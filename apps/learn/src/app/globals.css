@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Poppins:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b1220;
+
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #ffffff;
+  --accent: #f59e0b;
+  --accent-foreground: #111827;
+  --success: #10b981;
+  --success-foreground: #052e1c;
+  --danger: #ef4444;
+  --danger-foreground: #ffffff;
+  --surface: #f8fafc;
+  --surface-2: #eef2ff;
+  --border: rgba(15, 23, 42, 0.12);
+  --muted: rgba(2, 6, 23, 0.6);
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #e5e7eb;
+
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e40af;
+  --secondary-foreground: #ffffff;
+  --accent: #fbbf24;
+  --accent-foreground: #111827;
+  --success: #34d399;
+  --success-foreground: #052e1c;
+  --danger: #f87171;
+  --danger-foreground: #111827;
+  --surface: #111827;
+  --surface-2: #0f172a;
+  --border: rgba(226, 232, 240, 0.12);
+  --muted: rgba(226, 232, 240, 0.7);
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-cairo), var(--font-poppins), system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Fonts per direction */
+[dir='ltr'] body {
+  font-family: var(--font-poppins), system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+[dir='rtl'] body {
+  font-family: var(--font-cairo), system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* RTL helpers */
+[dir='rtl'] .text-left {
+  text-align: right;
+}
+
+[dir='rtl'] .text-right {
+  text-align: left;
+}
+
+[dir='rtl'] .ml-4 {
+  margin-right: 1rem;
+  margin-left: 0;
+}
+
+[dir='rtl'] .mr-4 {
+  margin-left: 1rem;
+  margin-right: 0;
+}
+
+/* Simple animations */
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

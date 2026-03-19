@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "retry": "Retry",
+    "empty": "No data to show right now",
+    "confirm": "Send",
+    "search": "Search",
+    "next": "Next",
+    "previous": "Previous",
+    "all": "All",
+    "back": "Back"
+  },
+  "errors": {
+    "something_wrong": "Something went wrong. Please try again.",
+    "network_error": "Network connection error",
+    "course_not_found": "Course not found",
+    "download_failed": "Failed to download file",
+    "copy_failed": "Failed to copy link"
+  },
+  "header": {
+    "academy": "CareerHub Academy",
+    "back": "← Back to CareerHub"
+  },
+  "home": {
+    "hero_title": "Learn. Grow. Succeed.",
+    "hero_subtitle": "A modern training experience, legally separated for licensing requirements.",
+    "featured": "Featured courses",
+    "categories": "Categories",
+    "category_tech": "Technology",
+    "category_business": "Business",
+    "all_courses": "All courses"
+  },
+  "courses": {
+    "title": "Courses",
+    "search_placeholder": "Search for a course...",
+    "sort_newest": "Newest",
+    "sort_popular": "Popular",
+    "sort_price": "Price",
+    "sort_rating": "Rating",
+    "filters": "Filters",
+    "view_all": "View All"
+  },
+  "course": {
+    "enroll": "Enroll now",
+    "enroll_success": "Enrolled successfully",
+    "what_you_learn": "What you'll learn",
+    "requirements": "Requirements",
+    "curriculum": "Curriculum",
+    "reviews": "Reviews",
+    "included": "What's included",
+    "certificate": "Certificate",
+    "lessons": "Lessons",
+    "hours": "Video hours",
+    "preview": "Free preview",
+    "students": "students",
+    "level": "Level",
+    "duration": "Duration",
+    "instructor": "Instructor",
+    "one_time_payment": "One-time payment"
+  },
+  "learn": {
+    "assistant": "AI Assistant",
+    "ask": "Ask the assistant",
+    "typing": "Typing...",
+    "previous_lesson": "← Previous lesson",
+    "next_lesson": "Next lesson →",
+    "mark_done": "✓ Mark complete",
+    "completed": "Completed",
+    "course_content": "Course Content",
+    "progress": "Progress",
+    "lesson_locked": "Lesson locked",
+    "type_message": "Type your message...",
+    "lesson_completed": "Lesson completed successfully"
+  },
+  "myCourses": {
+    "title": "My courses",
+    "subtitle": "Track your progress in enrolled courses",
+    "empty": "You haven't enrolled in any course yet",
+    "empty_description": "Start your learning journey by exploring our diverse courses",
+    "browse": "Browse courses",
+    "resume": "Resume",
+    "start": "Start Now",
+    "progress": "Progress",
+    "lessons_completed": "lessons completed",
+    "current_lesson": "Current Lesson"
+  },
+  "certificate": {
+    "title": "Certificate of Completion",
+    "subtitle": "شهادة إتمام",
+    "download": "Download PDF",
+    "print": "Print",
+    "linkedin": "Add to LinkedIn",
+    "share": "Share",
+    "verify": "Verify URL",
+    "invalid": "Certificate not found or invalid",
+    "invalid_description": "The certificate you're looking for doesn't exist in our system",
+    "revoked_description": "This certificate has been revoked and is no longer valid",
+    "this_certifies": "This certifies that",
+    "has_successfully_completed": "has successfully completed",
+    "completion_date": "Completion Date",
+    "instructor": "Instructor",
+    "duration": "Duration",
+    "score": "Score",
+    "verified": "Verified",
+    "serial_number": "Serial Number",
+    "verification_url": "Verification URL",
+    "verify_note": "You can verify this certificate's authenticity at:",
+    "download_success": "Certificate downloaded successfully",
+    "link_copied": "Link copied",
+    "share_title": "Certificate of Achievement",
+    "share_text": "I earned a certificate of achievement in {courseName} from CareerHub Academy"
+  }
+}

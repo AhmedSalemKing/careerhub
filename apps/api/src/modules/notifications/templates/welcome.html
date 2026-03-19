@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to CareerHub</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #2563EB, #1E3A8A);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .content {
+            background: white;
+            padding: 40px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .welcome-title {
+            color: #2563EB;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #2563EB;
+        }
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .feature-title {
+            font-weight: bold;
+            color: #1E3A8A;
+            margin-bottom: 8px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563EB, #1E3A8A);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .steps {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        .step-number {
+            background: #2563EB;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #666;
+            font-size: 14px;
+        }
+        .arabic {
+            direction: rtl;
+            font-family: 'Segoe UI', 'Tahoma', 'Arial Unicode MS', sans-serif;
+        }
+        .arabic .feature-card {
+            border-left: none;
+            border-right: 4px solid #2563EB;
+        }
+        .arabic .step {
+            flex-direction: row-reverse;
+        }
+        .arabic .step-number {
+            margin-left: 15px;
+            margin-right: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🚀 CareerHub</div>
+        <h1>{{#if isArabic}}مرحباً بك في CareerHub{{else}}Welcome to CareerHub{{/if}}</h1>
+        <p>{{#if isArabic}}منصتك المهنية الشاملة للنمو والتطور{{else}}Your Comprehensive Career Development Platform{{/if}}</p>
+    </div>
+
+    <div class="content {{#if isArabic}}arabic{{/if}}">
+        <h2 class="welcome-title">
+            {{#if isArabic}}مرحباً {{firstName}}! ابدأ رحلتك المهنية اليوم{{else}}Welcome {{firstName}}! Start Your Career Journey Today{{/if}}
+        </h2>
+
+        <p>{{#if isArabic}}
+            يسعدنا انضمامك إلى مجتمع CareerHub. لقد خطوت الخطوة الأولى نحو مستقبل مهني مشرق ومليء بالفرص.
+        {{else}}
+            We're thrilled to have you join the CareerHub community. You've taken the first step toward a bright and opportunity-filled career future.
+        {{/if}}</p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-title">{{#if isArabic}}تحليل المسار المهني{{else}}Career Path Analysis{{/if}}</div>
+                <p>{{#if isArabic}}اكتشف المسار المهني الأنسب لك عبر اختبار ذكاء اصطناعي متقدم{{else}}Discover your ideal career path through advanced AI assessment{{/if}}</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📚</div>
+                <div class="feature-title">{{#if isArabic}}دورات تدريبية{{else}}Training Courses{{/if}}</div>
+                <p>{{#if isArabic}}دورات عالية الجودة في أهم المجالات التقنية والإدارية{{else}}High-quality courses in the most important technical and business fields{{/if}}</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👨‍🏫</div>
+                <div class="feature-title">{{#if isArabic}}جلسات تدريب{{else}}Coaching Sessions{{/if}}</div>
+                <p>{{#if isArabic}}تواصل مع خبراء الصناعة للحصول على إرشاد شخصي{{else}}Connect with industry experts for personalized guidance{{/if}}</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-title">{{#if isArabic}}شهادات معتمدة{{else}}Certified Certificates{{/if}}</div>
+                <p>{{#if isArabic}}احصل على شهادات معترف بها تعزز سيرتك الذاتية{{else}}Earn recognized certificates that enhance your resume{{/if}}</p>
+            </div>
+        </div>
+
+        <div class="steps">
+            <h3>{{#if isArabic}}كيف تبدأ؟{{else}}How to Get Started?{{/if}}</h3>
+            <div class="step">
+                <div class="step-number">1</div>
+                <div>{{#if isArabic}}أكمل ملفك الشخصي وأضف خبراتك{{else}}Complete your profile and add your experience{{/if}}</div>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <div>{{#if isArabic}}قم بإجراء اختبار تحليل المسار المهني{{else}}Take the career path analysis assessment{{/if}}</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>{{#if isArabic}}استكشف الدورات الموصى بها وسجل فيها{{else}}Explore recommended courses and enroll{{/if}}</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div>{{#if isArabic}}احجز جلسة تدريبية مع خبير{{else}}Book a coaching session with an expert{{/if}}</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{{dashboardUrl}}" class="cta-button">
+                {{#if isArabic}}اذهب إلى لوحة التحكم{{else}}Go to Dashboard{{/if}}
+            </a>
+        </div>
+
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+            <h4 style="color: #856404; margin-top: 0;">{{#if isArabic}}💡 نصيحة احترافية{{else}}💡 Pro Tip{{/if}}</h4>
+            <p style="color: #856404; margin-bottom: 0;">
+                {{#if isArabic}}
+                خصص 15 دقيقة اليوم لإكمال ملفك الشخصي. الملفات المكتملة تحصل على توصيات دورات أكثر دقة!
+                {{else}}
+                Set aside 15 minutes today to complete your profile. Complete profiles receive more accurate course recommendations!
+                {{/if}}
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>{{#if isArabic}}مع أطيب التمنيات بالنجاح،{{else}}Best wishes for your success,{{/if}}</p>
+            <p><strong>فريق CareerHub</strong></p>
+            <p style="font-size: 12px; color: #999;">
+                {{#if isArabic}}
+                إذا لم تكن أنشأت هذا الحساب، يرجى تجاهل هذا البريد الإلكتروني.
+                {{else}}
+                If you didn't create this account, please ignore this email.
+                {{/if}}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

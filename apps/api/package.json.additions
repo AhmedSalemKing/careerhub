@@ -1,0 +1,37 @@
+{
+  "dependenciesToAdd": [
+    "@nestjs/platform-express",
+    "@nestjs/throttler",
+    "@nestjs/bull",
+    "@nestjs/elastic",
+    "aws-sdk",
+    "sharp",
+    "uuid",
+    "validator",
+    "helmet",
+    "compression",
+    "morgan",
+    "winston",
+    "class-validator",
+    "class-transformer",
+    "nodemailer",
+    "firebase-admin",
+    "twilio",
+    "stripe",
+    "bull",
+    "@elastic/elasticsearch",
+    "handlebars",
+    "puppeteer",
+    "multer",
+    "csv-parser"
+  ],
+  "devDependenciesToAdd": [
+    "@types/node",
+    "@types/multer",
+    "@types/uuid",
+    "@types/validator",
+    "@types/nodemailer",
+    "@types/csv-parser",
+    "@types/sharp"
+  ]
+}

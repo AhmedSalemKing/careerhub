@@ -1,0 +1,113 @@
+{
+  "common": {
+    "loading": "جاري التحميل...",
+    "retry": "إعادة المحاولة",
+    "empty": "لا توجد بيانات لعرضها حالياً",
+    "confirm": "إرسال",
+    "search": "بحث",
+    "next": "التالي",
+    "previous": "السابق",
+    "all": "الكل",
+    "back": "عودة"
+  },
+  "errors": {
+    "something_wrong": "حدث خطأ ما، يرجى المحاولة مرة أخرى",
+    "network_error": "خطأ في الاتصال بالشبكة",
+    "course_not_found": "الدورة غير موجودة",
+    "download_failed": "فشل تحميل الملف",
+    "copy_failed": "فشل نسخ الرابط"
+  },
+  "header": {
+    "academy": "CareerHub Academy",
+    "back": "← العودة لـ CareerHub"
+  },
+  "home": {
+    "hero_title": "تعلم. طور. انجح.",
+    "hero_subtitle": "منصة تدريب عربية متوافقة مع متطلبات الترخيص، بتجربة تعلم حديثة وذكية.",
+    "featured": "الدورات المميزة",
+    "categories": "التصنيفات",
+    "category_tech": "تكنولوجيا",
+    "category_business": "أعمال",
+    "all_courses": "كل الدورات"
+  },
+  "courses": {
+    "title": "الدورات",
+    "search_placeholder": "ابحث عن دورة...",
+    "sort_newest": "الأحدث",
+    "sort_popular": "الأكثر شيوعاً",
+    "sort_price": "السعر",
+    "sort_rating": "التقييم",
+    "filters": "الفلاتر",
+    "view_all": "عرض الكل"
+  },
+  "course": {
+    "enroll": "سجل الآن",
+    "enroll_success": "تم التسجيل بنجاح",
+    "what_you_learn": "ماذا ستتعلم",
+    "requirements": "المتطلبات",
+    "curriculum": "المنهج",
+    "reviews": "التقييمات",
+    "included": "ماذا يتضمن",
+    "certificate": "شهادة إتمام",
+    "lessons": "عدد الدروس",
+    "hours": "ساعات فيديو",
+    "preview": "معاينة مجانية",
+    "students": "طالب",
+    "level": "المستوى",
+    "duration": "المدة",
+    "instructor": "المدرب",
+    "one_time_payment": "دفع لمرة واحدة"
+  },
+  "learn": {
+    "assistant": "المساعد الذكي",
+    "ask": "اسأل المساعد",
+    "typing": "يكتب الآن...",
+    "previous_lesson": "← الدرس السابق",
+    "next_lesson": "الدرس التالي →",
+    "mark_done": "✓ تم الإنهاء",
+    "completed": "مكتمل",
+    "course_content": "محتوى الدورة",
+    "progress": "التقدم",
+    "lesson_locked": "الدرس مقفل",
+    "type_message": "اكتب رسالتك...",
+    "lesson_completed": "تم إكمال الدرس بنجاح"
+  },
+  "myCourses": {
+    "title": "كورساتي",
+    "subtitle": "تتبع تقدمك في الدورات المسجل فيها",
+    "empty": "لم تسجل في أي كورس بعد",
+    "empty_description": "ابدأ رحلة التعلم باستكشاف دوراتنا المتنوعة",
+    "browse": "تصفح الدورات",
+    "resume": "استكمل التعلم",
+    "start": "ابدأ الآن",
+    "progress": "التقدم",
+    "lessons_completed": "درس مكتمل",
+    "current_lesson": "الدرس الحالي"
+  },
+  "certificate": {
+    "title": "شهادة إتمام",
+    "subtitle": "Certificate of Completion",
+    "download": "تحميل PDF",
+    "print": "طباعة",
+    "linkedin": "إضافة إلى LinkedIn",
+    "share": "مشاركة",
+    "verify": "رابط التحقق",
+    "invalid": "الشهادة غير موجودة أو غير صحيحة",
+    "invalid_description": "الشهادة التي تبحث عنها غير موجودة في نظامنا",
+    "revoked_description": "تم إلغاء هذه الشهادة وهي لم تعد صالحة",
+    "this_certifies": "هذه الشهادة تؤكد أن",
+    "has_successfully_completed": "قد أكمل بنجاح",
+    "completion_date": "تاريخ الإنجاز",
+    "instructor": "المدرب",
+    "duration": "المدة",
+    "score": "الدرجة",
+    "verified": "موثق",
+    "serial_number": "الرقم التسلسلي",
+    "verification_url": "رابط التحقق",
+    "verify_note": "يمكنك التحقق من صحة هذه الشهادة عبر الرابط التالي:",
+    "download_success": "تم تحميل الشهادة بنجاح",
+    "link_copied": "تم نسخ الرابط",
+    "share_title": "شهادة الإنجاز",
+    "share_text": "لقد حصلت على شهادة إنجاز في دورة {courseName} من CareerHub Academy"
+  }
+}
