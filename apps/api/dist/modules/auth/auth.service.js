@@ -121,14 +121,26 @@ let AuthService = AuthService_1 = class AuthService {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         // Verify password
+        console.log('=== LOGIN DEBUG ===');
+        console.log('Email:', email);
+        console.log('Password received:', password);
+        console.log('User found:', user?.email);
+        console.log('DB hash:', user?.password?.substring(0, 30));
         const isPasswordValid = await bcrypt.compare(password, user.password);
+        console.log('Password valid:', isPasswordValid);
         if (!isPasswordValid) {
+            console.log('❌ Password validation failed - throwing Invalid credentials');
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        console.log('✅ Password validation passed - generating tokens...');
         // Generate tokens
+        console.log('🔑 About to generate tokens...');
         const { accessToken, refreshToken } = await this.generateTokens(user);
+        console.log('✅ Tokens generated successfully');
         // Store refresh token
+        console.log('💾 About to store refresh token...');
         await this.storeRefreshToken(user.id, refreshToken);
+        console.log('✅ Refresh token stored');
         // Update last login
         await this.prisma.user.update({
             where: { id: user.id },

@@ -8,5 +8,6 @@
     "tsConfigPath": "tsconfig.json"
   },
   "monorepo": false,
-  "root": "src"
+  "root": "src",
+  "outputPath": "dist"
 }

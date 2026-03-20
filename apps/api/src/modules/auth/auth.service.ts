@@ -21,7 +21,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   async register(registerDto: {
     email: string;
