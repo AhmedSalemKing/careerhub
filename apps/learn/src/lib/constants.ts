@@ -5,3 +5,8 @@ export const MAIN_URL =
 export const API_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
+export const LEARN_URL =
+  process.env.NEXT_PUBLIC_LEARN_URL || 'http://localhost:3002'
+
+export const TRAINING_URL = LEARN_URL
+
