@@ -134,9 +134,9 @@ export default function CoursesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('common.all')}</SelectItem>
-                {(Array.isArray(careerPaths?.data) ? careerPaths.data : (careerPaths as any)?.data?.data || []).map((path: CareerPath) => (
+                {((careerPaths as any)?.data?.careerPaths || []).map((path: CareerPath) => (
                   <SelectItem key={path.id} value={path.id}>
-                    {path.name[locale] || path.name.en}
+                    {(path as any).title || path.id}
                   </SelectItem>
                 ))}
               </SelectContent>
