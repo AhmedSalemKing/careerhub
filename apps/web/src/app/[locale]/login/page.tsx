@@ -1,104 +1,73 @@
 'use client'
 
-import { useState } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { post } from '../../../lib/api'
-import { useAuthStore } from '../../../stores/authStore'
+import Link from 'next/link'
+import { useLocale, useTranslations } from 'next-intl'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useAuth } from '../../../hooks/useAuth'
+import { Button } from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
+import { Label } from '../../components/ui/Label'
 
 export default function LoginPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const setToken = useAuthStore((s) => s.setToken)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const ar = locale === 'ar'
+  const locale = useLocale() as 'ar' | 'en'
+  const t = useTranslations('auth')
+  const c = useTranslations('common')
+  const { login } = useAuth()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const res = await post('/auth/login', { email: email.trim(), password })
-      const d = (res as any)?.data?.data ?? (res as any)?.data
-      if (d?.accessToken) {
-        const accessToken = d.accessToken
-        const user = d.user
+  const schema = z.object({
+    email: z.string().min(1, { message: t('errors.email_required') }).email({ message: t('errors.email_invalid') }),
+    password: z.string().min(1, { message: t('errors.password_required') }).min(8, { message: t('errors.password_min') }),
+  })
 
-        // 1. Save to localStorage
-        localStorage.setItem('careerhub_token', accessToken)
-        // 2. Save to cookie
-        document.cookie = `careerhub_token=${accessToken}; path=/; max-age=604800`
-        // 3. Save user info
-        if (user) localStorage.setItem('careerhub_user', JSON.stringify(user))
+  type Values = z.infer<typeof schema>
 
-        // 4. Update store
-        setToken(accessToken)
+  const form = useForm<Values>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: '', password: '' },
+  })
 
-        // 5. Redirect with a small delay to ensure storage is committed
-        setTimeout(() => {
-          window.location.href = `/${locale}/dashboard`
-        }, 100)
-      } else {
-        setError(ar ? 'فشل تسجيل الدخول. يرجى التحقق من البريد الإلكتروني وكلمة المرور.' : 'Login failed. Please check your email and password.')
-      }
-    } catch (err: any) {
-      setError(ar ? 'حدث خطأ أثناء الاتصال بالخادم. حاول مرة أخرى.' : 'An error occurred while connecting to the server. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  const onSubmit = (values: Values) => login.mutate(values)
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-900">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            {ar ? 'تسجيل الدخول' : 'Sign In'}
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              {error}
-            </div>
-          )}
-          <div className="-space-y-px rounded-md shadow-sm">
-            <div>
-              <input
-                type="email"
-                required
-                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:text-sm"
-                placeholder={ar ? 'البريد الإلكتروني' : 'Email address'}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                required
-                className="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white sm:text-sm"
-                placeholder={ar ? 'كلمة المرور' : 'Password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+    <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl place-items-center px-4 py-10 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
+        <h1 className="text-2xl font-extrabold tracking-tight text-foreground">{t('login_title')}</h1>
+        <p className="mt-2 text-sm text-[color:var(--muted)]">{t('have_account')}</p>
+
+        <form className="mt-6 space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="space-y-2">
+            <Label htmlFor="email">{t('email')}</Label>
+            <Input id="email" type="email" autoComplete="email" {...form.register('email')} />
+            {form.formState.errors.email?.message ? (
+              <p className="text-xs font-semibold text-[color:var(--danger)]">{form.formState.errors.email.message}</p>
+            ) : null}
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? (ar ? 'جاري التحميل...' : 'Loading...') : (ar ? 'تسجيل الدخول' : 'Sign in')}
-            </button>
+          <div className="space-y-2">
+            <Label htmlFor="password">{t('password')}</Label>
+            <Input id="password" type="password" autoComplete="current-password" {...form.register('password')} />
+            {form.formState.errors.password?.message ? (
+              <p className="text-xs font-semibold text-[color:var(--danger)]">{form.formState.errors.password.message}</p>
+            ) : null}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={login.isPending}>
+            {login.isPending ? c('loading') : t('login_btn')}
+          </Button>
+
+          <div className="flex items-center justify-between text-sm">
+            <Link href={`/${locale}/forgot-password`} className="font-semibold text-primary hover:underline">
+              {t('forgot_password')}
+            </Link>
+            <Link href={`/${locale}/register`} className="font-semibold text-foreground hover:underline">
+              {t('no_account')}
+            </Link>
           </div>
         </form>
       </div>
     </div>
   )
 }
+

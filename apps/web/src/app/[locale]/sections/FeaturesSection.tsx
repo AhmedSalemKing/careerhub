@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { LMS_URL } from '../../../lib/constants'
+import { TRAINING_URL } from '../../../lib/constants'
 
 export function FeaturesSection() {
   const t = useTranslations('features')
@@ -24,7 +24,7 @@ export function FeaturesSection() {
           cta={
             // ⚠️ LEGAL: External link — Saudi e-learning licensing
             <a
-              href={LMS_URL}
+              href={TRAINING_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-primary hover:underline"

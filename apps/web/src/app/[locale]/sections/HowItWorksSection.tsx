@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { LMS_URL } from '../../../lib/constants'
+import { TRAINING_URL } from '../../../lib/constants'
 
-export default function HowItWorksSection() {
+export function HowItWorksSection() {
   const t = useTranslations('how')
 
   const steps = [
@@ -12,7 +12,7 @@ export default function HowItWorksSection() {
     { id: 2, icon: '🧠', title: t('step2_title'), desc: t('step2_desc'), href: '/dashboard/assessment', external: false },
     { id: 3, icon: '🎯', title: t('step3_title'), desc: t('step3_desc'), href: '/careers', external: false },
     // ⚠️ LEGAL: External link — Saudi e-learning licensing
-    { id: 4, icon: '📚', title: t('step4_title'), desc: t('step4_desc'), href: LMS_URL, external: true },
+    { id: 4, icon: '📚', title: t('step4_title'), desc: t('step4_desc'), href: TRAINING_URL, external: true },
     { id: 5, icon: '🎓', title: t('step5_title'), desc: t('step5_desc'), href: '/coaches', external: false },
     { id: 6, icon: '🏆', title: t('step6_title'), desc: t('step6_desc'), href: '/dashboard/certificates', external: false },
   ] as const

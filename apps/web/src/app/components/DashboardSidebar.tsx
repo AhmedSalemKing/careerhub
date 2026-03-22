@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
-import { LMS_URL } from '../../lib/constants'
+import { TRAINING_URL } from '../../lib/constants'
 import { useAuthStore } from '../../stores/authStore'
 
 export function DashboardSidebar() {
@@ -31,9 +31,9 @@ export function DashboardSidebar() {
         <div className="mt-2">
           {/* ⚠️ LEGAL: External training link only */}
           <a
-            href={`${LMS_URL}/${locale}/courses`}
-            target="_self"
-            rel="noopener"
+            href={TRAINING_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="block rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm font-semibold text-foreground hover:bg-[color:var(--surface-2)]"
           >
             {t('courses')} ↗

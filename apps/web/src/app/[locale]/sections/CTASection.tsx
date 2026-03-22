@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
-export default function CTASection() {
+export function CTASection() {
   const t = useTranslations('cta')
 
   return (

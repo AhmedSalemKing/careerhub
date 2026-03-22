@@ -1,8 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import Image from 'next/image'
-import { LMS_URL } from '../../lib/constants'
+import { TRAINING_URL } from '../../lib/constants'
 
 export type CourseCardCourse = {
   id: string
@@ -20,22 +19,16 @@ export function CourseCard({ course, locale }: { course: CourseCardCourse; local
   return (
     <a
       // ⚠️ LEGAL: External training link only
-      href={`${LMS_URL}/courses/${course.id}`}
+      href={`${TRAINING_URL}/courses/${course.id}`}
       target="_blank"
       rel="noopener noreferrer"
       className="group block overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm hover:bg-[color:var(--surface-2)]"
       aria-label={title || t('view')}
     >
-      <div className="relative aspect-[16/9] w-full bg-[color:var(--surface-2)]">
+      <div className="aspect-[16/9] w-full bg-[color:var(--surface-2)]">
         {course.thumbnailUrl ? (
-          <Image
-            src={course.thumbnailUrl}
-            alt={title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            loading="lazy"
-          />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={course.thumbnailUrl} alt={title} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-sm text-[color:var(--muted)]">
             {t('loading')}

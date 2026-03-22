@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 
-export default function TestimonialsSection() {
+export function TestimonialsSection() {
   const t = useTranslations('testimonials')
 
   const items = [

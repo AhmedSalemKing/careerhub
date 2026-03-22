@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocale, useTranslations } from 'next-intl'
 import { api } from '../lib/api'
-import { logout as hardLogout, setToken, setUser } from '../lib/auth'
+import { setRefreshToken, setToken, setUser } from '../lib/auth'
 import { useAuthStore, type AuthUser } from '../stores/authStore'
 import { useToast } from '../lib/toast'
 
@@ -18,10 +18,14 @@ export function useAuth() {
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
     enabled: !!store.token,
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    queryFn: async () => store.user,
+    queryFn: async () => {
+      const res = await api.get<ApiResponse<{ user: AuthUser }>>('/auth/me')
+      const user = res.data.data?.user
+      if (user) {
+        store.setUser(user)
+      }
+      return user ?? null
+    },
   })
 
   const login = useMutation({
@@ -99,14 +103,13 @@ export function useAuth() {
   })
 
   const doLogout = () => {
-    hardLogout()
     store.logout()
   }
 
   return {
     user: store.user,
     token: store.token,
-    isLoading: meQuery.isLoading,
+    isLoading: store.isLoading || meQuery.isLoading,
     isAuthenticated: !!store.token,
     meQuery,
     login,
@@ -116,3 +119,4 @@ export function useAuth() {
     logout: doLogout,
   }
 }
+

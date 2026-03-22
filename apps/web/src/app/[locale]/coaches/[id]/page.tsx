@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
 import { useToast } from '../../../../lib/toast'
@@ -19,25 +19,19 @@ type CoachDetails = CoachCardCoach & {
 export default function CoachDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const t = useTranslations('coaches')
-  const locale = useLocale()
-  const ar = locale === 'ar'
   const c = useTranslations('common')
   const { toast } = useToast()
 
   const q = useQuery({
     queryKey: ['coach', id],
-    queryFn: async () => (await get<CoachDetails>(`/coaching/coaches/${encodeURIComponent(id)}`)).data,
+    queryFn: async () => (await get<CoachDetails>(`/api/coaching/coaches/${encodeURIComponent(id)}`)).data,
   })
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-          {q.isLoading ? (
-            <Skeleton className="h-8 w-72" />
-          ) : (
-            `${q.data?.user?.firstName || ''} ${q.data?.user?.lastName || ''}`.trim() || c('empty')
-          )}
+          {q.isLoading ? <Skeleton className="h-8 w-72" /> : q.data?.name || c('empty')}
         </h1>
         <Link
           href="/coaches"
@@ -91,7 +85,7 @@ export default function CoachDetailsPage() {
             <div className="mt-6">
               <div className="text-sm font-bold text-foreground">{t('specializations')}</div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {q.data.specialties.map((s: string) => (
+                {q.data.specialties.map((s) => (
                   <span key={s} className="rounded-full bg-[color:var(--surface-2)] px-2 py-1 text-xs text-foreground">
                     {s}
                   </span>

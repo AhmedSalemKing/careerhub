@@ -5,7 +5,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Clock, Play, BarChart3 } from 'lucide-react'
 import { get } from '../../../lib/api'
-import { unwrapList } from '../../../lib/unwrap'
 import { Button } from '../../components/ui/button'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Progress } from '../../components/ui/progress'
@@ -39,15 +38,12 @@ export default function MyCoursesPage() {
   const locale = useLocale() as 'ar' | 'en'
   const isRTL = locale === 'ar'
 
-  const { data: courses, isLoading, error } = useQuery({
+  const { data: coursesData, isLoading, error } = useQuery({
     queryKey: ['my-courses'],
-    queryFn: async () => {
-      const res = await get('/courses/my-courses')
-      return unwrapList<EnrolledCourse>(res, 'enrollments')
-    },
+    queryFn: () => get<EnrolledCourse[]>('/courses/my-courses'),
   })
 
-  const items = courses || []
+  const courses = coursesData?.data || []
 
   return (
     <div className="min-h-screen">
@@ -84,7 +80,7 @@ export default function MyCoursesPage() {
               {t('common.retry')}
             </Button>
           </div>
-        ) : items.length === 0 ? (
+        ) : courses.length === 0 ? (
           <div className="text-center py-12">
             <div className="mx-auto max-w-md">
               <BookOpen className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -102,7 +98,7 @@ export default function MyCoursesPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((enrolledCourse) => (
+            {courses.map((enrolledCourse) => (
               <div key={enrolledCourse.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Thumbnail */}
                 {enrolledCourse.course.thumbnail && (

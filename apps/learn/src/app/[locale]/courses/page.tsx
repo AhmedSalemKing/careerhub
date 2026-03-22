@@ -6,7 +6,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Clock, Users, Star, Filter, Search, ChevronDown } from 'lucide-react'
 import { get } from '../../../lib/api'
-import { unwrapList, unwrap } from '../../../lib/unwrap'
 import { Skeleton } from '../../components/ui/skeleton'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -62,17 +61,14 @@ export default function CoursesPage() {
     return () => clearTimeout(timer)
   }, [search])
 
-  const { data: careerPathsRes } = useQuery({
+  const { data: careerPaths } = useQuery({
     queryKey: ['career-paths'],
-    queryFn: async () => {
-      const res = await get('/career/paths')
-      return unwrapList<CareerPath>(res, 'careerPaths')
-    },
+    queryFn: () => get<CareerPath[]>('/career/paths'),
   })
 
   const { data: coursesData, isLoading, error } = useQuery({
     queryKey: ['courses', page, debouncedSearch, careerPath, type, level, sort],
-    queryFn: async () => {
+    queryFn: () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '12',
@@ -85,18 +81,17 @@ export default function CoursesPage() {
       if (level) params.append('level', level)
       if (sort) params.append('sort', sort)
 
-      const res = await get(`/courses?${params.toString()}`)
-      return {
-        items: unwrapList<Course>(res, 'courses'),
-        meta: unwrap<any>(res)
-      }
+      return get<{
+        data: Course[]
+        total: number
+        page: number
+        totalPages: number
+      }>(`/courses?${params.toString()}`)
     },
   })
 
-  const courses = coursesData?.items || []
-  const coursesMeta = coursesData?.meta
-  const totalPages = coursesMeta?.meta?.totalPages || coursesMeta?.totalPages || 1
-  const careerPaths = careerPathsRes || []
+  const courses = coursesData?.data?.data || []
+  const totalPages = coursesData?.data?.totalPages || 1
 
   const sortOptions = [
     { value: 'newest', label: t('courses.sort_newest') },
@@ -139,9 +134,9 @@ export default function CoursesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('common.all')}</SelectItem>
-                {careerPaths?.map((path) => (
+                {careerPaths?.data?.map((path) => (
                   <SelectItem key={path.id} value={path.id}>
-                    {(path as any).name?.[locale] || (path as any).name?.en || (path as any).title || ''}
+                    {path.name[locale] || path.name.en}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { get, patch } from '../../../../lib/api'
-import { unwrapList } from '../../../../lib/unwrap'
+import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
@@ -29,28 +29,33 @@ export default function DashboardNotificationsPage() {
   const q = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const res = await get('/notifications')
-      return unwrapList<NotificationItem>(res, 'notifications')
+      const raw = (await get<ApiEnvelope<unknown>>('/api/notifications')).data
+      return unwrapData(raw) as any
     },
   })
 
-  const items = q.data || []
+  const items: NotificationItem[] =
+    (q.data?.items as NotificationItem[]) ||
+    (q.data?.notifications as NotificationItem[]) ||
+    (q.data?.data?.items as NotificationItem[]) ||
+    (q.data?.data?.notifications as NotificationItem[]) ||
+    []
 
   const markRead = useMutation({
-    mutationFn: async (id: string) => (await patch(`/notifications/${encodeURIComponent(id)}/read`)).data,
+    mutationFn: async (id: string) => (await patch(`/api/notifications/${encodeURIComponent(id)}/read`)).data,
     onSuccess: () => q.refetch(),
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
   })
 
   const markAll = useMutation({
-    mutationFn: async () => (await patch('/notifications/mark-all-read')).data,
+    mutationFn: async () => (await patch('/api/notifications/mark-all-read')).data,
     onSuccess: () => q.refetch(),
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
   })
 
   return (
     <AuthGate>
-      <DashboardShell title={t('title')} subtitle={t('subtitle')} backHref="/dashboard">
+      <DashboardShell title={t('title')} subtitle={t('subtitle')}>
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-extrabold text-foreground">{t('inbox')}</div>

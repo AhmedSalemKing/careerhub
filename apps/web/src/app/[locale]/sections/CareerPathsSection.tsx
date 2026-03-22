@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { get } from '../../../lib/api'
 import { useToast } from '../../../lib/toast'
-import { unwrapList } from '../../../lib/unwrap'
 
 type CareerPath = {
   id: string
@@ -21,14 +20,20 @@ type CareerPath = {
   stats?: { totalCourses?: number; totalAssessments?: number; popularCourses?: unknown[] }
 }
 
-export default function CareerPathsSection() {
+export function CareerPathsSection() {
   const t = useTranslations('careers')
   const common = useTranslations('common')
   const { toast } = useToast()
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['careerPaths'],
-    queryFn: async () => unwrapList<CareerPath>(await get('/career/paths'), 'careerPaths'),
+    queryFn: async () => {
+      const res = await get<unknown>('/career/paths')
+      const payload: unknown = res.data
+      const maybeObj = payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Record<string, unknown>) : null
+      const items = (maybeObj && Array.isArray(maybeObj.data) ? maybeObj.data : payload) as unknown
+      return Array.isArray(items) ? (items as CareerPath[]) : []
+    },
   })
 
   return (
@@ -42,22 +47,8 @@ export default function CareerPathsSection() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-3">
-                  <div className="h-5 w-3/4 rounded-lg bg-[color:var(--surface-2)]" />
-                  <div className="h-3 w-full rounded-lg bg-[color:var(--surface-2)]" />
-                  <div className="h-3 w-5/6 rounded-lg bg-[color:var(--surface-2)]" />
-                </div>
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-[color:var(--surface-2)]" />
-              </div>
-              <div className="mt-6 flex flex-wrap gap-2">
-                <div className="h-6 w-16 rounded-full bg-[color:var(--surface-2)]" />
-                <div className="h-6 w-20 rounded-full bg-[color:var(--surface-2)]" />
-                <div className="h-6 w-14 rounded-full bg-[color:var(--surface-2)]" />
-              </div>
-            </div>
+              className="h-40 animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]"
+            />
           ))}
         </div>
       ) : isError ? (

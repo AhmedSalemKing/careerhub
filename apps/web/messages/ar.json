@@ -149,16 +149,10 @@
     "subtitle": "حدّث معلومات ملفك الشخصي.",
     "first_name": "الاسم الأول",
     "last_name": "اسم العائلة",
-    "country": "الدولة",
     "phone": "رقم الجوال",
     "first_required": "الاسم الأول مطلوب",
     "last_required": "اسم العائلة مطلوب",
-    "saved": "تم الحفظ بنجاح",
-    "edit_profile": "تعديل الملف الشخصي",
-    "save_changes": "حفظ التغييرات",
-    "preferences": "التفضيلات",
-    "interface_language": "لغة الواجهة",
-    "language_desc": "يمكنك تغيير اللغة باستخدام زر تبديل اللغة أعلى الصفحة"
+    "saved": "تم الحفظ بنجاح"
   },
   "chat": {
     "page_title": "محادثة الجلسة",
@@ -189,9 +183,7 @@
     "stat_revenue": "إيرادات الشهر",
     "stat_sessions": "جلسات معلقة",
     "revenue_12m": "الإيرادات (آخر 12 شهر)",
-    "users_30d": "مستخدمون جدد (آخر 30 يوم)",
-    "recent_users": "أحدث المستخدمين",
-    "recent_payments": "أحدث المدفوعات"
+    "users_30d": "مستخدمون جدد (آخر 30 يوم)"
   },
   "adminUsers": {
     "title": "المستخدمون",
@@ -287,18 +279,6 @@
     "empty": "لا توجد بيانات لعرضها حالياً",
     "toggle_theme": "تبديل الوضع",
     "switch_language": "تبديل اللغة",
-    "nav_home": "الرئيسية",
-    "nav_careers": "المسارات المهنية",
-    "nav_courses": "الكورسات",
-    "nav_coaches": "الكوتشينج",
-    "nav_training": "التدريب",
-    "nav_pricing": "الأسعار",
-    "nav_login": "تسجيل الدخول",
-    "nav_register": "إنشاء حساب",
-    "nav_dashboard": "لوحة التحكم",
-    "nav_admin": "لوحة الإدارة",
-    "nav_logout": "تسجيل الخروج",
-    "nav_profile": "الملف الشخصي",
     "save": "حفظ",
     "cancel": "إلغاء",
     "delete": "حذف",
@@ -308,12 +288,6 @@
     "next": "التالي",
     "previous": "السابق",
     "search": "بحث",
-    "name": "الاسم",
-    "email": "البريد الإلكتروني",
-    "date": "التاريخ",
-    "user": "المستخدم",
-    "amount": "المبلغ",
-    "status": "الحالة",
     "filter": "تصفية",
     "export": "تصدير",
     "add": "إضافة",
@@ -474,3 +448,4 @@
     "reject": "رفض"
   }
 }
+

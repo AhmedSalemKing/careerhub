@@ -2,20 +2,6 @@ export const TOKEN_KEY = 'careerhub_token'
 export const REFRESH_KEY = 'careerhub_refresh'
 export const USER_KEY = 'careerhub_user'
 
-function setCookie(name: string, value: string, days: number = 7) {
-  if (typeof document === 'undefined') return
-  const date = new Date()
-  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000))
-  const expires = "; expires=" + date.toUTCString()
-  // ⚠️ ISOLATION: Scoped to path / for main app, SameSite=Lax
-  document.cookie = `${name}=${value || ""}${expires}; path=/; domain=localhost; SameSite=Lax`
-}
-
-function removeCookie(name: string) {
-  if (typeof document === 'undefined') return
-  document.cookie = name + '=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-}
-
 export function getToken() {
   if (typeof window === 'undefined') return null
   return localStorage.getItem(TOKEN_KEY)
@@ -24,13 +10,11 @@ export function getToken() {
 export function setToken(t: string) {
   if (typeof window === 'undefined') return
   localStorage.setItem(TOKEN_KEY, t)
-  setCookie(TOKEN_KEY, t)
 }
 
 export function removeToken() {
   if (typeof window === 'undefined') return
   localStorage.removeItem(TOKEN_KEY)
-  removeCookie(TOKEN_KEY)
 }
 
 export function getRefreshToken() {
@@ -77,10 +61,6 @@ export function logout() {
   removeToken()
   removeRefreshToken()
   removeUser()
-  if (typeof window !== 'undefined') {
-    const seg = window.location.pathname.split('/')[1]
-    const locale = seg === 'en' ? 'en' : 'ar'
-    window.location.href = `/${locale}/login`
-  }
+  if (typeof window !== 'undefined') window.location.href = '/ar/login'
 }
 

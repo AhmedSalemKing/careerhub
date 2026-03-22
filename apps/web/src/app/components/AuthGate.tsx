@@ -1,48 +1,41 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
+import { useEffect } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useAuthStore } from '../../stores/authStore'
+import { Skeleton } from './ui/Skeleton'
 
-export function AuthGate({
-  children,
-  requireRole,
-}: {
-  children: React.ReactNode
-  requireRole?: 'ADMIN' | 'COACH'
-}) {
-  const router = useRouter()
-  const locale = useLocale()
-  const { user } = useAuthStore()
-  const [ready, setReady] = useState(false)
-  const checked = useRef(false)
+export function AuthGate({ children }: { children: React.ReactNode }) {
+  const locale = useLocale() as 'ar' | 'en'
+  const c = useTranslations('common')
+  const token = useAuthStore((s) => s.token)
+  const isLoading = useAuthStore((s) => s.isLoading)
+  const hydrate = useAuthStore((s) => s.hydrate)
 
   useEffect(() => {
-    if (checked.current) return
-    checked.current = true
+    hydrate()
+  }, [hydrate])
 
-    const token = localStorage.getItem('careerhub_token')
-    if (!token) {
-      router.replace(`/${locale}/login`)
-      return
+  useEffect(() => {
+    if (!isLoading && !token) {
+      window.location.href = `/${locale}/login`
     }
+  }, [isLoading, token, locale])
 
-    setReady(true)
-  }, [])
-
-  if (!ready) {
+  if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+          <div className="text-sm font-semibold text-foreground">{c('loading')}</div>
+          <Skeleton className="mt-4 h-5 w-2/3" />
+          <Skeleton className="mt-3 h-5 w-1/2" />
+        </div>
       </div>
     )
   }
 
-  if (requireRole && user && user.role !== requireRole) {
-    router.replace(`/${locale}/dashboard`)
-    return null
-  }
+  if (!token) return null
 
   return <>{children}</>
 }
+

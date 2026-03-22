@@ -1,52 +1,77 @@
-import axios from 'axios'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
+import { API_URL } from './constants'
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,
-  timeout: 30000,
-  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 })
 
-// Add token to EVERY request 
-api.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('careerhub_token')
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`
-      }
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
+  return null
+}
 
-// Handle 401 - clear token and redirect 
+function readNestedString(obj: unknown, path: string[]): string | null {
+  let cur: unknown = obj
+  for (const key of path) {
+    const rec = asRecord(cur)
+    if (!rec) return null
+    cur = rec[key]
+  }
+  return typeof cur === 'string' ? cur : null
+}
+
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('careerhub_token')
+    if (token) {
+      config.headers = config.headers ?? {}
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  }
+  return config
+})
+
 api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      if (typeof window !== 'undefined') {
+  (res) => res,
+  async (error: AxiosError) => {
+    if (typeof window === 'undefined') throw error
+    const status = error.response?.status
+
+    // Basic: don't loop refresh requests
+    const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
+    if (status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true
+      try {
+        const refreshToken = localStorage.getItem('careerhub_refresh')
+        if (!refreshToken) throw error
+        const refreshRes = await api.post('/auth/refresh', { refreshToken })
+        const payload: unknown = refreshRes.data
+        const newToken =
+          readNestedString(payload, ['data', 'accessToken']) ?? readNestedString(payload, ['accessToken'])
+        const newRefresh =
+          readNestedString(payload, ['data', 'refreshToken']) ?? readNestedString(payload, ['refreshToken'])
+        if (newToken) localStorage.setItem('careerhub_token', String(newToken))
+        if (newRefresh) localStorage.setItem('careerhub_refresh', String(newRefresh))
+        return api(originalRequest)
+      } catch {
         localStorage.removeItem('careerhub_token')
+        localStorage.removeItem('careerhub_refresh')
         localStorage.removeItem('careerhub_user')
-        document.cookie = 'careerhub_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         const seg = window.location.pathname.split('/')[1]
         const locale = seg === 'en' ? 'en' : 'ar'
-        // Only redirect if not already on login page 
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = `/${locale}/login`
-        }
+        window.location.href = `/${locale}/login`
       }
     }
-    return Promise.reject(error)
-  }
+    throw error
+  },
 )
 
-export const get = <T>(url: string, config?: any) => api.get<T>(url, config)
-export const post = <T>(url: string, data?: any, config?: any) => api.post<T>(url, data, config)
-export const put = <T>(url: string, data?: any, config?: any) => api.put<T>(url, data, config)
-export const patch = <T>(url: string, data?: any, config?: any) => api.patch<T>(url, data, config)
-export const del = <T>(url: string, config?: any) => api.delete<T>(url, config)
+export const get = <T>(url: string, config?: AxiosRequestConfig) => api.get<T>(url, config)
+export const post = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  api.post<T>(url, data, config)
+export const put = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) => api.put<T>(url, data, config)
+export const patch = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+  api.patch<T>(url, data, config)
+export const del = <T>(url: string, config?: AxiosRequestConfig) => api.delete<T>(url, config)
 
-export default api

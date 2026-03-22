@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../../lib/api'
-import { unwrap } from '../../../../../lib/unwrap'
+import { unwrapData, type ApiEnvelope } from '../../../../../lib/unwrap'
 import { AuthGate } from '../../../../components/AuthGate'
 import { DashboardShell } from '../../../../components/DashboardShell'
 import { Skeleton } from '../../../../components/ui/Skeleton'
@@ -30,15 +30,15 @@ export default function DashboardChatPage() {
   const q = useQuery({
     queryKey: ['session', id],
     queryFn: async () => {
-      const res = await get(`/coaching/sessions/${encodeURIComponent(id)}`)
-      const data = unwrap(res) as any
+      const raw = (await get<ApiEnvelope<unknown>>(`/api/coaching/sessions/${encodeURIComponent(id)}`)).data
+      const data = unwrapData(raw) as any
       return (data?.session ?? data?.data?.session ?? data) as SessionDetails
     },
   })
 
   return (
     <AuthGate>
-      <DashboardShell title={t('title')} subtitle={t('subtitle')}>
+      <DashboardShell title={t('page_title')} subtitle={t('page_subtitle')}>
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link
             href={`/${locale}/dashboard/coaching`}

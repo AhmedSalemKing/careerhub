@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { LMS_URL } from '../../lib/constants'
+import { TRAINING_URL } from '../../lib/constants'
 
 export function Footer() {
   const tNav = useTranslations('nav')
@@ -41,14 +41,14 @@ export function Footer() {
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             {/* ⚠️ LEGAL: External links — Saudi e-learning licensing */}
             <li>
-              <a className="hover:text-foreground" href={LMS_URL} target="_blank" rel="noopener noreferrer">
+              <a className="hover:text-foreground" href={TRAINING_URL} target="_blank" rel="noopener noreferrer">
                 {t('all_courses')}
               </a>
             </li>
             <li>
               <a
                 className="hover:text-foreground"
-                href={`${LMS_URL}/my-courses`}
+                href={`${TRAINING_URL}/my-courses`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
