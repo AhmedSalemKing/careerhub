@@ -54,6 +54,8 @@ let UsersService = UsersService_1 = class UsersService {
         this.prisma = prisma;
         this.configService = configService;
         this.logger = new common_1.Logger(UsersService_1.name);
+        this.cacheTtlMs = 30_000;
+        this.cache = new Map();
         // Initialize AWS S3
         this.s3 = new AWS.S3({
             accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
@@ -138,66 +140,92 @@ let UsersService = UsersService_1 = class UsersService {
         return uploadResult.Location;
     }
     async getDashboard(userId) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-                profile: true,
-                enrollments: {
-                    include: {
-                        course: true,
-                    },
-                    orderBy: { enrolledAt: 'desc' },
-                    take: 5,
-                },
-                certificates: {
-                    include: {
-                        course: true,
-                    },
-                    orderBy: { issuedAt: 'desc' },
-                    take: 3,
-                },
-                careerAssessments: {
-                    include: {
-                        careerPath: true,
-                    },
-                    orderBy: { startedAt: 'desc' },
-                    take: 3,
-                },
-                coachingSessions: {
-                    include: {
-                        coach: {
-                            include: {
-                                user: {
-                                    include: { profile: true },
-                                },
-                            },
-                        },
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    take: 3,
-                },
-                notifications: {
-                    where: { isRead: false },
-                    orderBy: { createdAt: 'desc' },
-                    take: 5,
-                },
-            },
-        });
+        return this.getUserDashboard(userId);
+    }
+    async getUserDashboard(userId) {
+        const cacheKey = `dashboard:${userId}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.data;
+        }
+        const [user, enrollments, certificates, notifications] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    createdAt: true,
+                    profile: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            avatar: true,
+                            language: true,
+                            country: true,
+                        }
+                    }
+                }
+            }),
+            this.prisma.enrollment.findMany({
+                where: { userId },
+                take: 5,
+                orderBy: { enrolledAt: 'desc' },
+                select: {
+                    id: true,
+                    courseId: true,
+                    progress: true,
+                    status: true,
+                    enrolledAt: true,
+                    completedAt: true,
+                }
+            }),
+            this.prisma.certificate.findMany({
+                where: { userId },
+                take: 3,
+                orderBy: { issuedAt: 'desc' },
+                select: {
+                    id: true,
+                    serialNumber: true,
+                    issuedAt: true,
+                    courseId: true,
+                }
+            }),
+            this.prisma.notification.findMany({
+                where: { userId },
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true,
+                    titleEn: true,
+                    titleAr: true,
+                    isRead: true,
+                    createdAt: true,
+                }
+            }),
+        ]);
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        // Get user statistics
-        const stats = await this.getUserStats(userId);
-        // Get recent activity
-        const recentActivity = await this.getRecentActivity(userId);
-        // Get recommendations (mock for now)
-        const recommendations = await this.getRecommendations(userId);
-        return {
-            user: this.sanitizeUser(user),
-            stats,
-            recentActivity,
-            recommendations,
+        const data = {
+            success: true,
+            data: {
+                user,
+                stats: {
+                    enrolledCourses: enrollments.length,
+                    certificates: certificates.length,
+                    unreadNotifications: notifications.filter((n) => !n.isRead).length,
+                },
+                recentEnrollments: enrollments,
+                recentCertificates: certificates,
+                notifications,
+            }
         };
+        this.cache.set(cacheKey, {
+            expiresAt: Date.now() + this.cacheTtlMs,
+            data,
+        });
+        return data;
     }
     async getEnrollments(userId, options) {
         const { page, limit, status } = options;
@@ -473,7 +501,15 @@ let UsersService = UsersService_1 = class UsersService {
         // Recent enrollments
         const recentEnrollments = await this.prisma.enrollment.findMany({
             where: { userId },
-            include: { course: true },
+            select: {
+                enrolledAt: true,
+                course: {
+                    select: {
+                        titleEn: true,
+                        titleAr: true,
+                    },
+                },
+            },
             orderBy: { enrolledAt: 'desc' },
             take: 3,
         });
@@ -482,18 +518,16 @@ let UsersService = UsersService_1 = class UsersService {
                 type: 'enrollment',
                 title: `Enrolled in ${enrollment.course.titleEn}`,
                 timestamp: enrollment.enrolledAt,
-                data: enrollment,
             });
         });
         // Recent lesson completions
         const recentProgress = await this.prisma.lessonProgress.findMany({
             where: { userId, status: 'COMPLETED' },
-            include: {
+            select: {
+                completedAt: true,
                 lesson: {
-                    include: {
-                        module: {
-                            include: { course: true },
-                        },
+                    select: {
+                        title: true,
                     },
                 },
             },
@@ -505,7 +539,6 @@ let UsersService = UsersService_1 = class UsersService {
                 type: 'lesson_completion',
                 title: `Completed: ${progress.lesson.title}`,
                 timestamp: progress.completedAt,
-                data: progress,
             });
         });
         // Sort by timestamp

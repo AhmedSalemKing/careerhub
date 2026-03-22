@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
+import { unwrapList } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { AdminShell } from '../../../components/AdminShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
@@ -30,14 +30,12 @@ export default function AdminCertificatesPage() {
   const q = useQuery({
     queryKey: ['admin-certificates', page],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/certificates/admin/all', { params: { page, limit: 20 } })).data
-      return unwrapData(raw) as any
+      const res = await get('/certificates/admin/all', { params: { page, limit: 20 } })
+      return unwrapList<AdminCertificate>(res, 'certificates')
     },
   })
 
-  const data = (q.data ?? null) as any
-  const items: AdminCertificate[] =
-    data?.items || data?.certificates || data?.data?.items || data?.data?.certificates || []
+  const items = q.data || []
 
   return (
     <AuthGate>

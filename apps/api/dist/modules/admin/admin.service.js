@@ -25,31 +25,147 @@ let AdminService = AdminService_1 = class AdminService {
         this.logger = new common_1.Logger(AdminService_1.name);
     }
     async getDashboardOverview() {
+        const [totalUsers, activeCourses, monthlyRevenue, pendingSessions, recentUsers, recentPayments,] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+            this.prisma.payment.aggregate({
+                _sum: { amount: true },
+                where: {
+                    status: 'COMPLETED',
+                    createdAt: {
+                        gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+                    },
+                },
+            }),
+            this.prisma.session.count({ where: { status: 'PENDING' } }),
+            this.prisma.user.findMany({
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                include: { profile: true },
+            }),
+            this.prisma.payment.findMany({
+                take: 10,
+                orderBy: { createdAt: 'desc' },
+                include: { user: { include: { profile: true } } },
+            }),
+        ]);
+        // Calculate real historical data for charts
+        const now = new Date();
+        const months = Array.from({ length: 12 }, (_, i) => {
+            const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+            return d;
+        });
+        const revenueLast12Months = await Promise.all(months.map(async (d) => {
+            const start = new Date(d.getFullYear(), d.getMonth(), 1);
+            const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+            const result = await this.prisma.payment.aggregate({
+                _sum: { amount: true },
+                where: {
+                    status: 'COMPLETED',
+                    createdAt: { gte: start, lte: end },
+                },
+            });
+            return {
+                month: d.toLocaleString('default', { month: 'short' }),
+                revenue: result._sum.amount || 0,
+            };
+        }));
+        const days = Array.from({ length: 30 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (29 - i));
+            d.setHours(0, 0, 0, 0);
+            return d;
+        });
+        const newUsersLast30Days = await Promise.all(days.map(async (d) => {
+            const start = d;
+            const end = new Date(d);
+            end.setHours(23, 59, 59, 999);
+            const count = await this.prisma.user.count({
+                where: {
+                    createdAt: { gte: start, lte: end },
+                },
+            });
+            return {
+                date: d.toISOString().split('T')[0],
+                users: count,
+            };
+        }));
         return {
-            users: { total: 0, active: 0, new: 0 },
-            courses: { total: 0, published: 0 },
-            revenue: { total: 0, thisMonth: 0 },
-            sessions: { total: 0, completed: 0 },
+            stats: {
+                totalUsers,
+                activeCourses,
+                monthlyRevenue: monthlyRevenue._sum.amount || 0,
+                pendingSessions,
+            },
+            revenueLast12Months,
+            newUsersLast30Days,
+            recentUsers,
+            recentPayments,
         };
     }
     async getPlatformStats() {
+        const [totalUsers, totalCourses, totalSessions, revenueStats] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.course.count(),
+            this.prisma.session.count(),
+            this.prisma.payment.aggregate({
+                _sum: { amount: true },
+                where: { status: 'COMPLETED' }
+            })
+        ]);
         return {
-            totalUsers: 0,
-            totalCourses: 0,
-            totalSessions: 0,
-            totalRevenue: 0,
+            totalUsers,
+            totalCourses,
+            totalSessions,
+            totalRevenue: revenueStats._sum.amount || 0,
         };
     }
     async getUsers(options) {
+        const where = {};
+        if (options.search) {
+            where.OR = [
+                { email: { contains: options.search, mode: 'insensitive' } },
+                { profile: { firstName: { contains: options.search, mode: 'insensitive' } } },
+                { profile: { lastName: { contains: options.search, mode: 'insensitive' } } },
+            ];
+        }
+        if (options.role) {
+            where.role = options.role;
+        }
+        if (options.status) {
+            where.isActive = options.status === 'ACTIVE';
+        }
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({
-                include: { profile: true },
+                where,
+                include: {
+                    profile: true,
+                    _count: {
+                        select: {
+                            enrollments: true,
+                            sessions: true,
+                            payments: true
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
                 skip: (options.page - 1) * options.limit,
                 take: options.limit,
             }),
-            this.prisma.user.count(),
+            this.prisma.user.count({ where }),
         ]);
         return { users, total, page: options.page, limit: options.limit };
+    }
+    async getUserDetails(id) {
+        return await this.prisma.user.findUnique({
+            where: { id },
+            include: {
+                profile: true,
+                enrollments: { include: { course: true }, take: 5, orderBy: { createdAt: 'desc' } },
+                sessions: { include: { coach: { include: { user: { include: { profile: true } } } } }, take: 5, orderBy: { createdAt: 'desc' } },
+                payments: { take: 5, orderBy: { createdAt: 'desc' } },
+            },
+        });
     }
     async getUserById(id) {
         return await this.prisma.user.findUnique({
@@ -81,13 +197,30 @@ let AdminService = AdminService_1 = class AdminService {
         });
     }
     async getAdminCourses(options) {
+        const where = {};
+        if (options.status) {
+            where.status = options.status;
+        }
+        if (options.search) {
+            where.OR = [
+                { titleEn: { contains: options.search, mode: 'insensitive' } },
+                { titleAr: { contains: options.search, mode: 'insensitive' } },
+            ];
+        }
         const [courses, total] = await Promise.all([
             this.prisma.course.findMany({
-                include: { careerPath: true },
+                where,
+                include: {
+                    careerPath: true,
+                    _count: {
+                        select: { enrollments: true }
+                    }
+                },
+                orderBy: { createdAt: 'desc' },
                 skip: (options.page - 1) * options.limit,
                 take: options.limit,
             }),
-            this.prisma.course.count(),
+            this.prisma.course.count({ where }),
         ]);
         return { courses, total, page: options.page, limit: options.limit };
     }

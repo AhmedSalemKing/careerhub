@@ -36,7 +36,7 @@ let HttpExceptionFilter = HttpExceptionFilter_1 = class HttpExceptionFilter {
         if (status === common_1.HttpStatus.BAD_REQUEST && Array.isArray(message)) {
             errors = message.map((error) => ({
                 field: error.property,
-                message: Object.values(error.constraints).join(', '),
+                message: error.constraints ? Object.values(error.constraints).join(', ') : error.message || 'Validation error',
             }));
             message = 'Validation failed';
         }

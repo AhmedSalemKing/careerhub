@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -456,17 +456,44 @@ export class PaymentsService {
     });
   }
 
-  async processRefund(paymentId: string, userId: string, amount?: number, reason?: string) {
-    const payment = await this.prisma.payment.findUnique({
-      where: { id: paymentId },
+  async getAdminPayments(options: { page: number; limit: number; status?: string; search?: string }) {
+    const where: any = {};
+    if (options.status) where.status = options.status;
+    if (options.search) {
+      where.OR = [
+        { transactionId: { contains: options.search, mode: 'insensitive' } },
+        { user: { email: { contains: options.search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [payments, total] = await Promise.all([
+      (this.prisma as any).payment.findMany({
+        where,
+        include: { user: { include: { profile: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (options.page - 1) * options.limit,
+        take: options.limit,
+      }),
+      (this.prisma as any).payment.count({ where }),
+    ]);
+
+    const stats = await (this.prisma as any).payment.groupBy({
+      by: ['currency', 'status'],
+      _sum: { amount: true },
     });
-    if (!payment) throw new Error('Payment not found');
-    await this.prisma.payment.update({
-      where: { id: paymentId },
-      data: { status: 'REFUNDED' as any },
+
+    return { payments, total, stats, page: options.page, limit: options.limit };
+  }
+
+  async refundPayment(id: string) {
+    const payment = await (this.prisma as any).payment.findUnique({ where: { id } });
+    if (!payment) throw new NotFoundException('Payment not found');
+    if (payment.status !== 'COMPLETED') throw new BadRequestException('Only completed payments can be refunded');
+
+    return await (this.prisma as any).payment.update({
+      where: { id },
+      data: { status: 'REFUNDED' },
     });
-    this.logger.log(`Refund processed for payment: ${paymentId}`);
-    return { success: true, paymentId };
   }
 
   async getUserInvoices(userId: string, options: { page: number; limit: number }) {

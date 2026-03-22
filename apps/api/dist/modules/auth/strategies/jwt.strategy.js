@@ -21,8 +21,6 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: configService.get('JWT_SECRET') || 'dev-secret',
-            issuer: 'careerhub.com',
-            audience: 'careerhub-users',
         });
         this.configService = configService;
         this.prisma = prisma;
@@ -33,7 +31,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             include: { profile: true },
         });
         if (!user || !user.isActive) {
-            throw new Error('User not found or inactive');
+            throw new common_1.UnauthorizedException('User not found or inactive');
         }
         return {
             id: user.id,

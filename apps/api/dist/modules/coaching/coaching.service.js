@@ -21,70 +21,61 @@ let CoachingService = CoachingService_1 = class CoachingService {
         this.configService = configService;
         this.zoomService = zoomService;
         this.logger = new common_1.Logger(CoachingService_1.name);
+        this.cacheTtlMs = 30_000;
+        this.cache = new Map();
     }
     async getCoaches(specialization, language = 'en') {
+        const cacheKey = `coaches:${specialization || ''}:${language}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.data;
+        }
         const where = {
             user: {
                 isActive: true,
             },
         };
         if (specialization) {
-            where.specializations = {
+            where.specialties = {
                 has: specialization,
             };
         }
         const coaches = await this.prisma.coach.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                hourlyRate: true,
+                rating: true,
+                specialties: true,
                 user: {
-                    include: { profile: true },
-                },
-                coachingSessions: {
-                    where: {
-                        status: 'COMPLETED',
-                    },
-                    include: {
-                        reviews: true,
-                    },
-                },
-                _count: {
                     select: {
-                        coachingSessions: {
-                            where: {
-                                status: 'COMPLETED',
+                        profile: {
+                            select: {
+                                firstName: true,
+                                lastName: true,
+                                avatar: true,
                             },
                         },
-                        reviews: true,
                     },
                 },
             },
         });
-        return coaches.map(coach => {
-            const totalReviews = coach._count.reviews;
-            const averageRating = totalReviews > 0
-                ? coach.coachingSessions.reduce((sum, session) => {
-                    const sessionRating = session.reviews.reduce((reviewSum, review) => reviewSum + review.rating, 0);
-                    return sum + (sessionRating / session.reviews.length || 0);
-                }, 0) / coach.coachingSessions.length
-                : 0;
-            return {
-                id: coach.id,
-                user: {
-                    id: coach.user.id,
-                    firstName: coach.user.profile?.firstName,
-                    lastName: coach.user.profile?.lastName,
-                    avatar: coach.user.profile?.avatar,
-                },
-                bio: language === 'ar' ? coach.bioAr : coach.bioEn,
-                specialties: coach.specializations,
-                hourlyRate: coach.hourlyRate,
-                experience: coach.experience,
-                rating: Math.round(averageRating * 10) / 10,
-                totalSessions: coach._count.coachingSessions,
-                totalReviews: totalReviews,
-                availability: this.getMockAvailability(coach.id),
-            };
+        const data = coaches.map(coach => ({
+            id: coach.id,
+            hourlyRate: coach.hourlyRate,
+            rating: coach.rating,
+            specialties: coach.specialties,
+            user: {
+                firstName: coach.user.profile?.firstName,
+                lastName: coach.user.profile?.lastName,
+                avatar: coach.user.profile?.avatar,
+            },
+        }));
+        this.cache.set(cacheKey, {
+            expiresAt: Date.now() + this.cacheTtlMs,
+            data,
         });
+        return data;
     }
     async getCoach(id, language = 'en') {
         const coach = await this.prisma.coach.findUnique({
@@ -605,12 +596,16 @@ let CoachingService = CoachingService_1 = class CoachingService {
         else if (status === 'inactive') {
             where.user = { isActive: false };
         }
-        const [coaches, total] = await Promise.all([
+        const [coachesRaw, total] = await Promise.all([
             this.prisma.coach.findMany({
                 where,
                 include: {
                     user: {
                         include: { profile: true },
+                    },
+                    coachingSessions: {
+                        where: { status: 'COMPLETED' },
+                        select: { reviews: { select: { rating: true } } },
                     },
                     _count: {
                         select: {
@@ -625,16 +620,24 @@ let CoachingService = CoachingService_1 = class CoachingService {
             }),
             this.prisma.coach.count({ where }),
         ]);
+        const coaches = coachesRaw.map((coach) => {
+            const allReviews = coach.coachingSessions.flatMap((s) => s.reviews);
+            const avgRating = allReviews.length > 0
+                ? allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length
+                : 0;
+            return {
+                ...coach,
+                rating: Math.round(avgRating * 10) / 10,
+                totalSessions: coach._count.coachingSessions,
+                totalReviews: coach._count.reviews,
+            };
+        });
         return {
             coaches,
-            meta: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                hasNext: page < Math.ceil(total / limit),
-                hasPrev: page > 1,
-            },
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
         };
     }
     async getAllSessions(options) {

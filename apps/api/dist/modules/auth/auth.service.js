@@ -61,6 +61,13 @@ let AuthService = AuthService_1 = class AuthService {
     }
     async register(registerDto) {
         const { email, password, firstName, lastName, phone, country, city, language } = registerDto;
+        // Check if email already exists
+        const existing = await this.prisma.user.findUnique({
+            where: { email },
+        });
+        if (existing) {
+            throw new common_1.BadRequestException('Email already exists');
+        }
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
         // Create user and profile in a transaction
@@ -115,32 +122,23 @@ let AuthService = AuthService_1 = class AuthService {
         // Find user with profile
         const user = await this.prisma.user.findUnique({
             where: { email },
-            include: { profile: true },
+            select: {
+                id: true, email: true, password: true, role: true, isActive: true, deletedAt: true, stripeCustomerId: true, createdAt: true, updatedAt: true,
+                profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
+            }
         });
         if (!user || !user.isActive) {
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
         // Verify password
-        console.log('=== LOGIN DEBUG ===');
-        console.log('Email:', email);
-        console.log('Password received:', password);
-        console.log('User found:', user?.email);
-        console.log('DB hash:', user?.password?.substring(0, 30));
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log('Password valid:', isPasswordValid);
         if (!isPasswordValid) {
-            console.log('❌ Password validation failed - throwing Invalid credentials');
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        console.log('✅ Password validation passed - generating tokens...');
         // Generate tokens
-        console.log('🔑 About to generate tokens...');
         const { accessToken, refreshToken } = await this.generateTokens(user);
-        console.log('✅ Tokens generated successfully');
         // Store refresh token
-        console.log('💾 About to store refresh token...');
         await this.storeRefreshToken(user.id, refreshToken);
-        console.log('✅ Refresh token stored');
         // Update last login
         await this.prisma.user.update({
             where: { id: user.id },
@@ -390,7 +388,15 @@ let AuthService = AuthService_1 = class AuthService {
     }
     sanitizeUser(user) {
         const { password, ...sanitizedUser } = user;
-        return sanitizedUser;
+        return {
+            ...sanitizedUser,
+            profile: user.profile ? {
+                firstName: user.profile.firstName,
+                lastName: user.profile.lastName,
+                avatar: user.profile.avatar,
+                language: user.profile.language,
+            } : null
+        };
     }
     getTimezoneFromCountry(country) {
         const timezoneMap = {

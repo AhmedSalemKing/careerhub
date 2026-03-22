@@ -384,18 +384,42 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             },
         });
     }
-    async processRefund(paymentId, userId, amount, reason) {
-        const payment = await this.prisma.payment.findUnique({
-            where: { id: paymentId },
+    async getAdminPayments(options) {
+        const where = {};
+        if (options.status)
+            where.status = options.status;
+        if (options.search) {
+            where.OR = [
+                { transactionId: { contains: options.search, mode: 'insensitive' } },
+                { user: { email: { contains: options.search, mode: 'insensitive' } } },
+            ];
+        }
+        const [payments, total] = await Promise.all([
+            this.prisma.payment.findMany({
+                where,
+                include: { user: { include: { profile: true } } },
+                orderBy: { createdAt: 'desc' },
+                skip: (options.page - 1) * options.limit,
+                take: options.limit,
+            }),
+            this.prisma.payment.count({ where }),
+        ]);
+        const stats = await this.prisma.payment.groupBy({
+            by: ['currency', 'status'],
+            _sum: { amount: true },
         });
+        return { payments, total, stats, page: options.page, limit: options.limit };
+    }
+    async refundPayment(id) {
+        const payment = await this.prisma.payment.findUnique({ where: { id } });
         if (!payment)
-            throw new Error('Payment not found');
-        await this.prisma.payment.update({
-            where: { id: paymentId },
+            throw new common_1.NotFoundException('Payment not found');
+        if (payment.status !== 'COMPLETED')
+            throw new common_1.BadRequestException('Only completed payments can be refunded');
+        return await this.prisma.payment.update({
+            where: { id },
             data: { status: 'REFUNDED' },
         });
-        this.logger.log(`Refund processed for payment: ${paymentId}`);
-        return { success: true, paymentId };
     }
     async getUserInvoices(userId, options) {
         const stripeCustomerId = await this.getOrCreateStripeCustomer(userId);

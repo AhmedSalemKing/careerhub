@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Get,
   Post,
@@ -303,6 +303,34 @@ export class PaymentsController {
     };
   }
 
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all payments (Admin)' })
+  async getAdminPayments(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    return await this.paymentsService.getAdminPayments({
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+      status,
+      search,
+    });
+  }
+
+  @Post('admin/:id/refund')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Refund payment (Admin)' })
+  async refundPayment(@Param('id') id: string) {
+    return await this.paymentsService.refundPayment(id);
+  }
+
   @Post('refunds/:paymentId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
@@ -317,10 +345,8 @@ export class PaymentsController {
       reason: string;
     },
   ) {
-    const refund = await this.paymentsService.processRefund(
-      paymentId,
-      String(refundData.amount) as any,
-      refundData.amount
+    const refund = await this.paymentsService.refundPayment(
+      paymentId
     );
     return {
       success: true,
@@ -500,10 +526,8 @@ export class PaymentsController {
     amount?: number;
     reason: string;
   }) {
-    const refund = await this.paymentsService.processRefund(
-      refundData.paymentId,
-      String(refundData.amount) as any,
-      refundData.amount
+    const refund = await this.paymentsService.refundPayment(
+      refundData.paymentId
     );
     return {
       success: true,

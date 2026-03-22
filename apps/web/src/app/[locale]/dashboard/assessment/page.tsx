@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
+import { unwrap } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { useToast } from '../../../../lib/toast'
@@ -83,9 +83,8 @@ export default function DashboardAssessmentPage() {
   const pathsQ = useQuery({
     queryKey: ['career-paths', locale],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ careerPaths: CareerPath[] }>>('/api/career/paths', { params: { language: locale } }))
-        .data
-      const data = unwrapData(raw)
+      const res = await get('/career/paths', { params: { language: locale } })
+      const data = unwrap(res) as any
       return (data as { careerPaths?: CareerPath[] }).careerPaths ?? []
     },
   })
@@ -99,26 +98,24 @@ export default function DashboardAssessmentPage() {
 
   const startMutation = useMutation({
     mutationFn: async (careerPathId: string) => {
-      const raw = (await post<ApiEnvelope<{ assessment: { id: string } }>>('/api/career/assessment/start', { careerPathId }))
-        .data
-      return unwrapData(raw) as StartAssessmentRes
+      const res = await post('/career/assessment/start', { careerPathId })
+      return unwrap(res) as StartAssessmentRes
     },
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('network_error') }),
   })
 
   const nextQuestionMutation = useMutation({
     mutationFn: async (payload: { id: string; answer?: string }) => {
-      const raw = (await post<ApiEnvelope<NextQuestionRes>>(`/api/career/assessment/${payload.id}/question`, { answer: payload.answer }))
-        .data
-      return unwrapData(raw) as NextQuestionRes
+      const res = await post(`/career/assessment/${payload.id}/question`, { answer: payload.answer })
+      return unwrap(res) as NextQuestionRes
     },
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
   })
 
   const completeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const raw = (await post<ApiEnvelope<CompleteRes>>(`/api/career/assessment/${id}/complete`)).data
-      return unwrapData(raw) as CompleteRes
+      const res = await post(`/career/assessment/${id}/complete`)
+      return unwrap(res) as CompleteRes
     },
     onError: () => toast({ variant: 'danger', title: t('results_title'), description: e('something_wrong') }),
   })
@@ -177,7 +174,7 @@ export default function DashboardAssessmentPage() {
   return (
     <AuthGate>
       <DashboardShell title={t('title')} subtitle={t('subtitle')}>
-        {pathsQ.isLoading ? (
+        {/* Implementation continues here */}        {pathsQ.isLoading ? (
           <Skeleton className="h-28 rounded-2xl" />
         ) : pathsQ.isError ? (
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">

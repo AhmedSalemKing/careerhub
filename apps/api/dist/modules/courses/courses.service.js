@@ -17,10 +17,19 @@ let CoursesService = CoursesService_1 = class CoursesService {
     constructor(prisma) {
         this.prisma = prisma;
         this.logger = new common_1.Logger(CoursesService_1.name);
+        this.cacheTtlMs = 30_000;
+        this.cache = new Map();
     }
     async getCourses(options) {
         const { page, limit, careerPath, level, search, language } = options;
-        const skip = (page - 1) * limit;
+        const effectiveLimit = limit || 12;
+        const safePage = page || 1;
+        const skip = (safePage - 1) * effectiveLimit;
+        const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.data;
+        }
         const where = {
             status: 'PUBLISHED',
         };
@@ -63,73 +72,46 @@ let CoursesService = CoursesService_1 = class CoursesService {
         const [courses, total] = await Promise.all([
             this.prisma.course.findMany({
                 where,
-                include: {
-                    careerPath: true,
-                    modules: {
-                        include: {
-                            _count: {
-                                select: {
-                                    lessons: true,
-                                },
-                            },
-                        },
-                    }, // ← Add comma here
-                    _count: {
-                        select: {
-                            enrollments: true,
-                            certificates: true,
-                        },
-                    },
+                select: {
+                    id: true,
+                    titleEn: true,
+                    titleAr: true,
+                    thumbnail: true,
+                    price: true,
+                    level: true,
                 },
                 orderBy: [
                     { isFeatured: 'desc' },
-                    { sortOrder: 'asc' },
                     { createdAt: 'desc' },
                 ],
                 skip,
-                take: limit,
+                take: effectiveLimit,
             }),
             this.prisma.course.count({ where }),
         ]);
         const transformedCourses = courses.map(course => ({
             id: course.id,
-            slug: course.slug,
             title: language === 'ar' ? course.titleAr : course.titleEn,
-            description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
             thumbnail: course.thumbnail,
             price: course.price,
-            currency: course.currency,
-            duration: course.duration,
             level: course.level,
-            isFeatured: course.isFeatured,
-            careerPath: {
-                id: course.careerPath.id,
-                slug: course.careerPath.slug,
-                title: language === 'ar' ? course.careerPath.titleAr : course.careerPath.titleEn,
-                color: course.careerPath.color,
-                icon: course.careerPath.icon,
-            },
-            stats: {
-                modulesCount: course.modules.length,
-                lessonsCount: course.modules.reduce((sum, module) => sum + module._count.lessons, 0),
-                enrollments: course._count.enrollments,
-                certificates: course._count.certificates,
-                rating: this.calculateMockRating(course._count.certificates, course._count.enrollments),
-            },
-            createdAt: course.createdAt,
-            updatedAt: course.updatedAt,
         }));
-        return {
+        const data = {
             courses: transformedCourses,
             meta: {
                 total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit),
-                hasNext: page < Math.ceil(total / limit),
-                hasPrev: page > 1,
+                page: safePage,
+                limit: effectiveLimit,
+                totalPages: Math.ceil(total / effectiveLimit),
+                hasNext: safePage < Math.ceil(total / effectiveLimit),
+                hasPrev: safePage > 1,
             },
         };
+        this.cache.set(cacheKey, {
+            expiresAt: Date.now() + this.cacheTtlMs,
+            data,
+        });
+        return data;
     }
     async getFeaturedCourses(limit, language = 'en') {
         const courses = await this.prisma.course.findMany({

@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
+import { unwrapList, unwrap } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
@@ -34,19 +34,13 @@ export default function DashboardCareerPathPage() {
   const historyQ = useQuery({
     queryKey: ['assessment-history'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/career/assessment/history')).data
-      return unwrapData(raw) as unknown
+      const res = await get('/career/assessment/history')
+      return unwrapList<AssessmentItem>(res, 'assessments')
     },
   })
 
-  const latest = (() => {
-    const data = historyQ.data as any
-    const items: AssessmentItem[] =
-      data?.items || data?.assessments || data?.data?.items || data?.data?.assessments || data?.results || []
-    if (!Array.isArray(items) || !items.length) return null
-    const completed = items.filter((x) => (x?.status || '').toString().toLowerCase().includes('complete'))
-    return (completed[0] ?? items[0]) as AssessmentItem
-  })()
+  const items = historyQ.data || []
+  const latest = items.length > 0 ? (items.find((x) => (x?.status || '').toString().toLowerCase().includes('complete')) ?? items[0]) : null
 
   const slug = latest?.result?.recommendedCareerPath?.slug
 
@@ -54,17 +48,17 @@ export default function DashboardCareerPathPage() {
     queryKey: ['roadmap', slug, locale],
     enabled: Boolean(slug),
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ roadmap: { steps?: RoadmapStep[] } }>>(`/api/career/paths/${encodeURIComponent(String(slug))}/roadmap`, { params: { language: locale } })).data
-      const data = unwrapData(raw) as any
+      const res = await get(`/career/paths/${encodeURIComponent(String(slug))}/roadmap`, { params: { language: locale } })
+      const data = unwrap(res) as any
       return (data?.roadmap?.steps ?? data?.steps ?? []) as RoadmapStep[]
     },
   })
 
-  const courses = latest?.result?.recommendedCourses || latest?.result?.recommendedCourses || []
+  const courses = latest?.result?.recommendedCourses || []
 
   return (
     <AuthGate>
-      <DashboardShell title={t('title')} subtitle={t('subtitle')}>
+      <DashboardShell title={t('title')} subtitle={t('roadmap')}>
         {historyQ.isLoading ? (
           <Skeleton className="h-40 rounded-2xl" />
         ) : historyQ.isError ? (

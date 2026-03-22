@@ -17,53 +17,42 @@ let CareerService = CareerService_1 = class CareerService {
     constructor(prisma) {
         this.prisma = prisma;
         this.logger = new common_1.Logger(CareerService_1.name);
+        this.cacheTtlMs = 30_000;
+        this.cache = new Map();
     }
     async getCareerPaths(language = 'en') {
+        const cacheKey = `career_paths:${language}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached && cached.expiresAt > Date.now()) {
+            return cached.data;
+        }
         const careerPaths = await this.prisma.careerPath.findMany({
             where: { isActive: true },
             orderBy: { createdAt: 'asc' },
-            include: {
-                courses: {
-                    where: { status: 'PUBLISHED' },
-                    include: {
-                        _count: {
-                            select: {
-                                enrollments: true,
-                            },
-                        },
-                    },
-                    take: 3, // Limit to 3 courses per career path for overview
-                },
-                _count: {
-                    select: {
-                        courses: true,
-                        careerAssessments: true,
-                    },
-                },
+            select: {
+                id: true,
+                slug: true,
+                titleEn: true,
+                titleAr: true,
+                icon: true,
+                color: true,
+                demandLevel: true,
             },
         });
         // Transform based on language
-        return careerPaths.map(path => ({
+        const data = careerPaths.map(path => ({
             id: path.id,
             slug: path.slug,
             title: language === 'ar' ? path.titleAr : path.titleEn,
-            description: language === 'ar' ? path.descriptionAr : path.descriptionEn,
-            skills: path.skills,
-            salaryRange: JSON.parse(language === 'ar' ? path.salaryRangeAr : path.salaryRangeEn),
-            jobTitles: path.jobTitlesEn,
             demandLevel: path.demandLevel,
             icon: path.icon,
             color: path.color,
-            stats: {
-                totalCourses: path._count.courses,
-                totalAssessments: path._count.careerAssessments,
-                popularCourses: path.courses.map(course => ({
-                    id: course.id,
-                    title: language === 'ar' ? course.titleAr : course.titleEn,
-                    enrollments: course._count?.enrollments,
-                })),
-            },
         }));
+        this.cache.set(cacheKey, {
+            expiresAt: Date.now() + this.cacheTtlMs,
+            data,
+        });
+        return data;
     }
     async getCareerPathBySlug(slug, language = 'en') {
         const careerPath = await this.prisma.careerPath.findUnique({

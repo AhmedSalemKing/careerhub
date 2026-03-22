@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
+import { unwrapList } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
@@ -21,21 +21,20 @@ export default function DashboardCoachingPage() {
   const q = useQuery({
     queryKey: ['my-sessions'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/coaching/sessions/my-sessions')).data
-      return unwrapData(raw) as any
+      const res = await get('/coaching/sessions/my-sessions')
+      return unwrapList<SessionModel>(res, 'sessions')
     },
   })
 
-  const sessions: SessionModel[] =
-    (q.data?.items as SessionModel[]) ||
-    (q.data?.sessions as SessionModel[]) ||
-    (q.data?.data?.items as SessionModel[]) ||
-    (q.data?.data?.sessions as SessionModel[]) ||
-    []
+  const sessions = q.data || []
 
   return (
     <AuthGate>
-      <DashboardShell title={t('title')} subtitle={t('subtitle')}>
+      <DashboardShell
+        title={t('title')}
+        subtitle={t('subtitle')}
+        backHref={`/${locale}/dashboard`}
+      >
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm font-extrabold text-foreground">{t('my_sessions')}</div>

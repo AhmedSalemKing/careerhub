@@ -39,7 +39,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (status === HttpStatus.BAD_REQUEST && Array.isArray(message)) {
       errors = message.map((error: any) => ({
         field: error.property,
-        message: Object.values(error.constraints).join(', '),
+        message: error.constraints ? Object.values(error.constraints).join(', ') : error.message || 'Validation error',
       }));
       message = 'Validation failed';
     }

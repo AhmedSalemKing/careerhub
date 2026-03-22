@@ -131,7 +131,7 @@ export default function CareerPathSlugPage() {
             </div>
           ) : coursesQuery.data?.length ? (
             <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              {coursesQuery.data.map((course) => (
+              {coursesQuery.data.map((course: CourseCardCourse) => (
                 <CourseCard key={course.id} course={course} locale={locale} />
               ))}
             </div>

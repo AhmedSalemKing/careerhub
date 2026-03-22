@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../../lib/unwrap'
+import { unwrap } from '../../../../../lib/unwrap'
 import { AuthGate } from '../../../../components/AuthGate'
 import { DashboardShell } from '../../../../components/DashboardShell'
 import { Skeleton } from '../../../../components/ui/Skeleton'
@@ -35,9 +35,8 @@ export default function DashboardBookCoachingPage() {
   const coachesQ = useQuery({
     queryKey: ['coaching-coaches', locale],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ coaches: CoachCardCoach[] }>>('/api/coaching/coaches', { params: { language: locale } }))
-        .data
-      const data = unwrapData(raw) as any
+      const res = await get('/coaching/coaches', { params: { language: locale } })
+      const data = unwrap(res) as any
       return (data?.coaches ?? data?.data?.coaches ?? []) as CoachCardCoach[]
     },
   })
@@ -46,8 +45,8 @@ export default function DashboardBookCoachingPage() {
     queryKey: ['coach-slots', coachId, date],
     enabled: step >= 2 && Boolean(coachId) && Boolean(date),
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<SlotsResponse>>(`/api/coaching/coaches/${encodeURIComponent(String(coachId))}/slots`, { params: { date } })).data
-      const data = unwrapData(raw) as any
+      const res = await get(`/coaching/coaches/${encodeURIComponent(String(coachId))}/slots`, { params: { date } })
+      const data = unwrap(res) as any
       return (data?.slots ?? data?.data?.slots ?? []) as BookingSlot[]
     },
   })
@@ -55,8 +54,8 @@ export default function DashboardBookCoachingPage() {
   const bookMutation = useMutation({
     mutationFn: async () => {
       if (!coachId || !slotId) throw new Error('missing')
-      const raw = (await post<ApiEnvelope<unknown>>('/api/coaching/sessions/book', { coachId, slotId, sessionType: 'ONE_ON_ONE', notes })).data
-      return unwrapData(raw) as any
+      const res = await post('/coaching/sessions/book', { coachId, slotId, sessionType: 'ONE_ON_ONE', notes })
+      return unwrap(res) as any
     },
     onSuccess: (data) => {
       const session = data?.session || data?.data?.session || data?.data || data

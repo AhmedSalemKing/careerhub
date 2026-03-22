@@ -3,14 +3,12 @@
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
+import { unwrapList } from '../../../../lib/unwrap'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../../lib/toast'
 import { CertificateView, type CertificateModel } from '../../../components/CertificateView'
-
-type CertificatesList = { items?: CertificateModel[] } | { certificates?: CertificateModel[] }
 
 export default function DashboardCertificatesPage() {
   const locale = useLocale() as 'ar' | 'en'
@@ -22,19 +20,18 @@ export default function DashboardCertificatesPage() {
   const q = useQuery({
     queryKey: ['my-certificates'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/certificates/my-certificates')).data
-      return unwrapData(raw) as any
+      const res = await get('/certificates/my-certificates')
+      return unwrapList<CertificateModel>(res, 'certificates')
     },
   })
 
-  const list = (q.data as CertificatesList) || {}
-  const items: CertificateModel[] = (list as any).items || (list as any).certificates || (q.data?.data?.items as any) || []
+  const items = q.data || []
 
   const download = async (serialNumber: string) => {
     try {
-      const raw = (await get<ApiEnvelope<{ downloadUrl: string }>>(`/api/certificates/${encodeURIComponent(serialNumber)}/download`)).data
-      const data = unwrapData(raw) as any
-      const url = data?.downloadUrl || data?.data?.downloadUrl
+      const res = await get(`/certificates/${encodeURIComponent(serialNumber)}/download`)
+      const data = (res as any)?.data?.data ?? (res as any)?.data
+      const url = data?.downloadUrl
       if (url) window.open(String(url), '_blank', 'noopener,noreferrer')
       else toast({ variant: 'danger', title: t('title'), description: e('something_wrong') })
     } catch {
@@ -44,7 +41,7 @@ export default function DashboardCertificatesPage() {
 
   return (
     <AuthGate>
-      <DashboardShell title={t('title')} subtitle={t('verify')}>
+      <DashboardShell title={t('title')} subtitle={t('subtitle')}>
         {q.isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-24 rounded-2xl" />

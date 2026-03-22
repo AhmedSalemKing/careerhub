@@ -1,49 +1,30 @@
-﻿import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Request } from 'express';
-
-export interface Response<T> {
-  success: boolean;
-  data: T;
-  meta?: {
-    timestamp: string;
-    path: string;
-    method: string;
-    requestId?: string;
-    duration?: number;
-  };
-}
+﻿import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
-{
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<Response<T>> {
-    const request = context.switchToHttp().getRequest<Request>();
-    const startTime = Date.now();
-
+export class TransformInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        data,
-        meta: {
-          timestamp: new Date().toISOString(),
-          path: request.url,
-          method: request.method,
-          requestId: String(request.headers['x-request-id'] || null),
-          duration: Date.now() - startTime,
-        },
-      })),
-    );
+      map(data => {
+        // If already wrapped, return as-is
+        if (data && typeof data === 'object' && 'success' in data) {
+          return data
+        }
+        // Otherwise wrap it
+        return {
+          success: true,
+          data,
+          meta: {
+            timestamp: new Date().toISOString(),
+            path: context.switchToHttp().getRequest().url,
+            method: context.switchToHttp().getRequest().method,
+            requestId: null,
+            duration: 0,
+          }
+        }
+      })
+    )
   }
 }
 

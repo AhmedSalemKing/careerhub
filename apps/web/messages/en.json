@@ -149,10 +149,16 @@
     "subtitle": "Update your profile information.",
     "first_name": "First name",
     "last_name": "Last name",
+    "country": "Country",
     "phone": "Phone",
     "first_required": "First name is required",
     "last_required": "Last name is required",
-    "saved": "Saved successfully"
+    "saved": "Saved successfully",
+    "edit_profile": "Edit profile",
+    "save_changes": "Save changes",
+    "preferences": "Preferences",
+    "interface_language": "Interface language",
+    "language_desc": "You can switch language using the language switcher at the top"
   },
   "chat": {
     "page_title": "Session chat",
@@ -183,7 +189,9 @@
     "stat_revenue": "Monthly revenue",
     "stat_sessions": "Pending sessions",
     "revenue_12m": "Revenue (last 12 months)",
-    "users_30d": "New users (last 30 days)"
+    "users_30d": "New users (last 30 days)",
+    "recent_users": "Recent users",
+    "recent_payments": "Recent payments"
   },
   "adminUsers": {
     "title": "Users",
@@ -279,6 +287,18 @@
     "empty": "No data to show right now",
     "toggle_theme": "Toggle theme",
     "switch_language": "Switch language",
+    "nav_home": "Home",
+    "nav_careers": "Career Paths",
+    "nav_courses": "Courses",
+    "nav_coaches": "Coaching",
+    "nav_training": "Training",
+    "nav_pricing": "Pricing",
+    "nav_login": "Login",
+    "nav_register": "Sign Up",
+    "nav_dashboard": "Dashboard",
+    "nav_admin": "Admin Panel",
+    "nav_logout": "Logout",
+    "nav_profile": "Profile",
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -288,6 +308,12 @@
     "next": "Next",
     "previous": "Previous",
     "search": "Search",
+    "name": "Name",
+    "email": "Email",
+    "date": "Date",
+    "user": "User",
+    "amount": "Amount",
+    "status": "Status",
     "filter": "Filter",
     "export": "Export",
     "add": "Add",
@@ -448,4 +474,3 @@
     "reject": "Reject"
   }
 }
-

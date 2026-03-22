@@ -116,8 +116,19 @@ let PaymentsController = class PaymentsController {
             message: 'Default payment method updated',
         };
     }
+    async getAdminPayments(page, limit, status, search) {
+        return await this.paymentsService.getAdminPayments({
+            page: Number(page) || 1,
+            limit: Number(limit) || 10,
+            status,
+            search,
+        });
+    }
+    async refundPayment(id) {
+        return await this.paymentsService.refundPayment(id);
+    }
     async processRefund(paymentId, refundData) {
-        const refund = await this.paymentsService.processRefund(paymentId, String(refundData.amount), refundData.amount);
+        const refund = await this.paymentsService.refundPayment(paymentId);
         return {
             success: true,
             message: 'Refund processed successfully',
@@ -198,7 +209,7 @@ let PaymentsController = class PaymentsController {
         };
     }
     async adminProcessRefund(refundData) {
-        const refund = await this.paymentsService.processRefund(refundData.paymentId, String(refundData.amount), refundData.amount);
+        const refund = await this.paymentsService.refundPayment(refundData.paymentId);
         return {
             success: true,
             message: 'Refund processed successfully',
@@ -370,6 +381,31 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], PaymentsController.prototype, "setDefaultPaymentMethod", null);
+__decorate([
+    (0, common_1.Get)('admin/all'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all payments (Admin)' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('search')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "getAdminPayments", null);
+__decorate([
+    (0, common_1.Post)('admin/:id/refund'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Refund payment (Admin)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PaymentsController.prototype, "refundPayment", null);
 __decorate([
     (0, common_1.Post)('refunds/:paymentId'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

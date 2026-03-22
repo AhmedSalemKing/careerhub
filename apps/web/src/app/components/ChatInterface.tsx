@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { useLocale, useTranslations } from 'next-intl'
 import { SOCKET_URL } from '../../lib/constants'
@@ -37,16 +37,12 @@ export function ChatInterface({
   const socketRef = useRef<Socket | null>(null)
   const endRef = useRef<HTMLDivElement | null>(null)
 
-  const token = useMemo(() => {
-    if (typeof window === 'undefined') return null
-    return window.localStorage.getItem('careerhub_token')
-  }, [])
-
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
   useEffect(() => {
+    const token = typeof window === 'undefined' ? null : window.localStorage.getItem('careerhub_token')
     // Connect Socket.IO (if server exists). If not, keep UI usable in "disconnected" mode.
     const socket = io(String(SOCKET_URL), {
       transports: ['websocket', 'polling'],
@@ -91,7 +87,7 @@ export function ChatInterface({
       socket.disconnect()
       socketRef.current = null
     }
-  }, [sessionId, token])
+  }, [sessionId])
 
   const send = () => {
     const trimmed = text.trim()
@@ -170,4 +166,3 @@ export function ChatInterface({
     </div>
   )
 }
-

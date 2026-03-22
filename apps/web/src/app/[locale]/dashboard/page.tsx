@@ -1,9 +1,10 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../lib/unwrap'
+import { unwrap } from '../../../lib/unwrap'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -20,29 +21,52 @@ type DashboardData = {
   recommendedCareerPath?: { slug?: string; title?: string; titleAr?: string } | null
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+      <Skeleton className="h-28 rounded-2xl" />
+      <Skeleton className="h-28 rounded-2xl" />
+      <Skeleton className="h-28 rounded-2xl" />
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const locale = useLocale() as 'ar' | 'en'
   const t = useTranslations('dashboard')
   const c = useTranslations('common')
   const { toast } = useToast()
+  const [mounted, setMounted] = useState(false)
 
-  const q = useQuery({
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const q = useQuery<DashboardData>({
     queryKey: ['dashboard'],
-    queryFn: async () => unwrapData((await get<ApiEnvelope<DashboardData>>('/api/users/dashboard')).data),
+    queryFn: async () => unwrap(await get('/users/dashboard')),
+    enabled: mounted,
   })
+
+  if (!mounted) {
+    return (
+      <DashboardShell title={t('overview')} subtitle={t('assessment_prompt')}>
+        <DashboardSkeleton />
+      </DashboardShell>
+    )
+  }
 
   const stats = q.data?.stats
   const courses = q.data?.recommendedCourses ?? []
 
   return (
     <AuthGate>
-      <DashboardShell title={t('overview')} subtitle={t('assessment_prompt')}>
+      <DashboardShell
+        title={t('overview')}
+        subtitle={t('assessment_prompt')}
+      >
         {q.isLoading ? (
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            <Skeleton className="h-28 rounded-2xl" />
-            <Skeleton className="h-28 rounded-2xl" />
-            <Skeleton className="h-28 rounded-2xl" />
-          </div>
+          <DashboardSkeleton />
         ) : q.isError ? (
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
             <div className="text-sm text-[color:var(--muted)]">{c('empty')}</div>
@@ -71,7 +95,7 @@ export default function DashboardPage() {
               </div>
               {courses.length ? (
                 <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {courses.slice(0, 6).map((course) => (
+                  {courses.slice(0, 6).map((course: CourseCardCourse) => (
                     <CourseCard key={course.id} course={course} locale={locale} />
                   ))}
                 </div>

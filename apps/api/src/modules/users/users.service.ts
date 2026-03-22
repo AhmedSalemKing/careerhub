@@ -16,6 +16,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
   private readonly s3: AWS.S3;
+  private readonly cacheTtlMs = 30_000;
+  private readonly cache = new Map<string, { expiresAt: number; data: any }>();
 
   constructor(
     private prisma: PrismaService,
@@ -121,71 +123,98 @@ export class UsersService {
   }
 
   async getDashboard(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        profile: true,
-        enrollments: {
-          include: {
-            course: true,
-          },
-          orderBy: { enrolledAt: 'desc' },
-          take: 5,
-        },
-        certificates: {
-          include: {
-            course: true,
-          },
-          orderBy: { issuedAt: 'desc' },
-          take: 3,
-        },
-        careerAssessments: {
-          include: {
-            careerPath: true,
-          },
-          orderBy: { startedAt: 'desc' },
-          take: 3,
-        },
-        coachingSessions: {
-          include: {
-            coach: {
-              include: {
-                user: {
-                  include: { profile: true },
-                },
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 3,
-        },
-        notifications: {
-          where: { isRead: false },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-        },
-      },
-    });
+    return this.getUserDashboard(userId);
+  }
+
+  async getUserDashboard(userId: string) {
+    const cacheKey = `dashboard:${userId}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
+    const [user, enrollments, certificates, notifications] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              language: true,
+              country: true,
+            }
+          }
+        }
+      }),
+      (this.prisma as any).enrollment.findMany({
+        where: { userId },
+        take: 5,
+        orderBy: { enrolledAt: 'desc' },
+        select: {
+          id: true,
+          courseId: true,
+          progress: true,
+          status: true,
+          enrolledAt: true,
+          completedAt: true,
+        }
+      }),
+      (this.prisma as any).certificate.findMany({
+        where: { userId },
+        take: 3,
+        orderBy: { issuedAt: 'desc' },
+        select: {
+          id: true,
+          serialNumber: true,
+          issuedAt: true,
+          courseId: true,
+        }
+      }),
+      (this.prisma as any).notification.findMany({
+        where: { userId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          titleEn: true,
+          titleAr: true,
+          isRead: true,
+          createdAt: true,
+        }
+      }),
+    ])
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Get user statistics
-    const stats = await this.getUserStats(userId);
+    const data = {
+      success: true,
+      data: {
+        user,
+        stats: {
+          enrolledCourses: enrollments.length,
+          certificates: certificates.length,
+          unreadNotifications: notifications.filter((n: any) => !n.isRead).length,
+        },
+        recentEnrollments: enrollments,
+        recentCertificates: certificates,
+        notifications,
+      }
+    }
 
-    // Get recent activity
-    const recentActivity = await this.getRecentActivity(userId);
+    this.cache.set(cacheKey, {
+      expiresAt: Date.now() + this.cacheTtlMs,
+      data,
+    });
 
-    // Get recommendations (mock for now)
-    const recommendations = await this.getRecommendations(userId);
-
-    return {
-      user: this.sanitizeUser(user),
-      stats,
-      recentActivity,
-      recommendations,
-    };
+    return data;
   }
 
   async getEnrollments(userId: string, options: { page: number; limit: number; status?: string }) {
@@ -518,7 +547,15 @@ export class UsersService {
     // Recent enrollments
     const recentEnrollments = await this.prisma.enrollment.findMany({
       where: { userId },
-      include: { course: true },
+      select: {
+        enrolledAt: true,
+        course: {
+          select: {
+            titleEn: true,
+            titleAr: true,
+          },
+        },
+      },
       orderBy: { enrolledAt: 'desc' },
       take: 3,
     });
@@ -526,21 +563,19 @@ export class UsersService {
     recentEnrollments.forEach(enrollment => {
       activities.push({
         type: 'enrollment',
-        title: `Enrolled in ${(enrollment.course as any).titleEn}`,
+        title: `Enrolled in ${enrollment.course.titleEn}`,
         timestamp: enrollment.enrolledAt,
-        data: enrollment,
       });
     });
 
     // Recent lesson completions
     const recentProgress = await this.prisma.lessonProgress.findMany({
       where: { userId, status: 'COMPLETED' },
-      include: {
+      select: {
+        completedAt: true,
         lesson: {
-          include: {
-            module: {
-              include: { course: true },
-            },
+          select: {
+            title: true,
           },
         },
       },
@@ -553,7 +588,6 @@ export class UsersService {
         type: 'lesson_completion',
         title: `Completed: ${progress.lesson.title}`,
         timestamp: progress.completedAt,
-        data: progress,
       });
     });
 

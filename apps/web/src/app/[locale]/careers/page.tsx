@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { get } from '../../../lib/api'
 import { useToast } from '../../../lib/toast'
+import { unwrapList } from '../../../lib/unwrap'
 
 type CareerPath = { id: string; slug: string; title: string; description?: string; color?: string | null; skills?: string[] }
 
@@ -17,11 +18,7 @@ export default function CareersPage() {
     queryKey: ['career', 'paths'],
     queryFn: async () => {
       const res = await get<unknown>('/career/paths')
-      const payload: unknown = res.data
-      const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Record<string, unknown>) : null
-      const items = obj && obj.data && typeof obj.data === 'object' ? (obj.data as Record<string, unknown>) : null
-      const paths = items && Array.isArray(items.careerPaths) ? (items.careerPaths as CareerPath[]) : []
-      return paths
+      return unwrapList<CareerPath>(res, 'careerPaths')
     },
   })
 
@@ -33,8 +30,25 @@ export default function CareersPage() {
 
       {isLoading ? (
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-44 animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="animate-pulse rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-3">
+                  <div className="h-5 w-3/4 rounded-lg bg-[color:var(--surface-2)]" />
+                  <div className="h-3 w-full rounded-lg bg-[color:var(--surface-2)]" />
+                  <div className="h-3 w-5/6 rounded-lg bg-[color:var(--surface-2)]" />
+                </div>
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-[color:var(--surface-2)]" />
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <div className="h-6 w-16 rounded-full bg-[color:var(--surface-2)]" />
+                <div className="h-6 w-20 rounded-full bg-[color:var(--surface-2)]" />
+                <div className="h-6 w-14 rounded-full bg-[color:var(--surface-2)]" />
+              </div>
+            </div>
           ))}
         </div>
       ) : isError ? (

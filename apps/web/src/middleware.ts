@@ -1,13 +1,11 @@
 import createMiddleware from 'next-intl/middleware'
-import { defaultLocale, locales } from './i18n'
 
 export default createMiddleware({
-  locales: [...locales],
-  defaultLocale,
-  localePrefix: 'always',
+  locales: ['ar', 'en'],
+  defaultLocale: 'ar',
+  localePrefix: 'always'
 })
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|api|.*\\..*).*)'],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)']
 }
-

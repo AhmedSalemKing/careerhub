@@ -35,6 +35,14 @@ export class AuthService {
   }) {
     const { email, password, firstName, lastName, phone, country, city, language } = registerDto;
 
+    // Check if email already exists
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    if (existing) {
+      throw new BadRequestException('Email already exists');
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -99,7 +107,10 @@ export class AuthService {
     // Find user with profile
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { profile: true },
+      select: {
+        id: true, email: true, password: true, role: true, isActive: true, deletedAt: true, stripeCustomerId: true, createdAt: true, updatedAt: true,
+        profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
+      }
     });
 
     if (!user || !user.isActive) {
@@ -127,7 +138,7 @@ export class AuthService {
     this.logger.log(`User logged in: ${email}`);
 
     return {
-      user: this.sanitizeUser(user),
+      user: this.sanitizeUser(user as any),
       accessToken,
       refreshToken,
     };
@@ -418,9 +429,17 @@ export class AuthService {
     });
   }
 
-  private sanitizeUser(user: User & { profile?: UserProfile }) {
+  private sanitizeUser(user: User & { profile?: UserProfile | null }) {
     const { password, ...sanitizedUser } = user;
-    return sanitizedUser;
+    return {
+      ...sanitizedUser,
+      profile: user.profile ? {
+        firstName: user.profile.firstName,
+        lastName: user.profile.lastName,
+        avatar: user.profile.avatar,
+        language: user.profile.language,
+      } : null
+    };
   }
 
   private getTimezoneFromCountry(country?: string): string {

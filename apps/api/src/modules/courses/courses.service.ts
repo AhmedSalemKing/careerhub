@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   NotFoundException,
   BadRequestException,
@@ -10,6 +10,8 @@ import { Course, CourseStatus, User } from '@prisma/client';
 @Injectable()
 export class CoursesService {
   private readonly logger = new Logger(CoursesService.name);
+  private readonly cacheTtlMs = 30_000;
+  private readonly cache = new Map<string, { expiresAt: number; data: any }>();
 
   constructor(private prisma: PrismaService) { }
 
@@ -22,7 +24,14 @@ export class CoursesService {
     language: string;
   }) {
     const { page, limit, careerPath, level, search, language } = options;
-    const skip = (page - 1) * limit;
+    const effectiveLimit = limit || 12;
+    const safePage = page || 1;
+    const skip = (safePage - 1) * effectiveLimit;
+    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
 
     const where: any = {
       status: 'PUBLISHED',
@@ -70,75 +79,50 @@ export class CoursesService {
     const [courses, total] = await Promise.all([
       this.prisma.course.findMany({
         where,
-        include: {
-          careerPath: true,
-          modules: {
-            include: {
-              _count: {
-                select: {
-                  lessons: true,
-                },
-              },
-            },
-          },  // ← Add comma here
-          _count: {
-            select: {
-              enrollments: true,
-              certificates: true,
-            },
-          },
+        select: {
+          id: true,
+          titleEn: true,
+          titleAr: true,
+          thumbnail: true,
+          price: true,
+          level: true,
         },
         orderBy: [
           { isFeatured: 'desc' },
-          { sortOrder: 'asc' } as any,
           { createdAt: 'desc' },
         ],
         skip,
-        take: limit,
+        take: effectiveLimit,
       }),
       this.prisma.course.count({ where }),
     ]);
 
     const transformedCourses = courses.map(course => ({
       id: course.id,
-      slug: course.slug,
       title: language === 'ar' ? course.titleAr : course.titleEn,
-      description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
       price: course.price,
-      currency: course.currency,
-      duration: (course as any).duration,
       level: course.level,
-      isFeatured: course.isFeatured,
-      careerPath: {
-        id: (course as any).careerPath.id,
-        slug: (course as any).careerPath.slug,
-        title: language === 'ar' ? (course as any).careerPath.titleAr : (course as any).careerPath.titleEn,
-        color: (course as any).careerPath.color,
-        icon: (course as any).careerPath.icon,
-      },
-      stats: {
-        modulesCount: (course as any).modules.length,
-        lessonsCount: (course as any).modules.reduce((sum, module) => sum + (module as any)._count.lessons, 0),
-        enrollments: (course as any)._count.enrollments,
-        certificates: (course as any)._count.certificates,
-        rating: this.calculateMockRating((course as any)._count.certificates, (course as any)._count.enrollments),
-      },
-      createdAt: course.createdAt,
-      updatedAt: course.updatedAt,
     }));
 
-    return {
+    const data = {
       courses: transformedCourses,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-        hasNext: page < Math.ceil(total / limit),
-        hasPrev: page > 1,
+        page: safePage,
+        limit: effectiveLimit,
+        totalPages: Math.ceil(total / effectiveLimit),
+        hasNext: safePage < Math.ceil(total / effectiveLimit),
+        hasPrev: safePage > 1,
       },
     };
+
+    this.cache.set(cacheKey, {
+      expiresAt: Date.now() + this.cacheTtlMs,
+      data,
+    });
+
+    return data;
   }
 
   async getFeaturedCourses(limit: number, language: string = 'en') {
@@ -797,8 +781,5 @@ export class CoursesService {
     return 'Recommended based on your interests';
   }
 }
-
-
-
 
 

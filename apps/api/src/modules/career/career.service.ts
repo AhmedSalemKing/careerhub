@@ -1,4 +1,4 @@
-﻿import {
+import {
   Injectable,
   NotFoundException,
   Logger,
@@ -9,56 +9,48 @@ import { CareerPath, Course } from '@prisma/client';
 @Injectable()
 export class CareerService {
   private readonly logger = new Logger(CareerService.name);
+  private readonly cacheTtlMs = 30_000;
+  private readonly cache = new Map<string, { expiresAt: number; data: any }>();
 
   constructor(private prisma: PrismaService) { }
 
   async getCareerPaths(language: string = 'en') {
+    const cacheKey = `career_paths:${language}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+
     const careerPaths = await this.prisma.careerPath.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'asc' },
-      include: {
-        courses: {
-          where: { status: 'PUBLISHED' },
-          include: {
-            _count: {
-              select: {
-                enrollments: true,
-              },
-            },
-          },
-          take: 3, // Limit to 3 courses per career path for overview
-        },
-        _count: {
-          select: {
-            courses: true,
-            careerAssessments: true,
-          },
-        },
+      select: {
+        id: true,
+        slug: true,
+        titleEn: true,
+        titleAr: true,
+        icon: true,
+        color: true,
+        demandLevel: true,
       },
     });
 
     // Transform based on language
-    return careerPaths.map(path => ({
+    const data = careerPaths.map(path => ({
       id: path.id,
       slug: path.slug,
       title: language === 'ar' ? path.titleAr : path.titleEn,
-      description: language === 'ar' ? path.descriptionAr : path.descriptionEn,
-      skills: (path.skills as any),
-      salaryRange: JSON.parse(language === 'ar' ? path.salaryRangeAr : path.salaryRangeEn),
-      jobTitles: (path.jobTitlesEn as any),
       demandLevel: path.demandLevel,
       icon: path.icon,
       color: path.color,
-      stats: {
-        totalCourses: (path as any)._count.courses,
-        totalAssessments: (path as any)._count.careerAssessments,
-        popularCourses: (path as any).courses.map(course => ({
-          id: course.id,
-          title: language === 'ar' ? course.titleAr : course.titleEn,
-          enrollments: (course as any)._count?.enrollments,
-        })),
-      },
     }));
+
+    this.cache.set(cacheKey, {
+      expiresAt: Date.now() + this.cacheTtlMs,
+      data,
+    });
+
+    return data;
   }
 
   async getCareerPathBySlug(slug: string, language: string = 'en') {
@@ -667,6 +659,4 @@ export class CareerService {
     ];
   }
 }
-
-
 
