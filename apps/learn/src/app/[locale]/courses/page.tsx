@@ -90,7 +90,7 @@ export default function CoursesPage() {
     },
   })
 
-  const courses = coursesData?.data?.data || []
+  const courses = (Array.isArray(coursesData?.data) ? coursesData.data : (coursesData as any)?.data?.data || [])
   const totalPages = coursesData?.data?.totalPages || 1
 
   const sortOptions = [
@@ -134,7 +134,7 @@ export default function CoursesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('common.all')}</SelectItem>
-                {careerPaths?.data?.map((path) => (
+                {(Array.isArray(careerPaths?.data) ? careerPaths.data : (careerPaths as any)?.data?.data || []).map((path: CareerPath) => (
                   <SelectItem key={path.id} value={path.id}>
                     {path.name[locale] || path.name.en}
                   </SelectItem>
@@ -212,7 +212,7 @@ export default function CoursesPage() {
         ) : (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {courses.map((course) => (
+              {courses.map((course: Course) => (
                 <Link
                   key={course.id}
                   href={`/courses/${course.slug}`}

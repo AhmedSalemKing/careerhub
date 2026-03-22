@@ -43,7 +43,7 @@ export default function MyCoursesPage() {
     queryFn: () => get<EnrolledCourse[]>('/courses/my-courses'),
   })
 
-  const courses = coursesData?.data || []
+  const courses = (Array.isArray(coursesData?.data) ? coursesData.data : (coursesData as any)?.data?.data || [])
 
   return (
     <div className="min-h-screen">
@@ -98,7 +98,7 @@ export default function MyCoursesPage() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((enrolledCourse) => (
+            {courses.map((enrolledCourse: EnrolledCourse) => (
               <div key={enrolledCourse.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                 {/* Thumbnail */}
                 {enrolledCourse.course.thumbnail && (

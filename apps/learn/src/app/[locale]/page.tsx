@@ -101,7 +101,7 @@ export default function HomePage() {
             </div>
           ) : featuredCourses?.data ? (
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredCourses.data.map((course) => (
+              {(Array.isArray(featuredCourses?.data) ? featuredCourses.data : (featuredCourses as any)?.data?.data || []).map((course: Course) => (
                 <Link
                   key={course.id}
                   href={`/courses/${course.slug}`}
@@ -181,7 +181,7 @@ export default function HomePage() {
             </div>
           ) : careerPaths?.data ? (
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {careerPaths.data.map((path) => (
+              {(Array.isArray(careerPaths?.data) ? careerPaths.data : (careerPaths as any)?.data?.data || []).map((path: CareerPath) => (
                 <Link
                   key={path.id}
                   href={`/courses?careerPath=${path.id}`}
@@ -238,7 +238,7 @@ export default function HomePage() {
             </div>
           ) : allCourses?.data ? (
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {allCourses.data?.data?.map((course: Course) => (
+              {(Array.isArray(allCourses?.data) ? allCourses.data : (allCourses as any)?.data?.data || []).map((course: Course) => (
                 <Link
                   key={course.id}
                   href={`/courses/${course.slug}`}
