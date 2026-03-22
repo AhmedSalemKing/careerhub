@@ -99,9 +99,9 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : featuredCourses?.data ? (
+          ) : ((featuredCourses as any)?.data?.courses?.length > 0) ? (
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {(Array.isArray(featuredCourses?.data) ? featuredCourses.data : (featuredCourses as any)?.data?.data || []).map((course: Course) => (
+              {((featuredCourses as any)?.data?.courses || []).map((course: Course) => (
                 <Link
                   key={course.id}
                   href={`/courses/${course.slug}`}
@@ -179,9 +179,9 @@ export default function HomePage() {
                 <Skeleton key={i} className="h-24 w-full" />
               ))}
             </div>
-          ) : careerPaths?.data ? (
+          ) : ((careerPaths as any)?.data?.careerPaths?.length > 0) ? (
             <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {(Array.isArray(careerPaths?.data) ? careerPaths.data : (careerPaths as any)?.data?.data || []).map((path: CareerPath) => (
+              {((careerPaths as any)?.data?.careerPaths || []).map((path: CareerPath) => (
                 <Link
                   key={path.id}
                   href={`/courses?careerPath=${path.id}`}
@@ -236,9 +236,9 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : allCourses?.data ? (
+          ) : ((allCourses as any)?.data?.courses?.length > 0) ? (
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {(Array.isArray(allCourses?.data) ? allCourses.data : (allCourses as any)?.data?.data || []).map((course: Course) => (
+              {((allCourses as any)?.data?.courses || []).map((course: Course) => (
                 <Link
                   key={course.id}
                   href={`/courses/${course.slug}`}
