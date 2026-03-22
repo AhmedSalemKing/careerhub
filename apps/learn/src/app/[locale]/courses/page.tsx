@@ -47,7 +47,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [careerPath, setCareerPath] = useState<string>('')
+  const [careerPath, setCareerPath] = useState<string>('all')
   const [type, setType] = useState<string>('')
   const [level, setLevel] = useState<string>('')
   const [sort, setSort] = useState<string>('newest')
@@ -76,7 +76,7 @@ export default function CoursesPage() {
       })
 
       if (debouncedSearch) params.append('search', debouncedSearch)
-      if (careerPath) params.append('careerPath', careerPath)
+      if (careerPath && careerPath !== 'all') params.append('careerPath', careerPath)
       if (type) params.append('type', type)
       if (level) params.append('level', level)
       if (sort) params.append('sort', sort)
@@ -133,7 +133,7 @@ export default function CoursesPage() {
                 <SelectValue placeholder={t('courses.filters')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('common.all')}</SelectItem>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
                 {((careerPaths as any)?.data?.careerPaths || []).map((path: CareerPath) => (
                   <SelectItem key={path.id} value={path.id}>
                     {(path as any).title || path.id}
