@@ -27,17 +27,20 @@ export function useToast() {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([])
 
-  const toast = useCallback((t: { title?: string; description: string; variant?: ToastVariant }) => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: String(Date.now()) + '-' + Math.random().toString(16).slice(2),
-        title: t.title,
-        description: t.description,
-        variant: t.variant ?? 'default',
-      },
-    ])
-  }, [])
+  const toast = useCallback(
+    (t: { title?: string; description: string; variant?: ToastVariant }) => {
+      setItems((prev) => [
+        ...prev,
+        {
+          id: String(Date.now()) + '-' + Math.random().toString(16).slice(2),
+          title: t.title,
+          description: t.description,
+          variant: t.variant ?? 'default',
+        },
+      ])
+    },
+    []
+  )
 
   const value = useMemo(() => ({ toast }), [toast])
 
@@ -54,20 +57,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               if (!open) setItems((prev) => prev.filter((x) => x.id !== item.id))
             }}
             className={[
-              'rounded-xl border bg-[var(--surface)] px-4 py-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-[color-mix(in_oklab,var(--surface),transparent_35%)]',
-              item.variant === 'success' && 'border-[color-mix(in_oklab,var(--success),white_35%)]',
-              item.variant === 'danger' && 'border-[color-mix(in_oklab,var(--danger),white_35%)]',
-              'data-[state=open]:animate-fade-in',
+              'rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 shadow-lg',
+              item.variant === 'success' && 'border-green-200 dark:border-green-800',
+              item.variant === 'danger' && 'border-red-200 dark:border-red-800',
             ]
               .filter(Boolean)
               .join(' ')}
           >
-            {item.title ? <Toast.Title className="text-sm font-semibold">{item.title}</Toast.Title> : null}
-            <Toast.Description className="mt-1 text-sm text-[color:var(--muted)]">{item.description}</Toast.Description>
+            {item.title ? (
+              <Toast.Title className="text-sm font-semibold">{item.title}</Toast.Title>
+            ) : null}
+            <Toast.Description className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              {item.description}
+            </Toast.Description>
           </Toast.Root>
         ))}
       </Toast.Provider>
     </ToastContext.Provider>
   )
 }
-

@@ -24,6 +24,11 @@ let CertificatesController = class CertificatesController {
     constructor(certificatesService) {
         this.certificatesService = certificatesService;
     }
+    async generateCert(courseId, req) {
+        const userId = req.user.sub || req.user.id;
+        const pdfUrl = await this.certificatesService.generateLocalCert(userId, courseId);
+        return { success: true, data: { pdfUrl } };
+    }
     async getMyCertificates(user, page, limit) {
         const certificates = await this.certificatesService.getUserCertificates(user.id, {
             page: page || 1,
@@ -160,6 +165,17 @@ let CertificatesController = class CertificatesController {
     }
 };
 exports.CertificatesController = CertificatesController;
+__decorate([
+    (0, common_1.Post)('generate/:courseId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Generate certificate PDF for completed course' }),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CertificatesController.prototype, "generateCert", null);
 __decorate([
     (0, common_1.Get)('my-certificates'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

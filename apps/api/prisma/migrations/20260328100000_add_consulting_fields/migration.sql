@@ -1,0 +1,7 @@
+-- AlterTable: Add new fields to consulting_sessions
+ALTER TABLE "consulting_sessions"
+  ADD COLUMN IF NOT EXISTS "paymentStatus" TEXT NOT NULL DEFAULT 'UNPAID',
+  ADD COLUMN IF NOT EXISTS "paymentId" TEXT,
+  ADD COLUMN IF NOT EXISTS "proposedAt" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "proposedTime" TIMESTAMP(3),
+  ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

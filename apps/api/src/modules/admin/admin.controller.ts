@@ -19,6 +19,7 @@ import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
 
@@ -645,5 +646,152 @@ export class AdminController {
       success: true,
       data: { stats },
     };
+  }
+
+  // ── Course Approval ─────────────────────────────────────────────────────
+
+  @Get('pending-courses')
+  @ApiOperation({ summary: 'Get courses pending review' })
+  @ApiResponse({ status: 200, description: 'Pending courses retrieved successfully' })
+  async getPendingCourses() {
+    return this.adminService.getPendingCourses();
+  }
+
+  @Post('courses/:id/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve and publish a course' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  async postApproveCourse(@Param('id') id: string) {
+    const course = await this.adminService.approveCourse(id);
+    return { success: true, message: 'Course approved and published', data: { course } };
+  }
+
+  @Post('courses/:id/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject a course submission' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  async postRejectCourse(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    const course = await this.adminService.rejectCourse(id, body.reason);
+    return { success: true, message: 'Course rejected', data: { course } };
+  }
+
+  // ── Approval system ────────────────────────────────────────────────────────
+
+  @Get('pending-approvals')
+  @ApiOperation({ summary: 'Get pending instructor/consultant approvals' })
+  @ApiResponse({ status: 200, description: 'Pending approvals retrieved successfully' })
+  async getPendingApprovals() {
+    const users = await this.adminService.getPendingApprovals();
+    return { success: true, data: users };
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get dashboard stats (safe)' })
+  async getDashboardStats() {
+    const stats = await this.adminService.getDashboardStats();
+    return { success: true, data: stats };
+  }
+
+  @Delete('clear-seed-data')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear seed/test data (ADMIN only)' })
+  async clearSeedData() {
+    return this.adminService.clearSeedData();
+  }
+
+  @Post('approve/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve user account' })
+  @ApiParam({ name: 'userId', description: 'User ID to approve' })
+  async approveUser(
+    @Param('userId') userId: string,
+    @CurrentUser() admin: User,
+  ) {
+    const user = await this.adminService.approveUser(userId, admin.id);
+    return { success: true, message: 'User approved', data: { user } };
+  }
+
+  @Post('reject/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject user application' })
+  @ApiParam({ name: 'userId', description: 'User ID to reject' })
+  async rejectUser(
+    @Param('userId') userId: string,
+    @Body('reason') reason: string | undefined,
+    @CurrentUser() admin: User,
+  ) {
+    const user = await this.adminService.rejectUser(userId, reason, admin.id);
+    return { success: true, message: 'User rejected', data: { user } };
+  }
+
+  @Post('users/:userId/ban')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Ban a user' })
+  @ApiParam({ name: 'userId', description: 'User ID to ban' })
+  async banUser(
+    @Param('userId') userId: string,
+    @CurrentUser() admin: User,
+  ) {
+    const user = await this.adminService.banUser(userId, admin.id);
+    return { success: true, message: 'User banned', data: { user } };
+  }
+
+  @Post('users/:userId/unban')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unban a user' })
+  @ApiParam({ name: 'userId', description: 'User ID to unban' })
+  async unbanUser(
+    @Param('userId') userId: string,
+    @CurrentUser() admin: User,
+  ) {
+    const user = await this.adminService.unbanUser(userId, admin.id);
+    return { success: true, message: 'User unbanned', data: { user } };
+  }
+
+  // ── Payments ───────────────────────────────────────────────────────────────
+
+  @Get('payments')
+  @ApiOperation({ summary: 'Get all payments with revenue total' })
+  async getAllPayments() {
+    return this.adminService.getAllPayments();
+  }
+
+  // ── Audit Logs ─────────────────────────────────────────────────────────────
+
+  @Get('audit-logs')
+  @ApiOperation({ summary: 'Get audit log entries' })
+  @ApiQuery({ name: 'limit', required: false })
+  async getAuditLogs(@Query('limit') limit?: string) {
+    const logs = await this.adminService.getAuditLogs(limit ? parseInt(limit) : 50);
+    return { success: true, data: { logs } };
+  }
+
+  // ── Site Settings ─────────────────────────────────────────────────────────
+
+  @Get('site-settings')
+  @Public()
+  @ApiOperation({ summary: 'Get site settings (public)' })
+  async getSiteSettings() {
+    const settings = await this.adminService.getSiteSettings();
+    return { success: true, data: { settings } };
+  }
+
+  @Get('sessions')
+  @ApiOperation({ summary: 'Get all consulting sessions (Admin)' })
+  async getAllSessions() {
+    return this.adminService.getAllSessions();
+  }
+
+  @Patch('site-settings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update site settings' })
+  async updateSiteSettings(
+    @Body() body: { primaryColor?: string; backgroundColor?: string; buttonColor?: string; logoUrl?: string; siteName?: string },
+  ) {
+    const settings = await this.adminService.updateSiteSettings(body);
+    return { success: true, data: { settings } };
   }
 }

@@ -17,7 +17,34 @@ let EnrollmentService = class EnrollmentService {
         this.prisma = prisma;
     }
     async enrollUser(userId, courseId, paymentId) { return { success: true, courseId, userId }; }
-    async getEnrollment(userId, courseId) { return this.prisma.enrollment.findFirst({ where: { userId, courseId } }); }
+    async getEnrollment(userId, courseId) {
+        const enrollment = await this.prisma.enrollment.findFirst({ where: { userId, courseId } });
+        if (!enrollment)
+            return null;
+        // Count completed lessons and total published lessons for richer response
+        const [completedLessons, totalLessons] = await Promise.all([
+            this.prisma.lessonProgress.count({
+                where: {
+                    userId,
+                    status: 'COMPLETED',
+                    lesson: { section: { courseId } },
+                },
+            }),
+            this.prisma.lesson.count({
+                where: { isPublished: true, section: { courseId } },
+            }),
+        ]);
+        return {
+            id: enrollment.id,
+            courseId: enrollment.courseId,
+            status: enrollment.status,
+            progress: enrollment.progress,
+            completedLessons,
+            totalLessons,
+            enrolledAt: enrollment.enrolledAt,
+            completedAt: enrollment.completedAt,
+        };
+    }
     async getUserEnrollments(userId, options) { return { data: [], total: 0 }; }
     async updateEnrollmentProgress(enrollmentId, progress) { return { success: true, progress }; }
     async completeEnrollment(enrollmentId) { return { success: true }; }

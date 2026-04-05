@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AuthController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
@@ -24,19 +25,20 @@ const reset_password_dto_1 = require("./dto/reset-password.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const refresh_guard_1 = require("./guards/refresh.guard");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
-let AuthController = class AuthController {
+const sanitize_util_1 = require("../../common/utils/sanitize.util");
+let AuthController = AuthController_1 = class AuthController {
     constructor(authService) {
         this.authService = authService;
+        this.logger = new common_1.Logger(AuthController_1.name);
     }
     async register(registerDto, response) {
         try {
             const result = await this.authService.register(registerDto);
-            // Set refresh token in HTTP-only cookie
             response.cookie('refresh_token', result.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
             });
             return {
@@ -49,21 +51,21 @@ let AuthController = class AuthController {
             };
         }
         catch (error) {
-            if (error.code === 'P2002') {
-                throw new common_1.BadRequestException('Email already exists');
+            this.logger.error('Registration failed', (0, sanitize_util_1.sanitize)({ operation: 'register', reason: error instanceof Error ? error.message : String(error) }));
+            if (error instanceof common_1.BadRequestException) {
+                throw error;
             }
-            throw error;
+            throw new common_1.BadRequestException('Registration failed');
         }
     }
     async login(loginDto, response) {
         try {
             const result = await this.authService.login(loginDto);
-            // Set refresh token in HTTP-only cookie
             response.cookie('refresh_token', result.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
             });
             return {
@@ -76,18 +78,18 @@ let AuthController = class AuthController {
             };
         }
         catch (error) {
+            this.logger.warn('Login attempt failed', (0, sanitize_util_1.sanitize)({ operation: 'login', reason: error instanceof Error ? error.message : String(error) }));
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
     }
     async refresh(user, response) {
         try {
             const result = await this.authService.refreshTokens(user.id);
-            // Set new refresh token in HTTP-only cookie
             response.cookie('refresh_token', result.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
             });
             return {
@@ -104,7 +106,6 @@ let AuthController = class AuthController {
     }
     async logout(user, response) {
         await this.authService.logout(user.id);
-        // Clear refresh token cookie
         response.clearCookie('refresh_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -128,20 +129,16 @@ let AuthController = class AuthController {
         await this.authService.forgotPassword(forgotPasswordDto.email);
         return {
             success: true,
-            message: 'Password reset email sent',
+            data: null,
+            message: 'If this email is registered, a reset link has been sent.',
         };
     }
     async resetPassword(resetPasswordDto) {
-        try {
-            await this.authService.resetPassword(resetPasswordDto);
-            return {
-                success: true,
-                message: 'Password reset successful',
-            };
-        }
-        catch (error) {
-            throw new common_1.BadRequestException('Invalid or expired token');
-        }
+        await this.authService.resetPassword(resetPasswordDto);
+        return {
+            success: true,
+            data: { message: 'Password reset successfully. Please log in.' },
+        };
     }
     async verifyEmail(token) {
         try {
@@ -183,12 +180,11 @@ let AuthController = class AuthController {
     async adminLogin(loginDto, response) {
         try {
             const result = await this.authService.adminLogin(loginDto);
-            // Set refresh token in HTTP-only cookie
             response.cookie('refresh_token', result.refreshToken, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'strict',
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                maxAge: 7 * 24 * 60 * 60 * 1000,
                 path: '/',
             });
             return {
@@ -210,10 +206,10 @@ __decorate([
     (0, throttler_1.Throttle)({ default: { limit: 3, ttl: 60000 } }),
     (0, common_1.Post)('register'),
     (0, swagger_1.ApiOperation)({ summary: 'Register a new user' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'User successfully registered' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Bad request' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'User registered successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Validation error or weak password' }),
     (0, swagger_1.ApiResponse)({ status: 409, description: 'Email already exists' }),
-    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __param(0, (0, common_1.Body)(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [register_dto_1.RegisterDto, Object]),
@@ -226,7 +222,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Login user' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Login successful' }),
     (0, swagger_1.ApiResponse)({ status: 401, description: 'Invalid credentials' }),
-    __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
+    __param(0, (0, common_1.Body)(new common_1.ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
@@ -271,11 +267,12 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
 __decorate([
+    (0, throttler_1.Throttle)({ default: { limit: 3, ttl: 60000 } }),
     (0, common_1.Post)('forgot-password'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Request password reset' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset email sent' }),
-    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'If this email is registered, a reset link has been sent.' }),
+    (0, swagger_1.ApiResponse)({ status: 429, description: 'Too many requests. Please try again later.' }),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
@@ -284,9 +281,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('reset-password'),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
-    (0, swagger_1.ApiOperation)({ summary: 'Reset password' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset successful' }),
-    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid or expired token' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Reset password using token from email' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset successfully. Please log in.' }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Reset link has expired or already been used.' }),
     __param(0, (0, common_1.Body)(common_1.ValidationPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
@@ -341,7 +338,7 @@ __decorate([
     __metadata("design:paramtypes", [login_dto_1.LoginDto, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "adminLogin", null);
-exports.AuthController = AuthController = __decorate([
+exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, swagger_1.ApiTags)('Auth'),
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

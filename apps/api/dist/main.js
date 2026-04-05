@@ -8,6 +8,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const config_1 = require("@nestjs/config");
 const helmet_1 = __importDefault(require("helmet"));
+const path_1 = require("path");
 const compression = require('compression');
 const morgan = require('morgan');
 const app_module_1 = require("./app.module");
@@ -17,6 +18,8 @@ const logger_middleware_1 = require("./common/middleware/logger.middleware");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    // Serve uploaded files as static assets
+    app.useStaticAssets((0, path_1.join)(__dirname, '..', 'uploads'), { prefix: '/uploads/' });
     const configService = app.get(config_1.ConfigService);
     // Security middleware
     app.use((0, helmet_1.default)({
@@ -31,13 +34,10 @@ async function bootstrap() {
     }));
     // CORS configuration
     app.enableCors({
-        origin: [
-            configService.get('FRONTEND_URL') || 'http://localhost:3000',
-            configService.get('LEARN_URL') || 'http://localhost:3002',
-        ],
+        origin: true, // allow all origins for demo
         credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'User-Agent', 'DNT', 'Cache-Control', 'X-Mx-ReqToken', 'Keep-Alive', 'X-Requested-With', 'If-Modified-Since'],
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
     });
     // Compression
     app.use(compression());
@@ -73,7 +73,7 @@ async function bootstrap() {
     // Swagger documentation
     if (configService.get('NODE_ENV') !== 'production') {
         const config = new swagger_1.DocumentBuilder()
-            .setTitle('CareerHub API')
+            .setTitle('DeveWay API')
             .setDescription('AI Career Development Platform API Documentation')
             .setVersion('1.0.0')
             .addBearerAuth({
@@ -101,7 +101,7 @@ async function bootstrap() {
             .addTag('Upload', 'File upload management')
             .addTag('Admin', 'Admin management')
             .addServer(`http://localhost:${configService.get('PORT') || 3001}/${apiPrefix}`, 'Development')
-            .addServer(`https://api.careerhub.com/${apiPrefix}`, 'Production')
+            .addServer(`https://api.deveway.com/${apiPrefix}`, 'Production')
             .build();
         const document = swagger_1.SwaggerModule.createDocument(app, config);
         swagger_1.SwaggerModule.setup(`${apiPrefix}/docs`, app, document, {
@@ -115,10 +115,10 @@ async function bootstrap() {
                 defaultModelsExpandDepth: 2,
                 defaultModelExpandDepth: 2,
             },
-            customSiteTitle: 'CareerHub API Documentation',
+            customSiteTitle: 'DeveWay API Documentation',
             customfavIcon: '/favicon.ico',
             customCss: `
-        .topbar-wrapper img { content: url('https://careerhub.com/logo.png'); width: 40px; height: auto; }
+        .topbar-wrapper img { content: url('https://deveway.com/logo.png'); width: 40px; height: auto; }
         .swagger-ui .topbar { background-color: #2563EB; }
         .swagger-ui .topbar-wrapper .link { color: white; }
       `,
@@ -154,7 +154,7 @@ async function bootstrap() {
     // Start server
     const port = configService.get('PORT') || 3001;
     await app.listen(port);
-    logger.log(`🚀 CareerHub API is running on port ${port}`);
+    logger.log(`🚀 DeveWay API is running on port ${port}`);
     logger.log(`🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`);
     logger.log(`📡 API endpoint: http://localhost:${port}/${apiPrefix}`);
 }

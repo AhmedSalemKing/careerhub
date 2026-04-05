@@ -14,7 +14,7 @@
   },
   "hero": {
     "badge": "🚀 AI-Powered Career Platform",
-    "title": "Discover your career path with CareerHub",
+    "title": "Discover your career path with DeveWay",
     "subtitle": "An all-in-one platform combining career guidance, professional training, and 1:1 coaching",
     "cta_primary": "Start your journey for free",
     "cta_secondary": "Learn more",
@@ -164,6 +164,30 @@
     "placeholder": "Write a message...",
     "join_zoom": "Join Zoom"
   },
+  "checkout": {
+    "title": "Complete Subscription",
+    "payment_method": "Payment Method",
+    "paymob": "Paymob",
+    "paymob_desc": "Credit card via Paymob",
+    "hyperpay": "HyperPay",
+    "hyperpay_desc": "Credit card via HyperPay",
+    "stripe": "Stripe",
+    "stripe_desc": "Secure card payment",
+    "card_details": "Card Details",
+    "card_number": "Card Number",
+    "expiry": "Expiry Date",
+    "secure": "Secure encrypted payment",
+    "order_summary": "Order Summary",
+    "course_price": "Course Price",
+    "tax": "Tax",
+    "total": "Total",
+    "agree": "I agree to the Terms of Service and Refund Policy",
+    "pay_now": "Pay Now",
+    "success_title": "Subscription Successful!",
+    "start_learning": "Start Learning Now",
+    "back_dashboard": "Back to Dashboard",
+    "sandbox_mode": "Sandbox mode — no real charge"
+  },
   "adminNav": {
     "title": "Admin",
     "dashboard": "Dashboard",
@@ -302,12 +326,12 @@
     "sar": "SAR"
   },
   "footer": {
-    "about": "CareerHub is an Arabic-first platform for career guidance and coaching, with legally separated training on a dedicated domain.",
+    "about": "DeveWay is an Arabic-first platform for career guidance and coaching, with legally separated training on a dedicated domain.",
     "all_courses": "All courses ↗",
     "my_courses": "My courses ↗",
     "privacy": "Privacy Policy",
     "terms": "Terms",
-    "rights": "© 2026 CareerHub"
+    "rights": "© 2026 DeveWay"
   },
   "how": {
     "title": "How it works",

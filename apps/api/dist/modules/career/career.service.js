@@ -20,6 +20,27 @@ let CareerService = CareerService_1 = class CareerService {
         this.cacheTtlMs = 30_000;
         this.cache = new Map();
     }
+    async saveUserCareerPath(userId, data) {
+        return this.prisma.userCareerPath.upsert({
+            where: { userId },
+            create: {
+                userId,
+                pathId: data.pathId,
+                pathTitle: data.pathTitle,
+                pathCategory: data.pathCategory,
+                aiRecommended: data.aiRecommended ?? false,
+            },
+            update: {
+                pathId: data.pathId,
+                pathTitle: data.pathTitle,
+                pathCategory: data.pathCategory,
+                aiRecommended: data.aiRecommended ?? false,
+            },
+        });
+    }
+    async getUserCareerPath(userId) {
+        return this.prisma.userCareerPath.findUnique({ where: { userId } });
+    }
     async getCareerPaths(language = 'en') {
         const cacheKey = `career_paths:${language}`;
         const cached = this.cache.get(cacheKey);

@@ -10,6 +10,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 import * as QRCode from 'qrcode';
 import * as AWS from 'aws-sdk';
 import { PuppeteerService } from './puppeteer.service';
+import { join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PDFDocument = require('pdfkit');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const bwipjs = require('bwip-js');
 
 @Injectable()
 export class CertificatesService {
@@ -233,10 +239,10 @@ export class CertificatesService {
 
     return {
       title: `I've successfully completed the ${courseTitle} course!`,
-      description: `Proud to share my certificate of completion for ${courseTitle} from CareerHub.`,
+      description: `Proud to share my certificate of completion for ${courseTitle} from DeveWay.`,
       url: `${this.configService.get('FRONTEND_URL')}/certificate/${certificate.serialNumber}`,
       imageUrl: certificate.qrCodeUrl,
-      hashtags: ['CareerHub', 'Certificate', 'Learning', courseTitle.replace(/\s+/g, '')],
+      hashtags: ['DeveWay', 'Certificate', 'Learning', courseTitle.replace(/\s+/g, '')],
       userName,
       courseTitle,
       issuedAt: (certificate as any).issuedAt,
@@ -703,6 +709,92 @@ export class CertificatesService {
     });
 
     return certificate;
+  }
+
+  async generateLocalCert(userId: string, courseId: string): Promise<string> {
+    // Return existing if already generated
+    const existing = await this.prisma.certificate.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    }).catch(() => null);
+    if (existing) return existing.certificateUrl;
+
+    const [user, course] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, include: { profile: true } }),
+      this.prisma.course.findUnique({ where: { id: courseId } }),
+    ]);
+    if (!user || !course) throw new NotFoundException('User or course not found');
+
+    const userName = user.profile
+      ? `${user.profile.firstName} ${user.profile.lastName}`
+      : user.email;
+    const courseTitle = (course as any).titleEn || (course as any).titleAr || 'Course';
+    const serialNumber = this.generateSerialNumber();
+    const fileName = `cert_${userId}_${courseId}_${Date.now()}.pdf`;
+    const dir = join(process.cwd(), 'uploads', 'certificates');
+    await mkdir(dir, { recursive: true });
+    const filePath = join(dir, fileName);
+
+    // Try to generate QR barcode
+    let barcodeBuffer: Buffer | null = null;
+    try {
+      barcodeBuffer = await new Promise<Buffer>((resolve, reject) => {
+        bwipjs.toBuffer({
+          bcid: 'qrcode',
+          text: `${this.configService.get('FRONTEND_URL') || 'http://localhost:3000'}/verify/${serialNumber}`,
+          scale: 3,
+          height: 20,
+          width: 20,
+        }, (err: any, png: Buffer) => {
+          if (err) reject(err); else resolve(png);
+        });
+      });
+    } catch { /* skip QR if bwip fails */ }
+
+    await new Promise<void>((resolve, reject) => {
+      const doc = new PDFDocument({ size: [841.89, 595.28], margin: 0 });
+      const chunks: Buffer[] = [];
+      doc.on('data', (c: Buffer) => chunks.push(c));
+      doc.on('end', async () => {
+        await writeFile(filePath, Buffer.concat(chunks));
+        resolve();
+      });
+      doc.on('error', reject);
+
+      const W = 841.89, H = 595.28;
+      doc.rect(0, 0, W, H).fill('#0a0f1e');
+      doc.rect(0, 0, W, 8).fill('#3b82f6');
+      doc.rect(0, H - 8, W, 8).fill('#3b82f6');
+      doc.rect(0, 0, 6, H).fill('#3b82f6');
+      doc.rect(W - 6, 0, 6, H).fill('#3b82f6');
+      doc.rect(20, 20, W - 40, H - 40).lineWidth(1).stroke('#3b82f630');
+      doc.circle(150, 150, 200).fill('#3b82f605');
+      doc.circle(W - 150, H - 150, 200).fill('#8b5cf605');
+      doc.font('Helvetica-Bold').fontSize(28).fill('#3b82f6').text('DeveWay', 60, 55, { align: 'left' });
+      doc.font('Helvetica').fontSize(10).fill('#ffffff40').text('Career Development Platform', 60, 88, { align: 'left' });
+      doc.font('Helvetica-Bold').fontSize(14).fill('#ffffff60').text('Certificate of Completion', 0, 110, { align: 'center', width: W });
+      doc.font('Helvetica-Bold').fontSize(36).fill('#ffffff').text('Certificate of Completion', 0, 135, { align: 'center', width: W });
+      doc.moveTo(W / 2 - 150, 185).lineTo(W / 2 + 150, 185).lineWidth(1).stroke('#3b82f660');
+      doc.font('Helvetica').fontSize(13).fill('#ffffff60').text('This certificate is proudly presented to', 0, 200, { align: 'center', width: W });
+      doc.font('Helvetica-Bold').fontSize(32).fill('#3b82f6').text(userName, 0, 225, { align: 'center', width: W });
+      doc.font('Helvetica').fontSize(12).fill('#ffffff70').text('for successfully completing the course', 0, 272, { align: 'center', width: W });
+      doc.font('Helvetica-Bold').fontSize(20).fill('#ffffff').text(courseTitle, 0, 295, { align: 'center', width: W });
+      const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      doc.font('Helvetica').fontSize(10).fill('#ffffff50').text('Date of Issue', 80, 390);
+      doc.font('Helvetica-Bold').fontSize(12).fill('#ffffff90').text(issueDate, 80, 408);
+      doc.font('Helvetica-Bold').fontSize(14).fill('#3b82f6').text('DeveWay', W / 2 - 40, 390);
+      doc.moveTo(W / 2 - 80, 430).lineTo(W / 2 + 80, 430).lineWidth(1).stroke('#ffffff30');
+      doc.font('Helvetica').fontSize(9).fill('#ffffff40').text('Authorized Signature', W / 2 - 50, 435);
+      doc.font('Helvetica').fontSize(10).fill('#ffffff50').text('Verification Code', W - 200, 390);
+      doc.font('Helvetica-Bold').fontSize(10).fill('#ffffff70').text(serialNumber, W - 200, 408);
+      if (barcodeBuffer) doc.image(barcodeBuffer, W - 120, 440, { width: 70, height: 70 });
+      doc.end();
+    });
+
+    const pdfUrl = `/uploads/certificates/${fileName}`;
+    await this.prisma.certificate.create({
+      data: { userId, courseId, serialNumber, certificateUrl: pdfUrl, qrCodeUrl: pdfUrl, issuedAt: new Date() },
+    });
+    return pdfUrl;
   }
 
   private generateSerialNumber(): string {

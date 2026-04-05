@@ -1,22 +1,44 @@
 'use client'
 
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
 import { TRAINING_URL } from '../../../lib/constants'
+import { SectionTitle } from '../../components/ui/BrandText'
+import { useAuthStore } from '../../../stores/authStore'
+
+function AssessmentCTALink() {
+  const locale = useLocale()
+  const { user } = useAuthStore()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const href = mounted && user
+    ? `/${locale}/dashboard/assessment`
+    : `/${locale}/register`
+
+  return (
+    <Link href={href} className="font-semibold text-primary hover:underline">
+      {mounted && user ? 'ابدأ الاختبار' : 'ابدأ / Start'}
+    </Link>
+  )
+}
 
 export function FeaturesSection() {
   const t = useTranslations('features')
   return (
     <section id="features" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
       <div className="flex items-end justify-between gap-4">
-        <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">{t('title')}</h2>
+        <SectionTitle>
+          {t('title')}
+        </SectionTitle>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-3">
         <FeatureCard
           title={t('career_title')}
           desc={t('career_desc')}
-          cta={<Link href="/register" className="font-semibold text-primary hover:underline">ابدأ / Start</Link>}
+          cta={<AssessmentCTALink />}
         />
         <FeatureCard
           title={t('training_title')}

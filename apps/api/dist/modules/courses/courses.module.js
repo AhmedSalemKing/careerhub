@@ -8,6 +8,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CoursesModule = void 0;
 const common_1 = require("@nestjs/common");
+const bull_1 = require("@nestjs/bull");
 const courses_controller_1 = require("./courses.controller");
 const courses_service_1 = require("./courses.service");
 const enrollment_service_1 = require("./enrollment.service");
@@ -20,7 +21,12 @@ let CoursesModule = class CoursesModule {
 exports.CoursesModule = CoursesModule;
 exports.CoursesModule = CoursesModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, auth_module_1.AuthModule, notifications_module_1.NotificationsModule],
+        imports: [
+            prisma_module_1.PrismaModule,
+            auth_module_1.AuthModule,
+            notifications_module_1.NotificationsModule,
+            bull_1.BullModule.registerQueue({ name: 'certificates' }),
+        ],
         controllers: [courses_controller_1.CoursesController],
         providers: [courses_service_1.CoursesService, enrollment_service_1.EnrollmentService, progress_service_1.ProgressService],
         exports: [courses_service_1.CoursesService, enrollment_service_1.EnrollmentService, progress_service_1.ProgressService],

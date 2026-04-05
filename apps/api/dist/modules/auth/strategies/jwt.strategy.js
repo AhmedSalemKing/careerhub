@@ -13,19 +13,21 @@ exports.JwtStrategy = void 0;
 const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
-const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../../../prisma/prisma.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
-    constructor(configService, prisma) {
+    constructor(prisma) {
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: configService.get('JWT_SECRET') || 'dev-secret',
+            secretOrKey: process.env.JWT_SECRET,
         });
-        this.configService = configService;
         this.prisma = prisma;
     }
     async validate(payload) {
+        console.log('[JwtStrategy] Payload:', payload); // 🔹 Logging payload
+        if (!payload?.sub || !payload?.email) {
+            throw new common_1.UnauthorizedException('Invalid JWT payload');
+        }
         const user = await this.prisma.user.findUnique({
             where: { id: payload.sub },
             include: { profile: true },
@@ -33,10 +35,13 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         if (!user || !user.isActive) {
             throw new common_1.UnauthorizedException('User not found or inactive');
         }
+        console.log('[JwtStrategy] Validated user:', user); // 🔹 Logging user
         return {
             id: user.id,
+            sub: user.id,
             email: user.email,
             role: user.role,
+            accountType: user.accountType,
             profile: user.profile,
         };
     }
@@ -44,6 +49,5 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
 exports.JwtStrategy = JwtStrategy;
 exports.JwtStrategy = JwtStrategy = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_1.ConfigService,
-        prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], JwtStrategy);

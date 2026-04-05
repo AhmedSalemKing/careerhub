@@ -4,15 +4,15 @@ exports.cookieOptions = exports.getJwtRefreshConfig = exports.getJwtConfig = voi
 const getJwtConfig = (configService) => ({
     secret: configService.get('JWT_SECRET') || 'dev-secret',
     expiresIn: configService.get('JWT_EXPIRES_IN') || '15m',
-    issuer: 'careerhub.com',
-    audience: 'careerhub-users',
+    issuer: 'deveway.com',
+    audience: 'deveway-users',
 });
 exports.getJwtConfig = getJwtConfig;
 const getJwtRefreshConfig = (configService) => ({
     secret: configService.get('JWT_REFRESH_SECRET') || 'dev-refresh-secret',
     expiresIn: configService.get('JWT_REFRESH_EXPIRES_IN') || '7d',
-    issuer: 'careerhub.com',
-    audience: 'careerhub-users',
+    issuer: 'deveway.com',
+    audience: 'deveway-users',
 });
 exports.getJwtRefreshConfig = getJwtRefreshConfig;
 exports.cookieOptions = {

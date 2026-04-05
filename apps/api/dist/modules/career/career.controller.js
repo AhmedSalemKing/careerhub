@@ -17,12 +17,22 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const career_service_1 = require("./career.service");
 const assessment_service_1 = require("./assessment.service");
+const ai_assessment_service_1 = require("./ai-assessment.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let CareerController = class CareerController {
-    constructor(careerService, assessmentService) {
+    constructor(careerService, assessmentService, aiAssessmentService) {
         this.careerService = careerService;
         this.assessmentService = assessmentService;
+        this.aiAssessmentService = aiAssessmentService;
+    }
+    async saveMyPath(user, body) {
+        const path = await this.careerService.saveUserCareerPath(user.id, body);
+        return { success: true, data: { path } };
+    }
+    async getMyPath(user) {
+        const path = await this.careerService.getUserCareerPath(user.id);
+        return { success: true, data: { path } };
     }
     async getCareerPaths(language) {
         const careerPaths = await this.careerService.getCareerPaths(language);
@@ -38,6 +48,24 @@ let CareerController = class CareerController {
             data: { careerPath },
         };
     }
+    // ── AI Assessment endpoints ──────────────────────────────────────────────────
+    async getAiQuestions() {
+        const questions = this.aiAssessmentService.getQuestions();
+        return { success: true, data: { questions } };
+    }
+    async startAiSession(user) {
+        const result = await this.aiAssessmentService.startSession(user.id);
+        return { success: true, data: result };
+    }
+    async completeAiSession(user, sessionId, answers) {
+        const result = await this.aiAssessmentService.completeSession(user.id, sessionId, answers);
+        return { success: true, data: result };
+    }
+    async getAiSessionHistory(user) {
+        const sessions = await this.aiAssessmentService.getSessionHistory(user.id);
+        return { success: true, data: { sessions } };
+    }
+    // ── Legacy Assessment endpoints ───────────────────────────────────────────────
     async startAssessment(user, careerPathId) {
         const assessment = await this.assessmentService.startAssessment(user.id, careerPathId);
         return {
@@ -130,6 +158,30 @@ let CareerController = class CareerController {
 };
 exports.CareerController = CareerController;
 __decorate([
+    (0, common_1.Post)('my-path'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Save user selected career path' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Career path saved successfully' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "saveMyPath", null);
+__decorate([
+    (0, common_1.Get)('my-path'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get user selected career path' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Career path retrieved successfully' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "getMyPath", null);
+__decorate([
     (0, common_1.Get)('paths'),
     (0, swagger_1.ApiOperation)({ summary: 'Get all career paths' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Career paths retrieved successfully' }),
@@ -151,6 +203,50 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], CareerController.prototype, "getCareerPathBySlug", null);
+__decorate([
+    (0, common_1.Get)('assessment/questions'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get AI assessment questions' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Questions retrieved successfully' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "getAiQuestions", null);
+__decorate([
+    (0, common_1.Post)('assessment/session/start'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Start AI assessment session' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Session started successfully' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "startAiSession", null);
+__decorate([
+    (0, common_1.Post)('assessment/session/:sessionId/complete'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Complete AI assessment session' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Session completed with AI report' }),
+    (0, swagger_1.ApiParam)({ name: 'sessionId', description: 'Assessment session ID' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('sessionId')),
+    __param(2, (0, common_1.Body)('answers')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Array]),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "completeAiSession", null);
+__decorate([
+    (0, common_1.Get)('assessment/session/history'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get AI assessment session history' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Session history retrieved' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CareerController.prototype, "getAiSessionHistory", null);
 __decorate([
     (0, common_1.Post)('assessment/start'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -295,5 +391,6 @@ exports.CareerController = CareerController = __decorate([
     (0, swagger_1.ApiTags)('Career'),
     (0, common_1.Controller)('career'),
     __metadata("design:paramtypes", [career_service_1.CareerService,
-        assessment_service_1.AssessmentService])
+        assessment_service_1.AssessmentService,
+        ai_assessment_service_1.AiAssessmentService])
 ], CareerController);

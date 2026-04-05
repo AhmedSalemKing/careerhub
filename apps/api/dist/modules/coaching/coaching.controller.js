@@ -62,6 +62,18 @@ let CoachingController = class CoachingController {
             data: { session },
         };
     }
+    async getConsultingSessions(user) {
+        const sessions = await this.coachingService.getConsultingSessions(user.id, user.accountType);
+        return { success: true, data: sessions };
+    }
+    async confirmConsultingSession(user, id) {
+        const session = await this.coachingService.confirmConsultingSession(id, user.id);
+        return { success: true, message: 'Session confirmed', data: session };
+    }
+    async cancelConsultingSession(user, id) {
+        const session = await this.coachingService.cancelConsultingSession(id, user.id);
+        return { success: true, message: 'Session cancelled', data: session };
+    }
     async getMySessions(user, page, limit, status) {
         const sessions = await this.coachingService.getUserSessions(user.id, {
             page: page || 1,
@@ -281,6 +293,41 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], CoachingController.prototype, "bookSession", null);
+__decorate([
+    (0, common_1.Get)('consulting/my-sessions'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get consulting sessions (for CONSULTANTs and students)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Consulting sessions retrieved successfully' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CoachingController.prototype, "getConsultingSessions", null);
+__decorate([
+    (0, common_1.Patch)('consulting/:id/confirm'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Confirm a consulting session (CONSULTANT only)' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Session ID' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CoachingController.prototype, "confirmConsultingSession", null);
+__decorate([
+    (0, common_1.Patch)('consulting/:id/cancel'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Cancel a consulting session' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Session ID' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], CoachingController.prototype, "cancelConsultingSession", null);
 __decorate([
     (0, common_1.Get)('sessions/my-sessions'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),

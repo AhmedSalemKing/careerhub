@@ -29,7 +29,7 @@ export default function DashboardNotificationsPage() {
   const q = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/notifications')).data
+      const raw = (await get<ApiEnvelope<unknown>>('/notifications')).data
       return unwrapData(raw) as any
     },
   })
@@ -42,13 +42,13 @@ export default function DashboardNotificationsPage() {
     []
 
   const markRead = useMutation({
-    mutationFn: async (id: string) => (await patch(`/api/notifications/${encodeURIComponent(id)}/read`)).data,
+    mutationFn: async (id: string) => (await patch(`/notifications/${encodeURIComponent(id)}/read`)).data,
     onSuccess: () => q.refetch(),
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
   })
 
   const markAll = useMutation({
-    mutationFn: async () => (await patch('/api/notifications/mark-all-read')).data,
+    mutationFn: async () => (await patch('/notifications/mark-all-read')).data,
     onSuccess: () => q.refetch(),
     onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
   })

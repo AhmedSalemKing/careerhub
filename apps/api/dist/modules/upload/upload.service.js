@@ -711,6 +711,20 @@ let UploadService = UploadService_1 = class UploadService {
         const folderPath = folder || 'general';
         return `uploads/${userId}/${year}/${month}/${day}/${folderPath}/${fileName}`;
     }
+    // Public CV upload — saves to disk when S3 is not configured
+    async uploadCV(file) {
+        const { writeFile, mkdir } = await Promise.resolve().then(() => __importStar(require('fs/promises')));
+        const { join } = await Promise.resolve().then(() => __importStar(require('path')));
+        const safeName = `cv_${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+        const uploadDir = join(process.cwd(), 'uploads', 'cvs');
+        await mkdir(uploadDir, { recursive: true });
+        await writeFile(join(uploadDir, safeName), file.buffer);
+        return {
+            url: `/uploads/cvs/${safeName}`,
+            fileName: file.originalname,
+            size: file.size,
+        };
+    }
 };
 exports.UploadService = UploadService;
 exports.UploadService = UploadService = UploadService_1 = __decorate([

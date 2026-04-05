@@ -1,0 +1,87 @@
+export const howData = {
+    title: [
+        { "text": "كيف يعمل ", "font": "default" },
+        { "text": "DeveWay", "font": "madinet" },
+        { "text": "؟", "font": "default" }
+    ],
+    subtitle: [
+        { "text": "خطوات بسيطة للانطلاق في مسارك المهني", "font": "default" }
+    ],
+    steps: [
+        {
+            id: 1,
+            icon: "📝",
+            title: [
+                { "text": "سجل حسابك", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "ابدأ رحلتك بإنشاء حساب مجاني على منصتنا", "font": "default" }
+            ],
+            href: "/register",
+            external: false
+        },
+        {
+            id: 2,
+            icon: "🧠",
+            title: [
+                { "text": "التقييم المهني", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "اجتاز اختبار لتحديد مسارك المهني الأمثل", "font": "default" }
+            ],
+            href: "/dashboard/assessment",
+            external: false
+        },
+        {
+            id: 3,
+            icon: "🎯",
+            title: [
+                { "text": "اختر مسارك", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "استكشف الفرص المهنية التي تناسب شغفك ومهاراتك", "font": "default" }
+            ],
+            href: "/careers",
+            external: false
+        },
+        {
+            id: 4,
+            icon: "📚",
+            title: [
+                { "text": "التدريب المتقدم", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "انضم إلى دورات تدريبية احترافية مع مدربين خبراء", "font": "default" }
+            ],
+            href: "https://training.example.com",
+            external: true
+        },
+        {
+            id: 5,
+            icon: "👥",
+            title: [
+                { "text": "الكوتشينج الشخصي", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "احصل على دعم فردي من مدربين متخصصين", "font": "default" }
+            ],
+            href: "/coaches",
+            external: false
+        },
+        {
+            id: 6,
+            icon: "🏆",
+            title: [
+                { "text": "الشهادات المعتمدة", "font": "madinet" }
+            ],
+            desc: [
+                { "text": "احصل على شهادات معتمدة تعزز سيرتك الذاتية", "font": "default" }
+            ],
+            href: "/dashboard/certificates",
+            external: false
+        }
+    ],
+    cta: [
+        { "text": "ابدأ رحلتك الآن", "font": "madinet" }
+    ]
+}

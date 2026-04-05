@@ -166,7 +166,7 @@ export class HealthService {
   async getVersion() {
     return {
       version: process.env.npm_package_version || '1.0.0',
-      name: process.env.npm_package_name || 'careerhub-api',
+      name: process.env.npm_package_name || 'deveway-api',
       environment: this.configService.get('NODE_ENV') || 'development',
       buildNumber: process.env.BUILD_NUMBER || 'unknown',
     };

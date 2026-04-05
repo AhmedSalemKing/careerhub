@@ -1,10 +1,16 @@
 'use client'
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 
 export function LanguageSwitcher() {
   const locale = useLocale()
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const switchLocale = () => {
     const newLocale = locale === 'ar' ? 'en' : 'ar'
@@ -13,6 +19,8 @@ export function LanguageSwitcher() {
     const newPath = segments.join('/')
     window.location.href = newPath
   }
+
+  if (!mounted) return null
 
   return (
     <button

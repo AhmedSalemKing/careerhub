@@ -39,7 +39,7 @@ export function ChatInterface({
 
   const token = useMemo(() => {
     if (typeof window === 'undefined') return null
-    return window.localStorage.getItem('careerhub_token')
+    return window.localStorage.getItem('deveway_token')
   }, [])
 
   useEffect(() => {
@@ -47,7 +47,6 @@ export function ChatInterface({
   }, [messages.length])
 
   useEffect(() => {
-    // Connect Socket.IO (if server exists). If not, keep UI usable in "disconnected" mode.
     const socket = io(String(SOCKET_URL), {
       transports: ['websocket', 'polling'],
       withCredentials: true,
@@ -57,7 +56,6 @@ export function ChatInterface({
 
     const onConnect = () => {
       setConnected(true)
-      // Try common room-join patterns (backend may ignore unknown events safely).
       socket.emit('join', { room: `session:${sessionId}`, sessionId })
       socket.emit('chat:join', { sessionId })
     }
@@ -105,7 +103,6 @@ export function ChatInterface({
     setMessages((prev) => [...prev, msg])
     setText('')
 
-    // Emit on multiple common event names; server can pick what it supports.
     const socket = socketRef.current
     socket?.emit('message', { sessionId, ...msg })
     socket?.emit('chat:message', { sessionId, ...msg })
@@ -113,15 +110,33 @@ export function ChatInterface({
   }
 
   return (
-    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border)] p-4">
-        <div className="text-sm font-extrabold text-foreground">{t('title')}</div>
-        <div className="text-xs font-semibold text-[color:var(--muted)]">
-          {connected ? t('connected') : t('disconnected')}
+    <div 
+      className="rounded-2xl shadow-lg"
+      style={{
+        background: '#141414',
+        border: '1px solid rgba(255,255,255,0.08)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+      }}
+    >
+      {/* Header */}
+      <div 
+        className="flex items-center justify-between gap-3 p-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+      >
+        <div className="text-sm font-extrabold" style={{ color: '#ffffff' }}>
+          {t('title')}
+        </div>
+        <div className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>
+          {connected ? (
+            <span style={{ color: '#34D399' }}>{t('connected')}</span>
+          ) : (
+            <span style={{ color: '#F87171' }}>{t('disconnected')}</span>
+          )}
         </div>
       </div>
 
-      <div className="h-[55vh] overflow-auto p-4">
+      {/* Messages Area */}
+      <div className="h-[55vh] overflow-auto p-4" style={{ background: 'transparent' }}>
         {messages.length ? (
           <div className="space-y-3">
             {messages.map((m) => {
@@ -133,14 +148,18 @@ export function ChatInterface({
                   dir={locale === 'ar' ? 'rtl' : 'ltr'}
                 >
                   <div
-                    className={
-                      isUser
-                        ? 'max-w-[82%] rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white'
-                        : 'max-w-[82%] rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-3 text-sm font-semibold text-foreground'
-                    }
+                    className="max-w-[82%] rounded-2xl px-4 py-3 text-sm font-semibold leading-6 shadow-sm"
+                    style={{
+                      background: isUser ? '#5120c8' : '#0A0A0A', // Coach message is darker than container
+                      border: isUser ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                      color: isUser ? '#ffffff' : '#E6E6E6',
+                    }}
                   >
-                    <div className="whitespace-pre-wrap leading-6">{m.text}</div>
-                    <div className={isUser ? 'mt-2 text-[11px] text-white/75' : 'mt-2 text-[11px] text-[color:var(--muted)]'}>
+                    <div className="whitespace-pre-wrap">{m.text}</div>
+                    <div 
+                      className="mt-2 text-[11px]"
+                      style={{ color: isUser ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}
+                    >
                       {locale === 'ar' ? formatArabicTime(m.createdAt) : new Date(m.createdAt).toLocaleTimeString()}
                     </div>
                   </div>
@@ -150,11 +169,15 @@ export function ChatInterface({
             <div ref={endRef} />
           </div>
         ) : (
-          <div className="text-sm text-[color:var(--muted)]">{t('empty')}</div>
+          <div className="text-sm text-center" style={{ color: '#9CA3AF' }}>{t('empty')}</div>
         )}
       </div>
 
-      <div className="flex gap-2 border-t border-[color:var(--border)] p-4">
+      {/* Input Area */}
+      <div 
+        className="flex gap-2 p-4"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -162,12 +185,19 @@ export function ChatInterface({
           onKeyDown={(e) => {
             if (e.key === 'Enter') send()
           }}
+          // Override Input style for Glossy Theme if necessary, 
+          // assuming Input component supports className/style or relies on global theme
+          style={{ background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.1)', color: '#E6E6E6' }}
         />
-        <Button type="button" onClick={send} disabled={!text.trim()}>
+        <Button 
+          type="button" 
+          onClick={send} 
+          disabled={!text.trim()}
+          style={{ background: '#5120c8' }} // Ensure button color
+        >
           {c('confirm')}
         </Button>
       </div>
     </div>
   )
 }
-

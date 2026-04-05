@@ -761,6 +761,56 @@ let CoachingService = CoachingService_1 = class CoachingService {
             status: session.status,
         }));
     }
+    async getConsultingSessions(userId, accountType) {
+        if (accountType === 'CONSULTANT') {
+            return this.prisma.consultingSession.findMany({
+                where: { consultantId: userId },
+                include: {
+                    student: {
+                        select: {
+                            id: true,
+                            profile: { select: { firstName: true, lastName: true, avatar: true } },
+                        },
+                    },
+                },
+                orderBy: { scheduledAt: 'desc' },
+            });
+        }
+        return this.prisma.consultingSession.findMany({
+            where: { studentId: userId },
+            include: {
+                consultant: {
+                    select: {
+                        id: true,
+                        profile: { select: { firstName: true, lastName: true, avatar: true } },
+                    },
+                },
+            },
+            orderBy: { scheduledAt: 'desc' },
+        });
+    }
+    async confirmConsultingSession(sessionId, consultantId) {
+        const session = await this.prisma.consultingSession.findFirst({
+            where: { id: sessionId, consultantId },
+        });
+        if (!session)
+            throw new common_1.NotFoundException('Session not found');
+        return this.prisma.consultingSession.update({
+            where: { id: sessionId },
+            data: { status: 'CONFIRMED' },
+        });
+    }
+    async cancelConsultingSession(sessionId, userId) {
+        const session = await this.prisma.consultingSession.findFirst({
+            where: { id: sessionId, OR: [{ consultantId: userId }, { studentId: userId }] },
+        });
+        if (!session)
+            throw new common_1.NotFoundException('Session not found');
+        return this.prisma.consultingSession.update({
+            where: { id: sessionId },
+            data: { status: 'CANCELLED' },
+        });
+    }
     async getSessionsByMonth() {
         // Get sessions grouped by month for the last 12 months
         const months = [];

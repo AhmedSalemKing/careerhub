@@ -1,12 +1,16 @@
 ﻿import {
   Injectable,
   Logger,
+  Optional,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EmailService } from './email.service';
 import { PushService } from './push.service';
 import { SmsService } from './sms.service';
+import { EmailJob } from './email.types';
 
 @Injectable()
 export class NotificationsService {
@@ -18,7 +22,12 @@ export class NotificationsService {
     private emailService: EmailService,
     private pushService: PushService,
     private smsService: SmsService,
+    @InjectQueue('email') private readonly emailQueue: Queue,
   ) { }
+
+  async queueEmail(job: EmailJob): Promise<void> {
+    await this.emailQueue.add(job);
+  }
 
   async createNotification(notificationData: {
     userId?: string;
@@ -343,8 +352,8 @@ export class NotificationsService {
     subject?: string;
     message?: string;
   }) {
-    const subject = emailData.subject || 'Test Email from CareerHub';
-    const message = emailData.message || 'This is a test email from CareerHub notification system.';
+    const subject = emailData.subject || 'Test Email from DeveWay';
+    const message = emailData.message || 'This is a test email from DeveWay notification system.';
 
     await this.emailService.sendEmail(emailData.to, subject, `<p>${message}</p>`);
 

@@ -1,29 +1,21 @@
-import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
-import { API_URL } from './constants'
+import axios from 'axios'
 
-export const api = axios.create({
-  baseURL: `${API_URL}/api`,
+const getBaseURL = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL
+  if (envUrl) return `${envUrl}/api`
+  if (typeof window !== 'undefined') return '/api'
+  return 'http://localhost:3001/api'
+}
+
+const api = axios.create({
+  baseURL: getBaseURL(),
   withCredentials: true,
+  timeout: 30000,
 })
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
-  return null
-}
-
-function readNestedString(obj: unknown, path: string[]): string | null {
-  let cur: unknown = obj
-  for (const key of path) {
-    const rec = asRecord(cur)
-    if (!rec) return null
-    cur = rec[key]
-  }
-  return typeof cur === 'string' ? cur : null
-}
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('careerhub_token')
+    const token = localStorage.getItem('deveway_token')
     if (token) {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${token}`
@@ -33,42 +25,46 @@ api.interceptors.request.use((config) => {
 })
 
 api.interceptors.response.use(
-  (res) => res,
-  async (error: AxiosError) => {
+  (response) => response,
+  async (error) => {
     if (typeof window === 'undefined') throw error
     const status = error.response?.status
-
-    const originalRequest = error.config as (AxiosRequestConfig & { _retry?: boolean }) | undefined
+    const originalRequest = error.config as any
     if (status === 401 && originalRequest && !originalRequest._retry) {
+      // /auth/me is a background "try to load user" call — never redirect on failure
+      if (originalRequest.url?.includes('/auth/me')) throw error
+
       originalRequest._retry = true
       try {
-        const refreshToken = localStorage.getItem('careerhub_refresh')
+        // Read refresh token from localStorage OR cookie (cross-port on localhost)
+        const refreshToken = localStorage.getItem('deveway_refresh')
+          || document.cookie.match(/deveway_refresh=([^;]+)/)?.[1]
         if (!refreshToken) throw error
         const refreshRes = await api.post('/auth/refresh', { refreshToken })
-        const payload: unknown = refreshRes.data
-        const newToken =
-          readNestedString(payload, ['data', 'accessToken']) ?? readNestedString(payload, ['accessToken'])
-        const newRefresh =
-          readNestedString(payload, ['data', 'refreshToken']) ?? readNestedString(payload, ['refreshToken'])
-        if (newToken) localStorage.setItem('careerhub_token', String(newToken))
-        if (newRefresh) localStorage.setItem('careerhub_refresh', String(newRefresh))
+        const newToken = refreshRes.data?.data?.accessToken ?? refreshRes.data?.accessToken
+        const newRefresh = refreshRes.data?.data?.refreshToken ?? refreshRes.data?.refreshToken
+        if (newToken) localStorage.setItem('deveway_token', newToken)
+        if (newRefresh) localStorage.setItem('deveway_refresh', newRefresh)
         return api(originalRequest)
       } catch {
-        localStorage.removeItem('careerhub_token')
-        localStorage.removeItem('careerhub_refresh')
-        localStorage.removeItem('careerhub_user')
+        localStorage.removeItem('deveway_token')
+        localStorage.removeItem('deveway_refresh')
+        localStorage.removeItem('deveway_user')
         const seg = window.location.pathname.split('/')[1]
         const locale = seg === 'en' ? 'en' : 'ar'
         window.location.href = `/${locale}/login`
       }
     }
+    console.error('[API Error]', error.config?.url, error.response?.status)
     throw error
-  },
+  }
 )
 
-export const get = <T>(url: string, config?: AxiosRequestConfig) => api.get<T>(url, config)
-export const post = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) => api.post<T>(url, data, config)
-export const put = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) => api.put<T>(url, data, config)
-export const patch = <T>(url: string, data?: unknown, config?: AxiosRequestConfig) => api.patch<T>(url, data, config)
-export const del = <T>(url: string, config?: AxiosRequestConfig) => api.delete<T>(url, config)
+export const get = <T>(url: string, config?: any) => api.get<T>(url, config)
+export const post = <T>(url: string, data?: unknown, config?: any) => api.post<T>(url, data, config)
+export const put = <T>(url: string, data?: unknown, config?: any) => api.put<T>(url, data, config)
+export const patch = <T>(url: string, data?: unknown, config?: any) => api.patch<T>(url, data, config)
+export const del = <T>(url: string, config?: any) => api.delete<T>(url, config)
 
+export { api }
+export default api

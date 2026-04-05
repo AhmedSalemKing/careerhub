@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bull';
 import { CoursesController } from './courses.controller';
 import { CoursesService } from './courses.service';
 import { EnrollmentService } from './enrollment.service';
@@ -8,7 +9,12 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, NotificationsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    NotificationsModule,
+    BullModule.registerQueue({ name: 'certificates' }),
+  ],
   controllers: [CoursesController],
   providers: [CoursesService, EnrollmentService, ProgressService],
   exports: [CoursesService, EnrollmentService, ProgressService],

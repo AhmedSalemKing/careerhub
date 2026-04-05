@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum UserRole {
@@ -30,7 +31,9 @@ enum AssessmentStatus {
 
 enum CourseStatus {
   DRAFT
+  PENDING_REVIEW
   PUBLISHED
+  REJECTED
   ARCHIVED
 }
 
@@ -47,17 +50,7 @@ enum LessonStatus {
   COMPLETED
 }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  PAYMOB
-  HYPERPAY
-}
+// PaymentStatus and PaymentMethod are now plain strings on the Payment model
 
 enum SessionStatus {
   SCHEDULED
@@ -88,36 +81,60 @@ model User {
   password          String
   role              UserRole  @default(USER)
   isActive          Boolean   @default(true)
+  accountType       String    @default("STUDENT") // STUDENT | INSTRUCTOR | CONSULTANT | ADMIN
+  status            String    @default("ACTIVE")  // ACTIVE | PENDING | REJECTED | BANNED
+  cvUrl             String?
+  bio               String?
+  experience        Int?
+  speciality        String?
+  linkedinUrl       String?
+  hourlyRate        Float?
+  meetingMethod     String?   // ZOOM | GOOGLE_MEET | BOTH
   stripeCustomerId  String?
+  approvedAt        DateTime?
+  rejectedAt        DateTime?
+  rejectedReason    String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
 
   // Relations
-  profile           UserProfile?
-  subscriptions     Subscription[]
-  sessions          Session[]
-  careerAssessments CareerAssessment[]
-  enrollments       Enrollment[]
-  lessonProgress    LessonProgress[]
-  certificates      Certificate[]
-  payments          Payment[]
-  coachingSessions  CoachingSession[]
-  coachReviews      CoachReview[]
-  sentMessages      ChatMessage[]      @relation("SentMessages")
-  receivedMessages  ChatMessage[]      @relation("ReceivedMessages")
-  notifications     Notification[]
-  adminLogs         AdminLog[]
-  uploadedFiles     UploadedFile[]
-  fileShares        FileShare[]
-  deviceTokens      DeviceToken[]
-  analyticsEvents   AnalyticsEvent[]
-  quizAttempts      QuizAttempt[]
-  coachProfile      Coach?
+  profile              UserProfile?
+  subscriptions        Subscription[]
+  sessions             Session[]
+  passwordResetTokens  PasswordResetToken[]
+  careerAssessments    CareerAssessment[]
+  enrollments          Enrollment[]
+  lessonProgress       LessonProgress[]
+  certificates         Certificate[]
+  payments             Payment[]
+  coachingSessions     CoachingSession[]
+  coachReviews         CoachReview[]
+  sentMessages         ChatMessage[]      @relation("SentMessages")
+  receivedMessages     ChatMessage[]      @relation("ReceivedMessages")
+  notifications        Notification[]
+  adminLogs            AdminLog[]
+  uploadedFiles        UploadedFile[]
+  fileShares           FileShare[]
+  deviceTokens         DeviceToken[]
+  analyticsEvents      AnalyticsEvent[]
+  quizAttempts         QuizAttempt[]
+  coachProfile         Coach?
+  assessmentSessions   AssessmentSession[]
+  userCareerPath       UserCareerPath?
+  studentSessions      ConsultingSession[] @relation("StudentSessions")
+  consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
+  instructorCourses    Course[]            @relation("InstructorCourses")
+  cart                 Cart?
+  conversations        Conversation[]
+  givenRatings         Rating[]            @relation("GivenRatings")
+  receivedRatings      Rating[]            @relation("ConsultantRatings")
 
   @@index([email])
   @@index([role])
   @@index([isActive])
+  @@index([accountType])
+  @@index([status])
   @@map("users")
 }
 
@@ -160,6 +177,23 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  ipAddress  String?
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model CareerPath {
@@ -239,19 +273,34 @@ model AssessmentQuestion {
   @@map("assessment_questions")
 }
 
+model Category {
+  id     String   @id @default(cuid())
+  nameAr String
+  nameEn String
+  slug   String   @unique
+  icon   String?
+
+  courses Course[]
+
+  @@map("categories")
+}
+
 model Course {
   id            String       @id @default(cuid())
   slug          String       @unique
-  careerPathId  String
+  careerPathId  String?
+  instructorId  String?
+  categoryId    String?
   titleEn       String
-  titleAr       String
-  descriptionEn String
-  descriptionAr String
+  titleAr       String?
+  descriptionEn String?
+  descriptionAr String?
   thumbnail     String?
+  previewVideo  String?
   price         Float        @default(0)
   currency      String       @default("USD")
-  duration      Int // Duration in minutes
-  level         String // BEGINNER, INTERMEDIATE, ADVANCED
+  duration      Int?
+  level         String       @default("BEGINNER")
   status        CourseStatus @default(DRAFT)
   isFeatured    Boolean      @default(false)
   sortOrder     Int          @default(0)
@@ -259,15 +308,35 @@ model Course {
   updatedAt     DateTime     @updatedAt
 
   // Relations
-  careerPath   CareerPath     @relation(fields: [careerPathId], references: [id])
+  careerPath   CareerPath?    @relation(fields: [careerPathId], references: [id])
+  category     Category?      @relation(fields: [categoryId], references: [id])
+  instructor   User?          @relation("InstructorCourses", fields: [instructorId], references: [id])
   modules      CourseModule[]
+  sections     Section[]
   enrollments  Enrollment[]
   certificates Certificate[]
   payments     Payment[]
+  cartItems    CartItem[]
+  ratings      Rating[]
 
   @@index([status])
   @@index([isFeatured])
   @@index([sortOrder])
+  @@index([instructorId])
+  @@index([categoryId])
+  @@index([careerPathId, status])
+}
+
+model Section {
+  id       String   @id @default(cuid())
+  title    String
+  order    Int      @default(0)
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+
+  @@index([courseId])
+  @@map("sections")
 }
 
 model CourseModule {
@@ -294,26 +363,34 @@ model CourseModule {
 
 model Lesson {
   id            String   @id @default(cuid())
-  moduleId      String
+  moduleId      String?
+  sectionId     String?
   title         String
   titleAr       String?
   description   String?
   descriptionAr String?
   content       Json? // Rich content
+  type          String   @default("VIDEO") // VIDEO | FILE | TEXT
   videoUrl      String?
   videoDuration Int? // in seconds
-  order         Int
+  fileUrl       String?
+  fileName      String?
+  fileSize      Int?
+  isFree        Boolean  @default(false)
+  order         Int      @default(0)
   isPublished   Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   // Relations
-  module       CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module       CourseModule?    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  section      Section?         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   videoContent VideoContent?
   quiz         Quiz?
   progress     LessonProgress[]
 
   @@index([moduleId])
+  @@index([sectionId])
   @@index([order])
   @@index([isPublished])
   @@map("lessons")
@@ -448,6 +525,7 @@ model LessonProgress {
   @@index([userId])
   @@index([lessonId])
   @@index([status])
+  @@index([userId, lessonId, status])
   @@map("lesson_progress")
 }
 
@@ -572,31 +650,33 @@ model CoachReview {
 }
 
 model Payment {
-  id            String        @id @default(cuid())
-  userId        String
-  amount        Float
-  currency      String
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  transactionId String?       @unique
-  description   String
-  itemType      String?
-  itemId        String?
-  completedAt   DateTime?
-  refundedAt    DateTime?
-  metadata      Json? // Additional payment metadata
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  courseId       String?
+  amount         Float
+  currency       String   @default("SAR")
+  method         String   @default("STRIPE_CARD")
+  status         String   @default("PENDING")
+  transactionId  String?  @unique
+  stripeIntentId String?
+  description    String?
+  itemType       String?
+  itemId         String?
+  completedAt    DateTime?
+  refundedAt     DateTime?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  user     User    @relation(fields: [userId], references: [id])
-  Course   Course? @relation(fields: [courseId], references: [id])
-  courseId String?
+  user   User    @relation(fields: [userId], references: [id])
+  course Course? @relation(fields: [courseId], references: [id])
 
   @@index([userId])
   @@index([status])
   @@index([method])
   @@index([transactionId])
+  @@index([userId, status])
   @@map("payments")
 }
 
@@ -643,6 +723,7 @@ model Notification {
   @@index([type])
   @@index([isRead])
   @@index([createdAt])
+  @@index([userId, isRead, createdAt])
   @@map("notifications")
 }
 
@@ -766,4 +847,159 @@ model Subscription {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
   @@index([userId])
+}
+
+model UserCareerPath {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  pathId       String
+  pathTitle    String
+  pathCategory String
+  aiRecommended Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_career_paths")
+}
+
+model AssessmentSession {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  answers     Json      @default("[]")
+  report      Json?
+  status      String    @default("IN_PROGRESS")
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("assessment_sessions")
+}
+
+model SiteSettings {
+  id              String   @id @default(cuid())
+  siteName        String   @default("DeveWay")
+  primaryColor    String   @default("#3b82f6")
+  backgroundColor String   @default("#0f172a")
+  buttonColor     String   @default("#3b82f6")
+  logoUrl         String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model ConsultingSession {
+  id            String    @id @default(cuid())
+  studentId     String
+  consultantId  String
+  student       User      @relation("StudentSessions", fields: [studentId], references: [id])
+  consultant    User      @relation("ConsultantSessions", fields: [consultantId], references: [id])
+  scheduledAt   DateTime
+  duration      Int       @default(60)
+  meetingMethod String    @default("ZOOM")
+  meetingLink   String?
+  topic         String?
+  notes         String?
+  status        String    @default("PENDING")
+  // PENDING | CONFIRMED | RESCHEDULED | COMPLETED | CANCELLED | REJECTED
+  price         Float     @default(0)
+  paymentStatus String    @default("UNPAID")
+  // UNPAID | PAID | REFUNDED
+  paymentId     String?
+  proposedAt    DateTime?
+  proposedTime  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([consultantId])
+  @@index([status])
+  @@map("consulting_sessions")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String?
+  entityId   String?
+  adminId    String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([action])
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Conversation {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String      @default("محادثة جديدة")
+  context   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  messages  AiMessage[]
+
+  @@index([userId])
+  @@map("conversations")
+}
+
+model AiMessage {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String       @db.Text
+  tokens         Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@map("ai_messages")
+}
+
+model Rating {
+  id           String   @id @default(cuid())
+  userId       String
+  courseId     String?
+  consultantId String?
+  value        Int      // 1-5
+  comment      String?
+  createdAt    DateTime @default(now())
+  user         User     @relation("GivenRatings", fields: [userId], references: [id])
+  course       Course?  @relation(fields: [courseId], references: [id])
+  consultant   User?    @relation("ConsultantRatings", fields: [consultantId], references: [id])
+
+  @@unique([userId, courseId])
+  @@unique([userId, consultantId])
+  @@map("ratings")
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  addedAt   DateTime @default(now())
+
+  @@unique([cartId, courseId])
+  @@index([cartId])
+  @@index([courseId])
+  @@map("cart_items")
 }

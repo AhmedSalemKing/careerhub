@@ -11,6 +11,7 @@ import {
   ValidationPipe,
   BadRequestException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -25,31 +26,33 @@ import { RefreshGuard } from './guards/refresh.guard';
 import { Roles } from './decorators/roles.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { sanitize } from '../../common/utils/sanitize.util';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private readonly logger = new Logger(AuthController.name);
+
+  constructor(private readonly authService: AuthService) { }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully registered' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error or weak password' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(
-    @Body(ValidationPipe) registerDto: RegisterDto,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) registerDto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
       const result = await this.authService.register(registerDto);
-      
-      // Set refresh token in HTTP-only cookie
+
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 
@@ -62,10 +65,13 @@ export class AuthController {
         },
       };
     } catch (error) {
-      if (error.code === 'P2002') {
-        throw new BadRequestException('Email already exists');
+      this.logger.error('Registration failed', sanitize({ operation: 'register', reason: error instanceof Error ? error.message : String(error) }));
+
+      if (error instanceof BadRequestException) {
+        throw error;
       }
-      throw error;
+
+      throw new BadRequestException('Registration failed');
     }
   }
 
@@ -76,18 +82,17 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
-    @Body(ValidationPipe) loginDto: LoginDto,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     try {
       const result = await this.authService.login(loginDto);
-      
-      // Set refresh token in HTTP-only cookie
+
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 
@@ -100,6 +105,7 @@ export class AuthController {
         },
       };
     } catch (error) {
+      this.logger.warn('Login attempt failed', sanitize({ operation: 'login', reason: error instanceof Error ? error.message : String(error) }));
       throw new UnauthorizedException('Invalid credentials');
     }
   }
@@ -116,13 +122,12 @@ export class AuthController {
   ) {
     try {
       const result = await this.authService.refreshTokens(user.id);
-      
-      // Set new refresh token in HTTP-only cookie
+
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 
@@ -149,8 +154,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authService.logout(user.id);
-    
-    // Clear refresh token cookie
+
     response.clearCookie('refresh_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -179,36 +183,34 @@ export class AuthController {
     };
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset' })
-  @ApiResponse({ status: 200, description: 'Password reset email sent' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 200, description: 'If this email is registered, a reset link has been sent.' })
+  @ApiResponse({ status: 429, description: 'Too many requests. Please try again later.' })
   async forgotPassword(@Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto) {
     await this.authService.forgotPassword(forgotPasswordDto.email);
-    
+
     return {
       success: true,
-      message: 'Password reset email sent',
+      data: null,
+      message: 'If this email is registered, a reset link has been sent.',
     };
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Reset password' })
-  @ApiResponse({ status: 200, description: 'Password reset successful' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiOperation({ summary: 'Reset password using token from email' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully. Please log in.' })
+  @ApiResponse({ status: 400, description: 'Reset link has expired or already been used.' })
   async resetPassword(@Body(ValidationPipe) resetPasswordDto: ResetPasswordDto) {
-    try {
-      await this.authService.resetPassword(resetPasswordDto);
-      
-      return {
-        success: true,
-        message: 'Password reset successful',
-      };
-    } catch (error) {
-      throw new BadRequestException('Invalid or expired token');
-    }
+    await this.authService.resetPassword(resetPasswordDto);
+
+    return {
+      success: true,
+      data: { message: 'Password reset successfully. Please log in.' },
+    };
   }
 
   @Post('verify-email')
@@ -219,7 +221,7 @@ export class AuthController {
   async verifyEmail(@Body('token') token: string) {
     try {
       await this.authService.verifyEmail(token);
-      
+
       return {
         success: true,
         message: 'Email verified successfully',
@@ -243,7 +245,7 @@ export class AuthController {
   ) {
     try {
       await this.authService.changePassword(user.id, currentPassword, newPassword);
-      
+
       return {
         success: true,
         message: 'Password changed successfully',
@@ -283,13 +285,12 @@ export class AuthController {
   ) {
     try {
       const result = await this.authService.adminLogin(loginDto);
-      
-      // Set refresh token in HTTP-only cookie
+
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 

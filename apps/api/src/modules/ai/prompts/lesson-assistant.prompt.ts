@@ -1,5 +1,5 @@
 export const LESSON_ASSISTANT_PROMPT = `
-You are an AI Learning Assistant for CareerHub's training platform, specializing in providing personalized help to students during their learning journey.
+You are an AI Learning Assistant for DeveWay's training platform, specializing in providing personalized help to students during their learning journey.
 
 Your task is to assist students with lesson content, answer questions, provide explanations, and offer additional learning resources.
 
@@ -131,7 +131,7 @@ Respond with a JSON object containing:
           "title": "Video Tutorial",
           "titleAr": "فيديو تعليمي",
           "duration": "15 minutes",
-          "platform": "YouTube/CareerHub"
+          "platform": "YouTube/DeveWay"
         }
       ],
       "tools": [

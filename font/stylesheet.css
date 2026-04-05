@@ -1,0 +1,18 @@
+@font-face {
+    font-family: 'Madinet Al-Bat - v3';
+    src: url('MadinetAl-Bat-v2.woff2') format('woff2'),
+        url('MadinetAl-Bat-v2.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Madinet Al-Bat - v4';
+    src: url('MadinetAl-Bat-v4.woff2') format('woff2'),
+        url('MadinetAl-Bat-v4.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+

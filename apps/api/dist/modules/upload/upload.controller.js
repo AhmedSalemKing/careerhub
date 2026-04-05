@@ -15,15 +15,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UploadController = void 0;
 const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
+const multer_1 = require("multer");
+const path_1 = require("path");
+const promises_1 = require("fs/promises");
+const fs_1 = require("fs");
 const swagger_1 = require("@nestjs/swagger");
 const upload_service_1 = require("./upload.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
 let UploadController = class UploadController {
     constructor(uploadService) {
         this.uploadService = uploadService;
+    }
+    // Public CV upload — used during registration before the user has a token
+    async uploadCV(file) {
+        if (!file)
+            throw new common_1.BadRequestException('No file provided');
+        const result = await this.uploadService.uploadCV(file);
+        return { success: true, data: result };
     }
     async uploadSingleFile(user, file, folder, isPublic) {
         const result = await this.uploadService.uploadSingleFile(user.id, file, {
@@ -47,28 +59,60 @@ let UploadController = class UploadController {
             data: result,
         };
     }
-    async uploadImage(user, image, resizeWidth, resizeHeight, quality, generateThumbnails) {
-        const result = await this.uploadService.uploadImage(user.id, image, {
-            resizeWidth: resizeWidth ? parseInt(resizeWidth) : undefined,
-            resizeHeight: resizeHeight ? parseInt(resizeHeight) : undefined,
-            quality: quality ? parseInt(quality) : undefined,
-            generateThumbnails: generateThumbnails === 'true',
-        });
+    async uploadImage(image) {
+        if (!image)
+            throw new common_1.BadRequestException('No image file provided');
+        const safeName = image.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `img_${Date.now()}_${safeName}`;
+        const dir = (0, path_1.join)(process.cwd(), 'uploads', 'images');
+        await (0, promises_1.mkdir)(dir, { recursive: true });
+        await (0, promises_1.writeFile)((0, path_1.join)(dir, fileName), image.buffer);
         return {
             success: true,
-            message: 'Image uploaded and processed successfully',
-            data: result,
+            message: 'Image uploaded successfully',
+            data: {
+                url: `/uploads/images/${fileName}`,
+                fileName: image.originalname,
+                size: image.size,
+                mimeType: image.mimetype,
+            },
         };
     }
-    async uploadVideo(user, video, title, description) {
-        const result = await this.uploadService.uploadVideo(user.id, video, {
-            title,
-            description,
-        });
+    async uploadFile(file) {
+        if (!file)
+            throw new common_1.BadRequestException('No file provided');
+        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `file_${Date.now()}_${safeName}`;
+        const dir = (0, path_1.join)(process.cwd(), 'uploads', 'files');
+        await (0, promises_1.mkdir)(dir, { recursive: true });
+        await (0, promises_1.writeFile)((0, path_1.join)(dir, fileName), file.buffer);
+        return {
+            success: true,
+            data: {
+                url: `/uploads/files/${fileName}`,
+                fileName: file.originalname,
+                size: file.size,
+                type: file.mimetype,
+            },
+        };
+    }
+    async uploadVideo(video) {
+        if (!video)
+            throw new common_1.BadRequestException('No video file provided');
+        const safeName = video.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `video_${Date.now()}_${safeName}`;
+        const dir = (0, path_1.join)(process.cwd(), 'uploads', 'videos');
+        await (0, promises_1.mkdir)(dir, { recursive: true });
+        await (0, promises_1.writeFile)((0, path_1.join)(dir, fileName), video.buffer);
         return {
             success: true,
             message: 'Video uploaded successfully',
-            data: result,
+            data: {
+                url: `/uploads/videos/${fileName}`,
+                fileName: video.originalname,
+                size: video.size,
+                mimeType: video.mimetype,
+            },
         };
     }
     async uploadDocument(user, document, title, description) {
@@ -92,6 +136,33 @@ let UploadController = class UploadController {
             success: true,
             data: files,
         };
+    }
+    async serveCV(filename, res, download) {
+        const filePath = (0, path_1.join)(process.cwd(), 'uploads', 'cvs', filename);
+        try {
+            await (0, promises_1.access)(filePath);
+        }
+        catch {
+            throw new common_1.NotFoundException('File not found');
+        }
+        const ext = filename.split('.').pop()?.toLowerCase();
+        const contentTypes = {
+            pdf: 'application/pdf',
+            doc: 'application/msword',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        };
+        const contentType = contentTypes[ext || ''] || 'application/octet-stream';
+        res.setHeader('Content-Type', contentType);
+        if (download === 'true') {
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        }
+        else {
+            res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+        }
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('Cache-Control', 'no-cache');
+        const fileStream = (0, fs_1.createReadStream)(filePath);
+        fileStream.pipe(res);
     }
     async getFile(fileId) {
         const file = await this.uploadService.getFile(fileId);
@@ -172,6 +243,34 @@ let UploadController = class UploadController {
 };
 exports.UploadController = UploadController;
 __decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('cv'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.memoryStorage)(),
+        limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+        fileFilter: (_req, file, cb) => {
+            const allowed = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ];
+            if (allowed.includes(file.mimetype)) {
+                cb(null, true);
+            }
+            else {
+                cb(new common_1.BadRequestException('Only PDF and Word files are allowed'), false);
+            }
+        },
+    })),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload CV (public — no auth)' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'CV uploaded successfully' }),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UploadController.prototype, "uploadCV", null);
+__decorate([
     (0, common_1.Post)('single'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
@@ -208,34 +307,77 @@ __decorate([
     (0, common_1.Post)('image'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
+        storage: (0, multer_1.memoryStorage)(),
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+        fileFilter: (_req, file, cb) => {
+            if (file.mimetype.startsWith('image/'))
+                cb(null, true);
+            else
+                cb(new common_1.BadRequestException('Only image files are allowed'), false);
+        },
+    })),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiOperation)({ summary: 'Upload image with processing' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Image uploaded and processed successfully' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.UploadedFile)()),
-    __param(2, (0, common_1.Body)('resizeWidth')),
-    __param(3, (0, common_1.Body)('resizeHeight')),
-    __param(4, (0, common_1.Body)('quality')),
-    __param(5, (0, common_1.Body)('generateThumbnails')),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload image — saved to local disk' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Image uploaded successfully' }),
+    __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String, String, String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "uploadImage", null);
+__decorate([
+    (0, common_1.Post)('file'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file', {
+        storage: (0, multer_1.memoryStorage)(),
+        limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+        fileFilter: (_req, file, cb) => {
+            const allowed = [
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel',
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/vnd.ms-powerpoint',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                'text/plain',
+                'application/zip',
+                'image/jpeg', 'image/png', 'image/gif',
+            ];
+            if (allowed.includes(file.mimetype))
+                cb(null, true);
+            else
+                cb(new common_1.BadRequestException('File type not supported'), false);
+        },
+    })),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload lesson file (PDF, Word, Excel, PPT...)' }),
+    __param(0, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UploadController.prototype, "uploadFile", null);
 __decorate([
     (0, common_1.Post)('video'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('video')),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('video', {
+        storage: (0, multer_1.memoryStorage)(),
+        limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
+        fileFilter: (_req, file, cb) => {
+            if (file.mimetype.startsWith('video/'))
+                cb(null, true);
+            else
+                cb(new common_1.BadRequestException('Only video files are allowed'), false);
+        },
+    })),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiOperation)({ summary: 'Upload video file' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload video — saved to local disk' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Video uploaded successfully' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.UploadedFile)()),
-    __param(2, (0, common_1.Body)('title')),
-    __param(3, (0, common_1.Body)('description')),
+    __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String, String]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "uploadVideo", null);
 __decorate([
@@ -271,6 +413,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, Number, Number, String]),
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "getMyFiles", null);
+__decorate([
+    (0, common_1.Get)('cv/:filename'),
+    (0, swagger_1.ApiOperation)({ summary: 'Serve CV file inline or as download' }),
+    __param(0, (0, common_1.Param)('filename')),
+    __param(1, (0, common_1.Res)()),
+    __param(2, (0, common_1.Query)('download')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", Promise)
+], UploadController.prototype, "serveCV", null);
 __decorate([
     (0, common_1.Get)(':fileId'),
     (0, swagger_1.ApiOperation)({ summary: 'Get file by ID' }),
@@ -398,6 +550,8 @@ __decorate([
 ], UploadController.prototype, "cleanupFiles", null);
 exports.UploadController = UploadController = __decorate([
     (0, swagger_1.ApiTags)('Upload'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('upload'),
     __metadata("design:paramtypes", [upload_service_1.UploadService])
 ], UploadController);

@@ -332,7 +332,7 @@ let PuppeteerService = PuppeteerService_1 = class PuppeteerService {
           <div class="border-decoration"></div>
           <div class="certificate-content">
             <div class="header">
-              <div class="logo">CareerHub</div>
+              <div class="logo">DeveWay</div>
               <div class="tagline">Empowering Careers Through Education</div>
             </div>
             

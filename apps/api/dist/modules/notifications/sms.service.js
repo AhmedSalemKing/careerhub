@@ -24,7 +24,7 @@ let SmsService = SmsService_1 = class SmsService {
         this.provider = this.configService.get('SMS_PROVIDER') || 'twilio';
         this.apiKey = this.configService.get('SMS_API_KEY');
         this.apiSecret = this.configService.get('SMS_API_SECRET');
-        this.sender = this.configService.get('SMS_SENDER') || 'CareerHub';
+        this.sender = this.configService.get('SMS_SENDER') || 'DeveWay';
     }
     async sendSms(smsData) {
         try {
@@ -94,8 +94,8 @@ let SmsService = SmsService_1 = class SmsService {
     }
     async sendVerificationCode(phoneNumber, code, language = 'en') {
         const message = language === 'ar'
-            ? `رمز التحقق الخاص بـ CareerHub هو: ${code}. صالح لمدة 5 دقائق.`
-            : `Your CareerHub verification code is: ${code}. Valid for 5 minutes.`;
+            ? `رمز التحقق الخاص بـ DeveWay هو: ${code}. صالح لمدة 5 دقائق.`
+            : `Your DeveWay verification code is: ${code}. Valid for 5 minutes.`;
         return this.sendSms({
             to: phoneNumber,
             message,
@@ -105,8 +105,8 @@ let SmsService = SmsService_1 = class SmsService {
     async sendPasswordResetSms(phoneNumber, resetToken, language = 'en') {
         const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${resetToken}`;
         const message = language === 'ar'
-            ? ` CareerHub: إعادة تعيين كلمة المرور. استخدم الرابط: ${resetUrl}`
-            : `CareerHub: Password reset. Use this link: ${resetUrl}`;
+            ? ` DeveWay: إعادة تعيين كلمة المرور. استخدم الرابط: ${resetUrl}`
+            : `DeveWay: Password reset. Use this link: ${resetUrl}`;
         return this.sendSms({
             to: phoneNumber,
             message,
@@ -117,8 +117,8 @@ let SmsService = SmsService_1 = class SmsService {
         const formattedDate = appointmentData.dateTime.toLocaleString(language === 'ar' ? 'ar-EG' : 'en-US');
         const location = appointmentData.location ? ` at ${appointmentData.location}` : '';
         const message = language === 'ar'
-            ? `تذكير من CareerHub: لديك موعد ${appointmentData.serviceName} في ${formattedDate}${location}`
-            : `Reminder from CareerHub: You have an appointment for ${appointmentData.serviceName} at ${formattedDate}${location}`;
+            ? `تذكير من DeveWay: لديك موعد ${appointmentData.serviceName} في ${formattedDate}${location}`
+            : `Reminder from DeveWay: You have an appointment for ${appointmentData.serviceName} at ${formattedDate}${location}`;
         return this.sendSms({
             to: phoneNumber,
             message,
@@ -132,8 +132,8 @@ let SmsService = SmsService_1 = class SmsService {
             'ANNOUNCEMENT': language === 'ar' ? 'إعلان' : 'Announcement',
         };
         const message = language === 'ar'
-            ? `CareerHub: ${updateTypeText[courseData.updateType]} في دورة ${courseData.courseTitle}: ${courseData.updateTitle}`
-            : `CareerHub: ${updateTypeText[courseData.updateType]} in ${courseData.courseTitle}: ${courseData.updateTitle}`;
+            ? `DeveWay: ${updateTypeText[courseData.updateType]} في دورة ${courseData.courseTitle}: ${courseData.updateTitle}`
+            : `DeveWay: ${updateTypeText[courseData.updateType]} in ${courseData.courseTitle}: ${courseData.updateTitle}`;
         return this.sendSms({
             to: phoneNumber,
             message,
@@ -141,8 +141,8 @@ let SmsService = SmsService_1 = class SmsService {
     }
     async sendPaymentConfirmationSms(phoneNumber, paymentData, language = 'en') {
         const message = language === 'ar'
-            ? `CareerHub: تم تأكيد دفعتك بمبلغ ${paymentData.amount} ${paymentData.currency} لشراء ${paymentData.itemName}`
-            : `CareerHub: Your payment of ${paymentData.amount} ${paymentData.currency} for ${paymentData.itemName} has been confirmed`;
+            ? `DeveWay: تم تأكيد دفعتك بمبلغ ${paymentData.amount} ${paymentData.currency} لشراء ${paymentData.itemName}`
+            : `DeveWay: Your payment of ${paymentData.amount} ${paymentData.currency} for ${paymentData.itemName} has been confirmed`;
         return this.sendSms({
             to: phoneNumber,
             message,
@@ -243,7 +243,7 @@ let SmsService = SmsService_1 = class SmsService {
             }
             await this.sendSms({
                 to: testNumber,
-                message: 'Test SMS from CareerHub',
+                message: 'Test SMS from DeveWay',
             });
             return true;
         }

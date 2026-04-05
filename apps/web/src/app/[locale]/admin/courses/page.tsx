@@ -1,135 +1,189 @@
 'use client'
-
-import { useState } from 'react'
-import { useTranslations } from 'next-intl'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { get, patch } from '../../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
-import { AuthGate } from '../../../components/AuthGate'
-import { AdminShell } from '../../../components/AdminShell'
-import { Skeleton } from '../../../components/ui/Skeleton'
-import { Button } from '../../../components/ui/Button'
-import { useToast } from '../../../../lib/toast'
+import { useState, useEffect } from 'react'
+import { api } from '../../../../lib/api'
+import { CheckCircle, XCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 
 type AdminCourse = {
   id: string
-  titleAr?: string | null
-  titleEn?: string | null
-  status?: string | null
-  price?: number | null
-  currency?: string | null
-} & Record<string, unknown>
-
-export default function AdminCoursesPage() {
-  const t = useTranslations('adminCourses')
-  const c = useTranslations('common')
-  const e = useTranslations('errors')
-  const { toast } = useToast()
-  const [page, setPage] = useState(1)
-
-  const q = useQuery({
-    queryKey: ['admin-courses', page],
-    queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/admin/courses', { params: { page, limit: 20 } })).data
-      return unwrapData(raw) as any
-    },
-  })
-
-  const data = (q.data ?? null) as any
-  const items: AdminCourse[] = data?.items || data?.courses || data?.data?.items || data?.data?.courses || []
-
-  const publish = useMutation({
-    mutationFn: async (id: string) => (await patch(`/api/admin/courses/${encodeURIComponent(id)}/approve`)).data,
-    onSuccess: () => q.refetch(),
-    onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
-  })
-
-  const unpublish = useMutation({
-    mutationFn: async (id: string) =>
-      (await patch(`/api/admin/courses/${encodeURIComponent(id)}/reject`, { reason: 'unpublish' })).data,
-    onSuccess: () => q.refetch(),
-    onError: () => toast({ variant: 'danger', title: t('title'), description: e('something_wrong') }),
-  })
-
-  return (
-    <AuthGate>
-      <AdminShell title={t('title')} subtitle={t('subtitle')}>
-        {q.isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-12 rounded-2xl" />
-            <Skeleton className="h-12 rounded-2xl" />
-            <Skeleton className="h-12 rounded-2xl" />
-          </div>
-        ) : q.isError ? (
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-            <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
-            <button
-              type="button"
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
-              onClick={() => {
-                toast({ title: c('loading'), description: c('loading') })
-                q.refetch()
-              }}
-            >
-              {c('retry')}
-            </button>
-          </div>
-        ) : items.length ? (
-          <>
-            <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-              <table className="w-full text-sm">
-                <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
-                  <tr>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_title')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_status')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_price')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_actions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((course) => (
-                    <tr key={course.id} className="border-t border-[color:var(--border)]">
-                      <td className="px-4 py-3 font-semibold text-foreground">{course.titleAr || course.titleEn || '-'}</td>
-                      <td className="px-4 py-3 text-[color:var(--muted)]">{course.status || '-'}</td>
-                      <td className="px-4 py-3 text-[color:var(--muted)]">
-                        {course.price ?? '-'} {course.currency ?? ''}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button type="button" variant="secondary" onClick={() => publish.mutate(course.id)} disabled={publish.isPending}>
-                            {t('publish')}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => unpublish.mutate(course.id)}
-                            disabled={unpublish.isPending}
-                          >
-                            {t('unpublish')}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
-                {c('previous')}
-              </Button>
-              <Button type="button" variant="secondary" onClick={() => setPage((p) => p + 1)} disabled={items.length < 20}>
-                {c('next')}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted)]">
-            {c('empty')}
-          </div>
-        )}
-      </AdminShell>
-    </AuthGate>
-  )
+  titleEn?: string
+  titleAr?: string
+  status: string
+  price?: number
+  currency?: string
+  createdAt: string
+  careerPath?: { titleEn: string } | null
+  _count?: { enrollments: number }
 }
 
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<AdminCourse[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [processing, setProcessing] = useState<string | null>(null)
+
+  function fetchCourses() {
+    setLoading(true)
+    api.get('/admin/courses', { params: { page, limit: 20, search: search || undefined } })
+      .then((res) => {
+        const d = res.data.data ?? res.data
+        setCourses(d.courses ?? d.items ?? [])
+        setTotal(d.total ?? 0)
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(fetchCourses, [page, search])
+
+  async function approve(id: string) {
+    setProcessing(id)
+    try {
+      await api.patch(`/admin/courses/${id}/approve`)
+      fetchCourses()
+    } catch (e) { console.error(e) }
+    finally { setProcessing(null) }
+  }
+
+  async function reject(id: string) {
+    const reason = prompt('Rejection reason:') ?? ''
+    setProcessing(id)
+    try {
+      await api.patch(`/admin/courses/${id}/reject`, { reason })
+      fetchCourses()
+    } catch (e) { console.error(e) }
+    finally { setProcessing(null) }
+  }
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      PUBLISHED: 'bg-emerald-900/30 text-emerald-400 border-emerald-800',
+      DRAFT: 'bg-amber-900/30 text-amber-400 border-amber-800',
+      ARCHIVED: 'bg-gray-800 text-gray-400 border-gray-700',
+    }
+    return map[status] ?? 'bg-gray-800 text-gray-400 border-gray-700'
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-white">Courses</h1>
+        <span className="text-sm text-gray-400">{total} total</span>
+      </div>
+
+      {/* Search */}
+      <div className="flex gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); setSearch(searchInput) } }}
+            placeholder="Search courses..."
+            className="w-full pl-8 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <button
+          onClick={() => { setPage(1); setSearch(searchInput) }}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+        >
+          Search
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center text-gray-400 text-sm py-16">Loading...</div>
+      ) : (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800 text-gray-400 text-left">
+                <th className="px-4 py-3 font-medium">Course</th>
+                <th className="px-4 py-3 font-medium">Category</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Price</th>
+                <th className="px-4 py-3 font-medium">Enrollments</th>
+                <th className="px-4 py-3 font-medium text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courses.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center text-gray-500 py-12">No courses found</td>
+                </tr>
+              ) : (
+                courses.map((c) => (
+                  <tr key={c.id} className="border-t border-gray-800 hover:bg-gray-800/40 transition-colors">
+                    <td className="px-4 py-3">
+                      <p className="text-white font-medium">{c.titleEn || c.titleAr || '—'}</p>
+                      {c.titleAr && c.titleEn && (
+                        <p className="text-xs text-gray-400">{c.titleAr}</p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300 text-xs">{c.careerPath?.titleEn ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-block px-2 py-0.5 text-[11px] font-semibold rounded border ${statusBadge(c.status)}`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">
+                      {c.price ? `${c.price} ${c.currency ?? 'USD'}` : 'Free'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-300">{c._count?.enrollments ?? 0}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {c.status !== 'PUBLISHED' && (
+                          <button
+                            onClick={() => approve(c.id)}
+                            disabled={processing === c.id}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                          >
+                            <CheckCircle size={12} /> Publish
+                          </button>
+                        )}
+                        {c.status === 'PUBLISHED' && (
+                          <button
+                            onClick={() => reject(c.id)}
+                            disabled={processing === c.id}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-red-800 hover:bg-red-900 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                          >
+                            <XCircle size={12} /> Unpublish
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {total > 20 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-400">Page {page} of {Math.ceil(total / 20)}</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800 disabled:opacity-40 transition-colors"
+            >
+              <ChevronLeft size={14} /> Prev
+            </button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={courses.length < 20}
+              className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800 disabled:opacity-40 transition-colors"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

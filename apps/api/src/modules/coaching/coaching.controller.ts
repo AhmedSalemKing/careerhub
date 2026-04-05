@@ -124,6 +124,36 @@ export class CoachingController {
     };
   }
 
+  @Get('consulting/my-sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get consulting sessions (for CONSULTANTs and students)' })
+  @ApiResponse({ status: 200, description: 'Consulting sessions retrieved successfully' })
+  async getConsultingSessions(@CurrentUser() user: any) {
+    const sessions = await this.coachingService.getConsultingSessions(user.id, user.accountType);
+    return { success: true, data: sessions };
+  }
+
+  @Patch('consulting/:id/confirm')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm a consulting session (CONSULTANT only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async confirmConsultingSession(@CurrentUser() user: any, @Param('id') id: string) {
+    const session = await this.coachingService.confirmConsultingSession(id, user.id);
+    return { success: true, message: 'Session confirmed', data: session };
+  }
+
+  @Patch('consulting/:id/cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel a consulting session' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async cancelConsultingSession(@CurrentUser() user: any, @Param('id') id: string) {
+    const session = await this.coachingService.cancelConsultingSession(id, user.id);
+    return { success: true, message: 'Session cancelled', data: session };
+  }
+
   @Get('sessions/my-sessions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

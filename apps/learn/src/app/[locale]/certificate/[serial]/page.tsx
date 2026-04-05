@@ -70,7 +70,7 @@ export default function CertificatePage() {
   const handleLinkedIn = () => {
     if (!certificate) return
 
-    const linkedinUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(certificate.courseName[locale] || certificate.courseName.en)}&organizationName=${encodeURIComponent('CareerHub Academy')}&issueYear=${new Date(certificate.issuedDate).getFullYear()}&issueMonth=${new Date(certificate.issuedDate).getMonth() + 1}&certUrl=${encodeURIComponent(certificate.verificationUrl)}&certId=${certificate.serialNumber}`
+    const linkedinUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(certificate.courseName[locale] || certificate.courseName.en)}&organizationName=${encodeURIComponent('DeveWay Academy')}&issueYear=${new Date(certificate.issuedDate).getFullYear()}&issueMonth=${new Date(certificate.issuedDate).getMonth() + 1}&certUrl=${encodeURIComponent(certificate.verificationUrl)}&certId=${certificate.serialNumber}`
 
     window.open(linkedinUrl, '_blank')
   }

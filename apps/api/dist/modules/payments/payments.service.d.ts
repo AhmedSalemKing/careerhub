@@ -18,18 +18,19 @@ export declare class PaymentsService {
     }): Promise<{
         paymentIntent: import("stripe").Stripe.Response<import("stripe").Stripe.PaymentIntent>;
         payment: {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
+            currency: string;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
-            currency: string;
+            description: string | null;
             courseId: string | null;
+            userId: string;
             completedAt: Date | null;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
+            method: string;
             transactionId: string | null;
+            stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
             refundedAt: Date | null;
@@ -39,43 +40,26 @@ export declare class PaymentsService {
     }>;
     confirmPayment(userId: string, paymentIntentId: string): Promise<{
         payment: {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
-            createdAt: Date;
-            updatedAt: Date;
-            currency: string;
-            courseId: string | null;
-            completedAt: Date | null;
+            status: string;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
-            transactionId: string | null;
-            itemType: string | null;
-            itemId: string | null;
-            refundedAt: Date | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            currency: string;
         };
-        status: string;
+        enrollment: {
+            id: any;
+            courseId: any;
+            status: any;
+            progress: any;
+        };
+        message: string;
     }>;
+    private createEnrollmentAfterPayment;
     purchaseCourse(userId: string, courseId: string, paymentMethodId: string, couponCode?: string): Promise<{
         payment: {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
-            createdAt: Date;
-            updatedAt: Date;
-            currency: string;
-            courseId: string | null;
-            completedAt: Date | null;
+            status: string;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
-            transactionId: string | null;
-            itemType: string | null;
-            itemId: string | null;
-            refundedAt: Date | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            currency: string;
         };
         status: string;
         enrollment: any;
@@ -86,22 +70,10 @@ export declare class PaymentsService {
     }>;
     purchaseCoachingPackage(userId: string, packageId: string, paymentMethodId: string): Promise<{
         payment: {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
-            createdAt: Date;
-            updatedAt: Date;
-            currency: string;
-            courseId: string | null;
-            completedAt: Date | null;
+            status: string;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
-            transactionId: string | null;
-            itemType: string | null;
-            itemId: string | null;
-            refundedAt: Date | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            currency: string;
         };
         status: string;
         enrollment: any;
@@ -115,24 +87,24 @@ export declare class PaymentsService {
         };
     }>;
     createSubscription(userId: string, planId: string, paymentMethodId: string): Promise<{
-        status: string;
         id: string;
-        startDate: Date;
-        endDate: Date | null;
-        userId: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         plan: string;
+        startDate: Date;
+        endDate: Date | null;
     }>;
     cancelSubscription(userId: string, subscriptionId: string, reason?: string): Promise<{
-        status: string;
         id: string;
-        startDate: Date;
-        endDate: Date | null;
-        userId: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
         plan: string;
+        startDate: Date;
+        endDate: Date | null;
     }>;
     getUserPayments(userId: string, options: {
         page: number;
@@ -143,7 +115,7 @@ export declare class PaymentsService {
             id: string;
             amount: number;
             currency: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
+            status: string;
             itemType: string;
             itemId: string;
             transactionId: string;
@@ -265,14 +237,14 @@ export declare class PaymentsService {
         successRate: number;
         hasActiveSubscription: boolean;
         activeSubscription: {
-            status: string;
             id: string;
-            startDate: Date;
-            endDate: Date | null;
-            userId: string;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
             plan: string;
+            startDate: Date;
+            endDate: Date | null;
         };
     }>;
     getAllPayments(options: {
@@ -285,11 +257,14 @@ export declare class PaymentsService {
             user: {
                 profile: {
                     id: string;
-                    userId: string;
-                    lastName: string;
-                    firstName: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    language: string;
+                    userId: string;
+                    bio: string | null;
+                    linkedinUrl: string | null;
+                    firstName: string;
+                    lastName: string;
                     phone: string | null;
                     dateOfBirth: Date | null;
                     gender: import(".prisma/client").$Enums.Gender | null;
@@ -297,35 +272,45 @@ export declare class PaymentsService {
                     country: string | null;
                     city: string | null;
                     avatar: string | null;
-                    bio: string | null;
-                    linkedinUrl: string | null;
                     timezone: string;
-                    language: string;
                 };
             } & {
-                role: import(".prisma/client").$Enums.UserRole;
                 id: string;
-                email: string;
-                password: string;
-                isActive: boolean;
-                stripeCustomerId: string | null;
+                status: string;
                 createdAt: Date;
                 updatedAt: Date;
+                isActive: boolean;
+                email: string;
+                password: string;
+                role: import(".prisma/client").$Enums.UserRole;
+                accountType: string;
+                cvUrl: string | null;
+                bio: string | null;
+                experience: number | null;
+                speciality: string | null;
+                linkedinUrl: string | null;
+                hourlyRate: number | null;
+                meetingMethod: string | null;
+                stripeCustomerId: string | null;
+                approvedAt: Date | null;
+                rejectedAt: Date | null;
+                rejectedReason: string | null;
                 deletedAt: Date | null;
             };
         } & {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
+            currency: string;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
-            currency: string;
+            description: string | null;
             courseId: string | null;
+            userId: string;
             completedAt: Date | null;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
+            method: string;
             transactionId: string | null;
+            stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
             refundedAt: Date | null;

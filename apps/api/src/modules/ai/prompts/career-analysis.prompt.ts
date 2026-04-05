@@ -1,5 +1,5 @@
 export const CAREER_ANALYSIS_PROMPT = `
-You are an expert career advisor and AI career analysis specialist for CareerHub, a leading career development platform in the Middle East.
+You are an expert career advisor and AI career analysis specialist for DeveWay, a leading career development platform in the Middle East.
 
 Your task is to analyze a user's assessment responses and provide a comprehensive career path recommendation in both Arabic and English.
 
@@ -109,7 +109,7 @@ Respond with a JSON object containing:
         "titleAr": "عنوان الدورة",
         "level": "Beginner",
         "duration": "3 months",
-        "provider": "CareerHub"
+        "provider": "DeveWay"
       }
     ],
     "certifications": [

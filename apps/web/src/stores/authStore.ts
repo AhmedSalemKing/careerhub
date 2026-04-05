@@ -5,15 +5,19 @@ export type AuthUser = {
   id: string
   email: string
   role?: string
+  accountType?: string // STUDENT | INSTRUCTOR | CONSULTANT | ADMIN
+  status?: string
   profile?: { firstName?: string; lastName?: string; avatar?: string; language?: string }
 }
 
 type AuthState = {
   user: AuthUser | null
   token: string | null
+  refreshToken: string | null
   isLoading: boolean
   setUser: (user: AuthUser | null) => void
   setToken: (token: string | null) => void
+  setRefreshToken: (token: string | null) => void
   hydrate: () => void
   logout: () => void
   updateUser: (partial: Partial<AuthUser>) => void
@@ -22,6 +26,7 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
+  refreshToken: null,
   isLoading: true,
   setUser: (user) => {
     set({ user })
@@ -33,14 +38,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (token) setToken(token)
     else removeToken()
   },
+  setRefreshToken: (token) => {
+    set({ refreshToken: token })
+    if (token) {
+      try { localStorage.setItem('deveway_refresh', token) } catch {}
+    } else {
+      try { localStorage.removeItem('deveway_refresh') } catch {}
+    }
+  },
   hydrate: () => {
     const token = getToken()
     const user = getUser<AuthUser>()
-    set({ token, user, isLoading: false })
+    let refreshToken: string | null = null
+    try { refreshToken = localStorage.getItem('deveway_refresh') } catch {}
+    set({ token, user, refreshToken, isLoading: false })
   },
   logout: () => {
     hardLogout()
-    set({ user: null, token: null })
+    try { localStorage.removeItem('deveway_refresh') } catch {}
+    set({ user: null, token: null, refreshToken: null })
   },
   updateUser: (partial) => {
     const current = get().user
@@ -50,4 +66,3 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     setUser(next)
   },
 }))
-

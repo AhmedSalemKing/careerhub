@@ -1,8 +1,12 @@
+import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 export declare class CoursesService {
     private prisma;
+    private certificateQueue;
     private readonly logger;
-    constructor(prisma: PrismaService);
+    private readonly cacheTtlMs;
+    private readonly cache;
+    constructor(prisma: PrismaService, certificateQueue: Queue);
     getCourses(options: {
         page: number;
         limit: number;
@@ -10,44 +14,7 @@ export declare class CoursesService {
         level?: string;
         search?: string;
         language: string;
-    }): Promise<{
-        courses: {
-            id: string;
-            slug: string;
-            title: string;
-            description: string;
-            thumbnail: string;
-            price: number;
-            currency: string;
-            duration: any;
-            level: string;
-            isFeatured: boolean;
-            careerPath: {
-                id: any;
-                slug: any;
-                title: any;
-                color: any;
-                icon: any;
-            };
-            stats: {
-                modulesCount: number;
-                lessonsCount: number;
-                enrollments: any;
-                certificates: any;
-                rating: number;
-            };
-            createdAt: Date;
-            updatedAt: Date;
-        }[];
-        meta: {
-            total: number;
-            page: number;
-            limit: number;
-            totalPages: number;
-            hasNext: boolean;
-            hasPrev: boolean;
-        };
-    }>;
+    }): Promise<any>;
     getFeaturedCourses(limit: number, language?: string): Promise<{
         id: string;
         slug: string;
@@ -111,6 +78,95 @@ export declare class CoursesService {
             hasPrev: boolean;
         };
     }>;
+    getCourseById(id: string): Promise<{
+        careerPath: {
+            id: string;
+            slug: string;
+            titleEn: string;
+            titleAr: string;
+            descriptionEn: string;
+            descriptionAr: string;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+            skills: string[];
+            salaryRangeEn: string;
+            salaryRangeAr: string;
+            jobTitlesEn: string[];
+            jobTitlesAr: string[];
+            demandLevel: string;
+            icon: string | null;
+            color: string | null;
+            isActive: boolean;
+        };
+        category: {
+            id: string;
+            slug: string;
+            icon: string | null;
+            nameAr: string;
+            nameEn: string;
+        };
+        instructor: {
+            id: string;
+            profile: {
+                firstName: string;
+                lastName: string;
+                avatar: string;
+            };
+        };
+        sections: ({
+            lessons: {
+                id: string;
+                titleAr: string | null;
+                descriptionAr: string | null;
+                createdAt: Date;
+                updatedAt: Date;
+                title: string;
+                description: string | null;
+                isPublished: boolean;
+                order: number;
+                moduleId: string | null;
+                sectionId: string | null;
+                content: import("@prisma/client/runtime/library").JsonValue | null;
+                type: string;
+                videoUrl: string | null;
+                videoDuration: number | null;
+                fileUrl: string | null;
+                fileName: string | null;
+                fileSize: number | null;
+                isFree: boolean;
+            }[];
+        } & {
+            id: string;
+            title: string;
+            courseId: string;
+            order: number;
+        })[];
+        _count: {
+            enrollments: number;
+        };
+    } & {
+        id: string;
+        slug: string;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
+        titleEn: string;
+        titleAr: string | null;
+        descriptionEn: string | null;
+        descriptionAr: string | null;
+        thumbnail: string | null;
+        previewVideo: string | null;
+        price: number;
+        currency: string;
+        duration: number | null;
+        level: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
+        isFeatured: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     getCourseBySlug(slug: string, language?: string): Promise<{
         id: string;
         slug: string;
@@ -135,7 +191,7 @@ export declare class CoursesService {
         stats: {
             modulesCount: any;
             lessonsCount: any;
-            quizzesCount: any;
+            quizzesCount: number;
             enrollments: any;
             certificates: any;
             rating: number;
@@ -194,81 +250,107 @@ export declare class CoursesService {
         slug: string;
     }[]>;
     createCourse(createCourseDto: any): Promise<{
-        status: import(".prisma/client").$Enums.CourseStatus;
+        category: {
+            id: string;
+            slug: string;
+            icon: string | null;
+            nameAr: string;
+            nameEn: string;
+        };
+        sections: {
+            id: string;
+            title: string;
+            courseId: string;
+            order: number;
+        }[];
+    } & {
         id: string;
-        level: string;
-        titleAr: string;
-        titleEn: string;
-        createdAt: Date;
-        updatedAt: Date;
         slug: string;
-        descriptionEn: string;
-        descriptionAr: string;
-        sortOrder: number;
-        careerPathId: string;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
+        titleEn: string;
+        titleAr: string | null;
+        descriptionEn: string | null;
+        descriptionAr: string | null;
         thumbnail: string | null;
+        previewVideo: string | null;
         price: number;
         currency: string;
-        duration: number;
+        duration: number | null;
+        level: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
         isFeatured: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     updateCourse(id: string, updateCourseDto: any): Promise<{
-        status: import(".prisma/client").$Enums.CourseStatus;
         id: string;
-        level: string;
-        titleAr: string;
-        titleEn: string;
-        createdAt: Date;
-        updatedAt: Date;
         slug: string;
-        descriptionEn: string;
-        descriptionAr: string;
-        sortOrder: number;
-        careerPathId: string;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
+        titleEn: string;
+        titleAr: string | null;
+        descriptionEn: string | null;
+        descriptionAr: string | null;
         thumbnail: string | null;
+        previewVideo: string | null;
         price: number;
         currency: string;
-        duration: number;
+        duration: number | null;
+        level: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
         isFeatured: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     deleteCourse(id: string): Promise<void>;
     publishCourse(id: string): Promise<{
-        status: import(".prisma/client").$Enums.CourseStatus;
         id: string;
-        level: string;
-        titleAr: string;
-        titleEn: string;
-        createdAt: Date;
-        updatedAt: Date;
         slug: string;
-        descriptionEn: string;
-        descriptionAr: string;
-        sortOrder: number;
-        careerPathId: string;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
+        titleEn: string;
+        titleAr: string | null;
+        descriptionEn: string | null;
+        descriptionAr: string | null;
         thumbnail: string | null;
+        previewVideo: string | null;
         price: number;
         currency: string;
-        duration: number;
+        duration: number | null;
+        level: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
         isFeatured: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     unpublishCourse(id: string): Promise<{
-        status: import(".prisma/client").$Enums.CourseStatus;
         id: string;
-        level: string;
-        titleAr: string;
-        titleEn: string;
-        createdAt: Date;
-        updatedAt: Date;
         slug: string;
-        descriptionEn: string;
-        descriptionAr: string;
-        sortOrder: number;
-        careerPathId: string;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
+        titleEn: string;
+        titleAr: string | null;
+        descriptionEn: string | null;
+        descriptionAr: string | null;
         thumbnail: string | null;
+        previewVideo: string | null;
         price: number;
         currency: string;
-        duration: number;
+        duration: number | null;
+        level: string;
+        status: import(".prisma/client").$Enums.CourseStatus;
         isFeatured: boolean;
+        sortOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
     getAdminCourses(options: {
         page: number;
@@ -279,14 +361,14 @@ export declare class CoursesService {
         courses: ({
             careerPath: {
                 id: string;
-                titleAr: string;
-                titleEn: string;
-                isActive: boolean;
-                createdAt: Date;
-                updatedAt: Date;
                 slug: string;
+                titleEn: string;
+                titleAr: string;
                 descriptionEn: string;
                 descriptionAr: string;
+                sortOrder: number;
+                createdAt: Date;
+                updatedAt: Date;
                 skills: string[];
                 salaryRangeEn: string;
                 salaryRangeAr: string;
@@ -295,30 +377,33 @@ export declare class CoursesService {
                 demandLevel: string;
                 icon: string | null;
                 color: string | null;
-                sortOrder: number;
+                isActive: boolean;
             };
             _count: {
                 enrollments: number;
                 certificates: number;
             };
         } & {
-            status: import(".prisma/client").$Enums.CourseStatus;
             id: string;
-            level: string;
-            titleAr: string;
-            titleEn: string;
-            createdAt: Date;
-            updatedAt: Date;
             slug: string;
-            descriptionEn: string;
-            descriptionAr: string;
-            sortOrder: number;
-            careerPathId: string;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
+            titleEn: string;
+            titleAr: string | null;
+            descriptionEn: string | null;
+            descriptionAr: string | null;
             thumbnail: string | null;
+            previewVideo: string | null;
             price: number;
             currency: string;
-            duration: number;
+            duration: number | null;
+            level: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
             isFeatured: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         meta: {
             total: number;
@@ -336,6 +421,289 @@ export declare class CoursesService {
         completionRate: number;
         lessonAnalytics: any;
         revenue: number;
+    }>;
+    getInstructorCourses(instructorId: string): Promise<{
+        success: boolean;
+        data: ({
+            sections: ({
+                _count: {
+                    lessons: number;
+                };
+            } & {
+                id: string;
+                title: string;
+                courseId: string;
+                order: number;
+            })[];
+            _count: {
+                sections: number;
+                enrollments: number;
+            };
+        } & {
+            id: string;
+            slug: string;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
+            titleEn: string;
+            titleAr: string | null;
+            descriptionEn: string | null;
+            descriptionAr: string | null;
+            thumbnail: string | null;
+            previewVideo: string | null;
+            price: number;
+            currency: string;
+            duration: number | null;
+            level: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            isFeatured: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+        })[];
+    }>;
+    createInstructorCourse(instructorId: string, dto: any): Promise<{
+        success: boolean;
+        data: {
+            category: {
+                id: string;
+                slug: string;
+                icon: string | null;
+                nameAr: string;
+                nameEn: string;
+            };
+            sections: {
+                id: string;
+                title: string;
+                courseId: string;
+                order: number;
+            }[];
+        } & {
+            id: string;
+            slug: string;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
+            titleEn: string;
+            titleAr: string | null;
+            descriptionEn: string | null;
+            descriptionAr: string | null;
+            thumbnail: string | null;
+            previewVideo: string | null;
+            price: number;
+            currency: string;
+            duration: number | null;
+            level: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            isFeatured: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    updateInstructorCourse(id: string, instructorId: string, dto: any): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            slug: string;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
+            titleEn: string;
+            titleAr: string | null;
+            descriptionEn: string | null;
+            descriptionAr: string | null;
+            thumbnail: string | null;
+            previewVideo: string | null;
+            price: number;
+            currency: string;
+            duration: number | null;
+            level: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            isFeatured: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    addSection(courseId: string, instructorId: string, title: string): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            title: string;
+            courseId: string;
+            order: number;
+        };
+    }>;
+    addLesson(sectionId: string, dto: any): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            titleAr: string | null;
+            descriptionAr: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            description: string | null;
+            isPublished: boolean;
+            order: number;
+            moduleId: string | null;
+            sectionId: string | null;
+            content: import("@prisma/client/runtime/library").JsonValue | null;
+            type: string;
+            videoUrl: string | null;
+            videoDuration: number | null;
+            fileUrl: string | null;
+            fileName: string | null;
+            fileSize: number | null;
+            isFree: boolean;
+        };
+    }>;
+    completeCheck(userId: string, courseId: string): Promise<{
+        completed: boolean;
+        certificateUrl?: undefined;
+        progress?: undefined;
+    } | {
+        completed: boolean;
+        certificateUrl: any;
+        progress?: undefined;
+    } | {
+        completed: boolean;
+        progress: any;
+        certificateUrl?: undefined;
+    }>;
+    globalSearch(q: string): Promise<{
+        courses: {
+            title: string;
+            id: string;
+            titleEn: string;
+            titleAr: string;
+            thumbnail: string;
+            price: number;
+        }[];
+        consultants: {
+            id: string;
+            speciality: string;
+            profile: {
+                firstName: string;
+                lastName: string;
+            };
+        }[];
+    }>;
+    getInstructorCourseDetails(id: string, instructorId: string): Promise<{
+        success: boolean;
+        data: {
+            sections: ({
+                lessons: {
+                    id: string;
+                    titleAr: string | null;
+                    descriptionAr: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    title: string;
+                    description: string | null;
+                    isPublished: boolean;
+                    order: number;
+                    moduleId: string | null;
+                    sectionId: string | null;
+                    content: import("@prisma/client/runtime/library").JsonValue | null;
+                    type: string;
+                    videoUrl: string | null;
+                    videoDuration: number | null;
+                    fileUrl: string | null;
+                    fileName: string | null;
+                    fileSize: number | null;
+                    isFree: boolean;
+                }[];
+            } & {
+                id: string;
+                title: string;
+                courseId: string;
+                order: number;
+            })[];
+            enrollments: ({
+                user: {
+                    id: string;
+                    email: string;
+                    profile: {
+                        firstName: string;
+                        lastName: string;
+                        avatar: string;
+                    };
+                };
+            } & {
+                id: string;
+                status: import(".prisma/client").$Enums.EnrollmentStatus;
+                courseId: string;
+                userId: string;
+                progress: number;
+                enrolledAt: Date;
+                completedAt: Date | null;
+                expiresAt: Date | null;
+            })[];
+            _count: {
+                enrollments: number;
+            };
+        } & {
+            id: string;
+            slug: string;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
+            titleEn: string;
+            titleAr: string | null;
+            descriptionEn: string | null;
+            descriptionAr: string | null;
+            thumbnail: string | null;
+            previewVideo: string | null;
+            price: number;
+            currency: string;
+            duration: number | null;
+            level: string;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            isFeatured: boolean;
+            sortOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+        };
+    }>;
+    getInstructorStats(instructorId: string): Promise<{
+        success: boolean;
+        data: {
+            totalCourses: number;
+            totalStudents: number;
+            revenue: number;
+        };
+    }>;
+    updateSection(sectionId: string, instructorId: string, title: string): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            title: string;
+            courseId: string;
+            order: number;
+        };
+    }>;
+    markLessonComplete(userId: string, courseId: string, lessonId: string): Promise<{
+        lessonProgress: {
+            lessonId: string;
+            status: import(".prisma/client").$Enums.LessonStatus;
+            completedAt: Date;
+        };
+        enrollmentProgress: {
+            certificateQueued?: boolean;
+            courseId: string;
+            progress: number;
+            status: import(".prisma/client").$Enums.EnrollmentStatus;
+            completedLessons: number;
+            totalLessons: number;
+        };
+    }>;
+    heartbeat(userId: string, courseId: string, lessonId: string, seconds: number): Promise<{
+        timeSpent: number;
+    }>;
+    deleteLesson(lessonId: string, instructorId: string): Promise<{
+        success: boolean;
     }>;
     private calculateMockRating;
     private generateSlug;

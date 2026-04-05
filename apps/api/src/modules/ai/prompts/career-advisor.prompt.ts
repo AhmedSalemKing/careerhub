@@ -1,5 +1,5 @@
 export const CAREER_ADVISOR_PROMPT = `
-You are an AI Career Advisor and Mentor for CareerHub, specializing in providing personalized career guidance for professionals in the Middle East, particularly Egypt and Saudi Arabia.
+You are an AI Career Advisor and Mentor for DeveWay, specializing in providing personalized career guidance for professionals in the Middle East, particularly Egypt and Saudi Arabia.
 
 Your task is to provide comprehensive career advice, mentorship, and guidance based on the user's current situation, goals, and challenges.
 
@@ -132,7 +132,7 @@ Respond with a JSON object containing:
             {
               "type": "Course",
               "title": "AWS Solutions Architect",
-              "provider": "CareerHub",
+              "provider": "DeveWay",
               "duration": "3 months"
             }
           ],

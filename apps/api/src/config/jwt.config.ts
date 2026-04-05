@@ -3,15 +3,15 @@ import { ConfigService } from '@nestjs/config';
 export const getJwtConfig = (configService: ConfigService) => ({
   secret: configService.get<string>('JWT_SECRET') || 'dev-secret',
   expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '15m',
-  issuer: 'careerhub.com',
-  audience: 'careerhub-users',
+  issuer: 'deveway.com',
+  audience: 'deveway-users',
 });
 
 export const getJwtRefreshConfig = (configService: ConfigService) => ({
   secret: configService.get<string>('JWT_REFRESH_SECRET') || 'dev-refresh-secret',
   expiresIn: configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
-  issuer: 'careerhub.com',
-  audience: 'careerhub-users',
+  issuer: 'deveway.com',
+  audience: 'deveway-users',
 });
 
 export const cookieOptions = {

@@ -8,8 +8,10 @@
   Param,
   Query,
   UseGuards,
+  Request,
   HttpCode,
   HttpStatus,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
@@ -59,6 +61,21 @@ export class CoursesController {
     };
   }
 
+  @Get('search')
+  @ApiOperation({ summary: 'Global search for courses and consultants' })
+  async globalSearch(@Query('q') q: string) {
+    const data = await this.coursesService.globalSearch(q || '');
+    return { success: true, data };
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Get all course categories' })
+  @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
+  @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
+  async getCategories(@Query('language') language?: string) {
+    return this.coursesService.getCategories(language || 'en');
+  }
+
   @Get('featured')
   @ApiOperation({ summary: 'Get featured courses' })
   @ApiResponse({ status: 200, description: 'Featured courses retrieved successfully' })
@@ -78,41 +95,67 @@ export class CoursesController {
     };
   }
 
+  @Get('enrolled')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get enrolled courses for current user' })
+  async getEnrolledCourses(@Request() req: any) {
+    const userId = req.user.sub || req.user.id
+    const result = await this.coursesService.getMyCourses(userId, { page: 1, limit: 100 })
+    return { success: true, data: result.enrollments }
+  }
+
   @Get('my-courses')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user enrolled courses' })
-  @ApiResponse({ status: 200, description: 'User courses retrieved successfully' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by enrollment status' })
+  @ApiOperation({ summary: 'Get courses (enrolled for students, created for instructors)' })
+  @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
   async getMyCourses(
-    @CurrentUser() user: User,
+    @Request() req: any,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: string,
   ) {
-    const courses = await this.coursesService.getMyCourses(user.id, {
+    if (req.user.accountType === 'INSTRUCTOR') {
+      return this.coursesService.getInstructorCourses(req.user.id);
+    }
+    const courses = await this.coursesService.getMyCourses(req.user.id, {
       page: page || 1,
       limit: limit || 10,
       status,
     });
-    return {
-      success: true,
-      data: courses,
-    };
+    return { success: true, data: courses };
+  }
+
+  // ─── Instructor endpoints ─────────────────────────────────────
+  @Get('instructor/stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get instructor dashboard stats' })
+  async getInstructorStats(@Request() req: any) {
+    return this.coursesService.getInstructorStats(req.user.id);
   }
 
   @Get(':slug')
-  @ApiOperation({ summary: 'Get course by slug' })
+  @ApiOperation({ summary: 'Get course by slug or ID' })
   @ApiResponse({ status: 200, description: 'Course retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Course not found' })
-  @ApiParam({ name: 'slug', description: 'Course slug' })
+  @ApiParam({ name: 'slug', description: 'Course slug or ID' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
   async getCourseBySlug(
     @Param('slug') slug: string,
     @Query('language') language?: string,
   ) {
+    // Try by ID first (cuid format), then fall back to slug
+    const isCuid = /^c[a-z0-9]{24,}$/.test(slug);
+    if (isCuid) {
+      try {
+        const course = await this.coursesService.getCourseById(slug);
+        return { success: true, data: { course } };
+      } catch {
+        // fall through to slug lookup
+      }
+    }
     const course = await this.coursesService.getCourseBySlug(slug, language || 'en');
     return {
       success: true,
@@ -172,6 +215,55 @@ export class CoursesController {
     };
   }
 
+  @Post(':courseId/lessons/:lessonId/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mark a lesson as complete and update progress' })
+  @ApiResponse({ status: 200, description: 'Lesson completed, enrollment progress updated' })
+  @ApiResponse({ status: 403, description: 'Not enrolled in this course' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'lessonId', description: 'Lesson ID' })
+  async markLessonComplete(
+    @Param('courseId') courseId: string,
+    @Param('lessonId') lessonId: string,
+    @Request() req: any,
+  ) {
+    const userId = req.user.sub || req.user.id;
+    const result = await this.coursesService.markLessonComplete(userId, courseId, lessonId);
+    return { success: true, data: result };
+  }
+
+  @Post(':courseId/lessons/:lessonId/heartbeat')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Track time spent on a lesson' })
+  @ApiResponse({ status: 200, description: 'Time tracked successfully' })
+  @ApiParam({ name: 'courseId', description: 'Course ID' })
+  @ApiParam({ name: 'lessonId', description: 'Lesson ID' })
+  async heartbeat(
+    @Param('courseId') courseId: string,
+    @Param('lessonId') lessonId: string,
+    @Body('seconds') seconds: number,
+    @Request() req: any,
+  ) {
+    const userId = req.user.sub || req.user.id;
+    // Clamp seconds to 1–60 range
+    const clampedSeconds = Math.max(1, Math.min(60, Math.floor(Number(seconds) || 30)));
+    const result = await this.coursesService.heartbeat(userId, courseId, lessonId, clampedSeconds);
+    return { success: true, data: result };
+  }
+
+  @Post(':id/complete-check')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if course is completed and get certificate URL' })
+  async completeCheck(@Param('id') courseId: string, @Request() req: any) {
+    const userId = req.user.sub || req.user.id;
+    const result = await this.coursesService.completeCheck(userId, courseId);
+    return { success: true, data: result };
+  }
+
   @Post(':id/progress')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -207,18 +299,6 @@ export class CoursesController {
     return {
       success: true,
       data: { stats },
-    };
-  }
-
-  @Get('categories/list')
-  @ApiOperation({ summary: 'Get course categories' })
-  @ApiResponse({ status: 200, description: 'Categories retrieved successfully' })
-  @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
-  async getCategories(@Query('language') language?: string) {
-    const categories = await this.coursesService.getCategories(language || 'en');
-    return {
-      success: true,
-      data: { categories },
     };
   }
 
@@ -258,38 +338,60 @@ export class CoursesController {
     };
   }
 
-  // Admin endpoints
-  @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  // ─── Instructor: sections & lessons ──────────────────────────
+  @Get('instructor/:id/details')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new course (Admin only)' })
+  @ApiOperation({ summary: 'Get full course details for instructor' })
+  async getInstructorCourseDetails(@Param('id') id: string, @Request() req: any) {
+    return this.coursesService.getInstructorCourseDetails(id, req.user.id);
+  }
+
+  @Post('instructor/:id/sections')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add section to instructor course' })
+  async addSection(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { title: string },
+  ) {
+    return this.coursesService.addSection(id, req.user.id, body.title);
+  }
+
+  @Post('sections/:sectionId/lessons')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add lesson to section' })
+  async addLesson(@Param('sectionId') sectionId: string, @Body() body: any) {
+    return this.coursesService.addLesson(sectionId, body);
+  }
+
+  // ─── Admin / Instructor shared CRUD ──────────────────────────
+  @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create course (Admin: full DTO / Instructor: own course)' })
   @ApiResponse({ status: 201, description: 'Course created successfully' })
-  async createCourse(@Body() createCourseDto: any) {
-    const course = await this.coursesService.createCourse(createCourseDto);
-    return {
-      success: true,
-      message: 'Course created successfully',
-      data: { course },
-    };
+  async createCourse(@Request() req: any, @Body() body: any) {
+    if (req.user.role === 'ADMIN') {
+      const course = await this.coursesService.createCourse(body);
+      return { success: true, message: 'Course created successfully', data: { course } };
+    }
+    return this.coursesService.createInstructorCourse(req.user.id, body);
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update a course (Admin only)' })
+  @ApiOperation({ summary: 'Update course (Admin: any / Instructor: own)' })
   @ApiResponse({ status: 200, description: 'Course updated successfully' })
-  async updateCourse(
-    @Param('id') id: string,
-    @Body() updateCourseDto: any,
-  ) {
-    const course = await this.coursesService.updateCourse(id, updateCourseDto);
-    return {
-      success: true,
-      message: 'Course updated successfully',
-      data: { course },
-    };
+  async updateCourse(@Param('id') id: string, @Request() req: any, @Body() body: any) {
+    if (req.user.role === 'ADMIN') {
+      const course = await this.coursesService.updateCourse(id, body);
+      return { success: true, message: 'Course updated successfully', data: { course } };
+    }
+    return this.coursesService.updateInstructorCourse(id, req.user.id, body);
   }
 
   @Delete(':id')

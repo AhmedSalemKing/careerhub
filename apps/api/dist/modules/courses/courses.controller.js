@@ -40,6 +40,13 @@ let CoursesController = class CoursesController {
             data: courses,
         };
     }
+    async globalSearch(q) {
+        const data = await this.coursesService.globalSearch(q || '');
+        return { success: true, data };
+    }
+    async getCategories(language) {
+        return this.coursesService.getCategories(language || 'en');
+    }
     async getFeaturedCourses(limit, language) {
         const courses = await this.coursesService.getFeaturedCourses(limit || 6, language || 'en');
         return {
@@ -47,18 +54,38 @@ let CoursesController = class CoursesController {
             data: { courses },
         };
     }
-    async getMyCourses(user, page, limit, status) {
-        const courses = await this.coursesService.getMyCourses(user.id, {
+    async getEnrolledCourses(req) {
+        const userId = req.user.sub || req.user.id;
+        const result = await this.coursesService.getMyCourses(userId, { page: 1, limit: 100 });
+        return { success: true, data: result.enrollments };
+    }
+    async getMyCourses(req, page, limit, status) {
+        if (req.user.accountType === 'INSTRUCTOR') {
+            return this.coursesService.getInstructorCourses(req.user.id);
+        }
+        const courses = await this.coursesService.getMyCourses(req.user.id, {
             page: page || 1,
             limit: limit || 10,
             status,
         });
-        return {
-            success: true,
-            data: courses,
-        };
+        return { success: true, data: courses };
+    }
+    // ─── Instructor endpoints ─────────────────────────────────────
+    async getInstructorStats(req) {
+        return this.coursesService.getInstructorStats(req.user.id);
     }
     async getCourseBySlug(slug, language) {
+        // Try by ID first (cuid format), then fall back to slug
+        const isCuid = /^c[a-z0-9]{24,}$/.test(slug);
+        if (isCuid) {
+            try {
+                const course = await this.coursesService.getCourseById(slug);
+                return { success: true, data: { course } };
+            }
+            catch {
+                // fall through to slug lookup
+            }
+        }
         const course = await this.coursesService.getCourseBySlug(slug, language || 'en');
         return {
             success: true,
@@ -87,6 +114,23 @@ let CoursesController = class CoursesController {
             data: { enrollment },
         };
     }
+    async markLessonComplete(courseId, lessonId, req) {
+        const userId = req.user.sub || req.user.id;
+        const result = await this.coursesService.markLessonComplete(userId, courseId, lessonId);
+        return { success: true, data: result };
+    }
+    async heartbeat(courseId, lessonId, seconds, req) {
+        const userId = req.user.sub || req.user.id;
+        // Clamp seconds to 1–60 range
+        const clampedSeconds = Math.max(1, Math.min(60, Math.floor(Number(seconds) || 30)));
+        const result = await this.coursesService.heartbeat(userId, courseId, lessonId, clampedSeconds);
+        return { success: true, data: result };
+    }
+    async completeCheck(courseId, req) {
+        const userId = req.user.sub || req.user.id;
+        const result = await this.coursesService.completeCheck(userId, courseId);
+        return { success: true, data: result };
+    }
     async updateProgress(user, courseId, lessonId, progress, timeSpent) {
         const updatedProgress = await this.enrollmentService.updateEnrollmentProgress(user.id, 0);
         return {
@@ -100,13 +144,6 @@ let CoursesController = class CoursesController {
         return {
             success: true,
             data: { stats },
-        };
-    }
-    async getCategories(language) {
-        const categories = await this.coursesService.getCategories(language || 'en');
-        return {
-            success: true,
-            data: { categories },
         };
     }
     async getLevels() {
@@ -130,22 +167,30 @@ let CoursesController = class CoursesController {
             data: { suggestions },
         };
     }
-    // Admin endpoints
-    async createCourse(createCourseDto) {
-        const course = await this.coursesService.createCourse(createCourseDto);
-        return {
-            success: true,
-            message: 'Course created successfully',
-            data: { course },
-        };
+    // ─── Instructor: sections & lessons ──────────────────────────
+    async getInstructorCourseDetails(id, req) {
+        return this.coursesService.getInstructorCourseDetails(id, req.user.id);
     }
-    async updateCourse(id, updateCourseDto) {
-        const course = await this.coursesService.updateCourse(id, updateCourseDto);
-        return {
-            success: true,
-            message: 'Course updated successfully',
-            data: { course },
-        };
+    async addSection(id, req, body) {
+        return this.coursesService.addSection(id, req.user.id, body.title);
+    }
+    async addLesson(sectionId, body) {
+        return this.coursesService.addLesson(sectionId, body);
+    }
+    // ─── Admin / Instructor shared CRUD ──────────────────────────
+    async createCourse(req, body) {
+        if (req.user.role === 'ADMIN') {
+            const course = await this.coursesService.createCourse(body);
+            return { success: true, message: 'Course created successfully', data: { course } };
+        }
+        return this.coursesService.createInstructorCourse(req.user.id, body);
+    }
+    async updateCourse(id, req, body) {
+        if (req.user.role === 'ADMIN') {
+            const course = await this.coursesService.updateCourse(id, body);
+            return { success: true, message: 'Course updated successfully', data: { course } };
+        }
+        return this.coursesService.updateInstructorCourse(id, req.user.id, body);
     }
     async deleteCourse(id) {
         await this.coursesService.deleteCourse(id);
@@ -208,6 +253,24 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getCourses", null);
 __decorate([
+    (0, common_1.Get)('search'),
+    (0, swagger_1.ApiOperation)({ summary: 'Global search for courses and consultants' }),
+    __param(0, (0, common_1.Query)('q')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "globalSearch", null);
+__decorate([
+    (0, common_1.Get)('categories'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all course categories' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Categories retrieved successfully' }),
+    (0, swagger_1.ApiQuery)({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' }),
+    __param(0, (0, common_1.Query)('language')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "getCategories", null);
+__decorate([
     (0, common_1.Get)('featured'),
     (0, swagger_1.ApiOperation)({ summary: 'Get featured courses' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Featured courses retrieved successfully' }),
@@ -220,15 +283,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getFeaturedCourses", null);
 __decorate([
+    (0, common_1.Get)('enrolled'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get enrolled courses for current user' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "getEnrolledCourses", null);
+__decorate([
     (0, common_1.Get)('my-courses'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Get user enrolled courses' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'User courses retrieved successfully' }),
-    (0, swagger_1.ApiQuery)({ name: 'page', required: false, description: 'Page number' }),
-    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, description: 'Items per page' }),
-    (0, swagger_1.ApiQuery)({ name: 'status', required: false, description: 'Filter by enrollment status' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    (0, swagger_1.ApiOperation)({ summary: 'Get courses (enrolled for students, created for instructors)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Courses retrieved successfully' }),
+    __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('page')),
     __param(2, (0, common_1.Query)('limit')),
     __param(3, (0, common_1.Query)('status')),
@@ -237,11 +307,21 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getMyCourses", null);
 __decorate([
+    (0, common_1.Get)('instructor/stats'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get instructor dashboard stats' }),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "getInstructorStats", null);
+__decorate([
     (0, common_1.Get)(':slug'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get course by slug' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get course by slug or ID' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Course retrieved successfully' }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'Course not found' }),
-    (0, swagger_1.ApiParam)({ name: 'slug', description: 'Course slug' }),
+    (0, swagger_1.ApiParam)({ name: 'slug', description: 'Course slug or ID' }),
     (0, swagger_1.ApiQuery)({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' }),
     __param(0, (0, common_1.Param)('slug')),
     __param(1, (0, common_1.Query)('language')),
@@ -289,6 +369,50 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getEnrollmentStatus", null);
 __decorate([
+    (0, common_1.Post)(':courseId/lessons/:lessonId/complete'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Mark a lesson as complete and update progress' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Lesson completed, enrollment progress updated' }),
+    (0, swagger_1.ApiResponse)({ status: 403, description: 'Not enrolled in this course' }),
+    (0, swagger_1.ApiParam)({ name: 'courseId', description: 'Course ID' }),
+    (0, swagger_1.ApiParam)({ name: 'lessonId', description: 'Lesson ID' }),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Param)('lessonId')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "markLessonComplete", null);
+__decorate([
+    (0, common_1.Post)(':courseId/lessons/:lessonId/heartbeat'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Track time spent on a lesson' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Time tracked successfully' }),
+    (0, swagger_1.ApiParam)({ name: 'courseId', description: 'Course ID' }),
+    (0, swagger_1.ApiParam)({ name: 'lessonId', description: 'Lesson ID' }),
+    __param(0, (0, common_1.Param)('courseId')),
+    __param(1, (0, common_1.Param)('lessonId')),
+    __param(2, (0, common_1.Body)('seconds')),
+    __param(3, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Number, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "heartbeat", null);
+__decorate([
+    (0, common_1.Post)(':id/complete-check'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Check if course is completed and get certificate URL' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "completeCheck", null);
+__decorate([
     (0, common_1.Post)(':id/progress'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
@@ -317,16 +441,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getCourseStats", null);
-__decorate([
-    (0, common_1.Get)('categories/list'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get course categories' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Categories retrieved successfully' }),
-    (0, swagger_1.ApiQuery)({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' }),
-    __param(0, (0, common_1.Query)('language')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], CoursesController.prototype, "getCategories", null);
 __decorate([
     (0, common_1.Get)('levels/list'),
     (0, swagger_1.ApiOperation)({ summary: 'Get course levels' }),
@@ -357,28 +471,62 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "getSearchSuggestions", null);
 __decorate([
-    (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.Get)('instructor/:id/details'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Create a new course (Admin only)' }),
-    (0, swagger_1.ApiResponse)({ status: 201, description: 'Course created successfully' }),
-    __param(0, (0, common_1.Body)()),
+    (0, swagger_1.ApiOperation)({ summary: 'Get full course details for instructor' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "getInstructorCourseDetails", null);
+__decorate([
+    (0, common_1.Post)('instructor/:id/sections'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Add section to instructor course' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "addSection", null);
+__decorate([
+    (0, common_1.Post)('sections/:sectionId/lessons'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Add lesson to section' }),
+    __param(0, (0, common_1.Param)('sectionId')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], CoursesController.prototype, "addLesson", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create course (Admin: full DTO / Instructor: own course)' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Course created successfully' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "createCourse", null);
 __decorate([
     (0, common_1.Patch)(':id'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
-    (0, roles_decorator_1.Roles)('ADMIN'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, swagger_1.ApiOperation)({ summary: 'Update a course (Admin only)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Update course (Admin: any / Instructor: own)' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Course updated successfully' }),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], CoursesController.prototype, "updateCourse", null);
 __decorate([

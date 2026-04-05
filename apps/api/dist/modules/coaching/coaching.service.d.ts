@@ -6,26 +6,10 @@ export declare class CoachingService {
     private configService;
     private zoomService;
     private readonly logger;
+    private readonly cacheTtlMs;
+    private readonly cache;
     constructor(prisma: PrismaService, configService: ConfigService, zoomService: ZoomService);
-    getCoaches(specialization?: string, language?: string): Promise<{
-        id: string;
-        user: {
-            id: string;
-            email: string;
-            firstName: string;
-            lastName: string;
-            avatar: string;
-        };
-        bio: string;
-        bioAr: string;
-        hourlyRate: number;
-        experience: number;
-        rating: number;
-        totalSessions: any;
-        totalReviews: number;
-        specialties: string[];
-        availability: import("@prisma/client/runtime/library").JsonValue;
-    }[]>;
+    getCoaches(specialization?: string, language?: string): Promise<any>;
     getCoach(id: string, language?: string): Promise<{
         id: string;
         user: {
@@ -139,16 +123,16 @@ export declare class CoachingService {
         notes?: string;
         followUpActions?: string[];
     }): Promise<{
-        status: import(".prisma/client").$Enums.SessionStatus;
         id: string;
-        userId: string;
+        status: import(".prisma/client").$Enums.SessionStatus;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
+        notes: string | null;
         coachId: string;
         slotId: string;
         zoomMeetingId: string | null;
         zoomJoinUrl: string | null;
-        notes: string | null;
         recordingUrl: string | null;
         startTime: Date;
     }>;
@@ -157,10 +141,10 @@ export declare class CoachingService {
         comment?: string;
     }): Promise<{
         id: string;
-        userId: string;
-        sessionId: string;
         createdAt: Date;
         updatedAt: Date;
+        userId: string;
+        sessionId: string;
         rating: number;
         coachId: string;
         comment: string | null;
@@ -173,11 +157,14 @@ export declare class CoachingService {
             user: {
                 profile: {
                     id: string;
-                    userId: string;
-                    lastName: string;
-                    firstName: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    language: string;
+                    userId: string;
+                    bio: string | null;
+                    linkedinUrl: string | null;
+                    firstName: string;
+                    lastName: string;
                     phone: string | null;
                     dateOfBirth: Date | null;
                     gender: import(".prisma/client").$Enums.Gender | null;
@@ -185,29 +172,38 @@ export declare class CoachingService {
                     country: string | null;
                     city: string | null;
                     avatar: string | null;
-                    bio: string | null;
-                    linkedinUrl: string | null;
                     timezone: string;
-                    language: string;
                 };
             } & {
-                role: import(".prisma/client").$Enums.UserRole;
                 id: string;
-                email: string;
-                password: string;
-                isActive: boolean;
-                stripeCustomerId: string | null;
+                status: string;
                 createdAt: Date;
                 updatedAt: Date;
+                isActive: boolean;
+                email: string;
+                password: string;
+                role: import(".prisma/client").$Enums.UserRole;
+                accountType: string;
+                cvUrl: string | null;
+                bio: string | null;
+                experience: number | null;
+                speciality: string | null;
+                linkedinUrl: string | null;
+                hourlyRate: number | null;
+                meetingMethod: string | null;
+                stripeCustomerId: string | null;
+                approvedAt: Date | null;
+                rejectedAt: Date | null;
+                rejectedReason: string | null;
                 deletedAt: Date | null;
             };
             session: {};
         } & {
             id: string;
-            userId: string;
-            sessionId: string;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
+            sessionId: string;
             rating: number;
             coachId: string;
             comment: string | null;
@@ -236,18 +232,19 @@ export declare class CoachingService {
         paymentMethodId: string;
     }): Promise<{
         purchase: {
-            description: string;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             id: string;
-            userId: string;
+            currency: string;
+            status: string;
             createdAt: Date;
             updatedAt: Date;
-            currency: string;
+            description: string | null;
             courseId: string | null;
+            userId: string;
             completedAt: Date | null;
             amount: number;
-            method: import(".prisma/client").$Enums.PaymentMethod;
+            method: string;
             transactionId: string | null;
+            stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
             refundedAt: Date | null;
@@ -311,18 +308,18 @@ export declare class CoachingService {
         experience: number;
     }): Promise<{
         id: string;
-        userId: string;
+        currency: string;
         createdAt: Date;
         updatedAt: Date;
-        currency: string;
+        userId: string;
+        experience: number;
+        hourlyRate: number;
+        rating: number;
         bioEn: string;
         bioAr: string;
         specialties: string[];
-        experience: number;
-        hourlyRate: number;
         availability: import("@prisma/client/runtime/library").JsonValue;
         isVerified: boolean;
-        rating: number;
         reviewCount: number;
     }>;
     getAllCoaches(options: {
@@ -346,11 +343,14 @@ export declare class CoachingService {
             user: {
                 profile: {
                     id: string;
-                    userId: string;
-                    lastName: string;
-                    firstName: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    language: string;
+                    userId: string;
+                    bio: string | null;
+                    linkedinUrl: string | null;
+                    firstName: string;
+                    lastName: string;
                     phone: string | null;
                     dateOfBirth: Date | null;
                     gender: import(".prisma/client").$Enums.Gender | null;
@@ -358,31 +358,43 @@ export declare class CoachingService {
                     country: string | null;
                     city: string | null;
                     avatar: string | null;
-                    bio: string | null;
-                    linkedinUrl: string | null;
                     timezone: string;
-                    language: string;
                 };
             } & {
-                role: import(".prisma/client").$Enums.UserRole;
                 id: string;
-                email: string;
-                password: string;
-                isActive: boolean;
-                stripeCustomerId: string | null;
+                status: string;
                 createdAt: Date;
                 updatedAt: Date;
+                isActive: boolean;
+                email: string;
+                password: string;
+                role: import(".prisma/client").$Enums.UserRole;
+                accountType: string;
+                cvUrl: string | null;
+                bio: string | null;
+                experience: number | null;
+                speciality: string | null;
+                linkedinUrl: string | null;
+                hourlyRate: number | null;
+                meetingMethod: string | null;
+                stripeCustomerId: string | null;
+                approvedAt: Date | null;
+                rejectedAt: Date | null;
+                rejectedReason: string | null;
                 deletedAt: Date | null;
             };
             coach: {
                 user: {
                     profile: {
                         id: string;
-                        userId: string;
-                        lastName: string;
-                        firstName: string;
                         createdAt: Date;
                         updatedAt: Date;
+                        language: string;
+                        userId: string;
+                        bio: string | null;
+                        linkedinUrl: string | null;
+                        firstName: string;
+                        lastName: string;
                         phone: string | null;
                         dateOfBirth: Date | null;
                         gender: import(".prisma/client").$Enums.Gender | null;
@@ -390,49 +402,58 @@ export declare class CoachingService {
                         country: string | null;
                         city: string | null;
                         avatar: string | null;
-                        bio: string | null;
-                        linkedinUrl: string | null;
                         timezone: string;
-                        language: string;
                     };
                 } & {
-                    role: import(".prisma/client").$Enums.UserRole;
                     id: string;
-                    email: string;
-                    password: string;
-                    isActive: boolean;
-                    stripeCustomerId: string | null;
+                    status: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    isActive: boolean;
+                    email: string;
+                    password: string;
+                    role: import(".prisma/client").$Enums.UserRole;
+                    accountType: string;
+                    cvUrl: string | null;
+                    bio: string | null;
+                    experience: number | null;
+                    speciality: string | null;
+                    linkedinUrl: string | null;
+                    hourlyRate: number | null;
+                    meetingMethod: string | null;
+                    stripeCustomerId: string | null;
+                    approvedAt: Date | null;
+                    rejectedAt: Date | null;
+                    rejectedReason: string | null;
                     deletedAt: Date | null;
                 };
             } & {
                 id: string;
-                userId: string;
+                currency: string;
                 createdAt: Date;
                 updatedAt: Date;
-                currency: string;
+                userId: string;
+                experience: number;
+                hourlyRate: number;
+                rating: number;
                 bioEn: string;
                 bioAr: string;
                 specialties: string[];
-                experience: number;
-                hourlyRate: number;
                 availability: import("@prisma/client/runtime/library").JsonValue;
                 isVerified: boolean;
-                rating: number;
                 reviewCount: number;
             };
         } & {
-            status: import(".prisma/client").$Enums.SessionStatus;
             id: string;
-            userId: string;
+            status: import(".prisma/client").$Enums.SessionStatus;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
+            notes: string | null;
             coachId: string;
             slotId: string;
             zoomMeetingId: string | null;
             zoomJoinUrl: string | null;
-            notes: string | null;
             recordingUrl: string | null;
             startTime: Date;
         })[];
@@ -460,5 +481,98 @@ export declare class CoachingService {
     private canJoin;
     private updateCoachAvailabilityAfterSession;
     private getRecentSessions;
+    getConsultingSessions(userId: string, accountType: string): Promise<({
+        student: {
+            id: string;
+            profile: {
+                firstName: string;
+                lastName: string;
+                avatar: string;
+            };
+        };
+    } & {
+        id: string;
+        price: number;
+        duration: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        meetingMethod: string;
+        studentId: string;
+        consultantId: string;
+        scheduledAt: Date;
+        meetingLink: string | null;
+        topic: string | null;
+        notes: string | null;
+        paymentStatus: string;
+        paymentId: string | null;
+        proposedAt: Date | null;
+        proposedTime: Date | null;
+    })[] | ({
+        consultant: {
+            id: string;
+            profile: {
+                firstName: string;
+                lastName: string;
+                avatar: string;
+            };
+        };
+    } & {
+        id: string;
+        price: number;
+        duration: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        meetingMethod: string;
+        studentId: string;
+        consultantId: string;
+        scheduledAt: Date;
+        meetingLink: string | null;
+        topic: string | null;
+        notes: string | null;
+        paymentStatus: string;
+        paymentId: string | null;
+        proposedAt: Date | null;
+        proposedTime: Date | null;
+    })[]>;
+    confirmConsultingSession(sessionId: string, consultantId: string): Promise<{
+        id: string;
+        price: number;
+        duration: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        meetingMethod: string;
+        studentId: string;
+        consultantId: string;
+        scheduledAt: Date;
+        meetingLink: string | null;
+        topic: string | null;
+        notes: string | null;
+        paymentStatus: string;
+        paymentId: string | null;
+        proposedAt: Date | null;
+        proposedTime: Date | null;
+    }>;
+    cancelConsultingSession(sessionId: string, userId: string): Promise<{
+        id: string;
+        price: number;
+        duration: number;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        meetingMethod: string;
+        studentId: string;
+        consultantId: string;
+        scheduledAt: Date;
+        meetingLink: string | null;
+        topic: string | null;
+        notes: string | null;
+        paymentStatus: string;
+        paymentId: string | null;
+        proposedAt: Date | null;
+        proposedTime: Date | null;
+    }>;
     private getSessionsByMonth;
 }

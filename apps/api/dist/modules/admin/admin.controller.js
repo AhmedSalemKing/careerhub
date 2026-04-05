@@ -20,6 +20,8 @@ const admin_service_1 = require("./admin.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
+const public_decorator_1 = require("../auth/decorators/public.decorator");
+const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 let AdminController = class AdminController {
     constructor(adminService) {
         this.adminService = adminService;
@@ -341,6 +343,67 @@ let AdminController = class AdminController {
             success: true,
             data: { stats },
         };
+    }
+    // ── Course Approval ─────────────────────────────────────────────────────
+    async getPendingCourses() {
+        return this.adminService.getPendingCourses();
+    }
+    async postApproveCourse(id) {
+        const course = await this.adminService.approveCourse(id);
+        return { success: true, message: 'Course approved and published', data: { course } };
+    }
+    async postRejectCourse(id, body) {
+        const course = await this.adminService.rejectCourse(id, body.reason);
+        return { success: true, message: 'Course rejected', data: { course } };
+    }
+    // ── Approval system ────────────────────────────────────────────────────────
+    async getPendingApprovals() {
+        const users = await this.adminService.getPendingApprovals();
+        return { success: true, data: users };
+    }
+    async getDashboardStats() {
+        const stats = await this.adminService.getDashboardStats();
+        return { success: true, data: stats };
+    }
+    async clearSeedData() {
+        return this.adminService.clearSeedData();
+    }
+    async approveUser(userId, admin) {
+        const user = await this.adminService.approveUser(userId, admin.id);
+        return { success: true, message: 'User approved', data: { user } };
+    }
+    async rejectUser(userId, reason, admin) {
+        const user = await this.adminService.rejectUser(userId, reason, admin.id);
+        return { success: true, message: 'User rejected', data: { user } };
+    }
+    async banUser(userId, admin) {
+        const user = await this.adminService.banUser(userId, admin.id);
+        return { success: true, message: 'User banned', data: { user } };
+    }
+    async unbanUser(userId, admin) {
+        const user = await this.adminService.unbanUser(userId, admin.id);
+        return { success: true, message: 'User unbanned', data: { user } };
+    }
+    // ── Payments ───────────────────────────────────────────────────────────────
+    async getAllPayments() {
+        return this.adminService.getAllPayments();
+    }
+    // ── Audit Logs ─────────────────────────────────────────────────────────────
+    async getAuditLogs(limit) {
+        const logs = await this.adminService.getAuditLogs(limit ? parseInt(limit) : 50);
+        return { success: true, data: { logs } };
+    }
+    // ── Site Settings ─────────────────────────────────────────────────────────
+    async getSiteSettings() {
+        const settings = await this.adminService.getSiteSettings();
+        return { success: true, data: { settings } };
+    }
+    async getAllSessions() {
+        return this.adminService.getAllSessions();
+    }
+    async updateSiteSettings(body) {
+        const settings = await this.adminService.updateSiteSettings(body);
+        return { success: true, data: { settings } };
     }
 };
 exports.AdminController = AdminController;
@@ -754,6 +817,143 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getUsageStatistics", null);
+__decorate([
+    (0, common_1.Get)('pending-courses'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get courses pending review' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Pending courses retrieved successfully' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getPendingCourses", null);
+__decorate([
+    (0, common_1.Post)('courses/:id/approve'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Approve and publish a course' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Course ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "postApproveCourse", null);
+__decorate([
+    (0, common_1.Post)('courses/:id/reject'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Reject a course submission' }),
+    (0, swagger_1.ApiParam)({ name: 'id', description: 'Course ID' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "postRejectCourse", null);
+__decorate([
+    (0, common_1.Get)('pending-approvals'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get pending instructor/consultant approvals' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Pending approvals retrieved successfully' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getPendingApprovals", null);
+__decorate([
+    (0, common_1.Get)('stats'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get dashboard stats (safe)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getDashboardStats", null);
+__decorate([
+    (0, common_1.Delete)('clear-seed-data'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Clear seed/test data (ADMIN only)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "clearSeedData", null);
+__decorate([
+    (0, common_1.Post)('approve/:userId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Approve user account' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'User ID to approve' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "approveUser", null);
+__decorate([
+    (0, common_1.Post)('reject/:userId'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Reject user application' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'User ID to reject' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Body)('reason')),
+    __param(2, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "rejectUser", null);
+__decorate([
+    (0, common_1.Post)('users/:userId/ban'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Ban a user' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'User ID to ban' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "banUser", null);
+__decorate([
+    (0, common_1.Post)('users/:userId/unban'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Unban a user' }),
+    (0, swagger_1.ApiParam)({ name: 'userId', description: 'User ID to unban' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "unbanUser", null);
+__decorate([
+    (0, common_1.Get)('payments'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all payments with revenue total' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllPayments", null);
+__decorate([
+    (0, common_1.Get)('audit-logs'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get audit log entries' }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAuditLogs", null);
+__decorate([
+    (0, common_1.Get)('site-settings'),
+    (0, public_decorator_1.Public)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get site settings (public)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getSiteSettings", null);
+__decorate([
+    (0, common_1.Get)('sessions'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all consulting sessions (Admin)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAllSessions", null);
+__decorate([
+    (0, common_1.Patch)('site-settings'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Update site settings' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "updateSiteSettings", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, common_1.Controller)('admin'),

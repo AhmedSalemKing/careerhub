@@ -5,95 +5,111 @@ import {
   MaxLength,
   IsOptional,
   IsIn,
+  IsInt,
+  IsNumber,
+  Min,
+  Max,
   Matches,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
-  @ApiProperty({
-    description: 'User email address',
-    example: 'user@example.com',
-  })
+  @ApiProperty({ description: 'User email address', example: 'user@example.com' })
   @IsEmail({}, { message: 'Please provide a valid email address' })
   email: string;
 
-  @ApiProperty({
-    description: 'User password',
-    example: 'Password123!',
-    minLength: 8,
-    maxLength: 128,
-  })
-  @IsString({ message: 'Password must be a string' })
+  @ApiProperty({ description: 'User password', example: 'Password123!', minLength: 8 })
+  @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters long' })
-  @MaxLength(128, { message: 'Password cannot exceed 128 characters' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+  @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)',
   })
   password: string;
 
-  @ApiProperty({
-    description: 'User first name',
-    example: 'John',
-    minLength: 2,
-    maxLength: 50,
-  })
-  @IsString({ message: 'First name must be a string' })
-  @MinLength(2, { message: 'First name must be at least 2 characters long' })
-  @MaxLength(50, { message: 'First name cannot exceed 50 characters' })
-  @Matches(/^[a-zA-Z\u0600-\u06FF\s]+$/, {
-    message: 'First name can only contain letters and spaces',
-  })
+  @ApiProperty({ description: 'User first name', example: 'John' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   firstName: string;
 
-  @ApiProperty({
-    description: 'User last name',
-    example: 'Doe',
-    minLength: 2,
-    maxLength: 50,
-  })
-  @IsString({ message: 'Last name must be a string' })
-  @MinLength(2, { message: 'Last name must be at least 2 characters long' })
-  @MaxLength(50, { message: 'Last name cannot exceed 50 characters' })
-  @Matches(/^[a-zA-Z\u0600-\u06FF\s]+$/, {
-    message: 'Last name can only contain letters and spaces',
-  })
+  @ApiProperty({ description: 'User last name', example: 'Doe' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   lastName: string;
 
-  @ApiPropertyOptional({
-    description: 'User phone number',
-    example: '+201234567890',
-  })
+  @ApiPropertyOptional({ description: 'User phone number', example: '+201234567890' })
   @IsOptional()
-  @IsString({ message: 'Phone number must be a string' })
-  @Matches(/^\+?[1-9]\d{1,14}$/, {
-    message: 'Please provide a valid phone number with country code',
-  })
+  @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({
-    description: 'User country',
-    example: 'Egypt',
-  })
+  @ApiPropertyOptional({ description: 'User country', example: 'Egypt' })
   @IsOptional()
-  @IsString({ message: 'Country must be a string' })
-  @MaxLength(50, { message: 'Country cannot exceed 50 characters' })
+  @IsString()
+  @MaxLength(50)
   country?: string;
 
-  @ApiPropertyOptional({
-    description: 'User city',
-    example: 'Cairo',
-  })
+  @ApiPropertyOptional({ description: 'User city', example: 'Cairo' })
   @IsOptional()
-  @IsString({ message: 'City must be a string' })
-  @MaxLength(50, { message: 'City cannot exceed 50 characters' })
+  @IsString()
+  @MaxLength(50)
   city?: string;
 
+  @ApiPropertyOptional({ description: 'Preferred language', example: 'en', enum: ['en', 'ar'] })
+  @IsOptional()
+  @IsIn(['en', 'ar'])
+  language?: string;
+
   @ApiPropertyOptional({
-    description: 'User preferred language',
-    example: 'en',
-    enum: ['en', 'ar'],
+    description: 'Account type',
+    example: 'STUDENT',
+    enum: ['STUDENT', 'INSTRUCTOR', 'CONSULTANT'],
   })
   @IsOptional()
-  @IsIn(['en', 'ar'], { message: 'Language must be either "en" or "ar"' })
-  language?: string;
+  @IsIn(['STUDENT', 'INSTRUCTOR', 'CONSULTANT'])
+  accountType?: string;
+
+  @ApiPropertyOptional({ description: 'CV URL for instructors/consultants' })
+  @IsOptional()
+  @IsString()
+  cvUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Professional bio' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  bio?: string;
+
+  @ApiPropertyOptional({ description: 'Years of experience' })
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== '' ? parseInt(String(value), 10) : undefined))
+  @IsInt()
+  @Min(0)
+  @Max(50)
+  experience?: number;
+
+  @ApiPropertyOptional({ description: 'Area of speciality' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  speciality?: string;
+
+  @ApiPropertyOptional({ description: 'LinkedIn profile URL' })
+  @IsOptional()
+  @IsString()
+  linkedinUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Hourly rate in SAR (for consultants)' })
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined && value !== '' ? parseFloat(String(value)) : undefined))
+  @IsNumber()
+  @Min(0)
+  hourlyRate?: number;
+
+  @ApiPropertyOptional({ description: 'Preferred meeting method', enum: ['ZOOM', 'GOOGLE_MEET', 'BOTH'] })
+  @IsOptional()
+  @IsIn(['ZOOM', 'GOOGLE_MEET', 'BOTH'])
+  meetingMethod?: string;
 }

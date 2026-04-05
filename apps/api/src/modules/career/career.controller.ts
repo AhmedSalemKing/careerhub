@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CareerService } from './career.service';
 import { AssessmentService } from './assessment.service';
+import { AiAssessmentService } from './ai-assessment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -22,7 +23,32 @@ export class CareerController {
   constructor(
     private readonly careerService: CareerService,
     private readonly assessmentService: AssessmentService,
+    private readonly aiAssessmentService: AiAssessmentService,
   ) {}
+
+  @Post('my-path')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Save user selected career path' })
+  @ApiResponse({ status: 200, description: 'Career path saved successfully' })
+  async saveMyPath(
+    @CurrentUser() user: User,
+    @Body() body: { pathId: string; pathTitle: string; pathCategory: string; aiRecommended?: boolean },
+  ) {
+    const path = await this.careerService.saveUserCareerPath(user.id, body);
+    return { success: true, data: { path } };
+  }
+
+  @Get('my-path')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user selected career path' })
+  @ApiResponse({ status: 200, description: 'Career path retrieved successfully' })
+  async getMyPath(@CurrentUser() user: User) {
+    const path = await this.careerService.getUserCareerPath(user.id);
+    return { success: true, data: { path } };
+  }
 
   @Get('paths')
   @ApiOperation({ summary: 'Get all career paths' })
@@ -51,6 +77,53 @@ export class CareerController {
       data: { careerPath },
     };
   }
+
+  // ── AI Assessment endpoints ──────────────────────────────────────────────────
+
+  @Get('assessment/questions')
+  @ApiOperation({ summary: 'Get AI assessment questions' })
+  @ApiResponse({ status: 200, description: 'Questions retrieved successfully' })
+  async getAiQuestions() {
+    const questions = this.aiAssessmentService.getQuestions();
+    return { success: true, data: { questions } };
+  }
+
+  @Post('assessment/session/start')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Start AI assessment session' })
+  @ApiResponse({ status: 201, description: 'Session started successfully' })
+  async startAiSession(@CurrentUser() user: User) {
+    const result = await this.aiAssessmentService.startSession(user.id);
+    return { success: true, data: result };
+  }
+
+  @Post('assessment/session/:sessionId/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Complete AI assessment session' })
+  @ApiResponse({ status: 200, description: 'Session completed with AI report' })
+  @ApiParam({ name: 'sessionId', description: 'Assessment session ID' })
+  async completeAiSession(
+    @CurrentUser() user: User,
+    @Param('sessionId') sessionId: string,
+    @Body('answers') answers: { questionId: number; answer: string }[],
+  ) {
+    const result = await this.aiAssessmentService.completeSession(user.id, sessionId, answers);
+    return { success: true, data: result };
+  }
+
+  @Get('assessment/session/history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get AI assessment session history' })
+  @ApiResponse({ status: 200, description: 'Session history retrieved' })
+  async getAiSessionHistory(@CurrentUser() user: User) {
+    const sessions = await this.aiAssessmentService.getSessionHistory(user.id);
+    return { success: true, data: { sessions } };
+  }
+
+  // ── Legacy Assessment endpoints ───────────────────────────────────────────────
 
   @Post('assessment/start')
   @UseGuards(JwtAuthGuard)

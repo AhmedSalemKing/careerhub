@@ -130,15 +130,66 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             });
             // Fulfill the purchase
             await this.fulfillPurchase(userId, payment.itemType, payment.itemId, payment.id);
+            // Create enrollment for course purchases
+            let enrollment = null;
+            if (payment.itemType === 'COURSE' && payment.itemId) {
+                try {
+                    enrollment = await this.createEnrollmentAfterPayment(userId, payment.itemId, payment.id);
+                }
+                catch (err) {
+                    this.logger.error('Enrollment creation failed after payment confirmation', {
+                        paymentId: payment.id,
+                        courseId: payment.itemId,
+                        reason: err.message,
+                    });
+                    // Re-throw so the caller knows — payment record is already persisted
+                    throw err;
+                }
+            }
             this.logger.log(`Payment confirmed: ${paymentIntentId}`);
             return {
-                payment: updatedPayment,
-                status: 'completed',
+                payment: {
+                    id: updatedPayment.id,
+                    status: 'COMPLETED',
+                    amount: updatedPayment.amount,
+                    currency: updatedPayment.currency,
+                },
+                enrollment: enrollment ? {
+                    id: enrollment.id,
+                    courseId: enrollment.courseId,
+                    status: enrollment.status,
+                    progress: enrollment.progress,
+                } : null,
+                message: 'Payment confirmed. You are now enrolled in the course.',
             };
         }
         else {
-            throw new common_1.BadRequestException('Payment confirmation failed');
+            throw new common_1.BadRequestException('Payment could not be confirmed. Please check your payment details.');
         }
+    }
+    async createEnrollmentAfterPayment(userId, courseId, paymentId) {
+        const enrollment = await this.prisma.enrollment.upsert({
+            where: { userId_courseId: { userId, courseId } },
+            create: {
+                userId,
+                courseId,
+                status: 'ACTIVE',
+                progress: 0,
+                enrolledAt: new Date(),
+            },
+            update: { status: 'ACTIVE' },
+        });
+        // Notify the user
+        await this.notificationsService.createNotification({
+            userId,
+            type: 'PAYMENT_CONFIRMED',
+            titleEn: 'Course Enrollment Confirmed',
+            titleAr: 'تم التسجيل في الدورة',
+            contentEn: 'Your payment was successful and you are now enrolled.',
+            contentAr: 'تمت عملية الدفع بنجاح وتم تسجيلك في الدورة.',
+            data: { courseId, paymentId },
+        });
+        return enrollment;
     }
     async purchaseCourse(userId, courseId, paymentMethodId, couponCode) {
         const course = await this.prisma.course.findUnique({

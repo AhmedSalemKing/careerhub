@@ -18,8 +18,8 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
       ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_REFRESH_SECRET') || 'dev-refresh-secret',
-      issuer: 'careerhub.com',
-      audience: 'careerhub-users',
+      issuer: 'deveway.com',
+      audience: 'deveway-users',
     });
   }
 

@@ -14,6 +14,34 @@ export class CareerService {
 
   constructor(private prisma: PrismaService) { }
 
+  async saveUserCareerPath(userId: string, data: {
+    pathId: string;
+    pathTitle: string;
+    pathCategory: string;
+    aiRecommended?: boolean;
+  }) {
+    return this.prisma.userCareerPath.upsert({
+      where: { userId },
+      create: {
+        userId,
+        pathId: data.pathId,
+        pathTitle: data.pathTitle,
+        pathCategory: data.pathCategory,
+        aiRecommended: data.aiRecommended ?? false,
+      },
+      update: {
+        pathId: data.pathId,
+        pathTitle: data.pathTitle,
+        pathCategory: data.pathCategory,
+        aiRecommended: data.aiRecommended ?? false,
+      },
+    });
+  }
+
+  async getUserCareerPath(userId: string) {
+    return this.prisma.userCareerPath.findUnique({ where: { userId } });
+  }
+
   async getCareerPaths(language: string = 'en') {
     const cacheKey = `career_paths:${language}`;
     const cached = this.cache.get(cacheKey);

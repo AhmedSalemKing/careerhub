@@ -25,8 +25,8 @@ let JwtRefreshStrategy = class JwtRefreshStrategy extends (0, passport_1.Passpor
             ]),
             ignoreExpiration: false,
             secretOrKey: configService.get('JWT_REFRESH_SECRET') || 'dev-refresh-secret',
-            issuer: 'careerhub.com',
-            audience: 'careerhub-users',
+            issuer: 'deveway.com',
+            audience: 'deveway-users',
         });
         this.configService = configService;
         this.prisma = prisma;

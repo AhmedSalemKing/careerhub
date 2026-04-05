@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(node -e \":*)",
+      "Bash(npm run:*)",
+      "Bash(tasklist)",
+      "Bash(netstat -ano)",
+      "Bash(curl:*)",
+      "Bash(ls D:/careerhub/apps/web/src/app/[locale]/admin/)",
+      "Bash(ls D:/careerhub/apps/web/src/app/[locale]/admin/approvals/)",
+      "Bash(ls D:/careerhub/apps/web/src/app/[locale]/admin/site-settings/)",
+      "Bash(node -e \"const {PrismaClient}=require\\(''@prisma/client''\\);const p=new PrismaClient\\(\\);p.user.findMany\\({select:{email:true,accountType:true,status:true,role:true}}\\).then\\(u=>{console.log\\(''Users:'',JSON.stringify\\(u,null,2\\)\\)}\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)\")",
+      "Bash(node diag.js)",
+      "Bash(grep:*)",
+      "Bash(npx nest:*)",
+      "Bash(ls D:/careerhub/apps/web/src/app/[locale]/admin/revenue/)",
+      "Bash(node -e \"const s=require\\(''stripe''\\); console.log\\(''Stripe version:'', require\\(''./node_modules/stripe/package.json''\\).version\\)\")",
+      "Bash(node -e \"require\\(''dotenv''\\).config\\(\\); console.log\\(''GROQ:'', process.env.GROQ_API_KEY?.slice\\(0,20\\)\\)\")",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/Ram/AppData/Local/Temp/claude/D--careerhub/c11a3711-7f4f-4d0e-b727-1aeb1f4a98ba/tasks/**)",
+      "Bash(done)",
+      "Bash(Copy-Item \"D:\\\\careerhub\\\\apps\\\\download \\(2\\).png\" \"D:\\\\careerhub\\\\apps\\\\web\\\\public\\\\logo.png\" -Force)",
+      "Bash(Copy-Item \"D:\\\\careerhub\\\\apps\\\\download \\(1\\).png\" \"D:\\\\careerhub\\\\apps\\\\web\\\\public\\\\logo-icon.png\" -Force)",
+      "Bash(Copy-Item \"D:\\\\careerhub\\\\apps\\\\download \\(2\\).png\" \"D:\\\\careerhub\\\\apps\\\\learn\\\\public\\\\logo.png\" -Force)",
+      "Bash(Copy-Item \"D:\\\\careerhub\\\\apps\\\\download \\(1\\).png\" \"D:\\\\careerhub\\\\apps\\\\learn\\\\public\\\\logo-icon.png\" -Force)",
+      "Bash(Test-Path \"D:\\\\careerhub\\\\apps\\\\web\\\\public\\\\logo.png\")",
+      "Bash(node:*)",
+      "Read(//c/Users/Ram/**)",
+      "Bash(where ngrok:*)",
+      "Bash(ngrok version:*)",
+      "Bash(find D:/careerhub/.env* -type f)",
+      "Bash(npx kill-port:*)"
+    ]
+  }
+}

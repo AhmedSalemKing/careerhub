@@ -1,29 +1,34 @@
 import type { Metadata } from 'next'
+import { Toaster } from 'sonner'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
-import { Cairo, Poppins } from 'next/font/google'
-import { ThemeProvider } from 'next-themes'
+import localFont from 'next/font/local'
 import './globals.css'
-import { Navbar } from './components/Navbar'
-import { Footer } from './components/Footer'
 import { Providers } from './components/Providers'
+import { LoadingProvider } from './components/PageLoader'
 import type { Locale } from '../i18n'
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
-})
-
-const cairo = Cairo({
-  subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-cairo',
+const madinetAlBat = localFont({
+  src: [
+    {
+      path: '../assets/fonts/MadinetAl-Bat-v4.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../assets/fonts/MadinetAl-Bat-v2.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-madinet',
+  display: 'swap',
+  preload: true,
 })
 
 export const metadata: Metadata = {
-  title: 'CareerHub',
-  description: 'CareerHub platform',
+  title: 'DeveWay — منصة التطوير المهني',
+  description: 'DeveWay — منصة احترافية للتطوير المهني والكورسات والاستشارات المهنية',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,21 +37,62 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dir = locale === 'ar' ? 'rtl' : 'ltr'
 
   return (
-    <html lang={locale} dir={dir} className={`${poppins.variable} ${cairo.variable}`}>
+    <html
+      lang={locale}
+      dir={dir}
+      className={`${madinetAlBat.variable} no-transition`}
+      suppressHydrationWarning
+    >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  var isDark = theme === 'dark' || (!theme && prefersDark);
+
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+
+                  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                } catch(e) {}
+
+                window.addEventListener('load', function() {
+                  requestAnimationFrame(function() {
+                    document.documentElement.classList.remove('no-transition');
+                  });
+                });
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <NextIntlClientProvider messages={messages}>
-            <Providers locale={locale}>
-              <div className="flex min-h-screen flex-col">
-                <Navbar />
-                <main className="flex-1">{children}</main>
-                <Footer />
-              </div>
-            </Providers>
-          </NextIntlClientProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider messages={messages}>
+          <Providers locale={locale}>
+            <LoadingProvider>
+              {children}
+            </LoadingProvider>
+          </Providers>
+        </NextIntlClientProvider>
+        <Toaster
+          position={dir === 'rtl' ? 'top-left' : 'top-right'}
+          expand={false}
+          richColors
+          toastOptions={{
+            style: {
+              fontFamily: "var(--font-madinet), 'DM Sans', 'Segoe UI', Arial, sans-serif",
+              direction: dir,
+            },
+            duration: 4000,
+          }}
+        />
       </body>
     </html>
   )
 }
-

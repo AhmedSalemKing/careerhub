@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   Query,
+  Request,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -21,6 +22,16 @@ import { User } from '@prisma/client';
 @Controller('certificates')
 export class CertificatesController {
   constructor(private readonly certificatesService: CertificatesService) {}
+
+  @Post('generate/:courseId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate certificate PDF for completed course' })
+  async generateCert(@Param('courseId') courseId: string, @Request() req: any) {
+    const userId = req.user.sub || req.user.id;
+    const pdfUrl = await this.certificatesService.generateLocalCert(userId, courseId);
+    return { success: true, data: { pdfUrl } };
+  }
 
   @Get('my-certificates')
   @UseGuards(JwtAuthGuard)

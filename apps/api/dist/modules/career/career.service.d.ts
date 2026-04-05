@@ -2,24 +2,35 @@ import { PrismaService } from '../../prisma/prisma.service';
 export declare class CareerService {
     private prisma;
     private readonly logger;
+    private readonly cacheTtlMs;
+    private readonly cache;
     constructor(prisma: PrismaService);
-    getCareerPaths(language?: string): Promise<{
+    saveUserCareerPath(userId: string, data: {
+        pathId: string;
+        pathTitle: string;
+        pathCategory: string;
+        aiRecommended?: boolean;
+    }): Promise<{
         id: string;
-        slug: string;
-        title: string;
-        description: string;
-        skills: any;
-        salaryRange: any;
-        jobTitles: any;
-        demandLevel: string;
-        icon: string;
-        color: string;
-        stats: {
-            totalCourses: any;
-            totalAssessments: any;
-            popularCourses: any;
-        };
-    }[]>;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        pathId: string;
+        pathTitle: string;
+        pathCategory: string;
+        aiRecommended: boolean;
+    }>;
+    getUserCareerPath(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        pathId: string;
+        pathTitle: string;
+        pathCategory: string;
+        aiRecommended: boolean;
+    }>;
+    getCareerPaths(language?: string): Promise<any>;
     getCareerPathBySlug(slug: string, language?: string): Promise<{
         id: string;
         slug: string;

@@ -817,5 +817,22 @@ export class UploadService {
     const folderPath = folder || 'general';
     return `uploads/${userId}/${year}/${month}/${day}/${folderPath}/${fileName}`;
   }
+
+  // Public CV upload — saves to disk when S3 is not configured
+  async uploadCV(file: Express.Multer.File): Promise<{ url: string; fileName: string; size: number }> {
+    const { writeFile, mkdir } = await import('fs/promises');
+    const { join } = await import('path');
+
+    const safeName = `cv_${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+    const uploadDir = join(process.cwd(), 'uploads', 'cvs');
+    await mkdir(uploadDir, { recursive: true });
+    await writeFile(join(uploadDir, safeName), file.buffer);
+
+    return {
+      url: `/uploads/cvs/${safeName}`,
+      fileName: file.originalname,
+      size: file.size,
+    };
+  }
 }
 

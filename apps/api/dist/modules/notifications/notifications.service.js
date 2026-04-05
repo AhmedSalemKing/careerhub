@@ -8,23 +8,31 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
+const bull_1 = require("@nestjs/bull");
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const email_service_1 = require("./email.service");
 const push_service_1 = require("./push.service");
 const sms_service_1 = require("./sms.service");
 let NotificationsService = NotificationsService_1 = class NotificationsService {
-    constructor(prisma, configService, emailService, pushService, smsService) {
+    constructor(prisma, configService, emailService, pushService, smsService, emailQueue) {
         this.prisma = prisma;
         this.configService = configService;
         this.emailService = emailService;
         this.pushService = pushService;
         this.smsService = smsService;
+        this.emailQueue = emailQueue;
         this.logger = new common_1.Logger(NotificationsService_1.name);
+    }
+    async queueEmail(job) {
+        await this.emailQueue.add(job);
     }
     async createNotification(notificationData) {
         const { userId, titleEn, titleAr, contentEn, contentAr, type, channels = ['PUSH'], data, sendToAll = false, } = notificationData;
@@ -258,8 +266,8 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.logger.log(`Device token unregistered for user: ${userId}`);
     }
     async sendTestEmail(emailData) {
-        const subject = emailData.subject || 'Test Email from CareerHub';
-        const message = emailData.message || 'This is a test email from CareerHub notification system.';
+        const subject = emailData.subject || 'Test Email from DeveWay';
+        const message = emailData.message || 'This is a test email from DeveWay notification system.';
         await this.emailService.sendEmail(emailData.to, subject, `<p>${message}</p>`);
         return { sent: true, to: emailData.to, subject };
     }
@@ -502,9 +510,10 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
+    __param(5, (0, bull_1.InjectQueue)('email')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         config_1.ConfigService,
         email_service_1.EmailService,
         push_service_1.PushService,
-        sms_service_1.SmsService])
+        sms_service_1.SmsService, Object])
 ], NotificationsService);

@@ -5,7 +5,7 @@ export const getRedisConfig = (configService: ConfigService) => ({
   port: configService.get<number>('REDIS_PORT') || 6379,
   password: configService.get<string>('REDIS_PASSWORD'),
   db: configService.get<number>('REDIS_DB') || 0,
-  keyPrefix: 'careerhub:',
+  keyPrefix: 'deveway:',
   retryDelayOnFailover: 100,
   maxRetriesPerRequest: 3,
   lazyConnect: true,

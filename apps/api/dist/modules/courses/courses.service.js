@@ -8,14 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var CoursesService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CoursesService = void 0;
 const common_1 = require("@nestjs/common");
+const bull_1 = require("@nestjs/bull");
 const prisma_service_1 = require("../../prisma/prisma.service");
 let CoursesService = CoursesService_1 = class CoursesService {
-    constructor(prisma) {
+    constructor(prisma, certificateQueue) {
         this.prisma = prisma;
+        this.certificateQueue = certificateQueue;
         this.logger = new common_1.Logger(CoursesService_1.name);
         this.cacheTtlMs = 30_000;
         this.cache = new Map();
@@ -236,6 +241,38 @@ let CoursesService = CoursesService_1 = class CoursesService {
             },
         };
     }
+    async getCourseById(id) {
+        const course = await this.prisma.course.findUnique({
+            where: { id },
+            include: {
+                instructor: {
+                    select: {
+                        id: true,
+                        profile: {
+                            select: { firstName: true, lastName: true, avatar: true },
+                        },
+                    },
+                },
+                category: true,
+                careerPath: true,
+                sections: {
+                    include: {
+                        lessons: {
+                            orderBy: { order: 'asc' },
+                        },
+                    },
+                    orderBy: { order: 'asc' },
+                },
+                _count: {
+                    select: { enrollments: true },
+                },
+            },
+        });
+        if (!course) {
+            throw new common_1.NotFoundException('Course not found');
+        }
+        return course;
+    }
     async getCourseBySlug(slug, language = 'en') {
         const course = await this.prisma.course.findUnique({
             where: { slug },
@@ -271,19 +308,11 @@ let CoursesService = CoursesService_1 = class CoursesService {
                 title: language === 'ar' ? lesson.titleAr : lesson.titleEn,
                 description: language === 'ar' ? lesson.descriptionAr : lesson.descriptionEn,
                 videoDuration: lesson.videoDuration,
-                sortOrder: lesson.sortOrder,
+                sortOrder: lesson.order,
                 isPublished: lesson.isPublished,
-                hasQuiz: lesson._count.quizQuestions > 0,
+                hasQuiz: false,
             })),
-            quizzes: module.quizzes.map(quiz => ({
-                id: quiz.id,
-                title: language === 'ar' ? quiz.titleAr : quiz.titleEn,
-                description: language === 'ar' ? quiz.descriptionAr : quiz.descriptionEn,
-                passingScore: quiz.passingScore,
-                timeLimit: quiz.timeLimit,
-                maxAttempts: quiz.maxAttempts,
-                questionsCount: quiz._count.questions,
-            })),
+            quizzes: [],
         }));
         return {
             id: course.id,
@@ -297,19 +326,19 @@ let CoursesService = CoursesService_1 = class CoursesService {
             level: course.level,
             isFeatured: course.isFeatured,
             status: course.status,
-            careerPath: {
+            careerPath: course.careerPath ? {
                 id: course.careerPath.id,
                 slug: course.careerPath.slug,
                 title: language === 'ar' ? course.careerPath.titleAr : course.careerPath.titleEn,
                 description: language === 'ar' ? course.careerPath.descriptionAr : course.careerPath.descriptionEn,
                 color: course.careerPath.color,
                 icon: course.careerPath.icon,
-            },
+            } : null,
             modules: transformedModules,
             stats: {
                 modulesCount: course.modules.length,
                 lessonsCount: course.modules.reduce((sum, module) => sum + module.lessons.length, 0),
-                quizzesCount: course.modules.reduce((sum, module) => sum + module.quizzes.length, 0),
+                quizzesCount: 0,
                 enrollments: course._count.enrollments,
                 certificates: course._count.certificates,
                 rating: this.calculateMockRating(course._count.certificates, course._count.enrollments),
@@ -525,14 +554,40 @@ let CoursesService = CoursesService_1 = class CoursesService {
     }
     // Admin methods
     async createCourse(createCourseDto) {
+        this.logger.log(`[CreateCourse] DTO keys: ${Object.keys(createCourseDto).join(', ')}`);
+        const rawSlug = this.generateSlug(createCourseDto.titleEn || createCourseDto.title || '');
+        const slug = rawSlug ? `${rawSlug}-${Date.now()}` : `course-${Date.now()}`;
+        const courseData = {
+            slug,
+            titleEn: createCourseDto.titleEn || createCourseDto.title || 'Untitled',
+            titleAr: createCourseDto.titleAr,
+            descriptionEn: createCourseDto.descriptionEn || createCourseDto.description,
+            descriptionAr: createCourseDto.descriptionAr,
+            price: parseFloat(createCourseDto.price) || 0,
+            level: createCourseDto.level || 'BEGINNER',
+            status: createCourseDto.status || 'DRAFT',
+            thumbnail: createCourseDto.thumbnail || null,
+            previewVideo: createCourseDto.previewVideo || null,
+        };
+        if (createCourseDto.instructorId)
+            courseData.instructorId = createCourseDto.instructorId;
+        if (createCourseDto.careerPathId)
+            courseData.careerPathId = createCourseDto.careerPathId;
+        if (createCourseDto.categoryId && createCourseDto.categoryId !== '')
+            courseData.categoryId = createCourseDto.categoryId;
+        if (Array.isArray(createCourseDto.sections) && createCourseDto.sections.length > 0) {
+            courseData.sections = {
+                create: createCourseDto.sections.map((s, i) => ({
+                    title: s.title,
+                    order: i,
+                })),
+            };
+        }
         const course = await this.prisma.course.create({
-            data: {
-                ...createCourseDto,
-                slug: this.generateSlug(createCourseDto.titleEn),
-                status: 'DRAFT',
-            },
+            data: courseData,
+            include: { sections: true, category: true },
         });
-        this.logger.log(`Course created: ${course.titleEn}`);
+        this.logger.log(`[CreateCourse] Created: ${course.id} (${course.titleEn})`);
         return course;
     }
     async updateCourse(id, updateCourseDto) {
@@ -669,6 +724,330 @@ let CoursesService = CoursesService_1 = class CoursesService {
             revenue: totalEnrollments * course.price,
         };
     }
+    // ─────────────────────────────────────────────────────────────
+    // Instructor methods
+    // ─────────────────────────────────────────────────────────────
+    async getInstructorCourses(instructorId) {
+        const courses = await this.prisma.course.findMany({
+            where: { instructorId },
+            include: {
+                _count: { select: { enrollments: true, sections: true } },
+                sections: {
+                    include: { _count: { select: { lessons: true } } },
+                    orderBy: { order: 'asc' },
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        return { success: true, data: courses };
+    }
+    async createInstructorCourse(instructorId, dto) {
+        this.logger.log(`[Courses] Creating course for instructor: ${instructorId}`);
+        this.logger.log(`[Courses] DTO: ${JSON.stringify({ ...dto, thumbnail: dto.thumbnail ? '(set)' : null, previewVideo: dto.previewVideo ? '(set)' : null })}`);
+        try {
+            const rawSlug = this.generateSlug(dto.title || '');
+            const slug = rawSlug ? `${rawSlug}-${Date.now()}` : `course-${Date.now()}`;
+            // Instructors can only save as DRAFT or PENDING_REVIEW — never directly PUBLISHED
+            let courseStatus = dto.status || 'DRAFT';
+            if (courseStatus === 'PUBLISHED' || courseStatus === 'PENDING_REVIEW') {
+                courseStatus = 'PENDING_REVIEW';
+            }
+            const courseData = {
+                slug,
+                titleEn: dto.title || dto.titleAr || 'بدون عنوان',
+                titleAr: dto.titleAr || dto.title,
+                descriptionEn: dto.description,
+                descriptionAr: dto.descriptionAr,
+                price: parseFloat(dto.price) || 0,
+                level: dto.level || 'BEGINNER',
+                status: courseStatus,
+                thumbnail: dto.thumbnail || null,
+                previewVideo: dto.previewVideo || null,
+                instructorId,
+            };
+            if (dto.careerPathId && dto.careerPathId !== '') {
+                courseData.careerPathId = dto.careerPathId;
+            }
+            if (dto.sections?.length) {
+                courseData.sections = {
+                    create: dto.sections.map((s, i) => ({
+                        title: s.title,
+                        order: i,
+                    })),
+                };
+            }
+            const course = await this.prisma.course.create({
+                data: courseData,
+                include: { sections: true, category: true },
+            });
+            this.logger.log(`[Courses] Course created: ${course.id} (${course.titleEn}) status: ${course.status}`);
+            // Notify instructor when course is submitted for review
+            if (courseStatus === 'PENDING_REVIEW') {
+                await this.prisma.notification.create({
+                    data: {
+                        userId: instructorId,
+                        type: 'SYSTEM_ANNOUNCEMENT',
+                        titleEn: 'Course Submission Received',
+                        titleAr: 'تم استلام طلب نشر الكورس',
+                        contentEn: `Your course "${course.titleEn}" has been received and will be reviewed by the DeveWay team within 24-48 hours.`,
+                        contentAr: `تم استلام كورسك "${course.titleEn}" وسيتم مراجعته من قبل فريق DeveWay. سنخبرك بالنتيجة خلال 24-48 ساعة.`,
+                        isRead: false,
+                    }
+                }).catch(e => this.logger.warn(`[Courses] Notification skip: ${e.message}`));
+            }
+            return { success: true, data: course };
+        }
+        catch (error) {
+            this.logger.error(`[Courses] Create error: ${error.message}`);
+            this.logger.error(`[Courses] Stack: ${error.stack}`);
+            throw error;
+        }
+    }
+    async updateInstructorCourse(id, instructorId, dto) {
+        const course = await this.prisma.course.findFirst({ where: { id, instructorId } });
+        if (!course)
+            throw new common_1.NotFoundException('Course not found or not yours');
+        const updated = await this.prisma.course.update({
+            where: { id },
+            data: {
+                ...(dto.title && { titleEn: dto.title }),
+                ...(dto.titleAr !== undefined && { titleAr: dto.titleAr }),
+                ...(dto.description !== undefined && { descriptionEn: dto.description }),
+                ...(dto.descriptionAr !== undefined && { descriptionAr: dto.descriptionAr }),
+                ...(dto.price !== undefined && { price: dto.price }),
+                ...(dto.level && { level: dto.level }),
+                ...(dto.status && { status: dto.status }),
+                ...(dto.thumbnail !== undefined && { thumbnail: dto.thumbnail }),
+                ...(dto.previewVideo !== undefined && { previewVideo: dto.previewVideo }),
+            },
+        });
+        return { success: true, data: updated };
+    }
+    async addSection(courseId, instructorId, title) {
+        const course = await this.prisma.course.findFirst({ where: { id: courseId, instructorId } });
+        if (!course)
+            throw new common_1.NotFoundException('Course not found');
+        const count = await this.prisma.section.count({ where: { courseId } });
+        const section = await this.prisma.section.create({
+            data: { title, courseId, order: count },
+        });
+        return { success: true, data: section };
+    }
+    async addLesson(sectionId, dto) {
+        const count = await this.prisma.lesson.count({ where: { sectionId } });
+        const lesson = await this.prisma.lesson.create({
+            data: {
+                title: dto.title,
+                description: dto.description,
+                type: dto.type || 'VIDEO',
+                videoUrl: dto.videoUrl,
+                videoDuration: dto.duration,
+                fileUrl: dto.fileUrl,
+                fileName: dto.fileName,
+                fileSize: dto.fileSize,
+                isFree: dto.isFree || false,
+                order: dto.order ?? count,
+                sectionId,
+            },
+        });
+        return { success: true, data: lesson };
+    }
+    async completeCheck(userId, courseId) {
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } },
+        }).catch(() => null);
+        if (!enrollment)
+            return { completed: false };
+        if (enrollment.progress >= 100) {
+            const cert = await this.prisma.certificate.findUnique({
+                where: { userId_courseId: { userId, courseId } },
+            }).catch(() => null);
+            return { completed: true, certificateUrl: cert?.certificateUrl ?? null };
+        }
+        return { completed: false, progress: enrollment.progress };
+    }
+    async globalSearch(q) {
+        if (!q || q.length < 2)
+            return { courses: [], consultants: [] };
+        const [courses, consultants] = await Promise.all([
+            this.prisma.course.findMany({
+                where: {
+                    status: 'PUBLISHED',
+                    OR: [
+                        { titleEn: { contains: q, mode: 'insensitive' } },
+                        { titleAr: { contains: q, mode: 'insensitive' } },
+                        { descriptionEn: { contains: q, mode: 'insensitive' } },
+                    ],
+                },
+                select: { id: true, titleEn: true, titleAr: true, thumbnail: true, price: true },
+                take: 5,
+            }),
+            this.prisma.user.findMany({
+                where: {
+                    accountType: 'CONSULTANT',
+                    status: 'ACTIVE',
+                    OR: [
+                        { speciality: { contains: q, mode: 'insensitive' } },
+                        { profile: { firstName: { contains: q, mode: 'insensitive' } } },
+                        { profile: { lastName: { contains: q, mode: 'insensitive' } } },
+                    ],
+                },
+                select: { id: true, speciality: true, profile: { select: { firstName: true, lastName: true } } },
+                take: 5,
+            }),
+        ]);
+        return { courses: courses.map(c => ({ ...c, title: c.titleEn })), consultants };
+    }
+    async getInstructorCourseDetails(id, instructorId) {
+        const course = await this.prisma.course.findFirst({
+            where: { id, instructorId },
+            include: {
+                sections: {
+                    include: { lessons: { orderBy: { order: 'asc' } } },
+                    orderBy: { order: 'asc' },
+                },
+                enrollments: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                email: true,
+                                profile: { select: { firstName: true, lastName: true, avatar: true } },
+                            },
+                        },
+                    },
+                },
+                _count: { select: { enrollments: true } },
+            },
+        });
+        if (!course)
+            throw new common_1.NotFoundException('Course not found');
+        return { success: true, data: course };
+    }
+    async getInstructorStats(instructorId) {
+        const [totalCourses, totalStudents] = await Promise.all([
+            this.prisma.course.count({ where: { instructorId } }),
+            this.prisma.enrollment.count({ where: { course: { instructorId } } }),
+        ]);
+        return { success: true, data: { totalCourses, totalStudents, revenue: 0 } };
+    }
+    async updateSection(sectionId, instructorId, title) {
+        const section = await this.prisma.section.findFirst({
+            where: { id: sectionId, course: { instructorId } },
+        });
+        if (!section)
+            throw new common_1.NotFoundException('Section not found');
+        const updated = await this.prisma.section.update({
+            where: { id: sectionId },
+            data: { title },
+        });
+        return { success: true, data: updated };
+    }
+    async markLessonComplete(userId, courseId, lessonId) {
+        // Verify enrollment
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } },
+        });
+        if (!enrollment) {
+            throw new common_1.ForbiddenException('You must be enrolled in this course to complete lessons.');
+        }
+        // Upsert LessonProgress record
+        const lessonProgress = await this.prisma.lessonProgress.upsert({
+            where: { userId_lessonId: { userId, lessonId } },
+            create: {
+                userId,
+                lessonId,
+                status: 'COMPLETED',
+                completedAt: new Date(),
+            },
+            update: {
+                status: 'COMPLETED',
+                completedAt: new Date(),
+            },
+        });
+        // Count completed lessons and total published lessons for this course in parallel
+        const [completedCount, totalCount] = await Promise.all([
+            this.prisma.lessonProgress.count({
+                where: {
+                    userId,
+                    status: 'COMPLETED',
+                    lesson: { section: { courseId } },
+                },
+            }),
+            this.prisma.lesson.count({
+                where: {
+                    isPublished: true,
+                    section: { courseId },
+                },
+            }),
+        ]);
+        const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+        const isCompleted = progress === 100;
+        // Update enrollment progress
+        const updatedEnrollment = await this.prisma.enrollment.update({
+            where: { userId_courseId: { userId, courseId } },
+            data: {
+                progress,
+                ...(isCompleted ? { status: 'COMPLETED', completedAt: new Date() } : {}),
+            },
+        });
+        // Queue certificate generation when course is completed
+        if (isCompleted) {
+            await this.certificateQueue.add('generate', { userId, courseId }).catch((err) => this.logger.error('Failed to queue certificate generation', { userId, courseId, reason: err.message }));
+        }
+        return {
+            lessonProgress: {
+                lessonId,
+                status: lessonProgress.status,
+                completedAt: lessonProgress.completedAt,
+            },
+            enrollmentProgress: {
+                courseId,
+                progress,
+                status: updatedEnrollment.status,
+                completedLessons: completedCount,
+                totalLessons: totalCount,
+                ...(isCompleted ? { certificateQueued: true } : {}),
+            },
+        };
+    }
+    async heartbeat(userId, courseId, lessonId, seconds) {
+        // Verify enrollment silently — heartbeat should not throw for missing enrollment
+        const enrollment = await this.prisma.enrollment.findUnique({
+            where: { userId_courseId: { userId, courseId } },
+        });
+        if (!enrollment) {
+            return { timeSpent: 0 };
+        }
+        // Upsert progress record, increment timeSpent, keep status if already COMPLETED
+        const existing = await this.prisma.lessonProgress.findUnique({
+            where: { userId_lessonId: { userId, lessonId } },
+        });
+        const lessonProgress = await this.prisma.lessonProgress.upsert({
+            where: { userId_lessonId: { userId, lessonId } },
+            create: {
+                userId,
+                lessonId,
+                status: 'IN_PROGRESS',
+                timeSpent: seconds,
+            },
+            update: {
+                timeSpent: { increment: seconds },
+                // Only set IN_PROGRESS if not already COMPLETED
+                ...(existing?.status !== 'COMPLETED' ? { status: 'IN_PROGRESS' } : {}),
+            },
+        });
+        return { timeSpent: lessonProgress.timeSpent };
+    }
+    async deleteLesson(lessonId, instructorId) {
+        const lesson = await this.prisma.lesson.findFirst({
+            where: { id: lessonId, section: { course: { instructorId } } },
+        });
+        if (!lesson)
+            throw new common_1.NotFoundException('Lesson not found');
+        await this.prisma.lesson.delete({ where: { id: lessonId } });
+        return { success: true };
+    }
     calculateMockRating(certificates, enrollments) {
         if (enrollments === 0)
             return 0;
@@ -698,5 +1077,6 @@ let CoursesService = CoursesService_1 = class CoursesService {
 exports.CoursesService = CoursesService;
 exports.CoursesService = CoursesService = CoursesService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __param(1, (0, bull_1.InjectQueue)('certificates')),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService, Object])
 ], CoursesService);
