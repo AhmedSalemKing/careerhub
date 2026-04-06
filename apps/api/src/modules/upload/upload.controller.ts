@@ -126,20 +126,38 @@ export class UploadController {
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload image — saved to local disk' })
+  @ApiOperation({ summary: 'Upload image — saved to S3' })
   @ApiResponse({ status: 201, description: 'Image uploaded successfully' })
   async uploadImage(@UploadedFile() image: Express.Multer.File) {
     if (!image) throw new BadRequestException('No image file provided');
+
+    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+
+    const s3 = new S3Client({
+      region: process.env.AWS_REGION,
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+      },
+    });
+
     const safeName = image.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileName = `img_${Date.now()}_${safeName}`;
-    const dir = join(process.cwd(), 'uploads', 'images');
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, fileName), image.buffer);
+    const fileName = `images/img_${Date.now()}_${safeName}`;
+
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET!,
+      Key: fileName,
+      Body: image.buffer,
+      ContentType: image.mimetype,
+    }));
+
+    const url = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+
     return {
       success: true,
       message: 'Image uploaded successfully',
       data: {
-        url: `/uploads/images/${fileName}`,
+        url,
         fileName: image.originalname,
         size: image.size,
         mimeType: image.mimetype,
@@ -486,4 +504,3 @@ export class UploadController {
     };
   }
 }
-
