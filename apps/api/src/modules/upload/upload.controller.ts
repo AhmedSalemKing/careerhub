@@ -38,12 +38,11 @@ import { User } from '@prisma/client';
 export class UploadController {
   constructor(private readonly uploadService: UploadService) { }
 
-  // Public CV upload — used during registration before the user has a token
   @Public()
   @Post('cv')
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const allowed = [
         'application/pdf',
@@ -83,17 +82,13 @@ export class UploadController {
       folder,
       isPublic: isPublic === 'true',
     });
-    return {
-      success: true,
-      message: 'File uploaded successfully',
-      data: result,
-    };
+    return { success: true, message: 'File uploaded successfully', data: result };
   }
 
   @Post('multiple')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(FilesInterceptor('files', 10)) // Max 10 files
+  @UseInterceptors(FilesInterceptor('files', 10))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload multiple files' })
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
@@ -107,11 +102,7 @@ export class UploadController {
       folder,
       isPublic: isPublic === 'true',
     });
-    return {
-      success: true,
-      message: 'Files uploaded successfully',
-      data: result,
-    };
+    return { success: true, message: 'Files uploaded successfully', data: result };
   }
 
   @Post('image')
@@ -119,45 +110,41 @@ export class UploadController {
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('image', {
     storage: memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       if (file.mimetype.startsWith('image/')) cb(null, true);
       else cb(new BadRequestException('Only image files are allowed'), false);
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload image — saved to S3' })
+  @ApiOperation({ summary: 'Upload image — saved to Cloudinary' })
   @ApiResponse({ status: 201, description: 'Image uploaded successfully' })
   async uploadImage(@UploadedFile() image: Express.Multer.File) {
     if (!image) throw new BadRequestException('No image file provided');
 
-    const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
+    const { v2: cloudinary } = await import('cloudinary');
 
-    const s3 = new S3Client({
-      region: process.env.AWS_REGION,
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-      },
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
     });
 
-    const safeName = image.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileName = `images/img_${Date.now()}_${safeName}`;
-
-    await s3.send(new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET!,
-      Key: fileName,
-      Body: image.buffer,
-      ContentType: image.mimetype,
-    }));
-
-    const url = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'deveway/images' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(image.buffer);
+    });
 
     return {
       success: true,
       message: 'Image uploaded successfully',
       data: {
-        url,
+        url: result.secure_url,
         fileName: image.originalname,
         size: image.size,
         mimeType: image.mimetype,
@@ -170,7 +157,7 @@ export class UploadController {
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+    limits: { fileSize: 50 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       const allowed = [
         'application/pdf',
@@ -213,7 +200,7 @@ export class UploadController {
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('video', {
     storage: memoryStorage(),
-    limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
+    limits: { fileSize: 500 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       if (file.mimetype.startsWith('video/')) cb(null, true);
       else cb(new BadRequestException('Only video files are allowed'), false);
@@ -254,15 +241,8 @@ export class UploadController {
     @Body('title') title?: string,
     @Body('description') description?: string,
   ) {
-    const result = await this.uploadService.uploadDocument(user.id, document, {
-      title,
-      description,
-    });
-    return {
-      success: true,
-      message: 'Document uploaded successfully',
-      data: result,
-    };
+    const result = await this.uploadService.uploadDocument(user.id, document, { title, description });
+    return { success: true, message: 'Document uploaded successfully', data: result };
   }
 
   @Get('my-files')
@@ -270,9 +250,9 @@ export class UploadController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user uploaded files' })
   @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by file type' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'type', required: false })
   async getMyFiles(
     @CurrentUser() user: User,
     @Query('page') page?: number,
@@ -284,10 +264,7 @@ export class UploadController {
       limit: limit || 20,
       type,
     });
-    return {
-      success: true,
-      data: files,
-    };
+    return { success: true, data: files };
   }
 
   @Get('cv/:filename')
@@ -298,62 +275,44 @@ export class UploadController {
     @Query('download') download?: string,
   ) {
     const filePath = join(process.cwd(), 'uploads', 'cvs', filename);
-
     try {
       await access(filePath);
     } catch {
       throw new NotFoundException('File not found');
     }
-
     const ext = filename.split('.').pop()?.toLowerCase();
-
     const contentTypes: Record<string, string> = {
       pdf: 'application/pdf',
       doc: 'application/msword',
       docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     };
-
     const contentType = contentTypes[ext || ''] || 'application/octet-stream';
-
     res.setHeader('Content-Type', contentType);
-
     if (download === 'true') {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     } else {
       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     }
-
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'no-cache');
-
     const fileStream = createReadStream(filePath);
     fileStream.pipe(res);
   }
 
   @Get(':fileId')
   @ApiOperation({ summary: 'Get file by ID' })
-  @ApiResponse({ status: 200, description: 'File retrieved successfully' })
-  @ApiResponse({ status: 404, description: 'File not found' })
-  @ApiParam({ name: 'fileId', description: 'File ID' })
+  @ApiParam({ name: 'fileId' })
   async getFile(@Param('fileId') fileId: string) {
     const file = await this.uploadService.getFile(fileId);
-    return {
-      success: true,
-      data: { file },
-    };
+    return { success: true, data: { file } };
   }
 
   @Get(':fileId/download')
   @ApiOperation({ summary: 'Download file' })
-  @ApiResponse({ status: 200, description: 'File download URL generated' })
-  @ApiResponse({ status: 404, description: 'File not found' })
-  @ApiParam({ name: 'fileId', description: 'File ID' })
+  @ApiParam({ name: 'fileId' })
   async downloadFile(@Param('fileId') fileId: string) {
     const downloadUrl = await this.uploadService.getDownloadUrl(fileId);
-    return {
-      success: true,
-      data: { downloadUrl },
-    };
+    return { success: true, data: { downloadUrl } };
   }
 
   @Delete(':fileId')
@@ -361,12 +320,8 @@ export class UploadController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete file' })
-  @ApiResponse({ status: 204, description: 'File deleted successfully' })
-  @ApiParam({ name: 'fileId', description: 'File ID' })
-  async deleteFile(
-    @CurrentUser() user: User,
-    @Param('fileId') fileId: string,
-  ) {
+  @ApiParam({ name: 'fileId' })
+  async deleteFile(@CurrentUser() user: User, @Param('fileId') fileId: string) {
     await this.uploadService.deleteFile(user.id, fileId);
   }
 
@@ -374,66 +329,41 @@ export class UploadController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Share file' })
-  @ApiResponse({ status: 200, description: 'File shared successfully' })
-  @ApiParam({ name: 'fileId', description: 'File ID' })
+  @ApiParam({ name: 'fileId' })
   async shareFile(
     @CurrentUser() user: User,
     @Param('fileId') fileId: string,
-    @Body() shareData: {
-      expiresAt?: Date;
-      password?: string;
-      downloadLimit?: number;
-    },
+    @Body() shareData: { expiresAt?: Date; password?: string; downloadLimit?: number },
   ) {
     const shareLink = await this.uploadService.shareFile(user.id, fileId, shareData);
-    return {
-      success: true,
-      message: 'File shared successfully',
-      data: { shareLink },
-    };
+    return { success: true, message: 'File shared successfully', data: { shareLink } };
   }
 
   @Get('shared/:shareId')
   @ApiOperation({ summary: 'Access shared file' })
-  @ApiResponse({ status: 200, description: 'Shared file accessed successfully' })
-  @ApiResponse({ status: 404, description: 'Shared file not found or expired' })
-  @ApiParam({ name: 'shareId', description: 'Share ID' })
+  @ApiParam({ name: 'shareId' })
   async getSharedFile(@Param('shareId') shareId: string) {
     const file = await this.uploadService.getSharedFile(shareId);
-    return {
-      success: true,
-      data: { file },
-    };
+    return { success: true, data: { file } };
   }
 
   @Post('presigned-url')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate presigned upload URL' })
-  @ApiResponse({ status: 201, description: 'Presigned URL generated successfully' })
   async generatePresignedUrl(
     @CurrentUser() user: User,
-    @Body() urlData: {
-      fileName: string;
-      fileType: string;
-      fileSize: number;
-      folder?: string;
-    },
+    @Body() urlData: { fileName: string; fileType: string; fileSize: number; folder?: string },
   ) {
     const presignedUrl = await this.uploadService.generatePresignedUrl(user.id, urlData);
-    return {
-      success: true,
-      message: 'Presigned URL generated successfully',
-      data: presignedUrl,
-    };
+    return { success: true, message: 'Presigned URL generated successfully', data: presignedUrl };
   }
 
   @Post('process/:fileId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process uploaded file' })
-  @ApiResponse({ status: 200, description: 'File processing started' })
-  @ApiParam({ name: 'fileId', description: 'File ID' })
+  @ApiParam({ name: 'fileId' })
   async processFile(
     @CurrentUser() user: User,
     @Param('fileId') fileId: string,
@@ -443,36 +373,22 @@ export class UploadController {
     },
   ) {
     const result = await this.uploadService.processFile(user.id, fileId);
-    return {
-      success: true,
-      message: 'File processing started',
-      data: result,
-    };
+    return { success: true, message: 'File processing started', data: result };
   }
 
-  // Admin endpoints
   @Get('admin/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all files (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Files retrieved successfully' })
   async getAllFiles(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('userId') userId?: string,
     @Query('type') type?: string,
   ) {
-    const files = await this.uploadService.getAllFiles({
-      page: page || 1,
-      limit: limit || 20,
-      userId,
-      type,
-    });
-    return {
-      success: true,
-      data: files,
-    };
+    const files = await this.uploadService.getAllFiles({ page: page || 1, limit: limit || 20, userId, type });
+    return { success: true, data: files };
   }
 
   @Get('admin/stats')
@@ -480,13 +396,9 @@ export class UploadController {
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get upload statistics (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   async getUploadStats() {
     const stats = await this.uploadService.getUploadStats();
-    return {
-      success: true,
-      data: { stats },
-    };
+    return { success: true, data: { stats } };
   }
 
   @Post('admin/cleanup')
@@ -494,13 +406,8 @@ export class UploadController {
   @Roles('ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cleanup unused files (Admin only)' })
-  @ApiResponse({ status: 200, description: 'Cleanup completed successfully' })
   async cleanupFiles(@Body('days') days: number = 30) {
     const result = await this.uploadService.cleanupFiles(days);
-    return {
-      success: true,
-      message: 'Cleanup completed successfully',
-      data: result,
-    };
+    return { success: true, message: 'Cleanup completed successfully', data: result };
   }
 }
