@@ -144,8 +144,7 @@ export class UploadController {
       success: true,
       message: 'Image uploaded successfully',
       data: {
-        url: result.secure_url,
-        fileName: image.originalname,
+url: result.secure_url.startsWith('http') ? result.secure_url : `https:${result.secure_url}`,        fileName: image.originalname,
         size: image.size,
         mimeType: image.mimetype,
       },
