@@ -340,8 +340,7 @@ export default function CreateCoursePage() {
                   {form.thumbnail ? (
                     <>
                       <img
-                        src={`${API_URL}${form.thumbnail}`}
-                        className="h-32 w-full object-cover rounded-xl"
+src={form.thumbnail.startsWith('http') ? form.thumbnail : `${API_URL}${form.thumbnail}`}                        className="h-32 w-full object-cover rounded-xl"
                         alt="thumbnail"
                       />
                       <button
