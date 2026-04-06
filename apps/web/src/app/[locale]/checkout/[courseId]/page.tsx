@@ -133,7 +133,8 @@ export default function CheckoutPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['checkout', courseId],
     queryFn: async () => {
-      const res = await get<any>(`/payment/checkout/${courseId}`)
+      // تم إزالة <any> هنا
+      const res = await get(`/payment/checkout/${courseId}`)
       return res?.data?.data
     },
     enabled: !!courseId,
@@ -147,7 +148,8 @@ export default function CheckoutPage() {
     }
     setCreatingIntent(true)
     try {
-      const res = await post<any>('/payment/create-intent', { courseId })
+      // تم إزالة <any> هنا أيضاً
+      const res = await post('/payment/create-intent', { courseId })
       const d = res?.data?.data
 
       if (d?.free || d?.sandbox) {

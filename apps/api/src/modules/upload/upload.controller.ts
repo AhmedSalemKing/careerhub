@@ -31,6 +31,24 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { User } from '@prisma/client';
 
+// ─── Cloudinary helper ───────────────────────────────────────────────────────
+async function getCloudinary() {
+  const { v2: cloudinary } = await import('cloudinary');
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+  return cloudinary;
+}
+
+function safeUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https:${url}`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 @ApiTags('Upload')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -122,13 +140,7 @@ export class UploadController {
   async uploadImage(@UploadedFile() image: Express.Multer.File) {
     if (!image) throw new BadRequestException('No image file provided');
 
-    const { v2: cloudinary } = await import('cloudinary');
-
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
+    const cloudinary = await getCloudinary();
 
     const result = await new Promise<any>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
@@ -144,7 +156,8 @@ export class UploadController {
       success: true,
       message: 'Image uploaded successfully',
       data: {
-url: result.secure_url.startsWith('http') ? result.secure_url : `https:${result.secure_url}`,        fileName: image.originalname,
+        url: safeUrl(result.secure_url),
+        fileName: image.originalname,
         size: image.size,
         mimeType: image.mimetype,
       },
@@ -206,20 +219,32 @@ url: result.secure_url.startsWith('http') ? result.secure_url : `https:${result.
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload video — saved to local disk' })
+  @ApiOperation({ summary: 'Upload video — saved to Cloudinary' })
   @ApiResponse({ status: 201, description: 'Video uploaded successfully' })
   async uploadVideo(@UploadedFile() video: Express.Multer.File) {
     if (!video) throw new BadRequestException('No video file provided');
-    const safeName = video.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileName = `video_${Date.now()}_${safeName}`;
-    const dir = join(process.cwd(), 'uploads', 'videos');
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, fileName), video.buffer);
+
+    const cloudinary = await getCloudinary();
+
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        {
+          folder: 'deveway/videos',
+          resource_type: 'video',
+          chunk_size: 6000000,
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      ).end(video.buffer);
+    });
+
     return {
       success: true,
       message: 'Video uploaded successfully',
       data: {
-        url: `/uploads/videos/${fileName}`,
+        url: safeUrl(result.secure_url),
         fileName: video.originalname,
         size: video.size,
         mimeType: video.mimetype,
