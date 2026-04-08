@@ -22,6 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [pendingUsersCount, setPendingUsersCount] = useState(0)
   const [pendingCoursesCount, setPendingCoursesCount] = useState(0)
@@ -100,12 +101,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
       `}</style>
       <div dir="rtl" className="flex h-screen overflow-hidden" style={{ background: '#0D0D0D', color: '#E6E6E6' }}>
-        
+
+        {/* ── Mobile backdrop ── */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 z-30 lg:hidden"
+            style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* ── Sidebar (Glossy Black) ── */}
         <aside
-          className={`flex flex-col transition-all duration-200 border-l z-20 ${collapsed ? 'w-16' : 'w-64'}`}
-          style={{ 
-            background: '#050505', /* أسود غامق جداً للإطار */
+          className={[
+            'flex flex-col transition-all duration-300 border-l',
+            'fixed lg:relative top-0 right-0 h-full z-40 lg:z-20',
+            collapsed ? 'w-16' : 'w-64',
+            sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
+          ].join(' ')}
+          style={{
+            background: '#050505',
             backgroundImage: 'radial-gradient(circle at 0% 0%, rgba(255,255,255,0.03), transparent 70%)',
             borderLeft: '1px solid rgba(255,255,255,0.08)',
           }}
@@ -195,12 +210,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           }} />
 
           {/* Top bar */}
-          <header className="relative z-10 h-16 flex items-center px-6 justify-between shrink-0 backdrop-blur-md" style={{ 
+          <header className="relative z-10 h-16 flex items-center px-4 lg:px-6 justify-between shrink-0 backdrop-blur-md" style={{
             background: 'rgba(13, 13, 13, 0.6)',
             borderBottom: '1px solid rgba(255,255,255,0.06)',
           }}>
-            <div className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
-              لوحة تحكم DeveWay
+            <div className="flex items-center gap-3">
+              {/* Mobile hamburger */}
+              <button
+                className="lg:hidden flex items-center justify-center rounded-lg p-1.5 transition-colors hover:bg-white/5"
+                style={{ color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)', minHeight: 'auto' }}
+                onClick={() => setSidebarOpen(true)}
+                aria-label="القائمة"
+              >
+                <Menu size={18} />
+              </button>
+              <div className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
+                لوحة تحكم DeveWay
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 border border-white/10 flex items-center justify-center text-xs font-bold text-white shadow-md">

@@ -251,7 +251,7 @@ export function Navbar() {
           boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
-        <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="dw-container flex h-[68px] items-center justify-between">
 
           {/* ═══ Branding ═══ */}
           <Link href={`/${locale}`} className="shrink-0">

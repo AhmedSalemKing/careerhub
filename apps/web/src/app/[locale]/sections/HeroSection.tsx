@@ -21,7 +21,7 @@ export function HeroSection() {
   return (
     <section
       className="relative min-h-[92vh] text-white overflow-hidden"
-      style={{ background: '#0D0D0D' }}
+      style={{ background: '#0D0D0D', padding: 'clamp(48px, 8vw, 120px) 0' }}
     >
       {/* ============================================= */}
       {/* 1. إضافة الشبكة التقنية (Technical Grid) هنا */}
@@ -57,8 +57,8 @@ export function HeroSection() {
 
         {/* Heading */}
         <h1
-          className="text-4xl sm:text-5xl lg:text-7xl font-bold font-madinet leading-tight animate-fade-up stagger-1"
-          style={{ color: '#F8F8FA' }}
+          className="font-bold font-madinet leading-tight animate-fade-up stagger-1"
+          style={{ color: '#F8F8FA', fontSize: 'clamp(28px, 5vw, 64px)' }}
         >
           {locale === 'ar' ? (
             <>
@@ -115,7 +115,7 @@ export function HeroSection() {
               backdropFilter: 'blur(10px)',
             }}
           >
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="flex flex-wrap justify-center gap-4 text-center" style={{ flexWrap: 'wrap' }}>
               <div>
                 <p className="text-2xl sm:text-3xl font-bold">150+</p>
                 <p className="text-sm" style={{ color: 'rgba(248,248,250,0.5)' }}>{t('stat_courses')}</p>

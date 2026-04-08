@@ -178,7 +178,7 @@ export default function CoursesPage() {
         </p>
 
         {/* Courses Grid */}
-        <div className={`grid gap-6 ${viewMode === 'grid' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-1'}`}>
+        <div className={viewMode === 'grid' ? 'dw-grid-3' : 'dw-grid-1'} style={{ gap: 24 }}>
           {filteredCourses.map((course, index) => {
             const levelBadge = getLevelBadge(course.level)
             return (
@@ -186,10 +186,10 @@ export default function CoursesPage() {
                 key={course.id}
                 href={`/${locale}/courses/${course.id}`}
                 className="group rounded-xl overflow-hidden"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)', width: '100%' }}
               >
                 {/* Thumbnail */}
-                <div className="relative aspect-video overflow-hidden">
+                <div className="relative overflow-hidden" style={{ aspectRatio: '16/9', width: '100%' }}>
                   {thumbUrl(course.thumbnail) ? (
                     <img
                       src={thumbUrl(course.thumbnail)!}
@@ -226,7 +226,7 @@ export default function CoursesPage() {
                 </div>
 
                 {/* Content */}
-                <div className="p-5">
+                <div style={{ padding: 'clamp(12px, 2vw, 20px)' }}>
                   <p className="text-xs font-medium mb-2" style={{ color: 'var(--primary)' }}>
                     {course.category[locale]}
                   </p>

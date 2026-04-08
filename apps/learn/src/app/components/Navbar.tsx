@@ -140,7 +140,7 @@ export function Navbar() {
         boxShadow: '0 1px 3px rgba(27,35,64,0.06)',
       }}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="dw-container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href={`/${locale}`} className="flex items-center gap-3 shrink-0">
           <img
