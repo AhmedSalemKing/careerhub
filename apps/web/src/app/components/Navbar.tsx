@@ -54,7 +54,7 @@ function ThemeToggle() {
           transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(90deg) scale(0.5)',
         }}
       >
-        <Moon className="h-[15px] w-[15px]" style={{ color: 'var(--primary)' }} />
+        <Moon className="h-[15px] w-[15px]" style={{ color: '#5120c8' }} />
       </div>
       <div
         className="absolute inset-0 flex items-center justify-center transition-all duration-200"
@@ -113,7 +113,7 @@ function UserDropdown({ locale }: { locale: string }) {
         ) : (
           <span
             className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
-            style={{ background: 'var(--primary)', fontFamily: NAV_FONT, color: '#ffffff' }}
+            style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
           >
             {initials}
           </span>
@@ -240,13 +240,11 @@ export function Navbar() {
         }
       `}</style>
 
-          <header
+      <header
         className="sticky top-0 z-40 w-full transition-all duration-200"
         style={{
-          // إجبار الخلفية لتكون الأسود اللامع لضمان التناسق
-          background: '#050505', 
-          // إضافة توهج خفيف في الأعلى للجمالية
-          backgroundImage: 'rad-gradient(circle at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 60%)',
+          background: '#050505',
+          backgroundImage: 'rad-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
           borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
           boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
@@ -278,7 +276,7 @@ export function Navbar() {
                     fontWeight: 900,
                     letterSpacing: '-0.01em',
                     fontFamily: NAV_FONT,
-                    color: active ? 'var(--primary)' : 'var(--foreground)',
+                    color: active ? '#5120c8' : 'var(--foreground)',
                     background: active ? 'var(--surface-2)' : 'transparent',
                     opacity: active ? 1 : 0.75,
                   }}
@@ -329,10 +327,9 @@ export function Navbar() {
           {/* ═══ Actions ═══ */}
           <div className="flex items-center gap-1.5">
 
-            {/* Icon buttons row (Search, Lang, Theme, AI, Bell, Cart) */}
+            {/* Icon buttons row */}
             <div className="flex items-center gap-1">
               
-              {/* Search Icon (Now a simple button for all devices) */}
               <SearchBar />
 
               <div className="hidden sm:flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
@@ -343,11 +340,11 @@ export function Navbar() {
                     href={`/${locale}/dashboard/ai-chat`}
                     title="DeveWay AI"
                     className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-                    style={{ background: 'var(--primary-subtle)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--primary-subtle-hover, color-mix(in srgb, var(--primary) 15%, transparent))' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--primary-subtle)' }}
+                    style={{ background: 'rgba(81, 32, 200, 0.10)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.18)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
                   >
-                    <Sparkles className="h-[14px] w-[14px]" style={{ color: 'var(--primary)' }} />
+                    <Sparkles className="h-[14px] w-[14px]" style={{ color: '#5120c8' }} />
                   </Link>
                 )}
               </div>
@@ -474,7 +471,7 @@ export function Navbar() {
                     style={{
                       fontWeight: 900,
                       fontFamily: NAV_FONT,
-                      color: active ? 'var(--primary)' : 'var(--foreground)',
+                      color: active ? '#5120c8' : 'var(--foreground)',
                       background: active ? 'var(--surface-2)' : 'transparent',
                       letterSpacing: '-0.01em',
                     }}
@@ -506,7 +503,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/dashboard/ai-chat`}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                  style={{ background: 'var(--primary-subtle)', color: 'var(--primary)', fontFamily: NAV_FONT }}
+                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   AI
@@ -530,7 +527,7 @@ export function Navbar() {
                   ) : (
                     <div
                       className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
-                      style={{ background: 'var(--primary)', fontFamily: NAV_FONT, color: '#ffffff' }}
+                      style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
                     >
                       {initials || '?'}
                     </div>
@@ -558,7 +555,6 @@ export function Navbar() {
                   </Link>
                   <button
                     onClick={() => {
-                      // useAuthStore logout logic
                       const { logout } = useAuthStore.getState();
                       logout();
                       setMobileOpen(false);

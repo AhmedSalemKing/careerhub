@@ -1,0 +1,46 @@
+[33m7377925[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{0}: reset: moving to 7377925
+[33mc9cf2c0[m HEAD@{1}: reset: moving to c9cf2c0
+[33m7377925[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{2}: reset: moving to 7377925
+[33m7377925[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{3}: commit: Version II
+[33m342d472[m HEAD@{4}: rebase (abort): returning to refs/heads/master
+[33m342d472[m HEAD@{5}: rebase (abort): returning to refs/heads/master
+[33me212a47[m HEAD@{6}: commit: Font
+[33mc9cf2c0[m HEAD@{7}: reset: moving to c9cf2c0
+[33mcf430c8[m HEAD@{8}: reset: moving to cf430c8
+[33mc9cf2c0[m HEAD@{9}: reset: moving to c9cf2c0
+[33md9d6586[m HEAD@{10}: reset: moving to d9d6586
+[33m699be55[m HEAD@{11}: reset: moving to 699be55
+[33m342d472[m HEAD@{12}: checkout: moving from 699be5513c25a4861785cfb6febb1ffafc771088 to master
+[33m699be55[m HEAD@{13}: commit: Light Section
+[33md9d6586[m HEAD@{14}: pull origin master --rebase (start): checkout d9d6586391daa333db5b6bf3a3d444144be533a6
+[33m342d472[m HEAD@{15}: commit: Light Section
+[33mc9cf2c0[m HEAD@{16}: reset: moving to c9cf2c0
+[33mfcae7ab[m HEAD@{17}: reset: moving to fcae7ab
+[33md9d6586[m HEAD@{18}: commit: Resolved Font
+[33m3af10b9[m HEAD@{19}: commit: Resolved Fonts
+[33ma1f6b1a[m HEAD@{20}: commit: Resolved Fonts
+[33m3aaba38[m HEAD@{21}: commit (merge): Resolved conflicts
+[33m9e76824[m HEAD@{22}: commit: Update herosection
+[33mc9cf2c0[m HEAD@{23}: reset: moving to c9cf2c0
+[33mfcae7ab[m HEAD@{24}: reset: moving to fcae7ab
+[33mc9cf2c0[m HEAD@{25}: reset: moving to c9cf2c0
+[33mc9cf2c0[m HEAD@{26}: reset: moving to c9cf2c0
+[33mfcae7ab[m HEAD@{27}: commit: Update Courses Design
+[33mc9cf2c0[m HEAD@{28}: reset: moving to c9cf2c0
+[33m54aada4[m HEAD@{29}: commit: revert: restore stable design
+[33m810b101[m HEAD@{30}: commit: feat: i18n + learn domain fixes + language switcher
+[33m5c4be28[m HEAD@{31}: commit: revert: restore web design to stable version
+[33m2ccf86d[m HEAD@{32}: commit: fix: add vercel.json for monorepo
+[33m6f7c74d[m HEAD@{33}: commit: fix: mobile responsive dashboard + drawer sidebar + hamburger menu
+[33mc9cf2c0[m HEAD@{34}: commit: feat: responsive design system + brand identity + AI chat + consulting + payment + certificates + search + dark mode
+[33mc5d4cb8[m HEAD@{35}: commit: migrate video upload to Cloudinary
+[33m520f2b0[m HEAD@{36}: commit: fix thumbnail url prefix
+[33m72fc995[m HEAD@{37}: commit: fix cloudinary url
+[33m110c18b[m HEAD@{38}: commit: migrate image upload to Cloudinary
+[33m7c36ba3[m HEAD@{39}: commit: migrate image upload to S3
+[33maa795cd[m HEAD@{40}: commit: initial commit
+[33m763538d[m HEAD@{41}: commit: fix: SelectItem empty value + careerPath filter logic
+[33mbd092bb[m HEAD@{42}: commit: fix: courses page careerPaths API structure
+[33md80affd[m HEAD@{43}: commit: fix: learn API response structure - careerPaths, courses, meta
+[33m82c9e5c[m HEAD@{44}: commit: fix: learn app API response handling + translations
+[33mabc8101[m HEAD@{45}: commit: feat: sync learn design with web - fonts, colors, navbar, footer

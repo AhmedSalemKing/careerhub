@@ -1,16 +1,31 @@
 'use client'
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get, post, del } from '../../../../lib/api'
 import {
-  Send, Plus, Trash2, User, Loader2,
-  Sparkles, MessageSquare, Target, Lightbulb,
-  X, Menu, GraduationCap, BrainCircuit, Code2, BarChart3,
+  Send,
+  Plus,
+  Trash2,
+  User,
+  Loader2,
+  Sparkles,
+  MessageSquare,
+  Target,
+  X,
+  Menu,
+  GraduationCap,
+  BrainCircuit,
+  Check,
+  Clock,
 } from 'lucide-react'
 import { notify } from '../../../../lib/notify'
 
-// ── Interfaces ────────────────────────────────────
+// ════════════════════════════════════
+// INTERFACES
+// ════════════════════════════════════
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -25,7 +40,10 @@ interface Conversation {
   messages?: { content: string; role: string }[]
 }
 
-// ── Markdown Renderer ─────────────────────────────
+// ════════════════════════════════════
+// MARKDOWN RENDERER
+// ════════════════════════════════════
+
 function MessageContent({ content }: { content: string }) {
   const lines = content.split('\n')
   const elements: JSX.Element[] = []
@@ -33,61 +51,39 @@ function MessageContent({ content }: { content: string }) {
   lines.forEach((line, i) => {
     if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={i} className="font-bold text-base mt-3 mb-1 text-blue-400">
+        <h3 key={i} className="font-semibold text-base mt-3 mb-1" style={{ color: 'var(--primary)' }}>
           {line.slice(4)}
         </h3>
       )
     } else if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={i} className="font-bold text-lg mt-4 mb-2 text-white">
+        <h2 key={i} className="font-semibold text-lg mt-4 mb-2" style={{ color: 'var(--foreground)' }}>
           {line.slice(3)}
         </h2>
       )
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       elements.push(
         <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
-          <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
-          <span
-            dangerouslySetInnerHTML={{
-              __html: line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
-            }}
-          />
+          <span className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--primary)' }} />
+          <span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
         </li>
       )
     } else if (/^\d+\. /.test(line)) {
       const num = line.match(/^(\d+)\./)?.[1]
       elements.push(
         <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-xs font-bold text-blue-400">
-            {num}
-          </span>
-          <span
-            dangerouslySetInnerHTML={{
-              __html: line
-                .replace(/^\d+\. /, '')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'),
-            }}
-          />
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}>{num}</span>
+          <span dangerouslySetInnerHTML={{ __html: line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
         </li>
       )
     } else if (line.trim()) {
       elements.push(
-        <p
-          key={i}
-          className="text-sm leading-relaxed mb-1"
-          dangerouslySetInnerHTML={{
-            __html: line
-              .replace(
-                /\*\*(.*?)\*\*/g,
-                '<strong class="text-white font-semibold">$1</strong>'
-              )
-              .replace(/\*(.*?)\*/g, '<em>$1</em>')
-              .replace(
-                /`(.*?)`/g,
-                '<code class="rounded bg-white/10 px-1 py-0.5 font-mono text-xs text-blue-400">$1</code>'
-              ),
-          }}
-        />
+        <p key={i} className="text-sm leading-relaxed mb-1" dangerouslySetInnerHTML={{
+          __html: line
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--foreground);font-weight:600">$1</strong>')
+            .replace(/`(.*?)`/g, '<code style="background:var(--code-bg);color:var(--primary);padding:2px 6px;border-radius:6px;font-size:13px;font-family:monospace">$1</code>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        }} />
       )
     } else if (i > 0) {
       elements.push(<div key={i} className="h-2" />)
@@ -97,27 +93,125 @@ function MessageContent({ content }: { content: string }) {
   return <div className="space-y-0.5">{elements}</div>
 }
 
-// ── Suggestion Data ───────────────────────────────
-const SUGGESTIONS = [
-  { icon: Target, text: 'اقترح لي مسار مهني في البرمجة', color: 'blue' },
-  { icon: GraduationCap, text: 'كيف أبدأ في تعلم الذكاء الاصطناعي؟', color: 'purple' },
-  { icon: Code2, text: 'ما الفرق بين Frontend و Backend؟', color: 'cyan' },
-  { icon: BarChart3, text: 'أهم المهارات في سوق العمل السعودي', color: 'green' },
-  { icon: BrainCircuit, text: 'كيف أحضّر لمقابلة عمل تقنية؟', color: 'amber' },
-  { icon: Lightbulb, text: 'ساعدني في تحسين سيرتي الذاتية', color: 'pink' },
-]
+// ════════════════════════════════════
+// TYPING INDICATOR
+// ══════════════════════════════════
 
-// Color classes for the suggestion cards
-const colorMap: Record<string, string> = {
-  blue:   'border-blue-500/20 text-blue-400 hover:border-blue-500/40',
-  purple: 'border-purple-500/20 text-purple-400 hover:border-purple-500/40',
-  cyan:   'border-cyan-500/20 text-cyan-400 hover:border-cyan-500/40',
-  green:  'border-green-500/20 text-green-400 hover:border-green-500/40',
-  amber:  'border-amber-500/20 text-amber-400 hover:border-amber-500/40',
-  pink:   'border-pink-500/20 text-pink-400 hover:border-pink-500/40',
+function TypingIndicator() {
+  return (
+    <div className="flex items-center gap-1 px-4 py-3">
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full"
+          style={{
+            background: 'var(--muted)',
+            animation: `typingBounce 1.4s ease-in-out ${i * 0.16}s infinite`
+          }}
+        />
+      ))}
+    </div>
+  )
 }
 
-// ── Main Component ────────────────────────────────
+// ════════════════════════════════════
+// MESSAGE BUBBLE
+// ══════════════════════════════════
+
+function MessageBubble({ msg }: { msg: Message }) {
+  const [copied, setCopied] = useState(false)
+  const isUser = msg.role === 'user'
+
+  const handleCopy = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(msg.content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  let timeStr = ''
+  try {
+    timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-SA', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch (e) {
+    timeStr = '--:--'
+  }
+
+  return (
+    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} group`}>
+      
+      {/* Avatar */}
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105`}
+        style={
+          isUser 
+            ? { background: 'var(--primary)' } 
+            : { background: 'var(--surface-2)', border: `1px solid var(--border)` }
+        }
+      >
+        {isUser ? (
+          <User className="h-4 w-4 text-white" />
+        ) : (
+          <BrainCircuit className="h-4 w-4" style={{ color: 'var(--primary)' }} />
+        )}
+      </div>
+
+      {/* Content Wrapper */}
+      <div className="relative max-w-[75%] min-w-[100px]">
+        
+        {/* Bubble */}
+        <div
+          className={`rounded-2xl px-4 py-2.5 ${
+            isUser ? 'rounded-tr-md' : 'rounded-tl-md'
+          }`}
+          style={
+            isUser
+              ? { background: 'var(--primary)', color: '#ffffff' }
+              : { background: 'var(--surface)', border: `1px solid var(--border)`, color: 'var(--foreground)' }
+          }
+        >
+          {isUser ? (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+          ) : (
+            <MessageContent content={msg.content} />
+          )}
+        </div>
+
+        {/* Meta Row */}
+        <div 
+          className={`flex items-center gap-2 mt-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
+            isUser ? 'justify-end' : 'justify-start'
+          }`}
+        >
+          <span className="text-[11px]" style={{ color: 'var(--muted-foreground)' }}>
+            {timeStr}
+          </span>
+          
+          {!isUser && (
+            <button
+              onClick={handleCopy}
+              className="p-1 rounded-md transition-colors duration-150"
+              style={{ color: 'var(--muted)' }}
+              onMouseEnter={(e) => { if(e.currentTarget) e.currentTarget.style.color = 'var(--primary)' }}
+              onMouseLeave={(e) => { if(e.currentTarget) e.currentTarget.style.color = 'var(--muted)' }}
+              title="نسخ الرسالة"
+            >
+              {copied ? <Check className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ════════════════════════════════════
+// MAIN COMPONENT
+// ══════════════════════════════════
+
 export default function AiChatPage() {
   const locale = useLocale()
   const qc = useQueryClient()
@@ -131,14 +225,19 @@ export default function AiChatPage() {
   const [streamingContent, setStreamingContent] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // suppress unused locale warning
   void locale
 
+  // ── Queries ────────────────────
   const { data: conversations = [] } = useQuery<Conversation[]>({
     queryKey: ['ai-conversations'],
     queryFn: async () => {
-      const res = await get('/ai/conversations')
-      return (res?.data as any)?.data ?? []
+      try {
+        const res = await get('/ai/conversations')
+        return (res?.data as any)?.data ?? []
+      } catch (error) {
+        console.error('Failed to load conversations:', error)
+        return []
+      }
     },
   })
 
@@ -146,17 +245,27 @@ export default function AiChatPage() {
     setActiveConvId(convId)
     setMessages([])
     setSidebarOpen(false)
+    
     try {
       const res = await get(`/ai/conversations/${convId}`)
       const data = (res?.data as any)?.data
-      setMessages(data?.messages ?? [])
-    } catch {}
+      if (data?.messages) {
+        setMessages(data.messages as Message[])
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error)
+    }
   }, [])
 
   const createConv = useMutation({
     mutationFn: async () => {
-      const res = await post('/ai/conversations', { context: 'dashboard' })
-      return (res?.data as any)?.data
+      try {
+        const res = await post('/ai/conversations', { context: 'dashboard' })
+        return (res?.data as any)?.data
+      } catch (error) {
+        console.error('Error creating conversation:', error)
+        throw error
+      }
     },
     onSuccess: (conv) => {
       qc.invalidateQueries({ queryKey: ['ai-conversations'] })
@@ -164,11 +273,20 @@ export default function AiChatPage() {
       setMessages([])
       setSidebarOpen(false)
     },
+    onError: (error) => {
+      console.error('Error creating conversation:', error)
+      notify.error('فشل إنشاء المحادثة')
+    },
   })
 
   const deleteConv = useMutation({
     mutationFn: async (id: string) => {
-      await del(`/ai/conversations/${id}`)
+      try {
+        await del(`/ai/conversations/${id}`)
+      } catch (error) {
+        console.error('Error deleting conversation:', error)
+        throw error
+      }
     },
     onSuccess: (_data, id) => {
       qc.invalidateQueries({ queryKey: ['ai-conversations'] })
@@ -177,44 +295,63 @@ export default function AiChatPage() {
         setMessages([])
       }
     },
+    onError: (error) => {
+      console.error('Error deleting conversation:', error)
+      notify.error('فشل حذف المحادثة')
+    },
   })
 
+  // ── Send Message ──────────────
   const sendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isStreaming) return
 
       let convId = activeConvId
+      
+      // Create conversation if none exists
       if (!convId) {
-        const res = await post('/ai/conversations', { context: 'dashboard' })
-        convId = (res?.data as any)?.data?.id
-        if (!convId) return
-        setActiveConvId(convId)
-        qc.invalidateQueries({ queryKey: ['ai-conversations'] })
+        try {
+          const res = await post('/ai/conversations', { context: 'dashboard' })
+          convId = (res?.data as any)?.data?.id
+          
+          if (!convId) {
+            console.error('Failed to create conversation: No ID returned')
+            return
+          }
+          
+          setActiveConvId(convId)
+          qc.invalidateQueries({ queryKey: ['ai-conversations'] })
+        } catch (error) {
+          console.error('Error creating conversation:', error)
+          notify.error('فشل بدء المحادثة')
+          return
+        }
       }
 
+      // Add user message immediately
       const userMsg: Message = {
-        id: `tmp-${Date.now()}`,
-        role: 'user',
+        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`, // ✅ FIX #9: substring instead of substr
+        role: 'user' as const,
         content: text,
         createdAt: new Date().toISOString(),
       }
 
-      setMessages((prev) => [...prev, userMsg])
+      setMessages(prev => [...prev, userMsg])
       setInput('')
       setIsStreaming(true)
       setStreamingContent('')
 
+      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
 
       try {
-        const token =
-          localStorage.getItem('deveway_token') ||
-          document.cookie.match(/deveway_token=([^;]+)/)?.[1]
+        const token = localStorage.getItem('deveway_token') || 
+                     document.cookie.match(/deveway_token=([^;]+)/)?.[1] || ''
 
-        const API = process.env.NEXT_PUBLIC_API_URL || ''
-        const response = await fetch(`${API}/api/ai/chat`, {
+        const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+        const response = await fetch(`${API_BASE}/api/ai/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -223,44 +360,70 @@ export default function AiChatPage() {
           body: JSON.stringify({ conversationId: convId, message: text }),
         })
 
-        if (!response.ok) throw new Error('AI request failed')
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`)
+        }
 
         const reader = response.body?.getReader()
+        
+        if (!reader) {
+          throw new Error('No reader available')
+        }
+
         const decoder = new TextDecoder()
         let fullContent = ''
 
-        while (reader) {
+        while (true) {
           const { done, value } = await reader.read()
+          
           if (done) break
-
+          
+          if (!value) continue
+          
           const chunk = decoder.decode(value)
-          const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
-
+          
+          if (!chunk) continue
+          
+          const lines = chunk.split('\n').filter((line: string) => line.startsWith('data: '))
+          
           for (const line of lines) {
-            const data = line.replace('data: ', '').trim()
-            if (data === '[DONE]') break
+            const data = line.replace(/^data:\s*/, '').trim()
+            
+            if (!data || data === '[DONE]') break
+            
             try {
               const parsed = JSON.parse(data)
-              if (parsed.content) {
+              
+              if (parsed.content && typeof parsed.content === 'string') {
                 fullContent += parsed.content
                 setStreamingContent(fullContent)
               }
-              if (parsed.error) throw new Error(parsed.error)
-            } catch {}
+              
+              if (parsed.error) {
+                throw new Error(parsed.error || 'Unknown AI error')
+              }
+            } 
+            catch (error: unknown) {
+              console.warn('Skipping malformed JSON chunk:', error)
+              continue
+            }
           }
         }
 
+        // Add final AI message
         if (fullContent) {
           const aiMsg: Message = {
-            id: `ai-${Date.now()}`,
-            role: 'assistant',
+            id: `ai-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`, // ✅ FIX #9
+            role: 'assistant' as const,
             content: fullContent,
             createdAt: new Date().toISOString(),
           }
-          setMessages((prev) => [...prev, aiMsg])
+          
+          setMessages(prev => [...prev, aiMsg])
         }
-      } catch {
-        notify.error('حدث خطأ في الاتصال بالذكاء الاصطناعي')
+      } catch (error) {
+        console.error('Send message error:', error)
+        notify.error('حدث خطأ في إرسال رسالتك')
       } finally {
         setIsStreaming(false)
         setStreamingContent('')
@@ -270,376 +433,780 @@ export default function AiChatPage() {
     [activeConvId, isStreaming, qc]
   )
 
+  // ── Auto-scroll to bottom ─────────────
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages, streamingContent])
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  // ── Keyboard handler ─────────────
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       sendMessage(input)
     }
   }
 
+  // ── Input change handler ─────────────
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
+    const value = e.target.value
+    setInput(value)
+    
+    // Auto-resize textarea
     e.target.style.height = 'auto'
-    e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'
+    
+    const newHeight = Math.min(e.target.scrollHeight, 140)
+    e.target.style.height = `${newHeight}px`
   }
 
+  // ── Computed values ──────────────
   const isEmpty = messages.length === 0 && !isStreaming
+  const hasInput = input.trim().length > 0
 
+  // ── RENDER ──────────────────────
   return (
-    <div
-      className="relative flex h-screen flex-col overflow-hidden"
+    <div 
+      className="flex h-screen overflow-hidden"
       dir="rtl"
-      // ═══ Glossy Black Background (Exact Request) ═══
-      style={{
-        background: '#0D0D0D',
-        backgroundImage: 
-          'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 60%), ' +
-          'radial-gradient(circle at 80% 80%, rgba(255,255,255,0.02), transparent 60%)',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        color: '#E6E6E6'
+      style={{ 
+        backgroundColor: 'var(--background)',
+        color: 'var(--foreground)',
+        fontFamily: "'DM Sans', sans-serif",
       }}
     >
-      {/* ── Ambient Glows (Subtle color accents) ─────── */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] h-[500px] w-[500px] rounded-full bg-[#5120c8] opacity-[0.03] blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-5%] h-[500px] w-[500px] rounded-full bg-blue-600 opacity-[0.02] blur-[100px]" />
-      </div>
-
-      {/* ── Top Bar (Glassy) ───────────────────────────── */}
-      <div 
-        className="relative z-20 flex items-center justify-between px-4 py-3 backdrop-blur-md transition-all duration-300"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(13,13,13,0.5)' }}
+      {/* ═══ SIDEBAR ═══ */}
+      {/* ✅ FIX #1: Changed 'flex col' to 'flex flex-col' */}
+      <aside 
+        className={`
+          fixed 
+          inset-y-0 
+          right-0 
+          z-30 
+          w-[288px]
+          md:w-[256px]
+          lg:w-[288px]
+          flex 
+          flex-col 
+          border-l 
+          transition-transform 
+          duration-300 
+          ease-out 
+          md:relative 
+          md:right-auto 
+          md:left-0 
+          md:w-64 
+          lg:w-72 
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
+          md:translate-x-0
+        `}
+        style={{ 
+          backgroundColor: 'var(--surface)',
+          borderLeft: '1px solid var(--border)',
+        }}
       >
-        {/* Right: Logo + Title */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#141414] border border-white/10 shadow-sm">
-            <BrainCircuit className="h-5 w-5 text-[#5120c8]" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold leading-none" style={{ color: '#ffffff' }}>
-              DeveWay AI
-            </h1>
-            <p className="mt-0.5 text-xs" style={{ color: '#9CA3AF' }}>
-              مدعوم بـ Llama 3.3
-            </p>
-          </div>
-        </div>
-
-        {/* Center: Status */}
-        <div className="hidden items-center gap-2 rounded-full border px-3 py-1 sm:flex"
-             style={{ borderColor: 'rgba(16, 185, 129, 0.2)', background: 'rgba(16, 185, 129, 0.08)' }}>
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: '#34D399' }} />
-          <span className="text-xs font-medium" style={{ color: '#34D399' }}>
-            متصل
-          </span>
-        </div>
-
-        {/* Left: Actions */}
-        <div className="flex items-center gap-2">
+        {/* New Chat Button */}
+        <div 
+          className="p-3"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
           <button
             onClick={() => createConv.mutate()}
             disabled={createConv.isPending}
-            className="flex items-center gap-1.5 rounded-xl border bg-[#141414] px-3 py-1.5 text-xs font-semibold transition-all hover:bg-[#1F1F1F]"
-            style={{ borderColor: 'rgba(81,32,200,0.3)', color: '#818CF8' }}
+            className="
+              w-full 
+              flex 
+              items-center 
+              justify-center 
+              gap-2 
+              rounded-xl 
+              px-4 
+              py-2.5 
+              text-sm 
+              font-bold 
+              transition-all 
+              duration-200 
+              hover:scale-[1.02] 
+              active:scale-[0.98]
+            "
+            style={{
+              backgroundColor: 'var(--primary)',
+              color: '#ffffff',
+              fontFamily: "'PingARLT', sans-serif",
+              boxShadow: '0 2px 8px rgba(81, 32, 200, 0.25)',
+            }}
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">محادثة جديدة</span>
-          </button>
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border bg-[#141414] transition hover:bg-[#1F1F1F] hover:text-white"
-            style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9CA3AF' }}
-          >
-            <Menu className="h-4 w-4" />
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+            <span>محادثة جديدة</span>
           </button>
         </div>
-      </div>
 
-      {/* ── Main Content ───────────────────────────── */}
-      <div className="relative flex-1 overflow-y-auto">
-        {isEmpty ? (
-          /* ── Welcome Screen ──────────────────────── */
-          <div className="flex min-h-full flex-col items-center justify-center px-4 py-10">
-            {/* Hero */}
-            <div className="mb-10 text-center">
-              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-3xl border bg-[#141414] shadow-2xl"
-                   style={{ borderColor: 'rgba(81,32,200,0.2)', boxShadow: '0 0 20px rgba(81,32,200,0.1)' }}>
-                <Sparkles className="h-12 w-12 text-[#5120c8]" />
-              </div>
-              <h2 className="mb-3 font-bold text-4xl" style={{ color: '#ffffff' }}>
-                مرحباً، كيف يمكنني مساعدتك؟
-              </h2>
-              <p className="max-w-lg text-base" style={{ color: '#9CA3AF' }}>
-                مساعدك الذكي للتعلم والنمو المهني — اسألني عن أي شيء
+        {/* Conversations List */}
+        <nav 
+          className="flex-1 overflow-y-auto p-2"
+          aria-label="قائمة المحادثات"
+        >
+          {conversations.length === 0 ? (
+            <div 
+              className="
+                flex 
+                flex-col 
+                items-center 
+                justify-center 
+                py-16 
+                px-4 
+                text-center 
+              "
+            >
+              <MessageSquare 
+                className="
+                  h-12 
+                  w-12 
+                  mb-4 
+                  opacity-20 
+                " 
+                style={{ color: 'var(--muted)' }} 
+              />
+              <p 
+                className="text-sm font-medium mt-2"
+                style={{ color: 'var(--muted)' }} 
+              >
+                لا توجد محادثات بعد
+              </p>
+              <p 
+                className="text-xs mt-1"
+                style={{ color: 'var(--muted-foreground)' }} 
+              >
+                ابدأ محادثة جديدة!
               </p>
             </div>
-
-            {/* Suggestion grid (Flat Glossy Style) */}
-            <div className="mb-8 grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {SUGGESTIONS.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => sendMessage(s.text)}
-                  // FIX: Moved colorMap from style to className
-                  className={`group flex items-start gap-3 rounded-2xl bg-[#141414] border p-4 text-right transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1F1F] hover:shadow-lg ${colorMap[s.color]}`}
-                >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/5">
-                    <s.icon className="h-5 w-5" />
-                  </div>
-                  <span className="text-sm leading-snug transition-colors group-hover:text-white"
-                        style={{ color: '#E6E6E6' }}>
-                    {s.text}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Quick action chips */}
-            <div className="flex max-w-2xl flex-wrap justify-center gap-2">
-              {['تلخيص نص', 'شرح مفهوم', 'خطة تعلم', 'تحليل مهارات', 'نصائح مهنية'].map(
-                (chip) => (
+          ) : (
+            <ul className="space-y-1">
+              {conversations.map((conv) => (
+                <li key={conv.id}>
                   <button
-                    key={chip}
-                    onClick={() => sendMessage(chip)}
-                    className="rounded-full border bg-[#141414] px-4 py-1.5 text-xs transition hover:bg-[#1F1F1F] hover:border-[#5120c8]/30 hover:text-[#818CF8]"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9CA3AF' }}
+                    onClick={() => loadConversation(conv.id)}
+                    className="
+                      w-full 
+                      text-right 
+                      flex 
+                      items-center 
+                      gap-3 
+                      rounded-xl 
+                      px-3 
+                      py-2.5 
+                      text-sm 
+                      transition-all 
+                      duration-150 
+                      hover:bg-[color:var(--surface-2)]
+                      active:bg-[color:var(--primary-subtle)]
+                    "
+                    style={{
+                      backgroundColor: activeConvId === conv.id ? 'var(--primary-subtle)' : 'transparent',
+                      color: activeConvId === conv.id ? 'var(--primary)' : 'var(--foreground)',
+                    }}
                   >
-                    {chip}
+                    <MessageSquare 
+                      className="h-4 w-4 shrink-0 opacity-60"
+                      style={{ 
+                        color: activeConvId === conv.id ? 'var(--primary)' : 'var(--muted)' 
+                      }} 
+                    />
+                    
+                    <span 
+                      className="
+                        truncate 
+                        flex-1 
+                        text-right 
+                        font-medium 
+                      " 
+                      style={{ 
+                        color: activeConvId === conv.id ? 'var(--primary)' : 'var(--foreground)' 
+                      }} 
+                    >
+                      {conv.title}
+                    </span>
                   </button>
-                )
-              )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </nav>
+
+        {/* Mobile Close Button */}
+        <div 
+          className="
+            md:hidden 
+            p-3 
+            border-t 
+            mt-auto 
+          " 
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="
+              w-full 
+              py-2.5 
+              rounded-xl 
+              text-sm 
+              font-medium 
+              transition-colors 
+              duration-150 
+              hover:opacity-80 
+            "
+            style={{
+              backgroundColor: 'var(--surface-2)',
+              color: 'var(--foreground)',
+            }}
+          >
+            إغلاق القائمة
+          </button>
+        </div>
+      </aside>
+
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div
+          className="
+            fixed 
+            inset-0 
+            z-40 
+            bg-black/50 
+            backdrop-blur-sm 
+            md:hidden 
+          "
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ═══ MAIN CHAT AREA ═══ */}
+      <main className="flex-1 flex flex-col min-w-0 min-h-0">
+
+        {/* ── HEADER ── */}
+        <header 
+          className="
+            flex 
+            items-center 
+            justify-between 
+            px-4 
+            lg:px-6 
+            py-3 
+            shrink-0 
+            relative 
+            z-10 
+          "
+          style={{ 
+            borderBottom: '1px solid var(--border)',
+            backgroundColor: 'var(--surface)',
+          }}
+        >
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="
+              md:hidden 
+              p-2 
+              -ml-2 
+              rounded-lg 
+              hover:opacity-80 
+              transition-colors 
+              duration-150 
+            "
+            style={{ color: 'var(--muted)'}}
+            aria-label="فتح القائمة الجانبية"
+          >
+            <Menu className="h-5 w-5" strokeWidth={2}/>
+          </button>
+
+          {/* Logo & Status */}
+          <div className="flex items-center gap-3">
+            {/* Logo Icon */}
+            <div 
+              className="
+                flex 
+                items-center 
+                justify-center 
+                h-9 
+                w-9 
+                rounded-xl 
+                shadow-lg 
+                transition-transform 
+                duration-200 
+                hover:scale-105 
+              "
+              style={{
+                backgroundColor: 'var(--primary)',
+                boxShadow: '0 4px 14px rgba(81, 32, 200, 0.3)',
+              }}
+            >
+              <Sparkles className="h-5 w-5 text-white" strokeWidth={2.5}/>
+            </div>
+
+            {/* Title & Status */}
+            <div>
+              <h1 
+                className="
+                  text-base 
+                  font-bold 
+                  tracking-tight 
+                  leading-none 
+                "
+                style={{ 
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  color: 'var(--foreground)',
+                }}
+              >
+                DeveWay AI
+              </h1>
+            </div>
+
+            {/* ✅ FIX #2: Added proper border to Online Status Badge */}
+            <div 
+              className="
+                hidden 
+                sm:flex 
+                items-center 
+                gap-1.5 
+                rounded-full 
+                px-3 
+                py-1 
+                text-xs 
+                font-semibold 
+              "
+              style={{
+                backgroundColor: 'rgba(52, 199, 89, 0.08)',
+                border: '1px solid rgba(52, 199, 89, 0.15)', // ✅ Added border property
+              }}
+            >
+              <span 
+                className="
+                  h-1.5 
+                  w-1.5 
+                  rounded-full 
+                  animate-pulse 
+                " 
+                style={{ backgroundColor: '#34D399' }}
+              />
+              <span 
+                style={{ 
+                  color: '#34D399',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                }} 
+              >
+                متصل
+              </span>
             </div>
           </div>
-        ) : (
-          /* ── Messages ────────────────────────────── */
-          <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 pb-32">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+        </header>
+
+        {/* ── MESSAGES AREA ── */}
+        <section 
+          className="
+            flex-1 
+            overflow-y-auto 
+            px-4 
+            py-6 
+            min-h-0 
+          "
+        >
+          {isEmpty ? (
+            /* ── WELCOME SCREEN ── */
+            <div 
+              className="
+                flex 
+                flex-col 
+                items-center 
+                justify-center 
+                h-full 
+                px-4 
+                py-16 
+                text-center 
+              "
+            >
+              {/* Hero Icon */}
+              <div 
+                className="
+                  mb-6 
+                  flex 
+                  h-20 
+                  w-20 
+                  items-center 
+                  justify-center 
+                  rounded-2xl 
+                  mx-auto 
+                "
+                style={{
+                  backgroundColor: 'var(--primary-subtle)',
+                  border: '1px solid var(--primary-border)',
+                  boxShadow: '0 0 40px rgba(81, 32, 200, 0.10)',
+                }}
               >
-                {/* Avatar */}
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border ${
-                    msg.role === 'user'
-                      ? 'bg-[#5120c8] border-[#5120c8] shadow-lg shadow-blue-900/20'
-                      : 'border border-white/10 bg-[#141414]'
-                  }`}
-                >
-                  {msg.role === 'user' ? (
-                    <User className="h-4 w-4 text-white" />
-                  ) : (
-                    <BrainCircuit className="h-4 w-4 text-[#A78BFA]" />
-                  )}
-                </div>
-
-                {/* Bubble */}
-                <div
-                  className={`relative max-w-[78%] rounded-2xl px-4 py-3 shadow-md ${
-                    msg.role === 'user'
-                      ? 'rounded-tr-sm bg-[#5120c8] text-white'
-                      : 'rounded-tl-sm border border-white/10 bg-[#141414] text-[#E6E6E6]'
-                  }`}
-                >
-                  {msg.role === 'user' ? (
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                      {msg.content}
-                    </p>
-                  ) : (
-                    <MessageContent content={msg.content} />
-                  )}
-                </div>
+                <BrainCircuit 
+                  className="
+                    h-10 
+                    w-10 
+                  " 
+                  style={{ color: 'var(--primary)' }} 
+                  strokeWidth={2.5} 
+                />
               </div>
-            ))}
 
-            {/* Streaming bubble */}
-            {isStreaming && (
-              <div className="flex gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#141414] shadow-md">
-                  <BrainCircuit className="h-4 w-4 text-[#A78BFA]" />
-                </div>
-                <div className="relative max-w-[78%] rounded-2xl rounded-tl-sm border border-white/10 bg-[#141414] px-4 py-3 text-[#E6E6E6]">
-                  {streamingContent ? (
-                    <>
-                      <MessageContent content={streamingContent} />
-                      <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-[#818CF8] align-middle" />
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-1.5 py-1">
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="h-2 w-2 animate-bounce rounded-full bg-[#818CF8]/70"
-                          style={{ animationDelay: `${i * 0.12}s` }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              {/* Welcome Text */}
+              <h2 
+                className="
+                  mb-2 
+                  text-2xl 
+                  font-black 
+                  tracking-tight 
+                  leading-snug 
+                "
+                style={{ 
+                  fontFamily: "'PingARLT', 'Cairo', sans-serif",
+                  color: 'var(--foreground)',
+                }}
+              >
+                مرحباً! 👋
+              </h2>
+              
+              <p 
+                className="
+                  max-w-md 
+                  mx-auto 
+                  mb-8 
+                  text-sm 
+                  leading-relaxed 
+                "
+                style={{ 
+                  color: 'var(--muted)', 
+                }}
+              >
+                أنا مساعدك الذكي الشخصي. اسألني عن أي شيء.
+              </p>
 
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      {/* ── Input Area (Floating) ──────────────────── */}
-      <div className="absolute bottom-0 left-0 right-0 z-10">
-        {/* Gradient fade to blend input into background */}
-        <div 
-          className="pointer-events-none h-16 bg-gradient-to-t to-transparent" 
-          style={{ background: 'linear-gradient(to top, #0D0D0D, transparent)' }}
-        />
-
-        <div className="px-4 pb-5 pt-2">
-          <div className="mx-auto max-w-3xl">
-            {/* Quick actions row */}
-            {!isEmpty && (
-              <div className="mb-3 flex justify-end gap-2 overflow-x-auto pb-1">
-                {['تلخيص', 'شرح', 'مثال', 'خطة'].map((action) => (
+              {/* Quick Suggestions */}
+              <div 
+                className="
+                  flex 
+                  flex-wrap 
+                  justify-center 
+                  gap-2 
+                  max-w-lg 
+                  mx-auto 
+                  mb-8 
+                "
+              >
+                {['تعلم البرمجة', 'خطة تعلم', 'مسار مهني'].map((suggestion, index) => (
                   <button
-                    key={action}
-                    onClick={() => sendMessage(action)}
-                    className="shrink-0 rounded-full border bg-[#141414] px-3 py-1 text-xs transition hover:bg-[#1F1F1F] hover:border-[#5120c8]/30 hover:text-[#818CF8]"
-                    style={{ borderColor: 'rgba(255,255,255,0.1)', color: '#9CA3AF' }}
+                    key={index}
+                    onClick={() => sendMessage(suggestion)}
+                    className="
+                      px-4 
+                      py-2 
+                      rounded-full 
+                      text-xs 
+                      font-medium 
+                      transition-all 
+                      duration-200 
+                      hover:scale-105 
+                      active:scale-95 
+                      border 
+                      shadow-none 
+                    "
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--muted)',
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--primary-border)'
+                      e.currentTarget.style.color = 'var(--primary)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.color = 'var(--muted)'
+                    }}
                   >
-                    {action}
+                    {suggestion}
                   </button>
                 ))}
               </div>
-            )}
-
-            {/* Main input */}
-            <div
-              className={`flex items-end gap-3 rounded-2xl border bg-[#141414] p-3 shadow-xl backdrop-blur-md transition-all duration-200 ${
-                isStreaming
-                  ? 'border-white/10'
-                  : input.trim()
-                  ? 'border-[#5120c8]/50 shadow-[#5120c8]/10'
-                  : 'border-white/10 focus-within:border-white/20'
-              }`}
+            </div>
+          ) : (
+            /* ── MESSAGES LIST ── */
+            <div 
+              className="
+                max-w-3xl 
+                mx-auto 
+                space-y-4 
+                px-4 
+                pb-32 
+              "
             >
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="اكتب سؤالك هنا... (Enter للإرسال)"
-                disabled={isStreaming}
-                rows={1}
-                className="flex-1 resize-none bg-transparent text-sm placeholder:text-gray-600 focus:outline-none disabled:opacity-50"
-                style={{ color: '#E6E6E6', maxHeight: '140px' }}
-              />
-              <button
-                onClick={() => sendMessage(input)}
-                disabled={!input.trim() || isStreaming}
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all ${
-                  input.trim() && !isStreaming
-                    ? 'bg-[#5120c8] text-white shadow-lg hover:bg-[#4318a8]'
-                    : 'cursor-not-allowed bg-[#1F1F1F] text-[#6B7280]'
-                }`}
-              >
-                {isStreaming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </button>
-            </div>
+              {messages.map((msg) => (
+                <MessageBubble key={msg.id} msg={msg} />
+              ))}
 
-            <p className="mt-2 text-center text-xs" style={{ color: 'rgba(255,255,255,0.15)' }}>
-              DeveWay AI · Llama 3.3 · المعلومات المهمة تحتاج تحقق مستقل
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Conversations Sidebar Drawer ──────────── */}
-      {sidebarOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
-          <div
-            className="fixed left-0 top-0 z-40 flex h-full w-72 flex-col border-r shadow-2xl"
-            dir="rtl"
-            style={{ background: '#141414', borderColor: 'rgba(255,255,255,0.08)' }}
-          >
-            <div className="flex items-center justify-between p-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <h3 className="font-bold text-white">المحادثات</h3>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="rounded-xl p-1.5 transition hover:bg-white/5"
-                style={{ color: '#9CA3AF' }}
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <button
-                onClick={() => createConv.mutate()}
-                disabled={createConv.isPending}
-                className="flex w-full items-center gap-2 rounded-xl border bg-[#0A0A0A] px-3 py-2.5 text-sm font-semibold transition hover:bg-[#1F1F1F]"
-                style={{ borderColor: 'rgba(81,32,200,0.3)', color: '#818CF8' }}
-              >
-                <Plus className="h-4 w-4" />
-                محادثة جديدة
-              </button>
-            </div>
-
-            <div className="flex-1 space-y-1 overflow-y-auto p-2">
-              {conversations.length === 0 ? (
-                <div className="py-10 text-center text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>
-                  <MessageSquare className="mx-auto mb-2 h-8 w-8 opacity-20" />
-                  لا توجد محادثات بعد
-                </div>
-              ) : (
-                conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    className={`group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 transition ${
-                      activeConvId === conv.id
-                        ? 'border bg-[#1F1F1F]'
-                        : 'hover:bg-[#1F1F1F]'
-                    }`}
-                    style={{ borderColor: activeConvId === conv.id ? 'rgba(81,32,200,0.3)' : 'transparent' }}
-                    onClick={() => loadConversation(conv.id)}
+              {/* Streaming Indicator */}
+              {isStreaming && (
+                <div className="flex gap-3">
+                  {/* AI Avatar */}
+                  <div 
+                    className="
+                      flex 
+                      h-8 
+                      w-8 
+                      shrink-0 
+                      items-center 
+                      justify-center 
+                      rounded-xl 
+                    "
+                    style={{
+                      backgroundColor: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                    }}
                   >
-                    <MessageSquare
-                      className={`h-4 w-4 shrink-0 ${
-                        activeConvId === conv.id ? 'text-[#5120c8]' : 'text-[#6B7280]'
-                      }`}
+                    <BrainCircuit 
+                      className="h-4 w-4" 
+                      style={{ color: 'var(--primary)' }} 
+                      strokeWidth={2}
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm" style={{ color: '#E6E6E6' }}>{conv.title}</p>
-                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                        {new Date(conv.updatedAt).toLocaleDateString('ar-SA')}
-                      </p>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteConv.mutate(conv.id)
-                      }}
-                      className="hidden h-6 w-6 items-center justify-center rounded-lg text-red-400/70 hover:bg-red-500/15 hover:text-red-400 group-hover:flex"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
                   </div>
-                ))
+
+                  {/* Typing or Streaming Bubble */}
+                  <div 
+                    className="
+                      max-w-[70%] 
+                      rounded-2xl 
+                      rounded-tl-md 
+                      px-4 
+                      py-3 
+                      border 
+                      shadow-sm 
+                    "
+                    style={{
+                      backgroundColor: 'var(--surface)',
+                      borderColor: 'var(--border)',
+                    }}
+                  >
+                    {streamingContent ? (
+                      <>
+                        <MessageContent content={streamingContent} />
+                        
+                        {/* Cursor blink effect */}
+                        <span 
+                          className="
+                            inline-block 
+                            h-4 
+                            w-0.5 
+                            align-middle 
+                            rounded-full 
+                            ml-1 
+                            animate-pulse 
+                          " 
+                          style={{
+                            backgroundColor: 'var(--primary)',
+                            animationDuration: '800ms',
+                            animationIterationCount: 'infinite',
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <TypingIndicator />
+                    )}
+                  </div>
+                </div>
               )}
+
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
             </div>
-          </div>
-        </>
+          )}
+        </section>
+{/* ── INPUT AREA ── */}
+<footer 
+  className="
+    shrink-0 
+    px-4 
+    pb-4 
+    pt-3 
+    sticky 
+    bottom-0 
+    z-10 
+  "
+  style={{
+    background: 'linear-gradient(to top, var(--surface) 80%, transparent)',
+  }}
+>
+  {/* Quick Action Chips */}
+  {!isEmpty && (
+    <div 
+      className="
+        flex 
+        justify-center 
+        gap-2 
+        mb-3 
+        overflow-x-auto 
+        pb-1
+      "
+    >
+      {['تلخيص', 'شرح', 'مثال', 'خطة'].map((action, index) => (
+        <button
+          key={index}
+          onClick={() => sendMessage(action)}
+          className="
+            shrink-0 
+            px-3.5 
+            py-1.5 
+            rounded-full 
+            text-xs 
+            font-medium 
+            transition-all 
+            duration-200 
+            hover:scale-105 
+            active:scale-95 
+            border
+          "
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: 'var(--border)',
+            color: 'var(--muted-foreground)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--primary-subtle)'
+            e.currentTarget.style.borderColor = 'var(--primary)'
+            e.currentTarget.style.color = 'var(--primary)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.borderColor = 'var(--border)'
+            e.currentTarget.style.color = 'var(--muted-foreground)'
+          }}
+        >
+          {action}
+        </button>
+      ))}
+    </div>
+  )}
+
+  {/* ═══ PROFESSIONAL INPUT BAR ═══ */}
+  <div 
+    className="
+      relative 
+      flex 
+      items-center 
+      gap-2 
+      rounded-2xl
+      transition-all 
+      duration-300 
+      group
+    "
+    style={{
+      background: 'var(--background)',
+      border: `2px solid ${hasInput ? 'var(--primary)' : 'var(--border)'}`,
+      boxShadow: hasInput 
+        ? '0 0 0 4px rgba(99, 102, 241, 0.1), 0 8px 32px rgba(81, 32, 200, 0.15)'
+        : '0 2px 12px rgba(0, 0, 0, 0.08)',
+      transform: hasInput ? 'translateY(-2px)' : 'translateY(0)',
+    }}
+  >
+    {/* ✨ Decorative gradient border effect on focus */}
+    {hasInput && (
+      <div 
+        className="absolute -inset-[2px] rounded-2xl -z-10 opacity-50 blur-sm"
+        style={{
+          background: 'linear-gradient(135deg, var(--primary), #8b5cf6, var(--primary))',
+        }}
+      />
+    )}
+
+    {/* Textarea - takes full available space */}
+    <textarea
+      ref={textareaRef}
+      value={input}
+      onChange={handleInputChange}
+      onKeyDown={handleKeyDown}
+      placeholder="اكتب رسالتك هنا..."
+      disabled={isStreaming}
+      rows={1}
+      className="
+        flex-1 
+        resize-none 
+        bg-transparent 
+        outline-none 
+        disabled:opacity-50 
+        text-sm 
+        leading-relaxed
+        max-h-[120px] 
+        py-3 
+        pl-3 
+        pr-2
+        placeholder:text-muted-400
+      "
+      style={{
+        color: 'var(--foreground)',
+        fontFamily: "'DM Sans', sans-serif",
+        caretColor: 'var(--primary)',
+      }}
+    />
+
+    {/* Send Button - Integrated inside the bar */}
+    <button
+      onClick={() => sendMessage(input)}
+      disabled={!hasInput || isStreaming}
+      className="
+        flex 
+        items-center 
+        justify-center
+        h-9 
+        w-9 
+        shrink-0 
+        rounded-xl 
+        transition-all 
+        duration-200 
+        m-1.5
+        active:scale-90
+      "
+      style={{
+        background: hasInput 
+          ? 'linear-gradient(135deg, var(--primary), #7c3aed)'
+          : 'var(--surface-2)',
+        color: hasInput ? '#ffffff' : 'var(--muted)',
+        cursor: hasInput ? 'pointer' : 'not-allowed',
+        boxShadow: hasInput 
+          ? '0 4px 14px rgba(99, 102, 241, 0.4)'
+          : 'none',
+        opacity: hasInput ? 1 : 0.5,
+      }}
+    >
+      {isStreaming ? (
+        <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+      ) : (
+        <Send className="h-4 w-4" strokeWidth={2.5} />
       )}
+    </button>
+  </div>
+
+  {/* Disclaimer */}
+  <p 
+    className="
+      text-center 
+      text-[11px] 
+      pt-2.5 
+      select-none
+      tracking-wide
+    "
+    style={{ 
+      color: 'var(--muted-foreground)',
+      opacity: 0.7,
+    }}
+  >
+    DeveWay AI • Llama 3.3 ⚡
+  </p>
+</footer>
+      </main>
     </div>
   )
 }

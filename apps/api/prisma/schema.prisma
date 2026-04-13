@@ -50,8 +50,6 @@ enum LessonStatus {
   COMPLETED
 }
 
-// PaymentStatus and PaymentMethod are now plain strings on the Payment model
-
 enum SessionStatus {
   SCHEDULED
   IN_PROGRESS
@@ -186,7 +184,7 @@ model PasswordResetToken {
   expiresAt  DateTime
   usedAt     DateTime?
   ipAddress  String?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime @default(now())
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -490,7 +488,7 @@ model Enrollment {
   userId      String
   courseId    String
   status      EnrollmentStatus @default(ACTIVE)
-  progress    Float            @default(0) // Percentage 0-100
+n  progress    Float            @default(0) // Percentage 0-100
   enrolledAt  DateTime         @default(now())
   completedAt DateTime?
   expiresAt   DateTime?
@@ -736,7 +734,7 @@ model AdminLog {
   details    Json? // Action details
   ipAddress  String?
   userAgent  String?
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
   admin User @relation(fields: [adminId], references: [id])
@@ -802,7 +800,7 @@ model AnalyticsEvent {
   sessionId  String? // Session ID for tracking
   ipAddress  String?
   userAgent  String?
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   // Relations
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -879,12 +877,22 @@ model AssessmentSession {
   @@map("assessment_sessions")
 }
 
+// ════════════════════════════════════════════════════════
+// ✅ SiteSettings - UPDATED COLORS (Purple + White Theme)
+// ════════════════════════════════════════════════════════
 model SiteSettings {
   id              String   @id @default(cuid())
   siteName        String   @default("DeveWay")
-  primaryColor    String   @default("#3b82f6")
-  backgroundColor String   @default("#0d0d0d")
-  buttonColor     String   @default("#3b82f6")
+  
+  // ✅ Updated: Purple theme (was blue #3b82f6)
+  primaryColor    String   @default("#5120c8")
+  
+  // ✅ Updated: Clean white for light mode (was #0d0d0d / #0d0d0d)
+  backgroundColor String   @default("#FFFFFF")
+  
+  // ✅ Updated: Purple buttons (was blue #3b82f6)
+  buttonColor     String   @default("#5120c8")
+  
   logoUrl         String?
   updatedAt       DateTime @updatedAt
 
@@ -904,10 +912,8 @@ model ConsultingSession {
   topic         String?
   notes         String?
   status        String    @default("PENDING")
-  // PENDING | CONFIRMED | RESCHEDULED | COMPLETED | CANCELLED | REJECTED
   price         Float     @default(0)
   paymentStatus String    @default("UNPAID")
-  // UNPAID | PAID | REFUNDED
   paymentId     String?
   proposedAt    DateTime?
   proposedTime  DateTime?

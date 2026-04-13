@@ -19,6 +19,9 @@ function hexToRgb(hex: string): string {
   return `${r} ${g} ${b}`
 }
 
+/* ══════════════════════════════════════
+   ✅ FIXED: Smart Background Handling
+   ══════════════════════════════════════ */
 export function applySiteSettings(s: {
   primaryColor?: string
   backgroundColor?: string
@@ -26,7 +29,11 @@ export function applySiteSettings(s: {
   siteName?: string
 }) {
   if (typeof document === 'undefined') return
+  
   const root = document.documentElement
+  const isDarkMode = root.classList.contains('dark')
+  
+  // Primary Color - always apply
   if (s.primaryColor) {
     root.style.setProperty('--primary', s.primaryColor)
     root.style.setProperty('--primary-hover', s.primaryColor)
@@ -34,25 +41,33 @@ export function applySiteSettings(s: {
       root.style.setProperty('--primary-rgb', hexToRgb(s.primaryColor))
     } catch {}
   }
-  if (s.backgroundColor) root.style.setProperty('--background', s.backgroundColor)
+  
+  /* ── Background: Only set for LIGHT mode or if not dark ── */
+  if (s.backgroundColor) {
+    if (!isDarkMode) {
+      // Light mode: use admin setting
+      root.style.setProperty('--background', s.backgroundColor)
+    }
+    // Dark mode: DON'T override - let CSS handle it with #0D0D0D
+  }
+  
   if (s.buttonColor) root.style.setProperty('--button-color', s.buttonColor)
+  
   document.title = s.siteName || SITE_NAME
 }
 
 /* ── Handles smooth transition when theme changes ── */
 function ThemeTransitionHandler({ children }: { children: React.ReactNode }) {
-  const { theme, resolvedTheme } = useTheme()
+  const { resolvedTheme } = useTheme()
   const prevTheme = useRef(resolvedTheme)
 
   useEffect(() => {
     const html = document.documentElement
 
-    // Remove no-transition on first load (after layout script sets initial theme)
     requestAnimationFrame(() => {
       html.classList.remove('no-transition')
     })
 
-    // Add smooth transition when theme actually changes
     if (prevTheme.current && prevTheme.current !== resolvedTheme) {
       html.classList.add('theme-transition')
       html.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light'
@@ -64,7 +79,6 @@ function ThemeTransitionHandler({ children }: { children: React.ReactNode }) {
       return () => clearTimeout(timeout)
     }
 
-    // Always keep colorScheme in sync
     if (resolvedTheme) {
       html.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light'
     }
@@ -84,7 +98,7 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
     hydrate()
   }, [hydrate])
 
-  // Load site settings and apply CSS variables on mount
+  // Load site settings
   useEffect(() => {
     fetch(`${API_BASE}/api/admin/site-settings`)
       .then((r) => r.json())

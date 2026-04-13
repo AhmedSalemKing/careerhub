@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useLocale } from 'next-intl'
@@ -13,122 +14,346 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  ChevronRight,
+  ChevronLeft,
 } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 
+// ════════════════════════════════════
+// NAVIGATION ITEMS
+// ════════════════════════════════════
+
 const navItems = [
-  { labelAr: 'نظرة عامة', path: '', icon: LayoutDashboard },
-  { labelAr: 'كورساتي', path: '/my-courses', icon: BookOpen },
-  { labelAr: 'بدء كورس جديد', path: '/create-course', icon: PlusCircle },
-  { labelAr: 'المحاضرات', path: '/lectures', icon: Video },
-  { labelAr: 'الطلاب', path: '/students', icon: Users },
-  { labelAr: 'الإيرادات', path: '/earnings', icon: DollarSign },
-  { labelAr: 'الإعدادات', path: '/settings', icon: Settings },
+  { label: 'نظرة عامة', path: '', icon: LayoutDashboard },
+  { label: 'كورساتي', path: '/my-courses', icon: BookOpen },
+  { label: 'بدء كورس جديد', path: '/create-course', icon: PlusCircle },
+  { label: 'المحاضرات', path: '/lectures', icon: Video },
+  { label: 'الطلاب', path: '/students', icon: Users },
+  { label: 'الإيرادات', path: '/earnings', icon: DollarSign },
+  { label: 'الإعدادات', path: '/settings', icon: Settings },
 ]
+
+// ════════════════════════════════════
+// TOOLTIP COMPONENT
+// ════════════════════════════════════
+
+function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false)
+  
+  return (
+    <div 
+      className="relative"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div 
+          className="
+            absolute right-full mr-3 top-1/2 -translate-y-1/2
+            px-2.5 py-1.5 rounded-md text-xs font-medium
+            bg-gray-900 text-white whitespace-nowrap
+            shadow-xl shadow-black/20 z-50
+            animate-in fade-in duration-150
+          "
+          style={{ animation: 'fadeIn 0.15s ease-out' }}
+        >
+          {text}
+          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ════════════════════════════════════
+// MAIN COMPONENT
+// ════════════════════════════════════
 
 export function InstructorSidebar() {
   const locale = useLocale()
   const pathname = usePathname()
   const { user, logout } = useAuthStore()
+  
+  // ── State ──
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
+  // ── Computed ──
   const base = `/${locale}/dashboard`
   const firstName = user?.profile?.firstName ?? ''
   const lastName = user?.profile?.lastName ?? ''
   const initials = `${firstName[0] ?? ''}${lastName[0] ?? ''}`.toUpperCase() || 'م'
 
+  // ── Helpers ──
+  const isActive = (path: string) => {
+    if (path === '') {
+      return pathname === base || pathname === `${base}/`
+    }
+    return pathname.startsWith(`${base}${path}`)
+  }
+
+  // ═══ RENDER ═══
   return (
     <aside
-      className="sticky top-0 h-screen w-64 shrink-0 flex flex-col overflow-hidden"
-      style={{ 
-        background: '#050505',
-        backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.03) 0%, transparent 40%)',
-        borderLeft: '1px solid rgba(255,255,255,0.08)' 
-      }}
+      className={`
+        h-screen flex flex-col overflow-hidden
+        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+        ${isCollapsed ? 'w-[68px]' : 'w-[256px]'}
+      `}
+      style={{ background: '#0f172a' }}
       dir="rtl"
     >
-      {/* Logo */}
-      <div style={{ padding: '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#5120c8] to-purple-600 flex items-center justify-center shadow-lg shadow-purple-900/20">
-             <span className="text-white font-bold text-sm">D</span>
+      
+      {/* ════════════════════════════════
+          SECTION 1: LOGO
+         ════════════════════════════════ */}
+      <div 
+        className={`
+          flex items-center border-b border-white/[0.06]
+          ${isCollapsed ? 'justify-center py-4' : 'justify-between px-5 py-5'}
+        `}
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div 
+            className="
+              shrink-0 w-8 h-8 rounded-lg 
+              flex items-center justify-center 
+              font-bold text-sm text-white
+            "
+            style={{ background: '#1e293b' }}
+          >
+            D
           </div>
-          <span style={{
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-            fontWeight: 800, fontSize: 20,
-            color: '#ffffff', letterSpacing: '-0.02em',
-          }}>DeveWay</span>
-        </div>
-      </div>
-
-      {/* User info */}
-      <div className="flex items-center gap-3 px-4 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: 'rgba(245,166,35,0.2)', border: '1px solid rgba(245,166,35,0.3)' }}>
-          {user?.profile?.avatar
-            ? <img src={user.profile.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
-            : initials}
-        </div>
-        <div className="min-w-0">
-          <div className="truncate text-sm font-semibold" style={{ color: '#ffffff' }}>{firstName} {lastName}</div>
-          <div className="mt-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: 'rgba(245,166,35,0.15)', color: '#FCD34D' }}>
-            محاضر
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <Link
-          href={`${base}/ai-chat`}
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all mb-1"
-          style={{
-            background: pathname.includes('ai-chat') ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.05)',
-            color: pathname.includes('ai-chat') ? '#ffffff' : 'rgba(167,139,250,0.8)',
-            borderLeft: pathname.includes('ai-chat') ? '3px solid #5120c8' : '3px solid transparent',
-          }}
-        >
-          <Sparkles className="h-4 w-4 shrink-0" />
-          DeveWay AI
-          <span className="mr-auto rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: 'rgba(81,32,200,0.2)', color: '#A78BFA' }}>
-            AI
-          </span>
-        </Link>
-
-        {navItems.map((item) => {
-          const href = `${base}${item.path}`
-          const isActive = item.path === ''
-            ? pathname === base || pathname === `${base}/`
-            : pathname.startsWith(href)
-          return (
-            <Link
-              key={item.path}
-              href={href}
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all hover:bg-white/[0.03]"
-              style={{
-                background: isActive ? 'rgba(81,32,200,0.15)' : 'transparent',
-                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.6)',
-                borderLeft: isActive ? '3px solid #5120c8' : '3px solid transparent',
-                fontFamily: 'DM Sans, sans-serif',
-              }}
+          
+          {!isCollapsed && (
+            <span 
+              className="text-sm font-semibold tracking-tight text-white shrink-0"
+              style={{ fontFamily: "'Inter', sans-serif" }}
             >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.labelAr}
+              DeveWay
+            </span>
+          )}
+        </div>
+
+        {/* Collapse Toggle */}
+        {!isCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="
+              shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+              text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]
+              transition-colors duration-150
+            "
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+        
+        {isCollapsed && (
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="
+              shrink-0 w-6 h-6 rounded-md flex items-center justify-center
+              text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]
+              transition-colors duration-150
+            "
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* ════════════════════════════════
+          SECTION 2: USER BLOCK
+         ════════════════════════════════ */}
+      <div 
+        className={`
+          border-b border-white/[0.06]
+          ${isCollapsed ? 'flex justify-center py-4' : 'px-4 py-4'}
+        `}
+      >
+        {isCollapsed ? (
+          <Tooltip text={`${firstName} ${lastName}`}>
+            <div 
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
+              style={{ background: '#1e293b' }}
+            >
+              {initials}
+            </div>
+          </Tooltip>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div 
+              className="
+                shrink-0 w-10 h-10 rounded-full 
+                flex items-center justify-center 
+                text-sm font-bold text-white overflow-hidden
+              "
+              style={{ background: '#1e293b' }}
+            >
+              {user?.profile?.avatar ? (
+                <img src={user.profile.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
+            </div>
+            
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white truncate">
+                {firstName} {lastName}
+              </p>
+              <span className="text-xs text-gray-500">محاضر</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ════════════════════════════════
+          SECTION 3: AI FEATURE ⭐
+         ════════════════════════════════ */}
+      <nav className={`px-3 pt-4 ${isCollapsed ? 'px-2 pt-4' : ''}`}>
+        
+        {/* AI Link - Special Treatment */}
+        <Link href={`${base}/ai-chat`}>
+          <Tooltip text="DeveWay AI">
+            <div
+              className={`
+                group relative flex items-center rounded-lg
+                transition-all duration-200 ease-out
+                ${pathname.includes('ai-chat')
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
+                }
+                ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
+              `}
+            >
+              {/* Active Indicator */}
+              {pathname.includes('ai-chat') && !isCollapsed && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-violet-500" />
+              )}
+              
+              {/* Icon */}
+              <Sparkles 
+                className={`
+                  shrink-0 transition-transform duration-200
+                  ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}
+                  group-hover:scale-110
+                  ${pathname.includes('ai-chat') ? 'text-violet-400' : ''}
+                `}
+              />
+              
+              {/* Text */}
+              {!isCollapsed && (
+                <>
+                  <span className="text-sm font-medium flex-1">DeveWay AI</span>
+                  <span 
+                    className="
+                      text-[10px] font-semibold px-1.5 py-0.5 rounded
+                      bg-violet-500/20 text-violet-400
+                    "
+                  >
+                    AI
+                  </span>
+                </>
+              )}
+              
+              {/* Active Dot for Collapsed */}
+              {isCollapsed && pathname.includes('ai-chat') && (
+                <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-violet-500" />
+              )}
+            </div>
+          </Tooltip>
+        </Link>
+      </nav>
+
+      {/* ════════════════════════════════
+          SECTION 4: NAVIGATION
+         ════════════════════════════════ */}
+      <nav className={`flex-1 px-3 py-2 space-y-0.5 overflow-y-auto ${isCollapsed ? 'px-2 py-2' : ''}`}>
+        {navItems.map((item) => {
+          const active = isActive(item.path)
+          
+          return (
+            <Link key={item.path} href={`${base}${item.path}`}>
+              <Tooltip text={item.label}>
+                <div
+                  className={`
+                    group relative flex items-center rounded-lg
+                    transition-all duration-200 ease-out
+                    ${active
+                      ? 'bg-white/[0.08] text-white'
+                      : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
+                    }
+                    ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
+                  `}
+                >
+                  {/* Active Indicator */}
+                  {active && !isCollapsed && (
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-white/50" />
+                  )}
+                  
+                  {/* Icon */}
+                  <item.icon 
+                    className={`
+                      shrink-0 transition-transform duration-200
+                      ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}
+                      group-hover:scale-110
+                    `}
+                  />
+                  
+                  {/* Text */}
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium">{item.label}</span>
+                  )}
+                  
+                  {/* Active Dot for Collapsed */}
+                  {isCollapsed && active && (
+                    <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/70" />
+                  )}
+                </div>
+              </Tooltip>
             </Link>
           )
         })}
       </nav>
 
-      {/* Logout */}
-      <div className="px-3 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
-        <button
-          type="button"
-          onClick={logout}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all hover:bg-white/[0.05]"
-          style={{ color: 'rgba(255,255,255,0.5)' }}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          تسجيل الخروج
-        </button>
+      {/* ════════════════════════════════
+          SECTION 5: LOGOUT (Isolated)
+         ════════════════════════════════ */}
+      <div 
+        className={`
+          border-t border-white/[0.06]
+          ${isCollapsed ? 'p-2 pt-3' : 'px-3 py-3'}
+        `}
+      >
+        <Tooltip text="تسجيل الخروج">
+          <button
+            onClick={() => {
+              logout()
+              window.location.href = `/${locale}`
+            }}
+            className={`
+              w-full flex items-center rounded-lg
+              text-red-400/80 hover:text-red-300
+              hover:bg-red-500/[0.08]
+              transition-all duration-200
+              ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
+            `}
+          >
+            <LogOut className={`shrink-0 ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+            {!isCollapsed && <span className="text-sm font-medium">تسجيل الخروج</span>}
+          </button>
+        </Tooltip>
       </div>
+
+      {/* ═══ CSS ANIMATIONS ═══ */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-50%) translateX(4px); }
+          to { opacity: 1; transform: translateY(-50%) translateX(0); }
+        }
+      `}</style>
     </aside>
   )
 }

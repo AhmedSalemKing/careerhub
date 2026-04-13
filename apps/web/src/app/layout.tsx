@@ -10,16 +10,8 @@ import type { Locale } from '../i18n'
 
 const madinetAlBat = localFont({
   src: [
-    {
-      path: '../assets/fonts/MadinetAl-Bat-v4.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../assets/fonts/MadinetAl-Bat-v2.woff2',
-      weight: '400',
-      style: 'normal',
-    },
+    { path: '../assets/fonts/MadinetAl-Bat-v4.woff2', weight: '400', style: 'normal' },
+    { path: '../assets/fonts/MadinetAl-Bat-v2.woff2', weight: '400', style: 'normal' },
   ],
   variable: '--font-madinet',
   display: 'swap',
@@ -44,6 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
+        {/* Script: Set initial theme only - NO forced colors on children */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -55,11 +48,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
                   if (isDark) {
                     document.documentElement.classList.add('dark');
+                    document.documentElement.style.colorScheme = 'dark';
                   } else {
                     document.documentElement.classList.remove('dark');
+                    document.documentElement.style.colorScheme = 'light';
                   }
-
-                  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
                 } catch(e) {}
 
                 window.addEventListener('load', function() {
@@ -71,7 +64,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             `,
           }}
         />
+        
+        {/* Minimal critical CSS - only prevent flash on html/body */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            html.dark { color-scheme: dark; }
+            html:not(.dark) { color-scheme: light; }
+          `
+        }} />
       </head>
+      
+      {/* Body uses CSS variables only */}
       <body className="min-h-screen bg-background text-foreground">
         <NextIntlClientProvider messages={messages}>
           <Providers locale={locale}>
@@ -80,6 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </LoadingProvider>
           </Providers>
         </NextIntlClientProvider>
+        
         <Toaster
           position={dir === 'rtl' ? 'top-left' : 'top-right'}
           expand={false}
