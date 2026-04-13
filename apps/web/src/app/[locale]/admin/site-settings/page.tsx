@@ -14,7 +14,7 @@ type SiteSettings = {
 export default function SiteSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
     primaryColor: '#3b82f6',
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0d0d0d',
     buttonColor: '#3b82f6',
     logoUrl: '',
   })
@@ -28,7 +28,7 @@ export default function SiteSettingsPage() {
         const d = res.data.data ?? res.data
         setSettings({
           primaryColor: d.primaryColor ?? '#3b82f6',
-          backgroundColor: d.backgroundColor ?? '#0f172a',
+          backgroundColor: d.backgroundColor ?? '#0d0d0d',
           buttonColor: d.buttonColor ?? '#3b82f6',
           logoUrl: d.logoUrl ?? '',
         })

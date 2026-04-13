@@ -140,7 +140,7 @@ export default function LoginPage() {
             </div>
             <h2
               className="text-2xl font-bold mb-2"
-              style={{ color: '#ffffff', fontFamily: ar ? "'MadinatAlBatt', sans-serif" : "'Plus Jakarta Sans', sans-serif" }}
+              style={{ color: '#ffffff', fontFamily: ar ? "'PingARLT', sans-serif" : "'Plus Jakarta Sans', sans-serif" }}
             >
               {ar ? 'طلبك قيد المراجعة' : 'Application Under Review'}
             </h2>

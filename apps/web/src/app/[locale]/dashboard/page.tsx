@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target } from 'lucide-react'
+import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft } from 'lucide-react'
 import { get, patch } from '../../../lib/api'
-import { unwrapData, type ApiEnvelope } from '../../../lib/unwrap'
+import { unwrapData } from '../../../lib/unwrap'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -14,18 +14,9 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 
-// ─── Styles Constants for Glossy Black Theme ───────────────────────────────────
-const CARD_STYLE = {
-  background: '#141414',
-  border: '1px solid rgba(255,255,255,0.08)',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-  color: '#E6E6E6'
-}
-
-const TEXT_MUTED = '#9CA3AF'
-const TEXT_PRIMARY = '#E6E6E6'
-
-// ─── Instructor Overview ────────────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════
+   INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
+   ════════════════════════════════════════════════════════ */
 
 function InstructorOverview() {
   const locale = useLocale()
@@ -51,117 +42,110 @@ function InstructorOverview() {
   })
 
   const statCards = [
-    { label: 'إجمالي الكورسات', value: stats?.totalCourses ?? 0, icon: BookOpen, bg: 'rgba(81,32,200,0.15)', color: '#818CF8' },
-    { label: 'إجمالي الطلاب', value: stats?.totalStudents ?? 0, icon: Users, bg: 'rgba(43,191,163,0.15)', color: '#34D399' },
-    { label: 'الإيرادات', value: `${stats?.revenue ?? 0} ريال`, icon: DollarSign, bg: 'rgba(245,166,35,0.15)', color: '#FCD34D' },
+    { label: 'إجمالي الكورسات', value: stats?.totalCourses ?? 0, icon: BookOpen, color: 'from-purple-500 to-violet-600' },
+    { label: 'إجمالي الطلاب', value: stats?.totalStudents ?? 0, icon: Users, color: 'from-teal-500 to-emerald-600' },
+    { label: 'الإيرادات', value: `${stats?.revenue ?? 0} ريال`, icon: DollarSign, color: 'from-amber-500 to-orange-600' },
   ]
 
   return (
-    <div className="p-6 space-y-6" dir="rtl" style={{ color: TEXT_PRIMARY }}>
-      {/* Welcome Banner */}
-      <div
-        className="rounded-2xl p-6 relative overflow-hidden"
-        style={{ 
-          background: '#141414', 
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
-        }}
-      >
-        {/* Subtle glow effect inside banner */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-[#5120c8] opacity-5 blur-3xl -mr-16 -mt-16 pointer-events-none" />
-        
-        <h1 className="text-3xl font-bold font-madinet relative z-10" style={{ color: '#ffffff' }}>
-          مرحباً بك يا {firstName}
-        </h1>
-        <p className="mt-1 text-sm relative z-10" style={{ color: TEXT_MUTED }}>
-          لوحة تحكم المحاضر — أدر كورساتك وطلابك بكل سهولة
-        </p>
-        <Link
-          href={`/${locale}/dashboard/create-course`}
-          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white transition-all shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 hover:-translate-y-0.5"
-          style={{ 
-            background: '#5120c8',
-            fontSize: 14
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = '#4318a8'}
-          onMouseLeave={(e) => e.currentTarget.style.background = '#5120c8'}
-        >
-          <PlusCircle className="h-4 w-4" />
-          بدء كورس جديد
-        </Link>
+    <div className="p-6 lg:p-8 space-y-8" dir="rtl">
+      
+      {/* Welcome Banner — Enhanced */}
+      <div className="card-welcome animate-fade-up">
+        <div className="welcome-glow" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg">
+              <BookOpen className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight leading-tight">
+                مرحباً بك يا {firstName} 👋
+              </h1>
+              <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المحاضر — أدر كورساتك وطلابك بكل سهولة</p>
+            </div>
+          </div>
+          
+          <Link href={`/${locale}/dashboard/create-course`} className="btn-create-inline">
+            <PlusCircle className="h-5 w-5" />
+            بدء كورس جديد
+          </Link>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      {/* Stats Grid — Modern Cards */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {statCards.map((stat, i) => (
-          <div
-            key={i}
-            className="rounded-2xl p-5 relative overflow-hidden"
-            style={CARD_STYLE}
+          <div 
+            key={i} 
+            className={`card-stat animate-fade-up stagger-${i + 1}`}
           >
-            <div
-              className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl"
-              style={{ background: stat.bg }}
-            >
-              <stat.icon className="h-6 w-6" style={{ color: stat.color }} />
+            <div className={`stat-icon-wrapper bg-gradient-to-br ${stat.color}`}>
+              <stat.icon className="h-6 w-6 text-white" />
             </div>
-            <p className="text-2xl font-bold" style={{ color: '#ffffff' }}>{stat.value}</p>
-            <p className="text-sm mt-0.5" style={{ color: TEXT_MUTED }}>{stat.label}</p>
+            <p className="stat-value">{stat.value}</p>
+            <p className="stat-label">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Recent Courses */}
+      {/* Recent Courses — Enhanced */}
       {courses.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold font-madinet" style={{ color: '#ffffff' }}>كورساتي الأخيرة</h2>
-            <Link href={`/${locale}/dashboard/my-courses`} className="text-sm hover:underline" style={{ color: '#818CF8' }}>
-              عرض الكل
+        <div className="animate-fade-up stagger-4">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              كورساتي الأخيرة
+            </h2>
+            <Link 
+              href={`/${locale}/dashboard/my-courses`} 
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover transition-colors group"
+            >
+              عرض الكل 
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
             </Link>
           </div>
+          
           <div className="grid gap-4 sm:grid-cols-2">
-            {courses.map((course: any) => (
-              <div
-                key={course.id}
-                className="flex items-center gap-4 rounded-2xl p-4 transition-colors hover:bg-white/[0.02]"
-                style={{ ...CARD_STYLE, padding: '16px' }}
+            {courses.map((course: any, idx: number) => (
+              <div 
+                key={course.id} 
+                className={`course-card-mini animate-fade-up`}
+                style={{ animationDelay: `${idx * 0.1}s`, opacity: 0 }}
               >
-                <div
-                  className="h-16 w-24 shrink-0 rounded-xl overflow-hidden border border-white/5"
-                  style={{ background: '#0A0A0A' }}
-                >
+                <div className="course-thumb-mini">
                   {course.thumbnail ? (
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL || ''}${course.thumbnail}`}
-                      className="h-full w-full object-cover"
-                      alt={course.titleEn}
+                    <img 
+                      src={`${process.env.NEXT_PUBLIC_API_URL || ''}${course.thumbnail}`} 
+                      className="h-full w-full object-cover" 
+                      alt={course.titleEn} 
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <BookOpen className="h-6 w-6 opacity-30" style={{ color: TEXT_MUTED }} />
+                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-surface-2 to-surface-3">
+                      <BookOpen className="h-7 w-7 opacity-30 text-muted" />
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate" style={{ color: '#ffffff' }}>{course.titleEn}</h3>
-                  <p className="text-sm mt-0.5" style={{ color: TEXT_MUTED }}>
-                    {course._count?.enrollments ?? 0} طالب
+                
+                <div className="flex-1 min-w-0 relative z-10">
+                  <h3 className="font-semibold text-[15px] text-foreground truncate mb-1">
+                    {course.titleEn}
+                  </h3>
+                  <p className="text-xs text-muted font-medium">
+                    {course._count?.enrollments ?? 0} طالب مسجل
                   </p>
-                  <span
-                    className="mt-1 inline-block text-xs rounded-full px-2 py-0.5 font-medium"
-                    style={{
-                      background: course.status === 'PUBLISHED' ? 'rgba(43,191,163,0.15)' : 'rgba(245,166,35,0.15)',
-                      color: course.status === 'PUBLISHED' ? '#34D399' : '#FCD34D',
-                    }}
-                  >
-                    {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                  <span className={`inline-block text-[11px] font-bold px-3 py-1 rounded-full mt-2 ${
+                    course.status === 'PUBLISHED' 
+                      ? 'bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20' 
+                      : 'bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20'
+                  }`}>
+                    {course.status === 'PUBLISHED' ? '✓ منشور' : '✎ مسودة'}
                   </span>
                 </div>
-                <Link
-                  href={`/${locale}/dashboard/courses/${course.id}/manage`}
-                  className="shrink-0 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors"
-                  style={{ border: '1px solid rgba(255,255,255,0.1)', color: TEXT_PRIMARY }}
+                
+                <Link 
+                  href={`/${locale}/dashboard/courses/${course.id}/manage`} 
+                  className="shrink-0 relative z-10 text-xs font-bold px-4 py-2.5 rounded-xl bg-surface-2 text-foreground hover:bg-primary hover:text-white transition-all duration-200 border border-border hover:border-primary"
                 >
                   إدارة
                 </Link>
@@ -171,19 +155,20 @@ function InstructorOverview() {
         </div>
       )}
 
+      {/* Empty State — Professional */}
       {courses.length === 0 && (
-        <div
-          className="rounded-2xl p-10 text-center"
-          style={{ border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent' }}
-        >
-          <BookOpen className="h-10 w-10 mx-auto mb-3" style={{ color: TEXT_MUTED, opacity: 0.3 }} />
-          <p className="text-sm" style={{ color: TEXT_MUTED }}>لا توجد كورسات بعد.</p>
-          <Link
-            href={`/${locale}/dashboard/create-course`}
-            className="mt-3 inline-flex items-center gap-2 text-sm font-bold hover:underline"
-            style={{ color: '#818CF8' }}
+        <div className="rounded-2xl p-16 text-center border-2 border-dashed border-border-strong bg-surface/50 animate-fade-in">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 flex items-center justify-center">
+            <BookOpen className="h-10 w-10 text-primary opacity-50" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-2">لا توجد كورسات بعد</h3>
+          <p className="text-sm text-muted mb-6 max-w-xs mx-auto">ابدأ رحلتك في إنشاء المحتوى التعليمي وأنشئ كورسك الأول الآن</p>
+          <Link 
+            href={`/${locale}/dashboard/create-course`} 
+            className="btn-create-inline"
           >
-            <PlusCircle className="h-4 w-4" /> أنشئ كورسك الأول
+            <PlusCircle className="h-5 w-5" />
+            أنشئ كورسك الأول
           </Link>
         </div>
       )}
@@ -191,7 +176,9 @@ function InstructorOverview() {
   )
 }
 
-// ─── Student Overview (Fixed) ───────────────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════
+   STUDENT OVERVIEW — ENHANCED
+   ════════════════════════════════════════════════════════ */
 
 type DashboardData = {
   stats?: { enrolledCourses?: number; completedCourses?: number; certificatesEarned?: number }
@@ -207,9 +194,7 @@ function StudentOverview() {
   const q = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
-      // FIX 1: Removed generic <ApiEnvelope<DashboardData>> from 'get'
       const res = await get('/users/dashboard')
-      // Extract data safely following the pattern in InstructorOverview
       const data = (res?.data as any)?.data ?? (res?.data as any)
       return unwrapData(data)
     },
@@ -222,20 +207,25 @@ function StudentOverview() {
     <DashboardShell title={t('overview')} subtitle={t('assessment_prompt')}>
       {q.isLoading ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-36 rounded-2xl" />
+          ))}
         </div>
       ) : q.isError ? (
-        <div className="rounded-2xl p-6" style={CARD_STYLE}>
-          <div className="text-sm" style={{ color: TEXT_MUTED }}>{c('empty')}</div>
-          <button
+        <div className="rounded-2xl p-8 border border-border bg-surface shadow-sm text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <p className="text-sm text-muted mb-5 font-medium">{c('empty')}</p>
+          <button 
             type="button"
-            className="mt-4 btn-primary"
-            style={{ fontSize: 13, padding: '8px 16px', background: '#5120c8', color: '#fff' }}
-            onClick={() => {
-              toast({ title: c('loading'), description: c('loading') })
-              q.refetch()
+            className="px-6 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-hover transition-all duration-200 shadow-md hover:shadow-lg"
+            onClick={() => { 
+              toast({ 
+                title: c('loading'), 
+                description: 'جاري إعادة تحميل البيانات...' 
+              }) 
+              q.refetch() 
             }}
           >
             {c('retry')}
@@ -243,22 +233,55 @@ function StudentOverview() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            <Stat label={t('enrolled_courses')} value={stats?.enrolledCourses ?? 0} />
-            <Stat label={t('completed_courses')} value={stats?.completedCourses ?? 0} />
-            <Stat label={t('certificates_earned')} value={stats?.certificatesEarned ?? 0} />
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-3 mb-8">
+            <Stat 
+              label={t('enrolled_courses')} 
+              value={stats?.enrolledCourses ?? 0} 
+              icon={<BookOpen className="h-5 w-5" />}
+              color="from-blue-500 to-indigo-600"
+              delay={0}
+            />
+            <Stat 
+              label={t('completed_courses')} 
+              value={stats?.completedCourses ?? 0} 
+              icon={<CheckCircle className="h-5 w-5" />}
+              color="from-emerald-500 to-green-600"
+              delay={1}
+            />
+            <Stat 
+              label={t('certificates_earned')} 
+              value={stats?.certificatesEarned ?? 0} 
+              icon={<Target className="h-5 w-5" />}
+              color="from-amber-500 to-orange-600"
+              delay={2}
+            />
           </div>
-          <div className="mt-6 rounded-2xl p-6" style={CARD_STYLE}>
-            <div className="text-sm font-extrabold" style={{ color: '#ffffff' }}>{t('courses')}</div>
+
+          {/* Recommended Courses */}
+          <div className="rounded-2xl p-6 lg:p-8 border border-border bg-surface shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
+                <BookOpen className="h-5 w-5 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">{t('courses')}</h3>
+            </div>
+            
             {courses.length ? (
               <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {/* FIX 2: Explicitly type 'course' */}
-                {courses.slice(0, 6).map((course: CourseCardCourse) => (
-                  <CourseCard key={course.id} course={course} locale={locale} />
+                {courses.slice(0, 6).map((course: CourseCardCourse, idx: number) => (
+                  <div key={course.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade-up" >
+                    <CourseCard course={course} locale={locale} />
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="mt-4 text-sm" style={{ color: TEXT_MUTED }}>{c('empty')}</div>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-2 flex items-center justify-center">
+                  <BookOpen className="h-8 w-8 text-muted opacity-40" />
+                </div>
+                <p className="text-sm text-muted font-medium">{c('empty')}</p>
+              </div>
             )}
           </div>
         </>
@@ -267,19 +290,38 @@ function StudentOverview() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+/* Stat Component — Enhanced */
+function Stat({ 
+  label, 
+  value, 
+  icon, 
+  color = 'from-primary to-violet-600',
+  delay = 0 
+}: { 
+  label: string; 
+  value: number; 
+  icon?: React.ReactNode;
+  color?: string;
+  delay?: number;
+}) {
   return (
-    <div
-      className="rounded-2xl p-5"
-      style={CARD_STYLE}
+    <div 
+      className={`rounded-2xl p-6 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${delay + 1}`}
     >
-      <div className="text-xs font-semibold" style={{ color: TEXT_MUTED }}>{label}</div>
-      <div className="mt-2 text-2xl font-extrabold" style={{ color: '#ffffff' }}>{value}</div>
+      <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} shadow-md`}>
+        {icon || <BookOpen className="h-5 w-5 text-white" />}
+      </div>
+      <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{label}</p>
+      <p className="text-3xl font-extrabold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
+        {value}
+      </p>
     </div>
   )
 }
 
-// ─── Consultant Overview ─────────────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════
+   CONSULTANT OVERVIEW — PROFESSIONAL
+   ════════════════════════════════════════════════════════ */
 
 function ConsultantOverview() {
   const locale = useLocale()
@@ -307,85 +349,100 @@ function ConsultantOverview() {
     await patch(`/coaching/consulting/${id}/confirm`, {})
     qc.invalidateQueries({ queryKey: ['consultant-sessions'] })
   }
+  
   const cancelSession = async (id: string) => {
     await patch(`/coaching/consulting/${id}/cancel`, {})
     qc.invalidateQueries({ queryKey: ['consultant-sessions'] })
   }
 
-  const statItems = [
-    { label: 'طلبات جديدة', value: pending.length, bg: 'rgba(245,166,35,0.15)', color: '#FCD34D', IconComp: Clock },
-    { label: 'جلسات مؤكدة', value: confirmed.length, bg: 'rgba(81,32,200,0.15)', color: '#818CF8', IconComp: CheckCircle },
-    { label: 'جلسات مكتملة', value: completed.length, bg: 'rgba(43,191,163,0.15)', color: '#34D399', IconComp: Target },
-    { label: 'الإيرادات', value: `${totalRevenue} ريال`, bg: 'rgba(81,32,200,0.15)', color: '#818CF8', IconComp: DollarSign },
+  const consultantStats = [
+    { label: 'طلبات جديدة', value: pending.length, icon: Clock, color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10' },
+    { label: 'جلسات مؤكدة', value: confirmed.length, icon: CheckCircle, color: 'from-blue-500 to-indigo-600', bgColor: 'bg-blue-500/10' },
+    { label: 'جلسات مكتملة', value: completed.length, icon: Target, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/10' },
+    { label: 'الإيرادات', value: `${totalRevenue} ريال`, icon: DollarSign, color: 'from-purple-500 to-violet-600', bgColor: 'bg-purple-500/10' },
   ]
 
   return (
-    <div className="p-6 space-y-6" dir="rtl" style={{ color: TEXT_PRIMARY }}>
-      {/* Welcome */}
-      <div
-        className="rounded-2xl p-6"
-        style={{ ...CARD_STYLE, background: '#141414' }}
-      >
-        <h1 className="text-3xl font-bold font-madinet" style={{ color: '#ffffff' }}>مرحباً يا {firstName}</h1>
-        <p className="mt-1 text-sm" style={{ color: TEXT_MUTED }}>لوحة تحكم المستشار</p>
+    <div className="p-6 lg:p-8 space-y-8" dir="rtl">
+      
+      {/* Welcome Header */}
+      <div className="rounded-2xl p-8 border border-border bg-surface shadow-sm animate-fade-up relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg">
+              <Calendar className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight">
+                مرحباً يا {firstName} 👋
+              </h1>
+              <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المستشار — تابع جلساتك واستشاراتك</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        {statItems.map((s, i) => (
-          <div
-            key={i}
-            className="rounded-2xl p-5"
-            style={CARD_STYLE}
+      {/* Stats Grid */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {consultantStats.map((s, i) => (
+          <div 
+            key={i} 
+            className={`rounded-2xl p-5 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${i + 1}`}
           >
-            <div
-              className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl"
-              style={{ background: s.bg }}
-            >
-              <s.IconComp className="h-6 w-6" style={{ color: s.color }} />
+            <div className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${s.color} shadow-md`}>
+              <s.icon className="h-5 w-5 text-white" />
             </div>
-            <p className="text-2xl font-bold" style={{ color: '#ffffff' }}>{s.value}</p>
-            <p className="text-sm" style={{ color: TEXT_MUTED }}>{s.label}</p>
+            <p className="text-2xl font-bold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>{s.value}</p>
+            <p className="text-xs text-muted mt-1 font-medium">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Pending sessions */}
+      {/* Pending Sessions */}
       {pending.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold font-madinet mb-4" style={{ color: '#ffffff' }}>طلبات تحتاج موافقة ({pending.length})</h2>
-          <div className="space-y-3">
+        <div className="animate-fade-up stagger-4">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <h2 className="text-lg font-bold text-foreground">طلبات تحتاج موافقة ({pending.length})</h2>
+          </div>
+          
+          <div className="space-y-4">
             {pending.map((s: any) => (
-              <div
-                key={s.id}
-                className="rounded-2xl p-5"
-                style={{
-                  background: 'rgba(245,166,35,0.08)',
-                  border: '1px solid rgba(245,166,35,0.15)',
-                }}
-              >
+              <div key={s.id} className="rounded-2xl p-6 border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.04] to-transparent hover:from-amber-500/[0.08] transition-all duration-300">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-semibold" style={{ color: '#ffffff' }}>{s.topic || 'جلسة استشارية'}</p>
-                    <p className="text-sm mt-1" style={{ color: TEXT_MUTED }}>
-                      {s.scheduledAt ? new Date(s.scheduledAt).toLocaleDateString('ar-SA') : '—'} — {s.meetingMethod}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Clock className="h-4 w-4 text-amber-500" />
+                      <p className="font-semibold text-foreground">{s.topic || 'جلسة استشارية'}</p>
+                    </div>
+                    <p className="text-sm text-muted">
+                      {s.scheduledAt ? new Date(s.scheduledAt).toLocaleDateString('ar-SA', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      }) : '—'} 
+                      <span className="mx-2">•</span> 
+                      <span className="font-medium text-foreground">{s.meetingMethod}</span>
                     </p>
-                    <p className="font-bold mt-1" style={{ color: '#FCD34D' }}>{s.price} ريال</p>
+                    <p className="font-bold text-amber-600 text-lg mt-2" style={{ fontFamily: 'PingARLT, sans-serif' }}>
+                      {s.price} ريال
+                    </p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    <button
-                      onClick={() => confirmSession(s.id)}
-                      className="rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors"
-                      style={{ background: '#10B981' }}
+                  
+                  <div className="flex gap-3 shrink-0">
+                    <button 
+                      onClick={() => confirmSession(s.id)} 
+                      className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     >
-                      قبول
+                      ✓ قبول
                     </button>
-                    <button
-                      onClick={() => cancelSession(s.id)}
-                      className="rounded-xl px-4 py-2 text-sm font-semibold transition-colors"
-                      style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#F87171' }}
+                    <button 
+                      onClick={() => cancelSession(s.id)} 
+                      className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-500 text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all duration-200"
                     >
-                      رفض
+                      ✕ رفض
                     </button>
                   </div>
                 </div>
@@ -395,32 +452,32 @@ function ConsultantOverview() {
         </div>
       )}
 
-      {/* Confirmed sessions */}
+      {/* Confirmed Sessions */}
       {confirmed.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold font-madinet mb-4" style={{ color: '#ffffff' }}>الجلسات القادمة</h2>
+        <div className="animate-fade-up stagger-5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <h2 className="text-lg font-bold text-foreground">الجلسات القادمة ({confirmed.length})</h2>
+          </div>
+          
           <div className="space-y-3">
             {confirmed.slice(0, 5).map((s: any) => (
-              <div
-                key={s.id}
-                className="rounded-2xl p-5"
-                style={CARD_STYLE}
-              >
+              <div key={s.id} className="rounded-2xl p-5 border border-border bg-surface hover:shadow-md hover:border-emerald-500/30 transition-all duration-300">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold" style={{ color: '#ffffff' }}>{s.topic || 'جلسة استشارية'}</p>
-                    <p className="text-sm mt-1" style={{ color: TEXT_MUTED }}>
+                    <p className="font-semibold text-foreground mb-1">{s.topic || 'جلسة استشارية'}</p>
+                    <p className="text-sm text-muted">
                       {s.scheduledAt ? new Date(s.scheduledAt).toLocaleDateString('ar-SA') : '—'}
                     </p>
                   </div>
+                  
                   <div className="text-left">
-                    <span
-                      className="rounded-full px-3 py-1 text-xs font-medium"
-                      style={{ background: 'rgba(43,191,163,0.15)', color: '#34D399' }}
-                    >
+                    <span className="inline-block px-4 py-1.5 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
                       {s.meetingMethod}
                     </span>
-                    <p className="font-bold mt-1" style={{ color: '#FCD34D' }}>{s.price} ريال</p>
+                    <p className="font-bold text-amber-600 text-base mt-2" style={{ fontFamily: 'PingARLT, sans-serif' }}>
+                      {s.price} ريال
+                    </p>
                   </div>
                 </div>
               </div>
@@ -429,35 +486,51 @@ function ConsultantOverview() {
         </div>
       )}
 
+      {/* Empty State */}
       {sessions.length === 0 && (
-        <div
-          className="rounded-2xl p-12 text-center"
-          style={{ border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent' }}
-        >
-          <Calendar className="h-10 w-10 mx-auto mb-3" style={{ color: TEXT_MUTED, opacity: 0.3 }} />
-          <p className="text-sm" style={{ color: TEXT_MUTED }}>لا توجد جلسات بعد.</p>
+        <div className="rounded-2xl p-16 text-center border-2 border-dashed border-border-strong bg-surface/50 animate-fade-in">
+          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/10 to-violet-600/10 flex items-center justify-center">
+            <Calendar className="h-10 w-10 text-primary opacity-50" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground mb-2">لا توجد جلسات بعد</h3>
+          <p className="text-sm text-muted">سيظهر هنا الجلسات الاستشارية عندما يتم حجزها</p>
         </div>
       )}
     </div>
   )
 }
 
-// ─── Main Page ──────────────────────────────────────────────────────────────
+/* ════════════════════════════════════════════════════════
+   MAIN PAGE COMPONENT
+   ════════════════════════════════════════════════════════ */
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const [mounted, setMounted] = useState(false)
 
-  useEffect(() => setMounted(true), [])
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   if (!mounted) {
     return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-32 rounded-3xl" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
-          <Skeleton className="h-28 rounded-2xl" />
+      <div className="p-6 lg:p-8 space-y-6">
+        {/* Skeleton Welcome Card */}
+        <div className="rounded-2xl p-8 bg-surface border border-border">
+          <div className="flex items-center gap-4">
+            <Skeleton className="w-14 h-14 rounded-2xl" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48 rounded-lg" />
+              <Skeleton className="h-4 w-72 rounded-lg" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Skeleton Stats */}
+        <div className="grid gap-5 sm:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-36 rounded-2xl" />
+          ))}
         </div>
       </div>
     )

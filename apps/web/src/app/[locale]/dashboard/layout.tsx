@@ -6,7 +6,8 @@ import { useAuthStore } from '../../../stores/authStore'
 import { InstructorSidebar } from '../../components/InstructorSidebar'
 import { StudentSidebar } from '../../components/StudentSidebar'
 import { ConsultantSidebar } from '../../components/ConsultantSidebar'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import { Skeleton } from '../../components/ui/Skeleton'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, hydrate } = useAuthStore()
@@ -19,29 +20,53 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMounted(true)
   }, [hydrate])
 
-  // Close sidebar on route change
+  // إغلاق Sidebar عند تغيير المسار
   useEffect(() => {
     setSidebarOpen(false)
   }, [pathname])
 
+  // وضع الشاشة الكاملة للمحادثة الذكية
   const isAiChat = pathname?.includes('ai-chat')
 
-  // AI chat gets full-screen dark layout — no sidebar
   if (isAiChat) {
     return (
-      <div className="min-h-screen" style={{ background: '#0D0D0D' }}>
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
         {children}
       </div>
     )
   }
 
+  // حالة التحميل
   if (!mounted) {
     return (
       <div className="flex min-h-screen" dir="rtl">
-        <div className="hidden lg:block w-64 shrink-0" style={{ background: '#141414', borderLeft: '1px solid rgba(255,255,255,0.08)' }} />
-        <main className="flex-1 p-6" style={{ background: '#0D0D0D' }}>
-          <div className="h-8 w-48 animate-pulse rounded-lg" style={{ background: '#1F1F1F' }} />
-          <div className="h-4 w-72 animate-pulse rounded mt-2" style={{ background: '#1F1F1F' }} />
+        {/* هيكل Sidebar */}
+        <div 
+          className="hidden lg:block w-[280px] shrink-0 border-l border-[var(--navbar-border)]"
+          style={{ background: 'var(--surface)' }}
+        >
+          <div className="p-6 space-y-4">
+            <Skeleton className="h-10 w-40 rounded-xl" />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10 w-full rounded-lg" />
+            ))}
+          </div>
+        </div>
+        
+        {/* المحتوى الرئيسي */}
+        <main 
+          className="flex-1 p-6 lg:p-8"
+          style={{ backgroundColor: 'var(--background)' }}
+        >
+          <div className="space-y-4 max-w-7xl mx-auto">
+            <Skeleton className="h-12 w-56 rounded-xl" />
+            <Skeleton className="h-4 w-96 rounded-lg" />
+            <div className="grid gap-5 sm:grid-cols-3 mt-8">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-36 rounded-2xl" />
+              ))}
+            </div>
+          </div>
         </main>
       </div>
     )
@@ -51,71 +76,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isConsultant = user?.accountType === 'CONSULTANT'
 
   return (
-    <div className="flex min-h-screen" dir="rtl" style={{ background: '#0D0D0D' }}>
-
-      {/* Mobile backdrop */}
+    <div className="flex min-h-screen dashboard-root" dir="rtl">
+      
+      {/* خلفية شفافة للجوال عند فتح القائمة */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+          className="fixed inset-0 z-40 lg:hidden mobile-backdrop"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar — fixed on mobile (drawer), sticky on desktop */}
-      <div
-        className={[
-          'fixed lg:sticky top-0 right-0 h-screen z-50 lg:z-auto',
-          'transition-transform duration-300 ease-in-out shrink-0',
-          sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0',
-        ].join(' ')}
+      {/* الشريط الجانبي */}
+      <aside
+        className={`
+          fixed lg:sticky top-0 right-0 h-screen z-50 lg:z-auto sidebar-container overflow-y-auto
+          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          transition-transform duration-300 ease-out
+        `}
       >
-        {isInstructor ? <InstructorSidebar /> : isConsultant ? <ConsultantSidebar /> : <StudentSidebar />}
-      </div>
+        {isInstructor && <InstructorSidebar />}
+        {isConsultant && <ConsultantSidebar />}
+        {!isInstructor && !isConsultant && <StudentSidebar />}
+      </aside>
 
-      {/* Main content */}
-      <main
-        className="flex-1 overflow-auto relative min-w-0"
-        style={{
-          background: '#0D0D0D',
-          backgroundImage: `
-            radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 60%),
-            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.02), transparent 60%)
-          `,
-          backgroundRepeat: 'no-repeat',
-          backgroundSize: 'cover',
-        }}
-      >
-        {/* Mobile top bar */}
-        <div
-          className="lg:hidden sticky top-0 z-30 flex items-center justify-between"
-          style={{
-            padding: '10px 16px',
-            background: 'rgba(13,13,13,0.95)',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <button
-            onClick={() => setSidebarOpen(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.10)',
-              borderRadius: 8, padding: '6px 12px',
-              cursor: 'pointer', color: 'rgba(255,255,255,0.8)',
-              fontSize: 14, fontFamily: 'DM Sans, sans-serif',
-              minHeight: 'auto',
-            }}
+      {/* المحتوى الرئيسي */}
+      <main className="main-content">
+        
+        {/* شريط العلوي للجوال */}
+        <header className="mobile-header">
+          <button 
+            onClick={() => setSidebarOpen(true)} 
+            className="mobile-menu-btn"
+            type="button"
+            aria-label="فتح القائمة الجانبية"
           >
-            <Menu size={18} />
-            القائمة
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            <span>القائمة</span>
           </button>
-          <img src="/logo-icon.png" style={{ height: 28, width: 'auto' }} alt="DeveWay" />
-        </div>
+          
+          <div className="flex items-center gap-3">
+            <img 
+              src="/logo-icon.png" 
+              alt="شعار DeveWay" 
+              className="h-8 w-auto"
+            />
+            <span 
+              className="font-bold text-[var(--foreground)] text-lg hidden sm:inline-block"
+              style={{ fontFamily: "'PingARLT', sans-serif" }}
+            >
+              DeveWay
+            </span>
+          </div>
+        </header>
 
-        {/* Page content */}
-        <div style={{ padding: 'clamp(16px, 3vw, 32px)' }}>
+        {/* محتوى الصفحة */}
+        <div className="page-content">
           {children}
         </div>
       </main>

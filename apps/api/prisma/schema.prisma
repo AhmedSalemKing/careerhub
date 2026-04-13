@@ -883,7 +883,7 @@ model SiteSettings {
   id              String   @id @default(cuid())
   siteName        String   @default("DeveWay")
   primaryColor    String   @default("#3b82f6")
-  backgroundColor String   @default("#0f172a")
+  backgroundColor String   @default("#0d0d0d")
   buttonColor     String   @default("#3b82f6")
   logoUrl         String?
   updatedAt       DateTime @updatedAt

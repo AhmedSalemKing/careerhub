@@ -31,7 +31,7 @@ const config: Config = {
         brand:   ['PingARLT', 'Arial Black', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'sans-serif'],
         body:    ['DM Sans', 'sans-serif'],
-        madinet: ['MadinatAlBatt', 'Madinet Al-Bat', 'Cairo', 'sans-serif'],
+        madinet: ['PingARLT', 'Cairo', 'sans-serif'],
         hero:    ['28DaysLater', 'sans-serif'],
         sans:    ['DM Sans', 'sans-serif'],
       },

@@ -832,7 +832,7 @@ export class AdminService {
         data: {
           siteName: 'DeveWay',
           primaryColor: '#3b82f6',
-          backgroundColor: '#0f172a',
+          backgroundColor: '#0d0d0d',
           buttonColor: '#3b82f6',
         } as any,
       });

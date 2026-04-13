@@ -47,7 +47,7 @@ let EmailService = class EmailService {
 <head><meta charset="UTF-8"><title>${title}</title></head>
 <body style="margin:0;padding:0;background:#0a0f1e;font-family:Arial,sans-serif;">
   <div style="max-width:600px;margin:0 auto;padding:20px;">
-    <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #1e3a5f;border-radius:16px 16px 0 0;padding:30px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#1e293b,#0d0d0d);border:1px solid #1e3a5f;border-radius:16px 16px 0 0;padding:30px;text-align:center;">
       <h1 style="color:#3b82f6;font-size:28px;margin:0;">DeveWay</h1>
       <p style="color:#64748b;margin:5px 0 0;font-size:12px;">منصة التطوير المهني</p>
     </div>

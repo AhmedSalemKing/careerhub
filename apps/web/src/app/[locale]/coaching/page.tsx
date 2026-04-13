@@ -1,4 +1,5 @@
 'use client'
+
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'

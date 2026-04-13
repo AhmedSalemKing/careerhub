@@ -99,7 +99,7 @@ export function CareerPathsSection() {
                 الطريق الوحيد
                 <span
                   style={{
-                    fontFamily: "'MadinatAlBatt', 'Madinet Al-Bat', sans-serif",
+                    fontFamily: "'PingARLT', sans-serif",
                     color: '#5B21B6',
                   }}
                 >
