@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import { get } from '../../../../../lib/api'
+import { get } from '../../../../lib/api'
 import { RefreshCw, Search } from 'lucide-react'
 
 const ACTION_COLORS: Record<string, string> = {
@@ -48,7 +48,7 @@ export default function ActivityMonitor() {
            (!filterAction || a.action === filterAction)
   })
 
-  const uniqueActions = [...new Set((rawData as any[]).map((a: any) => a.action))]
+  const uniqueActions = Array.from(new Set((rawData as any[]).map((a: any) => a.action as string)))
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'}>

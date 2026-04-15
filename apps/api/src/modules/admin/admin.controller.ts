@@ -127,7 +127,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Delete user (Admin only)' })
   @ApiResponse({ status: 204, description: 'User deleted successfully' })
   @ApiParam({ name: 'id', description: 'User ID' })
-  async deleteUser(@Param('id') id: string) {
+  async deleteUserRecord(@Param('id') id: string) {
     await this.adminService.deleteUser(id);
   }
 
@@ -186,7 +186,7 @@ export class AdminController {
   @Post('courses')
   @ApiOperation({ summary: 'Create new course (Admin only)' })
   @ApiResponse({ status: 201, description: 'Course created successfully' })
-  async createCourse(@Body() courseData: {
+  async createCourseBase(@Body() courseData: {
     titleEn: string;
     titleAr: string;
     descriptionEn: string;
@@ -198,8 +198,8 @@ export class AdminController {
     level: string;
     thumbnail?: string;
     tags?: string[];
-  }) {
-    const course = await this.adminService.createCourse(courseData);
+  }, @Req() req: any) {
+    const course = await this.adminService.createCourse(courseData, req.user?.sub || req.user?.id);
     return {
       success: true,
       message: 'Course created successfully',
@@ -814,11 +814,6 @@ export class AdminController {
     return { success: true, data: result };
   }
 
-  @Delete('users/:id/delete')
-  async deleteUser(@Param('id') id: string) {
-    return this.adminService.deleteUser(id);
-  }
-
   @Get('users/:id/detail')
   async getUserDetail(@Param('id') id: string) {
     const result = await this.adminService.getUserDetail(id);
@@ -826,7 +821,7 @@ export class AdminController {
   }
 
   @Post('courses/create')
-  async createCourse(@Body() body: any, @Req() req: any) {
+  async createCourseAdmin(@Body() body: any, @Req() req: any) {
     const result = await this.adminService.createCourse(body, req.user?.sub || req.user?.id);
     return { success: true, data: result };
   }

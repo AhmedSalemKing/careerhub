@@ -161,7 +161,7 @@ export class AuthService {
         stripeCustomerId: true, createdAt: true, updatedAt: true,
         accountType: true, status: true, cvUrl: true, bio: true, experience: true,
         speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
-        approvedAt: true, rejectedAt: true, rejectedReason: true,
+        approvedAt: true, rejectedAt: true, rejectedReason: true, lastSeenAt: true,
         profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
       }
     });

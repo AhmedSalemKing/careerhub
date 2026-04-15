@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
-import { get } from '../../../../../../lib/api'
+import { get } from '../../../../../lib/api'
 import { ArrowLeft, User, Mail, Calendar, DollarSign, BookOpen, Shield, Activity } from 'lucide-react'
 
 export default function UserDetailPage() {
@@ -115,7 +115,7 @@ export default function UserDetailPage() {
           ) : payments.map((p, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < payments.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
               <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
-                {p.course?.title?.slice(0, 25)}
+                {(p.course?.titleEn || p.course?.titleAr || '')?.slice(0, 25)}
               </span>
               <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3', fontFamily: 'DM Sans, sans-serif' }}>
                 {p.amount} {isAr ? 'ر.س' : 'SAR'}
