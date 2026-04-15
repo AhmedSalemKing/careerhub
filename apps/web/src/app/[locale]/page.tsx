@@ -6,6 +6,7 @@ import { CareerPathsSection } from './sections/CareerPathsSection'
 import { TestimonialsSection } from './sections/TestimonialsSection'
 import { CTASection } from './sections/CTASection'
 import { CoursesShowcase } from '../components/CoursesShowcase'
+import { HashScrollHandler } from '../components/HashScrollHandler'  // ← ضفت ده
 
 export const metadata: Metadata = {
   title: 'DeveWay — Discover Your Career Path',
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main id="main-content" aria-label="DeveWay homepage" className="scroll-smooth">
+
+      {/* 🔥 Hash Scroll Handler - handles #career-paths on page load */}
+      <HashScrollHandler />
 
       {/* ── HERO ── Full-width dark section */}
       <HeroSection />

@@ -56,13 +56,13 @@ export function LanguageSwitcher() {
             <button
               key={lang.code}
               onClick={() => switchLocale(lang.code)}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${locale === lang.code ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1e3a8a] dark:text-[#3b82f6]' : 'text-slate-700 dark:text-slate-300'
+              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors ${locale === lang.code ? 'bg-blue-50 dark:bg-blue-900/20 text-[#1e3a8a] dark:text-[#5120c8]' : 'text-slate-700 dark:text-slate-300'
                 }`}
             >
               <span>{lang.flag}</span>
               <span>{lang.name}</span>
               {locale === lang.code && (
-                <span className="mr-auto rtl:ml-auto rtl:mr-0 text-[#1e3a8a] dark:text-[#3b82f6]">✓</span>
+                <span className="mr-auto rtl:ml-auto rtl:mr-0 text-[#1e3a8a] dark:text-[#5120c8]">✓</span>
               )}
             </button>
           ))}

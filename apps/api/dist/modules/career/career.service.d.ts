@@ -13,8 +13,8 @@ export declare class CareerService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         pathId: string;
         pathTitle: string;
         pathCategory: string;
@@ -23,8 +23,8 @@ export declare class CareerService {
     getUserCareerPath(userId: string): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         userId: string;
+        updatedAt: Date;
         pathId: string;
         pathTitle: string;
         pathCategory: string;

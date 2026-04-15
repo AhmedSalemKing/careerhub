@@ -33,7 +33,10 @@
       "Bash(where ngrok:*)",
       "Bash(ngrok version:*)",
       "Bash(find D:/careerhub/.env* -type f)",
-      "Bash(npx kill-port:*)"
+      "Bash(npx kill-port:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(powershell -Command \"Set-Location 'D:\\\\careerhub\\\\apps\\\\api'; npm run build 2>&1 | Select-Object -Last 5; Test-Path 'D:\\\\careerhub\\\\apps\\\\api\\\\dist\\\\main.js'\")",
+      "Bash(powershell -Command \"Set-Location 'D:\\\\careerhub\\\\apps\\\\api'; node_modules\\\\.bin\\\\nest build --verbose 2>&1 | Select-Object -Last 30\")"
     ]
   }
 }

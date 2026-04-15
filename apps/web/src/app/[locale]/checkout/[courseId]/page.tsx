@@ -399,7 +399,7 @@ export default function CheckoutPage() {
                       appearance: {
                         theme: 'night',
                         variables: {
-                          colorPrimary: '#3b82f6',
+                          colorPrimary: '#5120c8',
                           colorBackground: '#1e293b',
                           borderRadius: '12px',
                           fontFamily: 'system-ui, sans-serif',

@@ -30,10 +30,10 @@ const config: Config = {
       fontFamily: {
         brand:   ['PingARLT', 'Arial Black', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'sans-serif'],
-        body:    ['DM Sans', 'sans-serif'],
+        body:    ['PingARLT', 'Arial Black', 'sans-serif'],
         madinet: ['PingARLT', 'Cairo', 'sans-serif'],
         hero:    ['28DaysLater', 'sans-serif'],
-        sans:    ['DM Sans', 'sans-serif'],
+        sans:    ['PingARLT', 'Arial Black', 'sans-serif'],
       },
       borderRadius: {
         sm:   '6px',

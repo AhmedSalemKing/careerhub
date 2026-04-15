@@ -92,6 +92,7 @@ model User {
   approvedAt        DateTime?
   rejectedAt        DateTime?
   rejectedReason    String?
+  lastSeenAt        DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -127,6 +128,7 @@ model User {
   conversations        Conversation[]
   givenRatings         Rating[]            @relation("GivenRatings")
   receivedRatings      Rating[]            @relation("ConsultantRatings")
+  activities           UserActivity[]
 
   @@index([email])
   @@index([role])
@@ -488,7 +490,7 @@ model Enrollment {
   userId      String
   courseId    String
   status      EnrollmentStatus @default(ACTIVE)
-n  progress    Float            @default(0) // Percentage 0-100
+  progress    Float            @default(0) // Percentage 0-100
   enrolledAt  DateTime         @default(now())
   completedAt DateTime?
   expiresAt   DateTime?
@@ -884,13 +886,13 @@ model SiteSettings {
   id              String   @id @default(cuid())
   siteName        String   @default("DeveWay")
   
-  // ✅ Updated: Purple theme (was blue #3b82f6)
+  // ✅ Updated: Purple theme (was blue #5120c8)
   primaryColor    String   @default("#5120c8")
   
   // ✅ Updated: Clean white for light mode (was #0d0d0d / #0d0d0d)
   backgroundColor String   @default("#FFFFFF")
   
-  // ✅ Updated: Purple buttons (was blue #3b82f6)
+  // ✅ Updated: Purple buttons (was blue #5120c8)
   buttonColor     String   @default("#5120c8")
   
   logoUrl         String?
@@ -983,6 +985,23 @@ model Rating {
   @@unique([userId, courseId])
   @@unique([userId, consultantId])
   @@map("ratings")
+}
+
+model UserActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String?
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("user_activities")
 }
 
 model Cart {

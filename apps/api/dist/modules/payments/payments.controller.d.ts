@@ -18,22 +18,22 @@ export declare class PaymentsController {
                 paymentIntent: import("stripe").Stripe.Response<import("stripe").Stripe.PaymentIntent>;
                 payment: {
                     id: string;
-                    currency: string;
-                    status: string;
+                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                     createdAt: Date;
-                    updatedAt: Date;
-                    description: string | null;
-                    courseId: string | null;
                     userId: string;
-                    completedAt: Date | null;
-                    amount: number;
                     method: string;
+                    status: string;
+                    updatedAt: Date;
+                    courseId: string | null;
+                    currency: string;
+                    completedAt: Date | null;
+                    description: string | null;
+                    amount: number;
                     transactionId: string | null;
                     stripeIntentId: string | null;
                     itemType: string | null;
                     itemId: string | null;
                     refundedAt: Date | null;
-                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 };
                 itemDetails: any;
             };
@@ -117,13 +117,13 @@ export declare class PaymentsController {
         data: {
             subscription: {
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
-                plan: string;
+                status: string;
+                updatedAt: Date;
                 startDate: Date;
                 endDate: Date | null;
+                plan: string;
             };
         };
     }>;
@@ -132,13 +132,13 @@ export declare class PaymentsController {
         message: string;
         data: {
             id: string;
-            status: string;
             createdAt: Date;
-            updatedAt: Date;
             userId: string;
-            plan: string;
+            status: string;
+            updatedAt: Date;
             startDate: Date;
             endDate: Date | null;
+            plan: string;
         };
     }>;
     getMyPayments(user: User, page?: number, limit?: number, status?: string): Promise<{
@@ -338,13 +338,13 @@ export declare class PaymentsController {
                 hasActiveSubscription: boolean;
                 activeSubscription: {
                     id: string;
-                    status: string;
                     createdAt: Date;
-                    updatedAt: Date;
                     userId: string;
-                    plan: string;
+                    status: string;
+                    updatedAt: Date;
                     startDate: Date;
                     endDate: Date | null;
+                    plan: string;
                 };
             };
         };
@@ -361,11 +361,10 @@ export declare class PaymentsController {
                     profile: {
                         id: string;
                         createdAt: Date;
-                        updatedAt: Date;
-                        language: string;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
+                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
@@ -376,17 +375,17 @@ export declare class PaymentsController {
                         city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
                     id: string;
-                    status: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    isActive: boolean;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
+                    isActive: boolean;
                     accountType: string;
+                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -398,26 +397,28 @@ export declare class PaymentsController {
                     approvedAt: Date | null;
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
+                    lastSeenAt: Date | null;
+                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
             } & {
                 id: string;
-                currency: string;
-                status: string;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 createdAt: Date;
-                updatedAt: Date;
-                description: string | null;
-                courseId: string | null;
                 userId: string;
-                completedAt: Date | null;
-                amount: number;
                 method: string;
+                status: string;
+                updatedAt: Date;
+                courseId: string | null;
+                currency: string;
+                completedAt: Date | null;
+                description: string | null;
+                amount: number;
                 transactionId: string | null;
                 stripeIntentId: string | null;
                 itemType: string | null;
                 itemId: string | null;
                 refundedAt: Date | null;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
             })[];
             meta: {
                 total: number;
@@ -461,16 +462,16 @@ export declare class PaymentsController {
                 totalTransactions: number;
                 averageTransactionValue: number;
                 revenueByType: (import(".prisma/client").Prisma.PickEnumerable<import(".prisma/client").Prisma.PaymentGroupByOutputType, "itemType"[]> & {
-                    _count: number;
                     _sum: {
                         amount: number;
                     };
+                    _count: number;
                 })[];
                 paymentsByStatus: (import(".prisma/client").Prisma.PickEnumerable<import(".prisma/client").Prisma.PaymentGroupByOutputType, "status"[]> & {
-                    _count: number;
                     _sum: {
                         amount: number;
                     };
+                    _count: number;
                 })[];
                 period: {
                     startDate: Date;

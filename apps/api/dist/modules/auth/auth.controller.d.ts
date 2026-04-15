@@ -21,13 +21,12 @@ export declare class AuthController {
                     language: string;
                 };
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -39,6 +38,8 @@ export declare class AuthController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;
@@ -56,13 +57,12 @@ export declare class AuthController {
                     language: string;
                 };
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -74,6 +74,8 @@ export declare class AuthController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;
@@ -95,14 +97,13 @@ export declare class AuthController {
         data: {
             user: {
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -114,6 +115,8 @@ export declare class AuthController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
         };
@@ -160,13 +163,12 @@ export declare class AuthController {
                     language: string;
                 };
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -178,6 +180,8 @@ export declare class AuthController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;

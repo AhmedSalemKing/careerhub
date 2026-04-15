@@ -135,6 +135,7 @@ export function CareerPathsSection() {
 
   return (
     <section
+      id="career-paths"
       dir={isAr ? 'rtl' : 'ltr'}
       className="career-paths-section"
     >

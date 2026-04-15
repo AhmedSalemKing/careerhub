@@ -65,7 +65,7 @@ async function main() {
                 jobTitlesAr: ['مطور برمجيات', 'مطور Full Stack', 'مظهر Backend', 'مظهر Frontend', 'مهندس DevOps'],
                 demandLevel: 'HIGH',
                 icon: '💻',
-                color: '#3B82F6',
+                color: '#5120c8',
                 isActive: true,
                 sortOrder: 1,
             },

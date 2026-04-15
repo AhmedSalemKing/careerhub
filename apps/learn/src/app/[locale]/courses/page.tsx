@@ -206,7 +206,7 @@ export default function CoursesPage() {
                     className="h-full w-full items-center justify-center"
                     style={{
                       display: course.thumbnail ? 'none' : 'flex',
-                      background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+                      background: 'linear-gradient(135deg, #1e3a8a 0%, #5120c8 100%)',
                     }}
                   >
                     <BookOpen className="h-12 w-12 text-white/50" />

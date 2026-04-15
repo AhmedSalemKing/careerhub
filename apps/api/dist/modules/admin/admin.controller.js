@@ -40,7 +40,6 @@ let AdminController = class AdminController {
             data: { stats },
         };
     }
-    // User Management
     async getUsers(page, limit, role, status, search) {
         const users = await this.adminService.getUsers({
             page: page || 1,
@@ -88,7 +87,6 @@ let AdminController = class AdminController {
             data: { user },
         };
     }
-    // Course Management
     async getAdminCourses(page, limit, status) {
         const courses = await this.adminService.getAdminCourses({
             page: page || 1,
@@ -124,7 +122,6 @@ let AdminController = class AdminController {
             data: { course },
         };
     }
-    // Content Management
     async getPendingContent() {
         const content = await this.adminService.getPendingContent();
         return {
@@ -148,7 +145,6 @@ let AdminController = class AdminController {
             data: { content },
         };
     }
-    // Reports and Moderation
     async getReports(page, limit, status) {
         const reports = await this.adminService.getReports({
             page: page || 1,
@@ -168,7 +164,6 @@ let AdminController = class AdminController {
             data: { report },
         };
     }
-    // Analytics and Reports
     async getRevenueAnalytics(startDate, endDate) {
         const analytics = await this.adminService.getRevenueAnalytics(startDate ? new Date(startDate) : undefined, endDate ? new Date(endDate) : undefined);
         return {
@@ -190,7 +185,6 @@ let AdminController = class AdminController {
             data: { analytics },
         };
     }
-    // System Management
     async getSystemHealth() {
         const health = await this.adminService.getSystemHealth();
         return {
@@ -228,7 +222,6 @@ let AdminController = class AdminController {
             data: result,
         };
     }
-    // Settings and Configuration
     async getSettings() {
         const settings = await this.adminService.getSettings();
         return {
@@ -252,7 +245,6 @@ let AdminController = class AdminController {
             data: result,
         };
     }
-    // Notifications
     async broadcastNotification(notificationData) {
         const result = await this.adminService.broadcastNotification(notificationData);
         return {
@@ -268,7 +260,6 @@ let AdminController = class AdminController {
             data: { templates },
         };
     }
-    // Export and Import
     async exportUsers(format) {
         const result = await this.adminService.exportUsers(format || 'csv');
         return {
@@ -291,7 +282,6 @@ let AdminController = class AdminController {
             data: result,
         };
     }
-    // Security
     async getAuditLog(page, limit, action, userId) {
         const auditLog = await this.adminService.getAuditLog({
             page: page || 1,
@@ -322,7 +312,6 @@ let AdminController = class AdminController {
     async revokeSession(sessionId) {
         await this.adminService.revokeSession(sessionId);
     }
-    // Monitoring
     async getPerformanceMetrics() {
         const metrics = await this.adminService.getPerformanceMetrics();
         return {
@@ -344,7 +333,6 @@ let AdminController = class AdminController {
             data: { stats },
         };
     }
-    // ── Course Approval ─────────────────────────────────────────────────────
     async getPendingCourses() {
         return this.adminService.getPendingCourses();
     }
@@ -356,7 +344,6 @@ let AdminController = class AdminController {
         const course = await this.adminService.rejectCourse(id, body.reason);
         return { success: true, message: 'Course rejected', data: { course } };
     }
-    // ── Approval system ────────────────────────────────────────────────────────
     async getPendingApprovals() {
         const users = await this.adminService.getPendingApprovals();
         return { success: true, data: users };
@@ -384,16 +371,13 @@ let AdminController = class AdminController {
         const user = await this.adminService.unbanUser(userId, admin.id);
         return { success: true, message: 'User unbanned', data: { user } };
     }
-    // ── Payments ───────────────────────────────────────────────────────────────
     async getAllPayments() {
         return this.adminService.getAllPayments();
     }
-    // ── Audit Logs ─────────────────────────────────────────────────────────────
     async getAuditLogs(limit) {
         const logs = await this.adminService.getAuditLogs(limit ? parseInt(limit) : 50);
         return { success: true, data: { logs } };
     }
-    // ── Site Settings ─────────────────────────────────────────────────────────
     async getSiteSettings() {
         const settings = await this.adminService.getSiteSettings();
         return { success: true, data: { settings } };
@@ -404,6 +388,46 @@ let AdminController = class AdminController {
     async updateSiteSettings(body) {
         const settings = await this.adminService.updateSiteSettings(body);
         return { success: true, data: { settings } };
+    }
+    async createUser(body) {
+        const result = await this.adminService.createUser(body);
+        return { success: true, data: result };
+    }
+    async changeRole(id, body) {
+        const result = await this.adminService.changeUserRole(id, body.accountType);
+        return { success: true, data: result };
+    }
+    async changeStatus(id, body) {
+        const result = await this.adminService.changeUserStatus(id, body.status);
+        return { success: true, data: result };
+    }
+    async deleteUser(id) {
+        return this.adminService.deleteUser(id);
+    }
+    async getUserDetail(id) {
+        const result = await this.adminService.getUserDetail(id);
+        return { success: true, data: result };
+    }
+    async createCourse(body, req) {
+        var _a, _b;
+        const result = await this.adminService.createCourse(body, ((_a = req.user) === null || _a === void 0 ? void 0 : _a.sub) || ((_b = req.user) === null || _b === void 0 ? void 0 : _b.id));
+        return { success: true, data: result };
+    }
+    async createSession(body) {
+        const result = await this.adminService.createSession(body);
+        return { success: true, data: result };
+    }
+    async getLiveActivity(limit = '50') {
+        const result = await this.adminService.getLiveActivity(+limit);
+        return { success: true, data: result };
+    }
+    async getActivityStats() {
+        const result = await this.adminService.getActivityStats();
+        return { success: true, data: result };
+    }
+    async getUserActivity(id, limit = '30') {
+        const result = await this.adminService.getUserActivity(id, +limit);
+        return { success: true, data: result };
     }
 };
 exports.AdminController = AdminController;
@@ -954,6 +978,79 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateSiteSettings", null);
+__decorate([
+    (0, common_1.Post)('users/create'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createUser", null);
+__decorate([
+    (0, common_1.Patch)('users/:id/role'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "changeRole", null);
+__decorate([
+    (0, common_1.Patch)('users/:id/status-update'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "changeStatus", null);
+__decorate([
+    (0, common_1.Delete)('users/:id/delete'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteUser", null);
+__decorate([
+    (0, common_1.Get)('users/:id/detail'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getUserDetail", null);
+__decorate([
+    (0, common_1.Post)('courses/create'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createCourse", null);
+__decorate([
+    (0, common_1.Post)('sessions/create'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createSession", null);
+__decorate([
+    (0, common_1.Get)('activity/live'),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getLiveActivity", null);
+__decorate([
+    (0, common_1.Get)('activity/stats'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getActivityStats", null);
+__decorate([
+    (0, common_1.Get)('users/:id/activity'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getUserActivity", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, common_1.Controller)('admin'),
@@ -962,3 +1059,4 @@ exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     __metadata("design:paramtypes", [admin_service_1.AdminService])
 ], AdminController);
+//# sourceMappingURL=admin.controller.js.map

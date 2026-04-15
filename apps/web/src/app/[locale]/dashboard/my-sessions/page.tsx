@@ -380,7 +380,7 @@ export default function MySessionsPage() {
               clientSecret,
               appearance: {
                 theme: 'night',
-                variables: { colorPrimary: '#3b82f6', borderRadius: '12px' }
+                variables: { colorPrimary: '#5120c8', borderRadius: '12px' }
               }
             }}>
               <SessionPayForm

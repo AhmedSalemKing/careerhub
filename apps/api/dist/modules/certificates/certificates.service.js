@@ -52,9 +52,7 @@ const AWS = __importStar(require("aws-sdk"));
 const puppeteer_service_1 = require("./puppeteer.service");
 const path_1 = require("path");
 const promises_1 = require("fs/promises");
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const PDFDocument = require('pdfkit');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const bwipjs = require('bwip-js');
 let CertificatesService = CertificatesService_1 = class CertificatesService {
     constructor(prisma, configService, puppeteerService) {
@@ -62,7 +60,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         this.configService = configService;
         this.puppeteerService = puppeteerService;
         this.logger = new common_1.Logger(CertificatesService_1.name);
-        // Initialize AWS S3
         this.s3 = new AWS.S3({
             accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
             secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
@@ -123,6 +120,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         };
     }
     async getCertificateBySerialNumber(serialNumber) {
+        var _a, _b;
         const certificate = await this.prisma.certificate.findUnique({
             where: { serialNumber },
             include: {
@@ -148,8 +146,8 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             revokeReason: certificate.revokeReason,
             user: {
                 id: certificate.user.id,
-                firstName: certificate.user.profile?.firstName,
-                lastName: certificate.user.profile?.lastName,
+                firstName: (_a = certificate.user.profile) === null || _a === void 0 ? void 0 : _a.firstName,
+                lastName: (_b = certificate.user.profile) === null || _b === void 0 ? void 0 : _b.lastName,
                 email: certificate.user.email,
             },
             course: {
@@ -168,6 +166,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         };
     }
     async verifyCertificate(serialNumber) {
+        var _a, _b;
         const certificate = await this.prisma.certificate.findUnique({
             where: { serialNumber },
             include: {
@@ -201,8 +200,8 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
                 serialNumber: certificate.serialNumber,
                 issuedAt: certificate.issuedAt,
                 user: {
-                    firstName: certificate.user.profile?.firstName,
-                    lastName: certificate.user.profile?.lastName,
+                    firstName: (_a = certificate.user.profile) === null || _a === void 0 ? void 0 : _a.firstName,
+                    lastName: (_b = certificate.user.profile) === null || _b === void 0 ? void 0 : _b.lastName,
                 },
                 course: {
                     title: certificate.course.titleEn,
@@ -225,11 +224,10 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (certificate.userId !== userId) {
             throw new common_1.ForbiddenException('Not authorized to download this certificate');
         }
-        // Generate signed URL for S3 download
         const signedUrl = this.s3.getSignedUrl('getObject', {
             Bucket: this.configService.get('AWS_S3_BUCKET'),
             Key: `certificates/${certificate.serialNumber}.pdf`,
-            Expires: 3600, // 1 hour
+            Expires: 3600,
         });
         return {
             downloadUrl: signedUrl,
@@ -238,6 +236,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         };
     }
     async getShareData(serialNumber) {
+        var _a, _b;
         const certificate = await this.prisma.certificate.findUnique({
             where: { serialNumber },
             include: {
@@ -250,7 +249,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (!certificate) {
             throw new common_1.NotFoundException('Certificate not found');
         }
-        const userName = `${certificate.user.profile?.firstName} ${certificate.user.profile?.lastName}`.trim();
+        const userName = `${(_a = certificate.user.profile) === null || _a === void 0 ? void 0 : _a.firstName} ${(_b = certificate.user.profile) === null || _b === void 0 ? void 0 : _b.lastName}`.trim();
         const courseTitle = certificate.course.titleEn;
         return {
             title: `I've successfully completed the ${courseTitle} course!`,
@@ -328,7 +327,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         };
     }
     async requestCertificate(userId, courseId, requestData) {
-        // Check if user has completed the course
         const enrollment = await this.prisma.enrollment.findUnique({
             where: {
                 userId_courseId: {
@@ -340,7 +338,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (!enrollment || enrollment.status !== 'COMPLETED') {
             throw new common_1.BadRequestException('Course must be completed to request a certificate');
         }
-        // Check if certificate already exists
         const existingCertificate = await this.prisma.certificate.findUnique({
             where: {
                 userId_courseId: {
@@ -352,13 +349,11 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (existingCertificate) {
             throw new common_1.BadRequestException('Certificate already issued for this course');
         }
-        // Generate certificate
         const certificate = await this.generateCertificate(userId, courseId, requestData);
         this.logger.log(`Certificate generated for user ${userId}, course ${courseId}`);
         return certificate;
     }
     async getCertificateTemplates() {
-        // Mock templates - in a real app, these would be stored in the database
         return [
             {
                 id: 'modern',
@@ -381,7 +376,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         ];
     }
     async createCertificateTemplate(templateData) {
-        // Mock implementation - would store template in database
         const template = {
             id: `template_${Date.now()}`,
             ...templateData,
@@ -397,7 +391,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (!certificate) {
             throw new common_1.NotFoundException('Certificate not found');
         }
-        // Generate new certificate with same serial number
         const newCertificate = await this.generateCertificate(certificate.userId, certificate.courseId, {}, certificate.serialNumber);
         this.logger.log(`Certificate regenerated: ${certificate.serialNumber}`);
         return newCertificate;
@@ -534,6 +527,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         return results;
     }
     async getPublicCertificate(serialNumber) {
+        var _a, _b;
         const certificate = await this.prisma.certificate.findUnique({
             where: { serialNumber },
             include: {
@@ -550,14 +544,13 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         if (!certificate) {
             throw new common_1.NotFoundException('Certificate not found');
         }
-        // Return only public information
         return {
             serialNumber: certificate.serialNumber,
             issuedAt: certificate.issuedAt,
             isRevoked: certificate.isRevoked,
             user: {
-                firstName: certificate.user.profile?.firstName,
-                lastName: certificate.user.profile?.lastName,
+                firstName: (_a = certificate.user.profile) === null || _a === void 0 ? void 0 : _a.firstName,
+                lastName: (_b = certificate.user.profile) === null || _b === void 0 ? void 0 : _b.lastName,
             },
             course: {
                 title: certificate.course.titleEn,
@@ -571,6 +564,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         };
     }
     async generateCertificate(userId, courseId, options, existingSerialNumber) {
+        var _a, _b, _c;
         const [user, course] = await Promise.all([
             this.prisma.user.findUnique({
                 where: { id: userId },
@@ -585,8 +579,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             throw new common_1.NotFoundException('User or course not found');
         }
         const serialNumber = existingSerialNumber || this.generateSerialNumber();
-        const fullName = options.fullName || `${user.profile?.firstName} ${user.profile?.lastName}`.trim();
-        // Generate PDF certificate
+        const fullName = options.fullName || `${(_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName} ${(_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName}`.trim();
         const pdfBuffer = await this.puppeteerService.generateCertificatePDF({
             serialNumber,
             fullName,
@@ -595,9 +588,8 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             careerPath: course.careerPath.titleEn,
             issuedAt: new Date(),
             includeDateOfBirth: options.includeDateOfBirth,
-            dateOfBirth: user.profile?.dateOfBirth,
+            dateOfBirth: (_c = user.profile) === null || _c === void 0 ? void 0 : _c.dateOfBirth,
         });
-        // Upload PDF to S3
         const pdfKey = `certificates/${serialNumber}.pdf`;
         await this.s3.upload({
             Bucket: this.configService.get('AWS_S3_BUCKET'),
@@ -606,7 +598,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             ContentType: 'application/pdf',
             ACL: 'public-read',
         }).promise();
-        // Generate QR code
         const verificationUrl = `${this.configService.get('FRONTEND_URL')}/verify/${serialNumber}`;
         const qrCodeBuffer = await QRCode.toBuffer(verificationUrl);
         const qrKey = `qrcodes/${serialNumber}.png`;
@@ -617,7 +608,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             ContentType: 'image/png',
             ACL: 'public-read',
         }).promise();
-        // Create certificate record
         const certificate = await this.prisma.certificate.create({
             data: {
                 userId,
@@ -631,7 +621,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         return certificate;
     }
     async generateLocalCert(userId, courseId) {
-        // Return existing if already generated
         const existing = await this.prisma.certificate.findUnique({
             where: { userId_courseId: { userId, courseId } },
         }).catch(() => null);
@@ -652,7 +641,6 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
         const dir = (0, path_1.join)(process.cwd(), 'uploads', 'certificates');
         await (0, promises_1.mkdir)(dir, { recursive: true });
         const filePath = (0, path_1.join)(dir, fileName);
-        // Try to generate QR barcode
         let barcodeBuffer = null;
         try {
             barcodeBuffer = await new Promise((resolve, reject) => {
@@ -670,7 +658,7 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
                 });
             });
         }
-        catch { /* skip QR if bwip fails */ }
+        catch { }
         await new Promise((resolve, reject) => {
             const doc = new PDFDocument({ size: [841.89, 595.28], margin: 0 });
             const chunks = [];
@@ -682,26 +670,26 @@ let CertificatesService = CertificatesService_1 = class CertificatesService {
             doc.on('error', reject);
             const W = 841.89, H = 595.28;
             doc.rect(0, 0, W, H).fill('#0a0f1e');
-            doc.rect(0, 0, W, 8).fill('#3b82f6');
-            doc.rect(0, H - 8, W, 8).fill('#3b82f6');
-            doc.rect(0, 0, 6, H).fill('#3b82f6');
-            doc.rect(W - 6, 0, 6, H).fill('#3b82f6');
-            doc.rect(20, 20, W - 40, H - 40).lineWidth(1).stroke('#3b82f630');
-            doc.circle(150, 150, 200).fill('#3b82f605');
+            doc.rect(0, 0, W, 8).fill('#5120c8');
+            doc.rect(0, H - 8, W, 8).fill('#5120c8');
+            doc.rect(0, 0, 6, H).fill('#5120c8');
+            doc.rect(W - 6, 0, 6, H).fill('#5120c8');
+            doc.rect(20, 20, W - 40, H - 40).lineWidth(1).stroke('#5120c830');
+            doc.circle(150, 150, 200).fill('#5120c805');
             doc.circle(W - 150, H - 150, 200).fill('#8b5cf605');
-            doc.font('Helvetica-Bold').fontSize(28).fill('#3b82f6').text('DeveWay', 60, 55, { align: 'left' });
+            doc.font('Helvetica-Bold').fontSize(28).fill('#5120c8').text('DeveWay', 60, 55, { align: 'left' });
             doc.font('Helvetica').fontSize(10).fill('#ffffff40').text('Career Development Platform', 60, 88, { align: 'left' });
             doc.font('Helvetica-Bold').fontSize(14).fill('#ffffff60').text('Certificate of Completion', 0, 110, { align: 'center', width: W });
             doc.font('Helvetica-Bold').fontSize(36).fill('#ffffff').text('Certificate of Completion', 0, 135, { align: 'center', width: W });
-            doc.moveTo(W / 2 - 150, 185).lineTo(W / 2 + 150, 185).lineWidth(1).stroke('#3b82f660');
+            doc.moveTo(W / 2 - 150, 185).lineTo(W / 2 + 150, 185).lineWidth(1).stroke('#5120c860');
             doc.font('Helvetica').fontSize(13).fill('#ffffff60').text('This certificate is proudly presented to', 0, 200, { align: 'center', width: W });
-            doc.font('Helvetica-Bold').fontSize(32).fill('#3b82f6').text(userName, 0, 225, { align: 'center', width: W });
+            doc.font('Helvetica-Bold').fontSize(32).fill('#5120c8').text(userName, 0, 225, { align: 'center', width: W });
             doc.font('Helvetica').fontSize(12).fill('#ffffff70').text('for successfully completing the course', 0, 272, { align: 'center', width: W });
             doc.font('Helvetica-Bold').fontSize(20).fill('#ffffff').text(courseTitle, 0, 295, { align: 'center', width: W });
             const issueDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             doc.font('Helvetica').fontSize(10).fill('#ffffff50').text('Date of Issue', 80, 390);
             doc.font('Helvetica-Bold').fontSize(12).fill('#ffffff90').text(issueDate, 80, 408);
-            doc.font('Helvetica-Bold').fontSize(14).fill('#3b82f6').text('DeveWay', W / 2 - 40, 390);
+            doc.font('Helvetica-Bold').fontSize(14).fill('#5120c8').text('DeveWay', W / 2 - 40, 390);
             doc.moveTo(W / 2 - 80, 430).lineTo(W / 2 + 80, 430).lineWidth(1).stroke('#ffffff30');
             doc.font('Helvetica').fontSize(9).fill('#ffffff40').text('Authorized Signature', W / 2 - 50, 435);
             doc.font('Helvetica').fontSize(10).fill('#ffffff50').text('Verification Code', W - 200, 390);
@@ -729,3 +717,4 @@ exports.CertificatesService = CertificatesService = CertificatesService_1 = __de
         config_1.ConfigService,
         puppeteer_service_1.PuppeteerService])
 ], CertificatesService);
+//# sourceMappingURL=certificates.service.js.map

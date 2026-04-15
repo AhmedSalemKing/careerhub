@@ -13,6 +13,41 @@ import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon } fr
 import { useAuthStore } from '../../stores/authStore'
 import { TRAINING_URL } from '../../lib/constants'
 
+/* ════════════════════════════════════════
+   SCROLL TO SECTION UTILITY
+   ════════════════════════════════════════ */
+function scrollToSection(sectionId: string, locale: string) {
+  const tryScroll = (attempt = 0): boolean => {
+    const element = document.getElementById(sectionId)
+    
+    if (element) {
+      // ✅ العنصر موجود → اسكرول له
+      setTimeout(() => {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        })
+      }, attempt === 0 ? 50 : 0)
+      
+      window.history.pushState(null, '', `/#${sectionId}`)
+      return true
+    }
+    
+    // ❌ العنصر مش موجود → حاول تاني
+    if (attempt < 20) {
+      setTimeout(() => tryScroll(attempt + 1), 100)
+      return false
+    }
+    
+    // ❌ فشل كلي → حول للصفحة مع الـ hash
+    window.location.href = `/${locale}/#${sectionId}`
+    return false
+  }
+  
+  return tryScroll()
+}
+
 /* ═══ Shared font for nav + buttons ═══ */
 const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
 
@@ -218,11 +253,10 @@ export function Navbar() {
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
     : ''
 
+  /* ═══ Navigation Links ═══ */
   const links = [
-    { href: `/${locale}/careers`, label: t('careers') },
-    { href: `/${locale}/coaches`, label: t('coaches') },
-    { href: `/${locale}/coaching`, label: 'احجز استشارة' },
-    { href: `/${locale}/pricing`, label: t('pricing') },
+    { href: `/#career-paths`, label: t('careers'), isAnchor: true, sectionId: 'career-paths' },
+    { href: `/${locale}/coaching`, label: t('coaches') },
   ]
 
   const isActive = (href: string) => pathname === href
@@ -244,22 +278,28 @@ export function Navbar() {
         className="sticky top-0 z-40 w-full transition-all duration-200"
         style={{
           background: '#050505',
-          backgroundImage: 'rad-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
+          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
           borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
           boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
         <div className="dw-container flex h-[68px] items-center justify-between">
 
-          {/* ═══ Branding ═══ */}
-          <Link href={`/${locale}`} className="shrink-0">
+          {/* ═══ Branding (Logo + Text) ═══ */}
+          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:mr-6 md:mr-8" style={{ marginRight: '12px' }}>
             <img
               src="/logo-icon.png"
               alt="DeveWay"
-              className="h-10 w-auto object-contain transition-opacity duration-200 hover:opacity-80"
-              style={{ background: 'transparent' }}
+              className="h-[44px] w-auto object-contain transition-opacity duration-200 hover:opacity-80 sm:h-[52px]"
+              style={{ background: 'transparent', minWidth: '44px' }}
               onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
+            <span
+              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-opacity duration-200 hover:opacity-80 md:text-[24px]"
+              style={{ fontFamily: NAV_FONT, color: '#ffffff', lineHeight: 1 }}
+            >
+              DeveWay
+            </span>
           </Link>
 
           {/* ═══ Navigation Links (Desktop) ═══ */}
@@ -270,6 +310,13 @@ export function Navbar() {
                 <Link
                   key={l.href}
                   href={l.href}
+                  onClick={(e) => {
+                    if (l.isAnchor) {
+                      e.preventDefault()
+                      const sectionId = l.sectionId || 'career-paths'
+                      scrollToSection(sectionId, locale)
+                    }
+                  }}
                   className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
                   style={{
                     fontSize: '14px',
@@ -466,7 +513,16 @@ export function Navbar() {
                   <Link
                     key={l.href}
                     href={l.href}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={(e) => {
+                      if (l.isAnchor) {
+                        e.preventDefault()
+                        const sectionId = l.sectionId || 'career-paths'
+                        scrollToSection(sectionId, locale)
+                        setMobileOpen(false)
+                      } else {
+                        setMobileOpen(false)
+                      }
+                    }}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
                     style={{
                       fontWeight: 900,

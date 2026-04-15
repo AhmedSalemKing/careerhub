@@ -8,19 +8,13 @@ export declare class UsersController {
         success: boolean;
         data: {
             profile: {
-                _count: {
-                    enrollments: number;
-                    certificates: number;
-                    coachingSessions: number;
-                };
                 profile: {
                     id: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    language: string;
                     userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
+                    updatedAt: Date;
                     firstName: string;
                     lastName: string;
                     phone: string | null;
@@ -31,15 +25,20 @@ export declare class UsersController {
                     city: string | null;
                     avatar: string | null;
                     timezone: string;
+                    language: string;
+                };
+                _count: {
+                    enrollments: number;
+                    certificates: number;
+                    coachingSessions: number;
                 };
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -51,6 +50,8 @@ export declare class UsersController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
         };
@@ -62,11 +63,10 @@ export declare class UsersController {
             profile: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
-                language: string;
                 userId: string;
                 bio: string | null;
                 linkedinUrl: string | null;
+                updatedAt: Date;
                 firstName: string;
                 lastName: string;
                 phone: string | null;
@@ -77,6 +77,7 @@ export declare class UsersController {
                 city: string | null;
                 avatar: string | null;
                 timezone: string;
+                language: string;
             };
         };
     }>;
@@ -98,14 +99,15 @@ export declare class UsersController {
                 course: {
                     careerPath: {
                         id: string;
+                        createdAt: Date;
+                        isActive: boolean;
+                        updatedAt: Date;
                         slug: string;
                         titleEn: string;
                         titleAr: string;
                         descriptionEn: string;
                         descriptionAr: string;
                         sortOrder: number;
-                        createdAt: Date;
-                        updatedAt: Date;
                         skills: string[];
                         salaryRangeEn: string;
                         salaryRangeAr: string;
@@ -114,10 +116,12 @@ export declare class UsersController {
                         demandLevel: string;
                         icon: string | null;
                         color: string | null;
-                        isActive: boolean;
                     };
                 } & {
                     id: string;
+                    createdAt: Date;
+                    status: import(".prisma/client").$Enums.CourseStatus;
+                    updatedAt: Date;
                     slug: string;
                     careerPathId: string | null;
                     instructorId: string | null;
@@ -132,21 +136,18 @@ export declare class UsersController {
                     currency: string;
                     duration: number | null;
                     level: string;
-                    status: import(".prisma/client").$Enums.CourseStatus;
                     isFeatured: boolean;
                     sortOrder: number;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
+                userId: string;
                 status: import(".prisma/client").$Enums.EnrollmentStatus;
                 courseId: string;
-                userId: string;
+                expiresAt: Date | null;
                 progress: number;
                 enrolledAt: Date;
                 completedAt: Date | null;
-                expiresAt: Date | null;
             })[];
             meta: {
                 total: number;
@@ -165,14 +166,15 @@ export declare class UsersController {
                 course: {
                     careerPath: {
                         id: string;
+                        createdAt: Date;
+                        isActive: boolean;
+                        updatedAt: Date;
                         slug: string;
                         titleEn: string;
                         titleAr: string;
                         descriptionEn: string;
                         descriptionAr: string;
                         sortOrder: number;
-                        createdAt: Date;
-                        updatedAt: Date;
                         skills: string[];
                         salaryRangeEn: string;
                         salaryRangeAr: string;
@@ -181,10 +183,12 @@ export declare class UsersController {
                         demandLevel: string;
                         icon: string | null;
                         color: string | null;
-                        isActive: boolean;
                     };
                 } & {
                     id: string;
+                    createdAt: Date;
+                    status: import(".prisma/client").$Enums.CourseStatus;
+                    updatedAt: Date;
                     slug: string;
                     careerPathId: string | null;
                     instructorId: string | null;
@@ -199,21 +203,18 @@ export declare class UsersController {
                     currency: string;
                     duration: number | null;
                     level: string;
-                    status: import(".prisma/client").$Enums.CourseStatus;
                     isFeatured: boolean;
                     sortOrder: number;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
-                courseId: string;
                 userId: string;
-                expiresAt: Date | null;
+                courseId: string;
                 serialNumber: string;
                 certificateUrl: string;
                 qrCodeUrl: string;
                 issuedAt: Date;
+                expiresAt: Date | null;
             })[];
             meta: {
                 total: number;
@@ -256,13 +257,13 @@ export declare class UsersController {
         success: boolean;
         data: {
             notifications: {
+                data: import("@prisma/client/runtime/library").JsonValue | null;
                 id: string;
-                titleEn: string;
-                titleAr: string;
                 createdAt: Date;
                 userId: string;
+                titleEn: string;
+                titleAr: string;
                 type: import(".prisma/client").$Enums.NotificationType;
-                data: import("@prisma/client/runtime/library").JsonValue | null;
                 contentEn: string;
                 contentAr: string;
                 isRead: boolean;

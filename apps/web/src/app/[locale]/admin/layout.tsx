@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Calendar,
+  Activity,
 } from 'lucide-react'
 import { api } from '../../../lib/api'
 
@@ -81,6 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: 'admin/courses', label: 'الكورسات', icon: BookOpen },
     { href: 'admin/sessions', label: 'الجلسات', icon: Calendar },
     { href: 'admin/revenue', label: 'الإيرادات', icon: TrendingUp },
+    { href: 'admin/activity', label: 'مراقب النشاط', icon: Activity },
     { href: 'admin/site-settings', label: 'إعدادات الموقع', icon: Settings },
   ]
 

@@ -13,11 +13,10 @@ export declare class JwtStrategy extends JwtStrategy_base {
         profile: {
             id: string;
             createdAt: Date;
-            updatedAt: Date;
-            language: string;
             userId: string;
             bio: string | null;
             linkedinUrl: string | null;
+            updatedAt: Date;
             firstName: string;
             lastName: string;
             phone: string | null;
@@ -28,6 +27,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
             city: string | null;
             avatar: string | null;
             timezone: string;
+            language: string;
         };
     }>;
 }

@@ -18,11 +18,14 @@ export declare class PaymentController {
                     };
                 };
                 _count: {
-                    sections: number;
                     enrollments: number;
+                    sections: number;
                 };
             } & {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -37,11 +40,8 @@ export declare class PaymentController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
             alreadyEnrolled: boolean;
         };
@@ -105,22 +105,22 @@ export declare class PaymentController {
             };
         } & {
             id: string;
-            currency: string;
-            status: string;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
             createdAt: Date;
-            updatedAt: Date;
-            description: string | null;
-            courseId: string | null;
             userId: string;
-            completedAt: Date | null;
-            amount: number;
             method: string;
+            status: string;
+            updatedAt: Date;
+            courseId: string | null;
+            currency: string;
+            completedAt: Date | null;
+            description: string | null;
+            amount: number;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
             refundedAt: Date | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
     }>;
     private doEnroll;

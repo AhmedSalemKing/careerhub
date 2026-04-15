@@ -77,8 +77,8 @@ export declare class AiAssessmentService {
     }>;
     getSessionHistory(userId: string): Promise<{
         id: string;
-        status: string;
         createdAt: Date;
+        status: string;
         completedAt: Date;
         report: import("@prisma/client/runtime/library").JsonValue;
     }[]>;

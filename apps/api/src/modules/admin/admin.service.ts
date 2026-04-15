@@ -1,7 +1,9 @@
 import {
   Injectable,
   Logger,
+  ConflictException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
@@ -831,9 +833,9 @@ export class AdminService {
       settings = await this.prisma.siteSettings.create({
         data: {
           siteName: 'DeveWay',
-          primaryColor: '#3b82f6',
+          primaryColor: '#5120c8',
           backgroundColor: '#0d0d0d',
-          buttonColor: '#3b82f6',
+          buttonColor: '#5120c8',
         } as any,
       });
     }
@@ -876,5 +878,148 @@ export class AdminService {
       orderBy: { createdAt: 'desc' },
     });
     return { success: true, data: sessions };
+  }
+
+  // ── Create User ──
+  async createUser(data: { email: string; password: string; firstName: string; lastName: string; accountType: string }) {
+    const exists = await this.prisma.user.findUnique({ where: { email: data.email } });
+    if (exists) throw new ConflictException('Email already exists');
+    const hashed = await bcrypt.hash(data.password, 10);
+    return this.prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashed,
+        accountType: data.accountType as any,
+        status: 'ACTIVE',
+        profile: { create: { firstName: data.firstName, lastName: data.lastName } },
+      },
+      select: {
+        id: true, email: true, accountType: true, status: true, createdAt: true,
+        profile: { select: { firstName: true, lastName: true } },
+      },
+    });
+  }
+
+  // ── Change user role ──
+  async changeUserRole(id: string, accountType: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { accountType: accountType as any },
+      select: { id: true, email: true, accountType: true },
+    });
+  }
+
+  // ── Change user status ──
+  async changeUserStatus(id: string, status: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { status: status as any },
+      select: { id: true, email: true, status: true },
+    });
+  }
+
+  // ── Delete user ──
+  async deleteUser(id: string) {
+    await this.prisma.user.delete({ where: { id } });
+    return { success: true };
+  }
+
+  // ── Admin creates a course ──
+  async createCourse(data: any, adminId: string) {
+    const instructorId = data.instructorId || adminId;
+    return this.prisma.course.create({
+      data: {
+        title: data.title,
+        titleAr: data.titleAr || data.title,
+        description: data.description || '',
+        price: Number(data.price) || 0,
+        level: data.level || 'BEGINNER',
+        status: data.status || 'PUBLISHED',
+        thumbnail: data.thumbnail || null,
+        instructorId,
+        categoryId: data.categoryId || null,
+      },
+    });
+  }
+
+  // ── Admin creates a consulting session ──
+  async createSession(data: any) {
+    return this.prisma.consultingSession.create({
+      data: {
+        studentId: data.studentId,
+        consultantId: data.consultantId,
+        scheduledAt: new Date(data.scheduledAt),
+        topic: data.topic || '',
+        meetingMethod: data.meetingMethod || 'ONLINE',
+        price: Number(data.price) || 0,
+        status: 'CONFIRMED',
+        paymentStatus: 'UNPAID',
+      },
+    });
+  }
+
+  // ── Live activity feed ──
+  async getLiveActivity(limit = 50) {
+    try {
+      return await this.prisma.userActivity.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true, email: true, accountType: true,
+              profile: { select: { firstName: true, lastName: true } },
+            },
+          },
+        },
+      });
+    } catch { return []; }
+  }
+
+  // ── User activity timeline ──
+  async getUserActivity(userId: string, limit = 30) {
+    try {
+      return await this.prisma.userActivity.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      });
+    } catch { return []; }
+  }
+
+  // ── User detail with full history ──
+  async getUserDetail(id: string) {
+    const [user, activities, payments, enrollments] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id },
+        include: { profile: true, _count: { select: { enrollments: true } } },
+      }),
+      this.getUserActivity(id, 20),
+      this.prisma.payment.findMany({
+        where: { userId: id, status: 'SUCCESS' },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        include: { course: { select: { title: true } } },
+      }).catch(() => []),
+      this.prisma.enrollment.findMany({
+        where: { userId: id },
+        take: 10,
+        include: { course: { select: { title: true, thumbnail: true } } },
+      }).catch(() => []),
+    ]);
+    const totalSpent = (payments as any[]).reduce((s, p) => s + p.amount, 0);
+    return { user, activities, payments, enrollments, totalSpent };
+  }
+
+  // ── Activity stats ──
+  async getActivityStats() {
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+    const [onlineUsers, todayActivity, totalActivities] = await Promise.all([
+      this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } }).catch(() => 0),
+      this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+      this.prisma.userActivity.count().catch(() => 0),
+    ]);
+    return { onlineUsers, todayActivity, totalActivities };
   }
 }

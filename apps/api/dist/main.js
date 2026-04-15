@@ -18,10 +18,8 @@ const logger_middleware_1 = require("./common/middleware/logger.middleware");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    // Serve uploaded files as static assets
     app.useStaticAssets((0, path_1.join)(__dirname, '..', 'uploads'), { prefix: '/uploads/' });
     const configService = app.get(config_1.ConfigService);
-    // Security middleware
     app.use((0, helmet_1.default)({
         contentSecurityPolicy: {
             directives: {
@@ -32,25 +30,20 @@ async function bootstrap() {
             },
         },
     }));
-    // CORS configuration
     app.enableCors({
-        origin: true, // allow all origins for demo
+        origin: true,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
     });
-    // Compression
     app.use(compression());
-    // HTTP request logger
     if (configService.get('NODE_ENV') !== 'production') {
         app.use(morgan('dev'));
     }
     else {
         app.use(morgan('combined'));
     }
-    // Custom logger middleware
     app.use(new logger_middleware_1.LoggerMiddleware().use);
-    // Global pipes
     app.useGlobalPipes(new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
@@ -63,14 +56,10 @@ async function bootstrap() {
             value: false,
         },
     }));
-    // Global filters
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
-    // Global interceptors
     app.useGlobalInterceptors(new transform_interceptor_1.TransformInterceptor());
-    // API prefix
     const apiPrefix = configService.get('API_PREFIX') || 'api';
     app.setGlobalPrefix(apiPrefix);
-    // Swagger documentation
     if (configService.get('NODE_ENV') !== 'production') {
         const config = new swagger_1.DocumentBuilder()
             .setTitle('DeveWay API')
@@ -125,9 +114,6 @@ async function bootstrap() {
         });
         logger.log(`📚 Swagger documentation available at: http://localhost:${configService.get('PORT') || 3001}/${apiPrefix}/docs`);
     }
-    // Rate limiting
-    // Note: @nestjs/throttler is configured in AppModule
-    // Health check endpoint
     app.getHttpServer().on('request', (req, res) => {
         if (req.url === '/health' && req.method === 'GET') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -140,7 +126,6 @@ async function bootstrap() {
             }));
         }
     });
-    // Graceful shutdown
     process.on('SIGTERM', async () => {
         logger.log('SIGTERM signal received: closing HTTP server');
         await app.close();
@@ -151,7 +136,6 @@ async function bootstrap() {
         await app.close();
         process.exit(0);
     });
-    // Start server
     const port = configService.get('PORT') || 3001;
     await app.listen(port);
     logger.log(`🚀 DeveWay API is running on port ${port}`);
@@ -162,3 +146,4 @@ bootstrap().catch((error) => {
     console.error('❌ Failed to start application:', error);
     process.exit(1);
 });
+//# sourceMappingURL=main.js.map

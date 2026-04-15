@@ -74,19 +74,19 @@ export declare class UploadService {
         type?: string;
     }): Promise<{
         files: {
-            url: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            userId: string;
-            fileName: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            key: string;
+            createdAt: Date;
+            userId: string;
+            updatedAt: Date;
+            url: string;
             isPublic: boolean;
+            fileName: string;
             originalName: string;
             mimeType: string;
             size: number;
             fileType: string;
+            key: string;
             folder: string;
         }[];
         meta: {
@@ -99,19 +99,19 @@ export declare class UploadService {
         };
     }>;
     getFile(fileId: string): Promise<{
-        url: string;
         id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        userId: string;
-        fileName: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        key: string;
+        createdAt: Date;
+        userId: string;
+        updatedAt: Date;
+        url: string;
         isPublic: boolean;
+        fileName: string;
         originalName: string;
         mimeType: string;
         size: number;
         fileType: string;
+        key: string;
         folder: string;
     }>;
     getDownloadUrl(fileId: string): Promise<{
@@ -131,19 +131,19 @@ export declare class UploadService {
     }>;
     getSharedFile(shareId: string): Promise<{
         file: {
-            url: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            userId: string;
-            fileName: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            key: string;
+            createdAt: Date;
+            userId: string;
+            updatedAt: Date;
+            url: string;
             isPublic: boolean;
+            fileName: string;
             originalName: string;
             mimeType: string;
             size: number;
             fileType: string;
+            key: string;
             folder: string;
         };
         url: string;
@@ -175,19 +175,19 @@ export declare class UploadService {
         type?: string;
     }): Promise<{
         files: {
-            url: string;
             id: string;
-            createdAt: Date;
-            updatedAt: Date;
-            userId: string;
-            fileName: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            key: string;
+            createdAt: Date;
+            userId: string;
+            updatedAt: Date;
+            url: string;
             isPublic: boolean;
+            fileName: string;
             originalName: string;
             mimeType: string;
             size: number;
             fileType: string;
+            key: string;
             folder: string;
         }[];
         meta: {

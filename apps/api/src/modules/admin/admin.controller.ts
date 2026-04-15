@@ -12,6 +12,7 @@ import {
   HttpStatus,
   UploadedFile,
   UseInterceptors,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
@@ -793,5 +794,64 @@ export class AdminController {
   ) {
     const settings = await this.adminService.updateSiteSettings(body);
     return { success: true, data: { settings } };
+  }
+
+  @Post('users/create')
+  async createUser(@Body() body: any) {
+    const result = await this.adminService.createUser(body);
+    return { success: true, data: result };
+  }
+
+  @Patch('users/:id/role')
+  async changeRole(@Param('id') id: string, @Body() body: { accountType: string }) {
+    const result = await this.adminService.changeUserRole(id, body.accountType);
+    return { success: true, data: result };
+  }
+
+  @Patch('users/:id/status-update')
+  async changeStatus(@Param('id') id: string, @Body() body: { status: string }) {
+    const result = await this.adminService.changeUserStatus(id, body.status);
+    return { success: true, data: result };
+  }
+
+  @Delete('users/:id/delete')
+  async deleteUser(@Param('id') id: string) {
+    return this.adminService.deleteUser(id);
+  }
+
+  @Get('users/:id/detail')
+  async getUserDetail(@Param('id') id: string) {
+    const result = await this.adminService.getUserDetail(id);
+    return { success: true, data: result };
+  }
+
+  @Post('courses/create')
+  async createCourse(@Body() body: any, @Req() req: any) {
+    const result = await this.adminService.createCourse(body, req.user?.sub || req.user?.id);
+    return { success: true, data: result };
+  }
+
+  @Post('sessions/create')
+  async createSession(@Body() body: any) {
+    const result = await this.adminService.createSession(body);
+    return { success: true, data: result };
+  }
+
+  @Get('activity/live')
+  async getLiveActivity(@Query('limit') limit = '50') {
+    const result = await this.adminService.getLiveActivity(+limit);
+    return { success: true, data: result };
+  }
+
+  @Get('activity/stats')
+  async getActivityStats() {
+    const result = await this.adminService.getActivityStats();
+    return { success: true, data: result };
+  }
+
+  @Get('users/:id/activity')
+  async getUserActivity(@Param('id') id: string, @Query('limit') limit = '30') {
+    const result = await this.adminService.getUserActivity(id, +limit);
+    return { success: true, data: result };
   }
 }

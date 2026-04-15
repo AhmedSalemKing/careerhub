@@ -17,7 +17,7 @@ const STEPS = [
     descAr: 'اجتز اختبار الذكاء الاصطناعي واحصل على تقرير مهني مخصص يحدد أفضل مسار لك',
     descEn: 'Take our AI assessment and get a personalized career report',
     detailsAr: ['تحليل الشخصية المهنية', 'توصية بـ 3 مسارات مناسبة', 'خطة تعلم مخصصة', 'متوسط رواتب السوق'],
-    color: '#3b82f6',
+    color: '#5120c8',
     glow: 'rgba(59,130,246,0.3)',
     bg: 'from-blue-500/20 to-blue-600/5',
     badge: 'مجاني',
@@ -151,7 +151,7 @@ export function JourneySection() {
               className="absolute top-0 left-0 right-0 origin-top"
               style={{
                 height: lineHeight,
-                background: 'linear-gradient(180deg, #3b82f6, #8b5cf6, #06b6d4, #f59e0b)',
+                background: 'linear-gradient(180deg, #5120c8, #8b5cf6, #06b6d4, #f59e0b)',
               }}
             />
           </div>
@@ -351,7 +351,7 @@ export function JourneySection() {
             whileTap={{ scale: 0.97 }}
             className="relative inline-flex items-center gap-3 overflow-hidden rounded-2xl px-10 py-4 font-bold text-white text-lg shadow-2xl"
             style={{
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              background: 'linear-gradient(135deg, #5120c8, #8b5cf6)',
               boxShadow: '0 20px 60px rgba(59,130,246,0.3)',
             }}
           >

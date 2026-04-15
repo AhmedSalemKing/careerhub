@@ -165,7 +165,7 @@ export default function MyCoursesPage() {
                       <img src={`${process.env.NEXT_PUBLIC_API_URL || ''}${course.thumbnail}`} className="w-full h-full object-cover" alt="" />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' }}>
+                        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #5120c8 100%)' }}>
                         <BookOpen className="h-10 w-10 text-white/30" />
                       </div>
                     )}

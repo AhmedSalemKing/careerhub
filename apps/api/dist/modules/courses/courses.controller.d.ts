@@ -97,16 +97,19 @@ export declare class CoursesController {
                 };
             } & {
                 id: string;
-                title: string;
                 courseId: string;
+                title: string;
                 order: number;
             })[];
             _count: {
-                sections: number;
                 enrollments: number;
+                sections: number;
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            updatedAt: Date;
             slug: string;
             careerPathId: string | null;
             instructorId: string | null;
@@ -121,11 +124,8 @@ export declare class CoursesController {
             currency: string;
             duration: number | null;
             level: string;
-            status: import(".prisma/client").$Enums.CourseStatus;
             isFeatured: boolean;
             sortOrder: number;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
     } | {
         success: boolean;
@@ -180,14 +180,15 @@ export declare class CoursesController {
             course: {
                 careerPath: {
                     id: string;
+                    createdAt: Date;
+                    isActive: boolean;
+                    updatedAt: Date;
                     slug: string;
                     titleEn: string;
                     titleAr: string;
                     descriptionEn: string;
                     descriptionAr: string;
                     sortOrder: number;
-                    createdAt: Date;
-                    updatedAt: Date;
                     skills: string[];
                     salaryRangeEn: string;
                     salaryRangeAr: string;
@@ -196,7 +197,6 @@ export declare class CoursesController {
                     demandLevel: string;
                     icon: string | null;
                     color: string | null;
-                    isActive: boolean;
                 };
                 category: {
                     id: string;
@@ -216,29 +216,29 @@ export declare class CoursesController {
                 sections: ({
                     lessons: {
                         id: string;
-                        titleAr: string | null;
-                        descriptionAr: string | null;
                         createdAt: Date;
                         updatedAt: Date;
-                        title: string;
+                        titleAr: string | null;
+                        descriptionAr: string | null;
                         description: string | null;
-                        isPublished: boolean;
+                        content: import("@prisma/client/runtime/library").JsonValue | null;
+                        type: string;
+                        title: string;
                         order: number;
                         moduleId: string | null;
                         sectionId: string | null;
-                        content: import("@prisma/client/runtime/library").JsonValue | null;
-                        type: string;
                         videoUrl: string | null;
                         videoDuration: number | null;
                         fileUrl: string | null;
                         fileName: string | null;
                         fileSize: number | null;
                         isFree: boolean;
+                        isPublished: boolean;
                     }[];
                 } & {
                     id: string;
-                    title: string;
                     courseId: string;
+                    title: string;
                     order: number;
                 })[];
                 _count: {
@@ -246,6 +246,9 @@ export declare class CoursesController {
                 };
             } & {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -260,11 +263,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         };
     } | {
@@ -455,34 +455,6 @@ export declare class CoursesController {
     getInstructorCourseDetails(id: string, req: any): Promise<{
         success: boolean;
         data: {
-            sections: ({
-                lessons: {
-                    id: string;
-                    titleAr: string | null;
-                    descriptionAr: string | null;
-                    createdAt: Date;
-                    updatedAt: Date;
-                    title: string;
-                    description: string | null;
-                    isPublished: boolean;
-                    order: number;
-                    moduleId: string | null;
-                    sectionId: string | null;
-                    content: import("@prisma/client/runtime/library").JsonValue | null;
-                    type: string;
-                    videoUrl: string | null;
-                    videoDuration: number | null;
-                    fileUrl: string | null;
-                    fileName: string | null;
-                    fileSize: number | null;
-                    isFree: boolean;
-                }[];
-            } & {
-                id: string;
-                title: string;
-                courseId: string;
-                order: number;
-            })[];
             enrollments: ({
                 user: {
                     id: string;
@@ -495,19 +467,50 @@ export declare class CoursesController {
                 };
             } & {
                 id: string;
+                userId: string;
                 status: import(".prisma/client").$Enums.EnrollmentStatus;
                 courseId: string;
-                userId: string;
+                expiresAt: Date | null;
                 progress: number;
                 enrolledAt: Date;
                 completedAt: Date | null;
-                expiresAt: Date | null;
+            })[];
+            sections: ({
+                lessons: {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    titleAr: string | null;
+                    descriptionAr: string | null;
+                    description: string | null;
+                    content: import("@prisma/client/runtime/library").JsonValue | null;
+                    type: string;
+                    title: string;
+                    order: number;
+                    moduleId: string | null;
+                    sectionId: string | null;
+                    videoUrl: string | null;
+                    videoDuration: number | null;
+                    fileUrl: string | null;
+                    fileName: string | null;
+                    fileSize: number | null;
+                    isFree: boolean;
+                    isPublished: boolean;
+                }[];
+            } & {
+                id: string;
+                courseId: string;
+                title: string;
+                order: number;
             })[];
             _count: {
                 enrollments: number;
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            updatedAt: Date;
             slug: string;
             careerPathId: string | null;
             instructorId: string | null;
@@ -522,11 +525,8 @@ export declare class CoursesController {
             currency: string;
             duration: number | null;
             level: string;
-            status: import(".prisma/client").$Enums.CourseStatus;
             isFeatured: boolean;
             sortOrder: number;
-            createdAt: Date;
-            updatedAt: Date;
         };
     }>;
     addSection(id: string, req: any, body: {
@@ -535,8 +535,8 @@ export declare class CoursesController {
         success: boolean;
         data: {
             id: string;
-            title: string;
             courseId: string;
+            title: string;
             order: number;
         };
     }>;
@@ -544,24 +544,24 @@ export declare class CoursesController {
         success: boolean;
         data: {
             id: string;
-            titleAr: string | null;
-            descriptionAr: string | null;
             createdAt: Date;
             updatedAt: Date;
-            title: string;
+            titleAr: string | null;
+            descriptionAr: string | null;
             description: string | null;
-            isPublished: boolean;
+            content: import("@prisma/client/runtime/library").JsonValue | null;
+            type: string;
+            title: string;
             order: number;
             moduleId: string | null;
             sectionId: string | null;
-            content: import("@prisma/client/runtime/library").JsonValue | null;
-            type: string;
             videoUrl: string | null;
             videoDuration: number | null;
             fileUrl: string | null;
             fileName: string | null;
             fileSize: number | null;
             isFree: boolean;
+            isPublished: boolean;
         };
     }>;
     createCourse(req: any, body: any): Promise<{
@@ -576,12 +576,15 @@ export declare class CoursesController {
             };
             sections: {
                 id: string;
-                title: string;
                 courseId: string;
+                title: string;
                 order: number;
             }[];
         } & {
             id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            updatedAt: Date;
             slug: string;
             careerPathId: string | null;
             instructorId: string | null;
@@ -596,11 +599,8 @@ export declare class CoursesController {
             currency: string;
             duration: number | null;
             level: string;
-            status: import(".prisma/client").$Enums.CourseStatus;
             isFeatured: boolean;
             sortOrder: number;
-            createdAt: Date;
-            updatedAt: Date;
         };
     } | {
         success: boolean;
@@ -616,12 +616,15 @@ export declare class CoursesController {
                 };
                 sections: {
                     id: string;
-                    title: string;
                     courseId: string;
+                    title: string;
                     order: number;
                 }[];
             } & {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -636,11 +639,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         };
     }>;
@@ -648,6 +648,9 @@ export declare class CoursesController {
         success: boolean;
         data: {
             id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.CourseStatus;
+            updatedAt: Date;
             slug: string;
             careerPathId: string | null;
             instructorId: string | null;
@@ -662,11 +665,8 @@ export declare class CoursesController {
             currency: string;
             duration: number | null;
             level: string;
-            status: import(".prisma/client").$Enums.CourseStatus;
             isFeatured: boolean;
             sortOrder: number;
-            createdAt: Date;
-            updatedAt: Date;
         };
     } | {
         success: boolean;
@@ -674,6 +674,9 @@ export declare class CoursesController {
         data: {
             course: {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -688,11 +691,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         };
     }>;
@@ -703,6 +703,9 @@ export declare class CoursesController {
         data: {
             course: {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -717,11 +720,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         };
     }>;
@@ -731,6 +731,9 @@ export declare class CoursesController {
         data: {
             course: {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -745,11 +748,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             };
         };
     }>;
@@ -759,14 +759,15 @@ export declare class CoursesController {
             courses: ({
                 careerPath: {
                     id: string;
+                    createdAt: Date;
+                    isActive: boolean;
+                    updatedAt: Date;
                     slug: string;
                     titleEn: string;
                     titleAr: string;
                     descriptionEn: string;
                     descriptionAr: string;
                     sortOrder: number;
-                    createdAt: Date;
-                    updatedAt: Date;
                     skills: string[];
                     salaryRangeEn: string;
                     salaryRangeAr: string;
@@ -775,7 +776,6 @@ export declare class CoursesController {
                     demandLevel: string;
                     icon: string | null;
                     color: string | null;
-                    isActive: boolean;
                 };
                 _count: {
                     enrollments: number;
@@ -783,6 +783,9 @@ export declare class CoursesController {
                 };
             } & {
                 id: string;
+                createdAt: Date;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                updatedAt: Date;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
@@ -797,11 +800,8 @@ export declare class CoursesController {
                 currency: string;
                 duration: number | null;
                 level: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
                 sortOrder: number;
-                createdAt: Date;
-                updatedAt: Date;
             })[];
             meta: {
                 total: number;

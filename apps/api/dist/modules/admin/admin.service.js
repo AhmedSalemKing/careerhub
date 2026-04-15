@@ -1,10 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -12,6 +45,7 @@ var AdminService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
+const bcrypt = __importStar(require("bcrypt"));
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const analytics_service_1 = require("../analytics/analytics.service");
@@ -51,7 +85,6 @@ let AdminService = AdminService_1 = class AdminService {
                 include: { user: { include: { profile: true } } },
             }).catch(() => []),
         ]);
-        // Calculate real historical data for charts
         const now = new Date();
         const months = Array.from({ length: 12 }, (_, i) => {
             const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
@@ -92,7 +125,6 @@ let AdminService = AdminService_1 = class AdminService {
                 users: count,
             };
         }));
-        // Total revenue (all time)
         const totalRevenueResult = await this.prisma.payment.aggregate({
             _sum: { amount: true },
             where: { status: { in: ['SUCCESS', 'COMPLETED'] } },
@@ -284,6 +316,7 @@ let AdminService = AdminService_1 = class AdminService {
         return { success: true, data: courses };
     }
     async approveCourse(id) {
+        var _a, _b;
         const course = await this.prisma.course.update({
             where: { id },
             data: { status: 'PUBLISHED', updatedAt: new Date() },
@@ -306,7 +339,7 @@ let AdminService = AdminService_1 = class AdminService {
                 include: { profile: true },
             }).catch(() => null);
             if (instructor) {
-                const name = `${instructor.profile?.firstName || ''} ${instructor.profile?.lastName || ''}`.trim() || instructor.email;
+                const name = `${((_a = instructor.profile) === null || _a === void 0 ? void 0 : _a.firstName) || ''} ${((_b = instructor.profile) === null || _b === void 0 ? void 0 : _b.lastName) || ''}`.trim() || instructor.email;
                 this.emailService.sendCourseApproved(instructor.email, name, course.titleEn || course.titleAr).catch(() => { });
             }
         }
@@ -524,11 +557,10 @@ let AdminService = AdminService_1 = class AdminService {
             activeConnections: 450,
         };
     }
-    // ── Audit Log ─────────────────────────────────────────────────────────────
     async log(action, entityType, entityId, adminId, details) {
         try {
             await this.prisma.auditLog.create({
-                data: { action, entityType, entityId, adminId: adminId ?? null, details: details ?? null },
+                data: { action, entityType, entityId, adminId: adminId !== null && adminId !== void 0 ? adminId : null, details: details !== null && details !== void 0 ? details : null },
             });
         }
         catch (e) {
@@ -541,7 +573,6 @@ let AdminService = AdminService_1 = class AdminService {
             take: limit,
         });
     }
-    // ── Approval system ────────────────────────────────────────────────────────
     async getPendingApprovals() {
         this.logger.log('[Admin] Fetching pending approvals...');
         const users = await this.prisma.user.findMany({
@@ -663,6 +694,7 @@ let AdminService = AdminService_1 = class AdminService {
         return { success: true, message: 'Seed data cleared' };
     }
     async approveUser(userId, adminId) {
+        var _a, _b, _c, _d;
         const user = await this.prisma.user.update({
             where: { id: userId },
             data: { status: 'ACTIVE', approvedAt: new Date() },
@@ -673,12 +705,12 @@ let AdminService = AdminService_1 = class AdminService {
             type: 'SYSTEM_ANNOUNCEMENT',
             titleEn: 'Application Approved!',
             titleAr: 'تم قبول طلبك! 🎉',
-            contentEn: `Congratulations ${user.profile?.firstName || ''}! Your account has been approved as ${user.accountType === 'INSTRUCTOR' ? 'an Instructor' : 'a Consultant'}. You can now log in and start using the platform.`,
-            contentAr: `تهانينا ${user.profile?.firstName || ''}! تم قبول طلبك كـ${user.accountType === 'INSTRUCTOR' ? 'محاضر' : 'مستشار'}. يمكنك الآن تسجيل الدخول والبدء في استخدام المنصة.`,
+            contentEn: `Congratulations ${((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || ''}! Your account has been approved as ${user.accountType === 'INSTRUCTOR' ? 'an Instructor' : 'a Consultant'}. You can now log in and start using the platform.`,
+            contentAr: `تهانينا ${((_b = user.profile) === null || _b === void 0 ? void 0 : _b.firstName) || ''}! تم قبول طلبك كـ${user.accountType === 'INSTRUCTOR' ? 'محاضر' : 'مستشار'}. يمكنك الآن تسجيل الدخول والبدء في استخدام المنصة.`,
             data: { type: 'approved' },
         });
         await this.log('APPROVE_USER', 'User', userId, adminId, { email: user.email, accountType: user.accountType });
-        const name = `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || user.email;
+        const name = `${((_c = user.profile) === null || _c === void 0 ? void 0 : _c.firstName) || ''} ${((_d = user.profile) === null || _d === void 0 ? void 0 : _d.lastName) || ''}`.trim() || user.email;
         this.emailService.sendApproval(user.email, name, user.accountType).catch(() => { });
         return user;
     }
@@ -724,16 +756,15 @@ let AdminService = AdminService_1 = class AdminService {
         await this.log('UNBAN_USER', 'User', userId, adminId);
         return user;
     }
-    // ── Site Settings ─────────────────────────────────────────────────────────
     async getSiteSettings() {
         let settings = await this.prisma.siteSettings.findFirst();
         if (!settings) {
             settings = await this.prisma.siteSettings.create({
                 data: {
                     siteName: 'DeveWay',
-                    primaryColor: '#3b82f6',
+                    primaryColor: '#5120c8',
                     backgroundColor: '#0d0d0d',
-                    buttonColor: '#3b82f6',
+                    buttonColor: '#5120c8',
                 },
             });
         }
@@ -769,6 +800,136 @@ let AdminService = AdminService_1 = class AdminService {
         });
         return { success: true, data: sessions };
     }
+    async createUser(data) {
+        const exists = await this.prisma.user.findUnique({ where: { email: data.email } });
+        if (exists)
+            throw new common_1.ConflictException('Email already exists');
+        const hashed = await bcrypt.hash(data.password, 10);
+        return this.prisma.user.create({
+            data: {
+                email: data.email,
+                password: hashed,
+                accountType: data.accountType,
+                status: 'ACTIVE',
+                profile: { create: { firstName: data.firstName, lastName: data.lastName } },
+            },
+            select: {
+                id: true, email: true, accountType: true, status: true, createdAt: true,
+                profile: { select: { firstName: true, lastName: true } },
+            },
+        });
+    }
+    async changeUserRole(id, accountType) {
+        return this.prisma.user.update({
+            where: { id },
+            data: { accountType: accountType },
+            select: { id: true, email: true, accountType: true },
+        });
+    }
+    async changeUserStatus(id, status) {
+        return this.prisma.user.update({
+            where: { id },
+            data: { status: status },
+            select: { id: true, email: true, status: true },
+        });
+    }
+    async deleteUser(id) {
+        await this.prisma.user.delete({ where: { id } });
+        return { success: true };
+    }
+    async createCourse(data, adminId) {
+        const instructorId = data.instructorId || adminId;
+        return this.prisma.course.create({
+            data: {
+                title: data.title,
+                titleAr: data.titleAr || data.title,
+                description: data.description || '',
+                price: Number(data.price) || 0,
+                level: data.level || 'BEGINNER',
+                status: data.status || 'PUBLISHED',
+                thumbnail: data.thumbnail || null,
+                instructorId,
+                categoryId: data.categoryId || null,
+            },
+        });
+    }
+    async createSession(data) {
+        return this.prisma.consultingSession.create({
+            data: {
+                studentId: data.studentId,
+                consultantId: data.consultantId,
+                scheduledAt: new Date(data.scheduledAt),
+                topic: data.topic || '',
+                meetingMethod: data.meetingMethod || 'ONLINE',
+                price: Number(data.price) || 0,
+                status: 'CONFIRMED',
+                paymentStatus: 'UNPAID',
+            },
+        });
+    }
+    async getLiveActivity(limit = 50) {
+        try {
+            return await this.prisma.userActivity.findMany({
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                include: {
+                    user: {
+                        select: {
+                            id: true, email: true, accountType: true,
+                            profile: { select: { firstName: true, lastName: true } },
+                        },
+                    },
+                },
+            });
+        }
+        catch {
+            return [];
+        }
+    }
+    async getUserActivity(userId, limit = 30) {
+        try {
+            return await this.prisma.userActivity.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+            });
+        }
+        catch {
+            return [];
+        }
+    }
+    async getUserDetail(id) {
+        const [user, activities, payments, enrollments] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { id },
+                include: { profile: true, _count: { select: { enrollments: true } } },
+            }),
+            this.getUserActivity(id, 20),
+            this.prisma.payment.findMany({
+                where: { userId: id, status: 'SUCCESS' },
+                orderBy: { createdAt: 'desc' },
+                take: 10,
+                include: { course: { select: { title: true } } },
+            }).catch(() => []),
+            this.prisma.enrollment.findMany({
+                where: { userId: id },
+                take: 10,
+                include: { course: { select: { title: true, thumbnail: true } } },
+            }).catch(() => []),
+        ]);
+        const totalSpent = payments.reduce((s, p) => s + p.amount, 0);
+        return { user, activities, payments, enrollments, totalSpent };
+    }
+    async getActivityStats() {
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+        const [onlineUsers, todayActivity, totalActivities] = await Promise.all([
+            this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } }).catch(() => 0),
+            this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+            this.prisma.userActivity.count().catch(() => 0),
+        ]);
+        return { onlineUsers, todayActivity, totalActivities };
+    }
 };
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = AdminService_1 = __decorate([
@@ -779,3 +940,4 @@ exports.AdminService = AdminService = AdminService_1 = __decorate([
         notifications_service_1.NotificationsService,
         email_service_1.EmailService])
 ], AdminService);
+//# sourceMappingURL=admin.service.js.map

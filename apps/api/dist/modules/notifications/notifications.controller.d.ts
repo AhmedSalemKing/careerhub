@@ -7,13 +7,13 @@ export declare class NotificationsController {
         success: boolean;
         data: {
             notifications: {
+                data: import("@prisma/client/runtime/library").JsonValue | null;
                 id: string;
-                titleEn: string;
-                titleAr: string;
                 createdAt: Date;
                 userId: string;
+                titleEn: string;
+                titleAr: string;
                 type: import(".prisma/client").$Enums.NotificationType;
-                data: import("@prisma/client/runtime/library").JsonValue | null;
                 contentEn: string;
                 contentAr: string;
                 isRead: boolean;
@@ -38,13 +38,13 @@ export declare class NotificationsController {
         success: boolean;
         data: {
             notification: {
+                data: import("@prisma/client/runtime/library").JsonValue | null;
                 id: string;
-                titleEn: string;
-                titleAr: string;
                 createdAt: Date;
                 userId: string;
+                titleEn: string;
+                titleAr: string;
                 type: import(".prisma/client").$Enums.NotificationType;
-                data: import("@prisma/client/runtime/library").JsonValue | null;
                 contentEn: string;
                 contentAr: string;
                 isRead: boolean;
@@ -104,13 +104,13 @@ export declare class NotificationsController {
         data: {
             settings: {
                 notifications: {
+                    data: import("@prisma/client/runtime/library").JsonValue | null;
                     id: string;
-                    titleEn: string;
-                    titleAr: string;
                     createdAt: Date;
                     userId: string;
+                    titleEn: string;
+                    titleAr: string;
                     type: import(".prisma/client").$Enums.NotificationType;
-                    data: import("@prisma/client/runtime/library").JsonValue | null;
                     contentEn: string;
                     contentAr: string;
                     isRead: boolean;
@@ -272,11 +272,10 @@ export declare class NotificationsController {
                     profile: {
                         id: string;
                         createdAt: Date;
-                        updatedAt: Date;
-                        language: string;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
+                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
@@ -287,17 +286,17 @@ export declare class NotificationsController {
                         city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
                     id: string;
-                    status: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    isActive: boolean;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
+                    isActive: boolean;
                     accountType: string;
+                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -309,16 +308,18 @@ export declare class NotificationsController {
                     approvedAt: Date | null;
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
+                    lastSeenAt: Date | null;
+                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
             } & {
+                data: import("@prisma/client/runtime/library").JsonValue | null;
                 id: string;
-                titleEn: string;
-                titleAr: string;
                 createdAt: Date;
                 userId: string;
+                titleEn: string;
+                titleAr: string;
                 type: import(".prisma/client").$Enums.NotificationType;
-                data: import("@prisma/client/runtime/library").JsonValue | null;
                 contentEn: string;
                 contentAr: string;
                 isRead: boolean;

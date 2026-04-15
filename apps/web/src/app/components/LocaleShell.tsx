@@ -1,19 +1,37 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Navbar } from './Navbar'
+// 🎯 تأكد من المسار الصح حسب مكان الملف
+import { Navbar } from './Navbar'  // ← غيّر المسار لو لزم
 import { Footer } from './Footer'
 
 export function LocaleShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname?.includes('/admin')
+  
+  // ✅ تحسين: التحقق الأفضل لمسار admin
+  const isAdmin = pathname?.startsWith('/admin') || pathname?.includes('/admin')
 
-  if (isAdmin) return <>{children}</>
+  // 🚫 لو صفحة admin → لا تظهر Navbar/Footer
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen">
+        {children}
+      </div>
+    )
+  }
 
+  // ✅ صفحات عادية → اظهر Layout كامل
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-[var(--bg)]">
+      {/* Sticky Navbar */}
       <Navbar />
-      <main className="flex-1">{children}</main>
+      
+      {/* Main Content - يتوسع ليملأ المساحة المتاحة */}
+      <main className="flex-1 relative">
+        {children}
+      </main>
+      
+      {/* Footer */}
       <Footer />
     </div>
   )

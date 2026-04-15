@@ -50,13 +50,13 @@ export declare class NotificationsService {
         isRead?: boolean;
     }): Promise<{
         notifications: {
+            data: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
-            titleEn: string;
-            titleAr: string;
             createdAt: Date;
             userId: string;
+            titleEn: string;
+            titleAr: string;
             type: import(".prisma/client").$Enums.NotificationType;
-            data: import("@prisma/client/runtime/library").JsonValue | null;
             contentEn: string;
             contentAr: string;
             isRead: boolean;
@@ -72,13 +72,13 @@ export declare class NotificationsService {
     }>;
     getUnreadCount(userId: string): Promise<number>;
     getNotification(userId: string, notificationId: string): Promise<{
+        data: import("@prisma/client/runtime/library").JsonValue | null;
         id: string;
-        titleEn: string;
-        titleAr: string;
         createdAt: Date;
         userId: string;
+        titleEn: string;
+        titleAr: string;
         type: import(".prisma/client").$Enums.NotificationType;
-        data: import("@prisma/client/runtime/library").JsonValue | null;
         contentEn: string;
         contentAr: string;
         isRead: boolean;
@@ -193,11 +193,10 @@ export declare class NotificationsService {
                 profile: {
                     id: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    language: string;
                     userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
+                    updatedAt: Date;
                     firstName: string;
                     lastName: string;
                     phone: string | null;
@@ -208,17 +207,17 @@ export declare class NotificationsService {
                     city: string | null;
                     avatar: string | null;
                     timezone: string;
+                    language: string;
                 };
             } & {
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -230,16 +229,18 @@ export declare class NotificationsService {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
         } & {
+            data: import("@prisma/client/runtime/library").JsonValue | null;
             id: string;
-            titleEn: string;
-            titleAr: string;
             createdAt: Date;
             userId: string;
+            titleEn: string;
+            titleAr: string;
             type: import(".prisma/client").$Enums.NotificationType;
-            data: import("@prisma/client/runtime/library").JsonValue | null;
             contentEn: string;
             contentAr: string;
             isRead: boolean;

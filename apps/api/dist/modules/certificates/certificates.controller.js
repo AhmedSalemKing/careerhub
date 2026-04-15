@@ -399,3 +399,4 @@ exports.CertificatesController = CertificatesController = __decorate([
     (0, common_1.Controller)('certificates'),
     __metadata("design:paramtypes", [certificates_service_1.CertificatesService])
 ], CertificatesController);
+//# sourceMappingURL=certificates.controller.js.map

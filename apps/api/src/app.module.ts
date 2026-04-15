@@ -1,4 +1,5 @@
-﻿import { Module } from '@nestjs/common';
+﻿import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { TrackActivityMiddleware } from './middleware/track-activity.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -92,4 +93,8 @@ import { RatingsModule } from './modules/ratings/ratings.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TrackActivityMiddleware).forRoutes('*');
+  }
+}

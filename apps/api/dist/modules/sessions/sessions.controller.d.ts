@@ -6,9 +6,6 @@ export declare class SessionsController {
         success: boolean;
         data: {
             id: string;
-            _count: {
-                consultantSessions: number;
-            };
             email: string;
             bio: string;
             experience: number;
@@ -22,15 +19,15 @@ export declare class SessionsController {
                 country: string;
                 avatar: string;
             };
+            _count: {
+                consultantSessions: number;
+            };
         }[];
     }>;
     getConsultant(id: string): Promise<{
         success: boolean;
         data: {
             id: string;
-            _count: {
-                consultantSessions: number;
-            };
             bio: string;
             experience: number;
             speciality: string;
@@ -42,6 +39,9 @@ export declare class SessionsController {
                 lastName: string;
                 country: string;
                 avatar: string;
+            };
+            _count: {
+                consultantSessions: number;
             };
         };
     }>;
@@ -59,11 +59,10 @@ export declare class SessionsController {
                 profile: {
                     id: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    language: string;
                     userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
+                    updatedAt: Date;
                     firstName: string;
                     lastName: string;
                     phone: string | null;
@@ -74,17 +73,17 @@ export declare class SessionsController {
                     city: string | null;
                     avatar: string | null;
                     timezone: string;
+                    language: string;
                 };
             } & {
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -96,17 +95,18 @@ export declare class SessionsController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
             consultant: {
                 profile: {
                     id: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    language: string;
                     userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
+                    updatedAt: Date;
                     firstName: string;
                     lastName: string;
                     phone: string | null;
@@ -117,17 +117,17 @@ export declare class SessionsController {
                     city: string | null;
                     avatar: string | null;
                     timezone: string;
+                    language: string;
                 };
             } & {
                 id: string;
-                status: string;
                 createdAt: Date;
-                updatedAt: Date;
-                isActive: boolean;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
+                isActive: boolean;
                 accountType: string;
+                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -139,16 +139,18 @@ export declare class SessionsController {
                 approvedAt: Date | null;
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
+                lastSeenAt: Date | null;
+                updatedAt: Date;
                 deletedAt: Date | null;
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -186,12 +188,12 @@ export declare class SessionsController {
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -210,12 +212,12 @@ export declare class SessionsController {
         success: boolean;
         data: {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;

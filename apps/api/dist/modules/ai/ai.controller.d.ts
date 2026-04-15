@@ -33,9 +33,9 @@ export declare class AiController {
         } & {
             id: string;
             createdAt: Date;
+            userId: string;
             updatedAt: Date;
             title: string;
-            userId: string;
             context: string | null;
         };
     }>;
@@ -46,9 +46,9 @@ export declare class AiController {
         data: {
             id: string;
             createdAt: Date;
+            userId: string;
             updatedAt: Date;
             title: string;
-            userId: string;
             context: string | null;
         };
     }>;

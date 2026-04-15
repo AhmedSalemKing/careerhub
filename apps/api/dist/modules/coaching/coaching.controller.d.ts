@@ -100,12 +100,12 @@ export declare class CoachingController {
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -127,12 +127,12 @@ export declare class CoachingController {
             };
         } & {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -150,12 +150,12 @@ export declare class CoachingController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -173,12 +173,12 @@ export declare class CoachingController {
         message: string;
         data: {
             id: string;
+            createdAt: Date;
+            status: string;
+            meetingMethod: string;
+            updatedAt: Date;
             price: number;
             duration: number;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            meetingMethod: string;
             studentId: string;
             consultantId: string;
             scheduledAt: Date;
@@ -298,10 +298,10 @@ export declare class CoachingController {
         data: {
             session: {
                 id: string;
-                status: import(".prisma/client").$Enums.SessionStatus;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
+                status: import(".prisma/client").$Enums.SessionStatus;
+                updatedAt: Date;
                 notes: string | null;
                 coachId: string;
                 slotId: string;
@@ -322,8 +322,8 @@ export declare class CoachingController {
             review: {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
+                updatedAt: Date;
                 sessionId: string;
                 rating: number;
                 coachId: string;
@@ -339,11 +339,10 @@ export declare class CoachingController {
                     profile: {
                         id: string;
                         createdAt: Date;
-                        updatedAt: Date;
-                        language: string;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
+                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
@@ -354,17 +353,17 @@ export declare class CoachingController {
                         city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
                     id: string;
-                    status: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    isActive: boolean;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
+                    isActive: boolean;
                     accountType: string;
+                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -376,14 +375,16 @@ export declare class CoachingController {
                     approvedAt: Date | null;
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
+                    lastSeenAt: Date | null;
+                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
                 session: {};
             } & {
                 id: string;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
+                updatedAt: Date;
                 sessionId: string;
                 rating: number;
                 coachId: string;
@@ -424,22 +425,22 @@ export declare class CoachingController {
             purchase: {
                 purchase: {
                     id: string;
-                    currency: string;
-                    status: string;
+                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                     createdAt: Date;
-                    updatedAt: Date;
-                    description: string | null;
-                    courseId: string | null;
                     userId: string;
-                    completedAt: Date | null;
-                    amount: number;
                     method: string;
+                    status: string;
+                    updatedAt: Date;
+                    courseId: string | null;
+                    currency: string;
+                    completedAt: Date | null;
+                    description: string | null;
+                    amount: number;
                     transactionId: string | null;
                     stripeIntentId: string | null;
                     itemType: string | null;
                     itemId: string | null;
                     refundedAt: Date | null;
-                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 };
                 package: {
                     id: string;
@@ -533,12 +534,12 @@ export declare class CoachingController {
         data: {
             coach: {
                 id: string;
-                currency: string;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
                 experience: number;
                 hourlyRate: number;
+                updatedAt: Date;
+                currency: string;
                 rating: number;
                 bioEn: string;
                 bioAr: string;
@@ -567,11 +568,10 @@ export declare class CoachingController {
                     profile: {
                         id: string;
                         createdAt: Date;
-                        updatedAt: Date;
-                        language: string;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
+                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
@@ -582,17 +582,17 @@ export declare class CoachingController {
                         city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
                     id: string;
-                    status: string;
                     createdAt: Date;
-                    updatedAt: Date;
-                    isActive: boolean;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
+                    isActive: boolean;
                     accountType: string;
+                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -604,6 +604,8 @@ export declare class CoachingController {
                     approvedAt: Date | null;
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
+                    lastSeenAt: Date | null;
+                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
                 coach: {
@@ -611,11 +613,10 @@ export declare class CoachingController {
                         profile: {
                             id: string;
                             createdAt: Date;
-                            updatedAt: Date;
-                            language: string;
                             userId: string;
                             bio: string | null;
                             linkedinUrl: string | null;
+                            updatedAt: Date;
                             firstName: string;
                             lastName: string;
                             phone: string | null;
@@ -626,17 +627,17 @@ export declare class CoachingController {
                             city: string | null;
                             avatar: string | null;
                             timezone: string;
+                            language: string;
                         };
                     } & {
                         id: string;
-                        status: string;
                         createdAt: Date;
-                        updatedAt: Date;
-                        isActive: boolean;
                         email: string;
                         password: string;
                         role: import(".prisma/client").$Enums.UserRole;
+                        isActive: boolean;
                         accountType: string;
+                        status: string;
                         cvUrl: string | null;
                         bio: string | null;
                         experience: number | null;
@@ -648,16 +649,18 @@ export declare class CoachingController {
                         approvedAt: Date | null;
                         rejectedAt: Date | null;
                         rejectedReason: string | null;
+                        lastSeenAt: Date | null;
+                        updatedAt: Date;
                         deletedAt: Date | null;
                     };
                 } & {
                     id: string;
-                    currency: string;
                     createdAt: Date;
-                    updatedAt: Date;
                     userId: string;
                     experience: number;
                     hourlyRate: number;
+                    updatedAt: Date;
+                    currency: string;
                     rating: number;
                     bioEn: string;
                     bioAr: string;
@@ -668,10 +671,10 @@ export declare class CoachingController {
                 };
             } & {
                 id: string;
-                status: import(".prisma/client").$Enums.SessionStatus;
                 createdAt: Date;
-                updatedAt: Date;
                 userId: string;
+                status: import(".prisma/client").$Enums.SessionStatus;
+                updatedAt: Date;
                 notes: string | null;
                 coachId: string;
                 slotId: string;

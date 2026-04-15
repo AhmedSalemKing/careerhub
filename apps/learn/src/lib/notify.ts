@@ -11,6 +11,6 @@ export const notify = {
     }),
   info: (msg: string) =>
     toast.info(msg, {
-      style: { background: '#0c1a3d', border: '1px solid #3b82f6', color: '#93c5fd' },
+      style: { background: '#0c1a3d', border: '1px solid #5120c8', color: '#93c5fd' },
     }),
 }
