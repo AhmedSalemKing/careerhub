@@ -270,12 +270,13 @@ let AdminService = AdminService_1 = class AdminService {
         ]);
         return { courses, total, page: options.page, limit: options.limit };
     }
-    async createCourse(courseData) {
+    async createCourse(courseData, adminId) {
         const baseSlug = (courseData.titleEn || courseData.title || 'course')
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
         const slug = `${baseSlug}-${Date.now()}`;
+        const instructorId = courseData.instructorId || adminId || undefined;
         return await this.prisma.course.create({
             data: {
                 slug,
@@ -287,10 +288,10 @@ let AdminService = AdminService_1 = class AdminService {
                 currency: courseData.currency || 'USD',
                 duration: courseData.duration,
                 level: courseData.level || 'BEGINNER',
-                status: 'DRAFT',
+                status: courseData.status || 'DRAFT',
                 thumbnail: courseData.thumbnail || null,
                 ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
-                ...(courseData.instructorId && { instructorId: courseData.instructorId }),
+                ...(instructorId && { instructorId }),
                 ...(courseData.categoryId && { categoryId: courseData.categoryId }),
             },
         });
@@ -833,26 +834,6 @@ let AdminService = AdminService_1 = class AdminService {
             select: { id: true, email: true, status: true },
         });
     }
-    async deleteUser(id) {
-        await this.prisma.user.delete({ where: { id } });
-        return { success: true };
-    }
-    async createCourse(data, adminId) {
-        const instructorId = data.instructorId || adminId;
-        return this.prisma.course.create({
-            data: {
-                title: data.title,
-                titleAr: data.titleAr || data.title,
-                description: data.description || '',
-                price: Number(data.price) || 0,
-                level: data.level || 'BEGINNER',
-                status: data.status || 'PUBLISHED',
-                thumbnail: data.thumbnail || null,
-                instructorId,
-                categoryId: data.categoryId || null,
-            },
-        });
-    }
     async createSession(data) {
         return this.prisma.consultingSession.create({
             data: {
@@ -909,12 +890,12 @@ let AdminService = AdminService_1 = class AdminService {
                 where: { userId: id, status: 'SUCCESS' },
                 orderBy: { createdAt: 'desc' },
                 take: 10,
-                include: { course: { select: { title: true } } },
+                include: { course: { select: { titleEn: true, titleAr: true } } },
             }).catch(() => []),
             this.prisma.enrollment.findMany({
                 where: { userId: id },
                 take: 10,
-                include: { course: { select: { title: true, thumbnail: true } } },
+                include: { course: { select: { titleEn: true, titleAr: true, thumbnail: true } } },
             }).catch(() => []),
         ]);
         const totalSpent = payments.reduce((s, p) => s + p.amount, 0);

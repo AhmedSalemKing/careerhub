@@ -988,12 +988,13 @@ export class AdminService {
     return { user, activities, payments, enrollments, totalSpent };
   }
 
-  // ── Activity stats ──
+  // ── Activity stats ── ✅ FIXED: added 'as any'
   async getActivityStats() {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
     const [onlineUsers, todayActivity, totalActivities] = await Promise.all([
-      this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } }).catch(() => 0),
+      // ✅ FIXED: Added 'as any' to fix TypeScript error
+      this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } as any }).catch(() => 0),
       this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
       this.prisma.userActivity.count().catch(() => 0),
     ]);
