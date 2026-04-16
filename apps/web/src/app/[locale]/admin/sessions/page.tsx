@@ -1,55 +1,47 @@
 'use client'
-import { useState, useRef } from 'react' // ✅ FIXED: Added useRef
+import { useState } from 'react'
+import { useRouter } from 'next/navigation' // ✅ NEW: For navigation
 import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { get, post } from '../../../../lib/api'
-import { Calendar, Video, Globe, Phone, PlusCircle, X, Upload, Image as ImageIcon } from 'lucide-react'
+import { get } from '../../../../lib/api'
+import { Calendar, Video, Globe, Phone, PlusCircle, Search, ExternalLink, CheckCircle, XCircle, Clock, Users } from 'lucide-react'
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-  PENDING:     { label: 'معلقة',        color: 'bg-amber-500/20 text-amber-400' },
-  CONFIRMED:   { label: 'مؤكدة',        color: 'bg-green-500/20 text-green-400' },
-  RESCHEDULED: { label: 'تغيير موعد',   color: 'bg-blue-500/20 text-blue-400' },
-  COMPLETED:   { label: 'مكتملة',       color: 'bg-gray-500/20 text-gray-400' },
-  CANCELLED:   { label: 'ملغية',        color: 'bg-red-500/20 text-red-400' },
-  REJECTED:    { label: 'مرفوضة',       color: 'bg-red-500/20 text-red-400' },
+const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
+  PENDING:     { label: 'معلقة',        color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
+  CONFIRMED:   { label: 'مؤكدة',        color: 'bg-green-500/20 text-green-400 border-green-500/30', icon: CheckCircle },
+  SCHEDULED:   { label: 'مجدولة',       color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', icon: Calendar },
+  RESCHEDULED: { label: 'تغيير موعد',   color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', icon: Calendar },
+  COMPLETED:   { label: 'مكتملة',       color: 'bg-gray-500/20 text-gray-400 border-gray-500/30', icon: CheckCircle },
+  CANCELLED:   { label: 'ملغية',        color: 'bg-red-500/20 text-red-400 border-red-500/30', icon: XCircle },
+  REJECTED:    { label: 'مرفوضة',       color: 'bg-red-500/20 text-red-500/300 border-red-500/30', icon: XCircle },
 }
 
-const MODAL_INPUT = {
-  width: '100%',
-  padding: '9px 12px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: 8,
-  color: '#fff',
-  fontSize: 13,
-  fontFamily: 'DM Sans, sans-serif',
-  outline: 'none',
-  boxSizing: 'border-box' as const,
+const methodConfig: Record<string, { label: string; icon: any; color: string }> = {
+  ONLINE:      { label: 'أونلاين',      icon: Video, color: 'text-blue-400' },
+  IN_PERSON:   { label: 'حضوري',        icon: MapPin, color: 'text-green-400' },
+  PHONE:       { label: 'هاتف',         icon: Phone, color: 'text-orange-400' },
+  ZOOM:        { label: 'Zoom',         icon: Video, color: 'text-blue-400' },
+  GOOGLE_MEET: { label: 'Google Meet',  icon: Globe, color: 'text-green-400' },
+}
+
+// Missing MapPin component
+function MapPin(props: any) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+      <circle cx="12" cy="10" r="3"></circle>
+    </svg>
+  )
 }
 
 export default function AdminSessionsPage() {
   const locale = useLocale()
+  const router = useRouter() // ✅ NEW: Router
   const isAr = locale === 'ar'
   const [filter, setFilter] = useState('ALL')
   const queryClient = useQueryClient()
 
-  // Create session modal
-  const [showCreate, setShowCreate] = useState(false)
-  const [sessionForm, setSessionForm] = useState({ 
-    studentId: '', 
-    consultantId: '', 
-    topic: '', 
-    scheduledAt: '', 
-    price: 0, 
-    meetingMethod: 'ONLINE',
-    duration: 60,
-  })
-  const [creating, setCreating] = useState(false)
-  const [createError, setCreateError] = useState('')
-  
-  // ✅ NEW: Image upload state
-  const [sessionImage, setSessionImage] = useState<File | null>(null)
-  const imageInputRef = useRef<HTMLInputElement>(null) // ✅ FIXED: Use useRef instead of React.useRef
+  // ✅ REMOVED: All modal state
 
   const { data: allSessions = [], isLoading } = useQuery({
     queryKey: ['admin-sessions'],
@@ -60,299 +52,237 @@ export default function AdminSessionsPage() {
     },
   })
 
-  const { data: students = [] } = useQuery({
-    queryKey: ['students-dropdown'],
-    queryFn: async () => {
-      const res = await get('/admin/users?accountType=STUDENT&limit=100')
-      const d = (res as any).data?.data ?? (res as any).data
-      const arr = d?.users ?? d?.items ?? (Array.isArray(d) ? d : [])
-      return arr
-    },
-  })
-
-  const { data: consultants = [] } = useQuery({
-    queryKey: ['consultants-dropdown'],
-    queryFn: async () => {
-      const res = await get('/admin/users?accountType=CONSULTANT&limit=100')
-      const d = (res as any).data?.data ?? (res as any).data
-      const arr = d?.users ?? d?.items ?? (Array.isArray(d) ? d : [])
-      return arr
-    },
-  })
-
   const sessions = filter === 'ALL' ? allSessions : (allSessions as any[]).filter((s: any) => s.status === filter)
-  const totalRevenue = (allSessions as any[])
-    .filter((s: any) => s.paymentStatus === 'PAID')
-    .reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+  
+  const stats = {
+    total: (allSessions as any[]).length,
+    pending: (allSessions as any[]).filter((s: any) => ['PENDING', 'SCHEDULED'].includes(s.status)).length,
+    completed: (allSessions as any[]).filter((s: any) => s.status === 'COMPLETED').length,
+    revenue: (allSessions as any[])
+      .filter((s: any) => ['PAID', 'CONFIRMED'].includes(s.paymentStatus))
+      .reduce((sum: number, s: any) => sum + (s.price || 0), 0),
+  }
 
-  const filters = ['ALL', 'PENDING', 'CONFIRMED', 'RESCHEDULED', 'COMPLETED', 'CANCELLED']
+  const filters = ['ALL', 'SCHEDULED', 'PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED']
   const filterLabels: Record<string, string> = {
     ALL: isAr ? 'الكل' : 'All',
+    SCHEDULED: isAr ? 'مجدولة' : 'Scheduled',
     PENDING: isAr ? 'معلقة' : 'Pending',
     CONFIRMED: isAr ? 'مؤكدة' : 'Confirmed',
-    RESCHEDULED: isAr ? 'تغيير موعد' : 'Rescheduled',
     COMPLETED: isAr ? 'مكتملة' : 'Completed',
     CANCELLED: isAr ? 'ملغية' : 'Cancelled',
   }
 
-  // ✅ UPDATED: Handle session creation with image
-  async function handleCreateSession() {
-    setCreating(true)
-    setCreateError('')
-    try {
-      if (sessionImage) {
-        // Use FormData for file upload
-        const formData = new FormData()
-        formData.append('studentId', sessionForm.studentId)
-        formData.append('consultantId', sessionForm.consultantId)
-        formData.append('topic', sessionForm.topic)
-        formData.append('scheduledAt', sessionForm.scheduledAt)
-        formData.append('price', String(sessionForm.price))
-        formData.append('meetingMethod', sessionForm.meetingMethod)
-        formData.append('duration', String(sessionForm.duration))
-        formData.append('image', sessionImage)
-
-        await post('/admin/sessions/create', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        })
-      } else {
-        // No image, use simple API
-        await post('/admin/sessions/create', sessionForm)
-      }
-      
-      setShowCreate(false)
-      setSessionForm({ studentId: '', consultantId: '', topic: '', scheduledAt: '', price: 0, meetingMethod: 'ONLINE', duration: 60 })
-      setSessionImage(null)
-      queryClient.invalidateQueries({ queryKey: ['admin-sessions'] })
-    } catch (e: any) {
-      setCreateError(e?.response?.data?.message || 'Error creating session')
-    } finally { setCreating(false) }
-  }
-
-  // ✅ NEW: Handle image selection
-  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (file.type.startsWith('image/')) {
-        setSessionImage(file)
-      } else {
-        alert(isAr ? 'يرجى اختيار صورة صحيحة' : 'Please select a valid image file')
-      }
-    }
+  // ✅ NEW: Navigate to professional create page
+  function goToCreateSession() {
+    router.push(`/${locale}/admin/create-session`)
   }
 
   const userName = (u: any) => u?.profile ? `${u.profile.firstName} ${u.profile.lastName}` : u?.email || '—'
 
   return (
-    <div className="p-6" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
+    <div className="p-6 space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+      {/* ─── Header ─── */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{isAr ? 'الجلسات الاستشارية' : 'Consulting Sessions'}</h1>
-          <p className="text-[color:var(--muted)] mt-1">{isAr ? 'إدارة ومتابعة جميع جلسات الاستشارة' : 'Manage all consulting sessions'}</p>
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <Calendar className="text-purple-400" />
+            {isAr ? 'إدارة الجلسات الاستشارية' : 'Consulting Sessions Management'}
+          </h1>
+          <p className="text-sm text-gray-400 mt-1">{isAr ? 'متابعة وإدارة جميع جلسات الاستشارة' : 'Track and manage all consulting sessions'}</p>
         </div>
+        
+        {/* ✅ UPDATED: Navigate button */}
         <button
-          onClick={() => setShowCreate(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14 }}
+          onClick={goToCreateSession}
+          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 group"
         >
-          <PlusCircle size={16} />
-          {isAr ? 'إضافة جلسة' : 'Add Session'}
+          <PlusCircle size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+          {isAr ? 'إضافة جلسة جديدة' : 'New Session'}
+          <ExternalLink size={14} className="opacity-60" />
         </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-4 mb-6">
+      {/* ─── Stats Cards ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: isAr ? 'إجمالي الجلسات' : 'Total Sessions', value: (allSessions as any[]).length },
-          { label: isAr ? 'معلقة' : 'Pending', value: (allSessions as any[]).filter((s: any) => s.status === 'PENDING').length },
-          { label: isAr ? 'مؤكدة' : 'Confirmed', value: (allSessions as any[]).filter((s: any) => s.status === 'CONFIRMED').length },
-          { label: isAr ? 'إيرادات الجلسات' : 'Session Revenue', value: `${totalRevenue} ${isAr ? 'ر.س' : 'SAR'}` },
+          { 
+            label: isAr ? 'إجمالي الجلسات' : 'Total Sessions', 
+            value: stats.total, 
+            icon: Calendar, 
+            color: 'from-blue-600/20 to-blue-800/20',
+            textColor: 'text-blue-400',
+            borderColor: 'border-blue-700/30'
+          },
+          { 
+            label: isAr ? 'قيد الانتظار' : 'Pending', 
+            value: stats.pending, 
+            icon: Clock, 
+            color: 'from-amber-600/20 to-amber-800/20',
+            textColor: 'text-amber-400',
+            borderColor: 'border-amber-700/30'
+          },
+          { 
+            label: isAr ? 'مكتملة' : 'Completed', 
+            value: stats.completed, 
+            icon: CheckCircle, 
+            color: 'from-green-600/20 to-green-800/20',
+            textColor: 'text-green-400',
+            borderColor: 'border-green-700/30'
+          },
+          { 
+            label: isAr ? 'الإيرادات' : 'Revenue', 
+            value: `${stats.revenue} ${isAr ? 'ر.س' : 'SAR'}`, 
+            icon: Users, 
+            color: 'from-purple-600/20 to-purple-800/20',
+            textColor: 'text-purple-400',
+            borderColor: 'border-purple-700/30'
+          },
         ].map((stat, i) => (
-          <div key={i} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p className="text-sm text-[color:var(--muted)]">{stat.label}</p>
+          <div key={i} className={`rounded-2xl border ${stat.borderColor} bg-gradient-to-br ${stat.color} p-4`}>
+            <div className="flex items-center justify-between mb-2">
+              <stat.icon size={18} className={stat.textColor} />
+              <span className={`text-2xl font-bold ${stat.textColor}`}>{stat.value}</span>
+            </div>
+            <p className="text-xs text-gray-400">{stat.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-5">
+      {/* ─── Filters ─── */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {filters.map(f => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition ${
-              filter === f ? 'bg-primary text-white' : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
-            }`}>
+            className={`shrink-0 px-4 py-2 text-sm font-medium rounded-xl transition-all ${
+              filter === f 
+                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25' 
+                : 'bg-gray-900/50 border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600'
+            }`}
+          >
             {filterLabels[f]}
+            {f !== 'ALL' && (
+              <span className="mr-2 text-xs opacity-60">
+                ({f === 'ALL' ? allSessions.length : sessions.length})
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* ─── Table ─── */}
       {isLoading ? (
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => <div key={i} className="h-16 animate-pulse rounded-xl bg-[color:var(--surface)]" />)}
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-gray-900/50" />
+          ))}
         </div>
       ) : (sessions as any[]).length === 0 ? (
-        <div className="rounded-2xl border border-[color:var(--border)] py-12 text-center">
-          <Calendar className="mx-auto mb-3 h-10 w-10 opacity-20" />
-          <p className="text-[color:var(--muted)]">{isAr ? 'لا توجد جلسات' : 'No sessions found'}</p>
+        <div className="rounded-2xl border border-dashed border-gray-700 py-16 text-center">
+          <Calendar className="mx-auto mb-4 h-12 w-12 opacity-20" />
+          <p className="text-gray-500 font-medium text-lg">{isAr ? 'لا توجد جلسات' : 'No sessions found'}</p>
+          <p className="text-gray-600 text-sm mt-1 mb-4">{isAr ? 'ابدأ بإضافة جلسة استشارية جديدة' : 'Start by adding a new consulting session'}</p>
+          <button
+            onClick={goToCreateSession}
+            className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 font-medium"
+          >
+            <PlusCircle size={16} />
+            {isAr ? 'إضافة جلسة جديدة' : 'Add new session'}
+          </button>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[color:var(--border)] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--border)] bg-[color:var(--surface-2)]">
-                {[
-                  isAr ? 'الطالب' : 'Student',
-                  isAr ? 'المستشار' : 'Consultant',
-                  isAr ? 'التاريخ' : 'Date',
-                  isAr ? 'الطريقة' : 'Method',
-                  isAr ? 'السعر' : 'Price',
-                  isAr ? 'الدفع' : 'Payment',
-                  isAr ? 'الحالة' : 'Status',
-                ].map(h => (
-                  <th key={h} className="px-4 py-3 text-right text-xs font-semibold text-[color:var(--muted)]">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[color:var(--border)]">
-              {(sessions as any[]).map((s) => {
-                const st = statusConfig[s.status] || statusConfig.PENDING
-                const studentName = userName(s.student)
-                const consultantName = userName(s.consultant)
-                const date = new Date(s.scheduledAt)
-                const MethodIcon = s.meetingMethod === 'ZOOM' ? Video : s.meetingMethod === 'GOOGLE_MEET' ? Globe : Phone
-                return (
-                  <tr key={s.id} className="bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)] transition">
-                    <td className="px-4 py-3 font-medium text-foreground">{studentName}</td>
-                    <td className="px-4 py-3 text-[color:var(--muted)]">{consultantName}</td>
-                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">
-                      {date.toLocaleDateString(isAr ? 'ar-SA' : 'en-US')} {date.toLocaleTimeString(isAr ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="px-4 py-3"><MethodIcon className="h-4 w-4 text-[color:var(--muted)]" /></td>
-                    <td className="px-4 py-3 font-bold text-primary">{s.price} {isAr ? 'ر.س' : 'SAR'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.paymentStatus === 'PAID' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                        {s.paymentStatus === 'PAID' ? (isAr ? 'مدفوع' : 'Paid') : (isAr ? 'غير مدفوع' : 'Unpaid')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${st.color}`}>{st.label}</span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* ✅ ENHANCED Create Session Modal */}
-      {showCreate && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480, position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
-            <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-              <X size={18} />
-            </button>
-            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: '0 0 20px' }}>
-              {isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <select value={sessionForm.studentId} onChange={e => setSessionForm(f => ({ ...f, studentId: e.target.value }))} style={MODAL_INPUT}>
-                <option value="">{isAr ? '-- اختر الطالب --' : '-- Select Student --'}</option>
-                {(students as any[]).map((u: any) => (
-                  <option key={u.id} value={u.id}>{userName(u)}</option>
-                ))}
-              </select>
-              <select value={sessionForm.consultantId} onChange={e => setSessionForm(f => ({ ...f, consultantId: e.target.value }))} style={MODAL_INPUT}>
-                <option value="">{isAr ? '-- اختر المستشار --' : '-- Select Consultant --'}</option>
-                {(consultants as any[]).map((u: any) => (
-                  <option key={u.id} value={u.id}>{userName(u)}</option>
-                ))}
-              </select>
-              <input
-                placeholder={isAr ? 'الموضوع' : 'Topic'}
-                value={sessionForm.topic}
-                onChange={e => setSessionForm(f => ({ ...f, topic: e.target.value }))}
-                style={MODAL_INPUT}
-              />
-              <input
-                type="datetime-local"
-                value={sessionForm.scheduledAt}
-                onChange={e => setSessionForm(f => ({ ...f, scheduledAt: e.target.value }))}
-                style={MODAL_INPUT}
-              />
-
-              {/* ✅ NEW: Session Image Upload */}
-              <div>
-                <label style={{ 
-                  display: 'block', 
-                  fontSize: 12, 
-                  fontWeight: 600, 
-                  color: '#A78BFA', 
-                  marginBottom: 8, 
-                  fontFamily: 'DM Sans, sans-serif' 
-                }}>
-                  <ImageIcon size={14} style={{ display: 'inline', marginRight: 6 }} />
-                  {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (Optional)'}
-                </label>
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  style={{ display: 'none' }}
-                />
-                <button
-                  onClick={() => imageInputRef.current?.click()}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    background: sessionImage 
-                      ? 'rgba(34,197,94,0.1)' 
-                      : 'rgba(255,255,255,0.03)',
-                    border: `2px dashed ${sessionImage ? '#22C55E' : 'rgba(255,255,255,0.15)'}`,
-                    borderRadius: 10,
-                    color: sessionImage ? '#22C55E' : 'rgba(255,255,255,0.5)',
-                    fontSize: 13,
-                    fontFamily: 'DM Sans, sans-serif',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <Upload size={20} />
-                  {sessionImage 
-                    ? sessionImage.name
-                    : isAr ? 'اضغط لاختيار صورة' : 'Click to select image'
-                  }
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <input
-                  type="number"
-                  placeholder={isAr ? 'السعر' : 'Price'}
-                  value={sessionForm.price}
-                  onChange={e => setSessionForm(f => ({ ...f, price: Number(e.target.value) }))}
-                  style={MODAL_INPUT}
-                />
-                <select value={sessionForm.meetingMethod} onChange={e => setSessionForm(f => ({ ...f, meetingMethod: e.target.value }))} style={MODAL_INPUT}>
-                  <option value="ONLINE">{isAr ? 'عبر الإنترنت' : 'Online'}</option>
-                  <option value="IN_PERSON">{isAr ? 'حضوري' : 'In Person'}</option>
-                </select>
-              </div>
-              {createError && (
-                <p style={{ color: '#f87171', fontSize: 12, fontFamily: 'DM Sans, sans-serif', margin: 0 }}>{createError}</p>
-              )}
-              <button
-                onClick={handleCreateSession}
-                disabled={creating || !sessionForm.studentId || !sessionForm.consultantId || !sessionForm.scheduledAt}
-                style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: 11, fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
-              >
-                {creating ? '...' : (isAr ? 'إنشاء الجلسة' : 'Create Session')}
-              </button>
-            </div>
+        <div className="rounded-2xl border border-gray-800 overflow-hidden bg-gray-900/30">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-800 bg-gray-900/50">
+                  {[
+                    isAr ? 'الطالب' : 'Student',
+                    isAr ? 'المستشار' : 'Consultant',
+                    isAr ? 'الموضوع' : 'Topic',
+                    isAr ? 'الموعد' : 'Date & Time',
+                    isAr ? 'الطريقة' : 'Method',
+                    isAr ? 'السعر' : 'Price',
+                    isAr ? 'الحالة' : 'Status',
+                  ].map(h => (
+                    <th key={h} className="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/50">
+                {(sessions as any[]).map((s) => {
+                  const st = statusConfig[s.status] || statusConfig.PENDING
+                  const method = methodConfig[s.meetingMethod] || methodConfig.ONLINE
+                  const studentName = userName(s.student)
+                  const consultantName = userName(s.consultant)
+                  const date = new Date(s.scheduledAt)
+                  const MethodIcon = method.icon
+                  
+                  return (
+                    <tr key={s.id} className="hover:bg-gray-800/30 transition-colors group">
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600/30 to-cyan-600/30 flex items-center justify-center text-blue-400 text-xs font-bold">
+                            {(studentName)[0]}
+                          </div>
+                          <span className="font-medium text-white text-xs">{studentName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600/30 to-pink-600/30 flex items-center justify-center text-purple-400 text-xs font-bold">
+                            {(consultantName)[0]}
+                          </div>
+                          <span className="text-gray-300 text-xs">{consultantName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-gray-200 text-xs max-w-[150px] truncate">{s.topic || '—'}</td>
+                      <td className="px-4 py-3.5">
+                        <div className="text-gray-300 text-xs">
+                          <div>{date.toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short' })}</div>
+                          <div className="text-gray-500">{date.toLocaleTimeString(isAr ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium ${method.color}`}>
+                          <MethodIcon size={12} />
+                          {method.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="font-bold text-green-400 text-sm">{s.price || 0} <span className="text-gray-500 text-xs">ر.س</span></span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${st.color}`}>
+                          <st.icon size={10} />
+                          {st.label}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
+
+      {/* ✅ INFO Banner */}
+      <div className="rounded-xl bg-gradient-to-r from-pink-900/20 to-purple-900/20 border border-pink-700/30 p-4 flex items-start gap-3">
+        <div className="w-8 h-8 rounded-lg bg-pink-600/20 flex items-center justify-center shrink-0 mt-0.5">
+          <PlusCircle size={16} className="text-pink-400" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-pink-300">
+            {isAr ? 'إنشاء جلسة بسهولة' : 'Easy Session Creation'}
+          </p>
+          <p className="text-xs text-pink-400/70 mt-1">
+            {isAr 
+              ? 'اضغط "إضافة جلسة جديدة" لفتح نموذج احترافي مع اختيار الطالب والمستشار وتحديد الموعد والسعر.'
+              : 'Click "New Session" to open a professional form with student/consultant selection, scheduling, and pricing.'
+            }
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
