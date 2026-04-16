@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   Get,
   UseGuards,
@@ -175,12 +176,21 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@CurrentUser() user: User) {
+    const fullUser = await this.authService.getMe(user.id);
     return {
       success: true,
-      data: {
-        user,
-      },
+      data: fullUser,
     };
+  }
+
+  @Patch('profile')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  async updateProfile(@CurrentUser() user: User, @Body() body: { firstName?: string; lastName?: string; bio?: string; phone?: string; avatar?: string }) {
+    return this.authService.updateProfile(user.id, body);
   }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
@@ -240,10 +250,11 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Current password is incorrect' })
   async changePassword(
     @CurrentUser() user: User,
-    @Body('currentPassword') currentPassword: string,
-    @Body('newPassword') newPassword: string,
+    @Body() body: { currentPassword?: string; oldPassword?: string; newPassword: string },
   ) {
     try {
+      const currentPassword = body.currentPassword || body.oldPassword || '';
+      const newPassword = body.newPassword;
       await this.authService.changePassword(user.id, currentPassword, newPassword);
 
       return {

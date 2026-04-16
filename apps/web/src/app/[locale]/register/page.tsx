@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { api } from '../../../lib/api'
+import { Camera } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -140,6 +141,8 @@ export default function RegisterPage() {
 
   const [errors1, setErrors1] = useState<Partial<Step1Data>>({})
   const [errors2, setErrors2] = useState<Partial<Record<keyof Step2Data, string>>>({})
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   // ── Step 1 validation ────────────────────────────────────────────────────
 
@@ -227,6 +230,16 @@ export default function RegisterPage() {
     }
 
     try {
+      if (avatarFile) {
+        const fd = new FormData()
+        fd.append('file', avatarFile)
+        try {
+          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload/image`, { method: 'POST', body: fd })
+          const uploadData = await uploadRes.json()
+          const avatarUrl = uploadData?.data?.url || uploadData?.url
+          if (avatarUrl) payload.avatar = avatarUrl
+        } catch {}
+      }
       const res = await api.post('/auth/register', payload)
       const data = res.data.data ?? res.data
 
@@ -309,6 +322,37 @@ export default function RegisterPage() {
             >
               {ar ? 'إنشاء حساب جديد' : 'Create your account'}
             </h1>
+
+            {/* Avatar Upload */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <div
+                style={{
+                  width: 80, height: 80, borderRadius: '50%',
+                  background: avatarPreview ? 'transparent' : 'rgba(81,32,200,0.1)',
+                  border: '2px dashed rgba(81,32,200,0.4)',
+                  margin: '0 auto 8px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden', cursor: 'pointer', position: 'relative',
+                }}
+                onClick={() => document.getElementById('avatar-upload-reg')?.click()}
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                ) : (
+                  <Camera size={24} color="rgba(81,32,200,0.6)" />
+                )}
+              </div>
+              <input
+                type="file" accept="image/*" id="avatar-upload-reg" style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) }
+                }}
+              />
+              <p style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'DM Sans, sans-serif', margin: 0 }}>
+                {ar ? 'صورة شخصية (اختياري)' : 'Profile photo (optional)'}
+              </p>
+            </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">

@@ -1,16 +1,85 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
-import { ThemeToggle } from './ThemeToggle'
 import { CartIcon } from './CartIcon'
 import { SearchBar } from './SearchBar'
-import { Menu, X, ExternalLink, LogOut, BookOpen, ChevronDown, Sparkles } from 'lucide-react'
+// import { NotificationBell } from './NotificationBell' // Uncomment if component exists
+import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { MAIN_URL } from '../../lib/constants'
 
+/* ═══ Shared font for nav + buttons ═══ */
+const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
+
+/* ════════════════════════════════════════
+   Theme Toggle (Professional & Smooth)
+   ════════════════════════════════════════ */
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  useEffect(() => setMounted(true), [])
+
+  if (!mounted) {
+    return (
+      <div
+        className="flex h-9 w-9 items-center justify-center rounded-xl"
+        style={{ background: 'var(--surface-2)' }}
+      >
+        <div className="h-4 w-4 rounded-full" style={{ background: 'var(--border)' }} />
+      </div>
+    )
+  }
+
+  const isDark = resolvedTheme === 'dark'
+
+  const handleToggle = () => {
+    if (isAnimating) return
+    setIsAnimating(true)
+    setTheme(isDark ? 'light' : 'dark')
+    setTimeout(() => setIsAnimating(false), 300)
+  }
+
+  return (
+    <button
+      onClick={handleToggle}
+      className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 overflow-hidden"
+      style={{ background: 'var(--surface-2)' }}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
+    >
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out"
+        style={{
+          opacity: isDark ? 1 : 0,
+          transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(90deg) scale(0.5)',
+        }}
+      >
+        <Moon className="h-[15px] w-[15px]" style={{ color: '#5120c8' }} />
+      </div>
+      <div
+        className="absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out"
+        style={{
+          opacity: isDark ? 0 : 1,
+          transform: isDark ? 'rotate(-90deg) scale(0.5)' : 'rotate(0deg) scale(1)',
+        }}
+      >
+        <Sun className="h-[15px] w-[15px]" style={{ color: '#F59E0B' }} />
+      </div>
+    </button>
+  )
+}
+
+/* ════════════════════════════════════════
+   User Dropdown (Professional Style)
+   ════════════════════════════════════════ */
 function UserDropdown({ locale }: { locale: string }) {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
@@ -31,6 +100,7 @@ function UserDropdown({ locale }: { locale: string }) {
   const handleLogout = () => {
     logout()
     setOpen(false)
+    window.dispatchEvent(new Event('auth:updated'))
     window.location.href = `/${locale}`
   }
 
@@ -38,33 +108,53 @@ function UserDropdown({ locale }: { locale: string }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full focus:outline-none"
+        className="flex items-center gap-1.5 rounded-full focus:outline-none transition-opacity duration-200 hover:opacity-80"
         aria-label="User menu"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white select-none" style={{ background: 'var(--primary)' }}>
-          {initials}
-        </span>
-        <ChevronDown className="h-3.5 w-3.5 text-slate-500" />
+        {user?.profile?.avatar ? (
+          <img
+            src={user.profile.avatar}
+            alt="avatar"
+            className="h-8 w-8 rounded-full object-cover"
+            style={{ boxShadow: '0 0 0 2px var(--border)' }}
+          />
+        ) : (
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
+            style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+          >
+            {initials}
+          </span>
+        )}
+        <ChevronDown
+          className="h-3 w-3 transition-transform duration-200"
+          style={{ color: 'var(--muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
       </button>
 
       {open && (
         <div
-          className="absolute left-0 rtl:left-auto rtl:right-0 top-full mt-2 w-52 rounded-xl py-1 z-50"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}
+          className="absolute left-0 rtl:left-auto rtl:right-0 top-full mt-2.5 w-56 rounded-2xl border py-1.5 z-50"
+          style={{
+            background: 'var(--surface)',
+            borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-xl)',
+            animation: 'navFadeIn 0.15s ease-out',
+          }}
         >
-          <div className="px-4 py-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
             <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
               {user?.profile?.firstName
                 ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
                 : user?.email}
             </p>
-            <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>{user?.email}</p>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--muted)' }}>{user?.email}</p>
           </div>
 
           <Link
             href={`/${locale}/my-courses`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
             style={{ color: 'var(--muted)' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
@@ -76,20 +166,20 @@ function UserDropdown({ locale }: { locale: string }) {
           <a
             href={`${MAIN_URL}/${locale}`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm transition-colors"
+            className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
             style={{ color: 'var(--muted)' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
-            <ExternalLink className="h-4 w-4" />
+            <LayoutDashboard className="h-4 w-4" />
             {locale === 'ar' ? 'العودة لـ DeveWay' : 'Back to DeveWay'}
           </a>
 
-          <div className="mt-1" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-sm transition-colors"
-              style={{ color: 'var(--error)' }}
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
+              style={{ color: 'var(--error)', fontFamily: NAV_FONT }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
@@ -103,214 +193,440 @@ function UserDropdown({ locale }: { locale: string }) {
   )
 }
 
+/* ════════════════════════════════════════
+   Main Navbar Component (Professional Design)
+   ════════════════════════════════════════ */
 export function Navbar() {
-  const locale = useLocale()
   const t = useTranslations('nav')
+  const locale = useLocale()
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const user = useAuthStore((s) => s.user)
-  const token = useAuthStore((s) => s.token)
-  const hydrate = useAuthStore((s) => s.hydrate)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { user, token, hydrate } = useAuthStore()
 
   useEffect(() => {
-    hydrate()
     setMounted(true)
-    const onScroll = () => setScrolled(window.scrollY > 20)
+    hydrate()
+
+    // Sync auth state across tabs
+    const syncAuth = () => hydrate()
+    window.addEventListener('storage', syncAuth)
+    window.addEventListener('auth:updated', syncAuth)
+    
+    // Periodic sync for reliability
+    const timers = [
+      setTimeout(syncAuth, 1000),
+      setTimeout(syncAuth, 2000),
+      setTimeout(syncAuth, 3000),
+    ]
+
+    const onScroll = () => setScrolled(window.scrollY > 8)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+
+    return () => {
+      window.removeEventListener('storage', syncAuth)
+      window.removeEventListener('auth:updated', syncAuth)
+      window.removeEventListener('scroll', onScroll)
+      timers.forEach(clearTimeout)
+    }
   }, [])
 
   const isLoggedIn = mounted && !!token
+  const isAr = locale === 'ar'
 
+  const initials = mounted && user?.profile
+    ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
+    : ''
+
+  /* ═══ Navigation Links with Smart Routing ═══ */
   const links = [
-    { href: `/${locale}`, label: locale === 'ar' ? 'الرئيسية' : 'Home' },
-    { href: `/${locale}/courses`, label: t('courses') },
-    { href: `/${locale}/my-courses`, label: locale === 'ar' ? 'كورساتي' : 'My Courses' },
-    { href: `/${locale}/coaching`, label: locale === 'ar' ? 'احجز استشارة' : 'Book Consultation' },
+    { 
+      href: `/${locale}`, 
+      label: locale === 'ar' ? 'الرئيسية' : 'Home' 
+    },
+    { 
+      href: `/${locale}/courses`, 
+      label: t('courses') 
+    },
+    { 
+      // ✅ Smart routing for My Courses - login if not authenticated
+      href: isLoggedIn ? `/${locale}/my-courses` : `/${locale}/login`,
+      label: locale === 'ar' ? 'كورساتي' : 'My Courses',
+      requiresAuth: true
+    },
+    { 
+      // ✅ Coaching link redirects to main site coaching page
+      href: `${MAIN_URL}/${locale}/coaching`,
+      label: locale === 'ar' ? 'احجز استشارة' : 'Book Consultation',
+      external: true
+    },
   ]
 
+  const isActive = (href: string) => pathname === href
+
   return (
-    <header
-      className="sticky top-0 z-50 w-full border-b"
-      style={{
-        background: 'var(--surface)',
-        borderColor: 'var(--border)',
-        boxShadow: '0 1px 3px rgba(27,35,64,0.06)',
-      }}
-    >
-      <div className="dw-container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href={`/${locale}`} className="flex items-center gap-3 shrink-0">
-          <img
-            src="/logo-icon.png"
-            alt="DeveWay"
-            className="h-9 w-auto object-contain md:h-11"
-style={{ background: 'transparent', mixBlendMode: 'screen' }}
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-          />
-          <span style={{
-            fontFamily: 'Plus Jakarta Sans, sans-serif',
-            fontWeight: 800,
-            fontSize: 20,
-            color: 'var(--foreground)',
-            letterSpacing: '-0.02em',
-          }}>
-            DeveWay
-          </span>
-        </Link>
+    <>
+      <style jsx>{`
+        @keyframes navFadeIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes mobileSlide {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="px-4 py-2 text-sm rounded-lg transition-colors duration-150 hover:text-primary"
-              style={{ color: 'var(--muted)', fontFamily: 'var(--font-brand)', fontWeight: 900 }}
+      <header
+        className="sticky top-0 z-40 w-full transition-all duration-200"
+        style={{
+          background: '#050505',
+          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
+          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
+          boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
+        }}
+      >
+        <div className="dw-container flex h-[68px] items-center justify-between">
+
+          {/* ═══ Branding (Logo + Text) ═══ */}
+          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:mr-6 md:mr-8" style={{ marginRight: '12px' }}>
+            <img
+              src="/logo-icon.png"
+              alt="DeveWay"
+              className="h-[44px] w-auto object-contain transition-opacity duration-200 hover:opacity-80 sm:h-[52px]"
+              style={{ background: 'transparent', minWidth: '44px' }}
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
+            <span
+              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-opacity duration-200 hover:opacity-80 md:text-[24px]"
+              style={{ fontFamily: NAV_FONT, color: '#ffffff', lineHeight: 1 }}
             >
-              {l.label}
-            </Link>
-          ))}
+              DeveWay
+            </span>
+          </Link>
 
-          <a
-            href={`${MAIN_URL}/${locale}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg transition-colors duration-150 hover:text-primary"
-            style={{ color: 'var(--muted)', fontFamily: 'var(--font-brand)', fontWeight: 900 }}
-          >
-            {locale === 'ar' ? 'الموقع الرئيسي' : 'Main Site'}
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </nav>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <div className="hidden md:block">
-            <SearchBar />
-          </div>
-          <CartIcon />
-          <ThemeToggle />
-          <LanguageSwitcher />
-          {isLoggedIn && (
-            <a
-              href={`${MAIN_URL}/${locale}/dashboard/ai-chat`}
-              title="DeveWay AI"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition group"
-            >
-              <Sparkles className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />
-            </a>
-          )}
-
-          {/* Auth area — desktop */}
-          <div className="hidden items-center gap-2 md:flex">
-            {isLoggedIn ? (
-              <UserDropdown locale={locale} />
-            ) : (
-              <>
-                <a href={`${MAIN_URL}/${locale}/login`} className="btn-secondary text-sm">
-                  {t('login')}
-                </a>
-                <a href={`${MAIN_URL}/${locale}/register`} className="btn-primary text-sm">
-                  {t('register')}
-                </a>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg md:hidden transition-colors"
-            style={{ color: 'var(--muted)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="border-t md:hidden animate-fade-up" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
-          <div className="space-y-1 px-4 py-4">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-lg px-4 py-3 text-base transition-colors duration-150 hover:text-primary"
-                style={{ color: 'var(--muted)', fontFamily: 'var(--font-brand)', fontWeight: 900 }}
-              >
-                {l.label}
-              </Link>
-            ))}
-
-            <a
-              href={`${MAIN_URL}/${locale}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center justify-between rounded-lg px-4 py-3 text-base transition-colors duration-150 hover:text-primary"
-              style={{ color: 'var(--muted)', fontFamily: 'var(--font-brand)', fontWeight: 900 }}
-            >
-              {locale === 'ar' ? 'الموقع الرئيسي' : 'Main Site'}
-              <ExternalLink className="h-4 w-4" />
-            </a>
-
-            {/* Mobile auth */}
-            {isLoggedIn ? (
-              <div className="pt-4 border-t mt-4 space-y-1" style={{ borderColor: 'var(--border)' }}>
-                <div className="flex items-center gap-3 px-4 py-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white select-none" style={{ background: 'var(--primary)' }}>
-                    {(user?.profile?.firstName || user?.email?.split('@')[0] || '?')[0]?.toUpperCase()}
-                  </span>
-                  <span className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
-                    {user?.profile?.firstName
-                      ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
-                      : user?.email}
-                  </span>
-                </div>
-                <button
-                  onClick={() => {
-                    useAuthStore.getState().logout()
-                    setMobileMenuOpen(false)
-                    window.location.href = `/${locale}`
+          {/* ═══ Navigation Links (Desktop) ═══ */}
+          <nav className="hidden lg:flex items-center gap-0.5">
+            {links.map((l) => {
+              const active = isActive(l.href)
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 900,
+                    letterSpacing: '-0.01em',
+                    fontFamily: NAV_FONT,
+                    color: active ? '#5120c8' : 'var(--foreground)',
+                    background: active ? 'var(--surface-2)' : 'transparent',
+                    opacity: active ? 1 : 0.75,
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
-                  style={{ color: 'var(--error)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = 'var(--surface-2)'
+                      e.currentTarget.style.opacity = '1'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.opacity = '0.75'
+                    }
+                  }}
                 >
-                  <LogOut className="h-4 w-4" />
-                  {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
-                </button>
+                  {l.label}
+                  {l.external && (
+                    <span className="inline-block ml-1 text-[10px] opacity-35">↗</span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* ═══ Actions ═══ */}
+          <div className="flex items-center gap-1.5">
+            
+            {/* Icon buttons row */}
+            <div className="flex items-center gap-1">
+              
+              <SearchBar />
+
+              <div className="hidden sm:flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
+                <LanguageSwitcher />
+                <ThemeToggle />
+                {mounted && isLoggedIn && (
+                  <Link
+                    href={`/${locale}/dashboard/ai-chat`}
+                    title="DeveWay AI"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
+                    style={{ background: 'rgba(81, 32, 200, 0.10)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.18)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
+                  >
+                    <Sparkles className="h-[14px] w-[14px]" style={{ color: '#5120c8' }} />
+                  </Link>
+                )}
+              </div>
+
+              {/* <NotificationBell /> */}
+              <CartIcon />
+            </div>
+
+            {/* Separator */}
+            {mounted && isLoggedIn && (
+              <div className="hidden lg:block h-6 w-px mx-0.5" style={{ background: 'var(--border)' }} />
+            )}
+
+            {/* Auth buttons (desktop) - Tall & Narrow Design ✅ */}
+            {!mounted ? (
+              <div className="h-9 w-[160px] hidden lg:block" />
+            ) : isLoggedIn ? (
+              <div className="hidden lg:block">
+                {user?.role === 'ADMIN' ? (
+                  <Link
+                    href={`/${locale}/admin`}
+                    className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-colors duration-150"
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    <div
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black"
+                      style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
+                    >
+                      {initials || 'A'}
+                    </div>
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                      style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
+                    >
+                      Admin
+                    </span>
+                  </Link>
+                ) : (
+                  <UserDropdown locale={locale} />
+                )}
               </div>
             ) : (
-              <div className="flex gap-3 pt-4 border-t mt-4" style={{ borderColor: 'var(--border)' }}>
-                <a
-                  href={`${MAIN_URL}/${locale}/login`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center btn-secondary text-sm"
+              <div className="hidden lg:flex items-center gap-2">
+                {/* ✅ تسجيل الدخول - طويل وضيق */}
+                <Link
+                  href={`/${locale}/login`}
+                  className="px-4 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"
+                  style={{
+                    color: 'var(--muted)',
+                    border: '1px solid var(--border)',
+                    fontFamily: NAV_FONT,
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'var(--foreground)'
+                    e.currentTarget.style.borderColor = 'var(--border-strong)'
+                    e.currentTarget.style.background = 'var(--surface-2)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = 'var(--muted)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                    e.currentTarget.style.background = 'transparent'
+                  }}
                 >
                   {t('login')}
-                </a>
-                <a
-                  href={`${MAIN_URL}/${locale}/register`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 text-center btn-primary text-sm"
+                </Link>
+                
+                {/* ✅ إنشاء حساب - طويل وضيق */}
+                <Link
+                  href={`/${locale}/register`}
+                  className="px-5 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"
+                  style={{
+                    background: '#5120c8',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
+                    fontFamily: NAV_FONT,
+                    height: '38px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#4318a8'
+                    e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(81,32,200,0.30)'
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#5120c8'
+                    e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(81,32,200,0.25)'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                  }}
                 >
                   {t('register')}
-                </a>
+                </Link>
               </div>
             )}
+
+            {/* Mobile toggle */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="flex lg:hidden h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
+              style={{
+                color: 'var(--muted)',
+                background: mobileOpen ? 'var(--surface-2)' : 'transparent',
+              }}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-[18px] w-[18px]" /> : <Menu className="h-[18px] w-[18px]" />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ═══ Mobile Menu ═══ */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 top-[68px] z-30 lg:hidden overflow-y-auto"
+          style={{
+            background: 'var(--surface)',
+            borderTop: '1px solid var(--border)',
+            animation: 'mobileSlide 0.2s ease-out',
+          }}
+        >
+          <div className="px-4 py-5 space-y-5">
+            {/* Nav links */}
+            <nav className="flex flex-col gap-0.5">
+              {links.map((l) => {
+                const active = isActive(l.href)
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
+                    style={{
+                      fontWeight: 900,
+                      fontFamily: NAV_FONT,
+                      color: active ? '#5120c8' : 'var(--foreground)',
+                      background: active ? 'var(--surface-2)' : 'transparent',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {l.label}
+                    {l.external && <span className="text-xs opacity-30 ml-1">↗</span>}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {/* Mobile actions row */}
+            <div
+              className="flex items-center gap-2 px-1"
+              style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}
+            >
+              <LanguageSwitcher />
+              <ThemeToggle />
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/ai-chat`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI
+                </Link>
+              )}
+              {/* <NotificationBell /> */}
+              <CartIcon />
+            </div>
+
+            {/* Auth section */}
+            {isLoggedIn ? (
+              <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                <div className="flex items-center gap-3 px-2">
+                  {user?.profile?.avatar ? (
+                    <img
+                      src={user.profile.avatar}
+                      alt="avatar"
+                      className="h-10 w-10 rounded-full object-cover"
+                      style={{ boxShadow: '0 0 0 2px var(--border)' }}
+                    />
+                  ) : (
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
+                      style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+                    >
+                      {initials || '?'}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
+                      {user?.profile?.firstName
+                        ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
+                        : user?.email}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2.5">
+                  <Link
+                    href={`/${locale}/my-courses`}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                    style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    {locale === 'ar' ? 'كورساتي' : 'My Courses'}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      const { logout } = useAuthStore.getState()
+                      logout()
+                      setMobileOpen(false)
+                      window.dispatchEvent(new Event('auth:updated'))
+                      window.location.href = `/${locale}`
+                    }}
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-colors duration-150"
+                    style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ) : mounted ? (
+              <div className="flex flex-col gap-2.5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                <Link
+                  href={`/${locale}/login`}
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  style={{ border: '1px solid var(--border)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
+                >
+                  {t('login')}
+                </Link>
+                <Link
+                  href={`/${locale}/register`}
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  style={{
+                    background: '#5120c8',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
+                    fontFamily: NAV_FONT,
+                  }}
+                >
+                  {t('register')}
+                </Link>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
-    </header>
+    </>
   )
 }

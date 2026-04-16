@@ -417,6 +417,38 @@ export class AuthService {
     this.logger.log(`Password changed for user: ${user.email}`);
   }
 
+  async getMe(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, email: true, role: true, isActive: true,
+        accountType: true, status: true, createdAt: true,
+        bio: true, experience: true, speciality: true,
+        profile: {
+          select: {
+            firstName: true, lastName: true, avatar: true,
+            bio: true, phone: true, language: true, timezone: true,
+          }
+        }
+      }
+    });
+    return user;
+  }
+
+  async updateProfile(userId: string, data: { firstName?: string; lastName?: string; bio?: string; phone?: string; avatar?: string }) {
+    const profile = await this.prisma.userProfile.update({
+      where: { userId },
+      data: {
+        ...(data.firstName !== undefined && { firstName: data.firstName }),
+        ...(data.lastName !== undefined && { lastName: data.lastName }),
+        ...(data.bio !== undefined && { bio: data.bio }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.avatar !== undefined && { avatar: data.avatar }),
+      }
+    });
+    return { success: true, data: profile };
+  }
+
   async adminLogin(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
 

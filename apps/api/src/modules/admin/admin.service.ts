@@ -819,6 +819,7 @@ export class AdminService {
       totalCourses,
       pendingUsers,
       allPayments,
+      allPaidSessions,
       recentUsers,
     ] = await Promise.all([
       this.prisma.user.count({
@@ -839,6 +840,12 @@ export class AdminService {
         orderBy: { createdAt: 'desc' },
       }).catch(() => []),
 
+      this.prisma.consultingSession.findMany({
+        where: { paymentStatus: 'PAID' },
+        select: { price: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      }).catch(() => []),
+
       this.prisma.user.findMany({
         where: { accountType: { not: 'ADMIN' } },
         orderBy: { createdAt: 'desc' },
@@ -856,21 +863,25 @@ export class AdminService {
 
     const toNum = (payments: { amount: number }[]) =>
       payments.map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
+    const toNumS = (sessions: { price: number }[]) =>
+      sessions.map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
 
-    const totalRevenue = toNum(allPayments);
-    const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth));
-    const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay));
+    const totalRevenue = toNum(allPayments) + toNumS(allPaidSessions);
+    const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth))
+      + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfMonth));
+    const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay))
+      + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfDay));
 
     const monthlyChart: { month: string; revenue: number }[] = [];
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
       const rev = allPayments
-        .filter(p => {
-          const pd = new Date(p.createdAt);
-          return pd >= d && pd < end;
-        })
-        .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
+        .filter(p => { const pd = new Date(p.createdAt); return pd >= d && pd < end; })
+        .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0)
+        + allPaidSessions
+        .filter(s => { const sd = new Date(s.createdAt); return sd >= d && sd < end; })
+        .map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
       monthlyChart.push({
         month: d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' }),
         revenue: rev,
