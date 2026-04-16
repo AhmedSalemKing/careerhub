@@ -13,7 +13,7 @@ import { TRAINING_URL } from '../../../lib/constants'
 const FEATURES = [
   {
     id: 1,
-    icon: <Target size={20} />,
+    icon: <Target size={22} />,
     iconBg: 'linear-gradient(135deg, #5120c8, #7C3AED)',
     titleAr: 'تحديد المسار المهني',
     titleEn: 'Career Path AI',
@@ -21,13 +21,13 @@ const FEATURES = [
     descEn: 'Smart test + AI analysis + personalized career recommendations',
     ctaAr: 'ابدأ',
     ctaEn: 'Start',
-    href: '/dashboard/assessment', // ← صفحة الاختبار
+    href: '/dashboard/assessment',
     color: '#5120c8',
     isExternal: false,
   },
   {
     id: 2,
-    icon: <GraduationCap size={20} />,
+    icon: <GraduationCap size={22} />,
     iconBg: 'linear-gradient(135deg, #0D9488, #2DD4BF)',
     titleAr: 'منصة التدريب',
     titleEn: 'Training Platform',
@@ -35,13 +35,13 @@ const FEATURES = [
     descEn: 'Video courses, live sessions & certified certificates',
     ctaAr: 'تصفح',
     ctaEn: 'Browse',
-    href: TRAINING_URL, // ← دومين خارجي (تاب جديد)
+    href: TRAINING_URL,
     color: '#0D9488',
-    isExternal: true, // ← يفتح في تاب جديد
+    isExternal: true,
   },
   {
     id: 3,
-    icon: <Users size={20} />,
+    icon: <Users size={22} />,
     iconBg: 'linear-gradient(135deg, #D97706, #FBBF24)',
     titleAr: 'الكوتشينج',
     titleEn: 'Coaching',
@@ -49,7 +49,7 @@ const FEATURES = [
     descEn: 'Book a session with an expert coach via Zoom',
     ctaAr: 'احجز',
     ctaEn: 'Book',
-    href: '/dashboard/coaching', // ← صفحة الكوتشينج الصحيحة
+    href: '/dashboard/coaching',
     color: '#D97706',
     isExternal: false,
   },
@@ -68,7 +68,6 @@ export function FeaturesSection() {
   const [isDark, setIsDark] = useState(false)
   const [imgError, setImgError] = useState(false)
 
-  // Detect when section is visible
   useEffect(() => {
     const el = ref.current
     if (!el) return
@@ -87,7 +86,6 @@ export function FeaturesSection() {
     return () => obs.disconnect()
   }, [])
 
-  // Detect theme changes
   useEffect(() => {
     const checkTheme = () => {
       setIsDark(document.documentElement.classList.contains('dark'))
@@ -184,9 +182,7 @@ export function FeaturesSection() {
           <div className="fx-cards-stack">
 
             {FEATURES.map((feature, index) => {
-              // ← تحديد نوع الرابط بناءً على isExternal
               if (feature.isExternal) {
-                // رابط خارجي → يفتح في تاب جديد
                 return (
                   <div
                     key={feature.id}
@@ -234,7 +230,6 @@ export function FeaturesSection() {
                 )
               }
 
-              // رابط داخلي → Next.js Link
               return (
                 <div
                   key={feature.id}
@@ -407,26 +402,58 @@ export function FeaturesSection() {
         }
 
         /* ========================================
-           LAYOUT
+           LAYOUT - Desktop: Grid with Fixed Direction | Mobile: Flex with Order
            ======================================== */
 
         .fx-main {
           display: grid;
-          grid-template-columns: 340px 1fr;
+          grid-template-columns: 1.3fr 300px; /* ← الكاردز أعرض | الموبايل أصغر */
           align-items: center;
-          gap: 60px;
+          gap: 48px;
+          direction: ltr; /* ← يثبت الاتجاه LTR دائماً */
         }
 
+        /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
+        [dir="rtl"] .fx-cards-stack,
+        [dir="rtl"] .fx-header {
+          direction: rtl;
+        }
+
+        /* Tablet & Mobile Medium (480px - 900px): Phone on LEFT, Cards on RIGHT */
         @media (max-width: 900px) {
           .fx-main {
-            grid-template-columns: 1fr;
-            gap: 56px;
+            display: flex;
+            flex-direction: row; /* ← اتجاه عادي */
+            align-items: center;
+            gap: 24px;
+            direction: rtl; /* ← نرجع RTL للموبايل */
           }
-          .fx-phone-wrapper { order: -1; }
+          
+          /* ← في RTL: order 1 = يمين | order 2 = شمال */
+          /* ← في LTR: order 1 = شمال | order 2 = يمين */
+          .fx-cards-stack { 
+            order: 1; /* ← الكاردز على اليمين */
+            flex: 1;
+            min-width: 0;
+          }
+          
+          .fx-phone-wrapper { 
+            order: 2; /* ← الموبايل على الشمال */
+            flex: 0 0 auto;
+            transform: scale(0.8);
+          }
         }
 
+        /* Mobile Small (<480px): Back to Column Layout */
         @media (max-width: 480px) {
           .features-section { padding: 60px 16px; }
+          .fx-main {
+            flex-direction: column;
+            gap: 40px;
+          }
+          .fx-phone-wrapper { 
+            transform: scale(1);
+          }
         }
 
         /* ========================================
@@ -587,13 +614,13 @@ export function FeaturesSection() {
         }
 
         /* ========================================
-           FEATURE CARDS
+           FEATURE CARDS - Enhanced Size & Spacing
            ======================================== */
 
         .fx-cards-stack {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 16px; /* ← مسافة مناسبة بين الكاردز */
         }
 
         .feature-card-wrapper {
@@ -611,14 +638,13 @@ export function FeaturesSection() {
           to { opacity: 1; transform: translateX(0) translateY(0); }
         }
 
-        /* ← الرابط العام (Link أو a) */
         .feature-card {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 18px 20px;
-          border-radius: 20px;
+          gap: 20px; /* ← مسافة أكبر أفقياً */
+          padding: 16px 28px; /* ← padding أقل عمودياً + أكبر أفقياً */
+          border-radius: 18px;
           background: var(--fx-card-bg);
           border: 1.5px solid var(--fx-card-border);
           backdrop-filter: blur(16px);
@@ -641,10 +667,10 @@ export function FeaturesSection() {
         }
 
         .feature-icon {
-          width: 48px;
+          width: 48px; /* ← أيقونة أصغر عمودياً */
           height: 48px;
           min-width: 48px;
-          border-radius: 14px;
+          border-radius: 14px; /* ← زوايا أدفأ */
           display: flex;
           align-items: center;
           justify-content: center;
@@ -667,16 +693,16 @@ export function FeaturesSection() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          margin-bottom: 4px;
+          margin-bottom: 2px; /* ← مسافة أقل */
         }
 
         .feature-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
-          font-size: 16px !important;
+          font-size: 16px !important; /* ← عنوان مناسب */
           color: var(--fx-fg);
           margin: 0;
-          line-height: 1.3;
+          line-height: 1.25; /* ← ارتفاع سطر أقل */
           letter-spacing: -0.01em;
         }
 
@@ -699,17 +725,17 @@ export function FeaturesSection() {
         }
 
         .feature-desc {
-          font-size: 13px;
+          font-size: 13px; /* ← وصف أصغر */
           color: var(--fx-muted);
-          line-height: 1.55;
+          line-height: 1.45; /* ← ارتفاع سطر أقل */
           margin: 0;
           font-family: "DM Sans", sans-serif;
         }
 
         .feature-cta {
-          padding: 7px 14px;
-          border-radius: 10px;
-          font-size: 11px;
+          padding: 7px 14px; /* ← زر أنحف */
+          border-radius: 10px; /* ← زوايا أدفأ */
+          font-size: 11px; /* ← نص مناسب */
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
           background: rgba(81,32,200,0.1);

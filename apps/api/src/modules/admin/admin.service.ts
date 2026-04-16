@@ -4,6 +4,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as path from 'path';
+import * as fs from 'fs';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
@@ -22,6 +24,162 @@ export class AdminService {
     private emailService: EmailService,
   ) {}
 
+  // ── Create Course WITH Uploads (Thumbnail + Videos) ──
+  async createCourseWithUploads(courseData: any, files: Express.Multer.File[], adminId?: string) {
+    const baseSlug = (courseData.titleEn || courseData.title || 'course')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const slug = `${baseSlug}-${Date.now()}`;
+    
+    // Determine instructor: Admin themselves OR selected instructor
+    const instructorId = courseData.isInstructor 
+      ? adminId  // Admin is the instructor!
+      : (courseData.instructorId || adminId || undefined);
+
+    // Separate images from videos
+    const imageFiles = files.filter(f => f.mimetype.startsWith('image/'));
+    const videoFiles = files.filter(f => f.mimetype.startsWith('video/'));
+
+    // Get thumbnail URL (first image or null)
+    let thumbnailUrl: string | null = null;
+    if (imageFiles.length > 0) {
+      thumbnailUrl = `/uploads/admin/${imageFiles[0].filename}`;
+    } else if (courseData.thumbnail) {
+      thumbnailUrl = courseData.thumbnail;
+    }
+
+    // Create the course first
+    const course = await this.prisma.course.create({
+      data: {
+        slug,
+        titleEn: courseData.titleEn || courseData.title || 'Untitled',
+        titleAr: courseData.titleAr,
+        descriptionEn: courseData.descriptionEn || courseData.description,
+        descriptionAr: courseData.descriptionAr,
+        price: parseFloat(courseData.price) || 0,
+        currency: courseData.currency || 'USD',
+        duration: courseData.duration ? parseInt(courseData.duration) : undefined,
+        level: courseData.level || 'BEGINNER',
+        status: (courseData.status as any) || 'PUBLISHED',
+        thumbnail: thumbnailUrl,
+        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+        ...(instructorId && { instructorId }),
+        ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+      },
+    });
+
+    // If there are videos, create lessons for them
+    if (videoFiles.length > 0 && course) {
+      // Create a default section for the course
+      const section = await this.prisma.section.create({
+        data: {
+          title: courseData.titleEn || 'Main Content',
+          order: 1,
+          courseId: course.id,
+        },
+      });
+
+      // Create a module for the course
+      const module = await this.prisma.courseModule.create({
+        data: {
+          courseId: course.id,
+          titleEn: courseData.titleEn || 'Course Content',
+          titleAr: courseData.titleAr || 'محتوى الكورس',
+          sortOrder: 1,
+          isPublished: true,
+        },
+      });
+
+      // Create lessons from videos
+      const videoTitles = courseData.videoTitles || [];
+      for (let i = 0; i < videoFiles.length; i++) {
+        const videoFile = videoFiles[i];
+        const lessonTitle = videoTitles[i] || `Lesson ${i + 1}`;
+        
+        // Create lesson
+        const lesson = await this.prisma.lesson.create({
+          data: {
+            moduleId: module.id,
+            sectionId: section.id,
+            title: lessonTitle,
+            titleAr: lessonTitle,
+            type: 'VIDEO',
+            videoUrl: `/uploads/admin/${videoFile.filename}`,
+            fileName: videoFile.originalname,
+            fileSize: videoFile.size,
+            isPublished: true,
+            order: i + 1,
+          },
+        });
+
+        // Create VideoContent record
+        await this.prisma.videoContent.create({
+          data: {
+            lessonId: lesson.id,
+            streamId: `admin-upload-${Date.now()}-${i}`,
+            playbackUrl: `/uploads/admin/${videoFile.filename}`,
+            thumbnail: thumbnailUrl || null,
+            duration: 0, // Will be processed later
+            status: 'READY',
+          },
+        });
+      }
+    }
+
+    return course;
+  }
+
+  // ── Create Session WITH Image ──
+  async createSessionWithImage(data: any, image?: Express.Multer.File) {
+    const sessionData: any = {
+      studentId: data.studentId,
+      consultantId: data.consultantId,
+      scheduledAt: new Date(data.scheduledAt),
+      topic: data.topic || '',
+      meetingMethod: data.meetingMethod || 'ONLINE',
+      price: Number(data.price) || 0,
+      duration: data.duration || 60,
+      status: 'CONFIRMED',
+      paymentStatus: 'UNPAID',
+    };
+
+    // Add image URL if provided
+    if (image) {
+      (sessionData as any).imageUrl = `/uploads/admin/${image.filename}`;
+    }
+
+    return this.prisma.consultingSession.create({
+      data: sessionData,
+    });
+  }
+
+  // ── Get ONLY Confirmed Payments (for Revenue) ──
+  async getAllConfirmedPayments() {
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: { in: ['SUCCESS', 'COMPLETED'] },  // ✅ Only confirmed payments!
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            profile: { select: { firstName: true, lastName: true } },
+          },
+        },
+        course: { select: { titleAr: true, titleEn: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    // Calculate total from confirmed payments ONLY
+    const total = payments.reduce((sum, p) => sum + p.amount, 0);
+    
+    return { success: true, data: payments, total };
+  }
+
+  // ... [Keep ALL existing methods below exactly as they are] ...
+  
   async getDashboardOverview() {
     const [
       totalUsers,
@@ -104,7 +262,7 @@ export class AdminService {
       })
     );
 
-    // Total revenue (all time)
+    // Total revenue (all time) - ONLY confirmed
     const totalRevenueResult = await this.prisma.payment.aggregate({
       _sum: { amount: true },
       where: { status: { in: ['SUCCESS', 'COMPLETED'] as any } },

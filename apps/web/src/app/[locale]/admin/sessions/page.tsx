@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react' // ✅ FIXED: Added useRef
 import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
-import { Calendar, Video, Globe, Phone, PlusCircle, X } from 'lucide-react'
+import { Calendar, Video, Globe, Phone, PlusCircle, X, Upload, Image as ImageIcon } from 'lucide-react'
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   PENDING:     { label: 'معلقة',        color: 'bg-amber-500/20 text-amber-400' },
@@ -35,9 +35,21 @@ export default function AdminSessionsPage() {
 
   // Create session modal
   const [showCreate, setShowCreate] = useState(false)
-  const [sessionForm, setSessionForm] = useState({ studentId: '', consultantId: '', topic: '', scheduledAt: '', price: 0, meetingMethod: 'ONLINE' })
+  const [sessionForm, setSessionForm] = useState({ 
+    studentId: '', 
+    consultantId: '', 
+    topic: '', 
+    scheduledAt: '', 
+    price: 0, 
+    meetingMethod: 'ONLINE',
+    duration: 60,
+  })
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
+  
+  // ✅ NEW: Image upload state
+  const [sessionImage, setSessionImage] = useState<File | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null) // ✅ FIXED: Use useRef instead of React.useRef
 
   const { data: allSessions = [], isLoading } = useQuery({
     queryKey: ['admin-sessions'],
@@ -83,17 +95,50 @@ export default function AdminSessionsPage() {
     CANCELLED: isAr ? 'ملغية' : 'Cancelled',
   }
 
+  // ✅ UPDATED: Handle session creation with image
   async function handleCreateSession() {
     setCreating(true)
     setCreateError('')
     try {
-      await post('/admin/sessions/create', sessionForm)
+      if (sessionImage) {
+        // Use FormData for file upload
+        const formData = new FormData()
+        formData.append('studentId', sessionForm.studentId)
+        formData.append('consultantId', sessionForm.consultantId)
+        formData.append('topic', sessionForm.topic)
+        formData.append('scheduledAt', sessionForm.scheduledAt)
+        formData.append('price', String(sessionForm.price))
+        formData.append('meetingMethod', sessionForm.meetingMethod)
+        formData.append('duration', String(sessionForm.duration))
+        formData.append('image', sessionImage)
+
+        await post('/admin/sessions/create', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+      } else {
+        // No image, use simple API
+        await post('/admin/sessions/create', sessionForm)
+      }
+      
       setShowCreate(false)
-      setSessionForm({ studentId: '', consultantId: '', topic: '', scheduledAt: '', price: 0, meetingMethod: 'ONLINE' })
+      setSessionForm({ studentId: '', consultantId: '', topic: '', scheduledAt: '', price: 0, meetingMethod: 'ONLINE', duration: 60 })
+      setSessionImage(null)
       queryClient.invalidateQueries({ queryKey: ['admin-sessions'] })
     } catch (e: any) {
       setCreateError(e?.response?.data?.message || 'Error creating session')
     } finally { setCreating(false) }
+  }
+
+  // ✅ NEW: Handle image selection
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        setSessionImage(file)
+      } else {
+        alert(isAr ? 'يرجى اختيار صورة صحيحة' : 'Please select a valid image file')
+      }
+    }
   }
 
   const userName = (u: any) => u?.profile ? `${u.profile.firstName} ${u.profile.lastName}` : u?.email || '—'
@@ -198,10 +243,10 @@ export default function AdminSessionsPage() {
         </div>
       )}
 
-      {/* Create Session Modal */}
+      {/* ✅ ENHANCED Create Session Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 460, position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 480, position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
             <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
               <X size={18} />
             </button>
@@ -233,6 +278,54 @@ export default function AdminSessionsPage() {
                 onChange={e => setSessionForm(f => ({ ...f, scheduledAt: e.target.value }))}
                 style={MODAL_INPUT}
               />
+
+              {/* ✅ NEW: Session Image Upload */}
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  fontSize: 12, 
+                  fontWeight: 600, 
+                  color: '#A78BFA', 
+                  marginBottom: 8, 
+                  fontFamily: 'DM Sans, sans-serif' 
+                }}>
+                  <ImageIcon size={14} style={{ display: 'inline', marginRight: 6 }} />
+                  {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (Optional)'}
+                </label>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    background: sessionImage 
+                      ? 'rgba(34,197,94,0.1)' 
+                      : 'rgba(255,255,255,0.03)',
+                    border: `2px dashed ${sessionImage ? '#22C55E' : 'rgba(255,255,255,0.15)'}`,
+                    borderRadius: 10,
+                    color: sessionImage ? '#22C55E' : 'rgba(255,255,255,0.5)',
+                    fontSize: 13,
+                    fontFamily: 'DM Sans, sans-serif',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                  }}
+                >
+                  <Upload size={20} />
+                  {sessionImage 
+                    ? sessionImage.name
+                    : isAr ? 'اضغط لاختيار صورة' : 'Click to select image'
+                  }
+                </button>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <input
                   type="number"

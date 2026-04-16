@@ -11,10 +11,11 @@ import {
   HttpCode,
   HttpStatus,
   UploadedFile,
+  UploadedFiles,
   UseInterceptors,
   Req,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,7 +31,7 @@ import { User } from '@prisma/client';
 @Roles('ADMIN')
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private readonly adminService: AdminService) { }
+  constructor(private readonly adminService: AdminService) {}
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get admin dashboard overview' })
@@ -180,6 +181,48 @@ export class AdminController {
     return {
       success: true,
       data: courses,
+    };
+  }
+
+  // ── Create Course WITH File Uploads ──
+  @Post('courses/create-with-files')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create new course with thumbnail and videos (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Course created successfully with files' })
+  async createCourseWithFiles(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: any,
+    @Req() req: any,
+  ) {
+    let courseData: any = {};
+    try {
+      if (body.titleEn) courseData.titleEn = body.titleEn;
+      if (body.titleAr) courseData.titleAr = body.titleAr;
+      if (body.descriptionEn) courseData.descriptionEn = body.descriptionEn;
+      if (body.descriptionAr) courseData.descriptionAr = body.descriptionAr;
+      if (body.price) courseData.price = parseFloat(body.price);
+      if (body.currency) courseData.currency = body.currency;
+      if (body.duration) courseData.duration = parseInt(body.duration);
+      if (body.level) courseData.level = body.level;
+      if (body.status) courseData.status = body.status;
+      if (body.careerPathId) courseData.careerPathId = body.careerPathId;
+      if (body.categoryId) courseData.categoryId = body.categoryId;
+      if (body.isInstructor === 'true' || body.isInstructor === true) courseData.isInstructor = true;
+      if (body.instructorId) courseData.instructorId = body.instructorId;
+      
+      if (body.videoTitles) {
+        try { courseData.videoTitles = JSON.parse(body.videoTitles); } catch { courseData.videoTitles = []; }
+      }
+    } catch (e) {
+      console.error('Error parsing course data:', e);
+    }
+
+    const result = await this.adminService.createCourseWithUploads(courseData, files, req.user?.sub || req.user?.id);
+    return {
+      success: true,
+      message: 'Course created successfully with files',
+      data: result,
     };
   }
 
@@ -476,7 +519,7 @@ export class AdminController {
     const result = await this.adminService.uploadLogo(file);
     return {
       success: true,
-      message: 'Logo uploaded successfully',
+      message: "Logo uploaded successfully",
       data: result,
     };
   }
@@ -749,15 +792,15 @@ export class AdminController {
     @CurrentUser() admin: User,
   ) {
     const user = await this.adminService.unbanUser(userId, admin.id);
-    return { success: true, message: 'User unbanned', data: { user } };
+    return { success: true, message: 'User unbanned', data: user };
   }
 
   // ── Payments ───────────────────────────────────────────────────────────────
 
   @Get('payments')
-  @ApiOperation({ summary: 'Get all payments with revenue total' })
+  @ApiOperation({ summary: 'Get all CONFIRMED payments only (revenue)' })
   async getAllPayments() {
-    return this.adminService.getAllPayments();
+    return this.adminService.getAllConfirmedPayments();
   }
 
   // ── Audit Logs ─────────────────────────────────────────────────────────────
@@ -826,9 +869,30 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  // ── Create Session WITH Image ──
   @Post('sessions/create')
-  async createSession(@Body() body: any) {
-    const result = await this.adminService.createSession(body);
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Create new session with optional image' })
+  async createSessionWithImage(
+    @UploadedFile() image: Express.Multer.File | null,
+    @Body() body: any,
+  ) {
+    const sessionData: any = {};
+    if (body.studentId) sessionData.studentId = body.studentId;
+    if (body.consultantId) sessionData.consultantId = body.consultantId;
+    if (body.topic) sessionData.topic = body.topic;
+    if (body.scheduledAt) sessionData.scheduledAt = body.scheduledAt;
+    if (body.price) sessionData.price = Number(body.price) || 0;
+    if (body.meetingMethod) sessionData.meetingMethod = body.meetingMethod;
+    if (body.duration) sessionData.duration = Number(body.duration) || 60;
+
+    // Add image URL if provided
+    if (image) {
+      (sessionData as any).imageUrl = `/uploads/admin/${image.filename}`;
+    }
+
+    const result = await this.adminService.createSessionWithImage(sessionData, image);
     return { success: true, data: result };
   }
 

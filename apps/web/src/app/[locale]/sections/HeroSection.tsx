@@ -51,13 +51,13 @@ export function HeroSection() {
       </div>
 
       {/* ════════════════════════════════════════
-          CONTENT LAYER
+          CONTENT LAYER - Split Layout (Text Left | Image Right)
          ════════════════════════════════════════ */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center max-w-5xl mx-auto px-4 w-full">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Badge */}
+        {/* CENTERED BADGE - Above Everything */}
         <div 
-          className="inline-flex items-center gap-2 rounded-full px-4 py-2 mb-8 border backdrop-blur-sm shadow-lg animate-fade-down hero-badge"
+          className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 mb-6 lg:mb-10 border backdrop-blur-sm shadow-lg animate-fade-down hero-badge"
           style={{
             borderColor: 'var(--hero-border)',
             backgroundColor: 'var(--hero-badge-bg)'
@@ -69,10 +69,16 @@ export function HeroSection() {
           </span>
         </div>
 
+        {/* Main Content Container - Split Layout */}
+        <div className="flex flex-col lg:flex-row-reverse items-center justify-center gap-8 lg:gap-12 xl:gap-16 w-full">
+        
+        {/* LEFT COLUMN: Text Content - MOBILE: Order 2 (Below Image) */}
+        <div className="flex-1 flex flex-col items-center text-center lg:text-left max-w-2xl order-2 lg:order-1">
+
         {/* Heading */}
-        <h1 className="leading-tight mb-6 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+        <h1 className="leading-tight mb-3 lg:mb-4 animate-fade-up" style={{ animationDelay: '0.1s' }}>
           <span 
-            className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-2 drop-shadow-lg"
+            className="block text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl mb-2 drop-shadow-lg"
             style={{ 
               fontFamily: 'PingARLT, Arial Black, sans-serif',
               color: 'var(--hero-fg)'
@@ -82,7 +88,7 @@ export function HeroSection() {
           </span>
           
           <span 
-            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl bg-clip-text text-transparent hero-gradient-text"
+            className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl bg-clip-text text-transparent hero-gradient-text"
             style={{ fontFamily: 'PingARLT, Arial Black, sans-serif' }}
           >
             <TypewriterHero />
@@ -90,7 +96,7 @@ export function HeroSection() {
         </h1>
 
         <p 
-          className="mt-2 text-lg sm:text-xl max-w-2xl leading-relaxed animate-fade-up font-sans"
+          className="mt-1.5 text-sm sm:text-base lg:text-lg max-w-xl lg:max-w-2xl leading-relaxed animate-fade-up font-sans"
           style={{ 
             animationDelay: '0.2s',
             color: 'var(--hero-muted)'
@@ -100,7 +106,7 @@ export function HeroSection() {
         </p>
 
         <div 
-          className="mt-10 flex flex-col sm:flex-row gap-4 animate-fade-up w-full sm:w-auto" 
+          className="mt-5 lg:mt-6 flex flex-col sm:flex-row gap-2.5 lg:gap-3 animate-fade-up w-full sm:w-auto" 
           style={{ animationDelay: '0.3s' }}
         >
           <Link 
@@ -131,47 +137,47 @@ export function HeroSection() {
           </a>
         </div>
 
-        {/* Stats Card */}
-        <div className="mt-16 w-full max-w-3xl animate-fade-up" style={{ animationDelay: '0.4s' }}>
+        {/* Stats Card - Simple & Compact Design - CENTERED */}
+        <div className="mt-8 lg:mt-10 w-full max-w-lg lg:max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '0.4s' }}>
           <div className="relative group">
             <div className="absolute -top-px left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
             
             <div 
-              className="relative overflow-hidden rounded-2xl border backdrop-blur-xl shadow-2xl p-6 sm:p-8 hero-stats-card"
+              className="relative overflow-hidden rounded-xl border backdrop-blur-md shadow-lg p-3 sm:p-4 hero-stats-card stats-card-compact"
               style={{
                 background: 'var(--hero-card-bg)',
                 borderColor: 'var(--hero-border)'
               }}
             >
-              <div className="flex flex-wrap justify-center items-center gap-8 sm:gap-16 text-center">
+              <div className="flex flex-nowrap justify-center items-center gap-4 sm:gap-6 lg:gap-8 text-center">
                 
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
                     150+
                   </span>
-                  <span className="mt-1 text-sm font-medium" style={{ color: 'var(--hero-muted)' }}>
+                  <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_courses')}
                   </span>
                 </div>
 
-                <div className="hidden sm:block w-px h-10 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+                <div className="w-px h-8 bg-white/15 flex-shrink-0" />
 
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
                     40+
                   </span>
-                  <span className="mt-1 text-sm font-medium" style={{ color: 'var(--hero-muted)' }}>
+                  <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_coaches')}
                   </span>
                 </div>
 
-                <div className="hidden sm:block w-px h-10 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+                <div className="w-px h-8 bg-white/15 flex-shrink-0" />
 
-                <div className="flex flex-col items-center">
-                  <span className="text-3xl sm:text-4xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
                     10,000+
                   </span>
-                  <span className="mt-1 text-sm font-medium" style={{ color: 'var(--hero-muted)' }}>
+                  <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_students')}
                   </span>
                 </div>
@@ -181,6 +187,31 @@ export function HeroSection() {
           </div>
         </div>
 
+        </div>
+
+        {/* RIGHT COLUMN: Hero Image - RAISED UP - MOBILE: Order 1 (Above Text) */}
+        <div className="relative flex-shrink-0 w-full max-w-md lg:max-w-lg xl:max-w-xl flex justify-center lg:justify-start -mt-4 lg:-mt-12 order-1 lg:order-2">
+          <div className="relative hero-image-container">
+            {/* Decorative glow behind image */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-violet-500/20 to-teal-500/20 rounded-3xl blur-3xl scale-110 animate-pulse-slow" />
+            
+            {/* Main image with floating animation */}
+            <div className="relative animate-float-image">
+              <img
+                src="/Remove_background_completely_to_create_transparent-1776292610725.png"
+                alt="DeveWay Career Platform"
+                className="w-full h-auto max-w-[280px] sm:max-w-[320px] md:max-w-[380px] lg:max-w-[420px] xl:max-w-[480px] object-contain drop-shadow-2xl hero-main-image"
+                loading="eager"
+              />
+            </div>
+
+            {/* Floating decorative elements around image - NO ORANGE DOT */}
+            <div className="absolute -bottom-6 -right-6 w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 blur-sm animate-float-decorative" style={{ animationDelay: '1.5s' }} />
+            <div className="absolute top-1/2 -right-4 w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 blur-sm animate-float-decorative" style={{ animationDelay: '3s' }} />
+          </div>
+        </div>
+
+        </div>
       </div>
 
       <style jsx global>{`
@@ -343,18 +374,52 @@ export function HeroSection() {
         }
 
         /* ════════════════════════════════════════
-           STATS CARD
+           STATS CARD - COMPACT & LIGHT DESIGN
            ════════════════════════════════════════ */
 
         .hero-stats-card {
           transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .hero-stats-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+          transform: translateY(-2px);
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
         :root:not(.dark) .hero-stats-card:hover {
-          box-shadow: 0 20px 40px rgba(27, 35, 64, 0.12);
+          box-shadow: 0 12px 24px rgba(27, 35, 64, 0.1);
+        }
+
+        /* Compact & Light Stats Card Styling */
+        .stats-card-compact {
+          position: relative;
+        }
+
+        /* Hero image styling */
+        .hero-image-container {
+          transition: transform 0.3s ease;
+        }
+        .hero-image-container:hover {
+          transform: scale(1.02);
+        }
+        
+        .hero-main-image {
+          transition: filter 0.3s ease, transform 0.3s ease;
+        }
+        .hero-image-container:hover .hero-main-image {
+          filter: brightness(1.05) contrast(1.02);
+        }
+
+        /* Responsive adjustments for split layout */
+        @media (max-width: 1023px) {
+          .hero-section .items-center.lg\\:items-start {
+            align-items: center !important;
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .hero-section {
+            padding-left: 2rem;
+            padding-right: 2rem;
+          }
         }
 
         /* ════════════════════════════════════════
@@ -367,6 +432,34 @@ export function HeroSection() {
         }
         .animate-float {
           animation: float 10s infinite ease-in-out;
+        }
+
+        /* Image floating animation - gentler movement */
+        @keyframes floatImage {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          33% { transform: translateY(-10px) rotate(0.5deg); }
+          66% { transform: translateY(5px) rotate(-0.3deg); }
+        }
+        .animate-float-image {
+          animation: floatImage 6s ease-in-out infinite;
+        }
+
+        /* Slow pulse for glow effect */
+        @keyframes pulseSlow {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 0.9; transform: scale(1.05); }
+        }
+        .animate-pulse-slow {
+          animation: pulseSlow 4s ease-in-out infinite;
+        }
+
+        /* Decorative elements floating */
+        @keyframes floatDecorative {
+          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+          50% { transform: translate(5px, -8px) scale(1.1); opacity: 1; }
+        }
+        .animate-float-decorative {
+          animation: floatDecorative 3s ease-in-out infinite;
         }
 
         @keyframes fadeUp {
