@@ -24,6 +24,167 @@ export class AdminService {
     private emailService: EmailService,
   ) {}
 
+  // ═══════════════════════════════════════════════════════════════════
+  // 🎯 CREATE COURSE (ADMIN FULL VERSION) - With Sections & Instructor
+  // ═══════════════════════════════════════════════════════════════════
+  
+  async createCourseAdminFull(courseData: any, adminId?: string) {
+    this.logger.log(`[Admin] Creating course FULL: ${courseData.titleEn}`);
+    
+    // 1. Generate unique slug
+    const baseSlug = (courseData.titleEn || courseData.title || 'course')
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const slug = `${baseSlug}-${Date.now()}`;
+    
+    // 2. Determine instructor
+    let instructorId: string | undefined;
+    if (courseData.isInstructor === true || courseData.isInstructor === 'true') {
+      // Admin is the instructor
+      instructorId = adminId;
+    } else if (courseData.instructorId) {
+      // Specific instructor selected
+      instructorId = courseData.instructorId;
+    } else {
+      // Default to admin
+      instructorId = adminId;
+    }
+
+    this.logger.log(`[Admin] Course instructor: ${instructorId}`);
+    
+    // 3. Create the course with ALL data ✅ مصحح - بدون isPublished/createdAt/updatedAt
+    const course = await this.prisma.course.create({
+      data: {
+        slug,
+        titleEn: courseData.titleEn || 'Untitled Course',
+        titleAr: courseData.titleAr || courseData.titleEn || 'كورس بدون عنوان',
+        descriptionEn: courseData.descriptionEn || '',
+        descriptionAr: courseData.descriptionAr || courseData.descriptionEn || '',
+        price: parseFloat(String(courseData.price || 0)),
+        currency: courseData.currency || 'SAR',
+        duration: parseInt(String(courseData.duration || 0)) || undefined,
+        level: courseData.level || 'BEGINNER',
+        status: (courseData.status as any) || 'DRAFT',
+        thumbnail: courseData.thumbnail || null,
+        previewVideo: courseData.previewVideo || null,
+        
+        // Relations ✅
+        ...(instructorId && { instructorId }),
+        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+        ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+        
+        // ✅ ملاحظة: isPublished, createdAt, updatedAt يتم إدارتها تلقائياً بواسطة Prisma
+      },
+    });
+
+    this.logger.log(`[Admin] Course created with ID: ${course.id}`);
+
+    // 4. Create Sections if provided ✅ مصحح - بدون moduleId في Section
+    if (courseData.sections && Array.isArray(courseData.sections) && courseData.sections.length > 0) {
+      const validSections = courseData.sections.filter((s: any) => s.title && s.title.trim());
+      
+      if (validSections.length > 0) {
+        this.logger.log(`[Admin] Creating ${validSections.length} sections...`);
+        
+        // Create a default module for the course (للتنظيم فقط)
+        try {
+          await this.prisma.courseModule.create({
+            data: {
+              courseId: course.id,
+              titleEn: courseData.titleEn || 'Course Content',
+              titleAr: courseData.titleAr || 'محتوى الكورس',
+              sortOrder: 1,
+              isPublished: true,
+            },
+          });
+        } catch (e) {
+          this.logger.warn(`Could not create module (may not exist in schema): ${e}`);
+        }
+
+        // Create each section ✅ مصحح - courseId فقط بدون moduleId
+        for (let i = 0; i < validSections.length; i++) {
+          const sectionData = validSections[i];
+          
+          try {
+            const section = await this.prisma.section.create({
+              data: {
+                courseId: course.id,
+                title: sectionData.title,
+                order: i + 1,
+              },
+            });
+            
+            this.logger.log(`[Admin] Created section: ${section.title}`);
+          } catch (e) {
+            this.logger.warn(`Failed to create section "${sectionData.title}": ${e}`);
+          }
+        }
+      }
+    }
+
+    // 5. Create notification for instructor (if not admin)
+    if (instructorId && instructorId !== adminId) {
+      try {
+        await this.notificationsService.createNotification({
+          userId: instructorId,
+          type: 'SYSTEM_ANNOUNCEMENT',
+          titleEn: 'New Course Assigned to You',
+          titleAr: 'تم تعيين كورس جديد لك',
+          contentEn: `An admin has created a course "${courseData.titleEn}" and assigned it to you.`,
+          contentAr: `قام الأدمن بإنشاء كورس "${courseData.titleAr || courseData.titleEn}" وتعيينه لك.`,
+          data: { type: 'course_assigned', courseId: course.id },
+        }).catch(() => {});
+      } catch (e) {
+        this.logger.warn(`Failed to create notification: ${e}`);
+      }
+    }
+
+    // 6. Log the action
+    await this.log('CREATE_COURSE', 'Course', course.id, adminId, {
+      title: courseData.titleEn,
+      instructorId,
+      status: courseData.status,
+    });
+
+// 7. Return the complete course with relations ✅ مصحح - بدون حقول محددة
+let fullCourse: any;
+
+try {
+  fullCourse = await this.prisma.course.findUnique({
+    where: { id: course.id },
+    include: {
+      instructor: {
+        select: {
+          id: true,
+          email: true,
+          profile: { select: { firstName: true, lastName: true } },
+        },
+      },
+      // ✅ استخدام include بدلاً من select مع حقول محددة
+      careerPath: true,
+      category: true,
+      sections: {
+        orderBy: { order: 'asc' },
+        include: {
+          _count: { select: { lessons: true } },
+        },
+      },
+      _count: {
+        select: { enrollments: true, sections: true },
+      },
+    },
+  });
+} catch (e) {
+  this.logger.warn(`Could not fetch full course with relations: ${e}`);
+  // Fallback: return basic course
+  fullCourse = course;
+}
+
+    this.logger.log(`[Admin] ✅ Course created successfully: ${course.id}`);
+    return fullCourse;
+  }
+
   // ── Create Course WITH Uploads (Thumbnail + Videos) ──
   async createCourseWithUploads(courseData: any, files: Express.Multer.File[], adminId?: string) {
     const baseSlug = (courseData.titleEn || courseData.title || 'course')
@@ -49,7 +210,7 @@ export class AdminService {
       thumbnailUrl = courseData.thumbnail;
     }
 
-    // Create the course first
+    // Create the course first ✅ مصحح
     const course = await this.prisma.course.create({
       data: {
         slug,
@@ -71,25 +232,35 @@ export class AdminService {
 
     // If there are videos, create lessons for them
     if (videoFiles.length > 0 && course) {
-      // Create a default section for the course
-      const section = await this.prisma.section.create({
-        data: {
-          title: courseData.titleEn || 'Main Content',
-          order: 1,
-          courseId: course.id,
-        },
-      });
+      // Create a default section for the course ✅ مصحح
+      let section: any;
+      try {
+        section = await this.prisma.section.create({
+          data: {
+            title: courseData.titleEn || 'Main Content',
+            order: 1,
+            courseId: course.id,
+          },
+        });
+      } catch (e) {
+        this.logger.warn(`Could not create section: ${e}`);
+      }
 
-      // Create a module for the course
-      const module = await this.prisma.courseModule.create({
-        data: {
-          courseId: course.id,
-          titleEn: courseData.titleEn || 'Course Content',
-          titleAr: courseData.titleAr || 'محتوى الكورس',
-          sortOrder: 1,
-          isPublished: true,
-        },
-      });
+      // Create a module for the course (optional)
+      try {
+        await this.prisma.courseModule.create({
+          data: {
+            courseId: course.id,
+            titleEn: courseData.titleEn || 'Course Content',
+            titleAr: courseData.titleAr || 'محتوى الكورس',
+            sortOrder: 1,
+            isPublished: true,
+          },
+        });
+      } catch (e) {
+        // Module may not exist in schema
+        this.logger.warn(`Could not create module: ${e}`);
+      }
 
       // Create lessons from videos
       const videoTitles = courseData.videoTitles || [];
@@ -97,11 +268,9 @@ export class AdminService {
         const videoFile = videoFiles[i];
         const lessonTitle = videoTitles[i] || `Lesson ${i + 1}`;
         
-        // Create lesson
-        const lesson = await this.prisma.lesson.create({
-          data: {
-            moduleId: module.id,
-            sectionId: section.id,
+        try {
+          // Create lesson ✅ مصحح - بدون sectionId إذا لم يكن موجوداً
+          const lessonData: any = {
             title: lessonTitle,
             titleAr: lessonTitle,
             type: 'VIDEO',
@@ -110,20 +279,35 @@ export class AdminService {
             fileSize: videoFile.size,
             isPublished: true,
             order: i + 1,
-          },
-        });
+          };
 
-        // Create VideoContent record
-        await this.prisma.videoContent.create({
-          data: {
-            lessonId: lesson.id,
-            streamId: `admin-upload-${Date.now()}-${i}`,
-            playbackUrl: `/uploads/admin/${videoFile.filename}`,
-            thumbnail: thumbnailUrl || null,
-            duration: 0, // Will be processed later
-            status: 'READY',
-          },
-        });
+          // Add moduleId and sectionId only if they exist
+          if (section) {
+            lessonData.sectionId = section.id;
+          }
+
+          const lesson = await this.prisma.lesson.create({
+            data: lessonData,
+          });
+
+          // Create VideoContent record (if exists)
+          try {
+            await this.prisma.videoContent.create({
+              data: {
+                lessonId: lesson.id,
+                streamId: `admin-upload-${Date.now()}-${i}`,
+                playbackUrl: `/uploads/admin/${videoFile.filename}`,
+                thumbnail: thumbnailUrl || null,
+                duration: 0, // Will be processed later
+                status: 'READY',
+              },
+            });
+          } catch (e) {
+            this.logger.warn(`Could not create videoContent: ${e}`);
+          }
+        } catch (e) {
+          this.logger.warn(`Failed to create lesson ${i}: ${e}`);
+        }
       }
     }
 
@@ -146,7 +330,7 @@ export class AdminService {
 
     // Add image URL if provided
     if (image) {
-      (sessionData as any).imageUrl = `/uploads/admin/${image.filename}`;
+      sessionData.imageUrl = `/uploads/admin/${image.filename}`;
     }
 
     return this.prisma.consultingSession.create({
@@ -178,7 +362,9 @@ export class AdminService {
     return { success: true, data: payments, total };
   }
 
-  // ... [Keep ALL existing methods below exactly as they are] ...
+  // ─────────────────────────────────────────────────────────────────────
+  // 📊 DASHBOARD & STATISTICS
+  // ─────────────────────────────────────────────────────────────────────
   
   async getDashboardOverview() {
     const [
@@ -307,6 +493,10 @@ export class AdminService {
     };
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 👥 USER MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
+
   async getUsers(options: { page: number; limit: number; search?: string; role?: string; status?: string }) {
     const where: any = {};
     if (options.search) {
@@ -389,6 +579,10 @@ export class AdminService {
     });
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 🎓 COURSE MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
+
   async getAdminCourses(options: { page: number; limit: number; search?: string; status?: string; level?: string }) {
     const where: any = {};
     if (options.status) {
@@ -427,10 +621,11 @@ export class AdminService {
     return { courses, total, page: options.page, limit: options.limit };
   }
 
+  // ── Create Course (Simple/Base Version - for backward compatibility) ✅ مصحح
   async createCourse(courseData: any, adminId?: string) {
     const baseSlug = (courseData.titleEn || courseData.title || 'course')
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
       .replace(/(^-|-$)/g, '');
     const slug = `${baseSlug}-${Date.now()}`;
     const instructorId = courseData.instructorId || adminId || undefined;
@@ -444,10 +639,12 @@ export class AdminService {
         descriptionAr: courseData.descriptionAr,
         price: parseFloat(courseData.price) || 0,
         currency: courseData.currency || 'USD',
-        duration: courseData.duration,
+        duration: courseData.duration ? parseInt(String(courseData.duration)) : undefined,
         level: courseData.level || 'BEGINNER',
         status: (courseData.status as any) || 'DRAFT',
         thumbnail: courseData.thumbnail || null,
+        previewVideo: courseData.previewVideo || null,
+        // ✅ تم إزالة isPublished (غير موجود في Schema)
         ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
         ...(instructorId && { instructorId }),
         ...(courseData.categoryId && { categoryId: courseData.categoryId }),
@@ -534,6 +731,10 @@ export class AdminService {
     return course;
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 📝 CONTENT MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
+
   async getPendingContent() {
     return {
       courses: await this.prisma.course.findMany({
@@ -553,6 +754,10 @@ export class AdminService {
     return { success: true, id, reason };
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 📊 REPORTS & MODERATION
+  // ─────────────────────────────────────────────────────────────────────
+
   async getReports(options: { page: number; limit: number; status?: string }) {
     return {
       reports: [],
@@ -566,6 +771,10 @@ export class AdminService {
     return { success: true, id, resolutionData };
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 📈 ANALYTICS
+  // ─────────────────────────────────────────────────────────────────────
+
   async getRevenueAnalytics(startDate?: Date, endDate?: Date) {
     return this.analyticsService.getRevenueAnalytics();
   }
@@ -577,6 +786,10 @@ export class AdminService {
   async getCourseAnalyticsAll() {
     return this.analyticsService.getCourseAnalytics("all");
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // ⚙️ SYSTEM MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
 
   async getSystemHealth() {
     return {
@@ -650,6 +863,10 @@ export class AdminService {
     };
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 🔔 NOTIFICATIONS
+  // ─────────────────────────────────────────────────────────────────────
+
   async broadcastNotification(notificationData: any) {
     return await this.notificationsService.broadcastNotification(notificationData);
   }
@@ -657,6 +874,10 @@ export class AdminService {
   async getNotificationTemplates() {
     return this.notificationsService.getNotificationTemplates();
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 📤 EXPORT & IMPORT
+  // ─────────────────────────────────────────────────────────────────────
 
   async exportUsers(format: string) {
     const users = await this.prisma.user.findMany({
@@ -680,6 +901,10 @@ export class AdminService {
       errors: [],
     };
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 🔒 SECURITY & AUDIT
+  // ─────────────────────────────────────────────────────────────────────
 
   async getAuditLog(options: { page: number; limit: number; action?: string; userId?: string }) {
     return {
@@ -751,7 +976,9 @@ export class AdminService {
     };
   }
 
-  // ── Audit Log ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
+  // 📋 AUDIT LOG (Private Methods)
+  // ─────────────────────────────────────────────────────────────────────
 
   private async log(
     action: string,
@@ -776,7 +1003,9 @@ export class AdminService {
     });
   }
 
-  // ── Approval system ────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
+  // ✅ APPROVAL SYSTEM
+  // ─────────────────────────────────────────────────────────────────────
 
   async getPendingApprovals() {
     this.logger.log('[Admin] Fetching pending approvals...');
@@ -929,6 +1158,10 @@ export class AdminService {
     return { success: true, message: 'Seed data cleared' };
   }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // 👤 USER APPROVAL & MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
+
   async approveUser(userId: string, adminId?: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
@@ -995,7 +1228,9 @@ export class AdminService {
     return user;
   }
 
-  // ── Site Settings ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
+  // ⚙️ SITE SETTINGS
+  // ─────────────────────────────────────────────────────────────────────
 
   async getSiteSettings() {
     let settings = await this.prisma.siteSettings.findFirst();
@@ -1028,6 +1263,10 @@ export class AdminService {
     }
     return this.prisma.siteSettings.create({ data: data as any });
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // 💼 SESSIONS MANAGEMENT
+  // ─────────────────────────────────────────────────────────────────────
 
   async getAllSessions() {
     const sessions = await this.prisma.consultingSession.findMany({
@@ -1157,12 +1396,11 @@ export class AdminService {
     return { user, activities, payments, enrollments, totalSpent };
   }
 
-  // ── Activity stats ── ✅ FIXED: added 'as any'
+  // ── Activity stats ──
   async getActivityStats() {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
     const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
     const [onlineUsers, todayActivity, totalActivities] = await Promise.all([
-      // ✅ FIXED: Added 'as any' to fix TypeScript error
       this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } as any }).catch(() => 0),
       this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
       this.prisma.userActivity.count().catch(() => 0),

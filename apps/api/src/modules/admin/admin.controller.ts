@@ -161,26 +161,43 @@ export class AdminController {
     };
   }
 
-  // Course Management
-  @Get('courses')
-  @ApiOperation({ summary: 'Get all courses for admin' })
-  @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
-  async getAdminCourses(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: string,
+  // ═══════════════════════════════════════════════════════════════════
+  // 🎯 COURSE MANAGEMENT - IMPORTANT: Specific routes FIRST!
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── Create Course (Admin) - MUST be before @Get/@Post('courses') ──
+  @Post('courses/create')
+  @ApiOperation({ summary: 'Create new course (Admin only) - Full Version' })
+  @ApiResponse({ status: 201, description: 'Course created successfully' })
+  async createCourseAdmin(
+    @Body() body: {
+      titleEn: string;
+      titleAr?: string;
+      descriptionEn?: string;
+      descriptionAr?: string;
+      price?: number | string;
+      currency?: string;
+      duration?: number | string;
+      level?: string;
+      status?: string;
+      careerPathId?: string;
+      categoryId?: string;
+      thumbnail?: string;
+      previewVideo?: string;
+      isInstructor?: boolean;
+      instructorId?: string;
+      sections?: Array<{ title: string }>;
+    },
+    @Req() req: any,
   ) {
-    const courses = await this.adminService.getAdminCourses({
-      page: page || 1,
-      limit: limit || 20,
-      status,
-    });
+    console.log('[Admin] Creating course:', body.titleEn);
+    
+    const result = await this.adminService.createCourseAdminFull(body, req.user?.sub || req.user?.id);
+    
     return {
       success: true,
-      data: courses,
+      message: 'Course created successfully',
+      data: result,
     };
   }
 
@@ -226,19 +243,43 @@ export class AdminController {
     };
   }
 
+  // Course Management - General Routes
+  @Get('courses')
+  @ApiOperation({ summary: 'Get all courses for admin' })
+  @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
+  @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
+  async getAdminCourses(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('status') status?: string,
+  ) {
+    const courses = await this.adminService.getAdminCourses({
+      page: page || 1,
+      limit: limit || 20,
+      status,
+    });
+    return {
+      success: true,
+      data: courses,
+    };
+  }
+
+  // ── Create Course (Simple/Base Version) ──
   @Post('courses')
-  @ApiOperation({ summary: 'Create new course (Admin only)' })
+  @ApiOperation({ summary: 'Create new course - Base version (Admin only)' })
   @ApiResponse({ status: 201, description: 'Course created successfully' })
   async createCourseBase(@Body() courseData: {
     titleEn: string;
-    titleAr: string;
-    descriptionEn: string;
-    descriptionAr: string;
-    careerPathId: string;
-    price: number;
-    currency: string;
-    duration: number;
-    level: string;
+    titleAr?: string;
+    descriptionEn?: string;
+    descriptionAr?: string;
+    careerPathId?: string;
+    price?: number;
+    currency?: string;
+    duration?: number;
+    level?: string;
     thumbnail?: string;
     tags?: string[];
   }, @Req() req: any) {
@@ -860,12 +901,6 @@ export class AdminController {
   @Get('users/:id/detail')
   async getUserDetail(@Param('id') id: string) {
     const result = await this.adminService.getUserDetail(id);
-    return { success: true, data: result };
-  }
-
-  @Post('courses/create')
-  async createCourseAdmin(@Body() body: any, @Req() req: any) {
-    const result = await this.adminService.createCourse(body, req.user?.sub || req.user?.id);
     return { success: true, data: result };
   }
 

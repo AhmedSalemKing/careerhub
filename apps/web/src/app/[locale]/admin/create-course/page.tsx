@@ -229,34 +229,60 @@ export default function AdminCreateCoursePage() {
     setSaving(true)
     setError('')
     try {
-      // ✅ استخدام endpoint الأدمن البسيط (بدون files)
+      console.log('[Admin] Submitting course creation...')
+      
+      // ✅ Prepare payload with ALL data
       const payload = {
-        titleEn: form.titleEn,
-        titleAr: form.titleAr || form.titleEn,
-        descriptionEn: form.descriptionEn,
-        descriptionAr: form.descriptionAr || form.descriptionEn,
+        titleEn: form.titleEn.trim(),
+        titleAr: form.titleAr?.trim() || form.titleEn.trim(),
+        descriptionEn: form.descriptionEn?.trim(),
+        descriptionAr: form.descriptionAr?.trim() || form.descriptionEn?.trim(),
         careerPathId: form.careerPathId || undefined,
         categoryId: form.categoryId || undefined,
         price: parseFloat(form.price) || 0,
         currency: form.currency,
         level: form.level,
-        status: form.status === 'PENDING_REVIEW' ? 'APPROVED' : form.status, // الأدمن ي approvals تلقائياً
+        status: form.status === 'PENDING_REVIEW' ? 'APPROVED' : form.status, // Admin auto-approves
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         duration: parseInt(form.duration) || 0,
         isInstructor: form.isInstructor,
-        instructorId: form.instructorId || undefined,
-        sections: form.sections.filter((s) => s.title.trim()).map((s) => ({ title: s.title })),
+        instructorId: !form.isInstructor ? form.instructorId : undefined,
+        sections: form.sections
+          .filter((s) => s.title && s.title.trim())
+          .map((s) => ({ title: s.title.trim() })),
       }
       
-      // ✅ استخدام /admin/courses/create (البسيط والموثوق)
-      await post('/admin/courses/create', payload)
+      console.log('[Admin] Payload:', JSON.stringify(payload, null, 2))
       
-      // Success - redirect
+      // ✅ Call the FIXED endpoint
+      const response = await post('/admin/courses/create', payload)
+      
+      console.log('[Admin] ✅ Course created successfully!', response)
+      
+      // Success notification
+      alert(`✅ تم إنشاء الكورس بنجاح!\n\n${form.status === 'APPROVED' ? 'تم نشره مباشرة' : 'تم حفظ كمسودة'}`)
+      
+      // Redirect to courses list or dashboard
       router.push(`/${locale}/admin/courses`)
+      
     } catch (e: any) {
-      console.error('Create course error:', e)
-      setError(e?.response?.data?.message || e?.message || 'حدث خطأ، حاول مرة أخرى')
+      console.error('[Admin] ❌ Create course error:', e)
+      
+      // Better error messages
+      let errorMsg = 'حدث خطأ، حاول مرة أخرى'
+      
+      if (e?.response?.status === 404) {
+        errorMsg = 'خطأ: الـ endpoint غير موجود (404) - تأكد من تشغيل السيرفر'
+      } else if (e?.response?.status === 401 || e?.response?.status === 403) {
+        errorMsg = 'ليس لديك صلاحية لإنشاء كورس'
+      } else if (e?.response?.data?.message) {
+        errorMsg = e.response.data.message
+      } else if (e?.message) {
+        errorMsg = e.message
+      }
+      
+      setError(errorMsg)
     } finally {
       setSaving(false)
     }
