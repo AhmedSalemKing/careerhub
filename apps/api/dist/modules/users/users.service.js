@@ -83,7 +83,6 @@ let UsersService = UsersService_1 = class UsersService {
         return sanitizedUser;
     }
     async updateProfile(userId, updateProfileDto) {
-        var _a, _b, _c, _d;
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             include: { profile: true },
@@ -91,41 +90,26 @@ let UsersService = UsersService_1 = class UsersService {
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        const firstName = updateProfileDto.firstName || ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || '';
-        const lastName = updateProfileDto.lastName || ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || '';
-        const updatedProfile = await this.prisma.userProfile.upsert({
-            where: { userId },
-            update: {
-                firstName,
-                lastName,
-                phone: updateProfileDto.phone,
-                dateOfBirth: updateProfileDto.dateOfBirth,
-                gender: updateProfileDto.gender,
-                nationality: updateProfileDto.nationality,
-                country: updateProfileDto.country,
-                city: updateProfileDto.city,
-                bio: updateProfileDto.bio,
-                linkedinUrl: updateProfileDto.linkedinUrl,
-                language: updateProfileDto.language,
-                timezone: updateProfileDto.timezone,
-                ...(updateProfileDto.avatar !== undefined && { avatar: updateProfileDto.avatar }),
-            },
-            create: {
-                userId,
-                firstName,
-                lastName,
-                phone: updateProfileDto.phone,
-                dateOfBirth: updateProfileDto.dateOfBirth,
-                gender: updateProfileDto.gender,
-                nationality: updateProfileDto.nationality,
-                country: updateProfileDto.country,
-                city: updateProfileDto.city,
-                bio: updateProfileDto.bio,
-                linkedinUrl: updateProfileDto.linkedinUrl,
-                language: (_c = updateProfileDto.language) !== null && _c !== void 0 ? _c : 'en',
-                timezone: (_d = updateProfileDto.timezone) !== null && _d !== void 0 ? _d : 'UTC',
-                ...(updateProfileDto.avatar !== undefined && { avatar: updateProfileDto.avatar }),
-            },
+        const updatedProfile = await this.prisma.transaction(async (tx) => {
+            var _a, _b;
+            const profile = await tx.userProfile.update({
+                where: { userId },
+                data: {
+                    firstName: updateProfileDto.firstName || ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName),
+                    lastName: updateProfileDto.lastName || ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName),
+                    phone: updateProfileDto.phone,
+                    dateOfBirth: updateProfileDto.dateOfBirth,
+                    gender: updateProfileDto.gender,
+                    nationality: updateProfileDto.nationality,
+                    country: updateProfileDto.country,
+                    city: updateProfileDto.city,
+                    bio: updateProfileDto.bio,
+                    linkedinUrl: updateProfileDto.linkedinUrl,
+                    language: updateProfileDto.language,
+                    timezone: updateProfileDto.timezone,
+                },
+            });
+            return profile;
         });
         this.logger.log(`Profile updated for user: ${user.email}`);
         return updatedProfile;

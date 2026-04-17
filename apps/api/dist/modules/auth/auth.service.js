@@ -153,7 +153,7 @@ let AuthService = AuthService_1 = class AuthService {
                 stripeCustomerId: true, createdAt: true, updatedAt: true,
                 accountType: true, status: true, cvUrl: true, bio: true, experience: true,
                 speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
-                approvedAt: true, rejectedAt: true, rejectedReason: true,
+                approvedAt: true, rejectedAt: true, rejectedReason: true, lastSeenAt: true,
                 profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
             }
         });
@@ -331,13 +331,43 @@ let AuthService = AuthService_1 = class AuthService {
         });
         this.logger.log(`Password changed for user: ${user.email}`);
     }
+    async getMe(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true, email: true, role: true, isActive: true,
+                accountType: true, status: true, createdAt: true,
+                bio: true, experience: true, speciality: true,
+                profile: {
+                    select: {
+                        firstName: true, lastName: true, avatar: true,
+                        bio: true, phone: true, language: true, timezone: true,
+                    }
+                }
+            }
+        });
+        return user;
+    }
+    async updateProfile(userId, data) {
+        const profile = await this.prisma.userProfile.update({
+            where: { userId },
+            data: {
+                ...(data.firstName !== undefined && { firstName: data.firstName }),
+                ...(data.lastName !== undefined && { lastName: data.lastName }),
+                ...(data.bio !== undefined && { bio: data.bio }),
+                ...(data.phone !== undefined && { phone: data.phone }),
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
+            }
+        });
+        return { success: true, data: profile };
+    }
     async adminLogin(loginDto) {
         const { email, password } = loginDto;
         const user = await this.prisma.user.findUnique({
             where: { email },
             include: { profile: true },
         });
-        if (!user || !user.isActive || user.role !== 'ADMIN') {
+        if (!user || !user.isActive || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.accountType !== 'ADMIN' && user.accountType !== 'SUPER_ADMIN')) {
             throw new common_1.UnauthorizedException('Invalid credentials or insufficient permissions');
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);

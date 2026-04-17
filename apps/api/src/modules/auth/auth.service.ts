@@ -458,7 +458,7 @@ export class AuthService {
       include: { profile: true },
     });
 
-    if (!user || !user.isActive || user.role !== 'ADMIN') {
+    if (!user || !user.isActive || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.accountType !== 'ADMIN' && user.accountType !== 'SUPER_ADMIN')) {
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
 

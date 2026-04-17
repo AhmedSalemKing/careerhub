@@ -37,6 +37,7 @@ export declare class AuthService {
                 language: string;
             };
             id: string;
+            createdAt: Date;
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
             isActive: boolean;
@@ -54,7 +55,6 @@ export declare class AuthService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
-            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         };
@@ -74,6 +74,7 @@ export declare class AuthService {
                 language: string;
             };
             id: string;
+            createdAt: Date;
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
             isActive: boolean;
@@ -91,7 +92,6 @@ export declare class AuthService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
-            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         };
@@ -111,6 +111,55 @@ export declare class AuthService {
     }): Promise<void>;
     verifyEmail(token: string): Promise<void>;
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
+    getMe(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        email: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        isActive: boolean;
+        accountType: string;
+        status: string;
+        bio: string;
+        experience: number;
+        speciality: string;
+        profile: {
+            bio: string;
+            firstName: string;
+            lastName: string;
+            phone: string;
+            language: string;
+            avatar: string;
+            timezone: string;
+        };
+    }>;
+    updateProfile(userId: string, data: {
+        firstName?: string;
+        lastName?: string;
+        bio?: string;
+        phone?: string;
+        avatar?: string;
+    }): Promise<{
+        success: boolean;
+        data: {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            bio: string | null;
+            linkedinUrl: string | null;
+            updatedAt: Date;
+            firstName: string;
+            lastName: string;
+            phone: string | null;
+            country: string | null;
+            city: string | null;
+            language: string;
+            dateOfBirth: Date | null;
+            gender: import(".prisma/client").$Enums.Gender | null;
+            nationality: string | null;
+            avatar: string | null;
+            timezone: string;
+        };
+    }>;
     adminLogin(loginDto: {
         email: string;
         password: string;
@@ -123,6 +172,7 @@ export declare class AuthService {
                 language: string;
             };
             id: string;
+            createdAt: Date;
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
             isActive: boolean;
@@ -140,7 +190,6 @@ export declare class AuthService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
-            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         };

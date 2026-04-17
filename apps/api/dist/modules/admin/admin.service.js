@@ -60,6 +60,280 @@ let AdminService = AdminService_1 = class AdminService {
         this.emailService = emailService;
         this.logger = new common_1.Logger(AdminService_1.name);
     }
+    async createCourseAdminFull(courseData, adminId) {
+        this.logger.log(`[Admin] Creating course FULL: ${courseData.titleEn}`);
+        const baseSlug = (courseData.titleEn || courseData.title || 'course')
+            .toLowerCase()
+            .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        const slug = `${baseSlug}-${Date.now()}`;
+        let instructorId;
+        if (courseData.isInstructor === true || courseData.isInstructor === 'true') {
+            instructorId = adminId;
+        }
+        else if (courseData.instructorId) {
+            instructorId = courseData.instructorId;
+        }
+        else {
+            instructorId = adminId;
+        }
+        this.logger.log(`[Admin] Course instructor: ${instructorId}`);
+        const course = await this.prisma.course.create({
+            data: {
+                slug,
+                titleEn: courseData.titleEn || 'Untitled Course',
+                titleAr: courseData.titleAr || courseData.titleEn || 'كورس بدون عنوان',
+                descriptionEn: courseData.descriptionEn || '',
+                descriptionAr: courseData.descriptionAr || courseData.descriptionEn || '',
+                price: parseFloat(String(courseData.price || 0)),
+                currency: courseData.currency || 'SAR',
+                duration: parseInt(String(courseData.duration || 0)) || undefined,
+                level: courseData.level || 'BEGINNER',
+                status: courseData.status || 'DRAFT',
+                thumbnail: courseData.thumbnail || null,
+                previewVideo: courseData.previewVideo || null,
+                ...(instructorId && { instructorId }),
+                ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+                ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+            },
+        });
+        this.logger.log(`[Admin] Course created with ID: ${course.id}`);
+        if (courseData.sections && Array.isArray(courseData.sections) && courseData.sections.length > 0) {
+            const validSections = courseData.sections.filter((s) => s.title && s.title.trim());
+            if (validSections.length > 0) {
+                this.logger.log(`[Admin] Creating ${validSections.length} sections...`);
+                try {
+                    await this.prisma.courseModule.create({
+                        data: {
+                            courseId: course.id,
+                            titleEn: courseData.titleEn || 'Course Content',
+                            titleAr: courseData.titleAr || 'محتوى الكورس',
+                            sortOrder: 1,
+                            isPublished: true,
+                        },
+                    });
+                }
+                catch (e) {
+                    this.logger.warn(`Could not create module (may not exist in schema): ${e}`);
+                }
+                for (let i = 0; i < validSections.length; i++) {
+                    const sectionData = validSections[i];
+                    try {
+                        const section = await this.prisma.section.create({
+                            data: {
+                                courseId: course.id,
+                                title: sectionData.title,
+                                order: i + 1,
+                            },
+                        });
+                        this.logger.log(`[Admin] Created section: ${section.title}`);
+                    }
+                    catch (e) {
+                        this.logger.warn(`Failed to create section "${sectionData.title}": ${e}`);
+                    }
+                }
+            }
+        }
+        if (instructorId && instructorId !== adminId) {
+            try {
+                await this.notificationsService.createNotification({
+                    userId: instructorId,
+                    type: 'SYSTEM_ANNOUNCEMENT',
+                    titleEn: 'New Course Assigned to You',
+                    titleAr: 'تم تعيين كورس جديد لك',
+                    contentEn: `An admin has created a course "${courseData.titleEn}" and assigned it to you.`,
+                    contentAr: `قام الأدمن بإنشاء كورس "${courseData.titleAr || courseData.titleEn}" وتعيينه لك.`,
+                    data: { type: 'course_assigned', courseId: course.id },
+                }).catch(() => { });
+            }
+            catch (e) {
+                this.logger.warn(`Failed to create notification: ${e}`);
+            }
+        }
+        await this.log('CREATE_COURSE', 'Course', course.id, adminId, {
+            title: courseData.titleEn,
+            instructorId,
+            status: courseData.status,
+        });
+        let fullCourse;
+        try {
+            fullCourse = await this.prisma.course.findUnique({
+                where: { id: course.id },
+                include: {
+                    instructor: {
+                        select: {
+                            id: true,
+                            email: true,
+                            profile: { select: { firstName: true, lastName: true } },
+                        },
+                    },
+                    careerPath: true,
+                    category: true,
+                    sections: {
+                        orderBy: { order: 'asc' },
+                        include: {
+                            _count: { select: { lessons: true } },
+                        },
+                    },
+                    _count: {
+                        select: { enrollments: true, sections: true },
+                    },
+                },
+            });
+        }
+        catch (e) {
+            this.logger.warn(`Could not fetch full course with relations: ${e}`);
+            fullCourse = course;
+        }
+        this.logger.log(`[Admin] ✅ Course created successfully: ${course.id}`);
+        return fullCourse;
+    }
+    async createCourseWithUploads(courseData, files, adminId) {
+        const baseSlug = (courseData.titleEn || courseData.title || 'course')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+        const slug = `${baseSlug}-${Date.now()}`;
+        const instructorId = courseData.isInstructor
+            ? adminId
+            : (courseData.instructorId || adminId || undefined);
+        const imageFiles = files.filter(f => f.mimetype.startsWith('image/'));
+        const videoFiles = files.filter(f => f.mimetype.startsWith('video/'));
+        let thumbnailUrl = null;
+        if (imageFiles.length > 0) {
+            thumbnailUrl = `/uploads/admin/${imageFiles[0].filename}`;
+        }
+        else if (courseData.thumbnail) {
+            thumbnailUrl = courseData.thumbnail;
+        }
+        const course = await this.prisma.course.create({
+            data: {
+                slug,
+                titleEn: courseData.titleEn || courseData.title || 'Untitled',
+                titleAr: courseData.titleAr,
+                descriptionEn: courseData.descriptionEn || courseData.description,
+                descriptionAr: courseData.descriptionAr,
+                price: parseFloat(courseData.price) || 0,
+                currency: courseData.currency || 'USD',
+                duration: courseData.duration ? parseInt(courseData.duration) : undefined,
+                level: courseData.level || 'BEGINNER',
+                status: courseData.status || 'PUBLISHED',
+                thumbnail: thumbnailUrl,
+                ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+                ...(instructorId && { instructorId }),
+                ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+            },
+        });
+        if (videoFiles.length > 0 && course) {
+            let section;
+            try {
+                section = await this.prisma.section.create({
+                    data: {
+                        title: courseData.titleEn || 'Main Content',
+                        order: 1,
+                        courseId: course.id,
+                    },
+                });
+            }
+            catch (e) {
+                this.logger.warn(`Could not create section: ${e}`);
+            }
+            try {
+                await this.prisma.courseModule.create({
+                    data: {
+                        courseId: course.id,
+                        titleEn: courseData.titleEn || 'Course Content',
+                        titleAr: courseData.titleAr || 'محتوى الكورس',
+                        sortOrder: 1,
+                        isPublished: true,
+                    },
+                });
+            }
+            catch (e) {
+                this.logger.warn(`Could not create module: ${e}`);
+            }
+            const videoTitles = courseData.videoTitles || [];
+            for (let i = 0; i < videoFiles.length; i++) {
+                const videoFile = videoFiles[i];
+                const lessonTitle = videoTitles[i] || `Lesson ${i + 1}`;
+                try {
+                    const lessonData = {
+                        title: lessonTitle,
+                        titleAr: lessonTitle,
+                        type: 'VIDEO',
+                        videoUrl: `/uploads/admin/${videoFile.filename}`,
+                        fileName: videoFile.originalname,
+                        fileSize: videoFile.size,
+                        isPublished: true,
+                        order: i + 1,
+                    };
+                    if (section) {
+                        lessonData.sectionId = section.id;
+                    }
+                    const lesson = await this.prisma.lesson.create({
+                        data: lessonData,
+                    });
+                    try {
+                        await this.prisma.videoContent.create({
+                            data: {
+                                lessonId: lesson.id,
+                                streamId: `admin-upload-${Date.now()}-${i}`,
+                                playbackUrl: `/uploads/admin/${videoFile.filename}`,
+                                thumbnail: thumbnailUrl || null,
+                                duration: 0,
+                                status: 'READY',
+                            },
+                        });
+                    }
+                    catch (e) {
+                        this.logger.warn(`Could not create videoContent: ${e}`);
+                    }
+                }
+                catch (e) {
+                    this.logger.warn(`Failed to create lesson ${i}: ${e}`);
+                }
+            }
+        }
+        return course;
+    }
+    async createSessionWithImage(data, image) {
+        const sessionData = {
+            studentId: data.studentId,
+            consultantId: data.consultantId,
+            scheduledAt: new Date(data.scheduledAt),
+            topic: data.topic || '',
+            meetingMethod: data.meetingMethod || 'ONLINE',
+            price: Number(data.price) || 0,
+            duration: data.duration || 60,
+            status: 'CONFIRMED',
+            paymentStatus: 'UNPAID',
+        };
+        if (image) {
+            sessionData.imageUrl = `/uploads/admin/${image.filename}`;
+        }
+        return this.prisma.consultingSession.create({
+            data: sessionData,
+        });
+    }
+    async getAllConfirmedPayments() {
+        const payments = await this.prisma.payment.findMany({
+            where: {
+                status: { in: ['SUCCESS', 'COMPLETED'] },
+            },
+            include: {
+                user: {
+                    select: {
+                        email: true,
+                        profile: { select: { firstName: true, lastName: true } },
+                    },
+                },
+                course: { select: { titleAr: true, titleEn: true } },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        const total = payments.reduce((sum, p) => sum + p.amount, 0);
+        return { success: true, data: payments, total };
+    }
     async getDashboardOverview() {
         const [totalUsers, activeCourses, monthlyRevenue, pendingSessions, recentUsers, recentPayments,] = await Promise.all([
             this.prisma.user.count().catch(() => 0),
@@ -273,7 +547,7 @@ let AdminService = AdminService_1 = class AdminService {
     async createCourse(courseData, adminId) {
         const baseSlug = (courseData.titleEn || courseData.title || 'course')
             .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
             .replace(/(^-|-$)/g, '');
         const slug = `${baseSlug}-${Date.now()}`;
         const instructorId = courseData.instructorId || adminId || undefined;
@@ -286,10 +560,11 @@ let AdminService = AdminService_1 = class AdminService {
                 descriptionAr: courseData.descriptionAr,
                 price: parseFloat(courseData.price) || 0,
                 currency: courseData.currency || 'USD',
-                duration: courseData.duration,
+                duration: courseData.duration ? parseInt(String(courseData.duration)) : undefined,
                 level: courseData.level || 'BEGINNER',
                 status: courseData.status || 'DRAFT',
                 thumbnail: courseData.thumbnail || null,
+                previewVideo: courseData.previewVideo || null,
                 ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
                 ...(instructorId && { instructorId }),
                 ...(courseData.categoryId && { categoryId: courseData.categoryId }),
@@ -608,7 +883,7 @@ let AdminService = AdminService_1 = class AdminService {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const [totalUsers, totalCourses, pendingUsers, allPayments, recentUsers,] = await Promise.all([
+        const [totalUsers, totalCourses, pendingUsers, allPayments, allPaidSessions, recentUsers,] = await Promise.all([
             this.prisma.user.count({
                 where: { accountType: { not: 'ADMIN' } },
             }).catch(() => 0),
@@ -621,6 +896,11 @@ let AdminService = AdminService_1 = class AdminService {
             this.prisma.payment.findMany({
                 where: { status: 'SUCCESS' },
                 select: { amount: true, createdAt: true },
+                orderBy: { createdAt: 'desc' },
+            }).catch(() => []),
+            this.prisma.consultingSession.findMany({
+                where: { paymentStatus: 'PAID' },
+                select: { price: true, createdAt: true },
                 orderBy: { createdAt: 'desc' },
             }).catch(() => []),
             this.prisma.user.findMany({
@@ -638,19 +918,22 @@ let AdminService = AdminService_1 = class AdminService {
             }).catch(() => []),
         ]);
         const toNum = (payments) => payments.map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
-        const totalRevenue = toNum(allPayments);
-        const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth));
-        const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay));
+        const toNumS = (sessions) => sessions.map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
+        const totalRevenue = toNum(allPayments) + toNumS(allPaidSessions);
+        const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth))
+            + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfMonth));
+        const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay))
+            + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfDay));
         const monthlyChart = [];
         for (let i = 11; i >= 0; i--) {
             const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
             const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
             const rev = allPayments
-                .filter(p => {
-                const pd = new Date(p.createdAt);
-                return pd >= d && pd < end;
-            })
-                .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
+                .filter(p => { const pd = new Date(p.createdAt); return pd >= d && pd < end; })
+                .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0)
+                + allPaidSessions
+                    .filter(s => { const sd = new Date(s.createdAt); return sd >= d && sd < end; })
+                    .map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
             monthlyChart.push({
                 month: d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' }),
                 revenue: rev,
