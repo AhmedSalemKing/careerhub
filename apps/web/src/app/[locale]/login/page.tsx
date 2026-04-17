@@ -30,7 +30,7 @@ export default function LoginPage() {
         window.location.href = redirectTo
         return
       }
-      if (user.accountType === 'ADMIN') {
+      if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
         window.location.href = `/${locale}/admin`
       } else {
         window.location.href = `/${locale}/dashboard`
@@ -67,20 +67,23 @@ export default function LoginPage() {
 
       store.setToken(token)
       setToken(token)
+      localStorage.setItem('deveway_token', token)
       localStorage.setItem('careerhub_token', token)
       document.cookie = `careerhub_token=${token}; path=/; SameSite=Lax; max-age=604800`
       if (refreshToken) {
         store.setRefreshToken(refreshToken)
         setRefreshToken(refreshToken)
+        localStorage.setItem('deveway_refresh', refreshToken)
         localStorage.setItem('careerhub_refresh', refreshToken)
       }
       store.setUser(user as Parameters<typeof store.setUser>[0])
       setUser(user as Parameters<typeof setUser>[0])
+      localStorage.setItem('deveway_user', JSON.stringify(user))
       localStorage.setItem('careerhub_user', JSON.stringify(user))
 
       window.dispatchEvent(new Event('auth:updated'))
 
-      if (user.accountType === 'ADMIN') {
+      if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
         window.location.href = `/${locale}/admin`
       } else {
         const params = new URLSearchParams(window.location.search)

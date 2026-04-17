@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const raw = localStorage.getItem('deveway_user')
         if (!raw) { setAuthorized(false); return }
         const u = JSON.parse(raw)
-        if (u?.accountType === 'ADMIN') {
+        if (u?.accountType === 'ADMIN' || u?.accountType === 'SUPER_ADMIN') {
           setAuthorized(true)
         } else {
           setAuthorized(false)

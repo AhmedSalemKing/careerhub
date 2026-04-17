@@ -61,7 +61,7 @@ export function useAuth() {
       // ── Notify Navbar + redirect ──
       window.dispatchEvent(new Event('auth:updated'))
 
-      if (user?.accountType === 'ADMIN') {
+      if (user?.accountType === 'ADMIN' || user?.accountType === 'SUPER_ADMIN') {
         window.location.href = `/${locale}/admin`
         return
       }
