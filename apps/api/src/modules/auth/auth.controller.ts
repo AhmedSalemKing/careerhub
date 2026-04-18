@@ -109,7 +109,7 @@ export class AuthController {
         },
       };
     } catch (error) {
-      this.logger.warn('[AUTH CONTROLLER] login failed', sanitize({ operation: 'login', reason: error instanceof Error ? error.message : String(error) }));
+      this.logger.error(`[AUTH CTRL] login FAILED for ${loginDto.email}: ${error instanceof Error ? error.stack || error.message : String(error)}`);
       // Re-throw ForbiddenException as-is so frontend can show "under review" / "rejected" UI
       if (error instanceof ForbiddenException) {
         throw error;
@@ -323,7 +323,7 @@ export class AuthController {
         },
       };
     } catch (error) {
-      this.logger.warn('[AUTH CONTROLLER] adminLogin failed', sanitize({ operation: 'adminLogin', reason: error instanceof Error ? error.message : String(error) }));
+      this.logger.error(`[AUTH CTRL] adminLogin FAILED for ${loginDto.email}: ${error instanceof Error ? error.stack || error.message : String(error)}`);
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
   }

@@ -153,30 +153,37 @@ export class AuthService {
   async login(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
 
-    console.log('[Auth Login] attempt:', email);
+    this.logger.log(`[LOGIN] attempt: ${email}`);
 
     // Find user with profile
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true, email: true, password: true, role: true, isActive: true, deletedAt: true,
-        stripeCustomerId: true, createdAt: true, updatedAt: true,
-        accountType: true, status: true, cvUrl: true, bio: true, experience: true,
-        speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
-        approvedAt: true, rejectedAt: true, rejectedReason: true, lastSeenAt: true,
-        profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
-      }
-    });
+    let user: any;
+    try {
+      user = await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true, email: true, password: true, role: true, isActive: true, deletedAt: true,
+          stripeCustomerId: true, createdAt: true, updatedAt: true,
+          accountType: true, status: true, cvUrl: true, bio: true, experience: true,
+          speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
+          approvedAt: true, rejectedAt: true, rejectedReason: true, lastSeenAt: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
+        }
+      });
+    } catch (dbErr) {
+      this.logger.error(`[LOGIN] DB query failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`);
+      throw dbErr;
+    }
 
-    console.log('[Auth Login] user:', user ? { id: user.id, accountType: user.accountType, isActive: user.isActive, status: user.status } : 'NOT FOUND');
+    this.logger.log(`[LOGIN] user found: ${user ? 'YES' : 'NO'}, id=${user?.id}, accountType=${user?.accountType}, isActive=${user?.isActive}, status=${user?.status}`);
 
     if (!user || user.isActive === false) {
+      this.logger.warn(`[LOGIN] rejected: user=${!!user}, isActive=${user?.isActive}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    console.log('[Auth Login] passwordMatch:', isPasswordValid);
+    this.logger.log(`[LOGIN] passwordMatch: ${isPasswordValid}, hashPrefix: ${user.password?.substring(0, 7)}`);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -193,10 +200,22 @@ export class AuthService {
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    let accessToken: string, refreshToken: string;
+    try {
+      ({ accessToken, refreshToken } = await this.generateTokens(user));
+      this.logger.log(`[LOGIN] tokens generated OK`);
+    } catch (tokenErr) {
+      this.logger.error(`[LOGIN] token generation failed: ${tokenErr instanceof Error ? tokenErr.message : String(tokenErr)}`);
+      throw tokenErr;
+    }
 
     // Store refresh token
-    await this.storeRefreshToken(user.id, refreshToken);
+    try {
+      await this.storeRefreshToken(user.id, refreshToken);
+    } catch (sessionErr) {
+      this.logger.error(`[LOGIN] storeRefreshToken failed: ${sessionErr instanceof Error ? sessionErr.message : String(sessionErr)}`);
+      throw sessionErr;
+    }
 
     // Update last login
     await this.prisma.user.update({
@@ -204,7 +223,7 @@ export class AuthService {
       data: { updatedAt: new Date() },
     });
 
-    this.logger.log(`User logged in: ${email}`);
+    this.logger.log(`[LOGIN] success: ${email}`);
 
     return {
       user: this.sanitizeUser(user as any),
@@ -457,41 +476,70 @@ export class AuthService {
   async adminLogin(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
 
+    this.logger.log(`[ADMIN-LOGIN] attempt: ${email}`);
+
     // Find admin user
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      include: { profile: true },
-    });
+    let user: any;
+    try {
+      user = await this.prisma.user.findUnique({
+        where: { email },
+        include: { profile: true },
+      });
+    } catch (dbErr) {
+      this.logger.error(`[ADMIN-LOGIN] DB query failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`);
+      throw dbErr;
+    }
+
+    this.logger.log(`[ADMIN-LOGIN] user found: ${user ? 'YES' : 'NO'}, role=${user?.role}, accountType=${user?.accountType}, isActive=${user?.isActive}`);
 
     const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
     if (!user || !user.isActive || (!adminRoles.includes(user.role) && !adminRoles.includes(user.accountType))) {
+      this.logger.warn(`[ADMIN-LOGIN] rejected: user=${!!user}, isActive=${user?.isActive}, role=${user?.role}, accountType=${user?.accountType}`);
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    this.logger.log(`[ADMIN-LOGIN] passwordMatch: ${isPasswordValid}, hashPrefix: ${user.password?.substring(0, 7)}`);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
 
     // Generate tokens
-    const { accessToken, refreshToken } = await this.generateTokens(user);
+    let accessToken: string, refreshToken: string;
+    try {
+      ({ accessToken, refreshToken } = await this.generateTokens(user));
+      this.logger.log(`[ADMIN-LOGIN] tokens generated OK`);
+    } catch (tokenErr) {
+      this.logger.error(`[ADMIN-LOGIN] token generation failed: ${tokenErr instanceof Error ? tokenErr.message : String(tokenErr)}`);
+      throw tokenErr;
+    }
 
     // Store refresh token
-    await this.storeRefreshToken(user.id, refreshToken);
+    try {
+      await this.storeRefreshToken(user.id, refreshToken);
+    } catch (sessionErr) {
+      this.logger.error(`[ADMIN-LOGIN] storeRefreshToken failed: ${sessionErr instanceof Error ? sessionErr.message : String(sessionErr)}`);
+      throw sessionErr;
+    }
 
     // Log admin login
-    await this.prisma.adminLog.create({
-      data: {
-        adminId: user.id,
-        action: 'LOGIN',
-        resource: 'Admin',
-        ipAddress: '', // Would be populated from request
-        userAgent: '', // Would be populated from request
-      },
-    });
+    try {
+      await this.prisma.adminLog.create({
+        data: {
+          adminId: user.id,
+          action: 'LOGIN',
+          resource: 'Admin',
+          ipAddress: '',
+          userAgent: '',
+        },
+      });
+    } catch (logErr) {
+      this.logger.error(`[ADMIN-LOGIN] adminLog.create failed: ${logErr instanceof Error ? logErr.message : String(logErr)}`);
+      // Don't throw — login should still succeed even if logging fails
+    }
 
-    this.logger.log(`Admin logged in: ${email}`);
+    this.logger.log(`[ADMIN-LOGIN] success: ${email}`);
 
     return {
       user: this.sanitizeUser(user),
