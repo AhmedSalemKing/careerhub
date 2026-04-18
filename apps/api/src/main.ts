@@ -34,10 +34,15 @@ async function bootstrap() {
 
   // CORS configuration
   app.enableCors({
-    origin: true, // allow all origins for demo
+    origin: [
+      'http://localhost:3000',
+      'https://deve-way.vercel.app',
+      /\.vercel\.app$/,
+      /deve-way/,
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Compression

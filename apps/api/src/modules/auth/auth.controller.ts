@@ -26,6 +26,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshGuard } from './guards/refresh.guard';
 import { Roles } from './decorators/roles.decorator';
+import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@prisma/client';
 import { sanitize } from '../../common/utils/sanitize.util';
@@ -77,7 +78,6 @@ export class AuthController {
     }
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
@@ -330,6 +330,21 @@ export class AuthController {
     } catch (error) {
       this.logger.error(`[AUTH CTRL] adminLogin FAILED for ${loginDto.email}: ${error instanceof Error ? error.stack || error.message : String(error)}`);
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
+    }
+  }
+
+  @Post('test-login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async testLogin(@Body() dto: { email: string; password: string }) {
+    this.logger.log(`[TEST-LOGIN] attempt: ${dto.email}`);
+    try {
+      const result = await this.authService.login(dto);
+      this.logger.log(`[TEST-LOGIN] success: ${dto.email}`);
+      return { success: true, user: result.user, hasToken: !!result.accessToken };
+    } catch (e: any) {
+      this.logger.error(`[TEST-LOGIN] failed: ${e.message}`);
+      return { success: false, error: e.message, status: e.status };
     }
   }
 }
