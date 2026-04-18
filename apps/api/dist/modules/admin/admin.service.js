@@ -563,6 +563,7 @@ let AdminService = AdminService_1 = class AdminService {
         });
     }
     async getPendingCourses() {
+        var _a;
         try {
             const courses = await this.prisma.course.findMany({
                 where: { status: 'PENDING_REVIEW' },
@@ -585,7 +586,12 @@ let AdminService = AdminService_1 = class AdminService {
             return { success: true, data: courses };
         }
         catch (e) {
-            this.logger.error(`[getPendingCourses] ERROR: ${e.message}`, e.stack);
+            console.error('[AdminService] getPendingCourses error:', {
+                message: e.message,
+                code: e.code,
+                meta: e.meta,
+                stack: (_a = e.stack) === null || _a === void 0 ? void 0 : _a.split('\n').slice(0, 3).join(' | '),
+            });
             return { success: true, data: [] };
         }
     }
@@ -848,6 +854,7 @@ let AdminService = AdminService_1 = class AdminService {
         });
     }
     async getPendingApprovals() {
+        var _a;
         try {
             this.logger.log('[Admin] Fetching pending approvals...');
             const users = await this.prisma.user.findMany({
@@ -879,11 +886,17 @@ let AdminService = AdminService_1 = class AdminService {
             return users;
         }
         catch (e) {
-            this.logger.error(`[getPendingApprovals] ERROR: ${e.message}`, e.stack);
+            console.error('[AdminService] getPendingApprovals error:', {
+                message: e.message,
+                code: e.code,
+                meta: e.meta,
+                stack: (_a = e.stack) === null || _a === void 0 ? void 0 : _a.split('\n').slice(0, 3).join(' | '),
+            });
             return [];
         }
     }
     async getDashboardStats() {
+        var _a;
         try {
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -939,7 +952,12 @@ let AdminService = AdminService_1 = class AdminService {
             return { totalUsers, totalCourses, pendingUsers, totalRevenue, monthlyRevenue, todayRevenue, recentUsers, monthlyChart };
         }
         catch (e) {
-            this.logger.error(`[getDashboardStats] FATAL: ${e.message}`, e.stack);
+            console.error('[AdminService] getDashboardStats error:', {
+                message: e.message,
+                code: e.code,
+                meta: e.meta,
+                stack: (_a = e.stack) === null || _a === void 0 ? void 0 : _a.split('\n').slice(0, 3).join(' | '),
+            });
             return { totalUsers: 0, totalCourses: 0, pendingUsers: 0, totalRevenue: 0, monthlyRevenue: 0, todayRevenue: 0, recentUsers: [], monthlyChart: [] };
         }
     }

@@ -351,7 +351,7 @@ export default function AiChatPage() {
                      document.cookie.match(/deveway_token=([^;]+)/)?.[1] || ''
 
         const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
-        const response = await fetch(`${API_BASE}/api/ai/chat`, {
+        const response = await fetch(`${API_BASE}/ai/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

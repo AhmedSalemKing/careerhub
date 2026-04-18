@@ -29,7 +29,7 @@ export default function AdminCoachesPage() {
   const q = useQuery({
     queryKey: ['admin-coaches', page],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/coaching/admin/all', { params: { page, limit: 20 } })).data
+      const raw = (await get<ApiEnvelope<unknown>>('/coaching/admin/all', { params: { page, limit: 20 } })).data
       return unwrapData(raw) as any
     },
   })

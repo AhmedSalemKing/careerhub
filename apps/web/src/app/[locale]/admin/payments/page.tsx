@@ -30,7 +30,7 @@ export default function AdminPaymentsPage() {
   const q = useQuery({
     queryKey: ['admin-payments', page],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/payments/admin/all', { params: { page, limit: 20 } })).data
+      const raw = (await get<ApiEnvelope<unknown>>('/payments/admin/all', { params: { page, limit: 20 } })).data
       return unwrapData(raw) as any
     },
   })

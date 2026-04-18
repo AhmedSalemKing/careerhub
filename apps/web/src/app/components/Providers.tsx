@@ -100,7 +100,7 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
 
   // Load site settings
   useEffect(() => {
-    fetch(`${API_BASE}/api/admin/site-settings`)
+    fetch(`${API_BASE}/admin/site-settings`)
       .then((r) => r.json())
       .then((res) => {
         const s = res?.data?.settings ?? res?.data

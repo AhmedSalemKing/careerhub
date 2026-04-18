@@ -30,7 +30,7 @@ export default function AdminCertificatesPage() {
   const q = useQuery({
     queryKey: ['admin-certificates', page],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>('/api/certificates/admin/all', { params: { page, limit: 20 } })).data
+      const raw = (await get<ApiEnvelope<unknown>>('/certificates/admin/all', { params: { page, limit: 20 } })).data
       return unwrapData(raw) as any
     },
   })

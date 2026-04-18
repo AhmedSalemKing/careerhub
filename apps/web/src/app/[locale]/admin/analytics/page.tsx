@@ -42,7 +42,7 @@ export default function AdminAnalyticsPage() {
   const overviewQ = useQuery({
     queryKey: ['analytics-overview'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ overview: Overview }>>('/api/analytics/overview')).data
+      const raw = (await get<ApiEnvelope<{ overview: Overview }>>('/analytics/overview')).data
       const data = unwrapData(raw) as any
       return (data?.overview ?? data?.data?.overview ?? data) as Overview
     },
@@ -51,7 +51,7 @@ export default function AdminAnalyticsPage() {
   const revenueQ = useQuery({
     queryKey: ['analytics-revenue'],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ analytics: RevenueAnalytics }>>('/api/analytics/revenue/analytics')).data
+      const raw = (await get<ApiEnvelope<{ analytics: RevenueAnalytics }>>('/analytics/revenue/analytics')).data
       const data = unwrapData(raw) as any
       return (data?.analytics ?? data?.data?.analytics ?? data) as RevenueAnalytics
     },

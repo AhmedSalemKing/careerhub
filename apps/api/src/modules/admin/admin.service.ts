@@ -653,7 +653,12 @@ export class AdminService {
       });
       return { success: true, data: courses };
     } catch (e: any) {
-      this.logger.error(`[getPendingCourses] ERROR: ${e.message}`, e.stack);
+      console.error('[AdminService] getPendingCourses error:', {
+        message: e.message,
+        code: e.code,
+        meta: e.meta,
+        stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+      });
       return { success: true, data: [] };
     }
   }
@@ -1023,7 +1028,12 @@ export class AdminService {
       this.logger.log(`[Admin] Found pending users: ${users.length}`);
       return users;
     } catch (e: any) {
-      this.logger.error(`[getPendingApprovals] ERROR: ${e.message}`, e.stack);
+      console.error('[AdminService] getPendingApprovals error:', {
+        message: e.message,
+        code: e.code,
+        meta: e.meta,
+        stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+      });
       return [];
     }
   }
@@ -1090,7 +1100,12 @@ export class AdminService {
 
       return { totalUsers, totalCourses, pendingUsers, totalRevenue, monthlyRevenue, todayRevenue, recentUsers, monthlyChart };
     } catch (e: any) {
-      this.logger.error(`[getDashboardStats] FATAL: ${e.message}`, e.stack);
+      console.error('[AdminService] getDashboardStats error:', {
+        message: e.message,
+        code: e.code,
+        meta: e.meta,
+        stack: e.stack?.split('\n').slice(0, 3).join(' | '),
+      });
       return { totalUsers: 0, totalCourses: 0, pendingUsers: 0, totalRevenue: 0, monthlyRevenue: 0, todayRevenue: 0, recentUsers: [], monthlyChart: [] };
     }
   }
