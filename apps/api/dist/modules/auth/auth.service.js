@@ -367,7 +367,7 @@ let AuthService = AuthService_1 = class AuthService {
             where: { email },
             include: { profile: true },
         });
-        if (!user || !user.isActive || (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN' && user.accountType !== 'ADMIN' && user.accountType !== 'SUPER_ADMIN')) {
+        if (!user || !user.isActive || (user.role !== 'ADMIN' && user.accountType !== 'ADMIN')) {
             throw new common_1.UnauthorizedException('Invalid credentials or insufficient permissions');
         }
         const isPasswordValid = await bcrypt.compare(password, user.password);

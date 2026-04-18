@@ -82,7 +82,7 @@ let AdminService = AdminService_1 = class AdminService {
                 const exists = await this.prisma.user.findUnique({ where: { id: instructorId }, select: { id: true } }).catch(() => null);
                 if (!exists) {
                     this.logger.warn(`[Admin] Instructor ${instructorId} not found, looking for fallback admin`);
-                    const fallback = await this.prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' }, select: { id: true } }).catch(() => null);
+                    const fallback = await this.prisma.user.findFirst({ where: { accountType: 'ADMIN' }, select: { id: true } }).catch(() => null);
                     instructorId = (fallback === null || fallback === void 0 ? void 0 : fallback.id) || undefined;
                 }
             }

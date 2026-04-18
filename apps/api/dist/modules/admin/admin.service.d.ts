@@ -14,15 +14,12 @@ export declare class AdminService {
     createCourseAdminFull(courseData: any, adminId?: string): Promise<any>;
     createCourseWithUploads(courseData: any, files: Express.Multer.File[], adminId?: string): Promise<{
         id: string;
-        createdAt: Date;
         status: import(".prisma/client").$Enums.CourseStatus;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         titleEn: string;
         titleAr: string | null;
-        slug: string;
-        careerPathId: string | null;
-        instructorId: string | null;
-        categoryId: string | null;
         descriptionEn: string | null;
         descriptionAr: string | null;
         thumbnail: string | null;
@@ -33,25 +30,28 @@ export declare class AdminService {
         level: string;
         isFeatured: boolean;
         sortOrder: number;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
     }>;
     createSessionWithImage(data: any, image?: Express.Multer.File): Promise<{
         id: string;
-        createdAt: Date;
         status: string;
         meetingMethod: string;
+        createdAt: Date;
         updatedAt: Date;
         price: number;
         duration: number;
-        notes: string | null;
-        studentId: string;
-        consultantId: string;
         scheduledAt: Date;
         meetingLink: string | null;
         topic: string | null;
+        notes: string | null;
         paymentStatus: string;
         paymentId: string | null;
         proposedAt: Date | null;
         proposedTime: Date | null;
+        studentId: string;
+        consultantId: string;
     }>;
     getAllConfirmedPayments(): Promise<{
         success: boolean;
@@ -69,22 +69,22 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            createdAt: Date;
-            userId: string;
-            method: string;
             status: string;
+            createdAt: Date;
             updatedAt: Date;
+            userId: string;
             description: string | null;
-            courseId: string | null;
-            completedAt: Date | null;
             currency: string;
+            courseId: string | null;
             amount: number;
+            method: string;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
+            completedAt: Date | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         total: number;
     }>;
@@ -107,10 +107,9 @@ export declare class AdminService {
         recentUsers: any[] | ({
             profile: {
                 id: string;
-                createdAt: Date;
-                userId: string;
                 bio: string | null;
                 linkedinUrl: string | null;
+                createdAt: Date;
                 updatedAt: Date;
                 firstName: string;
                 lastName: string;
@@ -123,10 +122,10 @@ export declare class AdminService {
                 avatar: string | null;
                 timezone: string;
                 language: string;
+                userId: string;
             };
         } & {
             id: string;
-            createdAt: Date;
             email: string;
             password: string;
             role: import(".prisma/client").$Enums.UserRole;
@@ -145,6 +144,7 @@ export declare class AdminService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
+            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         })[];
@@ -152,10 +152,9 @@ export declare class AdminService {
             user: {
                 profile: {
                     id: string;
-                    createdAt: Date;
-                    userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
+                    createdAt: Date;
                     updatedAt: Date;
                     firstName: string;
                     lastName: string;
@@ -168,10 +167,10 @@ export declare class AdminService {
                     avatar: string | null;
                     timezone: string;
                     language: string;
+                    userId: string;
                 };
             } & {
                 id: string;
-                createdAt: Date;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
@@ -190,27 +189,28 @@ export declare class AdminService {
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
                 lastSeenAt: Date | null;
+                createdAt: Date;
                 updatedAt: Date;
                 deletedAt: Date | null;
             };
         } & {
             id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            createdAt: Date;
-            userId: string;
-            method: string;
             status: string;
+            createdAt: Date;
             updatedAt: Date;
+            userId: string;
             description: string | null;
-            courseId: string | null;
-            completedAt: Date | null;
             currency: string;
+            courseId: string | null;
             amount: number;
+            method: string;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
+            completedAt: Date | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
     }>;
     getPlatformStats(): Promise<{
@@ -229,10 +229,9 @@ export declare class AdminService {
         users: ({
             profile: {
                 id: string;
-                createdAt: Date;
-                userId: string;
                 bio: string | null;
                 linkedinUrl: string | null;
+                createdAt: Date;
                 updatedAt: Date;
                 firstName: string;
                 lastName: string;
@@ -245,6 +244,7 @@ export declare class AdminService {
                 avatar: string | null;
                 timezone: string;
                 language: string;
+                userId: string;
             };
             _count: {
                 enrollments: number;
@@ -252,7 +252,6 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            createdAt: Date;
             email: string;
             password: string;
             role: import(".prisma/client").$Enums.UserRole;
@@ -271,6 +270,7 @@ export declare class AdminService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
+            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         })[];
@@ -281,10 +281,9 @@ export declare class AdminService {
     getUserDetails(id: string): Promise<{
         profile: {
             id: string;
-            createdAt: Date;
-            userId: string;
             bio: string | null;
             linkedinUrl: string | null;
+            createdAt: Date;
             updatedAt: Date;
             firstName: string;
             lastName: string;
@@ -297,19 +296,17 @@ export declare class AdminService {
             avatar: string | null;
             timezone: string;
             language: string;
+            userId: string;
         };
         enrollments: ({
             course: {
                 id: string;
-                createdAt: Date;
                 status: import(".prisma/client").$Enums.CourseStatus;
+                createdAt: Date;
                 updatedAt: Date;
+                slug: string;
                 titleEn: string;
                 titleAr: string | null;
-                slug: string;
-                careerPathId: string | null;
-                instructorId: string | null;
-                categoryId: string | null;
                 descriptionEn: string | null;
                 descriptionAr: string | null;
                 thumbnail: string | null;
@@ -320,39 +317,41 @@ export declare class AdminService {
                 level: string;
                 isFeatured: boolean;
                 sortOrder: number;
+                careerPathId: string | null;
+                instructorId: string | null;
+                categoryId: string | null;
             };
         } & {
             id: string;
-            userId: string;
             status: import(".prisma/client").$Enums.EnrollmentStatus;
+            userId: string;
             expiresAt: Date | null;
             courseId: string;
-            progress: number;
-            enrolledAt: Date;
             completedAt: Date | null;
+            enrolledAt: Date;
+            progress: number;
         })[];
         payments: {
             id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            createdAt: Date;
-            userId: string;
-            method: string;
             status: string;
+            createdAt: Date;
             updatedAt: Date;
+            userId: string;
             description: string | null;
-            courseId: string | null;
-            completedAt: Date | null;
             currency: string;
+            courseId: string | null;
             amount: number;
+            method: string;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
+            completedAt: Date | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         }[];
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -371,16 +370,16 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     getUserById(id: string): Promise<{
         profile: {
             id: string;
-            createdAt: Date;
-            userId: string;
             bio: string | null;
             linkedinUrl: string | null;
+            createdAt: Date;
             updatedAt: Date;
             firstName: string;
             lastName: string;
@@ -393,10 +392,10 @@ export declare class AdminService {
             avatar: string | null;
             timezone: string;
             language: string;
+            userId: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -415,12 +414,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     updateUser(id: string, updateData: any): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -439,12 +438,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     deleteUser(id: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -463,12 +462,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     suspendUser(id: string, reason?: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -487,12 +486,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     unsuspendUser(id: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -511,6 +510,7 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
@@ -522,14 +522,17 @@ export declare class AdminService {
         level?: string;
     }): Promise<{
         courses: ({
+            _count: {
+                enrollments: number;
+            };
             careerPath: {
                 id: string;
-                createdAt: Date;
                 isActive: boolean;
+                createdAt: Date;
                 updatedAt: Date;
+                slug: string;
                 titleEn: string;
                 titleAr: string;
-                slug: string;
                 descriptionEn: string;
                 descriptionAr: string;
                 sortOrder: number;
@@ -549,9 +552,6 @@ export declare class AdminService {
                 nameAr: string;
                 nameEn: string;
             };
-            _count: {
-                enrollments: number;
-            };
             instructor: {
                 id: string;
                 email: string;
@@ -562,15 +562,12 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             titleEn: string;
             titleAr: string | null;
-            slug: string;
-            careerPathId: string | null;
-            instructorId: string | null;
-            categoryId: string | null;
             descriptionEn: string | null;
             descriptionAr: string | null;
             thumbnail: string | null;
@@ -581,6 +578,9 @@ export declare class AdminService {
             level: string;
             isFeatured: boolean;
             sortOrder: number;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
         })[];
         total: number;
         page: number;
@@ -588,15 +588,12 @@ export declare class AdminService {
     }>;
     createCourse(courseData: any, adminId?: string): Promise<{
         id: string;
-        createdAt: Date;
         status: import(".prisma/client").$Enums.CourseStatus;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         titleEn: string;
         titleAr: string | null;
-        slug: string;
-        careerPathId: string | null;
-        instructorId: string | null;
-        categoryId: string | null;
         descriptionEn: string | null;
         descriptionAr: string | null;
         thumbnail: string | null;
@@ -607,10 +604,16 @@ export declare class AdminService {
         level: string;
         isFeatured: boolean;
         sortOrder: number;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
     }>;
     getPendingCourses(): Promise<{
         success: boolean;
         data: ({
+            _count: {
+                sections: number;
+            };
             category: {
                 id: string;
                 slug: string;
@@ -618,21 +621,26 @@ export declare class AdminService {
                 nameAr: string;
                 nameEn: string;
             };
-            _count: {
-                sections: number;
+            instructor: {
+                id: string;
+                email: string;
+                profile: {
+                    firstName: string;
+                    lastName: string;
+                };
             };
             sections: ({
                 lessons: {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    titleAr: string | null;
                     type: string;
                     description: string | null;
-                    title: string;
                     content: import("@prisma/client/runtime/library").JsonValue | null;
+                    titleAr: string | null;
                     descriptionAr: string | null;
-                    isPublished: boolean;
+                    title: string;
+                    order: number;
                     moduleId: string | null;
                     sectionId: string | null;
                     videoUrl: string | null;
@@ -641,33 +649,22 @@ export declare class AdminService {
                     fileName: string | null;
                     fileSize: number | null;
                     isFree: boolean;
-                    order: number;
+                    isPublished: boolean;
                 }[];
             } & {
                 id: string;
-                title: string;
                 courseId: string;
+                title: string;
                 order: number;
             })[];
-            instructor: {
-                id: string;
-                email: string;
-                profile: {
-                    firstName: string;
-                    lastName: string;
-                };
-            };
         } & {
             id: string;
-            createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             titleEn: string;
             titleAr: string | null;
-            slug: string;
-            careerPathId: string | null;
-            instructorId: string | null;
-            categoryId: string | null;
             descriptionEn: string | null;
             descriptionAr: string | null;
             thumbnail: string | null;
@@ -678,19 +675,19 @@ export declare class AdminService {
             level: string;
             isFeatured: boolean;
             sortOrder: number;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
         })[];
     }>;
     approveCourse(id: string): Promise<{
         id: string;
-        createdAt: Date;
         status: import(".prisma/client").$Enums.CourseStatus;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         titleEn: string;
         titleAr: string | null;
-        slug: string;
-        careerPathId: string | null;
-        instructorId: string | null;
-        categoryId: string | null;
         descriptionEn: string | null;
         descriptionAr: string | null;
         thumbnail: string | null;
@@ -701,18 +698,18 @@ export declare class AdminService {
         level: string;
         isFeatured: boolean;
         sortOrder: number;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
     }>;
     rejectCourse(id: string, reason?: string): Promise<{
         id: string;
-        createdAt: Date;
         status: import(".prisma/client").$Enums.CourseStatus;
+        createdAt: Date;
         updatedAt: Date;
+        slug: string;
         titleEn: string;
         titleAr: string | null;
-        slug: string;
-        careerPathId: string | null;
-        instructorId: string | null;
-        categoryId: string | null;
         descriptionEn: string | null;
         descriptionAr: string | null;
         thumbnail: string | null;
@@ -723,19 +720,19 @@ export declare class AdminService {
         level: string;
         isFeatured: boolean;
         sortOrder: number;
+        careerPathId: string | null;
+        instructorId: string | null;
+        categoryId: string | null;
     }>;
     getPendingContent(): Promise<{
         courses: {
             id: string;
-            createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             titleEn: string;
             titleAr: string | null;
-            slug: string;
-            careerPathId: string | null;
-            instructorId: string | null;
-            categoryId: string | null;
             descriptionEn: string | null;
             descriptionAr: string | null;
             thumbnail: string | null;
@@ -746,6 +743,9 @@ export declare class AdminService {
             level: string;
             isFeatured: boolean;
             sortOrder: number;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
         }[];
         lessons: any[];
         assessments: any[];
@@ -846,10 +846,9 @@ export declare class AdminService {
         users: ({
             profile: {
                 id: string;
-                createdAt: Date;
-                userId: string;
                 bio: string | null;
                 linkedinUrl: string | null;
+                createdAt: Date;
                 updatedAt: Date;
                 firstName: string;
                 lastName: string;
@@ -862,10 +861,10 @@ export declare class AdminService {
                 avatar: string | null;
                 timezone: string;
                 language: string;
+                userId: string;
             };
         } & {
             id: string;
-            createdAt: Date;
             email: string;
             password: string;
             role: import(".prisma/client").$Enums.UserRole;
@@ -884,6 +883,7 @@ export declare class AdminService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
+            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         })[];
@@ -893,12 +893,12 @@ export declare class AdminService {
         courses: ({
             careerPath: {
                 id: string;
-                createdAt: Date;
                 isActive: boolean;
+                createdAt: Date;
                 updatedAt: Date;
+                slug: string;
                 titleEn: string;
                 titleAr: string;
-                slug: string;
                 descriptionEn: string;
                 descriptionAr: string;
                 sortOrder: number;
@@ -913,15 +913,12 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            createdAt: Date;
             status: import(".prisma/client").$Enums.CourseStatus;
+            createdAt: Date;
             updatedAt: Date;
+            slug: string;
             titleEn: string;
             titleAr: string | null;
-            slug: string;
-            careerPathId: string | null;
-            instructorId: string | null;
-            categoryId: string | null;
             descriptionEn: string | null;
             descriptionAr: string | null;
             thumbnail: string | null;
@@ -932,6 +929,9 @@ export declare class AdminService {
             level: string;
             isFeatured: boolean;
             sortOrder: number;
+            careerPathId: string | null;
+            instructorId: string | null;
+            categoryId: string | null;
         })[];
         format: string;
     }>;
@@ -996,7 +996,6 @@ export declare class AdminService {
     getAuditLogs(limit?: number): Promise<any>;
     getPendingApprovals(): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         accountType: string;
         status: string;
@@ -1007,6 +1006,7 @@ export declare class AdminService {
         linkedinUrl: string;
         hourlyRate: number;
         meetingMethod: string;
+        createdAt: Date;
         profile: {
             firstName: string;
             lastName: string;
@@ -1022,10 +1022,10 @@ export declare class AdminService {
         todayRevenue: number;
         recentUsers: {
             id: string;
-            createdAt: Date;
             email: string;
             accountType: string;
             status: string;
+            createdAt: Date;
             profile: {
                 firstName: string;
                 lastName: string;
@@ -1053,22 +1053,22 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            createdAt: Date;
-            userId: string;
-            method: string;
             status: string;
+            createdAt: Date;
             updatedAt: Date;
+            userId: string;
             description: string | null;
-            courseId: string | null;
-            completedAt: Date | null;
             currency: string;
+            courseId: string | null;
             amount: number;
+            method: string;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
+            completedAt: Date | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         total: number;
     }>;
@@ -1079,10 +1079,9 @@ export declare class AdminService {
     approveUser(userId: string, adminId?: string): Promise<{
         profile: {
             id: string;
-            createdAt: Date;
-            userId: string;
             bio: string | null;
             linkedinUrl: string | null;
+            createdAt: Date;
             updatedAt: Date;
             firstName: string;
             lastName: string;
@@ -1095,10 +1094,10 @@ export declare class AdminService {
             avatar: string | null;
             timezone: string;
             language: string;
+            userId: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -1117,16 +1116,16 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     rejectUser(userId: string, reason?: string, adminId?: string): Promise<{
         profile: {
             id: string;
-            createdAt: Date;
-            userId: string;
             bio: string | null;
             linkedinUrl: string | null;
+            createdAt: Date;
             updatedAt: Date;
             firstName: string;
             lastName: string;
@@ -1139,10 +1138,10 @@ export declare class AdminService {
             avatar: string | null;
             timezone: string;
             language: string;
+            userId: string;
         };
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -1161,12 +1160,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     banUser(userId: string, adminId?: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -1185,12 +1184,12 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
     unbanUser(userId: string, adminId?: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         password: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -1209,6 +1208,7 @@ export declare class AdminService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
+        createdAt: Date;
         updatedAt: Date;
         deletedAt: Date | null;
     }>;
@@ -1255,22 +1255,22 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            createdAt: Date;
             status: string;
             meetingMethod: string;
+            createdAt: Date;
             updatedAt: Date;
             price: number;
             duration: number;
-            notes: string | null;
-            studentId: string;
-            consultantId: string;
             scheduledAt: Date;
             meetingLink: string | null;
             topic: string | null;
+            notes: string | null;
             paymentStatus: string;
             paymentId: string | null;
             proposedAt: Date | null;
             proposedTime: Date | null;
+            studentId: string;
+            consultantId: string;
         })[];
     }>;
     createUser(data: {
@@ -1281,10 +1281,10 @@ export declare class AdminService {
         accountType: string;
     }): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         accountType: string;
         status: string;
+        createdAt: Date;
         profile: {
             firstName: string;
             lastName: string;
@@ -1302,22 +1302,22 @@ export declare class AdminService {
     }>;
     createSession(data: any): Promise<{
         id: string;
-        createdAt: Date;
         status: string;
         meetingMethod: string;
+        createdAt: Date;
         updatedAt: Date;
         price: number;
         duration: number;
-        notes: string | null;
-        studentId: string;
-        consultantId: string;
         scheduledAt: Date;
         meetingLink: string | null;
         topic: string | null;
+        notes: string | null;
         paymentStatus: string;
         paymentId: string | null;
         proposedAt: Date | null;
         proposedTime: Date | null;
+        studentId: string;
+        consultantId: string;
     }>;
     getLiveActivity(limit?: number): Promise<({
         user: {
@@ -1331,32 +1331,31 @@ export declare class AdminService {
         };
     } & {
         id: string;
-        action: string;
-        entity: string | null;
-        entityId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        ipAddress: string | null;
         createdAt: Date;
         userId: string;
+        action: string;
+        ipAddress: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        entity: string | null;
+        entityId: string | null;
     })[]>;
     getUserActivity(userId: string, limit?: number): Promise<{
         id: string;
-        action: string;
-        entity: string | null;
-        entityId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        ipAddress: string | null;
         createdAt: Date;
         userId: string;
+        action: string;
+        ipAddress: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        entity: string | null;
+        entityId: string | null;
     }[]>;
     getUserDetail(id: string): Promise<{
         user: {
             profile: {
                 id: string;
-                createdAt: Date;
-                userId: string;
                 bio: string | null;
                 linkedinUrl: string | null;
+                createdAt: Date;
                 updatedAt: Date;
                 firstName: string;
                 lastName: string;
@@ -1369,13 +1368,13 @@ export declare class AdminService {
                 avatar: string | null;
                 timezone: string;
                 language: string;
+                userId: string;
             };
             _count: {
                 enrollments: number;
             };
         } & {
             id: string;
-            createdAt: Date;
             email: string;
             password: string;
             role: import(".prisma/client").$Enums.UserRole;
@@ -1394,18 +1393,19 @@ export declare class AdminService {
             rejectedAt: Date | null;
             rejectedReason: string | null;
             lastSeenAt: Date | null;
+            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         };
         activities: {
             id: string;
-            action: string;
-            entity: string | null;
-            entityId: string | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            ipAddress: string | null;
             createdAt: Date;
             userId: string;
+            action: string;
+            ipAddress: string | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            entity: string | null;
+            entityId: string | null;
         }[];
         payments: any[] | ({
             course: {
@@ -1414,22 +1414,22 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            createdAt: Date;
-            userId: string;
-            method: string;
             status: string;
+            createdAt: Date;
             updatedAt: Date;
+            userId: string;
             description: string | null;
-            courseId: string | null;
-            completedAt: Date | null;
             currency: string;
+            courseId: string | null;
             amount: number;
+            method: string;
             transactionId: string | null;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
+            completedAt: Date | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
         enrollments: any[] | ({
             course: {
@@ -1439,13 +1439,13 @@ export declare class AdminService {
             };
         } & {
             id: string;
-            userId: string;
             status: import(".prisma/client").$Enums.EnrollmentStatus;
+            userId: string;
             expiresAt: Date | null;
             courseId: string;
-            progress: number;
-            enrolledAt: Date;
             completedAt: Date | null;
+            enrolledAt: Date;
+            progress: number;
         })[];
         totalSpent: any;
     }>;
