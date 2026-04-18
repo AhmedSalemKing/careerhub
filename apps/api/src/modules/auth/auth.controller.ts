@@ -109,10 +109,15 @@ export class AuthController {
         },
       };
     } catch (error) {
-      this.logger.error(`[AUTH CTRL] login FAILED for ${loginDto.email}: ${error instanceof Error ? error.stack || error.message : String(error)}`);
+      const errDetail = error instanceof Error ? error.stack || error.message : String(error);
+      this.logger.error(`[AUTH CTRL] login FAILED for ${loginDto.email}: ${errDetail}`);
       // Re-throw ForbiddenException as-is so frontend can show "under review" / "rejected" UI
       if (error instanceof ForbiddenException) {
         throw error;
+      }
+      // TEMP DIAGNOSTIC: include real error for admin debugging
+      if (loginDto.email === 'admin@deveway.com' || loginDto.email === 'supertest@deveway.com') {
+        throw new UnauthorizedException(`Login failed: ${error instanceof Error ? error.message : String(error)}`);
       }
       throw new UnauthorizedException('Invalid credentials');
     }
