@@ -10,37 +10,38 @@ export declare class UsersService {
     private readonly cache;
     constructor(prisma: PrismaService, configService: ConfigService);
     getProfile(userId: string): Promise<{
-        profile: {
-            id: string;
-            createdAt: Date;
-            userId: string;
-            bio: string | null;
-            linkedinUrl: string | null;
-            updatedAt: Date;
-            firstName: string;
-            lastName: string;
-            phone: string | null;
-            country: string | null;
-            city: string | null;
-            language: string;
-            dateOfBirth: Date | null;
-            gender: import(".prisma/client").$Enums.Gender | null;
-            nationality: string | null;
-            avatar: string | null;
-            timezone: string;
-        };
         _count: {
             enrollments: number;
             certificates: number;
             coachingSessions: number;
         };
-        id: string;
+        profile: {
+            createdAt: Date;
+            id: string;
+            updatedAt: Date;
+            userId: string;
+            bio: string | null;
+            linkedinUrl: string | null;
+            firstName: string;
+            lastName: string;
+            phone: string | null;
+            dateOfBirth: Date | null;
+            gender: import(".prisma/client").$Enums.Gender | null;
+            nationality: string | null;
+            country: string | null;
+            city: string | null;
+            avatar: string | null;
+            timezone: string;
+            language: string;
+        };
         createdAt: Date;
+        id: string;
+        status: string;
+        updatedAt: Date;
         email: string;
         role: import(".prisma/client").$Enums.UserRole;
         isActive: boolean;
         accountType: string;
-        status: string;
         cvUrl: string | null;
         bio: string | null;
         experience: number | null;
@@ -53,27 +54,26 @@ export declare class UsersService {
         rejectedAt: Date | null;
         rejectedReason: string | null;
         lastSeenAt: Date | null;
-        updatedAt: Date;
         deletedAt: Date | null;
     }>;
     updateProfile(userId: string, updateProfileDto: UpdateProfileDto): Promise<{
-        id: string;
         createdAt: Date;
+        id: string;
+        updatedAt: Date;
         userId: string;
         bio: string | null;
         linkedinUrl: string | null;
-        updatedAt: Date;
         firstName: string;
         lastName: string;
         phone: string | null;
-        country: string | null;
-        city: string | null;
-        language: string;
         dateOfBirth: Date | null;
         gender: import(".prisma/client").$Enums.Gender | null;
         nationality: string | null;
+        country: string | null;
+        city: string | null;
         avatar: string | null;
         timezone: string;
+        language: string;
     }>;
     uploadAvatar(userId: string, file: Express.Multer.File): Promise<string>;
     getDashboard(userId: string): Promise<any>;
@@ -86,16 +86,16 @@ export declare class UsersService {
         enrollments: ({
             course: {
                 careerPath: {
-                    id: string;
                     createdAt: Date;
-                    isActive: boolean;
-                    updatedAt: Date;
+                    sortOrder: number;
+                    id: string;
+                    slug: string;
                     titleEn: string;
                     titleAr: string;
-                    slug: string;
                     descriptionEn: string;
                     descriptionAr: string;
-                    sortOrder: number;
+                    updatedAt: Date;
+                    isActive: boolean;
                     skills: string[];
                     salaryRangeEn: string;
                     salaryRangeAr: string;
@@ -106,16 +106,15 @@ export declare class UsersService {
                     color: string | null;
                 };
             } & {
-                id: string;
                 createdAt: Date;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                updatedAt: Date;
-                titleEn: string;
-                titleAr: string | null;
+                sortOrder: number;
+                id: string;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
                 categoryId: string | null;
+                titleEn: string;
+                titleAr: string | null;
                 descriptionEn: string | null;
                 descriptionAr: string | null;
                 thumbnail: string | null;
@@ -124,18 +123,19 @@ export declare class UsersService {
                 currency: string;
                 duration: number | null;
                 level: string;
+                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
-                sortOrder: number;
+                updatedAt: Date;
             };
         } & {
             id: string;
-            userId: string;
             status: import(".prisma/client").$Enums.EnrollmentStatus;
-            expiresAt: Date | null;
-            courseId: string;
             progress: number;
+            courseId: string;
+            userId: string;
             enrolledAt: Date;
             completedAt: Date | null;
+            expiresAt: Date | null;
         })[];
         meta: {
             total: number;
@@ -153,16 +153,16 @@ export declare class UsersService {
         certificates: ({
             course: {
                 careerPath: {
-                    id: string;
                     createdAt: Date;
-                    isActive: boolean;
-                    updatedAt: Date;
+                    sortOrder: number;
+                    id: string;
+                    slug: string;
                     titleEn: string;
                     titleAr: string;
-                    slug: string;
                     descriptionEn: string;
                     descriptionAr: string;
-                    sortOrder: number;
+                    updatedAt: Date;
+                    isActive: boolean;
                     skills: string[];
                     salaryRangeEn: string;
                     salaryRangeAr: string;
@@ -173,16 +173,15 @@ export declare class UsersService {
                     color: string | null;
                 };
             } & {
-                id: string;
                 createdAt: Date;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                updatedAt: Date;
-                titleEn: string;
-                titleAr: string | null;
+                sortOrder: number;
+                id: string;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
                 categoryId: string | null;
+                titleEn: string;
+                titleAr: string | null;
                 descriptionEn: string | null;
                 descriptionAr: string | null;
                 thumbnail: string | null;
@@ -191,16 +190,17 @@ export declare class UsersService {
                 currency: string;
                 duration: number | null;
                 level: string;
+                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
-                sortOrder: number;
+                updatedAt: Date;
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
             courseId: string;
+            userId: string;
+            expiresAt: Date | null;
             serialNumber: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
         })[];
@@ -238,15 +238,15 @@ export declare class UsersService {
         unread?: boolean;
     }): Promise<{
         notifications: {
+            type: import(".prisma/client").$Enums.NotificationType;
             data: import("@prisma/client/runtime/library").JsonValue | null;
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
             titleEn: string;
             titleAr: string;
+            userId: string;
             contentEn: string;
             contentAr: string;
-            type: import(".prisma/client").$Enums.NotificationType;
             isRead: boolean;
         }[];
         meta: {

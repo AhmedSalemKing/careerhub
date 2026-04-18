@@ -20,13 +20,14 @@ export declare class AuthController {
                     avatar: string;
                     language: string;
                 };
-                id: string;
                 createdAt: Date;
+                id: string;
+                status: string;
+                updatedAt: Date;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
                 accountType: string;
-                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -39,7 +40,6 @@ export declare class AuthController {
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
                 lastSeenAt: Date | null;
-                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;
@@ -56,13 +56,14 @@ export declare class AuthController {
                     avatar: string;
                     language: string;
                 };
-                id: string;
                 createdAt: Date;
+                id: string;
+                status: string;
+                updatedAt: Date;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
                 accountType: string;
-                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -75,7 +76,6 @@ export declare class AuthController {
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
                 lastSeenAt: Date | null;
-                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;
@@ -95,13 +95,13 @@ export declare class AuthController {
     getProfile(user: User): Promise<{
         success: boolean;
         data: {
-            id: string;
             createdAt: Date;
+            id: string;
+            status: string;
             email: string;
             role: import(".prisma/client").$Enums.UserRole;
             isActive: boolean;
             accountType: string;
-            status: string;
             bio: string;
             experience: number;
             speciality: string;
@@ -110,9 +110,9 @@ export declare class AuthController {
                 firstName: string;
                 lastName: string;
                 phone: string;
-                language: string;
                 avatar: string;
                 timezone: string;
+                language: string;
             };
         };
     }>;
@@ -125,23 +125,23 @@ export declare class AuthController {
     }): Promise<{
         success: boolean;
         data: {
-            id: string;
             createdAt: Date;
+            id: string;
+            updatedAt: Date;
             userId: string;
             bio: string | null;
             linkedinUrl: string | null;
-            updatedAt: Date;
             firstName: string;
             lastName: string;
             phone: string | null;
-            country: string | null;
-            city: string | null;
-            language: string;
             dateOfBirth: Date | null;
             gender: import(".prisma/client").$Enums.Gender | null;
             nationality: string | null;
+            country: string | null;
+            city: string | null;
             avatar: string | null;
             timezone: string;
+            language: string;
         };
     }>;
     forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{
@@ -189,13 +189,14 @@ export declare class AuthController {
                     avatar: string;
                     language: string;
                 };
-                id: string;
                 createdAt: Date;
+                id: string;
+                status: string;
+                updatedAt: Date;
                 email: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
                 accountType: string;
-                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -208,7 +209,6 @@ export declare class AuthController {
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
                 lastSeenAt: Date | null;
-                updatedAt: Date;
                 deletedAt: Date | null;
             };
             accessToken: string;

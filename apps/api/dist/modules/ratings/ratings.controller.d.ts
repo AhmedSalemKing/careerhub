@@ -8,13 +8,13 @@ export declare class RatingsController {
     }): Promise<{
         success: boolean;
         data: {
-            id: string;
             createdAt: Date;
+            id: string;
+            courseId: string | null;
             userId: string;
             value: number;
-            courseId: string | null;
-            comment: string | null;
             consultantId: string | null;
+            comment: string | null;
         };
     }>;
     getCourseRatings(courseId: string): Promise<{
@@ -28,13 +28,13 @@ export declare class RatingsController {
                     };
                 };
             } & {
-                id: string;
                 createdAt: Date;
+                id: string;
+                courseId: string | null;
                 userId: string;
                 value: number;
-                courseId: string | null;
-                comment: string | null;
                 consultantId: string | null;
+                comment: string | null;
             })[];
             average: number;
             count: number;
@@ -43,13 +43,13 @@ export declare class RatingsController {
     getMyRating(courseId: string, req: any): Promise<{
         success: boolean;
         data: {
-            id: string;
             createdAt: Date;
+            id: string;
+            courseId: string | null;
             userId: string;
             value: number;
-            courseId: string | null;
-            comment: string | null;
             consultantId: string | null;
+            comment: string | null;
         };
     }>;
 }

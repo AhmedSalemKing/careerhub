@@ -17,23 +17,23 @@ export declare class PaymentsController {
             paymentIntent: {
                 paymentIntent: import("stripe").Stripe.Response<import("stripe").Stripe.PaymentIntent>;
                 payment: {
-                    id: string;
-                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                    description: string | null;
                     createdAt: Date;
-                    userId: string;
-                    method: string;
+                    id: string;
+                    currency: string;
                     status: string;
                     updatedAt: Date;
-                    description: string | null;
                     courseId: string | null;
+                    userId: string;
                     completedAt: Date | null;
-                    currency: string;
-                    amount: number;
                     transactionId: string | null;
+                    amount: number;
+                    method: string;
                     stripeIntentId: string | null;
                     itemType: string | null;
                     itemId: string | null;
                     refundedAt: Date | null;
+                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 };
                 itemDetails: any;
             };
@@ -116,13 +116,13 @@ export declare class PaymentsController {
         message: string;
         data: {
             subscription: {
-                id: string;
                 createdAt: Date;
-                userId: string;
-                status: string;
-                updatedAt: Date;
                 startDate: Date;
                 endDate: Date | null;
+                id: string;
+                status: string;
+                updatedAt: Date;
+                userId: string;
                 plan: string;
             };
         };
@@ -131,13 +131,13 @@ export declare class PaymentsController {
         success: boolean;
         message: string;
         data: {
-            id: string;
             createdAt: Date;
-            userId: string;
-            status: string;
-            updatedAt: Date;
             startDate: Date;
             endDate: Date | null;
+            id: string;
+            status: string;
+            updatedAt: Date;
+            userId: string;
             plan: string;
         };
     }>;
@@ -337,13 +337,13 @@ export declare class PaymentsController {
                 successRate: number;
                 hasActiveSubscription: boolean;
                 activeSubscription: {
-                    id: string;
                     createdAt: Date;
-                    userId: string;
-                    status: string;
-                    updatedAt: Date;
                     startDate: Date;
                     endDate: Date | null;
+                    id: string;
+                    status: string;
+                    updatedAt: Date;
+                    userId: string;
                     plan: string;
                 };
             };
@@ -359,33 +359,34 @@ export declare class PaymentsController {
             payments: ({
                 user: {
                     profile: {
-                        id: string;
                         createdAt: Date;
+                        id: string;
+                        updatedAt: Date;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
-                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
-                        country: string | null;
-                        city: string | null;
-                        language: string;
                         dateOfBirth: Date | null;
                         gender: import(".prisma/client").$Enums.Gender | null;
                         nationality: string | null;
+                        country: string | null;
+                        city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
-                    id: string;
                     createdAt: Date;
+                    id: string;
+                    status: string;
+                    updatedAt: Date;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
                     isActive: boolean;
                     accountType: string;
-                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -398,27 +399,26 @@ export declare class PaymentsController {
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
                     lastSeenAt: Date | null;
-                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
             } & {
-                id: string;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                description: string | null;
                 createdAt: Date;
-                userId: string;
-                method: string;
+                id: string;
+                currency: string;
                 status: string;
                 updatedAt: Date;
-                description: string | null;
                 courseId: string | null;
+                userId: string;
                 completedAt: Date | null;
-                currency: string;
-                amount: number;
                 transactionId: string | null;
+                amount: number;
+                method: string;
                 stripeIntentId: string | null;
                 itemType: string | null;
                 itemId: string | null;
                 refundedAt: Date | null;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
             })[];
             meta: {
                 total: number;

@@ -76,19 +76,19 @@ export declare class UploadController {
         success: boolean;
         data: {
             files: {
-                id: string;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                url: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 updatedAt: Date;
-                isPublic: boolean;
-                key: string;
                 fileName: string;
+                userId: string;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 originalName: string;
                 mimeType: string;
                 size: number;
                 fileType: string;
-                url: string;
+                key: string;
+                isPublic: boolean;
                 folder: string;
             }[];
             meta: {
@@ -106,19 +106,19 @@ export declare class UploadController {
         success: boolean;
         data: {
             file: {
-                id: string;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                url: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 updatedAt: Date;
-                isPublic: boolean;
-                key: string;
                 fileName: string;
+                userId: string;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 originalName: string;
                 mimeType: string;
                 size: number;
                 fileType: string;
-                url: string;
+                key: string;
+                isPublic: boolean;
                 folder: string;
             };
         };
@@ -154,19 +154,19 @@ export declare class UploadController {
         data: {
             file: {
                 file: {
-                    id: string;
-                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                    url: string;
                     createdAt: Date;
-                    userId: string;
+                    id: string;
                     updatedAt: Date;
-                    isPublic: boolean;
-                    key: string;
                     fileName: string;
+                    userId: string;
+                    metadata: import("@prisma/client/runtime/library").JsonValue | null;
                     originalName: string;
                     mimeType: string;
                     size: number;
                     fileType: string;
-                    url: string;
+                    key: string;
+                    isPublic: boolean;
                     folder: string;
                 };
                 url: string;
@@ -208,19 +208,19 @@ export declare class UploadController {
         success: boolean;
         data: {
             files: {
-                id: string;
-                metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                url: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 updatedAt: Date;
-                isPublic: boolean;
-                key: string;
                 fileName: string;
+                userId: string;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
                 originalName: string;
                 mimeType: string;
                 size: number;
                 fileType: string;
-                url: string;
+                key: string;
+                isPublic: boolean;
                 folder: string;
             }[];
             meta: {

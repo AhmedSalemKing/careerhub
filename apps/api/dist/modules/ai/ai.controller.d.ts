@@ -8,14 +8,14 @@ export declare class AiController {
     getConversations(req: any): Promise<{
         success: boolean;
         data: {
-            id: string;
-            createdAt: Date;
-            updatedAt: Date;
             title: string;
+            createdAt: Date;
+            id: string;
+            updatedAt: Date;
             context: string;
             messages: {
-                role: string;
                 content: string;
+                role: string;
             }[];
         }[];
     }>;
@@ -23,19 +23,19 @@ export declare class AiController {
         success: boolean;
         data: {
             messages: {
-                id: string;
-                createdAt: Date;
-                role: string;
                 content: string;
+                createdAt: Date;
+                id: string;
+                role: string;
                 conversationId: string;
                 tokens: number | null;
             }[];
         } & {
-            id: string;
-            createdAt: Date;
-            userId: string;
-            updatedAt: Date;
             title: string;
+            createdAt: Date;
+            id: string;
+            updatedAt: Date;
+            userId: string;
             context: string | null;
         };
     }>;
@@ -44,11 +44,11 @@ export declare class AiController {
     }): Promise<{
         success: boolean;
         data: {
-            id: string;
-            createdAt: Date;
-            userId: string;
-            updatedAt: Date;
             title: string;
+            createdAt: Date;
+            id: string;
+            updatedAt: Date;
+            userId: string;
             context: string | null;
         };
     }>;

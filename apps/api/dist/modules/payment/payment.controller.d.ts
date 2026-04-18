@@ -11,27 +11,26 @@ export declare class PaymentController {
                     nameAr: string;
                     nameEn: string;
                 };
-                _count: {
-                    enrollments: number;
-                    sections: number;
-                };
                 instructor: {
                     profile: {
                         firstName: string;
                         lastName: string;
                     };
                 };
+                _count: {
+                    sections: number;
+                    enrollments: number;
+                };
             } & {
-                id: string;
                 createdAt: Date;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                updatedAt: Date;
-                titleEn: string;
-                titleAr: string | null;
+                sortOrder: number;
+                id: string;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
                 categoryId: string | null;
+                titleEn: string;
+                titleAr: string | null;
                 descriptionEn: string | null;
                 descriptionAr: string | null;
                 thumbnail: string | null;
@@ -40,8 +39,9 @@ export declare class PaymentController {
                 currency: string;
                 duration: number | null;
                 level: string;
+                status: import(".prisma/client").$Enums.CourseStatus;
                 isFeatured: boolean;
-                sortOrder: number;
+                updatedAt: Date;
             };
             alreadyEnrolled: boolean;
         };
@@ -104,23 +104,23 @@ export declare class PaymentController {
                 thumbnail: string;
             };
         } & {
-            id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            description: string | null;
             createdAt: Date;
-            userId: string;
-            method: string;
+            id: string;
+            currency: string;
             status: string;
             updatedAt: Date;
-            description: string | null;
             courseId: string | null;
+            userId: string;
             completedAt: Date | null;
-            currency: string;
-            amount: number;
             transactionId: string | null;
+            amount: number;
+            method: string;
             stripeIntentId: string | null;
             itemType: string | null;
             itemId: string | null;
             refundedAt: Date | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
         })[];
     }>;
     private doEnroll;

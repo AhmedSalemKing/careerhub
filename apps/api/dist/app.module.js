@@ -42,6 +42,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const track_activity_middleware_1 = require("./middleware/track-activity.middleware");
+const http_logger_middleware_1 = require("./middleware/http-logger.middleware");
 const config_1 = require("@nestjs/config");
 const Joi = __importStar(require("joi"));
 const throttler_1 = require("@nestjs/throttler");
@@ -69,7 +70,7 @@ const email_module_1 = require("./modules/email/email.module");
 const ratings_module_1 = require("./modules/ratings/ratings.module");
 let AppModule = class AppModule {
     configure(consumer) {
-        consumer.apply(track_activity_middleware_1.TrackActivityMiddleware).forRoutes('*');
+        consumer.apply(http_logger_middleware_1.HttpLoggerMiddleware, track_activity_middleware_1.TrackActivityMiddleware).forRoutes('*');
     }
 };
 exports.AppModule = AppModule;

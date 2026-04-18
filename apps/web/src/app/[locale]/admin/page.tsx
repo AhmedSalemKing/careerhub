@@ -77,7 +77,6 @@ export default function AdminOverviewPage() {
     api.get('/admin/stats')
       .then(res => {
         const d = res?.data?.data ?? res?.data
-        console.log('[Admin Stats]', d)
         setStats(d)
       })
       .catch(console.error)

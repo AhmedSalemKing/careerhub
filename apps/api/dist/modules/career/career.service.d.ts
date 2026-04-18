@@ -11,20 +11,20 @@ export declare class CareerService {
         pathCategory: string;
         aiRecommended?: boolean;
     }): Promise<{
-        id: string;
         createdAt: Date;
-        userId: string;
+        id: string;
         updatedAt: Date;
+        userId: string;
         pathId: string;
         pathTitle: string;
         pathCategory: string;
         aiRecommended: boolean;
     }>;
     getUserCareerPath(userId: string): Promise<{
-        id: string;
         createdAt: Date;
-        userId: string;
+        id: string;
         updatedAt: Date;
+        userId: string;
         pathId: string;
         pathTitle: string;
         pathCategory: string;

@@ -16,10 +16,10 @@ export declare class CareerController {
         success: boolean;
         data: {
             path: {
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 updatedAt: Date;
+                userId: string;
                 pathId: string;
                 pathTitle: string;
                 pathCategory: string;
@@ -31,10 +31,10 @@ export declare class CareerController {
         success: boolean;
         data: {
             path: {
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 updatedAt: Date;
+                userId: string;
                 pathId: string;
                 pathTitle: string;
                 pathCategory: string;
@@ -136,8 +136,8 @@ export declare class CareerController {
         success: boolean;
         data: {
             sessions: {
-                id: string;
                 createdAt: Date;
+                id: string;
                 status: string;
                 completedAt: Date;
                 report: import("@prisma/client/runtime/library").JsonValue;
@@ -150,14 +150,14 @@ export declare class CareerController {
         data: {
             assessment: {
                 assessment: {
-                    id: string;
                     createdAt: Date;
-                    userId: string;
+                    id: string;
+                    careerPathId: string;
                     status: import(".prisma/client").$Enums.AssessmentStatus;
                     updatedAt: Date;
-                    expiresAt: Date;
+                    userId: string;
                     completedAt: Date | null;
-                    careerPathId: string;
+                    expiresAt: Date;
                     score: number | null;
                     results: import("@prisma/client/runtime/library").JsonValue | null;
                     startedAt: Date;
@@ -178,14 +178,14 @@ export declare class CareerController {
         success: boolean;
         data: {
             assessment: {
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
+                careerPathId: string;
                 status: import(".prisma/client").$Enums.AssessmentStatus;
                 updatedAt: Date;
-                expiresAt: Date;
+                userId: string;
                 completedAt: Date | null;
-                careerPathId: string;
+                expiresAt: Date;
                 score: number | null;
                 results: import("@prisma/client/runtime/library").JsonValue | null;
                 startedAt: Date;
@@ -240,14 +240,14 @@ export declare class CareerController {
         message: string;
         data: {
             assessment: {
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
+                careerPathId: string;
                 status: import(".prisma/client").$Enums.AssessmentStatus;
                 updatedAt: Date;
-                expiresAt: Date;
+                userId: string;
                 completedAt: Date | null;
-                careerPathId: string;
+                expiresAt: Date;
                 score: number | null;
                 results: import("@prisma/client/runtime/library").JsonValue | null;
                 startedAt: Date;
@@ -288,16 +288,16 @@ export declare class CareerController {
             assessment: {
                 assessment: {
                     careerPath: {
-                        id: string;
                         createdAt: Date;
-                        isActive: boolean;
-                        updatedAt: Date;
+                        sortOrder: number;
+                        id: string;
+                        slug: string;
                         titleEn: string;
                         titleAr: string;
-                        slug: string;
                         descriptionEn: string;
                         descriptionAr: string;
-                        sortOrder: number;
+                        updatedAt: Date;
+                        isActive: boolean;
                         skills: string[];
                         salaryRangeEn: string;
                         salaryRangeAr: string;
@@ -308,28 +308,28 @@ export declare class CareerController {
                         color: string | null;
                     };
                     questions: {
-                        id: string;
                         createdAt: Date;
+                        id: string;
                         updatedAt: Date;
-                        options: import("@prisma/client/runtime/library").JsonValue | null;
                         order: number;
                         assessmentId: string;
                         questionTextEn: string;
                         questionTextAr: string;
                         questionType: string;
+                        options: import("@prisma/client/runtime/library").JsonValue | null;
                         correctAnswer: string | null;
                         userAnswer: string | null;
                         points: number;
                     }[];
                 } & {
-                    id: string;
                     createdAt: Date;
-                    userId: string;
+                    id: string;
+                    careerPathId: string;
                     status: import(".prisma/client").$Enums.AssessmentStatus;
                     updatedAt: Date;
-                    expiresAt: Date;
+                    userId: string;
                     completedAt: Date | null;
-                    careerPathId: string;
+                    expiresAt: Date;
                     score: number | null;
                     results: import("@prisma/client/runtime/library").JsonValue | null;
                     startedAt: Date;
@@ -347,16 +347,16 @@ export declare class CareerController {
         data: {
             assessments: ({
                 careerPath: {
-                    id: string;
                     createdAt: Date;
-                    isActive: boolean;
-                    updatedAt: Date;
+                    sortOrder: number;
+                    id: string;
+                    slug: string;
                     titleEn: string;
                     titleAr: string;
-                    slug: string;
                     descriptionEn: string;
                     descriptionAr: string;
-                    sortOrder: number;
+                    updatedAt: Date;
+                    isActive: boolean;
                     skills: string[];
                     salaryRangeEn: string;
                     salaryRangeAr: string;
@@ -367,14 +367,14 @@ export declare class CareerController {
                     color: string | null;
                 };
             } & {
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
+                careerPathId: string;
                 status: import(".prisma/client").$Enums.AssessmentStatus;
                 updatedAt: Date;
-                expiresAt: Date;
+                userId: string;
                 completedAt: Date | null;
-                careerPathId: string;
+                expiresAt: Date;
                 score: number | null;
                 results: import("@prisma/client/runtime/library").JsonValue | null;
                 startedAt: Date;

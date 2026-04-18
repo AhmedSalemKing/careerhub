@@ -227,7 +227,7 @@ export default function AdminUsersPage() {
                         ) : (
                           <button
                             onClick={() => ban(u.id)}
-                            disabled={processing === u.id || u.role === 'ADMIN'}
+                            disabled={processing === u.id || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.accountType === 'SUPER_ADMIN'}
                             className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-700 hover:bg-orange-800 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
                           >
                             <Ban size={12} /> {isAr ? 'حظر' : 'Ban'}
@@ -235,7 +235,7 @@ export default function AdminUsersPage() {
                         )}
                         <button
                           onClick={() => remove(u.id)}
-                          disabled={processing === u.id || u.role === 'ADMIN'}
+                          disabled={processing === u.id || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.accountType === 'SUPER_ADMIN'}
                           className="flex items-center gap-1 px-2.5 py-1.5 bg-red-800 hover:bg-red-900 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
                         >
                           <Trash2 size={12} /> {isAr ? 'حذف' : 'Delete'}

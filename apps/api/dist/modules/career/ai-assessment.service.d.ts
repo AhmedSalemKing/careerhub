@@ -76,8 +76,8 @@ export declare class AiAssessmentService {
         retryAfter?: undefined;
     }>;
     getSessionHistory(userId: string): Promise<{
-        id: string;
         createdAt: Date;
+        id: string;
         status: string;
         completedAt: Date;
         report: import("@prisma/client/runtime/library").JsonValue;

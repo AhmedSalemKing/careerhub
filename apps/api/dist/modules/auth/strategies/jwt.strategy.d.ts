@@ -11,23 +11,23 @@ export declare class JwtStrategy extends JwtStrategy_base {
         role: import(".prisma/client").$Enums.UserRole;
         accountType: string;
         profile: {
-            id: string;
             createdAt: Date;
+            id: string;
+            updatedAt: Date;
             userId: string;
             bio: string | null;
             linkedinUrl: string | null;
-            updatedAt: Date;
             firstName: string;
             lastName: string;
             phone: string | null;
-            country: string | null;
-            city: string | null;
-            language: string;
             dateOfBirth: Date | null;
             gender: import(".prisma/client").$Enums.Gender | null;
             nationality: string | null;
+            country: string | null;
+            city: string | null;
             avatar: string | null;
             timezone: string;
+            language: string;
         };
     }>;
 }

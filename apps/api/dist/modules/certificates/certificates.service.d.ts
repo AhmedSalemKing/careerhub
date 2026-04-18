@@ -151,11 +151,11 @@ export declare class CertificatesService {
         includeDateOfBirth?: boolean;
     }): Promise<{
         id: string;
-        userId: string;
-        certificateUrl: string;
-        expiresAt: Date | null;
         courseId: string;
+        userId: string;
+        expiresAt: Date | null;
         serialNumber: string;
+        certificateUrl: string;
         qrCodeUrl: string;
         issuedAt: Date;
     }>;
@@ -180,21 +180,21 @@ export declare class CertificatesService {
     }>;
     regenerateCertificate(certificateId: string): Promise<{
         id: string;
-        userId: string;
-        certificateUrl: string;
-        expiresAt: Date | null;
         courseId: string;
+        userId: string;
+        expiresAt: Date | null;
         serialNumber: string;
+        certificateUrl: string;
         qrCodeUrl: string;
         issuedAt: Date;
     }>;
     revokeCertificate(certificateId: string, reason: string): Promise<{
         id: string;
-        userId: string;
-        certificateUrl: string;
-        expiresAt: Date | null;
         courseId: string;
+        userId: string;
+        expiresAt: Date | null;
         serialNumber: string;
+        certificateUrl: string;
         qrCodeUrl: string;
         issuedAt: Date;
     }>;
@@ -205,35 +205,79 @@ export declare class CertificatesService {
         courseId?: string;
     }): Promise<{
         certificates: ({
+            course: {
+                careerPath: {
+                    createdAt: Date;
+                    sortOrder: number;
+                    id: string;
+                    slug: string;
+                    titleEn: string;
+                    titleAr: string;
+                    descriptionEn: string;
+                    descriptionAr: string;
+                    updatedAt: Date;
+                    isActive: boolean;
+                    skills: string[];
+                    salaryRangeEn: string;
+                    salaryRangeAr: string;
+                    jobTitlesEn: string[];
+                    jobTitlesAr: string[];
+                    demandLevel: string;
+                    icon: string | null;
+                    color: string | null;
+                };
+            } & {
+                createdAt: Date;
+                sortOrder: number;
+                id: string;
+                slug: string;
+                careerPathId: string | null;
+                instructorId: string | null;
+                categoryId: string | null;
+                titleEn: string;
+                titleAr: string | null;
+                descriptionEn: string | null;
+                descriptionAr: string | null;
+                thumbnail: string | null;
+                previewVideo: string | null;
+                price: number;
+                currency: string;
+                duration: number | null;
+                level: string;
+                status: import(".prisma/client").$Enums.CourseStatus;
+                isFeatured: boolean;
+                updatedAt: Date;
+            };
             user: {
                 profile: {
-                    id: string;
                     createdAt: Date;
+                    id: string;
+                    updatedAt: Date;
                     userId: string;
                     bio: string | null;
                     linkedinUrl: string | null;
-                    updatedAt: Date;
                     firstName: string;
                     lastName: string;
                     phone: string | null;
-                    country: string | null;
-                    city: string | null;
-                    language: string;
                     dateOfBirth: Date | null;
                     gender: import(".prisma/client").$Enums.Gender | null;
                     nationality: string | null;
+                    country: string | null;
+                    city: string | null;
                     avatar: string | null;
                     timezone: string;
+                    language: string;
                 };
             } & {
-                id: string;
                 createdAt: Date;
+                id: string;
+                status: string;
+                updatedAt: Date;
                 email: string;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
                 accountType: string;
-                status: string;
                 cvUrl: string | null;
                 bio: string | null;
                 experience: number | null;
@@ -246,59 +290,15 @@ export declare class CertificatesService {
                 rejectedAt: Date | null;
                 rejectedReason: string | null;
                 lastSeenAt: Date | null;
-                updatedAt: Date;
                 deletedAt: Date | null;
-            };
-            course: {
-                careerPath: {
-                    id: string;
-                    createdAt: Date;
-                    isActive: boolean;
-                    updatedAt: Date;
-                    titleEn: string;
-                    titleAr: string;
-                    slug: string;
-                    descriptionEn: string;
-                    descriptionAr: string;
-                    sortOrder: number;
-                    skills: string[];
-                    salaryRangeEn: string;
-                    salaryRangeAr: string;
-                    jobTitlesEn: string[];
-                    jobTitlesAr: string[];
-                    demandLevel: string;
-                    icon: string | null;
-                    color: string | null;
-                };
-            } & {
-                id: string;
-                createdAt: Date;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                updatedAt: Date;
-                titleEn: string;
-                titleAr: string | null;
-                slug: string;
-                careerPathId: string | null;
-                instructorId: string | null;
-                categoryId: string | null;
-                descriptionEn: string | null;
-                descriptionAr: string | null;
-                thumbnail: string | null;
-                previewVideo: string | null;
-                price: number;
-                currency: string;
-                duration: number | null;
-                level: string;
-                isFeatured: boolean;
-                sortOrder: number;
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
             courseId: string;
+            userId: string;
+            expiresAt: Date | null;
             serialNumber: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
         })[];

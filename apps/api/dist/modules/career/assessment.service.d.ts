@@ -5,14 +5,14 @@ export declare class AssessmentService {
     constructor(prisma: PrismaService);
     startAssessment(userId: string, careerPathId: string): Promise<{
         assessment: {
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
+            careerPathId: string;
             status: import(".prisma/client").$Enums.AssessmentStatus;
             updatedAt: Date;
-            expiresAt: Date;
+            userId: string;
             completedAt: Date | null;
-            careerPathId: string;
+            expiresAt: Date;
             score: number | null;
             results: import("@prisma/client/runtime/library").JsonValue | null;
             startedAt: Date;
@@ -29,14 +29,14 @@ export declare class AssessmentService {
     }>;
     getNextQuestion(userId: string, assessmentId: string, answer?: string): Promise<{
         assessment: {
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
+            careerPathId: string;
             status: import(".prisma/client").$Enums.AssessmentStatus;
             updatedAt: Date;
-            expiresAt: Date;
+            userId: string;
             completedAt: Date | null;
-            careerPathId: string;
+            expiresAt: Date;
             score: number | null;
             results: import("@prisma/client/runtime/library").JsonValue | null;
             startedAt: Date;
@@ -87,14 +87,14 @@ export declare class AssessmentService {
     }>;
     completeAssessment(userId: string, assessmentId: string): Promise<{
         assessment: {
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
+            careerPathId: string;
             status: import(".prisma/client").$Enums.AssessmentStatus;
             updatedAt: Date;
-            expiresAt: Date;
+            userId: string;
             completedAt: Date | null;
-            careerPathId: string;
+            expiresAt: Date;
             score: number | null;
             results: import("@prisma/client/runtime/library").JsonValue | null;
             startedAt: Date;
@@ -131,16 +131,16 @@ export declare class AssessmentService {
     getAssessment(userId: string, assessmentId: string): Promise<{
         assessment: {
             careerPath: {
-                id: string;
                 createdAt: Date;
-                isActive: boolean;
-                updatedAt: Date;
+                sortOrder: number;
+                id: string;
+                slug: string;
                 titleEn: string;
                 titleAr: string;
-                slug: string;
                 descriptionEn: string;
                 descriptionAr: string;
-                sortOrder: number;
+                updatedAt: Date;
+                isActive: boolean;
                 skills: string[];
                 salaryRangeEn: string;
                 salaryRangeAr: string;
@@ -151,28 +151,28 @@ export declare class AssessmentService {
                 color: string | null;
             };
             questions: {
-                id: string;
                 createdAt: Date;
+                id: string;
                 updatedAt: Date;
-                options: import("@prisma/client/runtime/library").JsonValue | null;
                 order: number;
                 assessmentId: string;
                 questionTextEn: string;
                 questionTextAr: string;
                 questionType: string;
+                options: import("@prisma/client/runtime/library").JsonValue | null;
                 correctAnswer: string | null;
                 userAnswer: string | null;
                 points: number;
             }[];
         } & {
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
+            careerPathId: string;
             status: import(".prisma/client").$Enums.AssessmentStatus;
             updatedAt: Date;
-            expiresAt: Date;
+            userId: string;
             completedAt: Date | null;
-            careerPathId: string;
+            expiresAt: Date;
             score: number | null;
             results: import("@prisma/client/runtime/library").JsonValue | null;
             startedAt: Date;
@@ -189,16 +189,16 @@ export declare class AssessmentService {
     }): Promise<{
         assessments: ({
             careerPath: {
-                id: string;
                 createdAt: Date;
-                isActive: boolean;
-                updatedAt: Date;
+                sortOrder: number;
+                id: string;
+                slug: string;
                 titleEn: string;
                 titleAr: string;
-                slug: string;
                 descriptionEn: string;
                 descriptionAr: string;
-                sortOrder: number;
+                updatedAt: Date;
+                isActive: boolean;
                 skills: string[];
                 salaryRangeEn: string;
                 salaryRangeAr: string;
@@ -209,14 +209,14 @@ export declare class AssessmentService {
                 color: string | null;
             };
         } & {
-            id: string;
             createdAt: Date;
-            userId: string;
+            id: string;
+            careerPathId: string;
             status: import(".prisma/client").$Enums.AssessmentStatus;
             updatedAt: Date;
-            expiresAt: Date;
+            userId: string;
             completedAt: Date | null;
-            careerPathId: string;
+            expiresAt: Date;
             score: number | null;
             results: import("@prisma/client/runtime/library").JsonValue | null;
             startedAt: Date;

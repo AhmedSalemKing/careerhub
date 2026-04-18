@@ -18,6 +18,8 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
+import { CreateCourseAdminDto } from './dto/create-course-admin.dto';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -170,24 +172,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Create new course (Admin only) - Full Version' })
   @ApiResponse({ status: 201, description: 'Course created successfully' })
   async createCourseAdmin(
-    @Body() body: {
-      titleEn: string;
-      titleAr?: string;
-      descriptionEn?: string;
-      descriptionAr?: string;
-      price?: number | string;
-      currency?: string;
-      duration?: number | string;
-      level?: string;
-      status?: string;
-      careerPathId?: string;
-      categoryId?: string;
-      thumbnail?: string;
-      previewVideo?: string;
-      isInstructor?: boolean;
-      instructorId?: string;
-      sections?: Array<{ title: string }>;
-    },
+    @Body() body: CreateCourseAdminDto,
     @Req() req: any,
   ) {
     console.log('[Admin] Creating course:', body.titleEn);
@@ -881,7 +866,7 @@ export class AdminController {
   }
 
   @Post('users/create')
-  async createUser(@Body() body: any) {
+  async createUser(@Body() body: CreateUserAdminDto) {
     const result = await this.adminService.createUser(body);
     return { success: true, data: result };
   }

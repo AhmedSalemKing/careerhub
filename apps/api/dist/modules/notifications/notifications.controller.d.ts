@@ -7,15 +7,15 @@ export declare class NotificationsController {
         success: boolean;
         data: {
             notifications: {
+                type: import(".prisma/client").$Enums.NotificationType;
                 data: import("@prisma/client/runtime/library").JsonValue | null;
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 titleEn: string;
                 titleAr: string;
+                userId: string;
                 contentEn: string;
                 contentAr: string;
-                type: import(".prisma/client").$Enums.NotificationType;
                 isRead: boolean;
             }[];
             meta: {
@@ -38,15 +38,15 @@ export declare class NotificationsController {
         success: boolean;
         data: {
             notification: {
+                type: import(".prisma/client").$Enums.NotificationType;
                 data: import("@prisma/client/runtime/library").JsonValue | null;
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 titleEn: string;
                 titleAr: string;
+                userId: string;
                 contentEn: string;
                 contentAr: string;
-                type: import(".prisma/client").$Enums.NotificationType;
                 isRead: boolean;
             };
         };
@@ -104,15 +104,15 @@ export declare class NotificationsController {
         data: {
             settings: {
                 notifications: {
+                    type: import(".prisma/client").$Enums.NotificationType;
                     data: import("@prisma/client/runtime/library").JsonValue | null;
-                    id: string;
                     createdAt: Date;
-                    userId: string;
+                    id: string;
                     titleEn: string;
                     titleAr: string;
+                    userId: string;
                     contentEn: string;
                     contentAr: string;
-                    type: import(".prisma/client").$Enums.NotificationType;
                     isRead: boolean;
                 }[];
                 meta: {
@@ -270,33 +270,34 @@ export declare class NotificationsController {
             notifications: ({
                 user: {
                     profile: {
-                        id: string;
                         createdAt: Date;
+                        id: string;
+                        updatedAt: Date;
                         userId: string;
                         bio: string | null;
                         linkedinUrl: string | null;
-                        updatedAt: Date;
                         firstName: string;
                         lastName: string;
                         phone: string | null;
-                        country: string | null;
-                        city: string | null;
-                        language: string;
                         dateOfBirth: Date | null;
                         gender: import(".prisma/client").$Enums.Gender | null;
                         nationality: string | null;
+                        country: string | null;
+                        city: string | null;
                         avatar: string | null;
                         timezone: string;
+                        language: string;
                     };
                 } & {
-                    id: string;
                     createdAt: Date;
+                    id: string;
+                    status: string;
+                    updatedAt: Date;
                     email: string;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
                     isActive: boolean;
                     accountType: string;
-                    status: string;
                     cvUrl: string | null;
                     bio: string | null;
                     experience: number | null;
@@ -309,19 +310,18 @@ export declare class NotificationsController {
                     rejectedAt: Date | null;
                     rejectedReason: string | null;
                     lastSeenAt: Date | null;
-                    updatedAt: Date;
                     deletedAt: Date | null;
                 };
             } & {
+                type: import(".prisma/client").$Enums.NotificationType;
                 data: import("@prisma/client/runtime/library").JsonValue | null;
-                id: string;
                 createdAt: Date;
-                userId: string;
+                id: string;
                 titleEn: string;
                 titleAr: string;
+                userId: string;
                 contentEn: string;
                 contentAr: string;
-                type: import(".prisma/client").$Enums.NotificationType;
                 isRead: boolean;
             })[];
             meta: {

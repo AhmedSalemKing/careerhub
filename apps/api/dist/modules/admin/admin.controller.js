@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const admin_service_1 = require("./admin.service");
+const create_course_admin_dto_1 = require("./dto/create-course-admin.dto");
+const create_user_admin_dto_1 = require("./dto/create-user-admin.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
@@ -596,7 +598,7 @@ __decorate([
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [create_course_admin_dto_1.CreateCourseAdminDto, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createCourseAdmin", null);
 __decorate([
@@ -1076,7 +1078,7 @@ __decorate([
     (0, common_1.Post)('users/create'),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [create_user_admin_dto_1.CreateUserAdminDto]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "createUser", null);
 __decorate([
