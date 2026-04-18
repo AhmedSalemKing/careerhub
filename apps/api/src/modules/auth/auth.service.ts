@@ -153,6 +153,8 @@ export class AuthService {
   async login(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
 
+    this.logger.log(`[Auth Login] attempt: ${email}`);
+
     // Find user with profile
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -166,25 +168,28 @@ export class AuthService {
       }
     });
 
-    if (!user || !user.isActive) {
+    this.logger.log(`[Auth Login] user found: ${user?.id} | isActive: ${user?.isActive} | status: ${user?.status} | accountType: ${user?.accountType}`);
+
+    if (!user || user.isActive === false) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
+    this.logger.log(`[Auth Login] password match: ${isPasswordValid}`);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Check account status
+    // Check account status — only block explicitly blocked accounts
+    if (user.status === 'BANNED') {
+      throw new UnauthorizedException('Account is disabled');
+    }
     if (user.status === 'PENDING') {
       throw new ForbiddenException('Account is under review. You will be notified within 48 hours.');
     }
     if (user.status === 'REJECTED') {
       throw new ForbiddenException('Your application was rejected. Please contact support.');
-    }
-    if (user.status === 'BANNED') {
-      throw new ForbiddenException('Your account has been banned. Please contact support.');
     }
 
     // Generate tokens
@@ -458,7 +463,8 @@ export class AuthService {
       include: { profile: true },
     });
 
-    if (!user || !user.isActive || (user.role !== 'ADMIN' && user.accountType !== 'ADMIN')) {
+    const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
+    if (!user || !user.isActive || (!adminRoles.includes(user.role) && !adminRoles.includes(user.accountType))) {
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
 
