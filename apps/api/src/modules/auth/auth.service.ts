@@ -153,7 +153,7 @@ export class AuthService {
   async login(loginDto: { email: string; password: string }) {
     const { email, password } = loginDto;
 
-    this.logger.log(`[Auth Login] attempt: ${email}`);
+    console.log('[Auth Login] attempt:', email);
 
     // Find user with profile
     const user = await this.prisma.user.findUnique({
@@ -168,7 +168,7 @@ export class AuthService {
       }
     });
 
-    this.logger.log(`[Auth Login] user found: ${user?.id} | isActive: ${user?.isActive} | status: ${user?.status} | accountType: ${user?.accountType}`);
+    console.log('[Auth Login] user:', user ? { id: user.id, accountType: user.accountType, isActive: user.isActive, status: user.status } : 'NOT FOUND');
 
     if (!user || user.isActive === false) {
       throw new UnauthorizedException('Invalid credentials');
@@ -176,7 +176,7 @@ export class AuthService {
 
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    this.logger.log(`[Auth Login] password match: ${isPasswordValid}`);
+    console.log('[Auth Login] passwordMatch:', isPasswordValid);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
