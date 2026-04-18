@@ -2,7 +2,8 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
-import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Play, Users, BookOpen, Star, Clock, ArrowRight,
   Award, Globe, Code, Palette,
@@ -21,13 +22,70 @@ function thumbUrl(path?: string | null): string | null {
   return path.startsWith('/') ? path : `/${path}`
 }
 
+// Auth hook for checking user authentication status
+function useAuth() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const checkAuth = useCallback(async () => {
+    try {
+      // Check for token in localStorage or cookies
+      const token = typeof window !== 'undefined' 
+        ? localStorage.getItem('auth_token') || document.cookie.includes('auth_token=') 
+        : false
+      
+      if (token) {
+        // Verify token with API (optional - for extra security)
+        try {
+          const response = await fetch(`${API_BASE}/auth/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+          
+          if (response.ok) {
+            setIsAuthenticated(true)
+          } else {
+            // Token invalid, clear it
+            localStorage.removeItem('auth_token')
+            setIsAuthenticated(false)
+          }
+        } catch (error) {
+          // If API check fails, assume authenticated if token exists
+          setIsAuthenticated(true)
+        }
+      } else {
+        setIsAuthenticated(false)
+      }
+    } catch (error) {
+      console.error('Auth check error:', error)
+      setIsAuthenticated(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  return {
+    isAuthenticated,
+    isLoading,
+    checkAuth
+  }
+}
+
 export default function HomePage() {
   const t = useTranslations()
   const locale = useLocale() as 'ar' | 'en'
+  const router = useRouter()
   const [showStickyCta, setShowStickyCta] = useState(false)
   const heroRef = useRef<HTMLDivElement>(null)
   const [apiCourses, setApiCourses] = useState<any[]>([])
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,7 +99,6 @@ export default function HomePage() {
   // Detect Dark/Light Mode for Wave Divider
   useEffect(() => {
     const checkTheme = () => {
-      // Check multiple methods for theme detection
       const isDark = 
         document.documentElement.classList.contains('dark') ||
         document.documentElement.getAttribute('data-theme') === 'dark' ||
@@ -50,10 +107,8 @@ export default function HomePage() {
       setIsDarkMode(isDark)
     }
     
-    // Initial check
     checkTheme()
     
-    // Listen for theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme') {
@@ -64,7 +119,6 @@ export default function HomePage() {
     
     observer.observe(document.documentElement, { attributes: true })
     
-    // Also listen for system preference changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     mediaQuery.addEventListener('change', checkTheme)
     
@@ -102,6 +156,27 @@ export default function HomePage() {
     badgeBg: i === 0 ? '#F5A623' : '#2BBFA3',
     thumbnail: c.thumbnail,
   }))
+
+  // Handler for Start Free button
+  const handleStartFreeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    
+    if (authLoading) return // Don't do anything while loading
+    
+    if (isAuthenticated) {
+      // User is logged in - redirect to dashboard
+      window.location.href = `${MAIN_SITE_URL}/${locale}/dashboard`
+    } else {
+      // User is not logged in - redirect to login/register
+      window.location.href = `${MAIN_SITE_URL}/${locale}/login`
+    }
+  }
+
+  // Handler for Browse Courses button
+  const handleBrowseCoursesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    router.push(`/${locale}/courses`)
+  }
 
   return (
     <div className="min-h-screen">
@@ -174,16 +249,36 @@ export default function HomePage() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  {/* ===== START FREE NOW BUTTON ===== */}
                   <a
-                    href={`${MAIN_SITE_URL}/${locale}/register`}
-                    className="btn-cta-primary text-base inline-flex items-center justify-center gap-2 group"
+                    href="#"
+                    onClick={handleStartFreeClick}
+                    className={`btn-cta-primary text-base inline-flex items-center justify-center gap-2 group ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
+                    aria-disabled={authLoading}
+                    role="button"
+                    tabIndex={authLoading ? -1 : 0}
                   >
-                    {locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}
-                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
+                    {authLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+                      </>
+                    ) : (
+                      <>
+                        {locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
+                      </>
+                    )}
                   </a>
-                  <Link
-                    href={`/${locale}/courses`}
-                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10"
+                  
+                  {/* ===== BROWSE COURSES BUTTON ===== */}
+                  <a
+                    href="#"
+                    onClick={handleBrowseCoursesClick}
+                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10 active:scale-95"
                     style={{
                       background: 'transparent',
                       border: '1.5px solid rgba(255,255,255,0.6)',
@@ -191,10 +286,11 @@ export default function HomePage() {
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                       textDecoration: 'none',
                       textShadow: '0 2px 15px rgba(0,0,0,0.4)',
+                      cursor: 'pointer',
                     }}
                   >
                     {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}
-                  </Link>
+                  </a>
                 </div>
               </div>
 
@@ -366,15 +462,76 @@ export default function HomePage() {
           <h2 className="text-3xl sm:text-4xl font-bold font-madinet">{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
           <p className="mt-4 text-lg" style={{ color: 'rgba(248,248,250,0.65)' }}>{locale === 'ar' ? 'انضم لآلاف المتعلمين وابدأ في تطوير مهاراتك اليوم' : 'Join thousands of learners and start today'}</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <a href={`${MAIN_SITE_URL}/${locale}/register`} className="btn-cta-primary text-base">{locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}<ArrowRight className="h-5 w-5" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} /></a>
-            <Link href={`/${locale}/courses`} className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200" style={{ background: 'transparent', border: '1.5px solid rgba(248,248,250,0.25)', color: '#F8F8FA', textDecoration: 'none', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}</Link>
+            {/* ===== CTA START FREE BUTTON ===== */}
+            <a
+              href="#"
+              onClick={handleStartFreeClick}
+              className={`btn-cta-primary text-base inline-flex items-center justify-center gap-2 ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
+              aria-disabled={authLoading}
+              role="button"
+              tabIndex={authLoading ? -1 : 0}
+            >
+              {authLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+                </>
+              ) : (
+                <>
+                  {locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}
+                  <ArrowRight className="h-5 w-5" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
+                </>
+              )}
+            </a>
+            
+            {/* ===== CTA BROWSE COURSES BUTTON ===== */}
+            <a
+              href="#"
+              onClick={handleBrowseCoursesClick}
+              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10 active:scale-95"
+              style={{
+                background: 'transparent',
+                border: '1.5px solid rgba(248,248,250,0.25)',
+                color: '#F8F8FA',
+                textDecoration: 'none',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                cursor: 'pointer',
+              }}
+            >
+              {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}
+            </a>
           </div>
         </div>
       </section>
 
       {/* ========== STICKY CTA ========== */}
       <div className={`floating-cta ${showStickyCta ? 'visible' : ''}`}>
-        <a href={`${MAIN_SITE_URL}/${locale}/register`} className="btn-primary w-full justify-center">{locale === 'ar' ? 'ابدأ التعلم الآن' : 'Start Learning Now'}<ArrowRight className="h-4 w-4" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} /></a>
+        <a
+          href="#"
+          onClick={handleStartFreeClick}
+          className={`btn-primary w-full justify-center ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
+          aria-disabled={authLoading}
+          role="button"
+          tabIndex={authLoading ? -1 : 0}
+        >
+          {authLoading ? (
+            <>
+              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </>
+          ) : (
+            <>
+              {locale === 'ar' ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
+              <ArrowRight className="h-4 w-4" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
+            </>
+          )}
+        </a>
       </div>
 
       {/* ========== CSS ANIMATIONS & WAVE COLORS ========== */}

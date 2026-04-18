@@ -20,6 +20,21 @@ export default function CourseDetailPage({
   const [openSection, setOpenSection] = useState<string | null>(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrollmentChecked, setEnrollmentChecked] = useState(false)
+  
+  // 🎨 إضافة حالة للثيم (فاتح/داكن)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+
+  // 🔄 التحقق من تفضيلات الثيم عند تحميل الصفحة
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    
+    if (savedTheme) {
+      setTheme(savedTheme)
+    } else if (systemPrefersDark) {
+      setTheme('dark')
+    }
+  }, [])
 
   useEffect(() => {
     const checkEnrollment = async () => {
@@ -70,7 +85,16 @@ export default function CourseDetailPage({
   const sections = course.sections ?? course.modules ?? []
 
   return (
-    <div className="min-h-screen" dir="rtl" style={{ background: 'var(--background)' }}>
+    <div 
+      className="min-h-screen" 
+      dir="rtl" 
+      style={{ 
+        background: 'var(--background)',
+        // تطبيق الثيم على العنصر الأب
+        ...(theme === 'dark' ? { '--theme-mode': 'dark' } : {})
+      }}
+      data-theme={theme}
+    >
       {/* Hero — NO gradient, solid navy */}
       <div className="py-10 px-6" style={{ background: 'var(--navy)' }}>
         <div className="max-w-6xl mx-auto grid gap-8 lg:grid-cols-2">
@@ -81,9 +105,18 @@ export default function CourseDetailPage({
                 {course.category.nameAr || course.category.nameEn}
               </span>
             )}
-            <h1 className="text-3xl font-bold font-madinet mb-4" style={{ color: '#F8F8FA' }}>
+            
+            {/* 🎯 العنوان مع دعم الثيم - التعديل المطلوب */}
+            <h1 
+              className="text-3xl font-bold font-madinet mb-4" 
+              style={{ 
+                // ✅ أسود في الوضع الفاتح، أبيض في الوضع الداكن
+                color: theme === 'dark' ? '#FFFFFF' : 'rgb(0 0 0)'
+              }}
+            >
               {getCourseTitle(course, locale)}
             </h1>
+            
             <p className="mb-6" style={{ color: 'rgba(248,248,250,0.65)' }}>
               {course.descriptionAr || course.descriptionEn || course.description}
             </p>

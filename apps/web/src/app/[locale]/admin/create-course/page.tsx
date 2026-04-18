@@ -242,7 +242,7 @@ export default function AdminCreateCoursePage() {
         price: parseFloat(form.price) || 0,
         currency: form.currency,
         level: form.level,
-        status: form.status === 'PENDING_REVIEW' ? 'APPROVED' : form.status, // Admin auto-approves
+        status: form.status === 'PENDING_REVIEW' ? 'PUBLISHED' : (form.status === 'APPROVED' ? 'PUBLISHED' : form.status),
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         duration: parseInt(form.duration) || 0,
@@ -261,7 +261,7 @@ export default function AdminCreateCoursePage() {
       console.log('[Admin] ✅ Course created successfully!', response)
       
       // Success notification
-      alert(`✅ تم إنشاء الكورس بنجاح!\n\n${form.status === 'APPROVED' ? 'تم نشره مباشرة' : 'تم حفظ كمسودة'}`)
+      alert(`✅ تم إنشاء الكورس بنجاح!\n\n${form.status === 'PUBLISHED' ? 'تم نشره مباشرة' : 'تم حفظ كمسودة'}`)
       
       // Redirect to courses list or dashboard
       router.push(`/${locale}/admin/courses`)
@@ -650,7 +650,7 @@ export default function AdminCreateCoursePage() {
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { value: 'DRAFT', label: '📝 حفظ كمسودة', desc: 'لن يظهر للطلاب', color: 'border-[color:var(--border)]' },
-                  { value: 'APPROVED', label: '✅ نشر مباشرة', desc: 'يظهر فوراً (صلاحيات الأدمن)', color: 'border-green-500' },
+                  { value: 'PUBLISHED', label: '✅ نشر مباشرة', desc: 'يظهر فوراً (صلاحيات الأدمن)', color: 'border-green-500' },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -718,7 +718,7 @@ export default function AdminCreateCoursePage() {
             ) : (
               <>
                 <CheckCircle className="h-4 w-4" />
-                {form.status === 'APPROVED' ? 'نشر الكورس ✓' : 'حفظ كمسودة'}
+                {form.status === 'PUBLISHED' ? 'نشر الكورس ✓' : 'حفظ كمسودة'}
               </>
             )}
           </button>

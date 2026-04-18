@@ -65,10 +65,10 @@ export class AdminService {
         currency: courseData.currency || 'SAR',
         duration: parseInt(String(courseData.duration || 0)) || undefined,
         level: courseData.level || 'BEGINNER',
-        status: (courseData.status as any) || 'DRAFT',
+        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
-        
+
         // Relations ✅
         ...(instructorId && { instructorId }),
         ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
@@ -222,7 +222,7 @@ try {
         currency: courseData.currency || 'USD',
         duration: courseData.duration ? parseInt(courseData.duration) : undefined,
         level: courseData.level || 'BEGINNER',
-        status: (courseData.status as any) || 'PUBLISHED',
+        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'PUBLISHED') as any,
         thumbnail: thumbnailUrl,
         ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
         ...(instructorId && { instructorId }),
@@ -641,7 +641,7 @@ try {
         currency: courseData.currency || 'USD',
         duration: courseData.duration ? parseInt(String(courseData.duration)) : undefined,
         level: courseData.level || 'BEGINNER',
-        status: (courseData.status as any) || 'DRAFT',
+        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
         // ✅ تم إزالة isPublished (غير موجود في Schema)

@@ -620,7 +620,7 @@ export function FeaturesSection() {
         .fx-cards-stack {
           display: flex;
           flex-direction: column;
-          gap: 16px; /* ← مسافة مناسبة بين الكاردز */
+          gap: 12px; /* ← مسافة أقل بين الكاردز */
         }
 
         .feature-card-wrapper {
@@ -642,8 +642,8 @@ export function FeaturesSection() {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 20px; /* ← مسافة أكبر أفقياً */
-          padding: 16px 28px; /* ← padding أقل عمودياً + أكبر أفقياً */
+          gap: 24px; /* ← مسافة أكبر أفقياً */
+          padding: 14px 32px; /* ← padding أقل عمودياً + أكبر أفقياً */
           border-radius: 18px;
           background: var(--fx-card-bg);
           border: 1.5px solid var(--fx-card-border);
@@ -667,10 +667,10 @@ export function FeaturesSection() {
         }
 
         .feature-icon {
-          width: 48px; /* ← أيقونة أصغر عمودياً */
-          height: 48px;
-          min-width: 48px;
-          border-radius: 14px; /* ← زوايا أدفأ */
+          width: 44px; /* ← أيقونة أصغر */
+          height: 44px;
+          min-width: 44px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -693,16 +693,16 @@ export function FeaturesSection() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          margin-bottom: 2px; /* ← مسافة أقل */
+          margin-bottom: 0px; /* ← إزالة المسافة تماماً */
         }
 
         .feature-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
-          font-size: 16px !important; /* ← عنوان مناسب */
+          font-size: 15px !important; /* ← عنوان مناسب */
           color: var(--fx-fg);
           margin: 0;
-          line-height: 1.25; /* ← ارتفاع سطر أقل */
+          line-height: 1.2; /* ← ارتفاع سطر أقل */
           letter-spacing: -0.01em;
         }
 
@@ -725,17 +725,17 @@ export function FeaturesSection() {
         }
 
         .feature-desc {
-          font-size: 13px; /* ← وصف أصغر */
+          font-size: 12px; /* ← وصف أصغر */
           color: var(--fx-muted);
-          line-height: 1.45; /* ← ارتفاع سطر أقل */
+          line-height: 1.35; /* ← ارتفاع سطر أقل */
           margin: 0;
           font-family: "DM Sans", sans-serif;
         }
 
         .feature-cta {
-          padding: 7px 14px; /* ← زر أنحف */
+          padding: 6px 14px; /* ← زر أنحف */
           border-radius: 10px; /* ← زوايا أدفأ */
-          font-size: 11px; /* ← نص مناسب */
+          font-size: 10px; /* ← نص أصغر */
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
           background: rgba(81,32,200,0.1);
