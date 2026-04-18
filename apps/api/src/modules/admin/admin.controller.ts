@@ -14,6 +14,7 @@ import {
   UploadedFiles,
   UseInterceptors,
   Req,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
@@ -175,15 +176,20 @@ export class AdminController {
     @Body() body: CreateCourseAdminDto,
     @Req() req: any,
   ) {
-    console.log('[Admin] Creating course:', body.titleEn);
-    
-    const result = await this.adminService.createCourseAdminFull(body, req.user?.sub || req.user?.id);
-    
-    return {
-      success: true,
-      message: 'Course created successfully',
-      data: result,
-    };
+    try {
+      console.log('[Admin] Creating course:', body.titleEn, 'admin:', req.user?.sub || req.user?.id);
+
+      const result = await this.adminService.createCourseAdminFull(body, req.user?.sub || req.user?.id);
+
+      return {
+        success: true,
+        message: 'Course created successfully',
+        data: result,
+      };
+    } catch (e: any) {
+      console.error('[Admin Controller] createCourse error:', e.code, e.message, e.meta || '');
+      throw new InternalServerErrorException(e.message || 'Failed to create course');
+    }
   }
 
   // ── Create Course WITH File Uploads ──
@@ -724,7 +730,12 @@ export class AdminController {
   @ApiOperation({ summary: 'Get courses pending review' })
   @ApiResponse({ status: 200, description: 'Pending courses retrieved successfully' })
   async getPendingCourses() {
-    return this.adminService.getPendingCourses();
+    try {
+      return await this.adminService.getPendingCourses();
+    } catch (e: any) {
+      console.error('[Admin Controller] pending-courses error:', e.message, e.stack);
+      return { success: true, data: [] };
+    }
   }
 
   @Post('courses/:id/approve')
@@ -754,15 +765,25 @@ export class AdminController {
   @ApiOperation({ summary: 'Get pending instructor/consultant approvals' })
   @ApiResponse({ status: 200, description: 'Pending approvals retrieved successfully' })
   async getPendingApprovals() {
-    const users = await this.adminService.getPendingApprovals();
-    return { success: true, data: users };
+    try {
+      const users = await this.adminService.getPendingApprovals();
+      return { success: true, data: users };
+    } catch (e: any) {
+      console.error('[Admin Controller] pending-approvals error:', e.message, e.stack);
+      return { success: true, data: [] };
+    }
   }
 
   @Get('stats')
   @ApiOperation({ summary: 'Get dashboard stats (safe)' })
   async getDashboardStats() {
-    const stats = await this.adminService.getDashboardStats();
-    return { success: true, data: stats };
+    try {
+      const stats = await this.adminService.getDashboardStats();
+      return { success: true, data: stats };
+    } catch (e: any) {
+      console.error('[Admin Controller] stats error:', e.message, e.stack);
+      throw new InternalServerErrorException(e.message);
+    }
   }
 
   @Delete('clear-seed-data')

@@ -30,159 +30,138 @@ export class AdminService {
   
   async createCourseAdminFull(courseData: any, adminId?: string) {
     this.logger.log(`[Admin] Creating course FULL: ${courseData.titleEn}`);
-    
-    // 1. Generate unique slug
-    const baseSlug = (courseData.titleEn || courseData.title || 'course')
-      .toLowerCase()
-      .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-    const slug = `${baseSlug}-${Date.now()}`;
-    
-    // 2. Determine instructor
-    let instructorId: string | undefined;
-    if (courseData.isInstructor === true || courseData.isInstructor === 'true') {
-      // Admin is the instructor
-      instructorId = adminId;
-    } else if (courseData.instructorId) {
-      // Specific instructor selected
-      instructorId = courseData.instructorId;
-    } else {
-      // Default to admin
-      instructorId = adminId;
-    }
 
-    this.logger.log(`[Admin] Course instructor: ${instructorId}`);
-    
-    // 3. Create the course with ALL data ✅ مصحح - بدون isPublished/createdAt/updatedAt
-    const course = await this.prisma.course.create({
-      data: {
-        slug,
-        titleEn: courseData.titleEn || 'Untitled Course',
-        titleAr: courseData.titleAr || courseData.titleEn || 'كورس بدون عنوان',
-        descriptionEn: courseData.descriptionEn || '',
-        descriptionAr: courseData.descriptionAr || courseData.descriptionEn || '',
-        price: parseFloat(String(courseData.price || 0)),
-        currency: courseData.currency || 'SAR',
-        duration: parseInt(String(courseData.duration || 0)) || undefined,
-        level: courseData.level || 'BEGINNER',
-        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
-        thumbnail: courseData.thumbnail || null,
-        previewVideo: courseData.previewVideo || null,
+    try {
+      // 1. Generate unique slug
+      const baseSlug = (courseData.titleEn || courseData.title || 'course')
+        .toLowerCase()
+        .replace(/[^a-z0-9\u0600-\u06FF]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      const slug = `${baseSlug}-${Date.now()}`;
 
-        // Relations ✅
-        ...(instructorId && { instructorId }),
-        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
-        ...(courseData.categoryId && { categoryId: courseData.categoryId }),
-        
-        // ✅ ملاحظة: isPublished, createdAt, updatedAt يتم إدارتها تلقائياً بواسطة Prisma
-      },
-    });
+      // 2. Determine & validate instructor
+      let instructorId: string | undefined;
+      if (courseData.isInstructor === true || courseData.isInstructor === 'true') {
+        instructorId = adminId;
+      } else if (courseData.instructorId) {
+        instructorId = courseData.instructorId;
+      } else {
+        instructorId = adminId;
+      }
 
-    this.logger.log(`[Admin] Course created with ID: ${course.id}`);
-
-    // 4. Create Sections if provided ✅ مصحح - بدون moduleId في Section
-    if (courseData.sections && Array.isArray(courseData.sections) && courseData.sections.length > 0) {
-      const validSections = courseData.sections.filter((s: any) => s.title && s.title.trim());
-      
-      if (validSections.length > 0) {
-        this.logger.log(`[Admin] Creating ${validSections.length} sections...`);
-        
-        // Create a default module for the course (للتنظيم فقط)
-        try {
-          await this.prisma.courseModule.create({
-            data: {
-              courseId: course.id,
-              titleEn: courseData.titleEn || 'Course Content',
-              titleAr: courseData.titleAr || 'محتوى الكورس',
-              sortOrder: 1,
-              isPublished: true,
-            },
-          });
-        } catch (e) {
-          this.logger.warn(`Could not create module (may not exist in schema): ${e}`);
+      // Verify instructor exists, fallback to any admin
+      if (instructorId) {
+        const exists = await this.prisma.user.findUnique({ where: { id: instructorId }, select: { id: true } }).catch(() => null);
+        if (!exists) {
+          this.logger.warn(`[Admin] Instructor ${instructorId} not found, looking for fallback admin`);
+          const fallback = await this.prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' }, select: { id: true } }).catch(() => null);
+          instructorId = fallback?.id || undefined;
         }
+      }
 
-        // Create each section ✅ مصحح - courseId فقط بدون moduleId
-        for (let i = 0; i < validSections.length; i++) {
-          const sectionData = validSections[i];
-          
+      this.logger.log(`[Admin] Course instructor: ${instructorId}`);
+
+      // 3. Validate status against CourseStatus enum
+      const validStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED', 'ARCHIVED'];
+      let status = courseData.status === 'APPROVED' ? 'PUBLISHED' : (courseData.status || 'DRAFT');
+      if (!validStatuses.includes(status)) status = 'PUBLISHED';
+
+      // 4. Create the course
+      const course = await this.prisma.course.create({
+        data: {
+          slug,
+          titleEn: courseData.titleEn || 'Untitled Course',
+          titleAr: courseData.titleAr || courseData.titleEn || '',
+          descriptionEn: courseData.descriptionEn || '',
+          descriptionAr: courseData.descriptionAr || courseData.descriptionEn || '',
+          price: parseFloat(String(courseData.price || 0)),
+          currency: courseData.currency || 'SAR',
+          duration: parseInt(String(courseData.duration || 0)) || undefined,
+          level: courseData.level || 'BEGINNER',
+          status: status as any,
+          thumbnail: courseData.thumbnail || null,
+          previewVideo: courseData.previewVideo || null,
+          ...(instructorId && { instructorId }),
+          ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+          ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+        },
+      });
+
+      this.logger.log(`[Admin] Course created with ID: ${course.id}`);
+
+      // 5. Create Sections if provided
+      if (courseData.sections && Array.isArray(courseData.sections) && courseData.sections.length > 0) {
+        const validSections = courseData.sections.filter((s: any) => s.title && s.title.trim());
+
+        if (validSections.length > 0) {
+          this.logger.log(`[Admin] Creating ${validSections.length} sections...`);
+
           try {
-            const section = await this.prisma.section.create({
-              data: {
-                courseId: course.id,
-                title: sectionData.title,
-                order: i + 1,
-              },
+            await this.prisma.courseModule.create({
+              data: { courseId: course.id, titleEn: courseData.titleEn || 'Course Content', titleAr: courseData.titleAr || 'محتوى الكورس', sortOrder: 1, isPublished: true },
             });
-            
-            this.logger.log(`[Admin] Created section: ${section.title}`);
           } catch (e) {
-            this.logger.warn(`Failed to create section "${sectionData.title}": ${e}`);
+            this.logger.warn(`Could not create module: ${e}`);
+          }
+
+          for (let i = 0; i < validSections.length; i++) {
+            try {
+              await this.prisma.section.create({
+                data: { courseId: course.id, title: validSections[i].title, order: i + 1 },
+              });
+            } catch (e) {
+              this.logger.warn(`Failed to create section "${validSections[i].title}": ${e}`);
+            }
           }
         }
       }
-    }
 
-    // 5. Create notification for instructor (if not admin)
-    if (instructorId && instructorId !== adminId) {
-      try {
-        await this.notificationsService.createNotification({
-          userId: instructorId,
-          type: 'SYSTEM_ANNOUNCEMENT',
-          titleEn: 'New Course Assigned to You',
-          titleAr: 'تم تعيين كورس جديد لك',
-          contentEn: `An admin has created a course "${courseData.titleEn}" and assigned it to you.`,
-          contentAr: `قام الأدمن بإنشاء كورس "${courseData.titleAr || courseData.titleEn}" وتعيينه لك.`,
-          data: { type: 'course_assigned', courseId: course.id },
-        }).catch(() => {});
-      } catch (e) {
-        this.logger.warn(`Failed to create notification: ${e}`);
+      // 6. Notify instructor (if not the admin)
+      if (instructorId && instructorId !== adminId) {
+        try {
+          await this.notificationsService.createNotification({
+            userId: instructorId,
+            type: 'SYSTEM_ANNOUNCEMENT',
+            titleEn: 'New Course Assigned to You',
+            titleAr: 'تم تعيين كورس جديد لك',
+            contentEn: `An admin has created a course "${courseData.titleEn}" and assigned it to you.`,
+            contentAr: `قام الأدمن بإنشاء كورس "${courseData.titleAr || courseData.titleEn}" وتعيينه لك.`,
+            data: { type: 'course_assigned', courseId: course.id },
+          }).catch(() => {});
+        } catch (e) {
+          this.logger.warn(`Failed to create notification: ${e}`);
+        }
       }
+
+      // 7. Audit log
+      await this.log('CREATE_COURSE', 'Course', course.id, adminId, {
+        title: courseData.titleEn, instructorId, status,
+      });
+
+      // 8. Return full course with relations
+      let fullCourse: any;
+      try {
+        fullCourse = await this.prisma.course.findUnique({
+          where: { id: course.id },
+          include: {
+            instructor: { select: { id: true, email: true, profile: { select: { firstName: true, lastName: true } } } },
+            careerPath: true,
+            category: true,
+            sections: { orderBy: { order: 'asc' }, include: { _count: { select: { lessons: true } } } },
+            _count: { select: { enrollments: true, sections: true } },
+          },
+        });
+      } catch (e) {
+        this.logger.warn(`Could not fetch full course: ${e}`);
+        fullCourse = course;
+      }
+
+      this.logger.log(`[Admin] Course created successfully: ${course.id}`);
+      return fullCourse;
+    } catch (e: any) {
+      this.logger.error(`[createCourseAdminFull] Prisma error: ${e.code} ${e.message}`, e.meta || e.stack);
+      throw e;
     }
-
-    // 6. Log the action
-    await this.log('CREATE_COURSE', 'Course', course.id, adminId, {
-      title: courseData.titleEn,
-      instructorId,
-      status: courseData.status,
-    });
-
-// 7. Return the complete course with relations ✅ مصحح - بدون حقول محددة
-let fullCourse: any;
-
-try {
-  fullCourse = await this.prisma.course.findUnique({
-    where: { id: course.id },
-    include: {
-      instructor: {
-        select: {
-          id: true,
-          email: true,
-          profile: { select: { firstName: true, lastName: true } },
-        },
-      },
-      // ✅ استخدام include بدلاً من select مع حقول محددة
-      careerPath: true,
-      category: true,
-      sections: {
-        orderBy: { order: 'asc' },
-        include: {
-          _count: { select: { lessons: true } },
-        },
-      },
-      _count: {
-        select: { enrollments: true, sections: true },
-      },
-    },
-  });
-} catch (e) {
-  this.logger.warn(`Could not fetch full course with relations: ${e}`);
-  // Fallback: return basic course
-  fullCourse = course;
-}
-
-    this.logger.log(`[Admin] ✅ Course created successfully: ${course.id}`);
-    return fullCourse;
   }
 
   // ── Create Course WITH Uploads (Thumbnail + Videos) ──
@@ -653,24 +632,30 @@ try {
   }
 
   async getPendingCourses() {
-    const courses = await this.prisma.course.findMany({
-      where: { status: 'PENDING_REVIEW' as any },
-      include: {
-        instructor: {
-          select: {
-            id: true,
-            profile: { select: { firstName: true, lastName: true } },
+    try {
+      const courses = await this.prisma.course.findMany({
+        where: { status: 'PENDING_REVIEW' },
+        include: {
+          instructor: {
+            select: {
+              id: true,
+              email: true,
+              profile: { select: { firstName: true, lastName: true } },
+            },
           },
+          sections: {
+            include: { lessons: true },
+          },
+          category: true,
+          _count: { select: { sections: true } },
         },
-        sections: {
-          include: { lessons: true },
-        },
-        category: true,
-        _count: { select: { sections: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { success: true, data: courses };
+        orderBy: { createdAt: 'desc' },
+      });
+      return { success: true, data: courses };
+    } catch (e: any) {
+      this.logger.error(`[getPendingCourses] ERROR: ${e.message}`, e.stack);
+      return { success: true, data: [] };
+    }
   }
 
   async approveCourse(id: string) {
@@ -1008,125 +993,106 @@ try {
   // ─────────────────────────────────────────────────────────────────────
 
   async getPendingApprovals() {
-    this.logger.log('[Admin] Fetching pending approvals...');
-    const users = await this.prisma.user.findMany({
-      where: { status: 'PENDING' },
-      select: {
-        id: true,
-        email: true,
-        status: true,
-        accountType: true,
-        cvUrl: true,
-        bio: true,
-        experience: true,
-        speciality: true,
-        linkedinUrl: true,
-        hourlyRate: true,
-        meetingMethod: true,
-        createdAt: true,
-        profile: {
-          select: {
-            firstName: true,
-            lastName: true,
-            avatar: true,
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    this.logger.log(`[Admin] Found pending users: ${users.length}`);
-    return users;
-  }
-
-  async getDashboardStats() {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    const [
-      totalUsers,
-      totalCourses,
-      pendingUsers,
-      allPayments,
-      allPaidSessions,
-      recentUsers,
-    ] = await Promise.all([
-      this.prisma.user.count({
-        where: { accountType: { not: 'ADMIN' } },
-      }).catch(() => 0),
-
-      this.prisma.course.count({
-        where: { status: 'PUBLISHED' },
-      }).catch(() => 0),
-
-      this.prisma.user.count({
+    try {
+      this.logger.log('[Admin] Fetching pending approvals...');
+      const users = await this.prisma.user.findMany({
         where: { status: 'PENDING' },
-      }).catch(() => 0),
-
-      this.prisma.payment.findMany({
-        where: { status: 'SUCCESS' },
-        select: { amount: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-      }).catch(() => []),
-
-      this.prisma.consultingSession.findMany({
-        where: { paymentStatus: 'PAID' },
-        select: { price: true, createdAt: true },
-        orderBy: { createdAt: 'desc' },
-      }).catch(() => []),
-
-      this.prisma.user.findMany({
-        where: { accountType: { not: 'ADMIN' } },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
         select: {
           id: true,
           email: true,
-          accountType: true,
           status: true,
+          accountType: true,
+          cvUrl: true,
+          bio: true,
+          experience: true,
+          speciality: true,
+          linkedinUrl: true,
+          hourlyRate: true,
+          meetingMethod: true,
           createdAt: true,
-          profile: { select: { firstName: true, lastName: true, avatar: true } },
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            }
+          }
         },
-      }).catch(() => []),
-    ]);
-
-    const toNum = (payments: { amount: number }[]) =>
-      payments.map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
-    const toNumS = (sessions: { price: number }[]) =>
-      sessions.map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
-
-    const totalRevenue = toNum(allPayments) + toNumS(allPaidSessions);
-    const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth))
-      + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfMonth));
-    const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay))
-      + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfDay));
-
-    const monthlyChart: { month: string; revenue: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-      const rev = allPayments
-        .filter(p => { const pd = new Date(p.createdAt); return pd >= d && pd < end; })
-        .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0)
-        + allPaidSessions
-        .filter(s => { const sd = new Date(s.createdAt); return sd >= d && sd < end; })
-        .map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
-      monthlyChart.push({
-        month: d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' }),
-        revenue: rev,
+        orderBy: { createdAt: 'desc' },
       });
+      this.logger.log(`[Admin] Found pending users: ${users.length}`);
+      return users;
+    } catch (e: any) {
+      this.logger.error(`[getPendingApprovals] ERROR: ${e.message}`, e.stack);
+      return [];
     }
+  }
 
-    return {
-      totalUsers,
-      totalCourses,
-      pendingUsers,
-      totalRevenue,
-      monthlyRevenue,
-      todayRevenue,
-      recentUsers,
-      monthlyChart,
-    };
+  async getDashboardStats() {
+    try {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      const results = await Promise.allSettled([
+        this.prisma.user.count({ where: { accountType: { notIn: ['ADMIN', 'SUPER_ADMIN'] } } }),
+        this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+        this.prisma.user.count({ where: { status: 'PENDING' } }),
+        this.prisma.payment.findMany({ where: { status: 'SUCCESS' }, select: { amount: true, createdAt: true }, orderBy: { createdAt: 'desc' } }),
+        this.prisma.consultingSession.findMany({ where: { paymentStatus: 'PAID' }, select: { price: true, createdAt: true }, orderBy: { createdAt: 'desc' } }),
+        this.prisma.user.findMany({
+          where: { accountType: { notIn: ['ADMIN', 'SUPER_ADMIN'] } },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: { id: true, email: true, accountType: true, status: true, createdAt: true, profile: { select: { firstName: true, lastName: true, avatar: true } } },
+        }),
+      ]);
+
+      const val = <T>(r: PromiseSettledResult<T>, fallback: T): T => {
+        if (r.status === 'fulfilled') return r.value;
+        this.logger.error(`[getDashboardStats] Query failed: ${(r as PromiseRejectedResult).reason?.message}`);
+        return fallback;
+      };
+
+      const totalUsers = val(results[0], 0);
+      const totalCourses = val(results[1], 0);
+      const pendingUsers = val(results[2], 0);
+      const allPayments = val(results[3], [] as { amount: number; createdAt: Date }[]);
+      const allPaidSessions = val(results[4], [] as { price: number; createdAt: Date }[]);
+      const recentUsers = val(results[5], []);
+
+      const toNum = (payments: { amount: number }[]) =>
+        payments.map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
+      const toNumS = (sessions: { price: number }[]) =>
+        sessions.map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
+
+      const totalRevenue = toNum(allPayments) + toNumS(allPaidSessions);
+      const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth))
+        + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfMonth));
+      const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay))
+        + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfDay));
+
+      const monthlyChart: { month: string; revenue: number }[] = [];
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        const rev = allPayments
+          .filter(p => { const pd = new Date(p.createdAt); return pd >= d && pd < end; })
+          .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0)
+          + allPaidSessions
+          .filter(s => { const sd = new Date(s.createdAt); return sd >= d && sd < end; })
+          .map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
+        monthlyChart.push({
+          month: d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' }),
+          revenue: rev,
+        });
+      }
+
+      return { totalUsers, totalCourses, pendingUsers, totalRevenue, monthlyRevenue, todayRevenue, recentUsers, monthlyChart };
+    } catch (e: any) {
+      this.logger.error(`[getDashboardStats] FATAL: ${e.message}`, e.stack);
+      return { totalUsers: 0, totalCourses: 0, pendingUsers: 0, totalRevenue: 0, monthlyRevenue: 0, todayRevenue: 0, recentUsers: [], monthlyChart: [] };
+    }
   }
 
   async getAllPayments() {

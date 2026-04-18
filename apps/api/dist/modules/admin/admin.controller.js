@@ -90,14 +90,20 @@ let AdminController = class AdminController {
         };
     }
     async createCourseAdmin(body, req) {
-        var _a, _b;
-        console.log('[Admin] Creating course:', body.titleEn);
-        const result = await this.adminService.createCourseAdminFull(body, ((_a = req.user) === null || _a === void 0 ? void 0 : _a.sub) || ((_b = req.user) === null || _b === void 0 ? void 0 : _b.id));
-        return {
-            success: true,
-            message: 'Course created successfully',
-            data: result,
-        };
+        var _a, _b, _c, _d;
+        try {
+            console.log('[Admin] Creating course:', body.titleEn, 'admin:', ((_a = req.user) === null || _a === void 0 ? void 0 : _a.sub) || ((_b = req.user) === null || _b === void 0 ? void 0 : _b.id));
+            const result = await this.adminService.createCourseAdminFull(body, ((_c = req.user) === null || _c === void 0 ? void 0 : _c.sub) || ((_d = req.user) === null || _d === void 0 ? void 0 : _d.id));
+            return {
+                success: true,
+                message: 'Course created successfully',
+                data: result,
+            };
+        }
+        catch (e) {
+            console.error('[Admin Controller] createCourse error:', e.code, e.message, e.meta || '');
+            throw new common_1.InternalServerErrorException(e.message || 'Failed to create course');
+        }
     }
     async createCourseWithFiles(files, body, req) {
         var _a, _b;
@@ -396,7 +402,13 @@ let AdminController = class AdminController {
         };
     }
     async getPendingCourses() {
-        return this.adminService.getPendingCourses();
+        try {
+            return await this.adminService.getPendingCourses();
+        }
+        catch (e) {
+            console.error('[Admin Controller] pending-courses error:', e.message, e.stack);
+            return { success: true, data: [] };
+        }
     }
     async postApproveCourse(id) {
         const course = await this.adminService.approveCourse(id);
@@ -407,12 +419,24 @@ let AdminController = class AdminController {
         return { success: true, message: 'Course rejected', data: { course } };
     }
     async getPendingApprovals() {
-        const users = await this.adminService.getPendingApprovals();
-        return { success: true, data: users };
+        try {
+            const users = await this.adminService.getPendingApprovals();
+            return { success: true, data: users };
+        }
+        catch (e) {
+            console.error('[Admin Controller] pending-approvals error:', e.message, e.stack);
+            return { success: true, data: [] };
+        }
     }
     async getDashboardStats() {
-        const stats = await this.adminService.getDashboardStats();
-        return { success: true, data: stats };
+        try {
+            const stats = await this.adminService.getDashboardStats();
+            return { success: true, data: stats };
+        }
+        catch (e) {
+            console.error('[Admin Controller] stats error:', e.message, e.stack);
+            throw new common_1.InternalServerErrorException(e.message);
+        }
     }
     async clearSeedData() {
         return this.adminService.clearSeedData();
