@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -86,17 +87,19 @@ export class AuthController {
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`[AUTH CONTROLLER] login called for: ${loginDto.email}`);
     try {
       const result = await this.authService.login(loginDto);
 
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 
+      this.logger.log(`[AUTH CONTROLLER] login success for: ${loginDto.email}`);
       return {
         success: true,
         message: 'Login successful',
@@ -106,7 +109,11 @@ export class AuthController {
         },
       };
     } catch (error) {
-      this.logger.warn('Login attempt failed', sanitize({ operation: 'login', reason: error instanceof Error ? error.message : String(error) }));
+      this.logger.warn('[AUTH CONTROLLER] login failed', sanitize({ operation: 'login', reason: error instanceof Error ? error.message : String(error) }));
+      // Re-throw ForbiddenException as-is so frontend can show "under review" / "rejected" UI
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid credentials');
     }
   }
@@ -294,17 +301,19 @@ export class AuthController {
     @Body(ValidationPipe) loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`[AUTH CONTROLLER] adminLogin called for: ${loginDto.email}`);
     try {
       const result = await this.authService.adminLogin(loginDto);
 
       response.cookie('refresh_token', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
       });
 
+      this.logger.log(`[AUTH CONTROLLER] adminLogin success for: ${loginDto.email}`);
       return {
         success: true,
         message: 'Admin login successful',
@@ -314,6 +323,7 @@ export class AuthController {
         },
       };
     } catch (error) {
+      this.logger.warn('[AUTH CONTROLLER] adminLogin failed', sanitize({ operation: 'adminLogin', reason: error instanceof Error ? error.message : String(error) }));
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
   }
