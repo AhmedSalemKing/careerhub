@@ -195,11 +195,13 @@ function UserDropdown({ locale }: { locale: string }) {
 
 /* ════════════════════════════════════════
    Main Navbar Component (Professional Design)
+   ✨ DeveWay Text: Dark→White (#ffffff) | Light→Black (#0d0d0d)
    ════════════════════════════════════════ */
 export function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
   const pathname = usePathname()
+  const { resolvedTheme, setTheme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -235,6 +237,7 @@ export function Navbar() {
 
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
+  const currentTheme = resolvedTheme || 'dark'
 
   const initials = mounted && user?.profile
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
@@ -251,13 +254,11 @@ export function Navbar() {
       label: t('courses') 
     },
     { 
-      // ✅ Smart routing for My Courses - login if not authenticated
       href: isLoggedIn ? `/${locale}/my-courses` : `/${locale}/login`,
       label: locale === 'ar' ? 'كورساتي' : 'My Courses',
       requiresAuth: true
     },
     { 
-      // ✅ Coaching link redirects to main site coaching page
       href: `${MAIN_URL}/${locale}/coaching`,
       label: locale === 'ar' ? 'احجز استشارة' : 'Book Consultation',
       external: true
@@ -279,6 +280,7 @@ export function Navbar() {
         }
       `}</style>
 
+      {/* ═══ HEADER - Original Dark Background ═══ */}
       <header
         className="sticky top-0 z-40 w-full transition-all duration-200"
         style={{
@@ -290,7 +292,7 @@ export function Navbar() {
       >
         <div className="dw-container flex h-[68px] items-center justify-between">
 
-          {/* ═══ Branding (Logo + Text) ═══ */}
+          {/* ═══ Branding (Logo + DeveWay Text) ═══ */}
           <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:mr-6 md:mr-8" style={{ marginRight: '12px' }}>
             <img
               src="/logo-icon.png"
@@ -299,9 +301,16 @@ export function Navbar() {
               style={{ background: 'transparent', minWidth: '44px' }}
               onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
+            
+            {/* ✨ DEVEWAY TEXT - Dynamic Color Based on Theme */}
             <span
-              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-opacity duration-200 hover:opacity-80 md:text-[24px]"
-              style={{ fontFamily: NAV_FONT, color: '#ffffff', lineHeight: 1 }}
+              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-all duration-300 hover:opacity-80 md:text-[24px]"
+              style={{ 
+                fontFamily: NAV_FONT, 
+                color: currentTheme === 'dark' ? '#ffffff' : '#0d0d0d', 
+                lineHeight: 1,
+                transition: 'color 0.3s ease'
+              }}
             >
               DeveWay
             </span>
@@ -382,7 +391,7 @@ export function Navbar() {
               <div className="hidden lg:block h-6 w-px mx-0.5" style={{ background: 'var(--border)' }} />
             )}
 
-            {/* Auth buttons (desktop) - Tall & Narrow Design ✅ */}
+            {/* Auth buttons (desktop) - Tall & Narrow Design */}
             {!mounted ? (
               <div className="h-9 w-[160px] hidden lg:block" />
             ) : isLoggedIn ? (
@@ -413,7 +422,7 @@ export function Navbar() {
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-2">
-                {/* ✅ تسجيل الدخول - طويل وضيق */}
+                {/* تسجيل الدخول */}
                 <Link
                   href={`/${locale}/login`}
                   className="px-4 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"
@@ -440,7 +449,7 @@ export function Navbar() {
                   {t('login')}
                 </Link>
                 
-                {/* ✅ إنشاء حساب - طويل وضيق */}
+                {/* إنشاء حساب */}
                 <Link
                   href={`/${locale}/register`}
                   className="px-5 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"

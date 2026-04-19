@@ -21,7 +21,6 @@ function scrollToSection(sectionId: string, locale: string) {
     const element = document.getElementById(sectionId)
     
     if (element) {
-      // ✅ العنصر موجود → اسكرول له
       setTimeout(() => {
         element.scrollIntoView({ 
           behavior: 'smooth', 
@@ -34,13 +33,11 @@ function scrollToSection(sectionId: string, locale: string) {
       return true
     }
     
-    // ❌ العنصر مش موجود → حاول تاني
     if (attempt < 20) {
       setTimeout(() => tryScroll(attempt + 1), 100)
       return false
     }
     
-    // ❌ فشل كلي → حول للصفحة مع الـ hash
     window.location.href = `/${locale}/#${sectionId}`
     return false
   }
@@ -215,6 +212,7 @@ export function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
   const pathname = usePathname()
+  const { resolvedTheme } = useTheme() // ← إضافة useTheme للحصول على الوضع الحالي
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -248,6 +246,11 @@ export function Navbar() {
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
   const isLearnRelative = TRAINING_URL.startsWith('/')
+
+  // ← تحديد لون DeveWay بناءً على الوضع
+  const deveWayColor = mounted 
+    ? (resolvedTheme === 'dark' ? '#ffffff' : '#0d0d0d')
+    : '#ffffff'
 
   const initials = mounted && user?.profile
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
@@ -294,9 +297,14 @@ export function Navbar() {
               style={{ background: 'transparent', minWidth: '44px' }}
               onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
+            {/* ✅ تم تعديل اللون هنا ليكون ديناميكياً حسب الوضع */}
             <span
-              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-opacity duration-200 hover:opacity-80 md:text-[24px]"
-              style={{ fontFamily: NAV_FONT, color: '#ffffff', lineHeight: 1 }}
+              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-colors duration-200 hover:opacity-80 md:text-[24px]"
+              style={{ 
+                fontFamily: NAV_FONT, 
+                color: deveWayColor,  // ← اللون الديناميكي
+                lineHeight: 1 
+              }}
             >
               DeveWay
             </span>

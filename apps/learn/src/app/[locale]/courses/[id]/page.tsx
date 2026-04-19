@@ -34,7 +34,28 @@ export default function CourseDetailPage({
     } else if (systemPrefersDark) {
       setTheme('dark')
     }
-  }, [])
+    
+    // 🎯 الاستماع لتغييرات الثيم في الوقت الفعلي
+    const handleStorageChange = () => {
+      const newTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (newTheme) setTheme(newTheme)
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    // 🔄 التحقق كل ثانية للتغييرات المحلية
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme)
+      }
+    }, 500)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
 
   useEffect(() => {
     const checkEnrollment = async () => {
@@ -106,7 +127,7 @@ export default function CourseDetailPage({
               </span>
             )}
             
-            {/* 🎯 العنوان مع دعم الثيم - التعديل المطلوب */}
+            {/* 🎯 العنوان مع دعم الثيم */}
             <h1 
               className="text-3xl font-bold font-madinet mb-4" 
               style={{ 
@@ -138,14 +159,31 @@ export default function CourseDetailPage({
             </div>
 
             <div className="flex items-center gap-3">
+              {/* 👤 Avatar - Always White Background (#ffffff) */}
               <div
-                className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold"
-                style={{ background: 'var(--primary)' }}
+                className="h-10 w-10 rounded-full flex items-center justify-center font-bold shadow-lg"
+                style={{ 
+                  // ✅ خلفية بيضاء دائمة في كل الأوضاع
+                  background: '#ffffff',
+                  color: '#5120c8',
+                  fontSize: '16px',
+                  boxShadow: '0 2px 8px rgba(255,255,255,0.15)'
+                }}
               >
                 {instructorName[0]}
               </div>
               <div>
-                <p className="font-semibold" style={{ color: '#F8F8FA' }}>{instructorName}</p>
+                {/* 👤 اسم المحاضر - Dynamic Theme Color */}
+                <p 
+                  className="font-semibold transition-colors duration-300" 
+                  style={{ 
+                    // ✅ Dark→White (#ffffff) | Light→Black (#0d0d0d)
+                    color: theme === 'dark' ? '#ffffff' : '#0d0d0d',
+                    transition: 'color 0.3s ease'
+                  }}
+                >
+                  {instructorName}
+                </p>
                 <p className="text-xs" style={{ color: 'rgba(248,248,250,0.4)' }}>المحاضر</p>
               </div>
             </div>

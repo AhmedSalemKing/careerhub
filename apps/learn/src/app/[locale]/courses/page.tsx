@@ -8,7 +8,8 @@ import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { api } from '../../../lib/api'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+// ✅ FIXED: تأكد أن API_BASE واضح وصحيح
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
 function thumbUrl(thumbnail?: string) {
   if (!thumbnail) return null
@@ -18,10 +19,10 @@ function thumbUrl(thumbnail?: string) {
 
 type ApiCourse = {
   id: string
-  title?: string        // API may return single-language string
+  title?: string        
   titleEn?: string
   titleAr?: string
-  description?: string  // API may return single-language string
+  description?: string  
   descriptionEn?: string
   descriptionAr?: string
   price: number
@@ -73,15 +74,80 @@ export default function CoursesPage() {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
   const [courses, setCourses] = useState<NormalizedCourse[]>([])
   const [loading, setLoading] = useState(true)
+  
+  // ✅ NEW: لإظهار الأخطاء
+  const [error, setError] = useState<string | null>(null)
 
+  // ✅ FIXED: استدعاء API مع تحسين كامل
   useEffect(() => {
+    let mounted = true
+    
+    // ✅ Debug: طباعة الـ URL المستخدم
+    console.log('[Courses] Fetching from:', `${API_BASE}/courses?status=PUBLISHED`)
+    console.log('[Courses] API Base URL:', API_BASE)
+    
     api.get('/courses?status=PUBLISHED')
       .then((res) => {
-        const raw: ApiCourse[] = res.data?.data?.courses ?? res.data?.data ?? res.data ?? []
-        setCourses(Array.isArray(raw) ? raw.map(normalizeCourse) : [])
+        // ✅ Debug: طباعة الاستجابة الكاملة
+        console.log('[Courses] Raw Axios Response:', res)
+        console.log('[Courses] Response Data (res.data):', res.data)
+        console.log('[Courses] Response Status:', res.status)
+        
+        if (!mounted) return
+        
+        // ✅ FIXED: استخراج البيانات بشكل صحيح مع دعم جميع الهياكل المحتملة
+        
+        // الحالة 1: { success: true, data: { courses: [...] } } ← الأكثر شيوعاً
+        let rawCourses: ApiCourse[] = []
+        
+        if (res.data?.data?.courses && Array.isArray(res.data.data.courses)) {
+          // ✅ الهيكل الصحيح: res.data.data.courses
+          console.log('[Courses] ✅ Found courses at: res.data.data.courses')
+          rawCourses = res.data.data.courses
+        } 
+        else if (res.data?.courses && Array.isArray(res.data.courses)) {
+          // الحالة 2: { courses: [...] } بدون data wrapper
+          console.log('[Courses] ✅ Found courses at: res.data.courses')
+          rawCourses = res.data.courses
+        }
+        else if (Array.isArray(res.data)) {
+          // الحالة 3: [...] مصفوفة مباشرة
+          console.log('[Courses] ✅ Found courses as array at: res.data')
+          rawCourses = res.data
+        }
+        else if (res.data?.data && Array.isArray(res.data.data)) {
+          // الحالة 4: { data: [...] }
+          console.log('[Courses] ✅ Found courses at: res.data.data (array)')
+          rawCourses = res.data.data
+        }
+        else {
+          // ❌ لم يتم العثور على كورسات
+          console.warn('[Courses] ⚠️ No courses found in response. Full structure:')
+          console.warn(JSON.stringify(res.data, null, 2))
+        }
+        
+        console.log(`[Courses] 📊 Extracted ${rawCourses.length} courses`)
+        
+        setCourses(rawCourses.map(normalizeCourse))
+        setError(null)
       })
-      .catch(() => setCourses([]))
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        // ✅ FIXED: عرض الخطأ بدلاً من إخفائه
+        console.error('[Courses] ❌ Error fetching courses:', err)
+        console.error('[Courses] Error config:', err.config?.url)
+        console.error('[Courses] Error response:', err.response?.status, err.response?.data)
+        
+        if (mounted) {
+          setError(err.message || 'Failed to load courses')
+          setCourses([])
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+    
+    // ✅ Cleanup function لمنع memory leaks
+    return () => { mounted = false }
   }, [])
 
   const filteredCourses = useMemo(() => {
@@ -109,6 +175,40 @@ export default function CoursesPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+      </div>
+    )
+  }
+
+  // ✅ NEW: عرض حالة الخطأ
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
+        <div className="text-center p-8">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
+            {locale === 'ar' ? 'حدث خطأ' : 'Error occurred'}
+          </h2>
+          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
+            {error}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-lg"
+            style={{ background: 'var(--primary)', color: 'white' }}
+          >
+            {locale === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+          </button>
+          
+          {/* ✅ Debug Info */}
+          <details className="mt-4 text-left">
+            <summary className="cursor-pointer text-sm" style={{ color: 'var(--text-muted)' }}>
+              {locale === 'ar' ? 'معلومات التصحيح' : 'Debug info'}
+            </summary>
+            <pre className="mt-2 p-3 text-xs bg-black/20 rounded overflow-auto" dir="ltr">
+              {JSON.stringify({ API_BASE, error }, null, 2)}
+            </pre>
+          </details>
+        </div>
       </div>
     )
   }
@@ -173,8 +273,12 @@ export default function CoursesPage() {
           </div>
         </div>
 
+        {/* ✅ FIXED: عرض العدد الصحيح */}
         <p className="mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
           {filteredCourses.length} {locale === 'ar' ? 'كورس متاح' : 'courses available'}
+          {filteredCourses.length !== courses.length && (
+            <span> ({locale === 'ar' ? 'من' : 'of'} {courses.length} {locale === 'ar' ? 'إجمالي' : 'total'})</span>
+          )}
         </p>
 
         {/* Courses Grid */}
@@ -256,17 +360,22 @@ export default function CoursesPage() {
           })}
         </div>
 
-        {filteredCourses.length === 0 && (
+        {filteredCourses.length === 0 && !loading && (
           <div className="text-center py-16">
             <BookOpen className="h-16 w-16 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
             <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
               {locale === 'ar' ? 'لا توجد كورسات' : 'No courses found'}
             </h3>
             <p style={{ color: 'var(--text-secondary)' }}>
-              {loading
-                ? (locale === 'ar' ? 'جاري التحميل...' : 'Loading...')
-                : (locale === 'ar' ? 'لم يتم نشر أي كورسات بعد' : 'No courses have been published yet')}
+              {locale === 'ar' ? 'لم يتم نشر أي كورسات بعد' : 'No courses have been published yet'}
             </p>
+            
+            {/* ✅ Debug: اعرض عدد الكورسات المخزنة */}
+            {courses.length > 0 && (
+              <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+                ({locale === 'ar' ? 'يوجد' : 'There are'} {courses.length} {locale === 'ar' ? 'كورس لكن لا تتطابق مع الفلتر' : 'courses but none match filter'})
+              </p>
+            )}
           </div>
         )}
       </div>

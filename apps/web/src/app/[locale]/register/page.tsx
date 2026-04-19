@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -36,16 +36,18 @@ function Field({
   label,
   error,
   children,
+  mutedColor,
 }: {
   label: string
   error?: string
   children: React.ReactNode
+  mutedColor: string
 }) {
   return (
     <div>
       <label
-        className="block text-sm font-medium mb-1.5"
-        style={{ color: '#9CA3AF' }} // رمادي فاتح على الخلفية السوداء
+        className="block text-sm font-medium mb-1.5 transition-colors duration-300"
+        style={{ color: mutedColor }}
       >
         {label}
       </label>
@@ -61,7 +63,7 @@ function Field({
 
 // ─── Step indicators ─────────────────────────────────────────────────────────
 
-function StepDots({ step, total }: { step: number; total: number }) {
+function StepDots({ step, total, theme }: { step: number; total: number; theme: 'light' | 'dark' }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-8">
       {Array.from({ length: total }, (_, i) => (
@@ -73,10 +75,12 @@ function StepDots({ step, total }: { step: number; total: number }) {
             width: i + 1 === step ? 28 : 8,
             background:
               i + 1 === step
-                ? '#5120c8' // Primary Purple
+                ? '#5120c8'
                 : i + 1 < step
                   ? 'rgba(81,32,200,0.2)'
-                  : 'rgba(255,255,255,0.1)', // رمادي شفاف على الأسود
+                  : theme === 'dark'
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.1)',
             transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         />
@@ -85,32 +89,115 @@ function StepDots({ step, total }: { step: number; total: number }) {
   )
 }
 
-// ─── Input classes ──────────────────────────────────────────────────────────────
-
-const INPUT_BASE = `
-  w-full px-4 py-3 rounded-xl text-sm
-  focus:outline-none
-  transition: border-color 0.2s ease, box-shadow 0.2s ease
-  placeholder:text-gray-600
-`
-
-const INPUT_STYLE = {
-  background: '#0A0A0A', // خلفية الحقل أغمق من الكرت
-  border: '1px solid rgba(255,255,255,0.1)',
-  color: '#E6E6E6',
-}
-
-const INPUT_FOCUS = `
-  focus:border-[#5120c8]
-  focus:shadow-[0_0_0_3px_rgba(81,32,200,0.15)]
-`
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
   const locale = useLocale()
   const router = useRouter()
   const ar = locale === 'ar'
+
+  // 🎨 حالة الثيم (فاتح/داكن)
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+
+  // 🔄 الكشف عن الثيم عند التحميل
+  useEffect(() => {
+    const detectTheme = () => {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      
+      if (savedTheme) {
+        setTheme(savedTheme)
+      } else if (systemPrefersDark) {
+        setTheme('dark')
+      } else {
+        setTheme('light')
+      }
+    }
+
+    detectTheme()
+
+    // 🔄 الاستماع للتغييرات في الوقت الفعلي
+    const handleStorageChange = () => {
+      const newTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (newTheme) setTheme(newTheme)
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    // تحديث دوري
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme)
+      }
+    }, 500)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // ════════════════════════════════════════
+  // 🎨 نظام الألوان الديناميكي - متناسق مع Login
+  // ════════════════════════════════════════
+  const colors = {
+    // خلفية الصفحة الخارجية
+    pageBg: theme === 'dark' ? '#0D0D0D' : '#FFFFFF',
+    
+    // بوكس التسجيل
+    cardBg: theme === 'dark' ? '#141414' : '#FFFFFF',
+    
+    // العناوين الرئيسية
+    titleColor: theme === 'dark' ? '#FFFFFF' : '#0d0d0d',
+    
+    // النصوص العادية
+    textColor: theme === 'dark' ? '#E6E6E6' : '#1a1a2e',
+    
+    // النصوص الخافتة (labels, descriptions)
+    mutedColor: theme === 'dark' ? '#9CA3AF' : '#6b7280',
+    
+    // حقول الإدخال
+    inputBg: theme === 'dark' ? '#0A0A0A' : '#f8f9fa',
+    inputBorder: theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+    inputText: theme === 'dark' ? '#E6E6E6' : '#1a1a2e',
+    
+    // حدود البوكس
+    cardBorder: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+    
+    // ظل البوكس
+    cardShadow: theme === 'dark' 
+      ? '0 25px 60px -12px rgba(0,0,0,0.5)' 
+      : '0 25px 60px -12px rgba(0,0,0,0.15)',
+    
+    // خلفية البطاقات الفرعية (account type cards)
+    subCardBg: theme === 'dark' ? '#0A0A0A' : '#f8f9fa',
+    subCardBorder: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+    
+    // زر ثانوي (Back button)
+    secondaryBtnBorder: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)',
+    secondaryBtnBg: theme === 'dark' ? 'transparent' : 'rgba(0,0,0,0.02)',
+  }
+
+  // ─── Input classes ──────────────────────────────────────────────────────────
+  
+  const INPUT_BASE = `
+    w-full px-4 py-3 rounded-xl text-sm
+    focus:outline-none
+    transition: border-color 0.2s ease, box-shadow 0.2s ease
+    placeholder:text-gray-600
+  `
+
+  const INPUT_STYLE = {
+    background: colors.inputBg,
+    border: `1.5px solid ${colors.inputBorder}`,
+    color: colors.inputText,
+  }
+
+  const INPUT_FOCUS = `
+    focus:border-[#5120c8]
+    focus:shadow-[0_0_0_4px_rgba(81,32,200,0.1)]
+  `
 
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(false)
@@ -268,33 +355,45 @@ export default function RegisterPage() {
   return (
     <div
       dir={ar ? 'rtl' : 'ltr'}
-      className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
+      className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden transition-all duration-300"
       style={{ 
-        background: '#0D0D0D', // الأسود الأساسي
-        color: '#E6E6E6' 
+        background: colors.pageBg,
+        color: colors.textColor 
       }}
     >
-      {/* ── Glossy Ambient Glows ── */}
+      {/* ── Ambient Glows ── */}
       <div className="pointer-events-none absolute top-0 left-0 w-full h-full overflow-hidden -z-0">
         <div
           className="absolute top-[10%] left-[10%] w-[600px] h-[600px] rounded-full opacity-100"
-          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.03), transparent 60%)' }}
+          style={{ 
+            background: `radial-gradient(circle, ${
+              theme === 'dark' 
+                ? 'rgba(81,32,200,0.06)' 
+                : 'rgba(81,32,200,0.03)'
+            }, transparent 65%)`,
+          }}
         />
         <div
           className="absolute bottom-[10%] right-[10%] w-[600px] h-[600px] rounded-full opacity-100"
-          style={{ background: 'radial-gradient(circle, rgba(255,255,255,0.02), transparent 60%)' }}
+          style={{ 
+            background: `radial-gradient(circle, ${
+              theme === 'dark' 
+                ? 'rgba(81,32,200,0.04)' 
+                : 'rgba(81,32,200,0.02)'
+            }, transparent 65%)`,
+          }}
         />
       </div>
 
-      {/* ── Card (Glossy Dark) ── */}
+      {/* ── Card ── */}
       <div
-        className="w-full max-w-lg relative z-10 animate-scale-in"
+        className="w-full max-w-lg relative z-10 animate-scale-in transition-all duration-300"
         style={{
-          background: '#141414', // لون الكرت الأسود المطفأ
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: colors.cardBg,
+          border: `1px solid ${colors.cardBorder}`,
           borderRadius: 24,
           padding: '40px 32px',
-          boxShadow: '0 20px 50px -10px rgba(0,0,0,0.5)',
+          boxShadow: colors.cardShadow,
         }}
       >
         {/* ── Logo ── */}
@@ -311,14 +410,15 @@ export default function RegisterPage() {
           </span>
         </div>
 
-        {step < 3 && <StepDots step={step} total={2} />}
+        {step < 3 && <StepDots step={step} total={2} theme={theme} />}
 
         {/* ═══════════════════ STEP 1 ═══════════════════ */}
         {step === 1 && (
           <>
+            {/* ✅ عنوان ديناميكي */}
             <h1
-              className="text-2xl font-bold text-center mb-7"
-              style={{ color: '#ffffff' }}
+              className="text-2xl font-bold text-center mb-7 transition-colors duration-300"
+              style={{ color: colors.titleColor }}
             >
               {ar ? 'إنشاء حساب جديد' : 'Create your account'}
             </h1>
@@ -329,7 +429,7 @@ export default function RegisterPage() {
                 style={{
                   width: 80, height: 80, borderRadius: '50%',
                   background: avatarPreview ? 'transparent' : 'rgba(81,32,200,0.1)',
-                  border: '2px dashed rgba(81,32,200,0.4)',
+                  border: `2px dashed ${theme === 'dark' ? 'rgba(81,32,200,0.4)' : 'rgba(81,32,200,0.3)'}`,
                   margin: '0 auto 8px',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   overflow: 'hidden', cursor: 'pointer', position: 'relative',
@@ -349,14 +449,14 @@ export default function RegisterPage() {
                   if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) }
                 }}
               />
-              <p style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'DM Sans, sans-serif', margin: 0 }}>
+              <p style={{ fontSize: 11, color: colors.mutedColor, fontFamily: 'DM Sans, sans-serif', margin: 0 }}>
                 {ar ? 'صورة شخصية (اختياري)' : 'Profile photo (optional)'}
               </p>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <Field label={ar ? 'الاسم الأول' : 'First Name'} error={errors1.firstName}>
+                <Field label={ar ? 'الاسم الأول' : 'First Name'} error={errors1.firstName} mutedColor={colors.mutedColor}>
                   <input
                     type="text"
                     value={step1.firstName}
@@ -366,7 +466,7 @@ export default function RegisterPage() {
                     placeholder={ar ? 'أحمد' : 'John'}
                   />
                 </Field>
-                <Field label={ar ? 'الاسم الأخير' : 'Last Name'} error={errors1.lastName}>
+                <Field label={ar ? 'الاسم الأخير' : 'Last Name'} error={errors1.lastName} mutedColor={colors.mutedColor}>
                   <input
                     type="text"
                     value={step1.lastName}
@@ -378,7 +478,7 @@ export default function RegisterPage() {
                 </Field>
               </div>
 
-              <Field label={ar ? 'البريد الإلكتروني' : 'Email'} error={errors1.email}>
+              <Field label={ar ? 'البريد الإلكتروني' : 'Email'} error={errors1.email} mutedColor={colors.mutedColor}>
                 <input
                   type="email"
                   value={step1.email}
@@ -390,7 +490,7 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field label={ar ? 'كلمة المرور' : 'Password'} error={errors1.password}>
+              <Field label={ar ? 'كلمة المرور' : 'Password'} error={errors1.password} mutedColor={colors.mutedColor}>
                 <input
                   type="password"
                   value={step1.password}
@@ -402,7 +502,7 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field label={ar ? 'تأكيد كلمة المرور' : 'Confirm Password'} error={errors1.confirmPassword}>
+              <Field label={ar ? 'تأكيد كلمة المرور' : 'Confirm Password'} error={errors1.confirmPassword} mutedColor={colors.mutedColor}>
                 <input
                   type="password"
                   value={step1.confirmPassword}
@@ -414,7 +514,7 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field label={ar ? 'الدولة' : 'Country'} error={errors1.country}>
+              <Field label={ar ? 'الدولة' : 'Country'} error={errors1.country} mutedColor={colors.mutedColor}>
                 <select
                   value={step1.country}
                   onChange={(e) => setStep1({ ...step1, country: e.target.value })}
@@ -429,7 +529,7 @@ export default function RegisterPage() {
                     paddingLeft: ar ? 36 : 16,
                   }}
                 >
-                  <option value="" style={{ background: '#141414', color: '#fff' }}>
+                  <option value="" style={{ background: colors.cardBg, color: colors.textColor }}>
                     {ar ? 'اختر الدولة' : 'Select country'}
                   </option>
                   {[
@@ -442,7 +542,7 @@ export default function RegisterPage() {
                     { v: 'Morocco', ar: 'المغرب' },
                     { v: 'Other', ar: 'أخرى' },
                   ].map((c) => (
-                    <option key={c.v} value={c.v} style={{ background: '#141414', color: '#fff' }}>
+                    <option key={c.v} value={c.v} style={{ background: colors.cardBg, color: colors.textColor }}>
                       {ar ? c.ar : c.v}
                     </option>
                   ))}
@@ -453,18 +553,18 @@ export default function RegisterPage() {
             {/* Next button */}
             <button
               onClick={() => { if (validateStep1()) setStep(2) }}
-              className="mt-7 w-full py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200"
+              className="mt-7 w-full py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200 cursor-pointer"
               style={{
                 background: '#5120c8',
                 border: 'none',
-                cursor: 'pointer',
                 fontFamily: 'var(--font-brand), var(--font-display)',
-                boxShadow: '0 4px 12px rgba(81,32,200,0.2)'
+                boxShadow: '0 4px 12px rgba(81,32,200,0.2)',
+                letterSpacing: '0.01em',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#4318a8'
                 e.currentTarget.style.transform = 'translateY(-2px)'
-                e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.3)'
+                e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.35)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = '#5120c8'
@@ -476,11 +576,11 @@ export default function RegisterPage() {
               <span style={{ display: 'inline-block', transform: ar ? 'scaleX(-1)' : 'none' }}>→</span>
             </button>
 
-            <p className="mt-5 text-center text-sm" style={{ color: '#9CA3AF' }}>
+            <p className="mt-5 text-center text-sm transition-colors duration-300" style={{ color: colors.mutedColor }}>
               {ar ? 'لديك حساب؟' : 'Have an account?'}{' '}
               <Link
                 href={`/${locale}/login`}
-                className="font-semibold hover:underline"
+                className="font-semibold hover:underline transition-colors duration-200"
                 style={{ color: '#818CF8' }}
               >
                 {ar ? 'تسجيل الدخول' : 'Sign in'}
@@ -492,10 +592,10 @@ export default function RegisterPage() {
         {/* ═══════════════════ STEP 2 ═══════════════════ */}
         {step === 2 && (
           <>
-            <h1 className="text-2xl font-bold text-center mb-2" style={{ color: '#ffffff' }}>
+            <h1 className="text-2xl font-bold text-center mb-2 transition-colors duration-300" style={{ color: colors.titleColor }}>
               {ar ? 'ما الذي يصفك أفضل؟' : 'What best describes you?'}
             </h1>
-            <p className="text-sm text-center mb-6" style={{ color: '#9CA3AF' }}>
+            <p className="text-sm text-center mb-6 transition-colors duration-300" style={{ color: colors.mutedColor }}>
               {ar ? 'اختر نوع حسابك' : 'Choose your account type'}
             </p>
 
@@ -513,26 +613,26 @@ export default function RegisterPage() {
                     onClick={() => setStep2({ ...step2, accountType: type })}
                     className="flex flex-col items-center gap-1.5 p-4 rounded-xl transition-all duration-200 text-center cursor-pointer"
                     style={{
-                      border: `2px solid ${isActive ? '#5120c8' : 'rgba(255,255,255,0.1)'}`,
-                      background: isActive ? 'rgba(81,32,200,0.15)' : '#0A0A0A',
+                      border: `2px solid ${isActive ? '#5120c8' : colors.subCardBorder}`,
+                      background: isActive ? 'rgba(81,32,200,0.15)' : colors.subCardBg,
                       boxShadow: isActive ? '0 0 20px rgba(81,32,200,0.15)' : 'none',
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive) {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'
-                        e.currentTarget.style.background = '#0F0F0F'
+                        e.currentTarget.style.borderColor = theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                        e.currentTarget.style.background = theme === 'dark' ? '#0F0F0F' : '#f0f0f0'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) {
-                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
-                        e.currentTarget.style.background = '#0A0A0A'
+                        e.currentTarget.style.borderColor = colors.subCardBorder
+                        e.currentTarget.style.background = colors.subCardBg
                       }
                     }}
                   >
                     <span className="text-2xl">{icon}</span>
-                    <span className="font-semibold text-sm" style={{ color: '#E6E6E6' }}>{label}</span>
-                    <span className="text-[11px]" style={{ color: '#9CA3AF' }}>{sub}</span>
+                    <span className="font-semibold text-sm transition-colors duration-200" style={{ color: colors.textColor }}>{label}</span>
+                    <span className="text-[11px]" style={{ color: colors.mutedColor }}>{sub}</span>
                   </button>
                 )
               })}
@@ -542,25 +642,25 @@ export default function RegisterPage() {
             {step2.accountType !== 'STUDENT' && (
               <div
                 className="space-y-4 pt-5"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ borderTop: `1px solid ${colors.cardBorder}` }}
               >
-                <p className="text-sm font-semibold" style={{ color: '#ffffff' }}>
+                <p className="text-sm font-semibold transition-colors duration-300" style={{ color: colors.titleColor }}>
                   {ar ? 'معلومات إضافية' : 'Additional information'}
                 </p>
 
-                <Field label={ar ? 'السيرة الذاتية (PDF أو Word)' : 'CV / Resume (PDF or Word)'} error={errors2.cvUrl}>
+                <Field label={ar ? 'السيرة الذاتية (PDF أو Word)' : 'CV / Resume (PDF or Word)'} error={errors2.cvUrl} mutedColor={colors.mutedColor}>
                   <div
                     className="rounded-xl p-5 text-center cursor-pointer transition-all duration-200"
                     style={{
-                      border: `2px dashed ${errors2.cvUrl ? '#ef4444' : 'rgba(255,255,255,0.1)'}`,
-                      background: errors2.cvUrl ? 'rgba(239,68,68,0.06)' : '#0A0A0A',
+                      border: `2px dashed ${errors2.cvUrl ? '#ef4444' : colors.subCardBorder}`,
+                      background: errors2.cvUrl ? 'rgba(239,68,68,0.06)' : colors.subCardBg,
                     }}
                     onClick={() => document.getElementById('cv-file-input')?.click()}
                     onMouseEnter={(e) => {
                       if (!errors2.cvUrl) e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)'
                     }}
                     onMouseLeave={(e) => {
-                      if (!errors2.cvUrl) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
+                      if (!errors2.cvUrl) e.currentTarget.style.borderColor = colors.subCardBorder
                     }}
                   >
                     <input
@@ -579,10 +679,10 @@ export default function RegisterPage() {
                       <p className="text-sm font-medium" style={{ color: '#34D399' }}>✅ {cvFileName}</p>
                     ) : (
                       <>
-                        <p className="text-sm font-medium" style={{ color: '#E6E6E6' }}>
+                        <p className="text-sm font-medium transition-colors duration-200" style={{ color: colors.textColor }}>
                           {ar ? 'اضغط لرفع السيرة الذاتية' : 'Click to upload your CV'}
                         </p>
-                        <p className="text-xs mt-1" style={{ color: '#9CA3AF' }}>
+                        <p className="text-xs mt-1" style={{ color: colors.mutedColor }}>
                           {ar ? 'PDF أو Word — حجم أقصى 5MB' : 'PDF or Word — max 5 MB'}
                         </p>
                       </>
@@ -591,7 +691,7 @@ export default function RegisterPage() {
                 </Field>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={ar ? 'سنوات الخبرة' : 'Years of Experience'}>
+                  <Field label={ar ? 'سنوات الخبرة' : 'Years of Experience'} mutedColor={colors.mutedColor}>
                     <input
                       type="number"
                       min={0}
@@ -603,7 +703,7 @@ export default function RegisterPage() {
                       placeholder="0"
                     />
                   </Field>
-                  <Field label={ar ? 'مجال التخصص' : 'Speciality / Field'}>
+                  <Field label={ar ? 'مجال التخصص' : 'Speciality / Field'} mutedColor={colors.mutedColor}>
                     <input
                       type="text"
                       value={step2.speciality}
@@ -615,7 +715,7 @@ export default function RegisterPage() {
                   </Field>
                 </div>
 
-                <Field label={ar ? 'نبذة مهنية' : 'Professional Bio'}>
+                <Field label={ar ? 'نبذة مهنية' : 'Professional Bio'} mutedColor={colors.mutedColor}>
                   <textarea
                     value={step2.bio}
                     onChange={(e) => setStep2({ ...step2, bio: e.target.value })}
@@ -627,7 +727,7 @@ export default function RegisterPage() {
                   />
                 </Field>
 
-                <Field label={ar ? 'رابط LinkedIn' : 'LinkedIn URL'}>
+                <Field label={ar ? 'رابط LinkedIn' : 'LinkedIn URL'} mutedColor={colors.mutedColor}>
                   <input
                     type="url"
                     value={step2.linkedinUrl}
@@ -641,7 +741,7 @@ export default function RegisterPage() {
 
                 {step2.accountType === 'CONSULTANT' && (
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label={ar ? 'السعر بالساعة (ريال)' : 'Hourly Rate (SAR)'}>
+                    <Field label={ar ? 'السعر بالساعة (ريال)' : 'Hourly Rate (SAR)'} mutedColor={colors.mutedColor}>
                       <input
                         type="number"
                         min={0}
@@ -653,7 +753,7 @@ export default function RegisterPage() {
                         dir="ltr"
                       />
                     </Field>
-                    <Field label={ar ? 'طريقة الاجتماع' : 'Meeting Method'} error={errors2.meetingMethod}>
+                    <Field label={ar ? 'طريقة الاجتماع' : 'Meeting Method'} error={errors2.meetingMethod} mutedColor={colors.mutedColor}>
                       <select
                         value={step2.meetingMethod}
                         onChange={(e) => setStep2({ ...step2, meetingMethod: e.target.value })}
@@ -668,12 +768,12 @@ export default function RegisterPage() {
                           paddingLeft: ar ? 36 : 16,
                         }}
                       >
-                        <option value="" style={{ background: '#141414', color: '#fff' }}>
+                        <option value="" style={{ background: colors.cardBg, color: colors.textColor }}>
                           {ar ? 'اختر' : 'Select'}
                         </option>
-                        <option value="ZOOM" style={{ background: '#141414', color: '#fff' }}>Zoom</option>
-                        <option value="GOOGLE_MEET" style={{ background: '#141414', color: '#fff' }}>Google Meet</option>
-                        <option value="BOTH" style={{ background: '#141414', color: '#fff' }}>
+                        <option value="ZOOM" style={{ background: colors.cardBg, color: colors.textColor }}>Zoom</option>
+                        <option value="GOOGLE_MEET" style={{ background: colors.cardBg, color: colors.textColor }}>Google Meet</option>
+                        <option value="BOTH" style={{ background: colors.cardBg, color: colors.textColor }}>
                           {ar ? 'كلاهما' : 'Both'}
                         </option>
                       </select>
@@ -686,7 +786,7 @@ export default function RegisterPage() {
             {/* Error banner */}
             {error && (
               <div
-                className="mt-5 p-3.5 rounded-xl text-sm"
+                className="mt-5 p-3.5 rounded-xl text-sm transition-all duration-200"
                 style={{
                   background: 'rgba(239,68,68,0.1)',
                   border: '1px solid rgba(239,68,68,0.2)',
@@ -703,18 +803,18 @@ export default function RegisterPage() {
                 onClick={() => setStep(1)}
                 className="flex-1 py-3.5 font-semibold rounded-xl text-[15px] transition-all duration-200 cursor-pointer"
                 style={{
-                  background: 'transparent',
-                  border: '1.5px solid rgba(255,255,255,0.1)',
-                  color: '#9CA3AF',
+                  background: colors.secondaryBtnBg,
+                  border: `1.5px solid ${colors.secondaryBtnBorder}`,
+                  color: colors.mutedColor,
                   fontFamily: 'var(--font-brand), var(--font-display)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'
-                  e.currentTarget.style.background = '#0A0A0A'
+                  e.currentTarget.style.borderColor = theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
+                  e.currentTarget.style.background = theme === 'dark' ? '#0A0A0A' : 'rgba(0,0,0,0.04)'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'
-                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = colors.secondaryBtnBorder
+                  e.currentTarget.style.background = colors.secondaryBtnBg
                 }}
               >
                 {ar ? 'رجوع' : 'Back'}
@@ -727,12 +827,13 @@ export default function RegisterPage() {
                   background: loading ? 'rgba(81,32,200,0.5)' : '#5120c8',
                   border: 'none',
                   fontFamily: 'var(--font-brand), var(--font-display)',
+                  letterSpacing: '0.01em',
                 }}
                 onMouseEnter={(e) => {
                   if (!loading) {
                     e.currentTarget.style.background = '#4318a8'
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.3)'
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.35)'
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -757,10 +858,10 @@ export default function RegisterPage() {
             {isPending ? (
               <>
                 <div className="text-6xl mb-5">⏳</div>
-                <h1 className="text-2xl font-bold mb-3" style={{ color: '#ffffff' }}>
+                <h1 className="text-2xl font-bold mb-3 transition-colors duration-300" style={{ color: colors.titleColor }}>
                   {ar ? 'تم إرسال طلبك!' : 'Application Submitted!'}
                 </h1>
-                <p className="mb-6 leading-relaxed" style={{ color: '#9CA3AF' }}>
+                <p className="mb-6 leading-relaxed transition-colors duration-300" style={{ color: colors.mutedColor }}>
                   {ar
                     ? 'طلبك قيد المراجعة من قِبل فريق DeveWay. سنخطرك خلال 48 ساعة بمجرد الموافقة على حسابك.'
                     : 'Your application is under review by the DeveWay team. We will notify you within 48 hours once your account is approved.'}
@@ -786,7 +887,7 @@ export default function RegisterPage() {
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#4318a8'
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.3)'
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.35)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#5120c8'
@@ -800,10 +901,10 @@ export default function RegisterPage() {
             ) : (
               <>
                 <div className="text-6xl mb-5">🎉</div>
-                <h1 className="text-2xl font-bold mb-3" style={{ color: '#ffffff' }}>
+                <h1 className="text-2xl font-bold mb-3 transition-colors duration-300" style={{ color: colors.titleColor }}>
                   {ar ? 'مرحباً بك في DeveWay!' : 'Welcome to DeveWay!'}
                 </h1>
-                <p className="mb-8" style={{ color: '#9CA3AF' }}>
+                <p className="mb-8 transition-colors duration-300" style={{ color: colors.mutedColor }}>
                   {ar
                     ? 'تم إنشاء حسابك بنجاح. ابدأ رحلتك المهنية الآن.'
                     : 'Your account was created successfully. Start your career journey now.'}
@@ -815,11 +916,12 @@ export default function RegisterPage() {
                     background: '#5120c8',
                     border: 'none',
                     fontFamily: 'var(--font-brand), var(--font-display)',
+                    letterSpacing: '0.01em',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = '#4318a8'
                     e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.3)'
+                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(81,32,200,0.35)'
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = '#5120c8'

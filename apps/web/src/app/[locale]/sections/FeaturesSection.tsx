@@ -403,14 +403,15 @@ export function FeaturesSection() {
 
         /* ========================================
            LAYOUT - Desktop: Grid with Fixed Direction | Mobile: Flex with Order
+           ✅ تم التعديل: الكاردز تأخذ مساحة أكبر أفقياً
            ======================================== */
 
         .fx-main {
           display: grid;
-          grid-template-columns: 1.3fr 300px; /* ← الكاردز أعرض | الموبايل أصغر */
+          grid-template-columns: 1fr 1.4fr; /* ← الكاردز أعرض بكثير (1.4fr بدلاً من 300px) */
           align-items: center;
-          gap: 48px;
-          direction: ltr; /* ← يثبت الاتجاه LTR دائماً */
+          gap: 56px; /* ← مسافة أكبر للتناسق */
+          direction: ltr;
         }
 
         /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
@@ -423,24 +424,22 @@ export function FeaturesSection() {
         @media (max-width: 900px) {
           .fx-main {
             display: flex;
-            flex-direction: row; /* ← اتجاه عادي */
+            flex-direction: row;
             align-items: center;
             gap: 24px;
-            direction: rtl; /* ← نرجع RTL للموبايل */
+            direction: rtl;
           }
           
-          /* ← في RTL: order 1 = يمين | order 2 = شمال */
-          /* ← في LTR: order 1 = شمال | order 2 = يمين */
           .fx-cards-stack { 
-            order: 1; /* ← الكاردز على اليمين */
+            order: 1;
             flex: 1;
             min-width: 0;
           }
           
           .fx-phone-wrapper { 
-            order: 2; /* ← الموبايل على الشمال */
+            order: 2;
             flex: 0 0 auto;
-            transform: scale(0.8);
+            transform: scale(0.75);
           }
         }
 
@@ -614,18 +613,18 @@ export function FeaturesSection() {
         }
 
         /* ========================================
-           FEATURE CARDS - Enhanced Size & Spacing
+           ✅ FEATURE CARDS - أعرض أفقيًا + أقصر عموديًا
            ======================================== */
 
         .fx-cards-stack {
           display: flex;
           flex-direction: column;
-          gap: 12px; /* ← مسافة أقل بين الكاردز */
+          gap: 10px; /* ← مسافة أصغر بين الكاردز للتكثيف الرأسي */
         }
 
         .feature-card-wrapper {
           opacity: 0;
-          transform: translateX(40px) translateY(12px);
+          transform: translateX(40px) translateY(8px);
           animation: cardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
           animation-play-state: paused;
         }
@@ -638,13 +637,14 @@ export function FeaturesSection() {
           to { opacity: 1; transform: translateX(0) translateY(0); }
         }
 
+        /* ✅ الكارد الرئيسي - أعرض + أقصر */
         .feature-card {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 24px; /* ← مسافة أكبر أفقياً */
-          padding: 14px 32px; /* ← padding أقل عمودياً + أكبر أفقياً */
-          border-radius: 18px;
+          gap: 20px; /* ← مسافة أفقية متوازنة */
+          padding: 12px 28px; /* ← padding عمودي أقل (12px) + أفقي واسع (28px) */
+          border-radius: 16px; /* ← زوايا أكثر نعومة */
           background: var(--fx-card-bg);
           border: 1.5px solid var(--fx-card-border);
           backdrop-filter: blur(16px);
@@ -654,29 +654,33 @@ export function FeaturesSection() {
           overflow: hidden;
           transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
           cursor: pointer;
+          min-height: unset; /* ← إزالة الحد الأدنى للارتفاع */
+          height: auto; /* ← ارتفاع تلقائي حسب المحتوى */
         }
 
         .feature-card:hover {
-          transform: scale(1.03) translateY(-2px);
+          transform: scale(1.02) translateY(-2px); /* ← تصغير التكبير قليلاً */
           border-color: rgba(81,32,200,0.35);
-          box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+          box-shadow: 0 10px 35px rgba(0,0,0,0.18);
         }
 
         :root:not(.dark) .feature-card:hover {
-          box-shadow: 0 12px 40px rgba(27,35,64,0.15);
+          box-shadow: 0 10px 35px rgba(27,35,64,0.12);
         }
 
+        /* ✅ الأيقونة - حجم مضبوط ومتناسق */
         .feature-icon {
-          width: 44px; /* ← أيقونة أصغر */
-          height: 44px;
-          min-width: 44px;
-          border-radius: 12px;
+          width: 40px; /* ← أصغر قليلاً */
+          height: 40px;
+          min-width: 40px;
+          border-radius: 11px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+          box-shadow: 0 3px 12px rgba(0,0,0,0.2);
           transition: transform 0.35s ease;
+          flex-shrink: 0; ← منع الضغط */
         }
 
         .feature-card:hover .feature-icon {
@@ -686,6 +690,9 @@ export function FeaturesSection() {
         .feature-text {
           flex: 1;
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 2px; /* ← مسافة صغيرة جداً بين العنوان والوصف */
         }
 
         .feature-text-header {
@@ -693,17 +700,21 @@ export function FeaturesSection() {
           align-items: center;
           justify-content: space-between;
           gap: 8px;
-          margin-bottom: 0px; /* ← إزالة المسافة تماماً */
+          margin-bottom: 0;
         }
 
+        /* ✅ العنوان - حجم مثالي */
         .feature-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
-          font-size: 15px !important; /* ← عنوان مناسب */
+          font-size: 14px !important; /* ← أصغر قليلاً */
           color: var(--fx-fg);
           margin: 0;
-          line-height: 1.2; /* ← ارتفاع سطر أقل */
+          line-height: 1.2;
           letter-spacing: -0.01em;
+          white-space: nowrap; /* ← منع كسر السطر للحفاظ على سطر واحد */
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .feature-arrow {
@@ -713,6 +724,7 @@ export function FeaturesSection() {
           opacity: 0;
           transform: translateX(-8px);
           transition: all 0.3s ease;
+          flex-shrink: 0;
         }
 
         [dir="rtl"] .feature-arrow {
@@ -724,18 +736,24 @@ export function FeaturesSection() {
           transform: translateX(0);
         }
 
+        /* ✅ الوصف - أصغر وأكثر ضغطاً */
         .feature-desc {
-          font-size: 12px; /* ← وصف أصغر */
+          font-size: 11px; /* ← أصغر */
           color: var(--fx-muted);
-          line-height: 1.35; /* ← ارتفاع سطر أقل */
+          line-height: 1.3; /* ← أقصر */
           margin: 0;
           font-family: "DM Sans", sans-serif;
+          white-space: nowrap; /* ← سطر واحد فقط */
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 100%;
         }
 
+        /* ✅ زر CTA - أنحف وأكثر أناقة */
         .feature-cta {
-          padding: 6px 14px; /* ← زر أنحف */
-          border-radius: 10px; /* ← زوايا أدفأ */
-          font-size: 10px; /* ← نص أصغر */
+          padding: 5px 13px; /* ← أنحف عمودياً */
+          border-radius: 9px;
+          font-size: 9px; /* ← نص أصغر */
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 900 !important;
           background: rgba(81,32,200,0.1);
@@ -746,6 +764,8 @@ export function FeaturesSection() {
           display: inline-flex;
           align-items: center;
           gap: 4px;
+          flex-shrink: 0; /* ← منع الضغط */
+          height: fit-content;
         }
 
         .feature-card:hover .feature-cta {

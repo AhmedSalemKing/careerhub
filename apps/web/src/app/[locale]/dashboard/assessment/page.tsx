@@ -9,6 +9,31 @@ import { DashboardShell } from '../../../components/DashboardShell'
 import { Button } from '../../../components/ui/Button'
 import { useRouter } from 'next/navigation'
 import { findPathByTitle } from '../../../../lib/career-paths'
+import {
+  Brain,
+  Target,
+  BookOpen,
+  DollarSign,
+  Clock,
+  AlertTriangle,
+  Check,
+  X,
+  Star,
+  ArrowRight,
+  ArrowLeft,
+  TrendingUp,
+  GraduationCap,
+  Briefcase,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  RefreshCw,
+  Save,
+  Calendar,
+  Award,
+  Zap,
+} from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -131,42 +156,77 @@ function WelcomeScreen({
 
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: '🧠', label: 'Personality Analysis' },
-            { icon: '🎯', label: 'Top 3 Specializations' },
-            { icon: '📚', label: 'Custom Learning Plan' },
-            { icon: '💰', label: 'Salary Insights' },
+            { icon: Brain, label: 'Personality Analysis', color: '#8b5cf6' },
+            { icon: Target, label: 'Top 3 Specializations', color: '#3b82f6' },
+            { icon: BookOpen, label: 'Custom Learning Plan', color: '#10b981' },
+            { icon: DollarSign, label: 'Salary Insights', color: '#f59e0b' },
           ].map((item) => (
             <div key={item.label} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 text-center shadow-sm">
-              <div className="text-2xl">{item.icon}</div>
-              <div className="mt-1 text-xs font-semibold text-foreground">{item.label}</div>
+              <div 
+                className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: `${item.color}15` }}
+              >
+                <item.icon size={22} style={{ color: item.color }} />
+              </div>
+              <div className="mt-2 text-xs font-semibold text-foreground">{item.label}</div>
             </div>
           ))}
         </div>
 
-        <Button className="mt-8 px-8" onClick={onStart} disabled={isStarting}>
-          {isStarting ? 'Starting...' : 'Start Assessment →'}
-        </Button>
+        {/* ✅ زر Start Assessment - نص أبيض دائمًا */}
+        <button
+          onClick={onStart}
+          disabled={isStarting}
+          className="
+            inline-flex h-11 items-center justify-center rounded-xl 
+            text-sm font-bold transition-colors mt-8 px-8
+            disabled:cursor-not-allowed disabled:opacity-60
+            bg-primary hover:bg-primary/90
+          "
+          style={{ color: '#ffffff' }}
+        >
+          {isStarting ? (
+            <span className="flex items-center gap-2">
+              <RefreshCw size={16} className="animate-spin" />
+              Starting...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Start Assessment
+              <ArrowRight size={16} />
+            </span>
+          )}
+        </button>
       </div>
 
       {history.length > 0 && (
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
-          <div className="text-sm font-bold text-foreground">Previous Assessments</div>
+          <div className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <Calendar size={16} />
+            Previous Assessments
+          </div>
           <div className="mt-4 space-y-3">
             {history.map((s) => (
               <div key={s.id} className="flex items-center justify-between rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4">
-                <div>
-                  <div className="text-sm font-semibold text-foreground">
-                    {s.report?.personalityType ?? 'Career Assessment'}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Award size={18} className="text-primary" />
                   </div>
-                  <div className="text-xs text-[color:var(--muted)]">
-                    {s.completedAt ? new Date(s.completedAt).toLocaleDateString() : '—'}
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">
+                      {s.report?.personalityType ?? 'Career Assessment'}
+                    </div>
+                    <div className="text-xs text-[color:var(--muted)]">
+                      {s.completedAt ? new Date(s.completedAt).toLocaleDateString() : '—'}
+                    </div>
                   </div>
                 </div>
                 {s.report && (
                   <button
-                    className="rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
                     onClick={() => onViewReport(s.report!)}
                   >
+                    <Eye size={14} />
                     View Report
                   </button>
                 )}
@@ -176,6 +236,28 @@ function WelcomeScreen({
         </div>
       )}
     </div>
+  )
+}
+
+// ─── Eye Icon (for View Report) ──────────────────────────────────────────────────
+
+function Eye({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 14} 
+      height={size || 14} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
   )
 }
 
@@ -204,14 +286,20 @@ function QuestionsScreen({
       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
       : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
 
+  const catIcon = q.category === 'technical' ? Code : Users
+
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-[color:var(--muted)]">
+          <span className="flex items-center gap-2 text-sm font-semibold text-[color:var(--muted)]">
+            <HelpCircle size={16} />
             Question {idx + 1} of {questions.length}
           </span>
-          <span className={`rounded-full px-3 py-1 text-xs font-bold ${catColor}`}>{catLabel}</span>
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${catColor}`}>
+            {q.category === 'technical' ? <Code size={12} /> : <Users size={12} />}
+            {catLabel}
+          </span>
         </div>
         <ProgressBar value={progress} className="mt-3" />
       </div>
@@ -224,9 +312,9 @@ function QuestionsScreen({
             <button
               key={`${q.id}-${opt.value}`}
               onClick={() => onAnswer(q.id, opt.value)}
-              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 text-left text-sm font-medium text-foreground transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.99]"
+              className="group w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 text-left text-sm font-medium text-foreground transition-all hover:border-primary hover:bg-primary/5 active:scale-[0.99]"
             >
-              <span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--border)] text-xs font-bold">
+              <span className="mr-3 inline-flex h-7 w-7 items-center justify-center rounded-full border-2 border-[color:var(--border)] text-xs font-bold transition-colors group-hover:border-primary group-hover:bg-primary/10">
                 {opt.value}
               </span>
               {opt.en}
@@ -236,11 +324,82 @@ function QuestionsScreen({
 
         {idx > 0 && (
           <div className="mt-6 flex gap-3">
-            <Button variant="ghost" className="text-sm" onClick={onBack}>← Previous</Button>
+            <button 
+              onClick={onBack}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-[color:var(--muted)] hover:text-foreground hover:bg-[color:var(--surface-2)] transition-colors"
+            >
+              <ArrowLeft size={16} />
+              Previous
+            </button>
           </div>
         )}
       </div>
     </div>
+  )
+}
+
+// ─── Additional Icons ──────────────────────────────────────────────────────────
+
+function HelpCircle({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 16} 
+      height={size || 16} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+  )
+}
+
+function Code({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 12} 
+      height={size || 12} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <polyline points="16 18 22 12 16 6"></polyline>
+      <polyline points="8 6 2 12 8 18"></polyline>
+    </svg>
+  )
+}
+
+function Users({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 12} 
+      height={size || 12} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+      <circle cx="9" cy="7" r="4"></circle>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+    </svg>
   )
 }
 
@@ -259,10 +418,23 @@ function LoadingScreen() {
 
   return (
     <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-10 shadow-sm">
-      <div className="text-5xl">🧠</div>
-      <div className="mt-6 text-base font-semibold text-foreground">{LOADING_MESSAGES[msgIdx]}</div>
+      {/* ✨ أيقونة احترافية بدل الإيموجي */}
+      <div className="relative">
+        <Brain size={64} className="text-primary animate-pulse" />
+        <Sparkles size={20} className="absolute -top-1 -right-1 text-yellow-400 animate-spin" style={{ animationDuration: '3s' }} />
+      </div>
+      
+      <div className="mt-6 flex items-center gap-2 text-base font-semibold text-foreground">
+        <Zap size={18} className="text-yellow-500" />
+        {LOADING_MESSAGES[msgIdx]}
+      </div>
+      
       <ProgressBar value={prog} className="mt-6 w-64" />
-      <p className="mt-3 text-xs text-[color:var(--muted)]">This may take up to 30 seconds</p>
+      
+      <p className="mt-3 flex items-center gap-1.5 text-xs text-[color:var(--muted)]">
+        <Clock size={12} />
+        This may take up to 30 seconds
+      </p>
     </div>
   )
 }
@@ -291,7 +463,11 @@ function ResultsScreen({
     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
   }
 
-  const rankBadge = (r: number) => ({ 1: 'bg-yellow-400 text-yellow-900', 2: 'bg-gray-300 text-gray-800', 3: 'bg-amber-600 text-white' }[r] || 'bg-primary text-white')
+  const rankBadge = (r: number) => ({ 
+    1: 'bg-gradient-to-br from-yellow-400 to-amber-500 text-white shadow-lg shadow-yellow-400/30', 
+    2: 'bg-gray-300 text-gray-800', 
+    3: 'bg-amber-600 text-white' 
+  }[r] || 'bg-primary text-white')
 
   const doSave = async () => {
     if (!report.topSpecializations.length || saving || saved) return
@@ -309,23 +485,33 @@ function ResultsScreen({
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+              <FileText size={14} />
               Your Career Report · {new Date().toLocaleDateString()}
             </div>
-            <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-foreground">{report.personalityType}</h2>
+            <h2 className="mt-1 flex items-center gap-2 text-2xl font-extrabold tracking-tight text-foreground">
+              <TrendingUp size={24} className="text-primary" />
+              {report.personalityType}
+            </h2>
             <p className="mt-2 max-w-xl text-sm text-[color:var(--muted)]">{report.personalityDescription}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {report.personalityStrengths.map((s) => <Chip key={s} label={s} variant="green" />)}
+            {report.personalityStrengths.map((s) => (
+              <Chip key={s} label={s} variant="green" />
+            ))}
           </div>
         </div>
       </div>
 
       {/* Top 3 */}
       <div className="space-y-4">
-        <h3 className="text-base font-extrabold text-foreground">Your Top 3 Specializations</h3>
+        <h3 className="flex items-center gap-2 text-base font-extrabold text-foreground">
+          <Trophy size={20} className="text-yellow-500" />
+          Your Top 3 Specializations
+        </h3>
+        
         {report.topSpecializations.map((spec) => (
-          <div key={spec.rank} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm">
+          <div key={spec.rank} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm overflow-hidden">
             <button
               className="w-full rounded-2xl p-5 text-left transition-colors hover:bg-[color:var(--surface-2)]"
               onClick={() => setExpandedRank(expandedRank === spec.rank ? 0 : spec.rank)}
@@ -336,9 +522,11 @@ function ResultsScreen({
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
+                    <Briefcase size={16} className="text-muted" />
                     <span className="font-bold text-foreground">{spec.titleEn}</span>
                     <span className="text-xs text-[color:var(--muted)]">{spec.title}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${demandColor(spec.demandLevel)}`}>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${demandColor(spec.demandLevel)}`}>
+                      <TrendingUp size={10} />
                       {spec.demandLevel} Demand
                     </span>
                   </div>
@@ -348,6 +536,12 @@ function ResultsScreen({
                   <div className="text-2xl font-extrabold text-primary">{spec.matchScore}%</div>
                   <div className="text-xs text-[color:var(--muted)]">Match</div>
                 </div>
+                <ChevronDown 
+                  size={18} 
+                  className={`shrink-0 text-[color:var(--muted)] transition-transform duration-200 ${
+                    expandedRank === spec.rank ? 'rotate-180' : ''
+                  }`}
+                />
               </div>
               <ProgressBar value={spec.matchScore} className="mt-3" />
             </button>
@@ -355,22 +549,51 @@ function ResultsScreen({
             {expandedRank === spec.rank && (
               <div className="border-t border-[color:var(--border)] p-5 pt-4 space-y-5">
                 <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">Skills</div>
+                  <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                    <Wrench size={14} />
+                    Skills
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    {spec.currentSkills.map((s) => <Chip key={`c-${s}`} label={`✓ ${s}`} variant="green" />)}
-                    {spec.missingSkills.map((s) => <Chip key={`m-${s}`} label={`✗ ${s}`} variant="red" />)}
+                    {spec.currentSkills.map((s) => (
+                      <span key={`c-${s}`} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                        <Check size={12} />
+                        {s}
+                      </span>
+                    ))}
+                    {spec.missingSkills.map((s) => (
+                      <span key={`m-${s}`} className="inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                        <X size={12} />
+                        {s}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
                 <div>
-                  <div className="mb-3 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">Learning Roadmap</div>
+                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                    <GraduationCap size={14} />
+                    Learning Roadmap
+                  </div>
                   <div className="space-y-3">
                     {spec.learningPath.map((step, i) => (
                       <div key={`lp-${i}`} className="flex gap-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3">
-                        <div className="shrink-0 rounded-lg bg-primary/10 px-2 py-1 text-center text-xs font-bold text-primary">{step.month}</div>
-                        <div>
-                          <div className="text-sm font-semibold text-foreground">{step.focus}</div>
-                          <div className="text-xs text-[color:var(--muted)]">{step.resources}</div>
+                        <div className="flex shrink-0 flex-col items-center">
+                          <div className="rounded-lg bg-primary/10 px-2 py-1 text-center text-xs font-bold text-primary">
+                            {step.month}
+                          </div>
+                          <div className="mt-1 text-[10px] text-[color:var(--muted)]">
+                            Step {i + 1}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                            <MapPin size={14} className="text-primary" />
+                            {step.focus}
+                          </div>
+                          <div className="mt-1 flex items-start gap-2 text-xs text-[color:var(--muted)]">
+                            <BookOpen size={12} className="mt-0.5 shrink-0" />
+                            {step.resources}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -379,27 +602,45 @@ function ResultsScreen({
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4">
-                    <div className="text-lg">🇪🇬</div>
-                    <div className="mt-1 text-xs font-semibold text-[color:var(--muted)]">Egypt</div>
-                    <div className="font-bold text-foreground">{spec.salaryRange.egypt}/month</div>
+                    <div className="flex items-center gap-2 text-lg">
+                      <MapPin size={20} className="text-green-600" />
+                      Egypt
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-[color:var(--muted)]">Average Salary</div>
+                    <div className="flex items-center gap-1 font-bold text-foreground">
+                      <DollarSign size={14} className="text-green-600" />
+                      {spec.salaryRange.egypt}/month
+                    </div>
                   </div>
                   <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4">
-                    <div className="text-lg">🇸🇦</div>
-                    <div className="mt-1 text-xs font-semibold text-[color:var(--muted)]">Saudi Arabia</div>
-                    <div className="font-bold text-foreground">{spec.salaryRange.saudi}/month</div>
+                    <div className="flex items-center gap-2 text-lg">
+                      <MapPin size={20} className="text-blue-600" />
+                      Saudi Arabia
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-[color:var(--muted)]">Average Salary</div>
+                    <div className="flex items-center gap-1 font-bold text-foreground">
+                      <DollarSign size={14} className="text-blue-600" />
+                      {spec.salaryRange.saudi}/month
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                  <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2 text-sm">
-                    ⏱ First job in: <span className="font-bold">{spec.timeToFirstJob}</span>
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2 text-sm">
+                    <Clock size={16} className="text-primary" />
+                    First job in: <span className="font-bold">{spec.timeToFirstJob}</span>
                   </div>
                 </div>
 
                 <div>
-                  <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">Job Titles You Can Apply For</div>
+                  <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">
+                    <Briefcase size={14} />
+                    Job Titles You Can Apply For
+                  </div>
                   <div className="flex flex-wrap gap-2">
-                    {spec.jobTitles.map((t) => <Chip key={`j-${t}`} label={t} />)}
+                    {spec.jobTitles.map((t) => (
+                      <Chip key={`j-${t}`} label={t} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -409,21 +650,35 @@ function ResultsScreen({
       </div>
 
       {/* Advice */}
-      <div className="rounded-2xl border border-l-4 border-primary bg-primary/5 p-6 shadow-sm">
-        <div className="text-sm font-extrabold text-primary">Personal Advice</div>
+      <div className="rounded-2xl border-l-4 border-primary bg-primary/5 p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-sm font-extrabold text-primary">
+          <Lightbulb size={18} />
+          Personal Advice
+        </div>
         <p className="mt-2 text-sm text-foreground">{report.personalAdvice}</p>
         <div className="mt-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <div className="text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">Your First Step This Week:</div>
-          <p className="mt-1 font-semibold text-foreground">{report.urgentFirstStep}</p>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-[color:var(--muted)]">
+            <Zap size={14} className="text-yellow-500" />
+            Your First Step This Week:
+          </div>
+          <p className="mt-1 flex items-start gap-2 font-semibold text-foreground">
+            <ArrowRight size={16} className="mt-0.5 shrink-0 text-primary" />
+            {report.urgentFirstStep}
+          </p>
         </div>
       </div>
 
       {/* Areas to improve */}
       {report.areasToImprove.length > 0 && (
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-sm">
-          <div className="mb-3 text-sm font-bold text-foreground">Areas to Improve</div>
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground">
+            <AlertTriangle size={16} className="text-orange-500" />
+            Areas to Improve
+          </div>
           <div className="flex flex-wrap gap-2">
-            {report.areasToImprove.map((a) => <Chip key={`a-${a}`} label={a} variant="red" />)}
+            {report.areasToImprove.map((a) => (
+              <Chip key={`a-${a}`} label={a} variant="red" />
+            ))}
           </div>
         </div>
       )}
@@ -431,19 +686,179 @@ function ResultsScreen({
       {/* CTAs */}
       <div className="flex flex-wrap gap-3">
         {report.topSpecializations.length > 0 && (
-          <Button disabled={saving || saved} onClick={doSave}>
-            {saved ? '✓ Path Saved!' : saving ? 'Saving...' : '⭐ Save This Path'}
-          </Button>
+          <button
+            disabled={saving || saved}
+            onClick={doSave}
+            className="inline-flex h-11 items-center justify-center rounded-xl text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 bg-primary hover:bg-primary/90 px-6"
+            style={{ color: '#ffffff' }}
+          >
+            {saved ? (
+              <span className="flex items-center gap-2">
+                <Check size={16} />
+                Path Saved!
+              </span>
+            ) : saving ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw size={16} className="animate-spin" />
+                Saving...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Star size={16} />
+                Save This Path
+              </span>
+            )}
+          </button>
         )}
-        <Button variant="secondary" onClick={() => router.push(`/${locale}/dashboard/career-path`)}>Start Learning Path</Button>
-        <Button variant="secondary" onClick={() => router.push(`/${locale}/dashboard/coaching`)}>Book Coaching Session</Button>
-        <Button variant="ghost" onClick={onRetake}>Retake Assessment</Button>
+        
+        <button
+          onClick={() => router.push(`/${locale}/dashboard/career-path`)}
+          className="inline-flex h-11 items-center justify-center rounded-xl text-sm font-bold transition-colors border border-[color:var(--border)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)] px-6"
+        >
+          <GraduationCap size={16} />
+          Start Learning Path
+        </button>
+        
+        <button
+          onClick={() => router.push(`/${locale}/dashboard/coaching`)}
+          className="inline-flex h-11 items-center justify-center rounded-xl text-sm font-bold transition-colors border border-[color:var(--border)] bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)] px-6"
+        >
+          <Users size={16} />
+          Book Coaching Session
+        </button>
+        
+        <button
+          onClick={onRetake}
+          className="inline-flex h-11 items-center justify-center rounded-xl text-sm font-bold transition-colors text-[color:var(--muted)] hover:text-foreground hover:bg-[color:var(--surface-2)] px-6"
+        >
+          <RefreshCw size={16} />
+          Retake Assessment
+        </button>
       </div>
 
-      <p className="text-xs text-[color:var(--muted)]">
+      <p className="flex items-center gap-2 text-xs text-[color:var(--muted)]">
+        <Info size={14} />
         {report.disclaimer ?? 'This is an AI-powered recommendation based on your answers.'}
       </p>
     </div>
+  )
+}
+
+// ─── Additional Icons for Results ───────────────────────────────────────────────
+
+function FileText({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 14} 
+      height={size || 14} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+      <polyline points="14 2 14 8 20 8"></polyline>
+      <line x1="16" y1="13" x2="8" y2="13"></line>
+      <line x1="16" y1="17" x2="8" y2="17"></line>
+      <polyline points="10 9 9 9 8 9"></polyline>
+    </svg>
+  )
+}
+
+function Trophy({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 20} 
+      height={size || 20} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+      <path d="M4 22h16"></path>
+      <path d="M10 14.66V17c0 .55-.45 1-1 1h0a1 1 0 0 1-1-1v-2.34"></path>
+      <path d="M14 14.66V17c0 .55.45 1 1 1h0a1 1 0 0 1 1-1v-2.34"></path>
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+    </svg>
+  )
+}
+
+function Wrench({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 14} 
+      height={size || 14} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+    </svg>
+  )
+}
+
+function Lightbulb({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 18} 
+      height={size || 18} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M9 18h6"></path>
+      <path d="M10 22h4"></path>
+      <path d="M15.09 14.213A4.72 4.72 0 0 1 12 16 4.72 4.72 0 0 1 8.91 14.213"></path>
+      <path d="M12 2v1"></path>
+      <path d="M12 20v1"></path>
+      <path d="M4.93 4.93l.7.7"></path>
+      <path d="M19.07 4.93l-.7.7"></path>
+      <path d="M2 12h1"></path>
+      <path d="M21 12h1"></path>
+      <path d="M4.93 19.07l-.7-.7"></path>
+      <path d="M19.07 19.07l-.7-.7"></path>
+    </svg>
+  )
+}
+
+function Info({ size, className }: { size?: number; className?: string }) {
+  return (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size || 14} 
+      height={size || 14} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10"></circle>
+      <line x1="12" y1="16" x2="12" y2="12"></line>
+      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
   )
 }
 
@@ -536,12 +951,11 @@ export default function AssessmentPage() {
     }
   }, [answers, questionsQ.data, sessionId, completeMutation, historyQ])
 
-  // ← ✅ تم إصلاح هذا السطر (كان فيه typo)
   const handleBack = useCallback(() => {
     const h = historyRef.current
     if (h.length <= 1) return
     historyRef.current = h.slice(0, -1)
-    setAnswers(h[h.length - 2])  // ← صحيح هنا
+    setAnswers(h[h.length - 2])
   }, [])
 
   const handleRetake = useCallback(() => {
@@ -586,12 +1000,19 @@ export default function AssessmentPage() {
 
         {screen === 'error' && (
           <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/20 p-8 text-center shadow-sm">
-            <div className="text-4xl">⚠️</div>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle size={32} className="text-red-600 dark:text-red-400" />
+            </div>
             <h3 className="mt-4 text-lg font-bold text-foreground">Something went wrong</h3>
             <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
-            <Button className="mt-6" onClick={() => { setScreen('welcome'); setAnswers([]); setSessionId(null); setError('') }}>
+            <button
+              className="mt-6 inline-flex h-11 items-center justify-center rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 px-6"
+              style={{ color: '#ffffff' }}
+              onClick={() => { setScreen('welcome'); setAnswers([]); setSessionId(null); setError('') }}
+            >
+              <RefreshCw size={16} />
               Try Again
-            </Button>
+            </button>
           </div>
         )}
 

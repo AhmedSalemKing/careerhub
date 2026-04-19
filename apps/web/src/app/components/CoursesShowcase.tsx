@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useLocale } from 'next-intl'
-import { BookOpen, Users, ArrowLeft, Play } from 'lucide-react'
+import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
+import api from '../../lib/api'
 
 /* ════════════════════════════════════════
    INTERFACES
@@ -56,25 +57,69 @@ export function CoursesShowcase() {
   const isAr = locale === 'ar'
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  
+  // ✅ متغيرات محسنة للسكرول التلقائي
   const animRef = useRef<number>(0)
   const pausedRef = useRef(false)
+  const positionRef = useRef(0)
+  const lastTimeRef = useRef<number>(0)
+  const velocityRef = useRef(0)
+  const targetVelocityRef = useRef(0.5)
+  
+  // حالة للأزرار
+  const [showNavButtons, setShowNavButtons] = useState(false)
 
   const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || '/learn'
 
   // ── Fetch real courses ──
   useEffect(() => {
-    const API = process.env.NEXT_PUBLIC_API_URL || ''
-    const url = `${API}/api/courses`
-
-    fetch(url)
-      .then(r => r.json())
-      .then(d => {
-        const arr = d?.data?.courses ?? d?.data ?? d
-        setCourses(Array.isArray(arr) ? arr : [])
+    let mounted = true
+    
+    console.log('[CoursesShowcase] Starting fetch...')
+    
+    api.get('/courses?status=PUBLISHED&limit=10')
+      .then((res) => {
+        console.log('[CoursesShowcase] ✅ Response received:')
+        console.log('[CoursesShowcase] - Status:', res.status)
+        console.log('[CoursesShowcase] - Data:', res.data)
+        
+        if (!mounted) return
+        
+        let arr: Course[] = []
+        
+        if (res.data?.data?.courses && Array.isArray(res.data.data.courses)) {
+          arr = res.data.data.courses
+        }
+        else if (res.data?.courses && Array.isArray(res.data.courses)) {
+          arr = res.data.courses
+        }
+        else if (Array.isArray(res.data)) {
+          arr = res.data
+        }
+        else if (res.data?.data && Array.isArray(res.data.data)) {
+          arr = res.data.data
+        }
+        
+        console.log(`[CoursesShowcase] 📊 Loaded ${arr.length} courses`)
+        
+        setCourses(arr)
+        setError(null)
       })
-      .catch(() => setCourses([]))
-      .finally(() => setLoading(false))
+      .catch((err) => {
+        console.error('[CoursesShowcase] ❌ Error:', err.message)
+        
+        if (mounted) {
+          setError(err.message)
+          setCourses([])
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false)
+      })
+    
+    return () => { mounted = false }
   }, [])
 
   // ── Auto-scroll animation ──
@@ -83,31 +128,102 @@ export function CoursesShowcase() {
     const el = scrollRef.current
     if (!el) return
 
-    let pos = 0
-    const speed = 0.6
+    positionRef.current = 0
+    velocityRef.current = 0
+    lastTimeRef.current = performance.now()
 
-    const tick = () => {
-      if (!pausedRef.current && el) {
-        pos += speed
-        if (pos >= el.scrollWidth / 2) pos = 0
-        el.scrollLeft = pos
+    const tick = (currentTime: number) => {
+      const deltaTime = currentTime - lastTimeRef.current
+      lastTimeRef.current = currentTime
+      
+      const clampedDelta = Math.min(deltaTime, 100)
+      
+      if (el && el.scrollWidth > 0) {
+        const halfWidth = el.scrollWidth / 2
+        
+        if (!pausedRef.current) {
+          const acceleration = 0.02
+          targetVelocityRef.current = 0.5
+          
+          if (velocityRef.current < targetVelocityRef.current) {
+            velocityRef.current += acceleration * clampedDelta
+            velocityRef.current = Math.min(velocityRef.current, targetVelocityRef.current)
+          }
+          
+          positionRef.current += velocityRef.current * clampedDelta * 0.06
+          
+          if (positionRef.current >= halfWidth) {
+            positionRef.current = positionRef.current % halfWidth
+          }
+          
+          el.scrollLeft = positionRef.current
+        } else {
+          const deceleration = 0.08
+          velocityRef.current *= (1 - deceleration * clampedDelta * 0.1)
+          if (velocityRef.current < 0.01) velocityRef.current = 0
+        }
       }
+      
       animRef.current = requestAnimationFrame(tick)
     }
 
     animRef.current = requestAnimationFrame(tick)
+    
     return () => cancelAnimationFrame(animRef.current)
   }, [courses])
+
+  // دالة للسكرول اليدوي بالأزرار
+  const scrollToDirection = (direction: 'left' | 'right') => {
+    const el = scrollRef.current
+    if (!el) return
+    
+    const cardWidth = 298
+    const scrollAmount = direction === 'right' ? cardWidth : -cardWidth
+    
+    velocityRef.current = direction === 'right' ? 8 : -8
+    positionRef.current = Math.max(0, el.scrollLeft + scrollAmount)
+    el.scrollTo({
+      left: positionRef.current,
+      behavior: 'smooth'
+    })
+    
+    setTimeout(() => setShowNavButtons(false), 3000)
+  }
 
   // Duplicate for infinite loop
   const displayCourses = courses.length > 0 ? [...courses, ...courses] : []
 
   return (
-    <section className="courses-showcase-section" dir={isAr ? 'rtl' : 'ltr'}>
+    <section 
+      className="courses-showcase-section" 
+      dir={isAr ? 'rtl' : 'ltr'}
+      onMouseEnter={() => setShowNavButtons(true)}
+      onMouseLeave={() => setShowNavButtons(false)}
+    >
       
-      {/* ═══ Theme Variables ═══ */}
+      {/* ═══ Theme Variables + Font Import ═══ */}
       <style jsx global>{`
         
+        /* ========================================
+           ✅ PINGARLT FONT IMPORT
+           ======================================== */
+        
+        @font-face {
+          font-family: 'PingARLT';
+          src: url('/fonts/alfont_com_PingARLT-Black.otf') format('opentype');
+          font-weight: 900;
+          font-style: normal;
+          font-display: swap;
+        }
+
+        @font-face {
+          font-family: 'PingARLT';
+          src: url('/fonts/PingARLT-Black.ttf') format('truetype');
+          font-weight: 900;
+          font-style: normal;
+          font-display: swap;
+        }
+
         /* ─── DARK MODE (Default) ─── */
         .courses-showcase-section {
           --cs-bg: #0D0D0D;
@@ -140,6 +256,7 @@ export function CoursesShowcase() {
           background: var(--cs-bg);
           color: var(--cs-fg);
           transition: background-color 0.3s ease, color 0.3s ease;
+          position: relative;
         }
 
         /* ─── LIGHT MODE ─── */
@@ -169,7 +286,7 @@ export function CoursesShowcase() {
           --cs-skeleton-to: rgba(27, 35, 64, 0.08);
         }
 
-        /* ─── Smooth transitions on theme change ─── */
+        /* Smooth transitions on theme change */
         .courses-showcase-section,
         .courses-showcase-section *,
         .courses-showcase-section *::before,
@@ -183,6 +300,75 @@ export function CoursesShowcase() {
         .courses-showcase-section a,
         .courses-showcase-section a * {
           transition-property: initial;
+        }
+
+        /* Fade edges for professional look */
+        .cs-scroll-wrapper {
+          position: relative;
+        }
+
+        .cs-scroll-wrapper::before,
+        .cs-scroll-wrapper::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 28px;
+          width: 80px;
+          z-index: 10;
+          pointer-events: none;
+        }
+
+        .cs-scroll-wrapper::before {
+          left: 0;
+          background: linear-gradient(to right, var(--cs-bg), transparent);
+        }
+
+        .cs-scroll-wrapper::after {
+          right: 0;
+          background: linear-gradient(to left, var(--cs-bg), transparent);
+        }
+
+        /* Navigation buttons styling */
+        .cs-nav-btn {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: var(--cs-card-bg);
+          border: 1.5px solid var(--cs-card-border);
+          color: var(--cs-fg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 20;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        .cs-nav-btn:hover {
+          background: var(--cs-primary);
+          border-color: var(--cs-primary);
+          color: white;
+          transform: translateY(-50%) scale(1.05);
+          box-shadow: 0 6px 24px var(--cs-primary-shadow);
+        }
+
+        .cs-nav-btn.cs-visible {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        .cs-nav-left {
+          left: 16px;
+        }
+
+        .cs-nav-right {
+          right: 16px;
         }
       `}</style>
 
@@ -219,121 +405,156 @@ export function CoursesShowcase() {
       </div>
 
       {/* ═══ Scrolling Rail ═══ */}
-      {loading ? (
-        <div className="cs-rail cs-rail-loading">
-          {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="cs-skeleton"
-              style={{ animationDelay: `${i * 0.1}s` }}
-            />
-          ))}
-        </div>
-      ) : courses.length === 0 ? (
-        <div className="cs-empty">
-          <BookOpen size={48} />
-          <p>{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}</p>
-        </div>
-      ) : (
-        <div
-          ref={scrollRef}
-          className="cs-rail"
-          onMouseEnter={() => { pausedRef.current = true }}
-          onMouseLeave={() => { pausedRef.current = false }}
-        >
-          {displayCourses.map((course, idx) => {
-            const thumb = getThumb(course.thumbnail)
-            const name = isAr ? (course.titleAr || course.title) : course.title
-            const instructor = course.instructor?.profile
-              ? `${course.instructor.profile.firstName} ${course.instructor.profile.lastName}`
-              : null
-            const levelColor = getLevelColor(course.level)
+      <div className="cs-scroll-wrapper">
+        
+        {/* Navigation Buttons */}
+        {!loading && courses.length > 0 && (
+          <>
+            <button
+              className={`cs-nav-btn cs-nav-left ${showNavButtons ? 'cs-visible' : ''}`}
+              onClick={() => scrollToDirection('left')}
+              aria-label={isAr ? 'السابق' : 'Previous'}
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              className={`cs-nav-btn cs-nav-right ${showNavButtons ? 'cs-visible' : ''}`}
+              onClick={() => scrollToDirection('right')}
+              aria-label={isAr ? 'التالي' : 'Next'}
+            >
+              <ChevronRight size={20} />
+            </button>
+          </>
+        )}
 
-            return (
-              <a
-                key={`${course.id}-${idx}`}
-                href={`${LEARN_URL}/${locale}/courses/${course.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="cs-card"
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget
-                  el.style.transform = 'translateY(-6px)'
-                  el.style.borderColor = 'var(--cs-border-hover)'
-                  el.style.boxShadow = 
-                    '0 20px 50px var(--cs-primary-shadow), ' +
-                    '0 0 0 1px var(--cs-border-hover), ' +
-                    'inset 0 1px 0 rgba(255,255,255,0.1)'
-                  pausedRef.current = true
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget
-                  el.style.transform = 'translateY(0)'
-                  el.style.borderColor = 'var(--cs-card-border)'
-                  el.style.boxShadow = 
-                    '0 2px 8px rgba(0,0,0,0.12), ' +
-                    'inset 0 1px 0 rgba(255,255,255,0.04)'
-                  pausedRef.current = false
-                }}
-              >
-                {/* Thumbnail Area */}
-                <div className="cs-thumb">
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt={name}
-                      onError={(e) => {
-                        ;(e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <div className="cs-thumb-placeholder">
-                      <BookOpen size={40} />
-                    </div>
-                  )}
+        {loading ? (
+          <div className="cs-rail cs-rail-loading">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="cs-skeleton"
+                style={{ animationDelay: `${i * 0.1}s` }}
+              />
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="cs-empty">
+            <BookOpen size={48} />
+            <p>{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}</p>
+            {error && (
+              <p className="mt-2 text-xs opacity-60">Error: {error}</p>
+            )}
+          </div>
+        ) : (
+          <div
+            ref={scrollRef}
+            className="cs-rail"
+            onMouseEnter={() => { 
+              pausedRef.current = true
+            }}
+            onMouseLeave={() => { 
+              pausedRef.current = false
+              setTimeout(() => {
+                pausedRef.current = false
+              }, 300)
+            }}
+          >
+            {displayCourses.map((course, idx) => {
+              const thumb = getThumb(course.thumbnail)
+              const name = isAr ? (course.titleAr || course.title) : course.title
+              const instructor = course.instructor?.profile
+                ? `${course.instructor.profile.firstName} ${course.instructor.profile.lastName}`
+                : null
+              const levelColor = getLevelColor(course.level)
 
-                  {/* Level Badge */}
-                  <span
-                    className="cs-level-badge"
-                    style={{ background: levelColor }}
-                  >
-                    {getLevelAr(course.level)}
-                  </span>
+              return (
+                <a
+                  key={`${course.id}-${idx}`}
+                  href={`${LEARN_URL}/${locale}/courses/${course.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cs-card"
+                  onMouseEnter={(e) => {
+                    const el = e.currentTarget
+                    el.style.transform = 'translateY(-6px) scale(1.02)'
+                    el.style.borderColor = 'var(--cs-border-hover)'
+                    el.style.boxShadow = 
+                      '0 20px 50px var(--cs-primary-shadow), ' +
+                      '0 0 0 1px var(--cs-border-hover), ' +
+                      'inset 0 1px 0 rgba(255,255,255,0.1)'
+                    pausedRef.current = true
+                  }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget
+                    el.style.transform = 'translateY(0) scale(1)'
+                    el.style.borderColor = 'var(--cs-card-border)'
+                    el.style.boxShadow = 
+                      '0 2px 8px rgba(0,0,0,0.12), ' +
+                      'inset 0 1px 0 rgba(255,255,255,0.04)'
+                    pausedRef.current = false
+                  }}
+                >
+                  {/* Thumbnail Area */}
+                  <div className="cs-thumb">
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt={name}
+                        onError={(e) => {
+                          ;(e.target as HTMLImageElement).style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="cs-thumb-placeholder">
+                        <BookOpen size={40} />
+                      </div>
+                    )}
 
-                  {/* Play Overlay */}
-                  <div className="cs-play-overlay">
-                    <div className="cs-play-icon">
-                      <Play size={18} color="#fff" fill="#fff" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="cs-body">
-                  <h3 className="cs-card-title">{name}</h3>
-
-                  {instructor && (
-                    <p className="cs-instructor">{instructor}</p>
-                  )}
-
-                  <div style={{ flex: 1 }} />
-
-                  <div className="cs-footer">
-                    <span className="cs-price">
-                      {course.price > 0 ? `${course.price} ريال` : isAr ? 'مجاني' : 'Free'}
+                    {/* Level Badge */}
+                    <span
+                      className="cs-level-badge"
+                      style={{ background: levelColor }}
+                    >
+                      {getLevelAr(course.level)}
                     </span>
 
-                    <span className="cs-enrollments">
-                      <Users size={12} />
-                      {course._count?.enrollments ?? 0}
-                    </span>
+                    {/* Play Overlay */}
+                    <div className="cs-play-overlay">
+                      <div className="cs-play-icon">
+                        <Play size={18} color="#fff" fill="#fff" />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </a>
-            )
-          })}
-        </div>
-      )}
+
+                  {/* Content */}
+                  <div className="cs-body">
+                    <h3 className="cs-card-title">{name}</h3>
+
+                    {instructor && (
+                      <p className="cs-instructor">{instructor}</p>
+                    )}
+
+                    <div style={{ flex: 1 }} />
+
+                    {/* ✅ FOOTER with PingARLT Price */}
+                    <div className="cs-footer">
+                      {/* ✅ PRICE - PingARLT Font Applied Here */}
+                      <span className="cs-price">
+                        {course.price > 0 ? `${course.price} ${isAr ? 'ريال' : 'SAR'}` : isAr ? 'مجاني' : 'Free'}
+                      </span>
+
+                      <span className="cs-enrollments">
+                        <Users size={12} />
+                        {course._count?.enrollments ?? 0}
+                      </span>
+                    </div>
+                  </div>
+                </a>
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       {/* ═══ Bottom CTA ═══ */}
       <div className="cs-bottom-cta">
@@ -436,12 +657,14 @@ export function CoursesShowcase() {
           display: flex;
           gap: 18px;
           overflow-x: hidden;
-          padding: 8px 24px 28px;
+          padding: 8px 60px 28px;
           cursor: grab;
           userSelect: none;
+          will-change: scroll-position;
+          -webkit-overflow-scrolling: touch;
         }
         .cs-rail-loading {
-          padding: 0 24px;
+          padding: 0 60px;
         }
 
         /* ─── Skeleton Loaders ─── */
@@ -484,10 +707,8 @@ export function CoursesShowcase() {
           overflow: hidden;
           background: var(--cs-card-bg);
           
-          /* ← الحواف الواضحة */
           border: 1.5px solid var(--cs-card-border);
           
-          /* ← ظل داخلي خفيف + ظل خارجي */
           box-shadow: 
             0 2px 8px rgba(0, 0, 0, 0.12),
             inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -496,9 +717,10 @@ export function CoursesShowcase() {
           display: flex;
           flex-direction: column;
           flex-shrink: 0;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+          transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
                       border-color 0.3s ease,
                       box-shadow 0.3s ease;
+          will-change: transform, box-shadow;
         }
 
         /* ─── Thumbnail ─── */
@@ -507,7 +729,6 @@ export function CoursesShowcase() {
           background: var(--cs-thumb-bg);
           position: relative;
           overflow: hidden;
-          /* فاصل بين الصورة والمحتوى */
           border-bottom: 1.5px solid var(--cs-card-border);
         }
 
@@ -515,6 +736,11 @@ export function CoursesShowcase() {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          transition: transform 0.4s ease;
+        }
+
+        .cs-card:hover .cs-thumb img {
+          transform: scale(1.05);
         }
 
         .cs-thumb-placeholder {
@@ -537,6 +763,7 @@ export function CoursesShowcase() {
           border-radius: 6px;
           font-family: "DM Sans", sans-serif;
           box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+          z-index: 2;
         }
 
         .cs-play-overlay {
@@ -547,6 +774,7 @@ export function CoursesShowcase() {
           align-items: center;
           justify-content: center;
           transition: background 0.25s ease;
+          z-index: 1;
         }
 
         .cs-play-icon {
@@ -558,13 +786,13 @@ export function CoursesShowcase() {
           align-items: center;
           justify-content: center;
           opacity: 0;
-          transition: opacity 0.25s ease, transform 0.25s ease;
+          transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
           box-shadow: 0 4px 20px rgba(81, 32, 200, 0.4);
         }
 
         .cs-card:hover .cs-play-icon {
           opacity: 1 !important;
-          transform: scale(1.05);
+          transform: scale(1.1);
         }
         .cs-card:hover .cs-play-overlay {
           background: rgba(0, 0, 0, 0.35) !important;
@@ -589,6 +817,11 @@ export function CoursesShowcase() {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          transition: color 0.2s ease;
+        }
+
+        .cs-card:hover .cs-card-title {
+          color: var(--cs-primary);
         }
 
         .cs-instructor {
@@ -598,6 +831,7 @@ export function CoursesShowcase() {
           font-family: "DM Sans", sans-serif;
         }
 
+        /* ─── Footer ─── */
         .cs-footer {
           display: flex;
           align-items: center;
@@ -607,11 +841,17 @@ export function CoursesShowcase() {
           border-top: 1.5px solid var(--cs-card-border-strong);
         }
 
+        /* ✅✅✅ PRICE - PINGARLT FONT APPLIED ✅✅✅ */
         .cs-price {
-          font-size: 18px;
-          font-weight: 800;
+          font-family: 'PingARLT', 'Arial Black', sans-serif !important;
+          font-weight: 900 !important;
+          font-size: 20px !important;
           color: var(--cs-primary);
-          font-family: "Plus Jakarta Sans", sans-serif;
+          letter-spacing: -0.02em !important;
+          line-height: 1 !important;
+          text-rendering: optimizeLegibility;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         .cs-enrollments {
@@ -647,10 +887,11 @@ export function CoursesShowcase() {
           font-weight: 700;
           text-decoration: none;
           font-family: "DM Sans", sans-serif;
-          transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease;
+          transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
         }
         .cs-cta-btn:hover {
           transform: translateY(-2px);
+          box-shadow: 0 8px 30px var(--cs-primary-shadow);
         }
 
         /* ─── Animations ─── */
@@ -662,6 +903,10 @@ export function CoursesShowcase() {
         @keyframes cs-shimmer {
           0% { background-position: 200% 0; }
           100% { background-position: -200% 0; }
+        }
+
+        .cs-rail:hover .cs-card {
+          border-color: var(--cs-card-border-strong);
         }
       `}</style>
     </section>

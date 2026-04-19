@@ -37,7 +37,7 @@ const navItems = [
 // TOOLTIP COMPONENT
 // ════════════════════════════════════
 
-function Tooltip({ text, children }: { text: string; children: React.ReactNode }) {
+function Tooltip({ text, children, theme }: { text: string; children: React.ReactNode; theme: 'light' | 'dark' }) {
   const [show, setShow] = useState(false)
   
   return (
@@ -49,17 +49,26 @@ function Tooltip({ text, children }: { text: string; children: React.ReactNode }
       {children}
       {show && (
         <div 
-          className="
+          className={`
             absolute right-full mr-3 top-1/2 -translate-y-1/2
             px-2.5 py-1.5 rounded-md text-xs font-medium
-            bg-gray-900 text-white whitespace-nowrap
-            shadow-xl shadow-black/20 z-50
-            animate-in fade-in duration-150
-          "
-          style={{ animation: 'fadeIn 0.15s ease-out' }}
+            whitespace-nowrap shadow-xl z-50
+            transition-colors duration-200
+          `}
+          style={{
+            background: theme === 'dark' ? '#1f2937' : '#ffffff',
+            color: theme === 'dark' ? '#ffffff' : '#1a1a2e',
+            boxShadow: theme === 'dark' 
+              ? '0 10px 25px -5px rgba(0,0,0,0.4)' 
+              : '0 10px 25px -5px rgba(0,0,0,0.15)',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
         >
           {text}
-          <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 rotate-45" />
+          <div 
+            className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rotate-45" 
+            style={{ background: theme === 'dark' ? '#1f2937' : '#ffffff' }}
+          />
         </div>
       )}
     </div>
@@ -77,6 +86,83 @@ export function InstructorSidebar() {
   
   // ── State ──
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // 🎨 حالة الثيم (فاتح/داكن)
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+
+  // 🔄 الكشف عن الثيم عند التحميل
+  useEffect(() => {
+    const detectTheme = () => {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      
+      if (savedTheme) {
+        setTheme(savedTheme)
+      } else if (systemPrefersDark) {
+        setTheme('dark')
+      } else {
+        setTheme('light')
+      }
+    }
+
+    detectTheme()
+
+    // 🔄 الاستماع للتغييرات في الوقت الفعلي
+    const handleStorageChange = () => {
+      const newTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (newTheme) setTheme(newTheme)
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    // تحديث دوري
+    const interval = setInterval(() => {
+      const currentTheme = localStorage.getItem('theme') as 'light' | 'dark' | null
+      if (currentTheme && currentTheme !== theme) {
+        setTheme(currentTheme)
+      }
+    }, 500)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [theme])
+
+  // 🎨 نظام الألوان الديناميكي
+  const colors = {
+    // ✅ خلفية السايدبار: Dark→#0d0d0d | Light→#ffffff
+    sidebarBg: theme === 'dark' ? '#0d0d0d' : '#ffffff',
+    
+    // حدود وفواصل
+    borderColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)',
+    
+    // خلفية العناصر الفرعية (Logo bg, Avatar bg)
+    elementBg: theme === 'dark' ? '#1e293b' : '#f1f5f9',
+    
+    // النصوص الرئيسية
+    textPrimary: theme === 'dark' ? '#ffffff' : '#0d0d0d',
+    
+    // النصوص الثانوية (role labels)
+    textSecondary: theme === 'dark' ? '#64748b' : '#6b7280',
+    
+    // أيقونات وروابط غير نشطة
+    iconInactive: theme === 'dark' ? '#64748b' : '#94a3b8',
+    
+    // hover states
+    hoverBg: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    hoverText: theme === 'dark' ? '#e2e8f0' : '#374151',
+    
+    // active state
+    activeBg: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(81,32,200,0.08)',
+    activeIndicator: theme === 'dark' ? 'rgba(255,255,255,0.5)' : '#5120c8',
+    
+    // collapse button
+    collapseBtnHover: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    
+    // tooltip arrow
+    tooltipBg: theme === 'dark' ? '#1f2937' : '#ffffff',
+  }
 
   // ── Computed ──
   const base = `/${locale}/dashboard`
@@ -100,7 +186,10 @@ export function InstructorSidebar() {
         transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
         ${isCollapsed ? 'w-[68px]' : 'w-[256px]'}
       `}
-      style={{ background: '#0f172a' }}
+      style={{ 
+        background: colors.sidebarBg,
+        borderLeft: `1px solid ${colors.borderColor}`,
+      }}
       dir="rtl"
     >
       
@@ -109,9 +198,10 @@ export function InstructorSidebar() {
          ════════════════════════════════ */}
       <div 
         className={`
-          flex items-center border-b border-white/[0.06]
+          flex items-center 
           ${isCollapsed ? 'justify-center py-4' : 'justify-between px-5 py-5'}
         `}
+        style={{ borderBottom: `1px solid ${colors.borderColor}` }}
       >
         {/* Logo */}
         <div className="flex items-center gap-3 overflow-hidden">
@@ -119,17 +209,23 @@ export function InstructorSidebar() {
             className="
               shrink-0 w-8 h-8 rounded-lg 
               flex items-center justify-center 
-              font-bold text-sm text-white
+              font-bold text-sm transition-colors duration-300
             "
-            style={{ background: '#1e293b' }}
+            style={{ 
+              background: colors.elementBg, 
+              color: colors.textPrimary 
+            }}
           >
             D
           </div>
           
           {!isCollapsed && (
             <span 
-              className="text-sm font-semibold tracking-tight text-white shrink-0"
-              style={{ fontFamily: "'Inter', sans-serif" }}
+              className="text-sm font-semibold tracking-tight shrink-0 transition-colors duration-300"
+              style={{ 
+                fontFamily: "'Inter', sans-serif",
+                color: colors.textPrimary 
+              }}
             >
               DeveWay
             </span>
@@ -140,11 +236,19 @@ export function InstructorSidebar() {
         {!isCollapsed && (
           <button
             onClick={() => setIsCollapsed(true)}
-            className="
+            className={`
               shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-              text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]
               transition-colors duration-150
-            "
+            `}
+            style={{ color: colors.iconInactive }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.textPrimary
+              e.currentTarget.style.background = colors.collapseBtnHover
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.iconInactive
+              e.currentTarget.style.background = 'transparent'
+            }}
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -153,11 +257,19 @@ export function InstructorSidebar() {
         {isCollapsed && (
           <button
             onClick={() => setIsCollapsed(false)}
-            className="
+            className={`
               shrink-0 w-6 h-6 rounded-md flex items-center justify-center
-              text-gray-500 hover:text-gray-300 hover:bg-white/[0.06]
               transition-colors duration-150
-            "
+            `}
+            style={{ color: colors.iconInactive }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = colors.textPrimary
+              e.currentTarget.style.background = colors.collapseBtnHover
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = colors.iconInactive
+              e.currentTarget.style.background = 'transparent'
+            }}
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -169,15 +281,15 @@ export function InstructorSidebar() {
          ════════════════════════════════ */}
       <div 
         className={`
-          border-b border-white/[0.06]
           ${isCollapsed ? 'flex justify-center py-4' : 'px-4 py-4'}
         `}
+        style={{ borderBottom: `1px solid ${colors.borderColor}` }}
       >
         {isCollapsed ? (
-          <Tooltip text={`${firstName} ${lastName}`}>
+          <Tooltip text={`${firstName} ${lastName}`} theme={theme}>
             <div 
-              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ background: '#1e293b' }}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors duration-300"
+              style={{ background: colors.elementBg, color: colors.textPrimary }}
             >
               {initials}
             </div>
@@ -188,9 +300,10 @@ export function InstructorSidebar() {
               className="
                 shrink-0 w-10 h-10 rounded-full 
                 flex items-center justify-center 
-                text-sm font-bold text-white overflow-hidden
+                text-sm font-bold overflow-hidden
+                transition-colors duration-300
               "
-              style={{ background: '#1e293b' }}
+              style={{ background: colors.elementBg, color: colors.textPrimary }}
             >
               {user?.profile?.avatar ? (
                 <img src={user.profile.avatar} alt="" className="w-full h-full object-cover" />
@@ -200,10 +313,18 @@ export function InstructorSidebar() {
             </div>
             
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">
+              <p 
+                className="text-sm font-medium truncate transition-colors duration-300"
+                style={{ color: colors.textPrimary }}
+              >
                 {firstName} {lastName}
               </p>
-              <span className="text-xs text-gray-500">محاضر</span>
+              <span 
+                className="text-xs transition-colors duration-300"
+                style={{ color: colors.textSecondary }}
+              >
+                محاضر
+              </span>
             </div>
           </div>
         )}
@@ -216,21 +337,40 @@ export function InstructorSidebar() {
         
         {/* AI Link - Special Treatment */}
         <Link href={`${base}/ai-chat`}>
-          <Tooltip text="DeveWay AI">
+          <Tooltip text="DeveWay AI" theme={theme}>
             <div
               className={`
                 group relative flex items-center rounded-lg
                 transition-all duration-200 ease-out
                 ${pathname.includes('ai-chat')
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
+                  ? ''
+                  : ''
                 }
                 ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
               `}
+              style={{
+                background: pathname.includes('ai-chat') ? colors.activeBg : 'transparent',
+                color: pathname.includes('ai-chat') ? colors.textPrimary : colors.iconInactive,
+              }}
+              onMouseEnter={(e) => {
+                if (!pathname.includes('ai-chat')) {
+                  e.currentTarget.style.background = colors.hoverBg
+                  e.currentTarget.style.color = colors.hoverText
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!pathname.includes('ai-chat')) {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = colors.iconInactive
+                }
+              }}
             >
               {/* Active Indicator */}
               {pathname.includes('ai-chat') && !isCollapsed && (
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-violet-500" />
+                <div 
+                  className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full"
+                  style={{ background: '#8b5cf6' }}
+                />
               )}
               
               {/* Icon */}
@@ -250,8 +390,11 @@ export function InstructorSidebar() {
                   <span 
                     className="
                       text-[10px] font-semibold px-1.5 py-0.5 rounded
-                      bg-violet-500/20 text-violet-400
                     "
+                    style={{
+                      background: 'rgba(139,92,246,0.15)',
+                      color: '#8b5cf6',
+                    }}
                   >
                     AI
                   </span>
@@ -276,21 +419,36 @@ export function InstructorSidebar() {
           
           return (
             <Link key={item.path} href={`${base}${item.path}`}>
-              <Tooltip text={item.label}>
+              <Tooltip text={item.label} theme={theme}>
                 <div
                   className={`
                     group relative flex items-center rounded-lg
                     transition-all duration-200 ease-out
-                    ${active
-                      ? 'bg-white/[0.08] text-white'
-                      : 'text-gray-400 hover:bg-white/[0.04] hover:text-gray-200'
-                    }
                     ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
                   `}
+                  style={{
+                    background: active ? colors.activeBg : 'transparent',
+                    color: active ? colors.textPrimary : colors.iconInactive,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = colors.hoverBg
+                      e.currentTarget.style.color = colors.hoverText
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = colors.iconInactive
+                    }
+                  }}
                 >
                   {/* Active Indicator */}
                   {active && !isCollapsed && (
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full bg-white/50" />
+                    <div 
+                      className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-l-full"
+                      style={{ background: colors.activeIndicator }}
+                    />
                   )}
                   
                   {/* Icon */}
@@ -309,7 +467,10 @@ export function InstructorSidebar() {
                   
                   {/* Active Dot for Collapsed */}
                   {isCollapsed && active && (
-                    <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white/70" />
+                    <div 
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
+                      style={{ background: colors.activeIndicator }}
+                    />
                   )}
                 </div>
               </Tooltip>
@@ -323,11 +484,11 @@ export function InstructorSidebar() {
          ════════════════════════════════ */}
       <div 
         className={`
-          border-t border-white/[0.06]
           ${isCollapsed ? 'p-2 pt-3' : 'px-3 py-3'}
         `}
+        style={{ borderTop: `1px solid ${colors.borderColor}` }}
       >
-        <Tooltip text="تسجيل الخروج">
+        <Tooltip text="تسجيل الخروج" theme={theme}>
           <button
             onClick={() => {
               logout()
@@ -335,11 +496,20 @@ export function InstructorSidebar() {
             }}
             className={`
               w-full flex items-center rounded-lg
-              text-red-400/80 hover:text-red-300
-              hover:bg-red-500/[0.08]
               transition-all duration-200
               ${isCollapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'}
             `}
+            style={{
+              color: '#ef4444',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#f87171'
+              e.currentTarget.style.background = 'rgba(239,68,68,0.08)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#ef4444'
+              e.currentTarget.style.background = 'transparent'
+            }}
           >
             <LogOut className={`shrink-0 ${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
             {!isCollapsed && <span className="text-sm font-medium">تسجيل الخروج</span>}
