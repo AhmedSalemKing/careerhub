@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
+import Toast from '../../../components/Toast'
 import {
   BookOpen,
   Image as ImageIcon,
@@ -125,6 +126,7 @@ export default function AdminCreateCoursePage() {
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' })
 
   const [form, setForm] = useState<CourseForm>({
     titleEn: '',
@@ -261,10 +263,13 @@ export default function AdminCreateCoursePage() {
       console.log('[Admin] ✅ Course created successfully!', response)
       
       // Success notification
-      alert(`✅ تم إنشاء الكورس بنجاح!\n\n${form.status === 'PUBLISHED' ? 'تم نشره مباشرة' : 'تم حفظ كمسودة'}`)
-      
-      // Redirect to courses list or dashboard
-      router.push(`/${locale}/admin/courses`)
+      const msg = form.status === 'PUBLISHED'
+        ? 'تم إنشاء الكورس ونشره بنجاح!'
+        : 'تم حفظ الكورس كمسودة بنجاح!'
+      setToast({ show: true, message: msg, type: 'success' })
+
+      // Redirect to courses list after a brief delay so the toast is visible
+      setTimeout(() => router.push(`/${locale}/admin/courses`), 1500)
       
     } catch (e: any) {
       console.error('[Admin] ❌ Create course error:', e)
@@ -283,6 +288,7 @@ export default function AdminCreateCoursePage() {
       }
       
       setError(errorMsg)
+      setToast({ show: true, message: errorMsg, type: 'error' })
     } finally {
       setSaving(false)
     }
@@ -724,6 +730,12 @@ export default function AdminCreateCoursePage() {
           </button>
         )}
       </div>
+      <Toast
+        message={toast.message}
+        show={toast.show}
+        type={toast.type}
+        onClose={() => setToast({ show: false, message: '', type: 'success' })}
+      />
     </div>
   )
 }
