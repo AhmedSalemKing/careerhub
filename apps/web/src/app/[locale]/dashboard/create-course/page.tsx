@@ -25,7 +25,7 @@ async function uploadImageFile(file: File): Promise<string> {
   const formData = new FormData()
   formData.append('image', file)
   const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
-  const res = await fetch(`${API_URL}/api/upload/image`, {
+  const res = await fetch(`${API_URL}/upload/image`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -56,7 +56,7 @@ async function uploadVideoFile(
       }
     }
     xhr.onerror = () => reject(new Error('Upload failed'))
-    xhr.open('POST', `${API_URL}/api/upload/video`)
+    xhr.open('POST', `${API_URL}/upload/video`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
   })

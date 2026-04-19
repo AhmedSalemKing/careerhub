@@ -321,7 +321,7 @@ export default function RegisterPage() {
         const fd = new FormData()
         fd.append('file', avatarFile)
         try {
-          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload/image`, { method: 'POST', body: fd })
+          const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/upload/image`, { method: 'POST', body: fd })
           const uploadData = await uploadRes.json()
           const avatarUrl = uploadData?.data?.url || uploadData?.url
           if (avatarUrl) payload.avatar = avatarUrl

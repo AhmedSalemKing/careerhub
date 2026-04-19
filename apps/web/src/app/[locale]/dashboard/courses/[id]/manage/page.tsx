@@ -32,7 +32,7 @@ async function uploadVideo(file: File, onProgress: (p: number) => void): Promise
       }
     }
     xhr.onerror = () => reject(new Error('فشل الاتصال'))
-    xhr.open('POST', `${API_URL}/api/upload/video`)
+    xhr.open('POST', `${API_URL}/upload/video`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
   })

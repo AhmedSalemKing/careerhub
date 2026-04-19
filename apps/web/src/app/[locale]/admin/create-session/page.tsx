@@ -99,7 +99,7 @@ export default function AdminCreateSessionPage() {
       formData.append('image', file)
       const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
       
-      const res = await fetch(`${API_URL}/api/upload/image`, {
+      const res = await fetch(`${API_URL}/upload/image`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
