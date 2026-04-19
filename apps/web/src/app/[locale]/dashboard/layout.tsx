@@ -1,29 +1,58 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { useAuthStore } from '../../../stores/authStore'
-import { InstructorSidebar } from '../../components/InstructorSidebar'
-import { StudentSidebar } from '../../components/StudentSidebar'
-import { ConsultantSidebar } from '../../components/ConsultantSidebar'
-import { Menu, X } from 'lucide-react'
 import { Skeleton } from '../../components/ui/Skeleton'
+import BottomDock from '../../../components/BottomDock'
+import {
+  LayoutDashboard, BookOpen, PlusCircle, Video, Users,
+  DollarSign, Settings, ClipboardList, Map, Users2,
+  Award, Bell, Calendar, Clock, Star, Sparkles,
+} from 'lucide-react'
+
+const studentItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
+  { icon: ClipboardList, label: 'Assessment', labelAr: 'اختبار المسار', href: '/ar/dashboard/assessment' },
+  { icon: Map, label: 'Career Path', labelAr: 'مساري المهني', href: '/ar/dashboard/career-path' },
+  { icon: Users2, label: 'Coaching', labelAr: 'الكوتشينج', href: '/ar/dashboard/coaching' },
+  { icon: BookOpen, label: 'Courses', labelAr: 'الكورسات', href: '/ar/dashboard/courses' },
+  { icon: Award, label: 'Certificates', labelAr: 'الشهادات', href: '/ar/dashboard/certificates' },
+  { icon: Bell, label: 'Notifications', labelAr: 'الإشعارات', href: '/ar/dashboard/notifications' },
+  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
+]
+
+const instructorItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
+  { icon: BookOpen, label: 'My Courses', labelAr: 'كورساتي', href: '/ar/dashboard/my-courses' },
+  { icon: PlusCircle, label: 'New Course', labelAr: 'كورس جديد', href: '/ar/dashboard/create-course' },
+  { icon: Video, label: 'Lectures', labelAr: 'المحاضرات', href: '/ar/dashboard/lectures' },
+  { icon: Users, label: 'Students', labelAr: 'الطلاب', href: '/ar/dashboard/students' },
+  { icon: DollarSign, label: 'Earnings', labelAr: 'الإيرادات', href: '/ar/dashboard/earnings' },
+  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
+]
+
+const consultantItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
+  { icon: Calendar, label: 'Sessions', labelAr: 'جلساتي', href: '/ar/dashboard/my-sessions' },
+  { icon: Clock, label: 'Availability', labelAr: 'مواعيدي', href: '/ar/dashboard/availability' },
+  { icon: DollarSign, label: 'Earnings', labelAr: 'الإيرادات', href: '/ar/dashboard/earnings' },
+  { icon: Star, label: 'Reviews', labelAr: 'التقييمات', href: '/ar/dashboard/reviews' },
+  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
+]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, hydrate } = useAuthStore()
   const [mounted, setMounted] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const locale = useLocale()
+  const router = useRouter()
 
   useEffect(() => {
     hydrate()
     setMounted(true)
   }, [hydrate])
-
-  // إغلاق Sidebar عند تغيير المسار
-  useEffect(() => {
-    setSidebarOpen(false)
-  }, [pathname])
 
   // وضع الشاشة الكاملة للمحادثة الذكية
   const isAiChat = pathname?.includes('ai-chat')
@@ -39,25 +68,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // حالة التحميل
   if (!mounted) {
     return (
-      <div className="flex min-h-screen" dir="rtl">
-        {/* هيكل Sidebar */}
-        <div 
-          className="hidden lg:block w-[280px] shrink-0 border-l border-[var(--navbar-border)]"
-          style={{ background: 'var(--surface)' }}
-        >
-          <div className="p-6 space-y-4">
-            <Skeleton className="h-10 w-40 rounded-xl" />
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-10 w-full rounded-lg" />
-            ))}
-          </div>
-        </div>
-        
-        {/* المحتوى الرئيسي */}
-        <main 
-          className="flex-1 p-6 lg:p-8"
-          style={{ backgroundColor: 'var(--background)' }}
-        >
+      <div className="min-h-screen" dir="rtl" style={{ backgroundColor: 'var(--background)' }}>
+        <main className="p-6 lg:p-8">
           <div className="space-y-4 max-w-7xl mx-auto">
             <Skeleton className="h-12 w-56 rounded-xl" />
             <Skeleton className="h-4 w-96 rounded-lg" />
@@ -75,65 +87,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isInstructor = user?.accountType === 'INSTRUCTOR'
   const isConsultant = user?.accountType === 'CONSULTANT'
 
+  const dockItems = isInstructor
+    ? instructorItems
+    : isConsultant
+    ? consultantItems
+    : studentItems
+
+  function handleLogout() {
+    localStorage.removeItem('deveway_token')
+    localStorage.removeItem('deveway_refresh')
+    localStorage.removeItem('deveway_user')
+    window.dispatchEvent(new Event('auth:updated'))
+    router.replace(`/${locale}/login`)
+  }
+
   return (
-    <div className="flex min-h-screen dashboard-root" dir="rtl">
-      
-      {/* خلفية شفافة للجوال عند فتح القائمة */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 lg:hidden mobile-backdrop"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* الشريط الجانبي */}
-      <aside
-        className={`
-          fixed lg:sticky top-0 right-0 h-screen z-50 lg:z-auto sidebar-container overflow-y-auto
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-          transition-transform duration-300 ease-out
-        `}
-      >
-        {isInstructor && <InstructorSidebar />}
-        {isConsultant && <ConsultantSidebar />}
-        {!isInstructor && !isConsultant && <StudentSidebar />}
-      </aside>
-
-      {/* المحتوى الرئيسي */}
+    <div className="min-h-screen dashboard-root" dir="rtl">
+      {/* محتوى الصفحة */}
       <main className="main-content">
-        
-        {/* شريط العلوي للجوال */}
-        <header className="mobile-header">
-          <button 
-            onClick={() => setSidebarOpen(true)} 
-            className="mobile-menu-btn"
-            type="button"
-            aria-label="فتح القائمة الجانبية"
-          >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-            <span>القائمة</span>
-          </button>
-          
-          <div className="flex items-center gap-3">
-            <img 
-              src="/logo-icon.png" 
-              alt="شعار DeveWay" 
-              className="h-8 w-auto"
-            />
-            <span 
-              className="font-bold text-[var(--foreground)] text-lg hidden sm:inline-block"
-              style={{ fontFamily: "'PingARLT', sans-serif" }}
-            >
-              DeveWay
-            </span>
-          </div>
-        </header>
-
-        {/* محتوى الصفحة */}
-        <div className="page-content">
+        <div className="page-content" style={{ paddingBottom: '100px' }}>
           {children}
         </div>
       </main>
+
+      {/* Bottom Dock */}
+      <BottomDock items={dockItems} onLogout={handleLogout} />
     </div>
   )
 }
