@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div dir="rtl" className="min-h-screen" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Page */}
-      <main className="p-6 lg:p-8" style={{ paddingBottom: '100px' }}>
+      <main className="p-6 lg:p-8" style={{ paddingTop: '80px' }}>
         {children}
       </main>
 

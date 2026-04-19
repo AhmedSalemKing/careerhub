@@ -24,7 +24,7 @@ export default function Toast({ message, show, onClose, type = 'success' }: Toas
   return (
     <div style={{
       position: 'fixed',
-      top: show ? '24px' : '-100px',
+      top: show ? '72px' : '-100px',
       left: '50%',
       transform: 'translateX(-50%)',
       transition: 'top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',

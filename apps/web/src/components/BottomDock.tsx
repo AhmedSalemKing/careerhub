@@ -40,10 +40,10 @@ export default function BottomDock({ items, onLogout }: BottomDockProps) {
   }
 
   return (
-    <div className="fixed bottom-5 left-0 right-0 flex justify-center z-50 pointer-events-none">
+    <div className="fixed top-4 left-0 right-0 flex justify-center z-50 pointer-events-none">
       <div
         className={`pointer-events-auto flex items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-700 ease-out ${
-          visible ? 'translate-y-0 opacity-100' : 'translate-y-16 opacity-0'
+          visible ? 'translate-y-0 opacity-100' : '-translate-y-16 opacity-0'
         }`}
         style={{
           background: theme === 'dark'

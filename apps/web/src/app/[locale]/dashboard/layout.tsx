@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen dashboard-root" dir="rtl">
       {/* محتوى الصفحة */}
       <main className="main-content">
-        <div className="page-content" style={{ paddingBottom: '100px' }}>
+        <div className="page-content" style={{ paddingTop: '80px' }}>
           {children}
         </div>
       </main>

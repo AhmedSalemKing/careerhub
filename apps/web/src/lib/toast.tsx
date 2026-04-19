@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={value}>
       <Toast.Provider swipeDirection="right">
         {children}
-        <Toast.Viewport className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] max-w-sm space-y-2 outline-none" />
+        <Toast.Viewport className="fixed top-[72px] right-4 z-50 w-[calc(100vw-2rem)] max-w-sm space-y-2 outline-none" />
         {items.map((item) => (
           <Toast.Root
             key={item.id}
