@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
@@ -17,6 +18,8 @@ import {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
 export default function ApprovalsPage() {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<'users' | 'courses'>('users')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
@@ -37,9 +40,9 @@ export default function ApprovalsPage() {
     onSuccess: (_, userId) => {
       qc.invalidateQueries({ queryKey: ['pending-approvals'] })
       const user = users.find((u: any) => u.id === userId)
-      notify.success(`تم قبول ${user?.profile?.firstName || user?.email || 'المستخدم'}`)
+      notify.success(isAr ? `تم قبول ${user?.profile?.firstName || user?.email || 'المستخدم'}` : `Approved ${user?.profile?.firstName || user?.email || 'user'}`)
     },
-    onError: () => notify.error('فشل قبول الطلب'),
+    onError: () => notify.error(isAr ? 'فشل قبول الطلب' : 'Failed to approve request'),
   })
 
   const rejectUser = useMutation({
@@ -48,11 +51,11 @@ export default function ApprovalsPage() {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['pending-approvals'] })
       const user = users.find((u: any) => u.id === id)
-      notify.info(`تم رفض ${user?.profile?.firstName || user?.email || 'المستخدم'}`)
+      notify.info(isAr ? `تم رفض ${user?.profile?.firstName || user?.email || 'المستخدم'}` : `Rejected ${user?.profile?.firstName || user?.email || 'user'}`)
       setRejectingId(null)
       setRejectReason('')
     },
-    onError: () => notify.error('فشل رفض الطلب'),
+    onError: () => notify.error(isAr ? 'فشل رفض الطلب' : 'Failed to reject request'),
   })
 
   // ── Pending courses ────────────────────────────────────────────
@@ -69,9 +72,9 @@ export default function ApprovalsPage() {
     mutationFn: (courseId: string) => post(`/admin/courses/${courseId}/approve`, {}),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pending-courses'] })
-      notify.success('تم الموافقة على الكورس ونشره')
+      notify.success(isAr ? 'تم الموافقة على الكورس ونشره' : 'Course approved and published')
     },
-    onError: () => notify.error('فشل الموافقة على الكورس'),
+    onError: () => notify.error(isAr ? 'فشل الموافقة على الكورس' : 'Failed to approve course'),
   })
 
   const rejectCourse = useMutation({
@@ -79,9 +82,9 @@ export default function ApprovalsPage() {
       post(`/admin/courses/${id}/reject`, { reason }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pending-courses'] })
-      notify.info('تم رفض الكورس')
+      notify.info(isAr ? 'تم رفض الكورس' : 'Course rejected')
     },
-    onError: () => notify.error('فشل رفض الكورس'),
+    onError: () => notify.error(isAr ? 'فشل رفض الكورس' : 'Failed to reject course'),
   })
 
   const isLoading = activeTab === 'users' ? usersLoading : coursesLoading
@@ -95,11 +98,11 @@ export default function ApprovalsPage() {
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div dir={isAr ? 'rtl' : 'ltr'} className="space-y-6">
       <div>
-        <h1 className="font-madinet text-2xl font-bold text-foreground">طلبات الموافقة</h1>
+        <h1 className="font-madinet text-2xl font-bold text-foreground">{isAr ? 'طلبات الموافقة' : 'Approval Requests'}</h1>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          مراجعة طلبات انضمام المحاضرين والمستشارين، وكورسات تنتظر المراجعة
+          {isAr ? 'مراجعة طلبات انضمام المحاضرين والمستشارين، وكورسات تنتظر المراجعة' : 'Review instructor and consultant applications, and courses pending review'}
         </p>
       </div>
 
@@ -113,7 +116,7 @@ export default function ApprovalsPage() {
               : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
           }`}
         >
-          المحاضرون والمستشارون
+          {isAr ? 'المحاضرون والمستشارون' : 'Instructors & Consultants'}
           {users.length > 0 && (
             <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {users.length}
@@ -128,7 +131,7 @@ export default function ApprovalsPage() {
               : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
           }`}
         >
-          كورسات تنتظر المراجعة
+          {isAr ? 'كورسات تنتظر المراجعة' : 'Courses Pending Review'}
           {pendingCourses.length > 0 && (
             <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {pendingCourses.length}
@@ -145,8 +148,8 @@ export default function ApprovalsPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10">
                 <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
-              <h3 className="font-madinet text-xl font-bold text-foreground">لا توجد طلبات معلقة</h3>
-              <p className="mt-2 text-sm text-[color:var(--muted)]">جميع الطلبات تمت مراجعتها</p>
+              <h3 className="font-madinet text-xl font-bold text-foreground">{isAr ? 'لا توجد طلبات معلقة' : 'No pending requests'}</h3>
+              <p className="mt-2 text-sm text-[color:var(--muted)]">{isAr ? 'جميع الطلبات تمت مراجعتها' : 'All requests have been reviewed'}</p>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -170,11 +173,11 @@ export default function ApprovalsPage() {
                             ? 'bg-blue-500/20 text-blue-400'
                             : 'bg-purple-500/20 text-purple-400'
                         }`}>
-                          {u.accountType === 'INSTRUCTOR' ? 'محاضر' : 'مستشار'}
+                          {u.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مستشار' : 'Consultant')}
                         </span>
                         <span className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
                           <Clock className="h-3 w-3" />
-                          {new Date(u.createdAt).toLocaleDateString('ar-SA')}
+                          {new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
                         </span>
                       </div>
                     </div>
@@ -184,25 +187,25 @@ export default function ApprovalsPage() {
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
                       {u.speciality && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
-                          <p className="text-xs text-[color:var(--muted)] mb-1">مجال التخصص</p>
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'مجال التخصص' : 'Specialization'}</p>
                           <p className="text-sm font-medium text-foreground">{u.speciality}</p>
                         </div>
                       )}
                       {u.experience !== undefined && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
-                          <p className="text-xs text-[color:var(--muted)] mb-1">سنوات الخبرة</p>
-                          <p className="text-sm font-medium text-foreground">{u.experience} سنة</p>
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'سنوات الخبرة' : 'Years of Experience'}</p>
+                          <p className="text-sm font-medium text-foreground">{u.experience} {isAr ? 'سنة' : 'years'}</p>
                         </div>
                       )}
                       {u.hourlyRate && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
-                          <p className="text-xs text-[color:var(--muted)] mb-1">السعر بالساعة</p>
-                          <p className="text-sm font-medium text-foreground">{u.hourlyRate} ر.س</p>
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'السعر بالساعة' : 'Hourly Rate'}</p>
+                          <p className="text-sm font-medium text-foreground">{u.hourlyRate} {isAr ? 'ر.س' : 'SAR'}</p>
                         </div>
                       )}
                       {u.meetingMethod && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
-                          <p className="text-xs text-[color:var(--muted)] mb-1">طريقة الاجتماع</p>
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'طريقة الاجتماع' : 'Meeting Method'}</p>
                           <p className="text-sm font-medium text-foreground">{u.meetingMethod}</p>
                         </div>
                       )}
@@ -211,7 +214,7 @@ export default function ApprovalsPage() {
 
                   {u.bio && (
                     <div className="rounded-xl bg-[color:var(--surface-2)] p-3 mb-4">
-                      <p className="text-xs text-[color:var(--muted)] mb-1">نبذة مهنية</p>
+                      <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'نبذة مهنية' : 'Professional Bio'}</p>
                       <p className="text-sm text-foreground line-clamp-2">{u.bio}</p>
                     </div>
                   )}
@@ -225,7 +228,7 @@ export default function ApprovalsPage() {
                         className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
                       >
                         <Eye className="h-4 w-4" />
-                        عرض السيرة الذاتية
+                        {isAr ? 'عرض السيرة الذاتية' : 'View CV'}
                       </a>
                     )}
                     {u.linkedinUrl && (
@@ -243,7 +246,7 @@ export default function ApprovalsPage() {
                   {rejectingId === u.id && (
                     <div className="mb-4">
                       <textarea
-                        placeholder="سبب الرفض (اختياري)..."
+                        placeholder={isAr ? 'سبب الرفض (اختياري)...' : 'Rejection reason (optional)...'}
                         value={rejectReason}
                         onChange={(e) => setRejectReason(e.target.value)}
                         className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none resize-none"
@@ -261,13 +264,13 @@ export default function ApprovalsPage() {
                           className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60 transition"
                         >
                           <X className="h-4 w-4" />
-                          تأكيد الرفض
+                          {isAr ? 'تأكيد الرفض' : 'Confirm Rejection'}
                         </button>
                         <button
                           onClick={() => { setRejectingId(null); setRejectReason('') }}
                           className="rounded-xl border border-[color:var(--border)] px-4 py-2 text-sm text-foreground hover:bg-[color:var(--surface-2)] transition"
                         >
-                          إلغاء
+                          {isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       </>
                     ) : (
@@ -278,14 +281,14 @@ export default function ApprovalsPage() {
                           className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition"
                         >
                           <Check className="h-4 w-4" />
-                          {approveUser.isPending ? 'جاري القبول...' : 'قبول'}
+                          {approveUser.isPending ? (isAr ? 'جاري القبول...' : 'Approving...') : (isAr ? 'قبول' : 'Approve')}
                         </button>
                         <button
                           onClick={() => setRejectingId(u.id)}
                           className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition"
                         >
                           <XCircle className="h-4 w-4" />
-                          رفض
+                          {isAr ? 'رفض' : 'Reject'}
                         </button>
                       </>
                     )}
@@ -306,9 +309,9 @@ export default function ApprovalsPage() {
                 <BookOpen className="h-8 w-8 text-amber-500" />
               </div>
               <h3 className="font-madinet text-xl font-bold text-foreground">
-                لا توجد كورسات تنتظر المراجعة
+                {isAr ? 'لا توجد كورسات تنتظر المراجعة' : 'No courses pending review'}
               </h3>
-              <p className="mt-2 text-sm text-[color:var(--muted)]">جميع الكورسات تمت مراجعتها</p>
+              <p className="mt-2 text-sm text-[color:var(--muted)]">{isAr ? 'جميع الكورسات تمت مراجعتها' : 'All courses have been reviewed'}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -325,12 +328,12 @@ export default function ApprovalsPage() {
                       )}
                       <div className="flex flex-wrap gap-3 mt-2 text-sm text-[color:var(--muted)]">
                         <span>
-                          المحاضر: {course.instructor?.profile?.firstName}{' '}
+                          {isAr ? 'المحاضر:' : 'Instructor:'} {course.instructor?.profile?.firstName}{' '}
                           {course.instructor?.profile?.lastName}
                         </span>
-                        <span>السعر: {course.price} ريال</span>
-                        <span>المستوى: {course.level}</span>
-                        <span>الأقسام: {course._count?.sections || 0}</span>
+                        <span>{isAr ? 'السعر:' : 'Price:'} {course.price} {isAr ? 'ريال' : 'SAR'}</span>
+                        <span>{isAr ? 'المستوى:' : 'Level:'} {course.level}</span>
+                        <span>{isAr ? 'الأقسام:' : 'Sections:'} {course._count?.sections || 0}</span>
                       </div>
                       {course.category && (
                         <span className="mt-2 inline-block rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
@@ -359,7 +362,7 @@ export default function ApprovalsPage() {
                   )}
 
                   <p className="text-xs text-[color:var(--muted)] mb-4">
-                    تاريخ الطلب: {new Date(course.createdAt).toLocaleDateString('ar-SA')}
+                    {isAr ? 'تاريخ الطلب:' : 'Request date:'} {new Date(course.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
                   </p>
 
                   <div className="flex gap-3">
@@ -369,18 +372,18 @@ export default function ApprovalsPage() {
                       className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60 transition"
                     >
                       <CheckCircle className="h-4 w-4" />
-                      {approveCourse.isPending ? 'جاري...' : 'موافقة ونشر'}
+                      {approveCourse.isPending ? (isAr ? 'جاري...' : 'Processing...') : (isAr ? 'موافقة ونشر' : 'Approve & Publish')}
                     </button>
                     <button
                       onClick={() => {
-                        const reason = window.prompt('سبب الرفض (اختياري):') || undefined
+                        const reason = window.prompt(isAr ? 'سبب الرفض (اختياري):' : 'Rejection reason (optional):') || undefined
                         rejectCourse.mutate({ id: course.id, reason })
                       }}
                       disabled={rejectCourse.isPending}
                       className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/20 disabled:opacity-60 transition"
                     >
                       <XCircle className="h-4 w-4" />
-                      رفض
+                      {isAr ? 'رفض' : 'Reject'}
                     </button>
                   </div>
                 </div>

@@ -52,14 +52,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const adminItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: `/${locale}/admin` },
-    { icon: Users, label: 'Users', labelAr: 'المستخدمون', href: `/${locale}/admin/users` },
-    { icon: BookOpen, label: 'Courses', labelAr: 'الكورسات', href: `/${locale}/admin/courses` },
-    { icon: CheckCircle, label: 'Approvals', labelAr: 'الموافقات', href: `/${locale}/admin/approvals` },
-    { icon: Calendar, label: 'Sessions', labelAr: 'الجلسات', href: `/${locale}/admin/sessions` },
-    { icon: TrendingUp, label: 'Revenue', labelAr: 'الإيرادات', href: `/${locale}/admin/revenue` },
-    { icon: Activity, label: 'Activity', labelAr: 'النشاط', href: `/${locale}/admin/activity` },
-    { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: `/${locale}/admin/site-settings` },
+    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/admin` },
+    { icon: Users, label: 'Users', labelKey: 'users', href: `/${locale}/admin/users` },
+    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/admin/courses` },
+    { icon: CheckCircle, label: 'Approvals', labelKey: 'approvals', href: `/${locale}/admin/approvals` },
+    { icon: Calendar, label: 'Sessions', labelKey: 'sessions', href: `/${locale}/admin/sessions` },
+    { icon: TrendingUp, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/admin/revenue` },
+    { icon: Activity, label: 'Activity', labelKey: 'activity', href: `/${locale}/admin/activity` },
+    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/admin/site-settings` },
   ]
 
   function handleLogout() {
@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div dir="rtl" className="min-h-screen" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+    <div dir={locale === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen" style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
       {/* Page */}
       <main className="p-6 lg:p-8" style={{ paddingTop: '80px' }}>
         {children}

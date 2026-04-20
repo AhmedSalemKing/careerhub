@@ -2,21 +2,24 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
+import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
 import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
 } from 'lucide-react'
 
-const formatPrice = (amount: number) => {
-  if (!amount || amount === 0) return 'مجاني'
-  return `${amount.toLocaleString('ar-SA')} ر.س`
-}
-
 export default function AdminRevenuePage() {
   const { theme } = useTheme()
+  const locale = useLocale()
   const isDark = theme === 'dark'
+  const isAr = locale === 'ar'
   const [tab, setTab] = useState<'payments' | 'sessions'>('payments')
+
+  const formatPrice = (amount: number) => {
+    if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
+    return isAr ? `${amount.toLocaleString('ar-SA')} ر.س` : `${amount.toLocaleString('en-US')} SAR`
+  }
 
   const { data: paymentsData, isLoading: loadingP } = useQuery({
     queryKey: ['admin-payments-confirmed'],
@@ -62,26 +65,26 @@ export default function AdminRevenuePage() {
     u?.profile ? `${u.profile.firstName} ${u.profile.lastName}` : u?.email ?? '—'
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
 
       {/* ─── Header ─── */}
       <div>
         <h1 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
           <DollarSign style={{ color: '#5120c8' }} />
-          الإيرادات المؤكدة
+          {isAr ? 'الإيرادات المؤكدة' : 'Confirmed Revenue'}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-          مدفوعات مؤكدة + جلسات مدفوعة
+          {isAr ? 'مدفوعات مؤكدة + جلسات مدفوعة' : 'Confirmed payments + paid sessions'}
         </p>
       </div>
 
       {/* ─── Stats Cards ─── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'إجمالي الإيرادات', value: formatPrice(total), icon: DollarSign, color: '#10b981' },
-          { label: 'إيرادات هذا الشهر', value: formatPrice(monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
-          { label: 'عدد المدفوعات', value: `${totalTransactions}`, icon: CreditCard, color: '#5120c8' },
-          { label: 'متوسط قيمة الطلب', value: formatPrice(avgOrder), icon: BarChart2, color: '#8b5cf6' },
+          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatPrice(total), icon: DollarSign, color: '#10b981' },
+          { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: formatPrice(monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
+          { label: isAr ? 'عدد المدفوعات' : 'Transactions', value: `${totalTransactions}`, icon: CreditCard, color: '#5120c8' },
+          { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: formatPrice(avgOrder), icon: BarChart2, color: '#8b5cf6' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
@@ -112,7 +115,7 @@ export default function AdminRevenuePage() {
       >
         <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
           <BarChart2 size={18} style={{ color: '#5120c8' }} />
-          توزيع الإيرادات
+          {isAr ? 'توزيع الإيرادات' : 'Revenue Breakdown'}
         </h2>
         <div className="grid sm:grid-cols-2 gap-4">
           <div
@@ -120,22 +123,22 @@ export default function AdminRevenuePage() {
             style={{ borderColor: 'var(--border)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.03)' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>إيرادات الكورسات</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الكورسات' : 'Course Revenue'}</span>
               <CreditCard size={16} style={{ color: '#5120c8' }} />
             </div>
             <p className="text-xl font-bold" style={{ color: '#5120c8' }}>{formatPrice(paymentTotal)}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{payments.length} عملية دفع</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{payments.length} {isAr ? 'عملية دفع' : 'payments'}</p>
           </div>
           <div
             className="rounded-lg p-4 border"
             style={{ borderColor: 'var(--border)', background: isDark ? 'rgba(139,92,246,0.06)' : 'rgba(139,92,246,0.03)' }}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>إيرادات الجلسات</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الجلسات' : 'Session Revenue'}</span>
               <Calendar size={16} style={{ color: '#8b5cf6' }} />
             </div>
             <p className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(sessionTotal)}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{paidSessions.length} جلسة مدفوعة</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{paidSessions.length} {isAr ? 'جلسة مدفوعة' : 'paid sessions'}</p>
           </div>
         </div>
       </div>
@@ -143,8 +146,8 @@ export default function AdminRevenuePage() {
       {/* ─── Tab Toggle ─── */}
       <div className="flex gap-2">
         {[
-          { key: 'payments' as const, label: 'مدفوعات الكورسات' },
-          { key: 'sessions' as const, label: 'الجلسات المدفوعة' },
+          { key: 'payments' as const, label: isAr ? 'مدفوعات الكورسات' : 'Course Payments' },
+          { key: 'sessions' as const, label: isAr ? 'الجلسات المدفوعة' : 'Paid Sessions' },
         ].map((t) => (
           <button
             key={t.key}
@@ -172,8 +175,8 @@ export default function AdminRevenuePage() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <CheckCircle2 size={18} style={{ color: '#10b981' }} />
-            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>مدفوعات الكورسات المؤكدة</h2>
-            <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{payments.length} عملية</span>
+            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? 'مدفوعات الكورسات المؤكدة' : 'Confirmed Course Payments'}</h2>
+            <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{payments.length} {isAr ? 'عملية' : 'transactions'}</span>
           </div>
           {loadingP ? (
             <div className="p-8 text-center" style={{ color: 'var(--muted)' }}>
@@ -181,12 +184,12 @@ export default function AdminRevenuePage() {
                 className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent mb-3"
                 style={{ borderColor: '#5120c8', borderTopColor: 'transparent' }}
               />
-              <p className="text-sm">جاري التحميل...</p>
+              <p className="text-sm">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
             </div>
           ) : payments.length === 0 ? (
             <div className="p-12 text-center">
               <DollarSign size={48} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
-              <p className="font-medium" style={{ color: 'var(--muted)' }}>لا توجد مدفوعات مؤكدة</p>
+              <p className="font-medium" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد مدفوعات مؤكدة' : 'No confirmed payments'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -194,17 +197,17 @@ export default function AdminRevenuePage() {
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>الطالب</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>الكورس</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>المبلغ</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>الحالة</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>التاريخ</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الطالب' : 'Student'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الكورس' : 'Course'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الحالة' : 'Status'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {payments.map((p: any, idx: number) => {
                     const name = userName(p.user)
-                    const courseTitle = p.course?.titleAr || p.course?.titleEn || '—'
+                    const courseTitle = (isAr ? p.course?.titleAr : p.course?.titleEn) || p.course?.titleEn || '—'
                     return (
                       <tr
                         key={p.id}
@@ -227,11 +230,11 @@ export default function AdminRevenuePage() {
                             }}
                           >
                             <CheckCircle2 size={12} />
-                            {p.status === 'SUCCESS' ? 'ناجح' : 'مكتمل'}
+                            {p.status === 'SUCCESS' ? (isAr ? 'ناجح' : 'Success') : (isAr ? 'مكتمل' : 'Completed')}
                           </span>
                         </td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(p.createdAt).toLocaleDateString('ar-SA')}
+                          {new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
                         </td>
                       </tr>
                     )
@@ -254,8 +257,8 @@ export default function AdminRevenuePage() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <Calendar size={18} style={{ color: '#8b5cf6' }} />
-            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>الجلسات المدفوعة</h2>
-            <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{paidSessions.length} جلسة</span>
+            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? 'الجلسات المدفوعة' : 'Paid Sessions'}</h2>
+            <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{paidSessions.length} {isAr ? 'جلسة' : 'sessions'}</span>
           </div>
           {loadingS ? (
             <div className="p-8 text-center" style={{ color: 'var(--muted)' }}>
@@ -263,12 +266,12 @@ export default function AdminRevenuePage() {
                 className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent mb-3"
                 style={{ borderColor: '#5120c8', borderTopColor: 'transparent' }}
               />
-              <p className="text-sm">جاري التحميل...</p>
+              <p className="text-sm">{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
             </div>
           ) : paidSessions.length === 0 ? (
             <div className="p-12 text-center">
               <Calendar size={48} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
-              <p className="font-medium" style={{ color: 'var(--muted)' }}>لا توجد جلسات مدفوعة</p>
+              <p className="font-medium" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد جلسات مدفوعة' : 'No paid sessions'}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -276,11 +279,11 @@ export default function AdminRevenuePage() {
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>الطالب</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>المستشار</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>الموضوع</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>المبلغ</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>التاريخ</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الطالب' : 'Student'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستشار' : 'Consultant'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الموضوع' : 'Topic'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -301,7 +304,7 @@ export default function AdminRevenuePage() {
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{s.topic || '—'}</td>
                         <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price))}</td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(s.scheduledAt || s.createdAt).toLocaleDateString('ar-SA')}
+                          {new Date(s.scheduledAt || s.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
                         </td>
                       </tr>
                     )
@@ -324,9 +327,9 @@ export default function AdminRevenuePage() {
         <div className="flex items-center gap-3">
           <CheckCircle2 size={22} style={{ color: '#10b981' }} />
           <div>
-            <p className="font-bold" style={{ color: isDark ? '#34d399' : '#059669' }}>ملخص الإيرادات</p>
+            <p className="font-bold" style={{ color: isDark ? '#34d399' : '#059669' }}>{isAr ? 'ملخص الإيرادات' : 'Revenue Summary'}</p>
             <p className="text-sm mt-1" style={{ color: isDark ? 'rgba(52,211,153,0.7)' : 'rgba(5,150,105,0.7)' }}>
-              كورسات: {formatPrice(paymentTotal)} | جلسات: {formatPrice(sessionTotal)} | الإجمالي: {formatPrice(total)}
+              {isAr ? 'كورسات' : 'Courses'}: {formatPrice(paymentTotal)} | {isAr ? 'جلسات' : 'Sessions'}: {formatPrice(sessionTotal)} | {isAr ? 'الإجمالي' : 'Total'}: {formatPrice(total)}
             </p>
           </div>
         </div>

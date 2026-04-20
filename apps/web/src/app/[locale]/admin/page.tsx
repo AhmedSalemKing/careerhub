@@ -31,15 +31,16 @@ type StatsData = {
   monthlyChart: { month: string; revenue: number }[]
 }
 
-const formatPrice = (amount: number) => {
-  if (!amount || amount === 0) return 'مجاني'
-  return `${amount.toLocaleString('ar-SA')} ر.س`
-}
-
 export default function AdminOverviewPage() {
   const locale = useLocale()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const isAr = locale === 'ar'
+
+  const formatPrice = (amount: number) => {
+    if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
+    return isAr ? `${amount.toLocaleString('ar-SA')} ر.س` : `${amount.toLocaleString('en-US')} SAR`
+  }
   const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -75,7 +76,9 @@ export default function AdminOverviewPage() {
   const maxRevenue = Math.max(...monthlyChart.map((m) => m.revenue), 1)
 
   const accountTypeLabel = (t: string) => {
-    const map: Record<string, string> = { STUDENT: 'طالب', INSTRUCTOR: 'محاضر', CONSULTANT: 'مستشار', ADMIN: 'مدير', SUPER_ADMIN: 'مدير أعلى' }
+    const map: Record<string, string> = isAr
+      ? { STUDENT: 'طالب', INSTRUCTOR: 'محاضر', CONSULTANT: 'مستشار', ADMIN: 'مدير', SUPER_ADMIN: 'مدير أعلى' }
+      : { STUDENT: 'Student', INSTRUCTOR: 'Instructor', CONSULTANT: 'Consultant', ADMIN: 'Admin', SUPER_ADMIN: 'Super Admin' }
     return map[t] ?? t
   }
 
@@ -91,11 +94,11 @@ export default function AdminOverviewPage() {
   }
 
   return (
-    <div dir="rtl" className="space-y-6">
+    <div dir={isAr ? 'rtl' : 'ltr'} className="space-y-6">
 
       {/* ─── Header ─── */}
       <h1 className="text-xl font-bold" style={{ color: 'var(--foreground)' }}>
-        نظرة عامة على المنصة
+        {isAr ? 'نظرة عامة على المنصة' : 'Platform Overview'}
       </h1>
 
       {/* ─── Pending Alert ─── */}
@@ -115,7 +118,9 @@ export default function AdminOverviewPage() {
               <AlertCircle size={18} style={{ color: isDark ? '#fbbf24' : '#d97706' }} />
             </div>
             <span className="text-sm font-medium" style={{ color: isDark ? '#fcd34d' : '#92400e' }}>
-              {pendingCount} طلب{pendingCount !== 1 ? 'ات' : ''} تنتظر الموافقة — انقر للمراجعة
+              {isAr
+                ? `${pendingCount} طلب${pendingCount !== 1 ? 'ات' : ''} تنتظر الموافقة — انقر للمراجعة`
+                : `${pendingCount} pending request${pendingCount !== 1 ? 's' : ''} — click to review`}
             </span>
           </div>
         </Link>
@@ -124,10 +129,10 @@ export default function AdminOverviewPage() {
       {/* ─── Stats Cards ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'إجمالي المستخدمين', value: totalUsers, sub: `${pendingCount} طلب معلق`, icon: Users, color: '#3b82f6' },
-          { label: 'الكورسات المنشورة', value: publishedCourses, sub: 'كورس نشط', icon: BookOpen, color: '#10b981' },
-          { label: 'إيرادات الشهر', value: formatPrice(monthlyRevenue), sub: `اليوم: ${formatPrice(todayRevenue)}`, icon: TrendingUp, color: '#f59e0b' },
-          { label: 'إجمالي الإيرادات', value: formatPrice(totalRevenue), sub: 'منذ الإطلاق', icon: DollarSign, color: '#5120c8' },
+          { label: isAr ? 'إجمالي المستخدمين' : 'Total Users', value: totalUsers, sub: isAr ? `${pendingCount} طلب معلق` : `${pendingCount} pending`, icon: Users, color: '#3b82f6' },
+          { label: isAr ? 'الكورسات المنشورة' : 'Published Courses', value: publishedCourses, sub: isAr ? 'كورس نشط' : 'active courses', icon: BookOpen, color: '#10b981' },
+          { label: isAr ? 'إيرادات الشهر' : 'Monthly Revenue', value: formatPrice(monthlyRevenue), sub: isAr ? `اليوم: ${formatPrice(todayRevenue)}` : `Today: ${formatPrice(todayRevenue)}`, icon: TrendingUp, color: '#f59e0b' },
+          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatPrice(totalRevenue), sub: isAr ? 'منذ الإطلاق' : 'since launch', icon: DollarSign, color: '#5120c8' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
@@ -155,10 +160,10 @@ export default function AdminOverviewPage() {
       {/* ─── Quick Actions ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: 'إضافة كورس', href: `/${locale}/admin/create-course`, icon: PlusCircle, color: '#5120c8' },
-          { label: 'مراجعة الطلبات', href: `/${locale}/admin/approvals`, icon: ClipboardList, color: '#f59e0b' },
-          { label: 'إدارة المستخدمين', href: `/${locale}/admin/users`, icon: UserPlus, color: '#3b82f6' },
-          { label: 'تقرير الإيرادات', href: `/${locale}/admin/revenue`, icon: BarChart2, color: '#10b981' },
+          { label: isAr ? 'إضافة كورس' : 'Add Course', href: `/${locale}/admin/create-course`, icon: PlusCircle, color: '#5120c8' },
+          { label: isAr ? 'مراجعة الطلبات' : 'Review Requests', href: `/${locale}/admin/approvals`, icon: ClipboardList, color: '#f59e0b' },
+          { label: isAr ? 'إدارة المستخدمين' : 'Manage Users', href: `/${locale}/admin/users`, icon: UserPlus, color: '#3b82f6' },
+          { label: isAr ? 'تقرير الإيرادات' : 'Revenue Report', href: `/${locale}/admin/revenue`, icon: BarChart2, color: '#10b981' },
         ].map((a, i) => {
           const Icon = a.icon
           return (
@@ -188,13 +193,13 @@ export default function AdminOverviewPage() {
         <div className="flex items-center gap-2 mb-6">
           <BarChart2 size={18} style={{ color: '#5120c8' }} />
           <h2 className="text-sm font-bold" style={{ color: 'var(--foreground)' }}>
-            الإيرادات — آخر ١٢ شهر
+            {isAr ? 'الإيرادات — آخر ١٢ شهر' : 'Revenue — Last 12 Months'}
           </h2>
         </div>
         {monthlyChart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12">
             <BarChart2 size={40} style={{ color: 'var(--muted)', opacity: 0.3 }} />
-            <p className="text-sm mt-3" style={{ color: 'var(--muted)' }}>لا توجد بيانات إيرادات بعد</p>
+            <p className="text-sm mt-3" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد بيانات إيرادات بعد' : 'No revenue data yet'}</p>
           </div>
         ) : (
           <div className="flex items-end gap-2 h-40 w-full">
@@ -237,14 +242,14 @@ export default function AdminOverviewPage() {
         >
           <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
             <Users size={16} style={{ color: '#5120c8' }} />
-            أحدث المستخدمين
+            {isAr ? 'أحدث المستخدمين' : 'Recent Users'}
           </h2>
           <Link
             href={`/${locale}/admin/users`}
             className="text-xs font-medium flex items-center gap-1 transition-colors"
             style={{ color: '#5120c8' }}
           >
-            عرض الكل
+            {isAr ? 'عرض الكل' : 'View All'}
             <ArrowLeft size={12} />
           </Link>
         </div>
@@ -252,7 +257,7 @@ export default function AdminOverviewPage() {
         {recentUsers.length === 0 ? (
           <div className="p-12 text-center">
             <Users size={40} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
-            <p className="font-medium" style={{ color: 'var(--muted)' }}>لا يوجد مستخدمون بعد</p>
+            <p className="font-medium" style={{ color: 'var(--muted)' }}>{isAr ? 'لا يوجد مستخدمون بعد' : 'No users yet'}</p>
           </div>
         ) : (
           <div>
@@ -289,7 +294,7 @@ export default function AdminOverviewPage() {
                       {accountTypeLabel(u.accountType)}
                     </span>
                     <span className="text-[10px]" style={{ color: 'var(--muted)' }}>
-                      {new Date(u.createdAt).toLocaleDateString('ar-SA')}
+                      {new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
                     </span>
                   </div>
                 </div>

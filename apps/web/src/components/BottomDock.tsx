@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
 import { Sun, Moon, LogOut } from 'lucide-react'
 
 interface DockItem {
   icon: any
   label: string
-  labelAr: string
+  labelKey: string
   href: string
 }
 
@@ -18,6 +19,7 @@ interface BottomDockProps {
 }
 
 export default function BottomDock({ items, onLogout }: BottomDockProps) {
+  const t = useTranslations('dock')
   const [visible, setVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
@@ -103,7 +105,7 @@ export default function BottomDock({ items, onLogout }: BottomDockProps) {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {item.labelAr}
+                {t(item.labelKey)}
               </span>
               {isActive && (
                 <span
@@ -151,7 +153,7 @@ export default function BottomDock({ items, onLogout }: BottomDockProps) {
             : <Moon size={20} style={{ color: 'rgba(13,13,13,0.6)' }} />
           }
           <span style={{ fontSize: '10px', marginTop: '3px', color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(13,13,13,0.4)' }}>
-            {mounted && theme === 'dark' ? 'فاتح' : 'داكن'}
+            {mounted && theme === 'dark' ? t('theme_light') : t('theme_dark')}
           </span>
         </button>
 
@@ -171,7 +173,7 @@ export default function BottomDock({ items, onLogout }: BottomDockProps) {
             }}
           >
             <LogOut size={20} style={{ color: '#ef4444' }} />
-            <span style={{ fontSize: '10px', marginTop: '3px', color: '#ef4444' }}>خروج</span>
+            <span style={{ fontSize: '10px', marginTop: '3px', color: '#ef4444' }}>{t('logout')}</span>
           </button>
         )}
       </div>

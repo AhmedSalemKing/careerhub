@@ -19,13 +19,13 @@ function MapPin(props: any) {
   )
 }
 
-const methodConfig: Record<string, { label: string; icon: any }> = {
-  ONLINE:      { label: 'أونلاين',      icon: Video },
-  IN_PERSON:   { label: 'حضوري',        icon: MapPin },
-  PHONE:       { label: 'هاتف',         icon: Phone },
-  ZOOM:        { label: 'Zoom',         icon: Video },
-  GOOGLE_MEET: { label: 'Google Meet',  icon: Globe },
-}
+const getMethodConfig = (isAr: boolean): Record<string, { label: string; icon: any }> => ({
+  ONLINE:      { label: isAr ? 'أونلاين' : 'Online',      icon: Video },
+  IN_PERSON:   { label: isAr ? 'حضوري' : 'In Person',     icon: MapPin },
+  PHONE:       { label: isAr ? 'هاتف' : 'Phone',          icon: Phone },
+  ZOOM:        { label: 'Zoom',                            icon: Video },
+  GOOGLE_MEET: { label: 'Google Meet',                     icon: Globe },
+})
 
 export default function AdminSessionsPage() {
   const locale = useLocale()
@@ -232,7 +232,8 @@ export default function AdminSessionsPage() {
                 {(sessions as any[]).map((s) => {
                   const st = statusBadge(s.status)
                   const pay = paymentBadge(s.paymentStatus)
-                  const method = methodConfig[s.meetingMethod] || methodConfig.ONLINE
+                  const mc = getMethodConfig(isAr)
+                  const method = mc[s.meetingMethod] || mc.ONLINE
                   const studentName = userName(s.student)
                   const consultantName = userName(s.consultant)
                   const date = new Date(s.scheduledAt)
@@ -298,7 +299,7 @@ export default function AdminSessionsPage() {
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-sm" style={{ color: '#10b981' }}>
                           {s.price || 0}{' '}
-                          <span className="text-xs font-normal" style={{ color: 'var(--muted)' }}>ر.س</span>
+                          <span className="text-xs font-normal" style={{ color: 'var(--muted)' }}>{isAr ? 'ر.س' : 'SAR'}</span>
                         </span>
                       </td>
                       <td className="px-4 py-3.5">

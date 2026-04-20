@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
+import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
 import {
   Activity, Users, Eye, Clock, TrendingUp, RefreshCw,
@@ -9,33 +10,36 @@ import {
   MessageSquare, ClipboardList, Upload, UserPlus, Settings,
 } from 'lucide-react'
 
-const ACTION_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  LOGIN:         { label: 'سجل دخول',      icon: LogIn,         color: '#2BBFA3' },
-  REGISTER:      { label: 'تسجيل جديد',     icon: UserPlus,      color: '#10B981' },
-  VIEW_COURSES:  { label: 'تصفح الكورسات',  icon: Eye,           color: '#5120c8' },
-  PAYMENT:       { label: 'عملية دفع',      icon: ShoppingCart,   color: '#F5A623' },
-  UPLOAD:        { label: 'رفع ملف',        icon: Upload,        color: '#EF4444' },
-  BOOK_SESSION:  { label: 'حجز جلسة',       icon: BookOpen,      color: '#8B5CF6' },
-  AI_CHAT:       { label: 'محادثة ذكية',    icon: MessageSquare, color: '#06B6D4' },
-  ASSESSMENT:    { label: 'اختبار تقييم',   icon: ClipboardList, color: '#F59E0B' },
-  ADMIN_ACTION:  { label: 'إجراء إداري',    icon: Settings,      color: '#EF4444' },
-  CREATE_COURSE: { label: 'إنشاء كورس',     icon: BookOpen,      color: '#2BBFA3' },
-}
+const getActionConfig = (isAr: boolean): Record<string, { label: string; icon: any; color: string }> => ({
+  LOGIN:         { label: isAr ? 'سجل دخول' : 'Login',              icon: LogIn,         color: '#2BBFA3' },
+  REGISTER:      { label: isAr ? 'تسجيل جديد' : 'Registration',     icon: UserPlus,      color: '#10B981' },
+  VIEW_COURSES:  { label: isAr ? 'تصفح الكورسات' : 'View Courses',  icon: Eye,           color: '#5120c8' },
+  PAYMENT:       { label: isAr ? 'عملية دفع' : 'Payment',           icon: ShoppingCart,   color: '#F5A623' },
+  UPLOAD:        { label: isAr ? 'رفع ملف' : 'Upload',              icon: Upload,        color: '#EF4444' },
+  BOOK_SESSION:  { label: isAr ? 'حجز جلسة' : 'Book Session',       icon: BookOpen,      color: '#8B5CF6' },
+  AI_CHAT:       { label: isAr ? 'محادثة ذكية' : 'AI Chat',         icon: MessageSquare, color: '#06B6D4' },
+  ASSESSMENT:    { label: isAr ? 'اختبار تقييم' : 'Assessment',     icon: ClipboardList, color: '#F59E0B' },
+  ADMIN_ACTION:  { label: isAr ? 'إجراء إداري' : 'Admin Action',    icon: Settings,      color: '#EF4444' },
+  CREATE_COURSE: { label: isAr ? 'إنشاء كورس' : 'Create Course',    icon: BookOpen,      color: '#2BBFA3' },
+})
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, isAr: boolean): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'الآن'
-  if (mins < 60) return `منذ ${mins} د`
+  if (mins < 1) return isAr ? 'الآن' : 'now'
+  if (mins < 60) return isAr ? `منذ ${mins} د` : `${mins}m ago`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `منذ ${hours} س`
+  if (hours < 24) return isAr ? `منذ ${hours} س` : `${hours}h ago`
   const days = Math.floor(hours / 24)
-  return `منذ ${days} ي`
+  return isAr ? `منذ ${days} ي` : `${days}d ago`
 }
 
 export default function ActivityMonitor() {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const ACTION_CONFIG = getActionConfig(isAr)
   const [search, setSearch] = useState('')
   const [filterAction, setFilterAction] = useState('')
 
@@ -95,17 +99,17 @@ export default function ActivityMonitor() {
   const maxCount = topActions.length > 0 ? topActions[0][1] : 1
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
 
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
             <Activity style={{ color: '#5120c8' }} />
-            مراقب النشاط المباشر
+            {isAr ? 'مراقب النشاط المباشر' : 'Live Activity Monitor'}
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-            تتبع مباشر لنشاط المستخدمين — يتحدث كل ١٠ ثوانٍ
+            {isAr ? 'تتبع مباشر لنشاط المستخدمين — يتحدث كل ١٠ ثوانٍ' : 'Real-time user activity tracking — refreshes every 10 seconds'}
           </p>
         </div>
         <button
@@ -118,17 +122,17 @@ export default function ActivityMonitor() {
           }}
         >
           <RefreshCw size={14} />
-          تحديث
+          {isAr ? 'تحديث' : 'Refresh'}
         </button>
       </div>
 
       {/* ─── Stats Row ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'المستخدمون النشطون', value: (stats as any)?.onlineUsers ?? 0, icon: Users, color: '#2BBFA3' },
-          { label: 'نشاط اليوم', value: (stats as any)?.todayActivity ?? 0, icon: TrendingUp, color: '#5120c8' },
-          { label: 'إجمالي الأحداث', value: (stats as any)?.totalActivities ?? 0, icon: Activity, color: '#F5A623' },
-          { label: 'مستخدمون فريدون', value: activeUsersMap.size, icon: Monitor, color: '#8b5cf6' },
+          { label: isAr ? 'المستخدمون النشطون' : 'Active Users', value: (stats as any)?.onlineUsers ?? 0, icon: Users, color: '#2BBFA3' },
+          { label: isAr ? 'نشاط اليوم' : "Today's Activity", value: (stats as any)?.todayActivity ?? 0, icon: TrendingUp, color: '#5120c8' },
+          { label: isAr ? 'إجمالي الأحداث' : 'Total Events', value: (stats as any)?.totalActivities ?? 0, icon: Activity, color: '#F5A623' },
+          { label: isAr ? 'مستخدمون فريدون' : 'Unique Users', value: activeUsersMap.size, icon: Monitor, color: '#8b5cf6' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
@@ -155,9 +159,9 @@ export default function ActivityMonitor() {
         >
           <h2 className="font-bold mb-4 flex items-center gap-2 text-sm" style={{ color: 'var(--foreground)' }}>
             <Users size={16} style={{ color: '#2BBFA3' }} />
-            المستخدمون النشطون
+            {isAr ? 'المستخدمون النشطون' : 'Active Users'}
             <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold mr-2"
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isAr ? 'mr-2' : 'ml-2'}`}
               style={{
                 background: isDark ? 'rgba(43,191,163,0.12)' : 'rgba(43,191,163,0.08)',
                 color: isDark ? '#2BBFA3' : '#0d9488',
@@ -167,7 +171,7 @@ export default function ActivityMonitor() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#2BBFA3' }} />
                 <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#2BBFA3' }} />
               </span>
-              مباشر
+              {isAr ? 'مباشر' : 'Live'}
             </span>
           </h2>
           <div className="flex flex-wrap gap-3">
@@ -201,7 +205,7 @@ export default function ActivityMonitor() {
                   <div>
                     <p className="text-xs font-medium" style={{ color: 'var(--foreground)' }}>{u.name}</p>
                     <p className="text-[10px]" style={{ color: 'var(--muted)' }}>
-                      {actionConf?.label ?? u.lastAction} · {timeAgo(u.lastSeen)}
+                      {actionConf?.label ?? u.lastAction} · {timeAgo(u.lastSeen, isAr)}
                     </p>
                   </div>
                 </div>
@@ -225,12 +229,12 @@ export default function ActivityMonitor() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <div className="relative flex-1 min-w-[180px]">
-              <Search size={14} className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--muted)' }} />
+              <Search size={14} className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2`} style={{ color: 'var(--muted)' }} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="بحث بالاسم أو الإيميل..."
-                className="w-full pr-9 pl-3 py-2 rounded-lg text-sm"
+                placeholder={isAr ? 'بحث بالاسم أو الإيميل...' : 'Search by name or email...'}
+                className={`w-full ${isAr ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2 rounded-lg text-sm`}
                 style={{
                   background: 'var(--input-bg)',
                   border: '1px solid var(--border)',
@@ -248,7 +252,7 @@ export default function ActivityMonitor() {
                 color: 'var(--foreground)',
               }}
             >
-              <option value="">كل الأفعال</option>
+              <option value="">{isAr ? 'كل الأفعال' : 'All Actions'}</option>
               {uniqueActions.map((a) => (
                 <option key={a} value={a}>{ACTION_CONFIG[a]?.label ?? a}</option>
               ))}
@@ -263,12 +267,12 @@ export default function ActivityMonitor() {
                   className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent mb-3"
                   style={{ borderColor: '#5120c8', borderTopColor: 'transparent' }}
                 />
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>جاري التحميل...</p>
+                <p className="text-sm" style={{ color: 'var(--muted)' }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
               </div>
             ) : activities.length === 0 ? (
               <div className="p-12 text-center">
                 <Activity size={40} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
-                <p className="font-medium" style={{ color: 'var(--muted)' }}>لا يوجد نشاط</p>
+                <p className="font-medium" style={{ color: 'var(--muted)' }}>{isAr ? 'لا يوجد نشاط' : 'No activity'}</p>
               </div>
             ) : (
               activities.slice(0, 30).map((act: any, i: number) => {
@@ -324,7 +328,7 @@ export default function ActivityMonitor() {
                     {/* Time */}
                     <div className="text-[11px] shrink-0 flex items-center gap-1" style={{ color: 'var(--muted)' }}>
                       <Clock size={10} />
-                      {timeAgo(act.createdAt)}
+                      {timeAgo(act.createdAt, isAr)}
                     </div>
                   </div>
                 )
@@ -340,13 +344,13 @@ export default function ActivityMonitor() {
         >
           <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
             <TrendingUp size={16} style={{ color: '#5120c8' }} />
-            توزيع النشاطات
+            {isAr ? 'توزيع النشاطات' : 'Activity Distribution'}
           </h3>
 
           {topActions.length === 0 ? (
             <div className="py-8 text-center">
               <TrendingUp size={32} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 8px' }} />
-              <p className="text-xs" style={{ color: 'var(--muted)' }}>لا توجد بيانات بعد</p>
+              <p className="text-xs" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد بيانات بعد' : 'No data yet'}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -389,9 +393,9 @@ export default function ActivityMonitor() {
           >
             <div className="space-y-2">
               {[
-                { label: 'إجمالي الأحداث', value: (rawData as any[]).length },
-                { label: 'أنواع النشاط', value: uniqueActions.length },
-                { label: 'مستخدمون فريدون', value: activeUsersMap.size },
+                { label: isAr ? 'إجمالي الأحداث' : 'Total Events', value: (rawData as any[]).length },
+                { label: isAr ? 'أنواع النشاط' : 'Action Types', value: uniqueActions.length },
+                { label: isAr ? 'مستخدمون فريدون' : 'Unique Users', value: activeUsersMap.size },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <span className="text-xs" style={{ color: 'var(--muted)' }}>{item.label}</span>

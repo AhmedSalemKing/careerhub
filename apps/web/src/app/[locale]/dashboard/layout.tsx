@@ -12,35 +12,41 @@ import {
   Award, Bell, Calendar, Clock, Star, Sparkles,
 } from 'lucide-react'
 
-const studentItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
-  { icon: ClipboardList, label: 'Assessment', labelAr: 'اختبار المسار', href: '/ar/dashboard/assessment' },
-  { icon: Map, label: 'Career Path', labelAr: 'مساري المهني', href: '/ar/dashboard/career-path' },
-  { icon: Users2, label: 'Coaching', labelAr: 'الكوتشينج', href: '/ar/dashboard/coaching' },
-  { icon: BookOpen, label: 'Courses', labelAr: 'الكورسات', href: '/ar/dashboard/courses' },
-  { icon: Award, label: 'Certificates', labelAr: 'الشهادات', href: '/ar/dashboard/certificates' },
-  { icon: Bell, label: 'Notifications', labelAr: 'الإشعارات', href: '/ar/dashboard/notifications' },
-  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
-]
+function getStudentItems(locale: string) {
+  return [
+    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
+    { icon: ClipboardList, label: 'Assessment', labelKey: 'assessment', href: `/${locale}/dashboard/assessment` },
+    { icon: Map, label: 'Career Path', labelKey: 'career_path', href: `/${locale}/dashboard/career-path` },
+    { icon: Users2, label: 'Coaching', labelKey: 'coaching', href: `/${locale}/dashboard/coaching` },
+    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/dashboard/courses` },
+    { icon: Award, label: 'Certificates', labelKey: 'certificates', href: `/${locale}/dashboard/certificates` },
+    { icon: Bell, label: 'Notifications', labelKey: 'notifications', href: `/${locale}/dashboard/notifications` },
+    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+  ]
+}
 
-const instructorItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
-  { icon: BookOpen, label: 'My Courses', labelAr: 'كورساتي', href: '/ar/dashboard/my-courses' },
-  { icon: PlusCircle, label: 'New Course', labelAr: 'كورس جديد', href: '/ar/dashboard/create-course' },
-  { icon: Video, label: 'Lectures', labelAr: 'المحاضرات', href: '/ar/dashboard/lectures' },
-  { icon: Users, label: 'Students', labelAr: 'الطلاب', href: '/ar/dashboard/students' },
-  { icon: DollarSign, label: 'Earnings', labelAr: 'الإيرادات', href: '/ar/dashboard/earnings' },
-  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
-]
+function getInstructorItems(locale: string) {
+  return [
+    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
+    { icon: BookOpen, label: 'My Courses', labelKey: 'my_courses', href: `/${locale}/dashboard/my-courses` },
+    { icon: PlusCircle, label: 'New Course', labelKey: 'new_course', href: `/${locale}/dashboard/create-course` },
+    { icon: Video, label: 'Lectures', labelKey: 'lectures', href: `/${locale}/dashboard/lectures` },
+    { icon: Users, label: 'Students', labelKey: 'students', href: `/${locale}/dashboard/students` },
+    { icon: DollarSign, label: 'Earnings', labelKey: 'earnings', href: `/${locale}/dashboard/earnings` },
+    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+  ]
+}
 
-const consultantItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', labelAr: 'الرئيسية', href: '/ar/dashboard' },
-  { icon: Calendar, label: 'Sessions', labelAr: 'جلساتي', href: '/ar/dashboard/my-sessions' },
-  { icon: Clock, label: 'Availability', labelAr: 'مواعيدي', href: '/ar/dashboard/availability' },
-  { icon: DollarSign, label: 'Earnings', labelAr: 'الإيرادات', href: '/ar/dashboard/earnings' },
-  { icon: Star, label: 'Reviews', labelAr: 'التقييمات', href: '/ar/dashboard/reviews' },
-  { icon: Settings, label: 'Settings', labelAr: 'الإعدادات', href: '/ar/dashboard/settings' },
-]
+function getConsultantItems(locale: string) {
+  return [
+    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
+    { icon: Calendar, label: 'Sessions', labelKey: 'my_sessions', href: `/${locale}/dashboard/my-sessions` },
+    { icon: Clock, label: 'Availability', labelKey: 'availability', href: `/${locale}/dashboard/availability` },
+    { icon: DollarSign, label: 'Earnings', labelKey: 'earnings', href: `/${locale}/dashboard/earnings` },
+    { icon: Star, label: 'Reviews', labelKey: 'reviews', href: `/${locale}/dashboard/reviews` },
+    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+  ]
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, hydrate } = useAuthStore()
@@ -54,7 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setMounted(true)
   }, [hydrate])
 
-  // وضع الشاشة الكاملة للمحادثة الذكية
+  // Full-screen mode for AI chat
   const isAiChat = pathname?.includes('ai-chat')
 
   if (isAiChat) {
@@ -65,10 +71,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  // حالة التحميل
+  // Loading state
   if (!mounted) {
     return (
-      <div className="min-h-screen" dir="rtl" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="min-h-screen" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ backgroundColor: 'var(--background)' }}>
         <main className="p-6 lg:p-8">
           <div className="space-y-4 max-w-7xl mx-auto">
             <Skeleton className="h-12 w-56 rounded-xl" />
@@ -88,10 +94,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isConsultant = user?.accountType === 'CONSULTANT'
 
   const dockItems = isInstructor
-    ? instructorItems
+    ? getInstructorItems(locale)
     : isConsultant
-    ? consultantItems
-    : studentItems
+    ? getConsultantItems(locale)
+    : getStudentItems(locale)
 
   function handleLogout() {
     localStorage.removeItem('deveway_token')
@@ -102,8 +108,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen dashboard-root" dir="rtl">
-      {/* محتوى الصفحة */}
+    <div className="min-h-screen dashboard-root" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      {/* Page content */}
       <main className="main-content">
         <div className="page-content" style={{ paddingTop: '80px' }}>
           {children}
