@@ -24,13 +24,18 @@
     "stat_students": "Learners+"
   },
   "features": {
-    "title": "Everything you need in one place",
+    "title": "Tools to Build Your Career Future",
+    "badge": "Why Us",
+    "subtitle": "An integrated platform combining smart guidance and practical training",
     "career_title": "Career Pathway",
     "career_desc": "Smart assessment + AI analysis + personalized recommendations for your career path",
     "training_title": "Training Platform",
     "training_desc": "Video courses, live sessions, and verified certificates",
     "coaching_title": "Coaching",
-    "coaching_desc": "Book a session with a specialized coach over Zoom"
+    "coaching_desc": "Book a session with a specialized coach over Zoom",
+    "career_cta": "Start",
+    "training_cta": "Browse",
+    "coaching_cta": "Book"
   },
   "auth": {
     "login_title": "Login",
@@ -352,6 +357,7 @@
     "step6_desc": "Track progress and share certificates after completion."
   },
   "testimonials": {
+    "badge": "Testimonials",
     "title": "What learners say",
     "subtitle": "Real feedback from learners using pathways and coaching.",
     "rating_label": "Rating",
@@ -369,6 +375,7 @@
     "t4_quote": "It saved me time researching and helped me focus on real progress step by step."
   },
   "cta": {
+    "badge": "Start Your Journey Now",
     "title": "Ready to start?",
     "subtitle": "Create an account and take the assessment to get actionable, personalized recommendations.",
     "primary": "Sign up",
@@ -449,6 +456,44 @@
     "join": "Join",
     "open_chat": "Chat",
     "empty": "No sessions yet. Book your first session."
+  },
+  "careerPaths": {
+    "badge": "Career Paths",
+    "title": "Explore Career Paths",
+    "subtitle": "Choose your path and start with a clear structured plan",
+    "start_path": "Start Path",
+    "paths_available": "paths available",
+    "discover_ai": "Discover your path with AI",
+    "technology": "Technology",
+    "business": "Business",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "beginner_intermediate": "Beginner → Intermediate",
+    "intermediate_advanced": "Intermediate → Advanced",
+    "months": "months",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "coursesShowcase": {
+    "badge": "Real Courses",
+    "title": "Explore Available Courses",
+    "subtitle": "Professional courses from expert instructors — start learning now",
+    "all_courses": "All Courses",
+    "start_learning": "Start Learning Now",
+    "no_courses": "No courses yet",
+    "free": "Free",
+    "sar": "SAR",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "general": "General",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "langSwitcher": {
+    "header": "Language",
+    "hint": "Switching reloads page"
   },
   "admin": {
     "dashboard": "Dashboard",

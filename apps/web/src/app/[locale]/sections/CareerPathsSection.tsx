@@ -1,119 +1,107 @@
 'use client'
 import { useState, useRef } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { ArrowLeft, ArrowRight, ChevronRight, Sparkles, Code2, Briefcase, Clock, Star } from 'lucide-react'
 
 const CATEGORIES = [
-  { id: 'tech', labelAr: 'التقنية', labelEn: 'Technology', icon: <Code2 size={14} /> },
-  { id: 'business', labelAr: 'إدارة الأعمال', labelEn: 'Business', icon: <Briefcase size={14} /> },
+  { id: 'tech', labelKey: 'technology' as const, icon: <Code2 size={14} /> },
+  { id: 'business', labelKey: 'business' as const, icon: <Briefcase size={14} /> },
 ]
 
 const PATHS = [
   {
     category: 'tech',
-    titleAr: 'Frontend Developer',
-    titleEn: 'Frontend Developer',
-    levelAr: 'مبتدئ ← متوسط',
-    duration: '4–6 شهور',
+    title: 'Frontend Developer',
+    levelKey: 'beginner_intermediate' as const,
+    durationNum: '4–6',
     skills: ['HTML / CSS', 'JavaScript', 'React', 'TypeScript'],
     color: '#5120c8',
   },
   {
     category: 'tech',
-    titleAr: 'Backend Developer',
-    titleEn: 'Backend Developer',
-    levelAr: 'متوسط',
-    duration: '5–7 شهور',
+    title: 'Backend Developer',
+    levelKey: 'intermediate' as const,
+    durationNum: '5–7',
     skills: ['Node.js', 'REST APIs', 'Databases', 'Authentication'],
     color: '#2BBFA3',
   },
   {
     category: 'tech',
-    titleAr: 'Full Stack Developer',
-    titleEn: 'Full Stack Developer',
-    levelAr: 'متوسط ← متقدم',
-    duration: '6–8 شهور',
+    title: 'Full Stack Developer',
+    levelKey: 'intermediate_advanced' as const,
+    durationNum: '6–8',
     skills: ['Frontend', 'Backend', 'DevOps', 'Deployment'],
     color: '#5120c8',
   },
   {
     category: 'tech',
-    titleAr: 'Cyber Security',
-    titleEn: 'Cyber Security',
-    levelAr: 'متوسط ← متقدم',
-    duration: '6–9 شهور',
+    title: 'Cyber Security',
+    levelKey: 'intermediate_advanced' as const,
+    durationNum: '6–9',
     skills: ['Networking', 'Linux', 'Ethical Hacking', 'CTF'],
     color: '#F5A623',
   },
   {
     category: 'tech',
-    titleAr: 'Data Science',
-    titleEn: 'Data Science',
-    levelAr: 'متوسط',
-    duration: '6 شهور',
+    title: 'Data Science',
+    levelKey: 'intermediate' as const,
+    durationNum: '6',
     skills: ['Python', 'Pandas', 'Machine Learning', 'Visualization'],
     color: '#2BBFA3',
   },
   {
     category: 'tech',
-    titleAr: 'AI Engineer',
-    titleEn: 'AI Engineer',
-    levelAr: 'متقدم',
-    duration: '8–12 شهر',
+    title: 'AI Engineer',
+    levelKey: 'advanced' as const,
+    durationNum: '8–12',
     skills: ['Deep Learning', 'NLP', 'PyTorch', 'LLMs'],
     color: '#5120c8',
   },
   {
     category: 'tech',
-    titleAr: 'Mobile Developer',
-    titleEn: 'Mobile Developer',
-    levelAr: 'مبتدئ ← متوسط',
-    duration: '5 شهور',
+    title: 'Mobile Developer',
+    levelKey: 'beginner_intermediate' as const,
+    durationNum: '5',
     skills: ['Flutter', 'React Native', 'iOS', 'Android'],
     color: '#2BBFA3',
   },
   {
     category: 'tech',
-    titleAr: 'Game Developer',
-    titleEn: 'Game Developer',
-    levelAr: 'متوسط',
-    duration: '6–8 شهور',
+    title: 'Game Developer',
+    levelKey: 'intermediate' as const,
+    durationNum: '6–8',
     skills: ['Unity', 'C#', '3D Modeling', 'Physics'],
     color: '#F5A623',
   },
   {
     category: 'business',
-    titleAr: 'Digital Marketing',
-    titleEn: 'Digital Marketing',
-    levelAr: 'مبتدئ ← متوسط',
-    duration: '3–4 شهور',
+    title: 'Digital Marketing',
+    levelKey: 'beginner_intermediate' as const,
+    durationNum: '3–4',
     skills: ['SEO', 'Google Ads', 'Content', 'Analytics'],
     color: '#5120c8',
   },
   {
     category: 'business',
-    titleAr: 'Product Manager',
-    titleEn: 'Product Manager',
-    levelAr: 'متوسط',
-    duration: '4–6 شهور',
+    title: 'Product Manager',
+    levelKey: 'intermediate' as const,
+    durationNum: '4–6',
     skills: ['Agile', 'UX Research', 'Roadmaps', 'Metrics'],
     color: '#2BBFA3',
   },
   {
     category: 'business',
-    titleAr: 'Business Analyst',
-    titleEn: 'Business Analyst',
-    levelAr: 'مبتدئ ← متوسط',
-    duration: '3–5 شهور',
+    title: 'Business Analyst',
+    levelKey: 'beginner_intermediate' as const,
+    durationNum: '3–5',
     skills: ['Excel', 'Power BI', 'SQL', 'Reporting'],
     color: '#F5A623',
   },
   {
     category: 'business',
-    titleAr: 'Entrepreneurship',
-    titleEn: 'Entrepreneurship',
-    levelAr: 'متوسط',
-    duration: '4 شهور',
+    title: 'Entrepreneurship',
+    levelKey: 'intermediate' as const,
+    durationNum: '4',
     skills: ['Startup', 'Finance', 'Growth', 'Pitch'],
     color: '#5120c8',
   },
@@ -121,6 +109,7 @@ const PATHS = [
 
 export function CareerPathsSection() {
   const locale = useLocale()
+  const t = useTranslations('careerPaths')
   const isAr = locale === 'ar'
   const [activeCategory, setActiveCategory] = useState('tech')
   const [expandedPath, setExpandedPath] = useState<number | null>(null)
@@ -145,18 +134,16 @@ export function CareerPathsSection() {
         <div className="career-header">
           <div className="career-badge">
             <Sparkles className="w-3 h-3" />
-            <span>{isAr ? 'مسارات مهنية' : 'Career Paths'}</span>
+            <span>{t('badge')}</span>
           </div>
 
           <div className="career-title-row">
             <div>
               <h2 className="career-title">
-                {isAr ? 'استكشف المسارات المهنية' : 'Explore Career Paths'}
+                {t('title')}
               </h2>
               <p className="career-subtitle">
-                {isAr
-                  ? 'اختر مسارك وابدأ بخطة واضحة ومنظمة'
-                  : 'Choose your path and start with a clear structured plan'}
+                {t('subtitle')}
               </p>
             </div>
 
@@ -165,14 +152,14 @@ export function CareerPathsSection() {
               <button
                 onClick={() => scroll(isAr ? 'right' : 'left')}
                 className="scroll-btn"
-                aria-label={isAr ? 'السابق' : 'Previous'}
+                aria-label={t('previous')}
               >
                 <ArrowRight size={16} />
               </button>
               <button
                 onClick={() => scroll(isAr ? 'left' : 'right')}
                 className="scroll-btn"
-                aria-label={isAr ? 'التالي' : 'Next'}
+                aria-label={t('next')}
               >
                 <ArrowLeft size={16} />
               </button>
@@ -188,7 +175,7 @@ export function CareerPathsSection() {
                 className={`category-tab ${activeCategory === cat.id ? 'category-tab-active' : ''}`}
               >
                 <span className="category-tab-icon">{cat.icon}</span>
-                {isAr ? cat.labelAr : cat.labelEn}
+                {t(cat.labelKey)}
               </button>
             ))}
           </div>
@@ -212,18 +199,18 @@ export function CareerPathsSection() {
                 <span className="path-number">0{index + 1}</span>
 
                 {/* Title */}
-                <h3 className="path-title">{path.titleAr}</h3>
+                <h3 className="path-title">{path.title}</h3>
 
                 {/* Meta */}
                 <div className="path-meta">
                   <span className="path-meta-item">
                     <Star size={12} />
-                    {path.levelAr}
+                    {t(path.levelKey)}
                   </span>
                   <span className="path-meta-divider" />
                   <span className="path-meta-item">
                     <Clock size={12} />
-                    {path.duration}
+                    {path.durationNum} {t('months')}
                   </span>
                 </div>
 
@@ -245,7 +232,7 @@ export function CareerPathsSection() {
                   }}
                   className="path-cta"
                 >
-                  {isAr ? 'ابدأ المسار' : 'Start Path'}
+                  {t('start_path')}
                   <ChevronRight size={14} />
                 </button>
               </div>
@@ -256,13 +243,13 @@ export function CareerPathsSection() {
         {/* Bottom count */}
         <div className="paths-footer">
           <p className="paths-count">
-            {filtered.length} {isAr ? 'مسار متاح' : 'paths available'}
+            {filtered.length} {t('paths_available')}
           </p>
           <a
             href={`/${locale}/dashboard/assessment`}
             className="paths-discover-link"
           >
-            {isAr ? 'اكتشف مسارك بالذكاء الاصطناعي' : 'Discover your path with AI'}
+            {t('discover_ai')}
             <ArrowLeft size={14} />
           </a>
         </div>

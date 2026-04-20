@@ -1,7 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '../../lib/api'
 
@@ -34,11 +34,11 @@ function getThumb(path: string | null | undefined): string | null {
   return path
 }
 
-function getLevelAr(level?: string) {
-  if (level === 'BEGINNER') return 'مبتدئ'
-  if (level === 'INTERMEDIATE') return 'متوسط'
-  if (level === 'ADVANCED') return 'متقدم'
-  return 'عام'
+function getLevelKey(level?: string) {
+  if (level === 'BEGINNER') return 'beginner'
+  if (level === 'INTERMEDIATE') return 'intermediate'
+  if (level === 'ADVANCED') return 'advanced'
+  return 'general'
 }
 
 function getLevelColor(level?: string) {
@@ -54,6 +54,7 @@ function getLevelColor(level?: string) {
 
 export function CoursesShowcase() {
   const locale = useLocale()
+  const t = useTranslations('coursesShowcase')
   const isAr = locale === 'ar'
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
@@ -380,15 +381,13 @@ export function CoursesShowcase() {
           <div>
             <span className="cs-badge">
               <span className="cs-badge-dot" />
-              {isAr ? 'كورسات حقيقية' : 'Real Courses'}
+              {t('badge')}
             </span>
             <h2 className="cs-title">
-              {isAr ? 'استكشف الكورسات المتاحة' : 'Explore Available Courses'}
+              {t('title')}
             </h2>
             <p className="cs-subtitle">
-              {isAr
-                ? 'كورسات احترافية من مدربين خبراء — ابدأ التعلم الآن'
-                : 'Professional courses from expert instructors'}
+              {t('subtitle')}
             </p>
           </div>
 
@@ -398,7 +397,7 @@ export function CoursesShowcase() {
             rel="noopener noreferrer"
             className="cs-header-btn"
           >
-            {isAr ? 'كل الكورسات' : 'All Courses'}
+            {t('all_courses')}
             <ArrowLeft size={16} />
           </a>
         </div>
@@ -413,14 +412,14 @@ export function CoursesShowcase() {
             <button
               className={`cs-nav-btn cs-nav-left ${showNavButtons ? 'cs-visible' : ''}`}
               onClick={() => scrollToDirection('left')}
-              aria-label={isAr ? 'السابق' : 'Previous'}
+              aria-label={t('previous')}
             >
               <ChevronLeft size={20} />
             </button>
             <button
               className={`cs-nav-btn cs-nav-right ${showNavButtons ? 'cs-visible' : ''}`}
               onClick={() => scrollToDirection('right')}
-              aria-label={isAr ? 'التالي' : 'Next'}
+              aria-label={t('next')}
             >
               <ChevronRight size={20} />
             </button>
@@ -440,7 +439,7 @@ export function CoursesShowcase() {
         ) : courses.length === 0 ? (
           <div className="cs-empty">
             <BookOpen size={48} />
-            <p>{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}</p>
+            <p>{t('no_courses')}</p>
             {error && (
               <p className="mt-2 text-xs opacity-60">Error: {error}</p>
             )}
@@ -515,7 +514,7 @@ export function CoursesShowcase() {
                       className="cs-level-badge"
                       style={{ background: levelColor }}
                     >
-                      {getLevelAr(course.level)}
+                      {t(getLevelKey(course.level))}
                     </span>
 
                     {/* Play Overlay */}
@@ -540,7 +539,7 @@ export function CoursesShowcase() {
                     <div className="cs-footer">
                       {/* ✅ PRICE - PingARLT Font Applied Here */}
                       <span className="cs-price">
-                        {course.price > 0 ? `${course.price} ${isAr ? 'ريال' : 'SAR'}` : isAr ? 'مجاني' : 'Free'}
+                        {course.price > 0 ? `${course.price} ${t('sar')}` : t('free')}
                       </span>
 
                       <span className="cs-enrollments">
@@ -575,7 +574,7 @@ export function CoursesShowcase() {
           }}
         >
           <Play size={18} />
-          {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
+          {t('start_learning')}
         </a>
       </div>
 

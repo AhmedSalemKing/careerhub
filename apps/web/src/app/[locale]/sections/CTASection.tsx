@@ -28,7 +28,7 @@ export function CTASection() {
             {/* Badge */}
             <div className="cta-badge">
               <Rocket className="w-4 h-4" />
-              <span>{locale === 'ar' ? 'ابدأ رحلتك الآن' : 'Start Your Journey Now'}</span>
+              <span>{t('badge')}</span>
             </div>
 
             <h2 className="cta-title">

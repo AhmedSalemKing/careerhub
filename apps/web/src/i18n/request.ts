@@ -1,9 +1,10 @@
 import { getRequestConfig } from 'next-intl/server'
 import { defaultLocale, locales, type Locale } from '../i18n'
 
-export default getRequestConfig(async ({ locale }) => {
+export default getRequestConfig(async ({ requestLocale }) => {
+  const requested = await requestLocale
   const resolvedLocale =
-    locale && (locales as readonly string[]).includes(locale) ? (locale as Locale) : defaultLocale
+    requested && (locales as readonly string[]).includes(requested) ? (requested as Locale) : defaultLocale
 
   return {
     locale: resolvedLocale,

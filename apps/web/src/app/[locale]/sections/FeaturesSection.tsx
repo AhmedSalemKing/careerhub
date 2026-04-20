@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Target, GraduationCap, Users, ChevronRight, Sparkles } from 'lucide-react'
 import { TRAINING_URL } from '../../../lib/constants'
@@ -15,12 +15,9 @@ const FEATURES = [
     id: 1,
     icon: <Target size={22} />,
     iconBg: 'linear-gradient(135deg, #5120c8, #7C3AED)',
-    titleAr: 'تحديد المسار المهني',
-    titleEn: 'Career Path AI',
-    descAr: 'اختبار ذكي + تحليل AI + توصيات مخصصة لمسارك المهني',
-    descEn: 'Smart test + AI analysis + personalized career recommendations',
-    ctaAr: 'ابدأ',
-    ctaEn: 'Start',
+    titleKey: 'career_title' as const,
+    descKey: 'career_desc' as const,
+    ctaKey: 'career_cta' as const,
     href: '/dashboard/assessment',
     color: '#5120c8',
     isExternal: false,
@@ -29,12 +26,9 @@ const FEATURES = [
     id: 2,
     icon: <GraduationCap size={22} />,
     iconBg: 'linear-gradient(135deg, #0D9488, #2DD4BF)',
-    titleAr: 'منصة التدريب',
-    titleEn: 'Training Platform',
-    descAr: 'كورسات فيديو، جلسات لايف، وشهادات معتمدة',
-    descEn: 'Video courses, live sessions & certified certificates',
-    ctaAr: 'تصفح',
-    ctaEn: 'Browse',
+    titleKey: 'training_title' as const,
+    descKey: 'training_desc' as const,
+    ctaKey: 'training_cta' as const,
     href: TRAINING_URL,
     color: '#0D9488',
     isExternal: true,
@@ -43,12 +37,9 @@ const FEATURES = [
     id: 3,
     icon: <Users size={22} />,
     iconBg: 'linear-gradient(135deg, #D97706, #FBBF24)',
-    titleAr: 'الكوتشينج',
-    titleEn: 'Coaching',
-    descAr: 'احجز جلسة مع كوتش متخصص عبر Zoom',
-    descEn: 'Book a session with an expert coach via Zoom',
-    ctaAr: 'احجز',
-    ctaEn: 'Book',
+    titleKey: 'coaching_title' as const,
+    descKey: 'coaching_desc' as const,
+    ctaKey: 'coaching_cta' as const,
     href: '/dashboard/coaching',
     color: '#D97706',
     isExternal: false,
@@ -61,8 +52,6 @@ const FEATURES = [
 
 export function FeaturesSection() {
   const t = useTranslations('features')
-  const locale = useLocale()
-  const isAr = locale === 'ar'
   const ref = useRef<HTMLDivElement>(null)
   const [show, setShow] = useState(false)
   const [isDark, setIsDark] = useState(false)
@@ -122,17 +111,15 @@ export function FeaturesSection() {
         <div className={`fx-header ${show ? 'fx-visible' : ''}`}>
           <span className="fx-badge">
             <Sparkles className="w-3 h-3" />
-            {isAr ? 'لماذا نحن' : 'Why Us'}
+            {t('badge')}
           </span>
-          
+
           <h2 className="fx-title fx-pingarlt">
-            {isAr ? 'أدوات لبناء مستقبلك المهني' : 'Tools to Build Your Career Future'}
+            {t('title')}
           </h2>
-          
+
           <p className="fx-subtitle">
-            {t('subtitle') || (isAr 
-              ? 'منصة متكاملة تجمع بين التوجيه الذكي والتدريب العملي' 
-              : 'An integrated platform combining smart guidance and practical training')}
+            {t('subtitle')}
           </p>
         </div>
 
@@ -206,7 +193,7 @@ export function FeaturesSection() {
                       <div className="feature-text">
                         <div className="feature-text-header">
                           <h3 className="feature-title fx-pingarlt">
-                            {isAr ? feature.titleAr : feature.titleEn}
+                            {t(feature.titleKey)}
                           </h3>
                           <span className="feature-arrow">
                             <ChevronRight size={14} />
@@ -214,12 +201,12 @@ export function FeaturesSection() {
                         </div>
                         
                         <p className="feature-desc">
-                          {isAr ? feature.descAr : feature.descEn}
+                          {t(feature.descKey)}
                         </p>
                       </div>
 
                       <div className="feature-cta fx-pingarlt-bold">
-                        {isAr ? feature.ctaAr : feature.ctaEn}
+                        {t(feature.ctaKey)}
                         <svg className="w-3 h-3 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
@@ -248,7 +235,7 @@ export function FeaturesSection() {
                     <div className="feature-text">
                       <div className="feature-text-header">
                         <h3 className="feature-title fx-pingarlt">
-                          {isAr ? feature.titleAr : feature.titleEn}
+                          {t(feature.titleKey)}
                         </h3>
                         <span className="feature-arrow">
                           <ChevronRight size={14} />
@@ -256,12 +243,12 @@ export function FeaturesSection() {
                       </div>
                       
                       <p className="feature-desc">
-                        {isAr ? feature.descAr : feature.descEn}
+                        {t(feature.descKey)}
                       </p>
                     </div>
 
                     <div className="feature-cta fx-pingarlt-bold">
-                      {isAr ? feature.ctaAr : feature.ctaEn}
+                      {t(feature.ctaKey)}
                     </div>
 
                   </Link>

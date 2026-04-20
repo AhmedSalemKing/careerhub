@@ -1,6 +1,6 @@
 'use client'
 
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { ChevronDown, Globe, Check } from 'lucide-react'
@@ -16,6 +16,7 @@ const languages = [
 
 export function LanguageSwitcher() {
   const locale = useLocale()
+  const t = useTranslations('langSwitcher')
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -162,7 +163,7 @@ export function LanguageSwitcher() {
               letterSpacing: '0.08em',
             }}
           >
-            Language
+            {t('header')}
           </div>
 
           {/* Options */}
@@ -234,7 +235,7 @@ export function LanguageSwitcher() {
               color: 'var(--muted-foreground)',
             }}
           >
-            {isAr ? 'التبديل يعيد تحميل الصفحة' : 'Switching reloads page'}
+            {t('hint')}
           </div>
         </div>
       )}

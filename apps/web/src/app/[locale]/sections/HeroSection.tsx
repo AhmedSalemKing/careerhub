@@ -84,7 +84,7 @@ export function HeroSection() {
               color: 'var(--hero-fg)'
             }}
           >
-            {locale === 'ar' ? 'اكتشف مسارك المهني مع' : 'Discover your career path with'}
+            {t('title')}
           </span>
           
           <span 
