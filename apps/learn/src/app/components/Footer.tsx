@@ -4,29 +4,30 @@
 'use client'
 
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, ExternalLink } from 'lucide-react'
 
 const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
 
 export function Footer() {
   const locale = useLocale()
+  const t = useTranslations('footer')
 
   const links = {
     platform: [
-      { href: `/${locale}/courses`, label: locale === 'ar' ? 'الكورسات' : 'Courses' },
-      { href: `/${locale}/coaches`, label: locale === 'ar' ? 'الكوتشينج' : 'Coaching' },
-      { href: `/${locale}/careers`, label: locale === 'ar' ? 'المسارات المهنية' : 'Career Paths' },
-      { href: `/${locale}/pricing`, label: locale === 'ar' ? 'الأسعار' : 'Pricing' },
+      { href: `/${locale}/courses`, label: t('courses') },
+      { href: `/${locale}/coaches`, label: t('coaching') },
+      { href: `/${locale}/careers`, label: t('career_paths') },
+      { href: `/${locale}/pricing`, label: t('pricing') },
     ],
     support: [
-      { href: `/${locale}/help`, label: locale === 'ar' ? 'مركز المساعدة' : 'Help Center' },
-      { href: `/${locale}/contact`, label: locale === 'ar' ? 'تواصل معنا' : 'Contact Us' },
-      { href: `/${locale}/faq`, label: locale === 'ar' ? 'الأسئلة الشائعة' : 'FAQ' },
+      { href: `/${locale}/help`, label: t('help_center') },
+      { href: `/${locale}/contact`, label: t('contact') },
+      { href: `/${locale}/faq`, label: t('faq') },
     ],
     legal: [
-      { href: `/${locale}/terms`, label: locale === 'ar' ? 'الشروط والأحكام' : 'Terms' },
-      { href: `/${locale}/privacy`, label: locale === 'ar' ? 'سياسة الخصوصية' : 'Privacy' },
+      { href: `/${locale}/terms`, label: t('terms') },
+      { href: `/${locale}/privacy`, label: t('privacy') },
     ],
   }
 
@@ -44,9 +45,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-              {locale === 'ar'
-                ? 'منصة متكاملة لتطوير المهارات وبناء المستقبل المهني بأحدث الكورسات والكوتشينج المتخصص.'
-                : 'A comprehensive platform for skill development and career building with the latest courses and specialized coaching.'}
+              {t('description')}
             </p>
 
             <div className="mt-6 flex gap-3">
@@ -75,7 +74,7 @@ export function Footer() {
           {/* Platform Links */}
           <div>
             <h3 className="font-semibold mb-4 text-sm" style={{ color: 'var(--foreground)' }}>
-              {locale === 'ar' ? 'المنصة' : 'Platform'}
+              {t('platform')}
             </h3>
             <ul className="space-y-2.5">
               {links.platform.map((link) => (
@@ -95,7 +94,7 @@ export function Footer() {
           {/* Support Links */}
           <div>
             <h3 className="font-semibold mb-4 text-sm" style={{ color: 'var(--foreground)' }}>
-              {locale === 'ar' ? 'الدعم' : 'Support'}
+              {t('support')}
             </h3>
             <ul className="space-y-2.5">
               {links.support.map((link) => (
@@ -115,7 +114,7 @@ export function Footer() {
           {/* Contact */}
           <div>
             <h3 className="font-semibold mb-4 text-sm" style={{ color: 'var(--foreground)' }}>
-              {locale === 'ar' ? 'تواصل معنا' : 'Contact Us'}
+              {t('contact')}
             </h3>
             <ul className="space-y-3">
               <li>
@@ -141,7 +140,7 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--muted)' }}>
                 <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'var(--info)' }} />
-                <span>{locale === 'ar' ? 'الرياض، المملكة العربية السعودية' : 'Riyadh, Saudi Arabia'}</span>
+                <span>{t('address')}</span>
               </li>
             </ul>
 
@@ -154,7 +153,7 @@ export function Footer() {
                 className="inline-flex items-center gap-2 text-sm transition-colors hover:underline"
                 style={{ color: 'var(--primary)' }}
               >
-                {locale === 'ar' ? 'الموقع الرئيسي' : 'Main Site'}
+                {t('main_site')}
                 <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -164,7 +163,7 @@ export function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: '1px solid var(--border)' }}>
           <p className="text-sm" style={{ color: 'var(--muted)' }}>
-            © {new Date().getFullYear()} DeveWay. {locale === 'ar' ? 'جميع الحقوق محفوظة' : 'All rights reserved'}
+            © {new Date().getFullYear()} DeveWay. {t('all_rights')}
           </p>
           <div className="flex gap-6">
             {links.legal.map((link) => (

@@ -81,6 +81,7 @@ function ThemeToggle() {
    User Dropdown (Professional Style)
    ════════════════════════════════════════ */
 function UserDropdown({ locale }: { locale: string }) {
+  const t = useTranslations('nav')
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [open, setOpen] = useState(false)
@@ -160,7 +161,7 @@ function UserDropdown({ locale }: { locale: string }) {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
             <BookOpen className="h-4 w-4" />
-            {locale === 'ar' ? 'كورساتي' : 'My Courses'}
+            {t('my_courses')}
           </Link>
 
           <a
@@ -172,7 +173,7 @@ function UserDropdown({ locale }: { locale: string }) {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
             <LayoutDashboard className="h-4 w-4" />
-            {locale === 'ar' ? 'العودة لـ DeveWay' : 'Back to DeveWay'}
+            {t('back_to_deveway')}
           </a>
 
           <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
@@ -184,7 +185,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               <LogOut className="h-4 w-4" />
-              {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -245,22 +246,22 @@ export function Navbar() {
 
   /* ═══ Navigation Links with Smart Routing ═══ */
   const links = [
-    { 
-      href: `/${locale}`, 
-      label: locale === 'ar' ? 'الرئيسية' : 'Home' 
+    {
+      href: `/${locale}`,
+      label: t('home')
     },
-    { 
-      href: `/${locale}/courses`, 
-      label: t('courses') 
+    {
+      href: `/${locale}/courses`,
+      label: t('courses')
     },
-    { 
+    {
       href: isLoggedIn ? `/${locale}/my-courses` : `/${locale}/login`,
-      label: locale === 'ar' ? 'كورساتي' : 'My Courses',
+      label: t('my_courses'),
       requiresAuth: true
     },
-    { 
+    {
       href: `${MAIN_URL}/${locale}/coaching`,
-      label: locale === 'ar' ? 'احجز استشارة' : 'Book Consultation',
+      label: t('book_consultation'),
       external: true
     },
   ]
@@ -591,7 +592,7 @@ export function Navbar() {
                     style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                   >
                     <BookOpen className="h-4 w-4" />
-                    {locale === 'ar' ? 'كورساتي' : 'My Courses'}
+                    {t('my_courses')}
                   </Link>
                   <button
                     onClick={() => {

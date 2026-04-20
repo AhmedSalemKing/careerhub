@@ -78,10 +78,10 @@ export default async function RootLayout({
           </NextIntlClientProvider>
         </ThemeProvider>
         <Toaster
-          position="top-right"
+          position={dir === 'rtl' ? 'top-left' : 'top-right'}
           richColors
           toastOptions={{
-            style: { fontFamily: "'DM Sans', 'Segoe UI', Arial, sans-serif", direction: 'rtl' },
+            style: { fontFamily: "'DM Sans', 'Segoe UI', Arial, sans-serif", direction: dir },
             duration: 4000,
           }}
         />

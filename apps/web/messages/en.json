@@ -10,7 +10,8 @@
     "dashboard": "Dashboard",
     "logout": "Logout",
     "profile": "Profile",
-    "admin": "Admin Panel"
+    "admin": "Admin Panel",
+    "courses": "Courses"
   },
   "hero": {
     "badge": "🚀 AI-Powered Career Platform",

@@ -10,7 +10,11 @@
     "dashboard": "Dashboard",
     "logout": "Logout",
     "profile": "Profile",
-    "admin": "Admin Panel"
+    "admin": "Admin Panel",
+    "courses": "Courses",
+    "my_courses": "My Courses",
+    "book_consultation": "Book Consultation",
+    "back_to_deveway": "Back to DeveWay"
   },
   "hero": {
     "badge": "🚀 AI-Powered Career Platform",
@@ -20,7 +24,8 @@
     "cta_secondary": "Learn more",
     "stat_courses": "Courses+",
     "stat_coaches": "Coaches+",
-    "stat_students": "Learners+"
+    "stat_students": "Learners+",
+    "all_courses": "All Courses"
   },
   "features": {
     "title": "Everything you need in one place",
@@ -331,7 +336,20 @@
     "my_courses": "My courses ↗",
     "privacy": "Privacy Policy",
     "terms": "Terms",
-    "rights": "© 2026 DeveWay"
+    "rights": "© 2026 DeveWay",
+    "platform": "Platform",
+    "support": "Support",
+    "contact": "Contact Us",
+    "courses": "Courses",
+    "coaching": "Coaching",
+    "career_paths": "Career Paths",
+    "pricing": "Pricing",
+    "help_center": "Help Center",
+    "faq": "FAQ",
+    "description": "A comprehensive platform for skill development and career building with the latest courses and specialized coaching.",
+    "address": "Riyadh, Saudi Arabia",
+    "main_site": "Main Site",
+    "all_rights": "All rights reserved"
   },
   "how": {
     "title": "How it works",
@@ -470,6 +488,30 @@
     "activate": "Activate",
     "approve": "Approve",
     "reject": "Reject"
+  },
+  "course": {
+    "not_found": "Course not found",
+    "student": "student",
+    "lesson": "lesson",
+    "section": "section",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "instructor": "Instructor",
+    "content": "Course Content",
+    "free": "Free",
+    "no_content": "No content has been added to this course yet",
+    "enrolled": "Enrolled successfully",
+    "start_learning": "Start Learning",
+    "enroll_free": "Enroll for Free",
+    "enrolling": "Enrolling...",
+    "checking": "Checking...",
+    "subscribe": "Subscribe",
+    "total_lessons": "Total Lessons",
+    "sections_label": "Sections",
+    "level": "Level",
+    "subscribers": "Subscribers",
+    "currency": "SAR"
   }
 }
 

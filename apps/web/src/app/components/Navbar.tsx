@@ -105,6 +105,7 @@ function ThemeToggle() {
    User Dropdown
    ════════════════════════════════════════ */
 function UserDropdown({ locale }: { locale: string }) {
+  const t = useTranslations('nav')
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const [open, setOpen] = useState(false)
@@ -184,7 +185,7 @@ function UserDropdown({ locale }: { locale: string }) {
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
           >
             <LayoutDashboard className="h-4 w-4" />
-            {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+            {t('dashboard')}
           </Link>
 
           <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
@@ -196,7 +197,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               <LogOut className="h-4 w-4" />
-              {locale === 'ar' ? 'تسجيل الخروج' : 'Logout'}
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -615,7 +616,7 @@ export function Navbar() {
                     style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    {locale === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+                    {t('dashboard')}
                   </Link>
                   <button
                     onClick={() => {
