@@ -69,7 +69,19 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search)
       const redirectTo = params.get('redirect')
       if (redirectTo && !redirectTo.includes('/login')) {
-        window.location.href = redirectTo
+        // Append token to cross-domain redirects (e.g. learn app)
+        if (redirectTo.startsWith('http')) {
+          try {
+            const url = new URL(redirectTo)
+            const t = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token')
+            if (t) url.searchParams.set('token', t)
+            window.location.href = url.toString()
+          } catch {
+            window.location.href = redirectTo
+          }
+        } else {
+          window.location.href = redirectTo
+        }
         return
       }
       if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
@@ -130,7 +142,18 @@ export default function LoginPage() {
       } else {
         const params = new URLSearchParams(window.location.search)
         const returnTo = params.get('redirect') || `/${locale}/dashboard`
-        window.location.href = returnTo
+        // Append token to cross-domain redirects (e.g. learn app)
+        if (returnTo.startsWith('http')) {
+          try {
+            const url = new URL(returnTo)
+            url.searchParams.set('token', token)
+            window.location.href = url.toString()
+          } catch {
+            window.location.href = returnTo
+          }
+        } else {
+          window.location.href = returnTo
+        }
       }
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { message?: string } } }
