@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   Play, Clock, Users, BookOpen, ChevronDown, Lock, CheckCircle2,
   ArrowRight, ArrowLeft, GraduationCap, BarChart3, Star, Loader2,
-  Sparkles,
+  Sparkles, PlayCircle,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -50,9 +50,29 @@ export default function CourseDetailPage({
   const [hasUser, setHasUser] = useState(false)
   useEffect(() => {
     const token = localStorage.getItem('deveway_token')
+      || localStorage.getItem('careerhub_token')
       || document.cookie.match(/deveway_token=([^;]+)/)?.[1]
     setHasUser(!!token)
   }, [])
+
+  // DEBUG: direct API test for enrollment
+  useEffect(() => {
+    const token = localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token')
+    console.log('=== ENROLLMENT DEBUG ===')
+    console.log('Token exists:', !!token)
+    console.log('Token value:', token?.slice(0, 20))
+    console.log('CourseId:', courseId)
+
+    if (token) {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+      fetch(`${apiUrl}/api/courses/${courseId}/enrollment`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(r => r.json())
+        .then(d => console.log('ENROLLMENT API RESPONSE:', JSON.stringify(d)))
+        .catch(e => console.log('ENROLLMENT ERROR:', e.message))
+    }
+  }, [courseId])
 
   // Course data
   const { data: course, isLoading } = useQuery({
@@ -87,6 +107,7 @@ export default function CourseDetailPage({
         enrollmentData?.enrolled === true ||
         enrollmentData?.enrollment?.id ||
         enrollmentData?.id ||
+        enrollmentData?.courseId ||
         (Array.isArray(enrollmentData) && enrollmentData.length > 0)
       )
       console.log('[Enrollment] enrollmentData:', enrollmentData, '→ isEnrolled:', enrolled)
@@ -396,66 +417,71 @@ export default function CourseDetailPage({
               </div>
 
               {/* Enrollment Button */}
-              {enrollmentLoading && hasUser ? (
-                <div
-                  className="flex items-center justify-center gap-2 rounded-xl py-3.5"
-                  style={{ background: cardBg }}
-                >
-                  <Loader2 className="h-5 w-5 animate-spin" style={{ color: purple }} />
-                  <span className="text-sm" style={{ color: textSecondary }}>{t('checking')}</span>
+              {isEnrolled ? (
+                <div style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                  color: '#fff',
+                  padding: '16px 24px',
+                  borderRadius: '14px',
+                  fontWeight: '700',
+                  fontSize: '16px',
+                  boxShadow: '0 4px 24px rgba(22,163,74,0.35)',
+                }}>
+                  <CheckCircle2 size={22} strokeWidth={2.5} />
+                  <span>تم الاشتراك بنجاح</span>
                 </div>
-              ) : isEnrolled ? (
-                <div className="space-y-3">
-                  {/* Green success bar */}
-                  <div
-                    className="flex items-center gap-2.5 rounded-xl py-3.5 px-5 font-bold text-sm"
-                    style={{
-                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                      color: '#fff',
-                      boxShadow: '0 4px 20px rgba(22,163,74,0.3)',
-                    }}
-                  >
-                    <CheckCircle2 size={20} strokeWidth={2.5} />
-                    <span>{t('enrolled')}</span>
-                  </div>
-                  <a
-                    href={`/${locale}/learn/${courseId}`}
-                    className="flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm text-white transition-opacity hover:opacity-90"
-                    style={{ background: purple }}
-                  >
-                    {t('start_learning')}
-                    <ArrowLeft className="h-4 w-4" />
-                  </a>
-                </div>
-              ) : isFree ? (
+              ) : course?.price === 0 || !course?.price ? (
                 <button
                   onClick={handleFreeEnroll}
                   disabled={enrolling}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm text-white transition-all hover:opacity-90 disabled:opacity-60"
                   style={{
-                    background: `linear-gradient(135deg, ${teal}, #0f766e)`,
-                    boxShadow: `0 4px 20px ${teal}40`,
+                    width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    background: '#5120c8', color: '#fff',
+                    padding: '16px 24px', borderRadius: '14px',
+                    fontWeight: '700', fontSize: '16px', border: 'none',
+                    cursor: enrolling ? 'not-allowed' : 'pointer',
+                    opacity: enrolling ? 0.7 : 1,
                   }}
                 >
-                  {enrolling ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  {enrolling ? t('enrolling') : t('enroll_free')}
+                  {enrolling ? <Loader2 size={20} className="animate-spin" /> : <BookOpen size={20} />}
+                  {enrolling ? 'جاري الاشتراك...' : 'اشترك مجاناً'}
                 </button>
               ) : (
                 <a
-                  href={`${MAIN_URL}/${locale}/checkout/${courseId}`}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm text-white transition-opacity hover:opacity-90"
+                  href={`${process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'}/${locale}/checkout/${courseId}`}
                   style={{
-                    background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
-                    boxShadow: `0 4px 20px ${purple}40`,
+                    width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    background: '#5120c8', color: '#fff',
+                    padding: '16px 24px', borderRadius: '14px',
+                    fontWeight: '700', fontSize: '16px', textDecoration: 'none',
                   }}
                 >
-                  <Lock className="h-4 w-4" />
-                  {t('subscribe')} — {course.price} {t('currency')}
+                  <Lock size={20} />
+                  الاشتراك – {course?.price} ريال
                 </a>
+              )}
+
+              {isEnrolled && (
+                <button
+                  onClick={() => router.push(`/${locale}/learn/${courseId}`)}
+                  style={{
+                    width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    background: '#5120c8', color: '#fff',
+                    padding: '16px 24px', borderRadius: '14px', marginTop: '10px',
+                    fontWeight: '700', fontSize: '16px', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  <PlayCircle size={20} />
+                  ابدأ التعلم الآن
+                </button>
               )}
 
               {/* Course stats */}

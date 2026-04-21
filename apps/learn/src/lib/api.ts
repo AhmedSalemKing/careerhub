@@ -16,6 +16,8 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('deveway_token')
+      || localStorage.getItem('careerhub_token')
+      || document.cookie.match(/deveway_token=([^;]+)/)?.[1]
     if (token) {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${token}`
