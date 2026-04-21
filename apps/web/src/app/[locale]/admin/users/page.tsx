@@ -12,7 +12,7 @@ type AdminUser = {
   isActive: boolean
   status: string
   createdAt: string
-  profile?: { firstName: string; lastName: string } | null
+  profile?: { firstName: string; lastName: string; avatar?: string } | null
 }
 
 const MODAL_INPUT = {
@@ -183,10 +183,21 @@ export default function AdminUsersPage() {
                 users.map((u) => (
                   <tr key={u.id} className="border-t border-gray-800 hover:bg-gray-800/40 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="text-white font-medium">
-                        {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
-                      </p>
-                      <p className="text-xs text-gray-400">{u.email}</p>
+                      <div className="flex items-center gap-2.5">
+                        {u.profile?.avatar ? (
+                          <img src={u.profile.avatar} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-bold text-white" style={{ background: '#5120c8' }}>
+                            {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-white font-medium">
+                            {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
+                          </p>
+                          <p className="text-xs text-gray-400">{u.email}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-300">{u.role}</td>
                     <td className="px-4 py-3">

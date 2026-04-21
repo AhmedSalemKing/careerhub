@@ -19,8 +19,8 @@ export function useAuth() {
     queryKey: ['auth', 'me'],
     enabled: !!store.token,
     queryFn: async () => {
-      const res = await api.get<ApiResponse<{ user: AuthUser }>>('/auth/me')
-      const user = res.data.data?.user
+      const res = await api.get<ApiResponse<AuthUser>>('/auth/me')
+      const user = res.data.data
       if (user) {
         store.setUser(user)
         localStorage.setItem('deveway_user', JSON.stringify(user))

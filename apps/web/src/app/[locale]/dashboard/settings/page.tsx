@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get, patch, post } from '../../../../lib/api'
 import api from '../../../../lib/api'
+import { useAuthStore } from '../../../../stores/authStore'
 import {
   Camera, User, Lock, Bell, Globe, Save,
   Eye, EyeOff, Check, AlertCircle, Moon, Sun,
@@ -13,6 +14,7 @@ export default function SettingsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const queryClient = useQueryClient()
+  const authStore = useAuthStore()
   const [activeTab, setActiveTab] = useState('profile')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -65,8 +67,22 @@ export default function SettingsPage() {
       if (avatarUrl !== undefined) body.avatar = avatarUrl
       return patch('/auth/profile', body)
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['me'] })
+      // Sync updated profile to Zustand store so Navbar avatar updates immediately
+      const current = authStore.user
+      const updatedProfile = res?.data?.data ?? res?.data
+      if (current) {
+        authStore.setUser({
+          ...current,
+          profile: {
+            ...current.profile,
+            firstName: updatedProfile?.firstName ?? profileForm.firstName,
+            lastName: updatedProfile?.lastName ?? profileForm.lastName,
+            avatar: updatedProfile?.avatar ?? current.profile?.avatar,
+          },
+        })
+      }
       setAvatarFile(null)
       showSuccess()
     }
