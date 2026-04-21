@@ -43,10 +43,12 @@ export class AuthService {
     linkedinUrl?: string;
     hourlyRate?: number;
     meetingMethod?: string;
+    avatar?: string;
   }) {
     const {
       email, password, firstName, lastName, phone, country, city, language,
       accountType, cvUrl, bio, experience, speciality, linkedinUrl, hourlyRate, meetingMethod,
+      avatar,
     } = registerDto;
 
     const resolvedAccountType = accountType || 'STUDENT';
@@ -98,6 +100,7 @@ export class AuthService {
           city,
           language: language || 'en',
           timezone: this.getTimezoneFromCountry(country),
+          avatar: avatar || null,
         },
       });
 

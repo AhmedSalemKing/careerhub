@@ -130,4 +130,10 @@ __decorate([
     (0, class_validator_1.IsIn)(['ZOOM', 'GOOGLE_MEET', 'BOTH']),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "meetingMethod", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Profile avatar URL' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "avatar", void 0);
 //# sourceMappingURL=register.dto.js.map

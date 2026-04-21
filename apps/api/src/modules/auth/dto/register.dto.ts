@@ -112,4 +112,9 @@ export class RegisterDto {
   @IsOptional()
   @IsIn(['ZOOM', 'GOOGLE_MEET', 'BOTH'])
   meetingMethod?: string;
+
+  @ApiPropertyOptional({ description: 'Profile avatar URL' })
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }

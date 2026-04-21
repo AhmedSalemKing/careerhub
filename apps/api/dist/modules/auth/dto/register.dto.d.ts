@@ -15,4 +15,5 @@ export declare class RegisterDto {
     linkedinUrl?: string;
     hourlyRate?: number;
     meetingMethod?: string;
+    avatar?: string;
 }

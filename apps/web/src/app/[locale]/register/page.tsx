@@ -258,7 +258,7 @@ export default function RegisterPage() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/upload/cv`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/upload/cv`, {
         method: 'POST',
         body: formData,
       })

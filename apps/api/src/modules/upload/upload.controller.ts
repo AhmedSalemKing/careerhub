@@ -123,9 +123,8 @@ export class UploadController {
     return { success: true, message: 'Files uploaded successfully', data: result };
   }
 
+  @Public()
   @Post('image')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('image', {
     storage: memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },

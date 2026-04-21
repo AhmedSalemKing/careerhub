@@ -309,9 +309,8 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UploadController.prototype, "uploadMultipleFiles", null);
 __decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('image'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', {
         storage: (0, multer_1.memoryStorage)(),
         limits: { fileSize: 10 * 1024 * 1024 },

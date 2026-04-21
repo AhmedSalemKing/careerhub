@@ -63,7 +63,7 @@ let AuthService = AuthService_1 = class AuthService {
     }
     async register(registerDto) {
         var _a, _b;
-        const { email, password, firstName, lastName, phone, country, city, language, accountType, cvUrl, bio, experience, speciality, linkedinUrl, hourlyRate, meetingMethod, } = registerDto;
+        const { email, password, firstName, lastName, phone, country, city, language, accountType, cvUrl, bio, experience, speciality, linkedinUrl, hourlyRate, meetingMethod, avatar, } = registerDto;
         const resolvedAccountType = accountType || 'STUDENT';
         const isPendingAccount = resolvedAccountType === 'INSTRUCTOR' || resolvedAccountType === 'CONSULTANT';
         const existing = await this.prisma.user.findUnique({
@@ -104,6 +104,7 @@ let AuthService = AuthService_1 = class AuthService {
                     city,
                     language: language || 'en',
                     timezone: this.getTimezoneFromCountry(country),
+                    avatar: avatar || null,
                 },
             });
             return { user, profile };
