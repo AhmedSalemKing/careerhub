@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '../../lib/api'
+import { learnUrl } from '../../lib/constants'
 
 /* ════════════════════════════════════════
    INTERFACES
@@ -72,7 +73,7 @@ export function CoursesShowcase() {
   // حالة للأزرار
   const [showNavButtons, setShowNavButtons] = useState(false)
 
-  const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || '/learn'
+  // learnUrl() from constants appends the auth token for cross-domain nav
 
   // ── Fetch real courses ──
   useEffect(() => {
@@ -392,7 +393,7 @@ export function CoursesShowcase() {
           </div>
 
           <a
-            href={`${LEARN_URL}/${locale}/courses`}
+            href={learnUrl(`/${locale}/courses`)}
             target="_blank"
             rel="noopener noreferrer"
             className="cs-header-btn"
@@ -469,7 +470,7 @@ export function CoursesShowcase() {
               return (
                 <a
                   key={`${course.id}-${idx}`}
-                  href={`${LEARN_URL}/${locale}/courses/${course.id}`}
+                  href={learnUrl(`/${locale}/courses/${course.id}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="cs-card"
@@ -558,7 +559,7 @@ export function CoursesShowcase() {
       {/* ═══ Bottom CTA ═══ */}
       <div className="cs-bottom-cta">
         <a
-          href={`${LEARN_URL}/${locale}`}
+          href={learnUrl(`/${locale}`)}
           target="_blank"
           rel="noopener noreferrer"
           className="cs-cta-btn"

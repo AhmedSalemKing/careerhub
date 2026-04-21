@@ -6,12 +6,14 @@ import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
+import { Suspense } from 'react'
 import './globals.css'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 import { ToastProvider } from '../lib/toast'
 import { QueryProvider } from '../lib/query'
 import { LoadingProvider } from './components/PageLoader'
+import { TokenSync } from './components/TokenSync'
 
 export const metadata: Metadata = {
   title: 'DeveWay | منصة التدريب',
@@ -67,6 +69,7 @@ export default async function RootLayout({
             <QueryProvider>
               <ToastProvider>
                 <LoadingProvider>
+                  <Suspense><TokenSync /></Suspense>
                   <div className="flex min-h-screen flex-col">
                     <Navbar />
                     <main className="flex-1">{children}</main>

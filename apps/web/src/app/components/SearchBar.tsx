@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Search, X, BookOpen, User, ArrowLeft } from 'lucide-react'
+import { learnUrl } from '../../lib/constants'
 
 interface SearchResult {
   courses: { id: string; title: string; titleAr?: string; thumbnail?: string; price: number }[]
@@ -20,7 +21,6 @@ export function SearchBar() {
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
   const API = process.env.NEXT_PUBLIC_API_URL || ''
-  const LEARN = process.env.NEXT_PUBLIC_LEARN_URL || 'http://localhost:3002'
 
   // Close on outside click
   useEffect(() => {
@@ -225,7 +225,7 @@ export function SearchBar() {
                     {results!.courses.map(course => (
                       <a
                         key={course.id}
-                        href={`${LEARN}/${locale}/courses/${course.id}`}
+                        href={learnUrl(`/${locale}/courses/${course.id}`)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setOpen(false)}

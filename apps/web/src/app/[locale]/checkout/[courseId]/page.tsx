@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { get, post } from '../../../../lib/api'
 import { getMediaUrl } from '../../../../lib/media'
 import { notify } from '../../../../lib/notify'
+import { learnUrl } from '../../../../lib/constants'
 import {
   Shield, CheckCircle,
   Lock, ArrowRight, Users, BookOpen, Clock, Zap
@@ -170,7 +171,7 @@ export default function CheckoutPage() {
   const course = data?.course
   const alreadyEnrolled = data?.alreadyEnrolled
   const thumb = getMediaUrl(course?.thumbnail)
-  const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || 'http://localhost:3002'
+  // learnUrl imported at top of file
   const courseTitle = course?.titleAr || course?.titleEn || ''
 
   if (isLoading) return <Skeleton />
@@ -184,7 +185,7 @@ export default function CheckoutPage() {
         <h2 className="text-2xl font-bold font-madinet text-foreground mb-2">أنت مشترك بالفعل</h2>
         <p className="text-[color:var(--muted)] mb-6">يمكنك الوصول لهذا الكورس مباشرة</p>
         <a
-          href={`${LEARN_URL}/${locale}/courses/${courseId}`}
+          href={learnUrl(`/${locale}/courses/${courseId}`)}
           className="inline-flex items-center gap-2 rounded-2xl bg-[color:var(--primary)] px-8 py-3 font-bold text-white hover:opacity-90 transition"
         >
           ابدأ التعلم <ArrowRight className="h-5 w-5" />
@@ -221,7 +222,7 @@ export default function CheckoutPage() {
 
           <div className="space-y-3">
             <a
-              href={`${LEARN_URL}/${locale}/courses/${courseId}`}
+              href={learnUrl(`/${locale}/courses/${courseId}`)}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color:var(--primary)] py-3.5 font-bold text-white hover:opacity-90 transition"
             >
               ابدأ التعلم الآن <ArrowRight className="h-5 w-5" />
