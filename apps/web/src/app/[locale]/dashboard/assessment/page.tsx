@@ -399,7 +399,7 @@ function ResultsScreen({ report, onRetake, onSavePath, locale }: {
 	report.topSpecializations.forEach((sp) => {
 		sp.currentSkills.forEach((s) => skillMap.set(s, (skillMap.get(s) || 0) + 1));
 	});
-	const topSkills = [...skillMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+	const topSkills = Array.from(skillMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 6);
 	const maxSkillVal = topSkills.length > 0 ? topSkills[0][1] : 1;
 
 	const careerIcons = [Target, Briefcase, TrendingUp];
