@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LEARN_URL } from '../../../../lib/constants'
+// LEARN_URL removed — navigation within the same app uses relative paths
 
 export default function CourseDetailPage({
   params,
@@ -67,15 +67,30 @@ export default function CourseDetailPage({
   // Enrollment check
   const { data: enrollmentData, isLoading: enrollmentLoading } = useQuery({
     queryKey: ['enrollment', courseId],
-    queryFn: () => get(`/courses/${courseId}/enrollment`)
-      .then(r => (r?.data as any)?.data ?? r?.data)
-      .catch(() => null),
+    queryFn: async () => {
+      try {
+        const res = await get(`/courses/${courseId}/enrollment`)
+        const d = (res?.data as any)?.data ?? res?.data
+        console.log('[Enrollment] raw response:', res?.data, '→ parsed:', d)
+        return d
+      } catch (err) {
+        console.log('[Enrollment] error:', err)
+        return null
+      }
+    },
     enabled: !!hasUser,
   })
 
   useEffect(() => {
-    if (enrollmentData) {
-      setIsEnrolled(enrollmentData?.enrolled === true || enrollmentData?.enrollment != null || enrollmentData?.id != null)
+    if (enrollmentData !== undefined && enrollmentData !== null) {
+      const enrolled = !!(
+        enrollmentData?.enrolled === true ||
+        enrollmentData?.enrollment?.id ||
+        enrollmentData?.id ||
+        (Array.isArray(enrollmentData) && enrollmentData.length > 0)
+      )
+      console.log('[Enrollment] enrollmentData:', enrollmentData, '→ isEnrolled:', enrolled)
+      setIsEnrolled(enrolled)
     }
   }, [enrollmentData])
 
@@ -275,7 +290,7 @@ export default function CourseDetailPage({
                                 key={lesson.id}
                                 onClick={() => {
                                   if (canAccess) {
-                                    window.location.href = `${LEARN_URL}/${locale}/learn/${courseId}?lesson=${lesson.id}`
+                                    window.location.href = `/${locale}/learn/${courseId}?lesson=${lesson.id}`
                                   } else if (!isFree) {
                                     window.location.href = `${MAIN_URL}/${locale}/checkout/${courseId}`
                                   }
@@ -404,7 +419,7 @@ export default function CourseDetailPage({
                     <span>{t('enrolled')}</span>
                   </div>
                   <a
-                    href={`${LEARN_URL}/${locale}/learn/${courseId}`}
+                    href={`/${locale}/learn/${courseId}`}
                     className="flex items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-sm text-white transition-opacity hover:opacity-90"
                     style={{ background: purple }}
                   >

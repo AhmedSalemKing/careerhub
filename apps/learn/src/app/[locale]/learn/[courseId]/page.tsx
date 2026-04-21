@@ -166,7 +166,7 @@ function LearnPageInner() {
     )
   }
 
-  if (isEnrolled === false && enrollment !== undefined && enrollment !== null) {
+  if (!isEnrolled && enrollment === null) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6" dir="rtl" style={{ background: bg }}>
         <div className="text-center max-w-md">
