@@ -202,6 +202,16 @@ export class AuthService {
       throw new ForbiddenException('Your application was rejected. Please contact support.');
     }
 
+    // Auto-create profile if missing (e.g. admin users created without one)
+    if (!user.profile) {
+      const emailName = email.split('@')[0];
+      const newProfile = await this.prisma.userProfile.create({
+        data: { userId: user.id, firstName: emailName, lastName: '' },
+      });
+      user.profile = { firstName: newProfile.firstName, lastName: newProfile.lastName, avatar: newProfile.avatar, language: newProfile.language };
+      this.logger.log(`[LOGIN] auto-created missing profile for ${email}`);
+    }
+
     // Generate tokens
     let accessToken: string, refreshToken: string;
     try {
@@ -459,19 +469,52 @@ export class AuthService {
         }
       }
     });
+
+    // Auto-create profile if missing (e.g. admin users created without one)
+    if (user && !user.profile) {
+      const emailName = user.email.split('@')[0];
+      const profile = await this.prisma.userProfile.create({
+        data: {
+          userId,
+          firstName: emailName,
+          lastName: '',
+        },
+      });
+      return {
+        ...user,
+        profile: {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          avatar: profile.avatar,
+          bio: profile.bio,
+          phone: profile.phone,
+          language: profile.language,
+          timezone: profile.timezone,
+        },
+      };
+    }
+
     return user;
   }
 
   async updateProfile(userId: string, data: { firstName?: string; lastName?: string; bio?: string; phone?: string; avatar?: string }) {
-    const profile = await this.prisma.userProfile.update({
+    const profile = await this.prisma.userProfile.upsert({
       where: { userId },
-      data: {
+      update: {
         ...(data.firstName !== undefined && { firstName: data.firstName }),
         ...(data.lastName !== undefined && { lastName: data.lastName }),
         ...(data.bio !== undefined && { bio: data.bio }),
         ...(data.phone !== undefined && { phone: data.phone }),
         ...(data.avatar !== undefined && { avatar: data.avatar }),
-      }
+      },
+      create: {
+        userId,
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        bio: data.bio || null,
+        phone: data.phone || null,
+        avatar: data.avatar || null,
+      },
     });
     return { success: true, data: profile };
   }

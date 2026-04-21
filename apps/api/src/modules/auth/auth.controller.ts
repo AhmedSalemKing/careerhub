@@ -45,9 +45,11 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Validation error or weak password' })
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async register(
-    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) registerDto: RegisterDto,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } })) registerDto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
   ) {
+    this.logger.log(`[Register] payload keys: ${Object.keys(registerDto).join(', ')}`);
+    this.logger.log(`[Register] accountType=${registerDto.accountType}, hasCV=${!!registerDto.cvUrl}, hasAvatar=${!!registerDto.avatar}`);
     try {
       const result = await this.authService.register(registerDto);
 
@@ -84,7 +86,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(
-    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) loginDto: LoginDto,
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } })) loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
   ) {
     this.logger.log(`[AUTH CONTROLLER] login called for: ${loginDto.email}`);

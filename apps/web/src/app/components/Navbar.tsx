@@ -426,12 +426,21 @@ export function Navbar() {
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                   >
-                    <div
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black"
-                      style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
-                    >
-                      {initials || 'A'}
-                    </div>
+                    {user?.profile?.avatar ? (
+                      <img
+                        src={user.profile.avatar}
+                        alt="avatar"
+                        className="h-7 w-7 rounded-full object-cover"
+                        style={{ boxShadow: '0 0 0 2px var(--error)' }}
+                      />
+                    ) : (
+                      <div
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black"
+                        style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
+                      >
+                        {initials || 'A'}
+                      </div>
+                    )}
                     <span
                       className="rounded-full px-2 py-0.5 text-[10px] font-black"
                       style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
