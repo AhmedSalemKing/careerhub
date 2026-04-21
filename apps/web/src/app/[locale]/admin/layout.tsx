@@ -52,14 +52,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const adminItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/admin` },
-    { icon: Users, label: 'Users', labelKey: 'users', href: `/${locale}/admin/users` },
-    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/admin/courses` },
-    { icon: CheckCircle, label: 'Approvals', labelKey: 'approvals', href: `/${locale}/admin/approvals` },
-    { icon: Calendar, label: 'Sessions', labelKey: 'sessions', href: `/${locale}/admin/sessions` },
-    { icon: TrendingUp, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/admin/revenue` },
-    { icon: Activity, label: 'Activity', labelKey: 'activity', href: `/${locale}/admin/activity` },
-    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/admin/site-settings` },
+    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/admin` },
+    { icon: Users, labelAr: 'المستخدمون', labelEn: 'Users', href: `/${locale}/admin/users` },
+    { icon: BookOpen, labelAr: 'الكورسات', labelEn: 'Courses', href: `/${locale}/admin/courses` },
+    { icon: CheckCircle, labelAr: 'الموافقات', labelEn: 'Approvals', href: `/${locale}/admin/approvals` },
+    { icon: Calendar, labelAr: 'الجلسات', labelEn: 'Sessions', href: `/${locale}/admin/sessions` },
+    { icon: TrendingUp, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/admin/revenue` },
+    { icon: Activity, labelAr: 'النشاط', labelEn: 'Activity', href: `/${locale}/admin/activity` },
+    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/admin/site-settings` },
   ]
 
   function handleLogout() {
@@ -77,8 +77,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {children}
       </main>
 
-      {/* Bottom Dock */}
-      <BottomDock items={adminItems} onLogout={handleLogout} />
+      {/* Top Dock for Admin */}
+      <BottomDock items={adminItems} onLogout={handleLogout} position="top" />
     </div>
   )
 }

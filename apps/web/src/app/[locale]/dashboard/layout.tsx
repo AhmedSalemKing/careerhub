@@ -14,35 +14,35 @@ import {
 
 function getStudentItems(locale: string) {
   return [
-    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
-    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/dashboard/my-courses` },
-    { icon: Brain, label: 'Assessment', labelKey: 'assessment', href: `/${locale}/dashboard/assessment` },
-    { icon: MessageSquare, label: 'AI Chat', labelKey: 'ai_chat', href: `/${locale}/dashboard/ai-chat` },
-    { icon: Users, label: 'Coaching', labelKey: 'coaching', href: `/${locale}/dashboard/my-sessions` },
-    { icon: Award, label: 'Certificates', labelKey: 'certificates', href: `/${locale}/dashboard/certificates` },
-    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
+    { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
+    { icon: Brain, labelAr: 'التقييم', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
+    { icon: MessageSquare, labelAr: 'المحادثة', labelEn: 'AI Chat', href: `/${locale}/dashboard/ai-chat` },
+    { icon: Users, labelAr: 'الكوتشنج', labelEn: 'Coaching', href: `/${locale}/dashboard/my-sessions` },
+    { icon: Award, labelAr: 'الشهادات', labelEn: 'Certificates', href: `/${locale}/dashboard/certificates` },
+    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
   ]
 }
 
 function getInstructorItems(locale: string) {
   return [
-    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
-    { icon: BookOpen, label: 'My Courses', labelKey: 'my_courses', href: `/${locale}/dashboard/my-courses` },
-    { icon: PlusCircle, label: 'New Course', labelKey: 'new_course', href: `/${locale}/dashboard/create-course` },
-    { icon: BarChart2, label: 'Analytics', labelKey: 'analytics', href: `/${locale}/dashboard/analytics` },
-    { icon: DollarSign, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/dashboard/revenue` },
-    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
+    { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'My Courses', href: `/${locale}/dashboard/my-courses` },
+    { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New Course', href: `/${locale}/dashboard/create-course` },
+    { icon: BarChart2, labelAr: 'التحليلات', labelEn: 'Analytics', href: `/${locale}/dashboard/analytics` },
+    { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
   ]
 }
 
 function getConsultantItems(locale: string) {
   return [
-    { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
-    { icon: Calendar, label: 'My Sessions', labelKey: 'my_sessions', href: `/${locale}/dashboard/my-sessions` },
-    { icon: Clock, label: 'Schedule', labelKey: 'schedule', href: `/${locale}/dashboard/schedule` },
-    { icon: DollarSign, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/dashboard/revenue` },
-    { icon: Star, label: 'Reviews', labelKey: 'reviews', href: `/${locale}/dashboard/reviews` },
-    { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
+    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
+    { icon: Calendar, labelAr: 'جلساتي', labelEn: 'My Sessions', href: `/${locale}/dashboard/my-sessions` },
+    { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+    { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+    { icon: Star, labelAr: 'التقييمات', labelEn: 'Reviews', href: `/${locale}/dashboard/reviews` },
+    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
   ]
 }
 
@@ -109,13 +109,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen dashboard-root" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       {/* Page content */}
       <main className="main-content">
-        <div className="page-content" style={{ paddingTop: '80px' }}>
+        <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
           {children}
         </div>
       </main>
 
       {/* Bottom Dock */}
-      <BottomDock items={dockItems} onLogout={handleLogout} />
+      <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
     </div>
   )
 }
