@@ -517,6 +517,9 @@
     "my_sessions": "My Sessions",
     "availability": "Availability",
     "reviews": "Reviews",
+    "ai_chat": "AI Chat",
+    "analytics": "Analytics",
+    "schedule": "Schedule",
     "theme_dark": "Dark",
     "theme_light": "Light",
     "logout": "Sign Out"

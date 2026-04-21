@@ -7,20 +7,19 @@ import { useAuthStore } from '../../../stores/authStore'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
 import {
-  LayoutDashboard, BookOpen, PlusCircle, Video, Users,
-  DollarSign, Settings, ClipboardList, Map, Users2,
-  Award, Bell, Calendar, Clock, Star, Sparkles,
+  LayoutDashboard, BookOpen, Brain, MessageSquare, Users,
+  Award, Settings, PlusCircle, BarChart2, DollarSign,
+  Calendar, Clock, Star,
 } from 'lucide-react'
 
 function getStudentItems(locale: string) {
   return [
     { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
-    { icon: ClipboardList, label: 'Assessment', labelKey: 'assessment', href: `/${locale}/dashboard/assessment` },
-    { icon: Map, label: 'Career Path', labelKey: 'career_path', href: `/${locale}/dashboard/career-path` },
-    { icon: Users2, label: 'Coaching', labelKey: 'coaching', href: `/${locale}/dashboard/coaching` },
-    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/dashboard/courses` },
+    { icon: BookOpen, label: 'Courses', labelKey: 'courses', href: `/${locale}/dashboard/my-courses` },
+    { icon: Brain, label: 'Assessment', labelKey: 'assessment', href: `/${locale}/dashboard/assessment` },
+    { icon: MessageSquare, label: 'AI Chat', labelKey: 'ai_chat', href: `/${locale}/dashboard/ai-chat` },
+    { icon: Users, label: 'Coaching', labelKey: 'coaching', href: `/${locale}/dashboard/my-sessions` },
     { icon: Award, label: 'Certificates', labelKey: 'certificates', href: `/${locale}/dashboard/certificates` },
-    { icon: Bell, label: 'Notifications', labelKey: 'notifications', href: `/${locale}/dashboard/notifications` },
     { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
   ]
 }
@@ -30,9 +29,8 @@ function getInstructorItems(locale: string) {
     { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
     { icon: BookOpen, label: 'My Courses', labelKey: 'my_courses', href: `/${locale}/dashboard/my-courses` },
     { icon: PlusCircle, label: 'New Course', labelKey: 'new_course', href: `/${locale}/dashboard/create-course` },
-    { icon: Video, label: 'Lectures', labelKey: 'lectures', href: `/${locale}/dashboard/lectures` },
-    { icon: Users, label: 'Students', labelKey: 'students', href: `/${locale}/dashboard/students` },
-    { icon: DollarSign, label: 'Earnings', labelKey: 'earnings', href: `/${locale}/dashboard/earnings` },
+    { icon: BarChart2, label: 'Analytics', labelKey: 'analytics', href: `/${locale}/dashboard/analytics` },
+    { icon: DollarSign, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/dashboard/revenue` },
     { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
   ]
 }
@@ -40,9 +38,9 @@ function getInstructorItems(locale: string) {
 function getConsultantItems(locale: string) {
   return [
     { icon: LayoutDashboard, label: 'Dashboard', labelKey: 'dashboard', href: `/${locale}/dashboard` },
-    { icon: Calendar, label: 'Sessions', labelKey: 'my_sessions', href: `/${locale}/dashboard/my-sessions` },
-    { icon: Clock, label: 'Availability', labelKey: 'availability', href: `/${locale}/dashboard/availability` },
-    { icon: DollarSign, label: 'Earnings', labelKey: 'earnings', href: `/${locale}/dashboard/earnings` },
+    { icon: Calendar, label: 'My Sessions', labelKey: 'my_sessions', href: `/${locale}/dashboard/my-sessions` },
+    { icon: Clock, label: 'Schedule', labelKey: 'schedule', href: `/${locale}/dashboard/schedule` },
+    { icon: DollarSign, label: 'Revenue', labelKey: 'revenue', href: `/${locale}/dashboard/revenue` },
     { icon: Star, label: 'Reviews', labelKey: 'reviews', href: `/${locale}/dashboard/reviews` },
     { icon: Settings, label: 'Settings', labelKey: 'settings', href: `/${locale}/dashboard/settings` },
   ]
