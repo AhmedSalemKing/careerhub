@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Search, X, BookOpen, User, ArrowLeft } from 'lucide-react'
 import { learnUrl } from '../../lib/constants'
+import { getMediaUrl } from '../../lib/media'
 
 interface SearchResult {
   courses: { id: string; title: string; titleAr?: string; thumbnail?: string; price: number }[]
@@ -251,7 +252,7 @@ export function SearchBar() {
                         }}>
                           {course.thumbnail ? (
                             <img
-                              src={`${API}${course.thumbnail}`}
+                              src={getMediaUrl(course.thumbnail) ?? ''}
                               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
                               alt=""

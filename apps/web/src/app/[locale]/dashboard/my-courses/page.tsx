@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { BookOpen, Users, PlusCircle, Edit3, Settings } from 'lucide-react'
 import { get } from '../../../../lib/api'
 import { AuthGate } from '../../../components/AuthGate'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
+import { getMediaUrl } from '../../../../lib/media'
 
 export default function MyCoursesPage() {
   const locale = useLocale()
@@ -99,7 +98,7 @@ function CourseCard({ course, locale }: { course: any; locale: string }) {
       <div className="relative h-44 bg-[color:var(--surface-2)] overflow-hidden">
         {course.thumbnail ? (
           <img
-            src={`${API_URL}${course.thumbnail}`}
+            src={getMediaUrl(course.thumbnail) ?? ''}
             className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
             alt={course.titleEn}
           />
