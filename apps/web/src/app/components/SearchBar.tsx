@@ -55,7 +55,7 @@ export function SearchBar() {
     setLoading(true)
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`${API}/api/courses/search?q=${encodeURIComponent(q)}`)
+        const res = await fetch(`${API}/courses/search?q=${encodeURIComponent(q)}`)
         const data = await res.json()
         setResults(data?.data ?? null)
       } catch { setResults(null) }

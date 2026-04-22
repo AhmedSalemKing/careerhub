@@ -51,7 +51,8 @@ api.interceptors.request.use((config) => {
   }
   
   // ✅ Debug: سجل كل طلب
-  console.log(`[API] ➡️ ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`)
+  const fullUrl = config.url?.startsWith('http') ? config.url : `${config.baseURL}/${config.url?.replace(/^\//, '')}`
+  console.log(`[API] ➡️ ${config.method?.toUpperCase()} ${fullUrl}`)
   
   return config
 })
