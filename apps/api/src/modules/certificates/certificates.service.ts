@@ -170,86 +170,109 @@ export class CertificatesService {
       console.error('[Certificate] loadImage failed:', e.message, 'path:', templatePath)
       throw e
     })
-    console.log(`[Certificate] Template loaded: ${template.width}x${template.height}`)
 
-    const W = template.width   // expected ~1900
-    const H = template.height  // expected ~1340
+    const W = template.width   // 4096
+    const H = template.height  // 2288
+    console.log(`[Certificate] Template loaded: ${W}x${H}`)
+
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
     ctx.drawImage(template, 0, 0)
 
-    // ── Cover placeholder areas (match template background colour) ──────
-    const bg = 'rgba(238, 240, 248, 0.97)'
-    const covers: [number, number, number, number][] = [
-      [W * 0.15, H * 0.38, W * 0.70, H * 0.12],  // recipient name
-      [W * 0.15, H * 0.54, W * 0.70, H * 0.10],  // course title
-      [W * 0.25, H * 0.63, W * 0.50, H * 0.06],  // date
-      [W * 0.20, H * 0.86, W * 0.60, H * 0.04],  // cert ID
-      [W * 0.04, H * 0.76, W * 0.28, H * 0.05],  // instructor name
-    ]
-    ctx.fillStyle = bg
-    for (const [x, y, w, h] of covers) ctx.fillRect(x, y, w, h)
+    // ── Sample exact background colours from the drawn template ──────────
+    // Lavender panel (center of template, between text lines)
+    const panelSample = ctx.getImageData(Math.floor(W * 0.50), Math.floor(H * 0.50), 1, 1).data
+    const panelColor = `rgb(${panelSample[0]},${panelSample[1]},${panelSample[2]})`
+    // White zone (below the panel)
+    const whiteSample = ctx.getImageData(Math.floor(W * 0.50), Math.floor(H * 0.74), 1, 1).data
+    const whiteColor = `rgb(${whiteSample[0]},${whiteSample[1]},${whiteSample[2]})`
+    // Near-white bottom (cert-id area)
+    const botSample = ctx.getImageData(Math.floor(W * 0.50), Math.floor(H * 0.85), 1, 1).data
+    const botColor = `rgb(${botSample[0]},${botSample[1]},${botSample[2]})`
+
+    console.log('[Certificate] panelColor:', panelColor, 'whiteColor:', whiteColor, 'botColor:', botColor)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    // ── Student Name (large italic Playfair) ────────────────────────────
-    const namePx = data.studentName.length > 24 ? Math.floor(W * 0.036) : Math.floor(W * 0.044)
+    // ── 1. COVER ALL CENTER PLACEHOLDER TEXT with solid lavender (full coverage) ─────────
+    ctx.fillStyle = panelColor
+    ctx.fillRect(W * 0.10, H * 0.35, W * 0.80, H * 0.50) // covers name, course, date area
+
+    // ── 2. Cover instructor name area (white zone left) ──────────────────
+    ctx.fillStyle = whiteColor
+    ctx.fillRect(W * 0.04, H * 0.750, W * 0.32, H * 0.055)
+
+    // ── 3. Cover certificate ID placeholder at bottom ────────────────────
+    ctx.fillStyle = botColor
+    ctx.fillRect(W * 0.15, H * 0.858, W * 0.70, H * 0.048)
+
+    // ── 4. Redraw static label text that belongs inside covered area ──────
+    ctx.fillStyle = '#4a5a72'
+    ctx.font = `${Math.floor(W * 0.011)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillText('has successfully completed the course:', W / 2, H * 0.510)
+
+    // ── 5. Student Name (large italic Playfair) ──────────────────────────
+    const namePx = data.studentName.length > 24 ? Math.floor(W * 0.034) : Math.floor(W * 0.042)
     ctx.font = `italic ${namePx}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1c2a44'
-    ctx.shadowColor = 'rgba(0,0,0,0.10)'
-    ctx.shadowBlur = 3
-    ctx.fillText(data.studentName, W / 2, H * 0.44)
+    ctx.shadowColor = 'rgba(0,0,0,0.12)'
+    ctx.shadowBlur = 6
+    ctx.fillText(data.studentName, W / 2, H * 0.43)
     ctx.shadowBlur = 0
 
-    // ── Course Title (bold Playfair, up to 2 lines) ─────────────────────
-    const titlePx = data.courseTitle.length > 35 ? Math.floor(W * 0.026) : Math.floor(W * 0.030)
+    // ── 6. Course Title (bold Playfair, up to 2 lines) ───────────────────
+    const titlePx = data.courseTitle.length > 35 ? Math.floor(W * 0.022) : Math.floor(W * 0.027)
     ctx.font = `bold ${titlePx}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1c2a44'
     const titleLines = this.splitToLines(ctx, data.courseTitle, W * 0.65)
     const titleLineH = titlePx * 1.45
-    const titleStartY = titleLines.length === 1 ? H * 0.584 : H * 0.570
-    titleLines.slice(0, 2).forEach((line, i) => ctx.fillText(line, W / 2, titleStartY + i * titleLineH))
+    if (titleLines.length === 1) {
+      ctx.fillText(titleLines[0], W / 2, H * 0.56)
+    } else {
+      ctx.fillText(titleLines[0], W / 2, H * 0.545)
+      ctx.fillText(titleLines[1] || '', W / 2, H * 0.545 + titleLineH)
+    }
 
-    // ── Issue Date (Cormorant Garamond) ─────────────────────────────────
-    ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
+    // ── 7. Issue Date ────────────────────────────────────────────────────
+    ctx.font = `${Math.floor(W * 0.012)}px "Cormorant Garamond", Georgia, serif`
     ctx.fillStyle = '#4a5568'
-    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.665)
+    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.62)
 
-    // ── Instructor Name (left column) ───────────────────────────────────
-    ctx.font = `${Math.floor(W * 0.014)}px "Cormorant Garamond", Georgia, serif`
+    // ── 8. Instructor Name (left column, below signature line) ───────────
+    ctx.font = `${Math.floor(W * 0.011)}px "Cormorant Garamond", Georgia, serif`
     ctx.fillStyle = '#2d3748'
-    ctx.fillText(data.instructorName, W * 0.22, H * 0.785)
+    ctx.fillText(data.instructorName, W * 0.22, H * 0.782)
 
-    // ── Certificate ID (monospace, small) ───────────────────────────────
-    ctx.font = `${Math.floor(W * 0.011)}px "Courier New", monospace`
+    // ── 9. Certificate ID ────────────────────────────────────────────────
+    ctx.font = `${Math.floor(W * 0.0085)}px "Courier New", monospace`
     ctx.fillStyle = '#6b7280'
-    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.883)
+    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.882)
 
-    // ── Instructor Signature image (optional) ───────────────────────────
+    // ── 10. Instructor Signature image (optional) ────────────────────────
     if (data.instructorSignatureUrl) {
       try {
         const sig = await loadImage(data.instructorSignatureUrl)
-        ctx.drawImage(sig, W * 0.08, H * 0.730, W * 0.16, H * 0.055)
+        ctx.drawImage(sig, W * 0.08, H * 0.725, W * 0.16, H * 0.05)
       } catch {
         console.warn('[Certificate] Instructor signature load failed')
       }
     }
 
-    // ── QR Code (bottom-right, transparent background) ──────────────────
+    // ── 11. QR Code (bottom-right) ───────────────────────────────────────
     const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
     try {
       const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 150,
+        width: 200,
         margin: 1,
-        color: { dark: '#1c2a44', light: 'rgba(255,255,255,0)' },
+        color: { dark: '#1c2a44', light: '#ffffff' },
       })
       const qrImage = await loadImage(qrDataUrl)
-      const qrSize = W * 0.09
-      ctx.drawImage(qrImage, W * 0.857, H * 0.72, qrSize, qrSize)
-      ctx.font = `${Math.floor(W * 0.009)}px Arial, sans-serif`
+      const qrSize = W * 0.085
+      ctx.drawImage(qrImage, W * 0.858, H * 0.72, qrSize, qrSize)
+      ctx.font = `${Math.floor(W * 0.008)}px Arial, sans-serif`
       ctx.fillStyle = '#6b7280'
-      ctx.fillText('Scan to verify', W * 0.9, H * 0.825)
+      ctx.fillText('Scan to verify', W * 0.9, H * 0.823)
     } catch (e: any) {
       console.error('[Certificate] QR failed:', e.message)
     }
