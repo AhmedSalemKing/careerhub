@@ -12,6 +12,8 @@ import {
   User,
   BookOpen,
   Shield,
+  FileText,
+  Share2,
 } from 'lucide-react'
 
 interface VerifyResult {
@@ -30,6 +32,7 @@ export default function CertificateVerifyPage() {
   const [cert, setCert] = useState<VerifyResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     const verify = async () => {
@@ -51,6 +54,46 @@ export default function CertificateVerifyPage() {
     }
     if (verifyCode) verify()
   }, [verifyCode])
+
+  const downloadAsPNG = async (url: string) => {
+    setDownloading(true)
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `certificate-${verifyCode}.png`
+      link.click()
+      URL.revokeObjectURL(link.href)
+    } catch {
+      window.open(url, '_blank')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  const downloadAsPDF = (url: string) => {
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(
+      '<html><head><title>Certificate</title>' +
+      '<style>* { margin: 0; padding: 0; box-sizing: border-box; } body { background: white; } ' +
+      'img { width: 100%; height: auto; display: block; } ' +
+      '@media print { body { margin: 0; } img { width: 100vw; } }</style></head>' +
+      `<body><img src="${url}" onload="window.print()" /></body></html>`
+    )
+    win.document.close()
+  }
+
+  const shareLink = () => {
+    const url = window.location.href
+    if (navigator.share) {
+      navigator.share({ title: 'شهادة DeveWay', url })
+    } else {
+      navigator.clipboard?.writeText(url)
+      alert('تم نسخ الرابط')
+    }
+  }
 
   if (loading) {
     return (
@@ -241,13 +284,14 @@ export default function CertificateVerifyPage() {
             </div>
 
             {/* Actions */}
-            <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {cert.certificateUrl && (
-                <a
-                  href={cert.certificateUrl}
-                  download={`certificate-${cert.verifyCode}.png`}
+                <button
+                  onClick={() => downloadAsPNG(cert.certificateUrl)}
+                  disabled={downloading}
                   style={{
                     flex: 1,
+                    minWidth: 160,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -256,14 +300,59 @@ export default function CertificateVerifyPage() {
                     background: '#5120c8',
                     color: '#fff',
                     borderRadius: '14px',
-                    textDecoration: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    opacity: downloading ? 0.7 : 1,
+                  }}
+                >
+                  <Download size={18} />
+                  {downloading ? 'جاري التحميل...' : 'تحميل PNG'}
+                </button>
+              )}
+              {cert.certificateUrl && (
+                <button
+                  onClick={() => downloadAsPDF(cert.certificateUrl)}
+                  style={{
+                    flex: 1,
+                    minWidth: 160,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '14px',
+                    background: '#dc2626',
+                    color: '#fff',
+                    borderRadius: '14px',
+                    border: 'none',
+                    cursor: 'pointer',
                     fontSize: '15px',
                     fontWeight: '700',
                   }}
                 >
-                  <Download size={18} /> تحميل الشهادة
-                </a>
+                  <FileText size={18} /> طباعة / PDF
+                </button>
               )}
+              <button
+                onClick={shareLink}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '14px 20px',
+                  background: 'transparent',
+                  color: '#fff',
+                  borderRadius: '14px',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: '600',
+                }}
+              >
+                <Share2 size={18} />
+              </button>
               {cert.certificateUrl && (
                 <a
                   href={cert.certificateUrl}

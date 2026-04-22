@@ -224,7 +224,7 @@ export default function ApprovalsPage() {
                     {u.cvUrl && u.cvUrl.startsWith('http') && (
                       <>
                         <a
-                          href={`https://docs.google.com/viewer?url=${encodeURIComponent(u.cvUrl)}&embedded=true`}
+                          href={`https://docs.google.com/viewer?url=${encodeURIComponent(u.cvUrl)}&embedded=false`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
@@ -232,16 +232,29 @@ export default function ApprovalsPage() {
                           <Eye className="h-4 w-4" />
                           {isAr ? 'عرض السيرة الذاتية' : 'View CV'}
                         </a>
-                        <a
-                          href={u.cvUrl}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
+                        <button
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(u.cvUrl)
+                              const blob = await res.blob()
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              const name = `${u.profile?.firstName || ''}-${u.profile?.lastName || ''}`.replace(/\s+/g, '-')
+                              a.download = `CV-${name}.pdf`
+                              document.body.appendChild(a)
+                              a.click()
+                              document.body.removeChild(a)
+                              URL.revokeObjectURL(url)
+                            } catch {
+                              window.open(u.cvUrl, '_blank')
+                            }
+                          }}
+                          className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground cursor-pointer"
                         >
                           <Download className="h-4 w-4" />
-                          {isAr ? 'تحميل' : 'Download'}
-                        </a>
+                          {isAr ? 'تحميل PDF' : 'Download PDF'}
+                        </button>
                       </>
                     )}
                     {u.cvUrl && !u.cvUrl.startsWith('http') && (

@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Loader2, Gift, ShoppingCart, PlayCircle, Image, File, ExternalLink,
   ZoomIn, Eye, FileDown, Volume2, VolumeX,
-  Pause, SkipForward, SkipBack
+  Pause, SkipForward, SkipBack, GraduationCap, Target, Star, Zap
 } from 'lucide-react'
 import VideoProtection from '../../../../components/VideoProtection'
 
@@ -351,13 +351,33 @@ function LearnPageInner() {
 
   const handleGetCertificate = async () => {
     try {
-      const res = await post(`/certificates/generate/${courseId}`, {})
-      const certUrl = (res?.data as any)?.data?.pdfUrl
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
-      if (certUrl) window.open(`${API_BASE}${certUrl}`, '_blank')
-      else router.push(`/${locale}/dashboard/certificates`)
-    } catch {
-      router.push(`/${locale}/dashboard/certificates`)
+      const token = localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token')
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+
+      const res = await fetch(`${apiUrl}/certificates/generate/${courseId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({})
+      })
+      const data = await res.json()
+      const cert = data?.data
+
+      if (cert?.serialNumber || cert?.verifyCode) {
+        const code = cert.serialNumber || cert.verifyCode
+        router.push(`/${locale}/certificate/${code}`)
+      } else if (cert?.certificateUrl || cert?.pdfUrl) {
+        window.open(cert.certificateUrl || cert.pdfUrl, '_blank')
+      } else {
+        const mainUrl = process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'
+        window.location.href = `${mainUrl}/${locale}/dashboard/certificates`
+      }
+    } catch(e) {
+      console.error('[Certificate] Error:', e)
+      const mainUrl = process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'
+      window.location.href = `${mainUrl}/${locale}/dashboard/certificates`
     }
   }
 
@@ -389,29 +409,68 @@ function LearnPageInner() {
     : imageUrl
   const hasMultipleTypes = [hasVideo, hasFile, hasImage].filter(Boolean).length > 1
 
-  // Colors
+  // Colors - ✅ Professional Educational Platform Design
   const isDark = theme === 'dark'
-  const bg = isDark ? '#0f1221' : '#ffffff'
-  const sidebarBg = isDark ? '#0d1024' : '#f8f8fa'
-  const headerBg = isDark ? '#0a0e1a' : '#f1f0fb'
-  const textPrimary = isDark ? '#ffffff' : '#0d0d0d'
+  const bg = isDark ? '#0a0a0f' : '#fafbfc'
+  const sidebarBg = isDark ? '#12131a' : '#ffffff'
+  const headerBg = isDark ? '#0d0e14' : '#f8f9fc'
+  const textPrimary = isDark ? '#f1f5f9' : '#1e293b'
   const textSecondary = isDark ? '#94a3b8' : '#64748b'
-  const borderColor = isDark ? '#1e293b' : '#e5e7eb'
-  const cardBg = isDark ? '#181c30' : '#f1f5f9'
-  const purple = '#6c3ce0'
+  const borderColor = isDark ? '#1f2937' : '#e2e8f0'
+  const cardBg = isDark ? '#181a24' : '#ffffff'
+  const purple = '#7c3aed'
   const teal = '#0d9488'
-  const green = '#16a34a'
+  const green = '#10b981'
   const redColor = '#ef4444'
   const blueColor = '#3b82f6'
-  const purpleColor = '#a855f7'
+  const purpleColor = '#8b5cf6'
+  const amberColor = '#f59e0b'
 
   if (!authChecked || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: bg }}>
         <div className="text-center">
-          <div className="h-12 w-12 mx-auto mb-4 animate-spin rounded-full border-4" style={{ borderColor: `${purple} ${purple}30 ${purple}30 ${purple}30` }} />
-          <p className="text-sm font-medium" style={{ color: textSecondary }}>جاري تحميل المحتوى...</p>
+          {/* Modern Loading Animation */}
+          <div className="relative mb-8">
+            <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center" style={{ 
+              background: `linear-gradient(135deg, ${purple}20, ${purpleColor}20)`,
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}>
+              <GraduationCap className="h-8 w-8 animate-pulse" style={{ color: purple }} />
+            </div>
+            <div className="absolute inset-0 h-16 w-16 mx-auto rounded-2xl animate-ping opacity-20" style={{ background: purple }} />
+          </div>
+          
+          <h3 className="text-lg font-semibold mb-2" style={{ color: textPrimary }}>
+            جاري تحميل المحتوى...
+          </h3>
+          <p className="text-sm max-w-xs mx-auto" style={{ color: textSecondary }}>
+            نُعدّ تجربة تعليمية مميزة لك
+          </p>
+          
+          {/* Progress dots */}
+          <div className="flex justify-center gap-2 mt-6">
+            {[0, 1, 2].map(i => (
+              <div 
+                key={i}
+                className="h-2 rounded-full animate-pulse"
+                style={{ 
+                  width: i === 1 ? '32px' : '8px',
+                  background: i === 1 ? purple : borderColor,
+                  transition: 'all 0.3s ease',
+                  animationDelay: `${i * 0.15}s`
+                }}
+              />
+            ))}
+          </div>
         </div>
+        
+        <style jsx>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+          }
+        `}</style>
       </div>
     )
   }
@@ -419,15 +478,56 @@ function LearnPageInner() {
   if (!isEnrolled && enrollment === null) {
     return (
       <div className="flex min-h-screen items-center justify-center p-6" dir="rtl" style={{ background: bg }}>
-        <div className="text-center max-w-md">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full" style={{ background: `${purple}12` }}>
-            <Lock className="h-10 w-10" style={{ color: purple }} />
+        <div className="text-center max-w-lg">
+          {/* Premium Lock Icon */}
+          <div className="relative mx-auto mb-8">
+            <div className="h-28 w-28 rounded-3xl flex items-center justify-center mx-auto relative overflow-hidden" style={{
+              background: `linear-gradient(135deg, ${purple}15, ${purpleColor}10)`
+            }}>
+              <Lock className="h-14 w-14 relative z-10" style={{ color: purple }} />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full animate-bounce" style={{ background: `${amberColor}30`, animationDelay: '0.5s' }} />
+            <div className="absolute -bottom-1 -left-1 h-6 w-6 rounded-full animate-bounce" style={{ background: `${teal}30`, animationDelay: '1s' }} />
           </div>
-          <h2 className="text-2xl font-bold font-madinet mb-3" style={{ color: textPrimary }}>الكورس مقيّد</h2>
-          <p className="mb-8 text-sm leading-relaxed" style={{ color: textSecondary }}>يجب الاشتراك في هذا الكورس للوصول إلى المحتوى</p>
-          <a href={`${MAIN_URL}/${locale}/checkout/${courseId}`} className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 font-bold text-white transition-all hover:scale-105" style={{ background: `linear-gradient(135deg, ${purple}, #5b21b6)` }}>
-            <ShoppingCart className="h-5 w-5" /> اشترك الآن <ArrowLeft className="h-5 w-5" />
+
+          <h2 className="text-3xl font-bold mb-4 tracking-tight" style={{ color: textPrimary }}>
+            الكورس مقيّد
+          </h2>
+          <p className="mb-8 text-base leading-relaxed max-w-md mx-auto" style={{ color: textSecondary }}>
+            يجب الاشتراك في هذا الكورس للوصول إلى المحتوى التعليمي المميز
+          </p>
+
+          {/* CTA Button with gradient */}
+          <a 
+            href={`${MAIN_URL}/${locale}/checkout/${courseId}`}
+            className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+            style={{ 
+              background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
+              boxShadow: `0 10px 40px ${purple}40`
+            }}
+          >
+            <ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-110" /> 
+            <span>اشترك الآن</span>
+            <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
           </a>
+
+          {/* Trust badges */}
+          <div className="mt-8 flex justify-center gap-6 text-xs" style={{ color: textSecondary }}>
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" style={{ color: green }} />
+              <span>دفع آمن</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" style={{ color: blueColor }} />
+              <span>وصول فوري</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Award className="h-4 w-4" style={{ color: amberColor }} />
+              <span>شهادة معتمدة</span>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -436,39 +536,125 @@ function LearnPageInner() {
   return (
     <div className="flex min-h-screen flex-col" dir="rtl" style={{ background: bg }}>
       
-      {/* Header */}
-      <header className="shrink-0 px-4 py-3" style={{ background: headerBg, borderBottom: `1px solid ${borderColor}` }}>
-        <div className="flex items-center gap-4 max-w-screen-xl mx-auto">
-          <a href={`/${locale}/courses/${courseId}`} className="flex items-center gap-1.5 text-sm shrink-0 transition-opacity hover:opacity-70" style={{ color: textSecondary }}>
-            <ArrowRight className="h-4 w-4" /><span className="hidden sm:inline">العودة للكورس</span>
-          </a>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-medium truncate flex items-center gap-2" style={{ color: textPrimary }}>
-                <BookOpen className="h-4 w-4" style={{ color: purple }} />
-                {course?.titleAr || course?.titleEn || course?.title}
-              </span>
-              <span className="shrink-0 mr-3 flex items-center gap-2" style={{ color: textSecondary }}>
-                <TrendingUp className="h-4 w-4" style={{ color: teal }} />
-                <span className="font-bold" style={{ color: purple }}>{progress}%</span>
-                <span>مكتمل</span>
-                <span className="mx-2">·</span>
-                <CheckCircle2 className="h-4 w-4" style={{ color: green }} />
-                <span>{completedCount}/{totalLessons}</span>
-              </span>
-            </div>
+      {/* ✨ Premium Header */}
+      <header 
+        className="shrink-0 sticky top-0 z-50 backdrop-blur-xl"
+        style={{ 
+          background: isDark ? 'rgba(13, 14, 20, 0.85)' : 'rgba(248, 249, 252, 0.9)',
+          borderBottom: `1px solid ${borderColor}`,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+        }}
+      >
+        <div className="px-4 lg:px-8 py-4">
+          <div className="flex items-center gap-6 max-w-screen-2xl mx-auto">
             
-            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: borderColor }}>
-              <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${purple}, ${teal})` }}>
-                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            {/* Back button */}
+            <a 
+              href={`/${locale}/courses/${courseId}`}
+              className="hidden sm:flex items-center gap-2 text-sm font-medium shrink-0 transition-all duration-200 hover:opacity-70 group px-3 py-2 rounded-xl hover:bg-black/5"
+              style={{ color: textSecondary }}
+            >
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+              <span>العودة للكورس</span>
+            </a>
+
+            {/* Course Info & Progress */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-4 mb-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ 
+                    background: `linear-gradient(135deg, ${purple}15, ${purpleColor}15)` 
+                  }}>
+                    <BookOpen className="h-4.5 w-4.5" style={{ color: purple }} />
+                  </div>
+                  <h2 className="font-semibold truncate text-sm lg:text-base" style={{ color: textPrimary }}>
+                    {course?.titleAr || course?.titleEn || course?.title}
+                  </h2>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ 
+                    background: `${green}10`,
+                    border: `1px solid ${green}20`
+                  }}>
+                    <TrendingUp className="h-4 w-4" style={{ color: green }} />
+                    <span className="text-sm font-bold" style={{ color: green }}>{progress}%</span>
+                    <span className="text-xs" style={{ color: textSecondary }}>مكتمل</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ 
+                    background: `${purple}10`,
+                    border: `1px solid ${purple}20`
+                  }}>
+                    <CheckCircle2 className="h-4 w-4" style={{ color: purple }} />
+                    <span className="text-sm font-semibold" style={{ color: textPrimary }}>{completedCount}/{totalLessons}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Elegant Progress Bar */}
+              <div className="relative h-2 rounded-full overflow-hidden" style={{ background: borderColor }}>
+                <div 
+                  className="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
+                  style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${purple}, ${purpleColor})` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+                </div>
+                
+                {/* Glow effect at the end */}
+                {progress > 0 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full blur-md transition-all duration-700"
+                    style={{ 
+                      left: `calc(${progress}% - 8px)`,
+                      background: purple,
+                      opacity: 0.4
+                    }}
+                  />
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button className="p-2 rounded-lg transition-colors hover:bg-purple-10" style={{ color: textSecondary }}><FileText className="h-5 w-5" /></button>
-            <button className="p-2 rounded-lg transition-colors hover:bg-purple-10" style={{ color: textSecondary }}><Settings className="h-5 w-5" /></button>
+            {/* Actions */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button 
+                className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+                style={{ 
+                  color: textSecondary,
+                  background: 'transparent',
+                  border: `1px solid transparent`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `${purple}10`
+                  e.currentTarget.style.borderColor = `${purple}20`
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = 'transparent'
+                }}
+              >
+                <FileText className="h-5 w-5" />
+              </button>
+              <button 
+                className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+                style={{ 
+                  color: textSecondary,
+                  background: 'transparent',
+                  border: `1px solid transparent`
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `${purple}10`
+                  e.currentTarget.style.borderColor = `${purple}20`
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = 'transparent'
+                }}
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -476,21 +662,51 @@ function LearnPageInner() {
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Sidebar */}
-        <aside className="w-full lg:w-[30%] xl:w-72 shrink-0 overflow-y-auto lg:h-[calc(100vh-58px)] lg:sticky lg:top-[58px]" style={{ background: sidebarBg, borderLeft: `1px solid ${borderColor}` }}>
-          {/* Sidebar header + mini progress */}
-          <div className="px-4 py-3 sticky top-0 z-10" style={{ background: sidebarBg, borderBottom: `1px solid ${borderColor}` }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold" style={{ color: textSecondary }}>محتوى الكورس</span>
-              <span className="text-xs font-bold" style={{ color: purple }}>{progress}% مكتمل</span>
+        {/* ✨ Modern Sidebar */}
+        <aside 
+          className="w-full lg:w-[340px] xl:w-[380px] shrink-0 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky lg:top-[88px]"
+          style={{ 
+            background: sidebarBg,
+            borderLeft: `1px solid ${borderColor}`,
+            boxShadow: isDark ? '-2px 0 12px rgba(0,0,0,0.2)' : '-2px 0 12px rgba(0,0,0,0.03)'
+          }}
+        >
+          {/* Sidebar Header */}
+          <div className="px-5 py-5 sticky top-0 z-10" style={{ 
+            background: sidebarBg,
+            borderBottom: `1px solid ${borderColor}`
+          }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: purple }} />
+                <span className="text-sm font-bold tracking-wide" style={{ color: textPrimary }}>محتوى الكورس</span>
+              </div>
+              <div className="px-3 py-1 rounded-lg text-xs font-bold" style={{ 
+                background: `linear-gradient(135deg, ${purple}, ${purpleColor})`,
+                color: 'white'
+              }}>
+                {progress}%
+              </div>
             </div>
-            <div style={{ height: 4, background: borderColor, borderRadius: 2 }}>
-              <div style={{ height: '100%', borderRadius: 2, width: `${progress}%`, background: `linear-gradient(90deg, ${purple}, ${teal})`, transition: 'width 0.5s ease' }} />
+            
+            {/* Mini Progress */}
+            <div className="relative h-1.5 rounded-full overflow-hidden mb-3" style={{ background: borderColor }}>
+              <div 
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ 
+                  width: `${progress}%`, 
+                  background: `linear-gradient(90deg, ${purple}, ${purpleColor})` 
+                }}
+              />
             </div>
-            <p className="text-xs mt-1" style={{ color: textSecondary }}>{completedCount} من {totalLessons} درس</p>
+            
+            <p className="text-xs font-medium" style={{ color: textSecondary }}>
+              <span style={{ color: purple }}>{completedCount}</span> من <span>{totalLessons}</span> درس مكتمل
+            </p>
           </div>
 
-          <div className="p-2">
+          {/* Lessons List */}
+          <div className="px-3 pb-4 space-y-1">
             {allLessonsFlat.map((lesson: any, idx: number) => {
               const status = getLessonStatus(lesson.id)
               const isActive = activeLessonId === lesson.id
@@ -502,77 +718,200 @@ function LearnPageInner() {
                   key={lesson.id}
                   onClick={() => status !== 'locked' && setActiveLessonId(lesson.id)}
                   disabled={status === 'locked'}
+                  className={`
+                    group relative w-full text-right transition-all duration-200
+                    ${status === 'locked' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.01]'}
+                  `}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px', borderRadius: 10,
-                    width: '100%', textAlign: 'right', border: 'none',
-                    cursor: status === 'locked' ? 'not-allowed' : 'pointer',
-                    background: isActive ? `${purple}15` : 'transparent',
-                    opacity: status === 'locked' ? 0.5 : 1,
-                    transition: 'all 0.15s ease',
-                    borderLeft: isActive ? `3px solid ${purple}` : '3px solid transparent',
-                    marginBottom: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    border: 'none',
+                    background: isActive 
+                      ? `linear-gradient(135deg, ${purple}08, ${purpleColor}05)` 
+                      : 'transparent',
+                    borderRight: isActive ? `3px solid ${purple}` : '3px solid transparent',
+                    marginBottom: '4px',
+                    boxShadow: isActive ? `0 4px 20px ${purple}15` : 'none'
                   }}
                 >
-                  {/* Status Icon */}
-                  <div style={{
-                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: status === 'completed' ? green
-                      : status === 'available' ? purple
-                      : 'rgba(107,114,128,0.25)',
-                  }}>
-                    {status === 'completed' && <CheckCircle2 size={15} color="#fff" />}
-                    {status === 'available' && <PlayCircle size={15} color="#fff" />}
-                    {status === 'locked' && <Lock size={13} color="#9ca3af" />}
+                  {/* Status Indicator */}
+                  <div 
+                    className="relative flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '12px',
+                      background: status === 'completed' 
+                        ? `linear-gradient(135deg, ${green}, #059669)` 
+                        : status === 'available' 
+                          ? `linear-gradient(135deg, ${purple}, ${purpleColor})`
+                          : borderColor
+                    }}
+                  >
+                    {status === 'completed' && (
+                      <>
+                        <CheckCircle2 size={17} color="#fff" strokeWidth={2.5} />
+                        <div className="absolute inset-0 rounded-xl animate-ping opacity-20" style={{ background: green }} />
+                      </>
+                    )}
+                    {status === 'available' && <Play size={16} color="#fff" fill="#fff" />}
+                    {status === 'locked' && <Lock size={14} color={isDark ? '#6b7280' : '#9ca3af'} />}
                   </div>
 
-                  {/* Lesson info */}
-                  <div style={{ flex: 1, textAlign: 'right', minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 13, fontWeight: isActive ? 600 : 400,
-                      color: isActive ? purple : status === 'locked' ? textSecondary : textPrimary,
-                      lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {lesson.title || lesson.titleAr}
+                  {/* Lesson Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 
+                        className="text-[13px] font-semibold truncate leading-tight"
+                        style={{ 
+                          color: isActive ? purple : status === 'locked' ? textSecondary : textPrimary 
+                        }}
+                      >
+                        {lesson.title || lesson.titleAr}
+                      </h3>
                     </div>
-                    <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>
-                      {lessonType}{lesson.duration ? ` • ${lesson.duration} د` : ''}
-                      {lesson.isFree && <span style={{ marginRight: 4, color: teal }}>· مجاني</span>}
+                    
+                    <div className="flex items-center gap-2 text-[11px]" style={{ color: textSecondary }}>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium" style={{
+                        background: lessonMediaType === 'video' ? `${redColor}10` :
+                                  lessonMediaType === 'file' ? `${blueColor}10` :
+                                  lessonMediaType === 'image' ? `${purpleColor}10` : `${borderColor}`,
+                        color: lessonMediaType === 'video' ? redColor :
+                               lessonMediaType === 'file' ? blueColor :
+                               lessonMediaType === 'image' ? purpleColor : textSecondary
+                      }}>
+                        {lessonType === 'فيديو' && <Video size={10} />}
+                        {lessonType === 'ملف' && <FileText size={10} />}
+                        {lessonType === 'صورة' && <Image size={10} />}
+                        {lessonType}
+                      </span>
+                      
+                      {lesson.duration && (
+                        <span className="flex items-center gap-1">
+                          <Clock size={10} />
+                          {lesson.duration} د
+                        </span>
+                      )}
+                      
+                      {lesson.isFree && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium" style={{
+                          background: `${teal}10`,
+                          color: teal
+                        }}>
+                          <Gift size={10} />
+                          مجاني
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Lesson number */}
-                  <span style={{ fontSize: 11, color: textSecondary, flexShrink: 0 }}>{idx + 1}</span>
+                  {/* Lesson Number Badge */}
+                  <div 
+                    className="flex items-center justify-center shrink-0 text-xs font-bold"
+                    style={{
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '8px',
+                      background: isActive ? purple : `${borderColor}`,
+                      color: isActive ? '#fff' : textSecondary
+                    }}
+                  >
+                    {idx + 1}
+                  </div>
+
+                  {/* Active indicator glow */}
+                  {isActive && (
+                    <div 
+                      className="absolute inset-0 rounded-[14px] pointer-events-none"
+                      style={{
+                        background: `linear-gradient(135deg, ${purple}05, transparent)`,
+                        boxShadow: `inset 0 0 20px ${purple}08`
+                      }}
+                    />
+                  )}
                 </button>
               )
             })}
           </div>
         </aside>
 
-        {/* Main Content */}
+        {/* Main Content Area */}
         <main className="flex-1 overflow-auto flex flex-col">
           {activeLessonId && activeLesson ? (
             <>
-              {/* Media Viewer */}
-              <div className="bg-black w-full relative" style={{ minHeight: '400px', maxHeight: '70vh' }}>
+              {/* Media Viewer Container */}
+              <div className="bg-black w-full relative" style={{ minHeight: '450px', maxHeight: '72vh' }}>
                 
-                {/* Mode Tabs */}
+                {/* Mode Tabs - Modern Design */}
                 {hasMultipleTypes && (
-                  <div className="absolute top-0 left-0 right-0 z-20 flex gap-1 p-3" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)' }}>
-                    {hasVideo && (<button onClick={() => setViewerMode('video')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${viewerMode === 'video' ? 'bg-red-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10'}`}><Video className="h-4 w-4" /> فيديو</button>)}
-                    {hasFile && (<button onClick={() => setViewerMode('file')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${viewerMode === 'file' ? 'bg-blue-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10'}`}><FileText className="h-4 w-4" /> ملف PDF</button>)}
-                    {hasImage && (<button onClick={() => setViewerMode('image')} className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${viewerMode === 'image' ? 'bg-purple-500 text-white shadow-lg' : 'text-white/80 hover:text-white hover:bg-white/10'}`}><Image className="h-4 w-4" /> صورة</button>)}
+                  <div 
+                    className="absolute top-0 left-0 right-0 z-20 flex gap-2 p-4"
+                    style={{ 
+                      background: 'linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent)',
+                      backdropFilter: 'blur(8px)'
+                    }}
+                  >
+                    <div className="flex gap-1.5 ml-auto bg-black/30 p-1 rounded-xl backdrop-blur-sm">
+                      {hasVideo && (
+                        <button 
+                          onClick={() => setViewerMode('video')}
+                          className={`
+                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
+                            ${viewerMode === 'video' 
+                              ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105' 
+                              : 'text-white/70 hover:text-white hover:bg-white/10'}
+                          `}
+                        >
+                          <Video className="h-4 w-4" />
+                          <span>فيديو</span>
+                        </button>
+                      )}
+                      {hasFile && (
+                        <button 
+                          onClick={() => setViewerMode('file')}
+                          className={`
+                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
+                            ${viewerMode === 'file' 
+                              ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105' 
+                              : 'text-white/70 hover:text-white hover:bg-white/10'}
+                          `}
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span>ملف PDF</span>
+                        </button>
+                      )}
+                      {hasImage && (
+                        <button 
+                          onClick={() => setViewerMode('image')}
+                          className={`
+                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
+                            ${viewerMode === 'image' 
+                              ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30 scale-105' 
+                              : 'text-white/70 hover:text-white hover:bg-white/10'}
+                          `}
+                        >
+                          <Image className="h-4 w-4" />
+                          <span>صورة</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 
-                {/* VIDEO PLAYER */}
+                {/* VIDEO PLAYER - Enhanced */}
                 {(viewerMode === 'video' || viewerMode === 'all') && hasVideo && videoUrl && (
-                  <div>
-                    {/* 16:9 video wrapper */}
+                  <div className="relative">
+                    {/* Video Container with Aspect Ratio */}
                     <div
-                      className="video-container"
-                      style={{ position: 'relative', paddingTop: '56.25%', background: '#000', borderRadius: 0, overflow: 'hidden' }}
+                      className="video-container relative overflow-hidden"
+                      style={{ 
+                        paddingTop: '56.25%', 
+                        background: '#000',
+                        borderRadius: 0 
+                      }}
                       onTouchEnd={handleVideoTap}
                     >
                       <video
@@ -580,7 +919,7 @@ function LearnPageInner() {
                         key={videoUrl}
                         src={videoUrl}
                         controls
-                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                        className="absolute top-0 left-0 w-full h-full object-contain"
                         controlsList="nodownload"
                         disablePictureInPicture
                         playsInline
@@ -589,113 +928,245 @@ function LearnPageInner() {
                         onWaiting={() => setIsLoadingMedia(true)}
                         onError={() => { setIsLoadingMedia(false); setVideoError('فشل تحميل الفيديو') }}
                         onEnded={() => { if (!isCurrentCompleted) handleMarkComplete() }}
+                        style={{
+                          filter: isLoadingMedia ? 'brightness(0.7)' : 'brightness(1)',
+                          transition: 'filter 0.3s ease'
+                        }}
                       />
 
-                      {/* Loading spinner */}
+                      {/* Modern Loading Overlay */}
                       {isLoadingMedia && (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 10, pointerEvents: 'none' }}>
-                          <Loader2 className="h-10 w-10 animate-spin text-white" />
-                        </div>
-                      )}
-
-                      {/* Error overlay */}
-                      {videoError && (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', zIndex: 10 }}>
-                          <div className="text-center p-6">
-                            <Video className="h-10 w-10 text-red-400 mx-auto mb-3" />
-                            <p className="text-white text-sm mb-3">{videoError}</p>
-                            <button onClick={() => { setVideoError(null); videoRef.current?.load() }} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm">إعادة المحاولة</button>
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
+                          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+                        >
+                          <div className="relative">
+                            <Loader2 className="h-14 w-14 animate-spin text-white" strokeWidth={2} />
+                            <div className="absolute inset-0 h-14 w-14 rounded-full animate-ping opacity-20 bg-white" />
                           </div>
                         </div>
                       )}
 
-                      {/* Double-tap seek feedback */}
+                      {/* Error State */}
+                      {videoError && (
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center z-10"
+                          style={{ background: 'rgba(0,0,0,0.95)' }}
+                        >
+                          <div className="text-center p-8 max-w-sm">
+                            <div className="h-16 w-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: `${redColor}20` }}>
+                              <Video className="h-8 w-8" style={{ color: redColor }} />
+                            </div>
+                            <h3 className="text-white font-bold text-lg mb-2">خطأ في التشغيل</h3>
+                            <p className="text-white/60 text-sm mb-6">{videoError}</p>
+                            <button 
+                              onClick={() => { setVideoError(null); videoRef.current?.load() }}
+                              className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-all hover:scale-105"
+                            >
+                              إعادة المحاولة
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Double-tap Seek Feedback */}
                       {seekFeedback.visible && (
-                        <div style={{
-                          position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-                          ...(seekFeedback.side === 'backward' ? { left: '15%' } : { right: '15%' }),
-                          background: 'rgba(0,0,0,0.7)', color: '#fff',
-                          borderRadius: '50%', width: 60, height: 60,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 12, fontWeight: 700, pointerEvents: 'none', zIndex: 20,
-                        }}>
+                        <div 
+                          className="absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center font-bold pointer-events-none transition-all duration-150"
+                          style={{
+                            ...(seekFeedback.side === 'backward' ? { left: '18%' } : { right: '18%' }),
+                            background: 'rgba(0,0,0,0.8)',
+                            color: '#fff',
+                            borderRadius: '50%',
+                            width: '64px',
+                            height: '64px',
+                            fontSize: '13px',
+                            backdropFilter: 'blur(8px)',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                            transform: seekFeedback.visible ? 'translateY(-50%) scale(1)' : 'translateY(-50%) scale(0.8)'
+                          }}
+                        >
                           {seekFeedback.side === 'backward' ? '-5s' : '+5s'}
                         </div>
                       )}
                     </div>
 
-                    {/* Speed controls */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', flexWrap: 'wrap', background: isDark ? '#0d1024' : '#f8f8fa', borderBottom: `1px solid ${borderColor}` }}>
-                      <span style={{ fontSize: 12, color: textSecondary, marginLeft: 4 }}>سرعة:</span>
-                      {speeds.map(speed => (
-                        <button
-                          key={speed}
-                          onClick={() => setPlaybackRate(speed)}
-                          style={{
-                            padding: '3px 10px', borderRadius: 20, fontSize: 12,
-                            fontWeight: playbackRate === speed ? 700 : 400,
-                            background: playbackRate === speed ? purple : 'transparent',
-                            color: playbackRate === speed ? '#fff' : textSecondary,
-                            border: `1px solid ${playbackRate === speed ? purple : borderColor}`,
-                            cursor: 'pointer', transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {speed}x
-                        </button>
-                      ))}
+                    {/* Speed Controls - Modern */}
+                    <div 
+                      className="flex items-center gap-3 px-6 py-4 flex-wrap"
+                      style={{ 
+                        background: isDark ? '#0d0e14' : '#f8f9fc', 
+                        borderBottom: `1px solid ${borderColor}` 
+                      }}
+                    >
+                      <div className="flex items-center gap-2 ml-2">
+                        <Zap className="h-4 w-4" style={{ color: purple }} />
+                        <span className="text-xs font-semibold" style={{ color: textSecondary }}>السرعة:</span>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {speeds.map(speed => (
+                          <button
+                            key={speed}
+                            onClick={() => setPlaybackRate(speed)}
+                            className={`
+                              px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200
+                              ${playbackRate === speed 
+                                ? 'text-white scale-105 shadow-lg' 
+                                : 'hover:scale-105'}
+                            `}
+                            style={{
+                              background: playbackRate === speed 
+                                ? `linear-gradient(135deg, ${purple}, ${purpleColor})` 
+                                : 'transparent',
+                              color: playbackRate === speed ? '#fff' : textSecondary,
+                              border: `1.5px solid ${playbackRate === speed ? 'transparent' : borderColor}`,
+                              boxShadow: playbackRate === speed ? `0 4px 16px ${purple}35` : 'none'
+                            }}
+                          >
+                            {speed}x
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* PDF VIEWER */}
+                {/* PDF VIEWER - Professional */}
                 {(viewerMode === 'file' || (viewerMode === 'all' && !hasVideo)) && hasFile && fileUrl && (
-                  <div className="h-[600px] flex flex-col" style={{ background: isDark ? '#1a1a2e' : '#f8fafc' }}>
-                    <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: isDark ? '#2d2d44' : '#e2e8f0', background: isDark ? '#161625' : '#fff' }}>
-                      <div className="flex items-center gap-3">
-                        <div className="h-11 w-11 rounded-xl flex items-center justify-center" style={{ background: `${blueColor}15` }}><FileText className="h-6 w-6" style={{ color: blueColor }} /></div>
+                  <div className="h-[650px] flex flex-col" style={{ background: sidebarBg }}>
+                    {/* PDF Header */}
+                    <div 
+                      className="flex items-center justify-between px-6 py-5"
+                      style={{ 
+                        borderBottom: `1px solid ${borderColor}`,
+                        background: isDark ? '#0d0e14' : '#ffffff'
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div 
+                          className="h-12 w-12 rounded-2xl flex items-center justify-center"
+                          style={{ background: `${blueColor}12` }}
+                        >
+                          <FileText className="h-6 w-6" style={{ color: blueColor }} />
+                        </div>
                         <div>
-                          <p className="text-sm font-semibold" style={{ color: textPrimary }}>{fileName}</p>
-                          <p className="text-xs" style={{ color: textSecondary }}>اضغط على زر التحميل لحفظ الملف</p>
+                          <p className="text-sm font-bold" style={{ color: textPrimary }}>{fileName}</p>
+                          <p className="text-xs mt-0.5" style={{ color: textSecondary }}>
+                            اضغط على زر التحميل لحفظ الملف
+                          </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: blueColor, color: 'white', boxShadow: `0 4px 14px ${blueColor}30` }}><Download className="h-4 w-4" /> تحميل الملف</a>
-                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: 'transparent', color: blueColor, border: `1.5px solid ${blueColor}30` }}><ExternalLink className="h-4 w-4" /> فتح</a>
+                      
+                      <div className="flex items-center gap-3">
+                        <a 
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+                          style={{ 
+                            background: blueColor, 
+                            color: 'white',
+                            boxShadow: `0 4px 20px ${blueColor}30`
+                          }}
+                        >
+                          <Download className="h-4 w-4 group-hover:animate-bounce" />
+                          <span>تحميل الملف</span>
+                        </a>
+                        <a 
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+                          style={{ 
+                            background: 'transparent', 
+                            color: blueColor, 
+                            border: `1.5px solid ${blueColor}25`
+                          }}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                          <span>فتح</span>
+                        </a>
                       </div>
                     </div>
+                    
+                    {/* PDF iframe */}
                     <div className="flex-1 relative">
                       <iframe
                         src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
                         className="w-full h-full border-0"
                         title={fileName}
-                        style={{ background: isDark ? '#0f0f1a' : '#e5e7eb' }}
+                        style={{ background: isDark ? '#0a0a0f' : '#e5e7eb' }}
                       />
                     </div>
                   </div>
                 )}
 
-                {/* IMAGE VIEWER */}
+                {/* IMAGE VIEWER - Gallery Style */}
                 {(viewerMode === 'image' || (viewerMode === 'all' && !hasVideo && !hasFile)) && hasImage && effectiveImageUrl && (
-                  <div className="min-h-[500px] flex flex-col items-center justify-center relative" style={{ background: isDark ? '#0a0a14' : '#1a1a2e' }}>
-                    <div className="absolute top-4 right-4 z-10 flex gap-2">
-                      <a href={effectiveImageUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><ZoomIn className="h-5 w-5" /></a>
-                      <a href={effectiveImageUrl} download className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><Download className="h-5 w-5" /></a>
+                  <div 
+                    className="min-h-[550px] flex flex-col items-center justify-center relative"
+                    style={{ background: isDark ? '#080810' : '#0f0f23' }}
+                  >
+                    {/* Image Actions */}
+                    <div className="absolute top-5 right-5 z-10 flex gap-2.5">
+                      <a 
+                        href={effectiveImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                        title="تكبير"
+                      >
+                        <ZoomIn className="h-5 w-5" />
+                      </a>
+                      <a 
+                        href={effectiveImageUrl}
+                        download
+                        className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+                        title="تحميل"
+                      >
+                        <Download className="h-5 w-5" />
+                      </a>
                     </div>
-                    <div className="max-h-[600px] max-w-full p-6 flex items-center justify-center">
-                      <img src={effectiveImageUrl} alt={activeLesson.title || activeLesson.titleAr || ''} className="max-h-full max-w-full object-contain rounded-xl shadow-2xl" />
+
+                    {/* Image Container */}
+                    <div className="max-h-[650px] max-w-full p-8 flex items-center justify-center">
+                      <img 
+                        src={effectiveImageUrl} 
+                        alt={activeLesson.title || activeLesson.titleAr || ''} 
+                        className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl"
+                        style={{ boxShadow: '0 25px 80px rgba(0,0,0,0.5)' }}
+                      />
                     </div>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl text-sm text-white/90" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}>{activeLesson.title || activeLesson.titleAr}</div>
+
+                    {/* Image Caption */}
+                    <div 
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl text-sm text-white/90 font-medium backdrop-blur-xl"
+                      style={{ 
+                        background: 'rgba(0,0,0,0.7)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+                      }}
+                    >
+                      {activeLesson.title || activeLesson.titleAr}
+                    </div>
                   </div>
                 )}
 
-                {/* Broken local URL — files gone from Render */}
+                {/* Broken Local URL State */}
                 {!hasVideo && !hasFile && !hasImage && hasLocalUrl && (
-                  <div className="h-[400px] flex items-center justify-center" style={{ background: isDark ? '#0a0a14' : '#fff8f0' }}>
-                    <div className="text-center max-w-sm px-6">
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{ background: '#f97316' + '20' }}>
-                        <File className="h-8 w-8" style={{ color: '#f97316' }} />
+                  <div 
+                    className="h-[450px] flex items-center justify-center"
+                    style={{ background: sidebarBg }}
+                  >
+                    <div className="text-center max-w-md px-8">
+                      <div 
+                        className="mx-auto mb-5 h-20 w-20 rounded-3xl flex items-center justify-center"
+                        style={{ background: `${amberColor}15` }}
+                      >
+                        <File className="h-10 w-10" style={{ color: amberColor }} />
                       </div>
-                      <p className="text-base font-bold mb-2" style={{ color: textPrimary }}>المحتوى قيد الترحيل</p>
+                      <h3 className="text-xl font-bold mb-3" style={{ color: textPrimary }}>
+                        المحتوى قيد الترحيل
+                      </h3>
                       <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
                         هذا الملف لم يتم رفعه بعد على المنصة الجديدة. يرجى التواصل مع المحاضر لإعادة رفع المحتوى.
                       </p>
@@ -703,128 +1174,547 @@ function LearnPageInner() {
                   </div>
                 )}
 
-                {/* No Media */}
+                {/* No Media State */}
                 {!hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
-                  <div className="h-[400px] flex items-center justify-center" style={{ background: isDark ? '#0a0a14' : '#f1f5f9' }}>
+                  <div 
+                    className="h-[450px] flex items-center justify-center"
+                    style={{ background: sidebarBg }}
+                  >
                     <div className="text-center">
-                      <File className="mx-auto h-16 w-16 mb-3" style={{ color: `${purple}30` }} />
-                      <p className="text-sm font-medium" style={{ color: textPrimary }}>لا يوجد وسائط لهذا الدرس</p>
-                      {activeLesson.description && (<p className="text-xs mt-3 max-w-md mx-auto leading-relaxed" style={{ color: textSecondary }}>{activeLesson.description}</p>)}
+                      <div 
+                        className="mx-auto mb-4 h-20 w-20 rounded-3xl flex items-center justify-center"
+                        style={{ background: `${purple}10` }}
+                      >
+                        <File className="h-10 w-10" style={{ color: `${purple}40` }} />
+                      </div>
+                      <p className="text-base font-semibold mb-2" style={{ color: textPrimary }}>
+                        لا يوجد وسائط لهذا الدرس
+                      </p>
+                      {activeLesson.description && (
+                        <p className="text-sm mt-4 max-w-lg mx-auto leading-relaxed px-6" style={{ color: textSecondary }}>
+                          {activeLesson.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Lesson Info */}
-              <div className="flex-1 p-6" style={{ borderTop: `1px solid ${borderColor}`, background: bg }}>
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {mediaType === 'video' ? <Video className="h-5 w-5" style={{ color: redColor }} /> : mediaType === 'file' ? <FileText className="h-5 w-5" style={{ color: blueColor }} /> : mediaType === 'image' ? <Image className="h-5 w-5" style={{ color: purpleColor }} /> : <File className="h-5 w-5" style={{ color: purple }} />}
-                      <h1 className="text-xl font-bold font-madinet" style={{ color: textPrimary }}>{activeLesson.title || activeLesson.titleAr}</h1>
+              {/* Lesson Information Section */}
+              <div 
+                className="flex-1 p-6 lg:p-8"
+                style={{ 
+                  borderTop: `1px solid ${borderColor}`,
+                  background: bg
+                }}
+              >
+                {/* Lesson Title & Status */}
+                <div className="flex items-start justify-between gap-6 mb-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div 
+                        className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ 
+                          background: mediaType === 'video' ? `${redColor}12` :
+                                   mediaType === 'file' ? `${blueColor}12` :
+                                   mediaType === 'image' ? `${purpleColor}12` : `${purple}12`
+                        }}
+                      >
+                        {mediaType === 'video' ? <Video className="h-5 w-5" style={{ color: redColor }} /> :
+                         mediaType === 'file' ? <FileText className="h-5 w-5" style={{ color: blueColor }} /> :
+                         mediaType === 'image' ? <Image className="h-5 w-5" style={{ color: purpleColor }} /> :
+                         <File className="h-5 w-5" style={{ color: purple }} />}
+                      </div>
+                      <h1 
+                        className="text-2xl lg:text-3xl font-bold leading-tight"
+                        style={{ color: textPrimary }}
+                      >
+                        {activeLesson.title || activeLesson.titleAr}
+                      </h1>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-xs flex-wrap" style={{ color: textSecondary }}>
-                      {activeLesson.duration && (<span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{activeLesson.duration}</span>)}
-                      <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" />الدرس {activeLessonIndex >= 0 ? activeLessonIndex + 1 : 1} من {totalLessons}</span>
-                      {hasVideo && <span className="flex items-center gap-1" style={{ color: redColor }}><Video className="h-3.5 w-3.5" />فيديو</span>}
-                      {hasFile && <span className="flex items-center gap-1" style={{ color: blueColor }}><FileText className="h-3.5 w-3.5" />ملف PDF</span>}
-                      {hasImage && <span className="flex items-center gap-1" style={{ color: purpleColor }}><Image className="h-3.5 w-3.5" />صورة</span>}
-                      {isCurrentCompleted && <span className="flex items-center gap-1" style={{ color: green }}><CheckCircle2 className="h-3.5 w-3.5" />تم الإكمال</span>}
+                    {/* Meta Information */}
+                    <div className="flex items-center gap-4 flex-wrap text-sm" style={{ color: textSecondary }}>
+                      {activeLesson.duration && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: `${borderColor}` }}>
+                          <Clock className="h-4 w-4" />
+                          <span className="font-medium">{activeLesson.duration}</span>
+                        </span>
+                      )}
+                      
+                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: `${borderColor}` }}>
+                        <BookOpen className="h-4 w-4" />
+                        <span className="font-medium">الدرس {activeLessonIndex >= 0 ? activeLessonIndex + 1 : 1} من {totalLessons}</span>
+                      </span>
+                      
+                      {hasVideo && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium" style={{ background: `${redColor}10`, color: redColor }}>
+                          <Video className="h-4 w-4" />
+                          فيديو
+                        </span>
+                      )}
+                      
+                      {hasFile && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium" style={{ background: `${blueColor}10`, color: blueColor }}>
+                          <FileText className="h-4 w-4" />
+                          ملف PDF
+                        </span>
+                      )}
+                      
+                      {hasImage && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium" style={{ background: `${purpleColor}10`, color: purpleColor }}>
+                          <Image className="h-4 w-4" />
+                          صورة
+                        </span>
+                      )}
+                      
+                      {isCurrentCompleted && (
+                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg font-medium" style={{ background: `${green}10`, color: green }}>
+                          <CheckCircle2 className="h-4 w-4" />
+                          تم الإكمال
+                        </span>
+                      )}
                     </div>
                   </div>
 
+                  {/* Complete Button / Status Badge */}
                   {isCurrentCompleted ? (
-                    <div className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shrink-0" style={{ background: `${green}12`, color: green, border: `1px solid ${green}25` }}><Award className="h-4 w-4" /><span>مكتمل</span><CheckCircle2 className="h-4 w-4" /></div>
-                  ) : (
-                    <button onClick={handleMarkComplete} disabled={markingComplete} className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:hover:scale-100" style={{ background: `linear-gradient(135deg, ${purple}, #5b21b6)`, boxShadow: `0 4px 16px ${purple}35` }}>{markingComplete ? <><Loader2 className="h-4 w-4 animate-spin" />جاري...</> : <><CheckCheck className="h-4 w-4" />تمييز كمكتمل</>}</button>
-                  )}
-                </div>
-
-                {activeLesson.description && (
-                  <div className="mt-4 p-4 rounded-xl text-sm leading-relaxed" style={{ background: cardBg, color: textSecondary, border: `1px solid ${borderColor}` }}><FileText className="inline h-4 w-4 ml-2" style={{ color: purple }} />{activeLesson.description}</div>
-                )}
-
-                {hasFile && fileUrl && (
-                  <div className="mt-4 p-4 rounded-xl" style={{ background: `${blueColor}08`, border: `1px solid ${blueColor}20` }}>
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: blueColor }}><Download className="h-4 w-4" />تحميل المواد الدراسية</h3>
-                    <div className="flex flex-wrap gap-3">
-                      <a href={fileUrl} download={fileName} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: blueColor, color: 'white', boxShadow: `0 4px 12px ${blueColor}30` }}><FileDown className="h-4 w-4" />تحميل {fileName}</a>
-                      <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: 'transparent', color: blueColor, border: `1.5px solid ${blueColor}30` }}><Eye className="h-4 w-4" />عرض</a>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation */}
-                <div className="flex gap-3 mt-8 pt-6" style={{ borderTop: `1px solid ${borderColor}` }}>
-                  {nextLesson && (isEnrolled || nextLesson.isFree) && (
-                    <button onClick={goToNextLesson} className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95" style={{ background: `linear-gradient(135deg, ${purple}, #5b21b6)`, boxShadow: `0 4px 16px ${purple}35` }}><SkipForward className="h-4 w-4" /><div className="text-right"><div className="text-xs opacity-80">التالي</div><div>{nextLesson.title || nextLesson.titleAr}</div></div><ArrowLeft className="h-4 w-4" /></button>
-                  )}
-                  {prevLesson && (
-                    <button onClick={goToPrevLesson} className="flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all hover:scale-105 active:scale-95" style={{ background: cardBg, color: textPrimary, border: `1px solid ${borderColor}` }}><ArrowRight className="h-4 w-4" /><div className="text-right"><div className="text-xs opacity-60">السابق</div><div>{prevLesson.title || prevLesson.titleAr}</div></div><SkipBack className="h-4 w-4" /></button>
-                  )}
-                </div>
-
-                {/* Interactions */}
-                <div className="mt-6 pt-6 flex items-center gap-4" style={{ borderTop: `1px solid ${borderColor}` }}>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-purple-5" style={{ color: textSecondary }}><ThumbsUp className="h-4 w-4" />مفيد</button>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-purple-5" style={{ color: textSecondary }}><MessageSquare className="h-4 w-4" />اسأل سؤال</button>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-purple-5" style={{ color: textSecondary }}><Share2 className="h-4 w-4" />مشاركة</button>
-                </div>
-
-                {/* Course complete sticky button */}
-                {isCourseComplete && (
-                  <div style={{ position: 'sticky', bottom: 20, marginTop: 16 }}>
-                    <button
-                      onClick={handleGetCertificate}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        gap: 12, padding: '16px 24px', borderRadius: 16, border: 'none',
-                        background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                        color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer',
-                        boxShadow: '0 8px 32px rgba(22,163,74,0.4)',
+                    <div 
+                      className="flex items-center gap-3 px-6 py-3.5 rounded-2xl text-sm font-bold shrink-0"
+                      style={{ 
+                        background: `${green}10`,
+                        color: green,
+                        border: `1.5px solid ${green}25`,
+                        boxShadow: `0 4px 20px ${green}15`
                       }}
                     >
-                      <Award size={22} />
-                      تهانينا! أكملت الكورس — احصل على شهادتك
-                      <ChevronLeft size={18} />
+                      <Award className="h-5 w-5" />
+                      <span>مكتمل ✓</span>
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={handleMarkComplete}
+                      disabled={markingComplete}
+                      className="
+                        group flex items-center gap-3 px-7 py-3.5 rounded-2xl text-sm font-bold text-white 
+                        shrink-0 transition-all duration-300 
+                        hover:scale-105 active:scale-95 
+                        disabled:opacity-60 disabled:hover:scale-100
+                      "
+                      style={{ 
+                        background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
+                        boxShadow: `0 6px 24px ${purple}40`
+                      }}
+                    >
+                      {markingComplete ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>جاري...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCheck className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          <span>تمييز كمكتمل</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Description Card */}
+                {activeLesson.description && (
+                  <div 
+                    className="mb-6 p-5 rounded-2xl text-sm leading-relaxed"
+                    style={{ 
+                      background: cardBg,
+                      color: textSecondary,
+                      border: `1px solid ${borderColor}`,
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 shrink-0 mt-0.5" style={{ color: purple }} />
+                      <p className="flex-1">{activeLesson.description}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Download Materials Section */}
+                {hasFile && fileUrl && (
+                  <div 
+                    className="mb-6 p-5 rounded-2xl"
+                    style={{ 
+                      background: `${blueColor}06`,
+                      border: `1.5px solid ${blueColor}15`
+                    }}
+                  >
+                    <h3 className="text-base font-bold mb-4 flex items-center gap-2" style={{ color: blueColor }}>
+                      <Download className="h-5 w-5" />
+                      تحميل المواد الدراسية
+                    </h3>
+                    <div className="flex flex-wrap gap-3">
+                      <a 
+                        href={fileUrl}
+                        download={fileName}
+                        className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+                        style={{ 
+                          background: blueColor, 
+                          color: 'white',
+                          boxShadow: `0 4px 16px ${blueColor}25`
+                        }}
+                      >
+                        <FileDown className="h-4 w-4 group-hover:animate-bounce" />
+                        <span>تحميل {fileName}</span>
+                      </a>
+                      <a 
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+                        style={{ 
+                          background: 'transparent', 
+                          color: blueColor, 
+                          border: `1.5px solid ${blueColor}25`
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>عرض</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* Navigation Buttons */}
+                <div 
+                  className="flex gap-4 mt-8 pt-8"
+                  style={{ borderTop: `1px solid ${borderColor}` }}
+                >
+                  {nextLesson && (isEnrolled || nextLesson.isFree) && (
+                    <button 
+                      onClick={goToNextLesson}
+                      className="
+                        group flex-1 sm:flex-none flex items-center justify-center gap-3 px-7 py-4 
+                        rounded-2xl text-sm font-bold text-white transition-all duration-300 
+                        hover:scale-105 active:scale-95
+                      "
+                      style={{ 
+                        background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
+                        boxShadow: `0 6px 24px ${purple}35`
+                      }}
+                    >
+                      <SkipForward className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <div className="text-right">
+                        <div className="text-xs opacity-80 font-normal">التالي →</div>
+                        <div className="text-sm font-bold">{nextLesson.title || nextLesson.titleAr}</div>
+                      </div>
+                      <ArrowLeft className="h-5 w-5" />
+                    </button>
+                  )}
+                  
+                  {prevLesson && (
+                    <button 
+                      onClick={goToPrevLesson}
+                      className="
+                        group flex-1 sm:flex-none flex items-center justify-center gap-3 px-7 py-4 
+                        rounded-2xl text-sm font-bold transition-all duration-300 
+                        hover:scale-105 active:scale-95
+                      "
+                      style={{ 
+                        background: cardBg,
+                        color: textPrimary,
+                        border: `1.5px solid ${borderColor}`,
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+                      }}
+                    >
+                      <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <div className="text-right">
+                        <div className="text-xs opacity-60 font-normal">← السابق</div>
+                        <div className="text-sm">{prevLesson.title || prevLesson.titleAr}</div>
+                      </div>
+                      <SkipBack className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Interaction Buttons */}
+                <div 
+                  className="mt-8 pt-8 flex items-center gap-3 flex-wrap"
+                  style={{ borderTop: `1px solid ${borderColor}` }}
+                >
+                  <button 
+                    className="
+                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
+                      transition-all duration-200 hover:scale-105
+                    "
+                    style={{ 
+                      color: textSecondary,
+                      background: 'transparent',
+                      border: `1.5px solid ${borderColor}`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `${green}08`
+                      e.currentTarget.style.color = green
+                      e.currentTarget.style.borderColor = `${green}25`
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = textSecondary
+                      e.currentTarget.style.borderColor = borderColor
+                    }}
+                  >
+                    <ThumbsUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    <span>مفيد</span>
+                  </button>
+                  
+                  <button 
+                    className="
+                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
+                      transition-all duration-200 hover:scale-105
+                    "
+                    style={{ 
+                      color: textSecondary,
+                      background: 'transparent',
+                      border: `1.5px solid ${borderColor}`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `${blueColor}08`
+                      e.currentTarget.style.color = blueColor
+                      e.currentTarget.style.borderColor = `${blueColor}25`
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = textSecondary
+                      e.currentTarget.style.borderColor = borderColor
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                    <span>اسأل سؤال</span>
+                  </button>
+                  
+                  <button 
+                    className="
+                      group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
+                      transition-all duration-200 hover:scale-105
+                    "
+                    style={{ 
+                      color: textSecondary,
+                      background: 'transparent',
+                      border: `1.5px solid ${borderColor}`
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `${purple}08`
+                      e.currentTarget.style.color = purple
+                      e.currentTarget.style.borderColor = `${purple}25`
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.color = textSecondary
+                      e.currentTarget.style.borderColor = borderColor
+                    }}
+                  >
+                    <Share2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+                    <span>مشاركة</span>
+                  </button>
+                </div>
+
+                {/* Course Completion Certificate CTA */}
+                {isCourseComplete && (
+                  <div style={{ position: 'sticky', bottom: 24, marginTop: 32 }}>
+                    <button
+                      onClick={handleGetCertificate}
+                      className="
+                        w-full flex items-center justify-center gap-4 px-8 py-5 rounded-2xl
+                        text-white font-bold text-lg cursor-pointer
+                        transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]
+                      "
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        boxShadow: '0 10px 40px rgba(16,185,129,0.35)'
+                      }}
+                    >
+                      <Award size={26} className="animate-pulse" />
+                      <div className="text-right">
+                        <div className="text-base">🎉 تهانينا! أكملت الكورس بنجاح</div>
+                        <div className="text-sm opacity-90 font-normal">احصل على شهادتك الآن</div>
+                      </div>
+                      <ChevronLeft size={20} />
                     </button>
                   </div>
                 )}
               </div>
             </>
           ) : (
-            <div className="flex h-full min-h-[60vh] items-center justify-center text-center p-6">
-              <div>
-                <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full" style={{ background: `${purple}12` }}><PlayCircle className="h-10 w-10" style={{ color: `${purple}60` }} /></div>
-                <h2 className="text-xl font-bold font-madinet mb-2" style={{ color: textPrimary }}>اختر درساً للبدء</h2>
-                <p className="text-sm mb-6" style={{ color: textSecondary }}>اختر أي درس من القائمة الجانبية لبدء التعلم</p>
-                <button onClick={() => { const first = allLessonsFlat[0]; if (first) setActiveLessonId(first.id) }} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition-all hover:scale-105" style={{ background: purple }}><Play className="h-4 w-4" />ابدأ من أول درس</button>
+            /* Empty State */
+            <div className="flex h-full min-h-[70vh] items-center justify-center text-center p-8">
+              <div className="max-w-md">
+                <div 
+                  className="mx-auto mb-8 h-28 w-28 rounded-3xl flex items-center justify-center relative"
+                  style={{ background: `linear-gradient(135deg, ${purple}12, ${purpleColor}08)` }}
+                >
+                  <PlayCircle className="h-14 w-14" style={{ color: `${purple}60` }} />
+                  <div className="absolute inset-0 rounded-3xl animate-pulse opacity-30" style={{ background: `linear-gradient(135deg, ${purple}20, transparent)` }} />
+                </div>
+                
+                <h2 className="text-2xl lg:text-3xl font-bold mb-4" style={{ color: textPrimary }}>
+                  اختر درساً للبدء
+                </h2>
+                <p className="text-base mb-8 leading-relaxed" style={{ color: textSecondary }}>
+                  اختر أي درس من القائمة الجانبية لبدء رحلتك التعليمية
+                </p>
+                
+                <button 
+                  onClick={() => { const first = allLessonsFlat[0]; if (first) setActiveLessonId(first.id) }}
+                  className="
+                    group inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold 
+                    text-base transition-all duration-300 hover:scale-105
+                  "
+                  style={{ 
+                    background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
+                    boxShadow: `0 8px 32px ${purple}40`
+                  }}
+                >
+                  <Play className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                  <span>ابدأ من أول درس</span>
+                  <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                </button>
               </div>
             </div>
           )}
         </main>
       </div>
 
-      {/* Floating AI Button */}
-      <a href={`${MAIN_URL}/${locale}/dashboard/ai-chat`} title="اسأل الذكاء الاصطناعي" className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95" style={{ background: `linear-gradient(135deg, ${purple}, #8b5cf6)`, boxShadow: `0 6px 24px ${purple}50` }}><Sparkles className="h-7 w-7 text-white" /></a>
+      {/* Floating AI Assistant Button */}
+      <a 
+        href={`${MAIN_URL}/${locale}/dashboard/ai-chat`}
+        title="اسأل الذكاء الاصطناعي"
+        className="
+          fixed bottom-8 left-8 z-50 flex h-16 w-16 items-center justify-center rounded-2xl
+          transition-all duration-300 hover:scale-110 active:scale-95 group
+        "
+        style={{ 
+          background: `linear-gradient(135deg, ${purple}, #8b5cf6)`,
+          boxShadow: `0 8px 32px ${purple}50`
+        }}
+      >
+        <Sparkles className="h-7 w-7 text-white group-hover:rotate-12 transition-transform" />
+        <div className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-white" />
+      </a>
 
-      {/* Video Protection + Watermark */}
+      {/* Video Protection Component */}
       <VideoProtection userName={undefined} userEmail={undefined} />
 
-      {/* Mobile Progress Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 px-4 py-3 flex items-center justify-between" style={{ background: headerBg, borderTop: `1px solid ${borderColor}` }}>
-        <button onClick={goToPrevLesson} disabled={!prevLesson} className="p-2 rounded-lg disabled:opacity-30" style={{ color: textPrimary }}><ArrowRight className="h-5 w-5" /></button>
-        <div className="flex-1 mx-4"><div className="h-1.5 rounded-full" style={{ background: borderColor }}><div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: purple }} /></div></div>
-        <button onClick={goToNextLesson} disabled={!nextLesson} className="p-2 rounded-lg disabled:opacity-30" style={{ color: textPrimary }}><ArrowLeft className="h-5 w-5" /></button>
+      {/* Mobile Bottom Navigation Bar */}
+      <div 
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-4 flex items-center justify-between backdrop-blur-xl"
+        style={{ 
+          background: isDark ? 'rgba(13, 14, 20, 0.92)' : 'rgba(248, 249, 252, 0.92)',
+          borderTop: `1px solid ${borderColor}`,
+          boxShadow: '0 -4px 20px rgba(0,0,0,0.08)'
+        }}
+      >
+        <button 
+          onClick={goToPrevLesson}
+          disabled={!prevLesson}
+          className="p-3 rounded-xl transition-all duration-200 hover:scale-110 disabled:opacity-30 disabled:hover:scale-100"
+          style={{ 
+            background: prevLesson ? `${purple}10` : 'transparent',
+            color: prevLesson ? purple : textSecondary
+          }}
+        >
+          <ArrowRight className="h-5 w-5" />
+        </button>
+        
+        <div className="flex-1 mx-5">
+          <div className="relative h-2 rounded-full overflow-hidden" style={{ background: borderColor }}>
+            <div 
+              className="h-full rounded-full transition-all duration-500"
+              style={{ 
+                width: `${progress}%`, 
+                background: `linear-gradient(90deg, ${purple}, ${purpleColor})` 
+              }}
+            />
+          </div>
+        </div>
+        
+        <button 
+          onClick={goToNextLesson}
+          disabled={!nextLesson}
+          className="p-3 rounded-xl transition-all duration-200 hover:scale-110 disabled:opacity-30 disabled:hover:scale-100"
+          style={{ 
+            background: nextLesson ? `${purple}10` : 'transparent',
+            color: nextLesson ? purple : textSecondary
+          }}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
       </div>
+
+      {/* Global Styles for Animations */}
+      <style jsx global>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        
+        .animate-shimmer {
+          animation: shimmer 2s infinite;
+        }
+        
+        /* Smooth scrolling */
+        * {
+          scroll-behavior: smooth;
+        }
+        
+        /* Custom scrollbar for sidebar */
+        aside::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        aside::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        
+        aside::-webkit-scrollbar-thumb {
+          background: ${borderColor};
+          border-radius: 10px;
+        }
+        
+        aside::-webkit-scrollbar-thumb:hover {
+          background: ${purple}40;
+        }
+      `}</style>
     </div>
+  )
+}
+
+// ShieldCheck icon component (if not imported)
+function ShieldCheck({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
   )
 }
 
 export default function LearnPage() {
   return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="h-8 w-8 mx-auto mb-3 animate-spin text-primary" /><p className="text-sm text-muted-foreground">جاري تحميل صفحة التعلم...</p></div></div>}>
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center" style={{ background: '#fafbfc' }}>
+        <div className="text-center">
+          <div className="relative mb-6">
+            <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center" style={{ 
+              background: 'linear-gradient(135deg, #7c3aed15, #8b5cf615)',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}>
+              <GraduationCap className="h-8 w-8 animate-pulse" style={{ color: '#7c3aed' }} />
+            </div>
+          </div>
+          <p className="text-sm font-medium text-gray-600">جاري تحميل صفحة التعلم...</p>
+        </div>
+      </div>
+    }>
       <LearnPageInner />
     </Suspense>
   )
