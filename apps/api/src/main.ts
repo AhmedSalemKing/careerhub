@@ -17,7 +17,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Serve uploaded files as static assets
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads/' });
+  const uploadsPath = process.env.UPLOADS_PATH || join(process.cwd(), 'uploads');
+  app.useStaticAssets(uploadsPath, { prefix: '/uploads' });
   const configService = app.get(ConfigService);
 
   // Security middleware

@@ -11,26 +11,30 @@ export class EnrollmentService {
     const enrollment = await this.prisma.enrollment.findFirst({ where: { userId, courseId } });
     if (!enrollment) return null;
 
-    // Count completed lessons and total published lessons for richer response
-    const [completedLessons, totalLessons] = await Promise.all([
-      this.prisma.lessonProgress.count({
+    // Fetch completed lesson IDs and total published lessons
+    const [lessonProgressRecords, totalLessons] = await Promise.all([
+      this.prisma.lessonProgress.findMany({
         where: {
           userId,
           status: 'COMPLETED',
           lesson: { section: { courseId } },
         },
+        select: { lessonId: true },
       }),
       this.prisma.lesson.count({
         where: { isPublished: true, section: { courseId } },
       }),
     ]);
 
+    const completedLessonIds = lessonProgressRecords.map((r) => r.lessonId);
+
     return {
       id: enrollment.id,
       courseId: enrollment.courseId,
       status: enrollment.status,
       progress: enrollment.progress,
-      completedLessons,
+      completedLessons: completedLessonIds.length,
+      completedLessonIds,
       totalLessons,
       enrolledAt: enrollment.enrolledAt,
       completedAt: enrollment.completedAt,

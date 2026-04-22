@@ -828,8 +828,10 @@ export class UploadService {
     await mkdir(uploadDir, { recursive: true });
     await writeFile(join(uploadDir, safeName), file.buffer);
 
+    const apiBase = (process.env.API_URL || '').replace(/\/+$/, '');
+    const url = apiBase ? `${apiBase}/uploads/cvs/${safeName}` : `/uploads/cvs/${safeName}`;
     return {
-      url: `/uploads/cvs/${safeName}`,
+      url,
       fileName: file.originalname,
       size: file.size,
     };

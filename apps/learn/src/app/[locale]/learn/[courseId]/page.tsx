@@ -102,36 +102,24 @@ function LearnPageInner() {
 
   const isEnrolled = !!enrollment
 
-  // ✅ FIXED: Safe array extraction - handle all possible data structures
+  // Extract completed lesson IDs from enrollment response
   const getCompletedLessonIds = (): string[] => {
     try {
       if (!enrollment) return []
-      
-      // Case 1: completedLessons is an array of objects with lessonId
+      // Primary: new completedLessonIds array from updated getEnrollment
+      if (Array.isArray(enrollment.completedLessonIds)) {
+        return enrollment.completedLessonIds.filter(Boolean)
+      }
+      // Fallback: array of objects with lessonId
       if (Array.isArray(enrollment.completedLessons)) {
         return enrollment.completedLessons.map((cl: any) => cl.lessonId || cl.id || cl).filter(Boolean)
       }
-      
-      // Case 2: progress is an array of objects with lessonId  
-      if (Array.isArray(enrollment.progress)) {
-        return enrollment.progress.map((p: any) => p.lessonId || p.id || p).filter(Boolean)
-      }
-      
-      // Case 3: progress is an array of strings directly
-      if (typeof enrollment.progress === 'object' && Array.isArray(Object.values(enrollment.progress))) {
-        return Object.values(enrollment.progress).map(String).filter(Boolean)
-      }
-      
-      // Case 4: lessons array inside enrollment
+      // Fallback: lessons array with status
       if (Array.isArray(enrollment.lessons)) {
-        return enrollment.lessons.filter((l: any) => l.completed || l.status === 'COMPLETED').map((l: any) => l.id || l.lessonId)
+        return enrollment.lessons.filter((l: any) => l.completed || l.status === 'COMPLETED').map((l: any) => l.id || l.lessonId).filter(Boolean)
       }
-      
       return []
-    } catch (e) {
-      console.error('Error parsing completed lessons:', e)
-      return []
-    }
+    } catch { return [] }
   }
 
   const completedLessonIdsList = getCompletedLessonIds()
@@ -209,6 +197,20 @@ function LearnPageInner() {
   const totalLessons = allLessonsFlat.length
   const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
+
+  // Merge localStorage progress on first load (before server data arrives)
+  useEffect(() => {
+    if (!courseId) return
+    try {
+      const saved = localStorage.getItem(`progress_${courseId}`)
+      if (saved) {
+        const ids: string[] = JSON.parse(saved)
+        if (Array.isArray(ids) && ids.length > 0) {
+          setLocalCompleted(prev => new Set([...prev, ...ids]))
+        }
+      }
+    } catch {}
+  }, [courseId])
 
   // Auto-select lesson
   useEffect(() => {
@@ -318,7 +320,15 @@ function LearnPageInner() {
   const handleMarkComplete = async () => {
     if (!activeLessonId || markingComplete) return
     setMarkingComplete(true)
-    setLocalCompleted((prev) => new Set([...prev, activeLessonId]))
+    setLocalCompleted((prev) => {
+      const next = new Set([...prev, activeLessonId])
+      // Persist to localStorage as backup
+      try {
+        const allIds = [...next, ...completedLessonIdsList]
+        localStorage.setItem(`progress_${courseId}`, JSON.stringify([...new Set(allIds)]))
+      } catch {}
+      return next
+    })
     try {
       await post(`/courses/${courseId}/lessons/${activeLessonId}/complete`, {})
       refetchEnrollment()
@@ -345,10 +355,29 @@ function LearnPageInner() {
   const goToNextLesson = () => { if (nextLesson) setActiveLessonId(nextLesson.id) }
   const goToPrevLesson = () => { if (prevLesson) setActiveLessonId(prevLesson.id) }
 
+  // Detect media type — checks lesson.type field first, then URL extension
+  const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|svg|bmp)(\?.*)?$/i
+  const getMediaType = (lesson: any): 'video' | 'file' | 'image' | 'none' => {
+    if (!lesson) return 'none'
+    const type = (lesson.type || '').toUpperCase()
+    if (type === 'VIDEO') return 'video'
+    if (type === 'FILE' || type === 'PDF' || type === 'DOCUMENT') return 'file'
+    if (type === 'IMAGE') return 'image'
+    // Inspect URL extension to catch mis-filed images stored in videoUrl
+    if (lesson.videoUrl) return IMAGE_EXTS.test(lesson.videoUrl) ? 'image' : 'video'
+    if (lesson.imageUrl) return 'image'
+    if (lesson.fileUrl) return 'file'
+    return 'none'
+  }
+
   // Content type detection
-  const hasVideo = !!activeLesson?.videoUrl && !!videoUrl
+  const mediaType = activeLesson ? getMediaType(activeLesson) : 'none'
+  const hasVideo = mediaType === 'video' && !!videoUrl
   const hasFile = !!activeLesson?.fileUrl && !!fileUrl
-  const hasImage = !!activeLesson?.imageUrl && !!imageUrl
+  const hasImage = (mediaType === 'image') && !!(getSafeUrl(activeLesson?.imageUrl) || getSafeUrl(activeLesson?.videoUrl))
+  const effectiveImageUrl = mediaType === 'image'
+    ? (getSafeUrl(activeLesson?.imageUrl) || getSafeUrl(activeLesson?.videoUrl))
+    : imageUrl
   const hasMultipleTypes = [hasVideo, hasFile, hasImage].filter(Boolean).length > 1
 
   // Colors
@@ -456,7 +485,8 @@ function LearnPageInner() {
             {allLessonsFlat.map((lesson: any, idx: number) => {
               const status = getLessonStatus(lesson.id)
               const isActive = activeLessonId === lesson.id
-              const lessonType = lesson.videoUrl ? 'فيديو' : lesson.fileUrl ? 'ملف' : lesson.imageUrl ? 'صورة' : 'نص'
+              const lessonMediaType = getMediaType(lesson)
+              const lessonType = lessonMediaType === 'video' ? 'فيديو' : lessonMediaType === 'file' ? 'ملف' : lessonMediaType === 'image' ? 'صورة' : 'نص'
 
               return (
                 <button
@@ -633,14 +663,14 @@ function LearnPageInner() {
                 )}
 
                 {/* IMAGE VIEWER */}
-                {(viewerMode === 'image' || (viewerMode === 'all' && !hasVideo && !hasFile)) && hasImage && imageUrl && (
+                {(viewerMode === 'image' || (viewerMode === 'all' && !hasVideo && !hasFile)) && hasImage && effectiveImageUrl && (
                   <div className="min-h-[500px] flex flex-col items-center justify-center relative" style={{ background: isDark ? '#0a0a14' : '#1a1a2e' }}>
                     <div className="absolute top-4 right-4 z-10 flex gap-2">
-                      <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><ZoomIn className="h-5 w-5" /></a>
-                      <a href={imageUrl} download className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><Download className="h-5 w-5" /></a>
+                      <a href={effectiveImageUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><ZoomIn className="h-5 w-5" /></a>
+                      <a href={effectiveImageUrl} download className="p-2.5 rounded-xl bg-black/50 text-white hover:bg-black/70 transition-colors"><Download className="h-5 w-5" /></a>
                     </div>
                     <div className="max-h-[600px] max-w-full p-6 flex items-center justify-center">
-                      <img src={imageUrl} alt={activeLesson.title || activeLesson.titleAr || ''} className="max-h-full max-w-full object-contain rounded-xl shadow-2xl" />
+                      <img src={effectiveImageUrl} alt={activeLesson.title || activeLesson.titleAr || ''} className="max-h-full max-w-full object-contain rounded-xl shadow-2xl" />
                     </div>
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-xl text-sm text-white/90" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}>{activeLesson.title || activeLesson.titleAr}</div>
                   </div>
@@ -663,7 +693,7 @@ function LearnPageInner() {
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      {hasVideo ? <Video className="h-5 w-5" style={{ color: redColor }} /> : hasFile ? <FileText className="h-5 w-5" style={{ color: blueColor }} /> : hasImage ? <Image className="h-5 w-5" style={{ color: purpleColor }} /> : <File className="h-5 w-5" style={{ color: purple }} />}
+                      {mediaType === 'video' ? <Video className="h-5 w-5" style={{ color: redColor }} /> : mediaType === 'file' ? <FileText className="h-5 w-5" style={{ color: blueColor }} /> : mediaType === 'image' ? <Image className="h-5 w-5" style={{ color: purpleColor }} /> : <File className="h-5 w-5" style={{ color: purple }} />}
                       <h1 className="text-xl font-bold font-madinet" style={{ color: textPrimary }}>{activeLesson.title || activeLesson.titleAr}</h1>
                     </div>
                     
