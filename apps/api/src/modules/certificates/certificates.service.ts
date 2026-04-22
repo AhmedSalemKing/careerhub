@@ -18,6 +18,19 @@ export class CertificatesService {
   }
 
   async generateCertificate(userId: string, courseId: string, bypassEnrollment = false) {
+    try {
+      return await this._doGenerate(userId, courseId, bypassEnrollment)
+    } catch (e: any) {
+      console.error('[Certificate] Generation error:', {
+        message: e.message,
+        code: e.code,
+        stack: e.stack?.split('\n').slice(0, 6).join(' | '),
+      })
+      throw e
+    }
+  }
+
+  private async _doGenerate(userId: string, courseId: string, bypassEnrollment: boolean) {
     // 1. Check existing certificate (unique by userId+courseId)
     const existing = await this.prisma.certificate.findUnique({
       where: { userId_courseId: { userId, courseId } },
@@ -98,6 +111,24 @@ export class CertificatesService {
     })
 
     return { success: true, data: certificate }
+  } // end _doGenerate
+
+  private resolveTemplatePath(): string {
+    const fs = require('fs') as typeof import('fs')
+    const candidates = [
+      path.join(__dirname, 'template.png'),                                         // dist/modules/certificates/
+      path.join(process.cwd(), 'dist', 'modules', 'certificates', 'template.png'), // explicit dist path
+      path.join(process.cwd(), 'src', 'modules', 'certificates', 'template.png'),  // src (local dev)
+      path.join(process.cwd(), 'public', 'template.png'),                           // public fallback
+    ]
+    console.log('[Certificate] __dirname:', __dirname)
+    for (const p of candidates) {
+      const exists = fs.existsSync(p)
+      console.log(`[Certificate] Checking ${p} → ${exists ? 'FOUND' : 'missing'}`)
+      if (exists) return p
+    }
+    console.error('[Certificate] Template NOT FOUND. Searched:', candidates)
+    throw new Error('Certificate template not found in any expected location')
   }
 
   private async createCertificateImage(data: {
@@ -108,9 +139,14 @@ export class CertificatesService {
     instructorName: string
     instructorSignatureUrl: string | null
   }): Promise<Buffer> {
-    const templatePath = path.join(__dirname, 'template.png')
+    const templatePath = this.resolveTemplatePath()
 
-    const template = await loadImage(templatePath)
+    const template = await loadImage(templatePath).catch((e: any) => {
+      console.error('[Certificate] loadImage failed:', e.message, 'path:', templatePath)
+      throw e
+    })
+    console.log(`[Certificate] Template loaded: ${template.width}x${template.height}`)
+
     const canvas = createCanvas(template.width, template.height)
     const ctx = canvas.getContext('2d')
 
