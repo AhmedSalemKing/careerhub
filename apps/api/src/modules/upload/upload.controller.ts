@@ -20,10 +20,11 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { join } from 'path';
-import { access, mkdir, writeFile } from 'fs/promises';
+import { access } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
+import { CloudinaryService } from './cloudinary.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -31,30 +32,16 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { User } from '@prisma/client';
 
-// ─── Cloudinary helper ───────────────────────────────────────────────────────
-async function getCloudinary() {
-  const { v2: cloudinary } = await import('cloudinary');
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-  return cloudinary;
-}
-
-function safeUrl(url: string): string {
-  if (!url) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return `https:${url}`;
-}
-// ─────────────────────────────────────────────────────────────────────────────
 
 @ApiTags('Upload')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) { }
+  constructor(
+    private readonly uploadService: UploadService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) { }
 
   @Public()
   @Post('cv')
@@ -67,20 +54,17 @@ export class UploadController {
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       ];
-      if (allowed.includes(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new BadRequestException('Only PDF and Word files are allowed'), false);
-      }
+      if (allowed.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('Only PDF and Word files are allowed'), false);
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload CV (public — no auth)' })
+  @ApiOperation({ summary: 'Upload CV to Cloudinary (public — no auth)' })
   @ApiResponse({ status: 201, description: 'CV uploaded successfully' })
   async uploadCV(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided');
-    const result = await this.uploadService.uploadCV(file);
-    return { success: true, data: result };
+    const result = await this.cloudinaryService.uploadFile(file, 'cvs', 'raw');
+    return { success: true, data: { url: result.url, fileName: file.originalname, size: file.size } };
   }
 
   @Post('single')
@@ -138,28 +122,11 @@ export class UploadController {
   @ApiResponse({ status: 201, description: 'Image uploaded successfully' })
   async uploadImage(@UploadedFile() image: Express.Multer.File) {
     if (!image) throw new BadRequestException('No image file provided');
-
-    const cloudinary = await getCloudinary();
-
-    const result = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        { folder: 'deveway/images' },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(image.buffer);
-    });
-
+    const result = await this.cloudinaryService.uploadFile(image, 'images', 'image');
     return {
       success: true,
       message: 'Image uploaded successfully',
-      data: {
-        url: safeUrl(result.secure_url),
-        fileName: image.originalname,
-        size: image.size,
-        mimeType: image.mimetype,
-      },
+      data: { url: result.url, fileName: image.originalname, size: image.size, mimeType: image.mimetype },
     };
   }
 
@@ -187,21 +154,16 @@ export class UploadController {
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload lesson file (PDF, Word, Excel, PPT...)' })
+  @ApiOperation({ summary: 'Upload lesson file to Cloudinary (PDF, Word, Excel, PPT...)' })
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file provided');
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const fileName = `file_${Date.now()}_${safeName}`;
-    const dir = join(process.cwd(), 'uploads', 'files');
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, fileName), file.buffer);
-    // Return absolute URL so the frontend never needs to guess the base
-    const apiBase = (process.env.API_URL || '').replace(/\/+$/, '');
-    const url = apiBase ? `${apiBase}/uploads/files/${fileName}` : `/uploads/files/${fileName}`;
+    const resourceType = file.mimetype.startsWith('image/') ? 'image' : 'raw';
+    const folder = file.mimetype.startsWith('image/') ? 'images' : 'files';
+    const result = await this.cloudinaryService.uploadFile(file, folder, resourceType);
     return {
       success: true,
       data: {
-        url,
+        url: result.url,
         fileName: file.originalname,
         size: file.size,
         type: file.mimetype,
@@ -225,32 +187,11 @@ export class UploadController {
   @ApiResponse({ status: 201, description: 'Video uploaded successfully' })
   async uploadVideo(@UploadedFile() video: Express.Multer.File) {
     if (!video) throw new BadRequestException('No video file provided');
-
-    const cloudinary = await getCloudinary();
-
-    const result = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
-        {
-          folder: 'deveway/videos',
-          resource_type: 'video',
-          chunk_size: 6000000,
-        },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      ).end(video.buffer);
-    });
-
+    const result = await this.cloudinaryService.uploadFile(video, 'videos', 'video');
     return {
       success: true,
       message: 'Video uploaded successfully',
-      data: {
-        url: safeUrl(result.secure_url),
-        fileName: video.originalname,
-        size: video.size,
-        mimeType: video.mimetype,
-      },
+      data: { url: result.url, fileName: video.originalname, size: video.size, mimeType: video.mimetype },
     };
   }
 

@@ -649,15 +649,18 @@ function LearnPageInner() {
                           <p className="text-xs" style={{ color: textSecondary }}>اضغط على زر التحميل لحفظ الملف</p>
                         </div>
                       </div>
-                      
                       <div className="flex items-center gap-2">
-                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: blueColor, color: 'white', boxShadow: `0 4px 14px ${blueColor}30` }} onClick={(e) => { e.preventDefault(); window.open(fileUrl, '_blank'); }}><Download className="h-4 w-4" /> تحميل الملف</a>
+                        <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: blueColor, color: 'white', boxShadow: `0 4px 14px ${blueColor}30` }}><Download className="h-4 w-4" /> تحميل الملف</a>
                         <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-105" style={{ background: 'transparent', color: blueColor, border: `1.5px solid ${blueColor}30` }}><ExternalLink className="h-4 w-4" /> فتح</a>
                       </div>
                     </div>
-                    
                     <div className="flex-1 relative">
-                      <iframe src={`${fileUrl}#toolbar=1&navpanes=0`} className="w-full h-full border-0" title={fileName} style={{ background: isDark ? '#0f0f1a' : '#e5e7eb' }} />
+                      <iframe
+                        src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+                        className="w-full h-full border-0"
+                        title={fileName}
+                        style={{ background: isDark ? '#0f0f1a' : '#e5e7eb' }}
+                      />
                     </div>
                   </div>
                 )}
