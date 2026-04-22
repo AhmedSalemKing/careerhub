@@ -195,10 +195,13 @@ export class UploadController {
     const dir = join(process.cwd(), 'uploads', 'files');
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, fileName), file.buffer);
+    // Return absolute URL so the frontend never needs to guess the base
+    const apiBase = (process.env.API_URL || '').replace(/\/+$/, '');
+    const url = apiBase ? `${apiBase}/uploads/files/${fileName}` : `/uploads/files/${fileName}`;
     return {
       success: true,
       data: {
-        url: `/uploads/files/${fileName}`,
+        url,
         fileName: file.originalname,
         size: file.size,
         type: file.mimetype,
