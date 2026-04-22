@@ -13,6 +13,7 @@ import {
   Check,
   X,
   BookOpen,
+  Download,
 } from 'lucide-react'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
@@ -220,16 +221,33 @@ export default function ApprovalsPage() {
                   )}
 
                   <div className="flex gap-3 mb-4">
-                    {u.cvUrl && (
-                      <a
-                        href={`${API_BASE}${u.cvUrl}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
-                      >
-                        <Eye className="h-4 w-4" />
-                        {isAr ? 'عرض السيرة الذاتية' : 'View CV'}
-                      </a>
+                    {u.cvUrl && u.cvUrl.startsWith('http') && (
+                      <>
+                        <a
+                          href={`https://docs.google.com/viewer?url=${encodeURIComponent(u.cvUrl)}&embedded=true`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
+                        >
+                          <Eye className="h-4 w-4" />
+                          {isAr ? 'عرض السيرة الذاتية' : 'View CV'}
+                        </a>
+                        <a
+                          href={u.cvUrl}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
+                        >
+                          <Download className="h-4 w-4" />
+                          {isAr ? 'تحميل' : 'Download'}
+                        </a>
+                      </>
+                    )}
+                    {u.cvUrl && !u.cvUrl.startsWith('http') && (
+                      <span className="flex items-center gap-1 rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm text-orange-400">
+                        {isAr ? 'السيرة الذاتية غير متاحة (قديمة)' : 'CV unavailable (old upload)'}
+                      </span>
                     )}
                     {u.linkedinUrl && (
                       <a

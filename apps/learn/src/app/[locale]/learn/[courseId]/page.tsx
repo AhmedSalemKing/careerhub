@@ -174,18 +174,27 @@ function LearnPageInner() {
   
   const getSafeUrl = (url: string | null | undefined): string => {
     if (!url) return ''
-    
+
+    // Local /uploads/ paths no longer exist on Render — treat as broken
+    if (url.startsWith('/uploads/')) return ''
+
     // If already absolute URL, return as-is
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url
     }
-    
+
     // Remove leading slash if present to avoid double slashes
     const cleanUrl = url.replace(/^\//, '')
-    
+
     // Construct full URL with API base
     return `${API_BASE_URL}/${cleanUrl}`
   }
+
+  // Detect lessons whose content was uploaded to the old Render filesystem (now gone)
+  const hasLocalUrl = (
+    (!!activeLesson?.videoUrl && !activeLesson.videoUrl.startsWith('http')) ||
+    (!!activeLesson?.fileUrl && !activeLesson.fileUrl.startsWith('http'))
+  )
 
   const videoUrl: string | undefined = getSafeUrl(activeLesson?.videoUrl) || undefined
   const fileUrl: string | undefined = getSafeUrl(activeLesson?.fileUrl) || undefined
@@ -679,8 +688,23 @@ function LearnPageInner() {
                   </div>
                 )}
 
+                {/* Broken local URL — files gone from Render */}
+                {!hasVideo && !hasFile && !hasImage && hasLocalUrl && (
+                  <div className="h-[400px] flex items-center justify-center" style={{ background: isDark ? '#0a0a14' : '#fff8f0' }}>
+                    <div className="text-center max-w-sm px-6">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full" style={{ background: '#f97316' + '20' }}>
+                        <File className="h-8 w-8" style={{ color: '#f97316' }} />
+                      </div>
+                      <p className="text-base font-bold mb-2" style={{ color: textPrimary }}>المحتوى قيد الترحيل</p>
+                      <p className="text-sm leading-relaxed" style={{ color: textSecondary }}>
+                        هذا الملف لم يتم رفعه بعد على المنصة الجديدة. يرجى التواصل مع المحاضر لإعادة رفع المحتوى.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* No Media */}
-                {!hasVideo && !hasFile && !hasImage && (
+                {!hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
                   <div className="h-[400px] flex items-center justify-center" style={{ background: isDark ? '#0a0a14' : '#f1f5f9' }}>
                     <div className="text-center">
                       <File className="mx-auto h-16 w-16 mb-3" style={{ color: `${purple}30` }} />
