@@ -17,7 +17,7 @@ export class CertificatesService {
     })
   }
 
-  async generateCertificate(userId: string, courseId: string) {
+  async generateCertificate(userId: string, courseId: string, bypassEnrollment = false) {
     // 1. Check existing certificate (unique by userId+courseId)
     const existing = await this.prisma.certificate.findUnique({
       where: { userId_courseId: { userId, courseId } },
@@ -42,11 +42,13 @@ export class CertificatesService {
     })
     if (!course) throw new NotFoundException('Course not found')
 
-    // 4. Check enrollment
-    const enrollment = await this.prisma.enrollment.findUnique({
-      where: { userId_courseId: { userId, courseId } },
-    })
-    if (!enrollment) throw new ForbiddenException('Not enrolled in this course')
+    // 4. Check enrollment (admin can bypass)
+    if (!bypassEnrollment) {
+      const enrollment = await this.prisma.enrollment.findUnique({
+        where: { userId_courseId: { userId, courseId } },
+      })
+      if (!enrollment) throw new ForbiddenException('Not enrolled in this course')
+    }
 
     // 5. Generate unique serial number (our verifyCode)
     const serialNumber = `DVW-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`

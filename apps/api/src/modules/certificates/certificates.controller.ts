@@ -25,7 +25,8 @@ export class CertificatesController {
   @ApiOperation({ summary: 'Generate certificate image for completed course' })
   async generate(@Param('courseId') courseId: string, @Request() req: any) {
     const userId = req.user.sub || req.user.id
-    return this.certificatesService.generateCertificate(userId, courseId)
+    const isAdmin = req.user.role === 'ADMIN' || req.user.accountType === 'ADMIN'
+    return this.certificatesService.generateCertificate(userId, courseId, isAdmin)
   }
 
   // ── My certificates ─────────────────────────────────────────
