@@ -29,6 +29,7 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@aws-sdk/client-s3": "^3.1024.0",
     "@aws-sdk/s3-request-presigner": "^3.490.0",
+    "@napi-rs/canvas": "^0.1.99",
     "@nestjs/bull": "^11.0.4",
     "@nestjs/common": "^11.1.17",
     "@nestjs/config": "^3.1.1",
