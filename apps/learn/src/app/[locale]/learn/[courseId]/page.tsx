@@ -1,36 +1,34 @@
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
-import dynamic from 'next/dynamic'
+import { useState, useEffect, Suspense, useRef, useMemo, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { get, post } from '../../../../lib/api'
-import { getMediaUrl } from '../../../../lib/media'
 import {
   Lock, Play, BookOpen, ArrowRight, ArrowLeft, Sparkles,
   CheckCircle2, ChevronDown, CheckCheck, Video, FileText,
   Clock, Award, ChevronLeft, Settings,
   Download, Share2, MessageSquare, ThumbsUp,
-  User, GraduationCap, TrendingUp,
+  TrendingUp,
   Loader2, Gift, ShoppingCart, PlayCircle, Image, File, ExternalLink,
   ZoomIn, Eye, FileDown, Volume2, VolumeX,
   Pause, SkipForward, SkipBack
 } from 'lucide-react'
 import VideoProtection from '../../../../components/VideoProtection'
 
-const ReactPlayer = dynamic(() => import('react-player'), { ssr: false })
-
 function LearnPageInner() {
   const params = useParams()
   const courseId = params.courseId as string
   const locale = useLocale()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const qc = useQueryClient()
   const lessonParam = searchParams.get('lesson')
 
-  // ReactPlayer v3 ref (wraps HTMLVideoElement)
-  const playerRef = useRef<HTMLVideoElement>(null)
+  // Native video ref
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const lastTapRef = useRef<{ time: number; x: number } | null>(null)
 
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null)
   const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set())
@@ -38,17 +36,14 @@ function LearnPageInner() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set())
   const [markingComplete, setMarkingComplete] = useState(false)
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
-  
+
   // Media states
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [showNotes, setShowNotes] = useState(false)
   const [viewerMode, setViewerMode] = useState<'video' | 'file' | 'image' | 'all'>('all')
-  const [showControls, setShowControls] = useState(true)
   const [isLoadingMedia, setIsLoadingMedia] = useState(true)
   const [videoError, setVideoError] = useState<string | null>(null)
+  const [playbackRate, setPlaybackRate] = useState(1)
+  const [seekFeedback, setSeekFeedback] = useState<{ side: 'forward' | 'backward'; visible: boolean }>({ side: 'forward', visible: false })
+  const speeds = [0.75, 1, 1.25, 1.5, 2]
 
   // Theme detection
   useEffect(() => {
@@ -140,32 +135,51 @@ function LearnPageInner() {
   }
 
   const completedLessonIdsList = getCompletedLessonIds()
-  // Merge server-confirmed completions with locally-tracked ones for instant UI feedback
-  const completedLessonIds = new Set([...completedLessonIdsList, ...Array.from(localCompleted)])
+  // Merge server-confirmed + locally-tracked completions for instant UI feedback
+  const completedLessons = useMemo(
+    () => new Set([...completedLessonIdsList, ...Array.from(localCompleted)]),
+    [completedLessonIdsList, localCompleted]
+  )
 
-  // ✅ FIXED: Safe sections extraction - ensure it's always an array
-  const sections: any[] = Array.isArray(course?.sections) 
-    ? course.sections 
-    : Array.isArray(course?.modules) 
-      ? course.modules 
-      : []
-  
-  const allLessons = sections.flatMap((s: any) => Array.isArray(s.lessons) ? s.lessons : [])
-  const activeLesson = allLessons.find((l: any) => l.id === activeLessonId)
-  const activeLessonIndex = allLessons.findIndex((l: any) => l.id === activeLessonId)
-  const prevLesson = activeLessonIndex > 0 ? allLessons[activeLessonIndex - 1] : null
-  const nextLesson = activeLessonIndex < allLessons.length - 1 ? allLessons[activeLessonIndex + 1] : null
+  // Safe sections extraction
+  const sections: any[] = useMemo(
+    () => Array.isArray(course?.sections) ? course.sections
+        : Array.isArray(course?.modules) ? course.modules
+        : [],
+    [course]
+  )
 
-  // Lock system: each lesson requires the previous one to be completed
-  const isLessonUnlocked = (lessonId: string): boolean => {
+  // Flat ordered list across all sections — used for locking + navigation
+  const allLessonsFlat = useMemo(
+    () => sections.flatMap((s: any) =>
+      (Array.isArray(s.lessons) ? s.lessons : []).map((l: any) => ({ ...l, sectionTitle: s.title || s.titleAr }))
+    ),
+    [sections]
+  )
+
+  const activeLesson = useMemo(
+    () => allLessonsFlat.find((l: any) => l.id === activeLessonId),
+    [allLessonsFlat, activeLessonId]
+  )
+  const activeLessonIndex = allLessonsFlat.findIndex((l: any) => l.id === activeLessonId)
+  const prevLesson = activeLessonIndex > 0 ? allLessonsFlat[activeLessonIndex - 1] : null
+  const nextLesson = activeLessonIndex < allLessonsFlat.length - 1 ? allLessonsFlat[activeLessonIndex + 1] : null
+
+  // Sequential lock: lesson N unlocked only when lesson N-1 is completed
+  const isLessonUnlocked = useCallback((lessonId: string): boolean => {
     if (!isEnrolled) return false
-    const idx = allLessons.findIndex((l: any) => l.id === lessonId)
-    if (idx <= 0) return true // first lesson always accessible
-    return completedLessonIds.has(allLessons[idx - 1]?.id)
-  }
+    const idx = allLessonsFlat.findIndex((l: any) => l.id === lessonId)
+    if (idx <= 0) return true
+    return completedLessons.has(allLessonsFlat[idx - 1]?.id)
+  }, [allLessonsFlat, completedLessons, isEnrolled])
 
-  const isCourseComplete =
-    allLessons.length > 0 && allLessons.every((l: any) => completedLessonIds.has(l.id))
+  const getLessonStatus = useCallback((lessonId: string): 'completed' | 'available' | 'locked' => {
+    if (completedLessons.has(lessonId)) return 'completed'
+    if (isLessonUnlocked(lessonId)) return 'available'
+    return 'locked'
+  }, [completedLessons, isLessonUnlocked])
+
+  const isCourseComplete = allLessonsFlat.length > 0 && allLessonsFlat.every((l: any) => completedLessons.has(l.id))
   
   // ✅ FIXED: Safe URL construction - handles relative and absolute URLs
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_MAIN_URL || 'https://api.deveway.com'
@@ -190,9 +204,9 @@ function LearnPageInner() {
   const imageUrl: string | undefined = getSafeUrl(activeLesson?.imageUrl) || undefined
   const fileName: string = activeLesson?.fileName || 'document.pdf'
   
-  const isCurrentCompleted = activeLessonId ? completedLessonIds.has(activeLessonId) : false
-  const completedCount = completedLessonIds.size
-  const totalLessons = allLessons.length
+  const isCurrentCompleted = activeLessonId ? completedLessons.has(activeLessonId) : false
+  const completedCount = completedLessons.size
+  const totalLessons = allLessonsFlat.length
   const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
   const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
 
@@ -200,13 +214,10 @@ function LearnPageInner() {
   useEffect(() => {
     if (!course || !isEnrolled) return
     if (lessonParam) { setActiveLessonId(lessonParam); return }
-    if (!activeLessonId && sections.length > 0) {
-      const firstSection = sections[0]
-      if (firstSection && Array.isArray(firstSection.lessons) && firstSection.lessons.length > 0) {
-        setActiveLessonId(firstSection.lessons[0].id)
-      }
+    if (!activeLessonId && allLessonsFlat.length > 0) {
+      setActiveLessonId(allLessonsFlat[0].id)
     }
-  }, [lessonParam, isEnrolled, course, activeLessonId])
+  }, [lessonParam, isEnrolled, course, activeLessonId, allLessonsFlat])
 
   // Auto-open section containing active lesson
   useEffect(() => {
@@ -230,36 +241,69 @@ function LearnPageInner() {
     setViewerMode('all')
     setIsLoadingMedia(true)
     setVideoError(null)
-    setIsPlaying(false)
-    setCurrentTime(0)
   }, [activeLessonId])
 
-  // ReactPlayer v3 event handlers (native HTMLVideoElement events)
-  const handleVideoReady = () => { setIsLoadingMedia(false); setVideoError(null) }
-  const handleVideoWaiting = () => { setIsLoadingMedia(true) }
-  const handleVideoCanPlay = () => { setIsLoadingMedia(false); setVideoError(null) }
-  const handleVideoError = () => {
-    setIsLoadingMedia(false)
-    setVideoError('فشل تحميل الفيديو. يرجى التحقق من اتصالك بالإنترنت.')
-  }
-  const handleTimeUpdate = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    setCurrentTime(e.currentTarget.currentTime)
-  }
-  const handleDurationChange = (e: React.SyntheticEvent<HTMLVideoElement>) => {
-    setDuration(e.currentTarget.duration)
-  }
-  const handleVideoEnd = () => { setIsPlaying(false) }
+  // Apply playback speed to video element
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate
+  }, [playbackRate, activeLessonId])
 
-  const togglePlay = () => setIsPlaying((prev) => !prev)
-  const toggleMute = () => setIsMuted((prev) => !prev)
-  const seekTo = (time: number) => {
-    if (playerRef.current) playerRef.current.currentTime = time
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeys = (e: KeyboardEvent) => {
+      const video = videoRef.current
+      if (!video) return
+      // Ignore when typing in inputs
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') return
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          video.currentTime = Math.max(0, video.currentTime - 5)
+          showSeekFeedback('backward')
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          video.currentTime = Math.min(video.duration || 0, video.currentTime + 5)
+          showSeekFeedback('forward')
+          break
+        case ' ':
+          e.preventDefault()
+          video.paused ? video.play() : video.pause()
+          break
+        case 'f':
+          video.requestFullscreen?.()
+          break
+      }
+    }
+    window.addEventListener('keydown', handleKeys)
+    return () => window.removeEventListener('keydown', handleKeys)
+  }, [activeLessonId])
+
+  // Double-tap to seek ±5s on mobile
+  const showSeekFeedback = (side: 'forward' | 'backward') => {
+    setSeekFeedback({ side, visible: true })
+    setTimeout(() => setSeekFeedback(prev => ({ ...prev, visible: false })), 600)
   }
-  const formatTime = (seconds: number): string => {
-    if (!seconds || isNaN(seconds)) return '00:00'
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+
+  const handleVideoTap = (e: React.TouchEvent<HTMLDivElement>) => {
+    const now = Date.now()
+    const touch = e.changedTouches[0]
+    const videoWidth = e.currentTarget.offsetWidth
+    if (lastTapRef.current && now - lastTapRef.current.time < 300) {
+      const video = videoRef.current
+      if (!video) return
+      const isLeft = touch.clientX < videoWidth / 2
+      if (isLeft) {
+        video.currentTime = Math.max(0, video.currentTime - 5)
+        showSeekFeedback('backward')
+      } else {
+        video.currentTime = Math.min(video.duration || 0, video.currentTime + 5)
+        showSeekFeedback('forward')
+      }
+      lastTapRef.current = null
+    } else {
+      lastTapRef.current = { time: now, x: touch.clientX }
+    }
   }
 
   const toggleSection = (id: string) => {
@@ -274,7 +318,6 @@ function LearnPageInner() {
   const handleMarkComplete = async () => {
     if (!activeLessonId || markingComplete) return
     setMarkingComplete(true)
-    // Immediately unlock next lesson in UI without waiting for server
     setLocalCompleted((prev) => new Set([...prev, activeLessonId]))
     try {
       await post(`/courses/${courseId}/lessons/${activeLessonId}/complete`, {})
@@ -284,13 +327,19 @@ function LearnPageInner() {
       console.error('Error marking complete:', e)
     }
     setMarkingComplete(false)
-    // Auto-advance to next lesson
     if (nextLesson) setActiveLessonId(nextLesson.id)
   }
 
-  const handleCourseComplete = () => {
-    const MAIN = process.env.NEXT_PUBLIC_MAIN_URL || ''
-    window.location.href = `${MAIN}/${locale}/dashboard/certificates`
+  const handleGetCertificate = async () => {
+    try {
+      const res = await post(`/certificates/generate/${courseId}`, {})
+      const certUrl = (res?.data as any)?.data?.pdfUrl
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+      if (certUrl) window.open(`${API_BASE}${certUrl}`, '_blank')
+      else router.push(`/${locale}/dashboard/certificates`)
+    } catch {
+      router.push(`/${locale}/dashboard/certificates`)
+    }
   }
 
   const goToNextLesson = () => { if (nextLesson) setActiveLessonId(nextLesson.id) }
@@ -380,7 +429,7 @@ function LearnPageInner() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <button onClick={() => setShowNotes(!showNotes)} className="p-2 rounded-lg transition-colors hover:bg-purple-10" style={{ color: textSecondary }}><FileText className="h-5 w-5" /></button>
+            <button className="p-2 rounded-lg transition-colors hover:bg-purple-10" style={{ color: textSecondary }}><FileText className="h-5 w-5" /></button>
             <button className="p-2 rounded-lg transition-colors hover:bg-purple-10" style={{ color: textSecondary }}><Settings className="h-5 w-5" /></button>
           </div>
         </div>
@@ -391,63 +440,72 @@ function LearnPageInner() {
 
         {/* Sidebar */}
         <aside className="w-full lg:w-[30%] xl:w-72 shrink-0 overflow-y-auto lg:h-[calc(100vh-58px)] lg:sticky lg:top-[58px]" style={{ background: sidebarBg, borderLeft: `1px solid ${borderColor}` }}>
-          <div className="p-3 space-y-1">
-            <div className="px-3 py-2 mb-2 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: textSecondary }}>محتوى الكورس</span>
-              <span className="text-xs px-2 py-1 rounded-full font-medium" style={{ background: `${purple}15}`, color: purple }}>{progress}% مكتمل</span>
+          {/* Sidebar header + mini progress */}
+          <div className="px-4 py-3 sticky top-0 z-10" style={{ background: sidebarBg, borderBottom: `1px solid ${borderColor}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-semibold" style={{ color: textSecondary }}>محتوى الكورس</span>
+              <span className="text-xs font-bold" style={{ color: purple }}>{progress}% مكتمل</span>
             </div>
+            <div style={{ height: 4, background: borderColor, borderRadius: 2 }}>
+              <div style={{ height: '100%', borderRadius: 2, width: `${progress}%`, background: `linear-gradient(90deg, ${purple}, ${teal})`, transition: 'width 0.5s ease' }} />
+            </div>
+            <p className="text-xs mt-1" style={{ color: textSecondary }}>{completedCount} من {totalLessons} درس</p>
+          </div>
 
-            {sections.map((section: any) => {
-              if (!section || !section.id) return null
-              
-              const isOpen = openSections.has(section.id)
-              const sectionLessons: any[] = Array.isArray(section.lessons) ? section.lessons : []
-              const sectionCompletedCount = sectionLessons.filter((l: any) => completedLessonIds.has(l.id)).length
-              const sectionCompleted = sectionLessons.length > 0 && sectionCompletedCount === sectionLessons.length
+          <div className="p-2">
+            {allLessonsFlat.map((lesson: any, idx: number) => {
+              const status = getLessonStatus(lesson.id)
+              const isActive = activeLessonId === lesson.id
+              const lessonType = lesson.videoUrl ? 'فيديو' : lesson.fileUrl ? 'ملف' : lesson.imageUrl ? 'صورة' : 'نص'
 
               return (
-                <div key={section.id} className="rounded-xl overflow-hidden transition-all hover:shadow-sm" style={{ border: `1px solid ${borderColor}` }}>
-                  <button onClick={() => toggleSection(section.id)} className="w-full flex items-center gap-2.5 px-3 py-3 text-right text-sm font-semibold transition-opacity hover:opacity-80" style={{ background: isDark ? '#151929' : '#ffffff', color: textPrimary }}>
-                    <div className={`h-5 w-5 rounded-full flex items-center justify-center`} style={{ background: sectionCompleted ? `${green}15` : `${purple}15` }}>
-                      {sectionCompleted ? <CheckCircle2 className="h-3.5 w-3.5" style={{ color: green }} /> : <BookOpen className="h-3.5 w-3.5" style={{ color: purple }} />}
-                    </div>
-                    <span className="flex-1 text-right leading-snug">{section.title || section.titleAr || section.titleEn}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {sectionLessons.length > 0 && (<span className="text-xs px-1.5 py-0.5 rounded" style={{ background: sectionCompleted ? `${green}15` : cardBg, color: sectionCompleted ? green : textSecondary }}>{sectionCompletedCount}/{sectionLessons.length}</span>)}
-                      <ChevronDown className="h-4 w-4 transition-transform duration-200" style={{ color: textSecondary, transform: isOpen ? 'rotate(180deg)' : 'none' }} />
-                    </div>
-                  </button>
+                <button
+                  key={lesson.id}
+                  onClick={() => status !== 'locked' && setActiveLessonId(lesson.id)}
+                  disabled={status === 'locked'}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 14px', borderRadius: 10,
+                    width: '100%', textAlign: 'right', border: 'none',
+                    cursor: status === 'locked' ? 'not-allowed' : 'pointer',
+                    background: isActive ? `${purple}15` : 'transparent',
+                    opacity: status === 'locked' ? 0.5 : 1,
+                    transition: 'all 0.15s ease',
+                    borderLeft: isActive ? `3px solid ${purple}` : '3px solid transparent',
+                    marginBottom: 2,
+                  }}
+                >
+                  {/* Status Icon */}
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: status === 'completed' ? green
+                      : status === 'available' ? purple
+                      : 'rgba(107,114,128,0.25)',
+                  }}>
+                    {status === 'completed' && <CheckCircle2 size={15} color="#fff" />}
+                    {status === 'available' && <PlayCircle size={15} color="#fff" />}
+                    {status === 'locked' && <Lock size={13} color="#9ca3af" />}
+                  </div>
 
-                  {isOpen && (
-                    <div style={{ borderTop: `1px solid ${borderColor}` }}>
-                      {sectionLessons.map((lesson: any, index: number) => {
-                        if (!lesson || !lesson.id) return null
-                        
-                        const unlocked = lesson.isFree || isLessonUnlocked(lesson.id)
-                        const canAccess = unlocked
-                        const isActive = activeLessonId === lesson.id
-                        const isCompleted = completedLessonIds.has(lesson.id)
-                        const isLocked = isEnrolled && !unlocked
-                        const lessonHasVideo = !!lesson.videoUrl
-                        const lessonHasFile = !!lesson.fileUrl
-                        const lessonHasImage = !!lesson.imageUrl
-
-                        return (
-                          <button key={lesson.id} onClick={() => canAccess && setActiveLessonId(lesson.id)} disabled={!canAccess} className="w-full flex items-center gap-2.5 px-3 py-2.5 text-right text-sm transition-all relative group" style={{ background: isActive ? `${purple}08` : 'transparent', borderRight: isActive ? `3px solid ${purple}` : '3px solid transparent', color: isActive ? purple : canAccess ? textPrimary : textSecondary, cursor: canAccess ? 'pointer' : 'not-allowed', opacity: canAccess ? 1 : 0.45 }}>
-                            <span className="text-xs w-5 text-center shrink-0" style={{ color: isActive ? purple : textSecondary, opacity: 0.6 }}>{index + 1}</span>
-                            <div className="h-6 w-6 shrink-0 flex items-center justify-center rounded-full transition-colors" style={{ background: isCompleted ? `${green}15` : isActive ? `${purple}18` : cardBg }}>
-                              {isCompleted ? <CheckCircle2 className="h-3.5 w-3.5" style={{ color: green }} /> : isLocked ? <Lock className="h-3 w-3" style={{ color: textSecondary }} /> : !canAccess ? <Lock className="h-3 w-3" style={{ color: textSecondary }} /> : lessonHasVideo ? <Video className="h-3 w-3" style={{ color: isActive ? redColor : textSecondary }} /> : lessonHasFile ? <FileText className="h-3 w-3" style={{ color: isActive ? blueColor : textSecondary }} /> : lessonHasImage ? <Image className="h-3 w-3" style={{ color: isActive ? purpleColor : textSecondary }} /> : <File className="h-3 w-3" style={{ color: textSecondary }} />}
-                            </div>
-                            <span className={`flex-1 line-clamp-2 text-right leading-snug ${isActive ? 'font-semibold' : ''}`}>{lesson.title || lesson.titleAr}</span>
-                            {isActive && (<div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-l" style={{ background: purple }} />)}
-                            {lesson.isFree && !isActive && (<span className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium flex items-center gap-1" style={{ background: `${teal}18`, color: teal }}><Gift className="h-3 w-3" /> مجاني</span>)}
-                            {isActive && (<ChevronLeft className="h-4 w-4 shrink-0" style={{ color: purple }} />)}
-                          </button>
-                        )
-                      })}
+                  {/* Lesson info */}
+                  <div style={{ flex: 1, textAlign: 'right', minWidth: 0 }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: isActive ? 600 : 400,
+                      color: isActive ? purple : status === 'locked' ? textSecondary : textPrimary,
+                      lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {lesson.title || lesson.titleAr}
                     </div>
-                  )}
-                </div>
+                    <div style={{ fontSize: 11, color: textSecondary, marginTop: 2 }}>
+                      {lessonType}{lesson.duration ? ` • ${lesson.duration} د` : ''}
+                      {lesson.isFree && <span style={{ marginRight: 4, color: teal }}>· مجاني</span>}
+                    </div>
+                  </div>
+
+                  {/* Lesson number */}
+                  <span style={{ fontSize: 11, color: textSecondary, flexShrink: 0 }}>{idx + 1}</span>
+                </button>
               )
             })}
           </div>
@@ -471,88 +529,82 @@ function LearnPageInner() {
 
                 {/* VIDEO PLAYER */}
                 {(viewerMode === 'video' || viewerMode === 'all') && hasVideo && videoUrl && (
-                  <div className="video-container relative w-full flex items-center justify-center" style={{ height: viewerMode === 'all' && hasMultipleTypes ? '450px' : '100%', maxHeight: '70vh', background: '#000' }} onMouseEnter={() => setShowControls(true)} onMouseLeave={() => { if (isPlaying) setShowControls(false) }}>
-
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-                      <ReactPlayer
-                        ref={playerRef}
+                  <div>
+                    {/* 16:9 video wrapper */}
+                    <div
+                      className="video-container"
+                      style={{ position: 'relative', paddingTop: '56.25%', background: '#000', borderRadius: 0, overflow: 'hidden' }}
+                      onTouchEnd={handleVideoTap}
+                    >
+                      <video
+                        ref={videoRef}
                         key={videoUrl}
                         src={videoUrl}
-                        playing={isPlaying}
-                        muted={isMuted}
-                        width="100%"
-                        height="100%"
-                        onReady={handleVideoReady}
-                        onWaiting={handleVideoWaiting}
-                        onCanPlay={handleVideoCanPlay}
-                        onTimeUpdate={handleTimeUpdate}
-                        onDurationChange={handleDurationChange}
-                        onPlay={() => setIsPlaying(true)}
-                        onPause={() => setIsPlaying(false)}
-                        onEnded={handleVideoEnd}
-                        onError={handleVideoError}
-                        style={{ position: 'absolute', top: 0, left: 0 }}
+                        controls
+                        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                        controlsList="nodownload"
+                        disablePictureInPicture
+                        playsInline
+                        onContextMenu={e => e.preventDefault()}
+                        onCanPlay={() => setIsLoadingMedia(false)}
+                        onWaiting={() => setIsLoadingMedia(true)}
+                        onError={() => { setIsLoadingMedia(false); setVideoError('فشل تحميل الفيديو') }}
+                        onEnded={() => { if (!isCurrentCompleted) handleMarkComplete() }}
                       />
+
+                      {/* Loading spinner */}
+                      {isLoadingMedia && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', zIndex: 10, pointerEvents: 'none' }}>
+                          <Loader2 className="h-10 w-10 animate-spin text-white" />
+                        </div>
+                      )}
+
+                      {/* Error overlay */}
+                      {videoError && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', zIndex: 10 }}>
+                          <div className="text-center p-6">
+                            <Video className="h-10 w-10 text-red-400 mx-auto mb-3" />
+                            <p className="text-white text-sm mb-3">{videoError}</p>
+                            <button onClick={() => { setVideoError(null); videoRef.current?.load() }} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm">إعادة المحاولة</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Double-tap seek feedback */}
+                      {seekFeedback.visible && (
+                        <div style={{
+                          position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+                          ...(seekFeedback.side === 'backward' ? { left: '15%' } : { right: '15%' }),
+                          background: 'rgba(0,0,0,0.7)', color: '#fff',
+                          borderRadius: '50%', width: 60, height: 60,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 700, pointerEvents: 'none', zIndex: 20,
+                        }}>
+                          {seekFeedback.side === 'backward' ? '-5s' : '+5s'}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Loading Spinner */}
-                    {isLoadingMedia && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                        <Loader2 className="h-12 w-12 animate-spin text-white" />
-                      </div>
-                    )}
-
-                    {/* Error Message */}
-                    {videoError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-10">
-                        <div className="text-center p-6 max-w-md">
-                          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center"><Video className="h-8 w-8 text-red-400" /></div>
-                          <p className="text-white font-medium mb-2">خطأ في تشغيل الفيديو</p>
-                          <p className="text-white/60 text-sm mb-4">{videoError}</p>
-                          <button onClick={() => { setVideoError(null); setIsLoadingMedia(true); if (playerRef.current) playerRef.current.load() }} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors">إعادة المحاولة</button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom Controls */}
-                    {!isLoadingMedia && !videoError && (
-                      <div className={`absolute bottom-0 left-0 right-0 z-10 transition-opacity duration-300 ${showControls || !isPlaying ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)' }}>
-                        <div className="px-4 pt-6 pb-2">
-                          {/* Progress Bar */}
-                          <div className="w-full h-1 bg-white/30 rounded-full cursor-pointer group" onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); const percent = (e.clientX - rect.left) / rect.width; seekTo(percent * duration) }}>
-                            <div className="h-full bg-red-500 rounded-full relative" style={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' }}>
-                              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-
-                          {/* Controls Row */}
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-3">
-                              <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">{isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}</button>
-                              <button onClick={goToPrevLesson} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><SkipBack className="h-4 w-4" /></button>
-                              <button onClick={goToNextLesson} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80 hover:text-white"><SkipForward className="h-4 w-4" /></button>
-                              <span className="text-xs text-white/80 font-mono">{formatTime(currentTime)} / {formatTime(duration)}</span>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <button onClick={toggleMute} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
-                              {!isCurrentCompleted ? (
-                                <button onClick={handleMarkComplete} disabled={markingComplete} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 rounded-lg text-green-400 text-xs font-medium transition-colors disabled:opacity-50">{markingComplete ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCheck className="h-3 w-3" />}{markingComplete ? 'جاري...' : 'تم الإكمال'}</button>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500/30 rounded-lg text-green-400 text-xs font-medium"><CheckCircle2 className="h-3 w-3" /> مكتمل ✓</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Play Button Overlay */}
-                    {!isPlaying && !isLoadingMedia && !videoError && (
-                      <div className="absolute inset-0 flex items-center justify-center z-5 cursor-pointer" onClick={togglePlay}>
-                        <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-all hover:scale-110"><Play className="h-10 w-10 text-white ml-1" /></div>
-                      </div>
-                    )}
+                    {/* Speed controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', flexWrap: 'wrap', background: isDark ? '#0d1024' : '#f8f8fa', borderBottom: `1px solid ${borderColor}` }}>
+                      <span style={{ fontSize: 12, color: textSecondary, marginLeft: 4 }}>سرعة:</span>
+                      {speeds.map(speed => (
+                        <button
+                          key={speed}
+                          onClick={() => setPlaybackRate(speed)}
+                          style={{
+                            padding: '3px 10px', borderRadius: 20, fontSize: 12,
+                            fontWeight: playbackRate === speed ? 700 : 400,
+                            background: playbackRate === speed ? purple : 'transparent',
+                            color: playbackRate === speed ? '#fff' : textSecondary,
+                            border: `1px solid ${playbackRate === speed ? purple : borderColor}`,
+                            cursor: 'pointer', transition: 'all 0.15s ease',
+                          }}
+                        >
+                          {speed}x
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -617,7 +669,7 @@ function LearnPageInner() {
                     
                     <div className="flex items-center gap-4 text-xs flex-wrap" style={{ color: textSecondary }}>
                       {activeLesson.duration && (<span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{activeLesson.duration}</span>)}
-                      <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" />الدرس {activeLessonIndex + 1} من {totalLessons}</span>
+                      <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" />الدرس {activeLessonIndex >= 0 ? activeLessonIndex + 1 : 1} من {totalLessons}</span>
                       {hasVideo && <span className="flex items-center gap-1" style={{ color: redColor }}><Video className="h-3.5 w-3.5" />فيديو</span>}
                       {hasFile && <span className="flex items-center gap-1" style={{ color: blueColor }}><FileText className="h-3.5 w-3.5" />ملف PDF</span>}
                       {hasImage && <span className="flex items-center gap-1" style={{ color: purpleColor }}><Image className="h-3.5 w-3.5" />صورة</span>}
@@ -662,6 +714,26 @@ function LearnPageInner() {
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-purple-5" style={{ color: textSecondary }}><MessageSquare className="h-4 w-4" />اسأل سؤال</button>
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-colors hover:bg-purple-5" style={{ color: textSecondary }}><Share2 className="h-4 w-4" />مشاركة</button>
                 </div>
+
+                {/* Course complete sticky button */}
+                {isCourseComplete && (
+                  <div style={{ position: 'sticky', bottom: 20, marginTop: 16 }}>
+                    <button
+                      onClick={handleGetCertificate}
+                      style={{
+                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        gap: 12, padding: '16px 24px', borderRadius: 16, border: 'none',
+                        background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                        color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer',
+                        boxShadow: '0 8px 32px rgba(22,163,74,0.4)',
+                      }}
+                    >
+                      <Award size={22} />
+                      تهانينا! أكملت الكورس — احصل على شهادتك
+                      <ChevronLeft size={18} />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -670,29 +742,12 @@ function LearnPageInner() {
                 <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full" style={{ background: `${purple}12` }}><PlayCircle className="h-10 w-10" style={{ color: `${purple}60` }} /></div>
                 <h2 className="text-xl font-bold font-madinet mb-2" style={{ color: textPrimary }}>اختر درساً للبدء</h2>
                 <p className="text-sm mb-6" style={{ color: textSecondary }}>اختر أي درس من القائمة الجانبية لبدء التعلم</p>
-                <button onClick={() => { const first = allLessons[0]; if (first) setActiveLessonId(first.id) }} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition-all hover:scale-105" style={{ background: purple }}><Play className="h-4 w-4" />ابدأ من أول درس</button>
+                <button onClick={() => { const first = allLessonsFlat[0]; if (first) setActiveLessonId(first.id) }} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm transition-all hover:scale-105" style={{ background: purple }}><Play className="h-4 w-4" />ابدأ من أول درس</button>
               </div>
             </div>
           )}
         </main>
       </div>
-
-      {/* Course Complete Banner */}
-      {isCourseComplete && (
-        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 w-full max-w-sm">
-          <button
-            onClick={handleCourseComplete}
-            className="w-full flex items-center justify-center gap-3 rounded-2xl py-4 font-bold text-white text-base transition-all hover:scale-105 active:scale-95"
-            style={{
-              background: 'linear-gradient(135deg, #16a34a, #15803d)',
-              boxShadow: '0 4px 24px rgba(22,163,74,0.5)',
-            }}
-          >
-            <Award className="h-5 w-5" />
-            تم إكمال الكورس — احصل على شهادتك
-          </button>
-        </div>
-      )}
 
       {/* Floating AI Button */}
       <a href={`${MAIN_URL}/${locale}/dashboard/ai-chat`} title="اسأل الذكاء الاصطناعي" className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full transition-all hover:scale-110 active:scale-95" style={{ background: `linear-gradient(135deg, ${purple}, #8b5cf6)`, boxShadow: `0 6px 24px ${purple}50` }}><Sparkles className="h-7 w-7 text-white" /></a>
