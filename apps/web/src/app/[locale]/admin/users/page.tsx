@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { api, post, patch } from '../../../../lib/api'
 import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, Eye, X } from 'lucide-react'
+import { getMediaUrl } from '../../../../lib/media'
 
 type AdminUser = {
   id: string
@@ -185,7 +186,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         {u.profile?.avatar ? (
-                          <img src={u.profile.avatar} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
+                          <img src={getMediaUrl(u.profile.avatar) ?? ''} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
                         ) : (
                           <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-bold text-white" style={{ background: '#5120c8' }}>
                             {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}

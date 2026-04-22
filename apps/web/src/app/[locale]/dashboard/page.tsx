@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft } from 'lucide-react'
 import { get, patch } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
+import { getMediaUrl } from '../../../lib/media'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -116,7 +117,7 @@ function InstructorOverview() {
                 <div className="course-thumb-mini">
                   {course.thumbnail ? (
                     <img 
-                      src={`${process.env.NEXT_PUBLIC_API_URL || ''}${course.thumbnail}`} 
+                      src={getMediaUrl(course.thumbnail) ?? ''}
                       className="h-full w-full object-cover" 
                       alt={course.titleEn} 
                     />

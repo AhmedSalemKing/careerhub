@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get, patch, post } from '../../../../lib/api'
+import { getMediaUrl } from '../../../../lib/media'
 import api from '../../../../lib/api'
 import { useAuthStore } from '../../../../stores/authStore'
 import {
@@ -44,7 +45,7 @@ export default function SettingsPage() {
       })
       if (me.profile?.avatar) {
         const av = me.profile.avatar
-        setAvatarPreview(av.startsWith('http') ? av : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}${av}`)
+        setAvatarPreview(getMediaUrl(av) || '')
       }
       if (typeof window !== 'undefined') {
         setPrefForm(f => ({ ...f, theme: localStorage.getItem('deveway-theme') || 'dark' }))
