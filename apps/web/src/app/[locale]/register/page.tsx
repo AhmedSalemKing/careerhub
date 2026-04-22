@@ -4,7 +4,7 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { api } from '../../../lib/api'
-import { Camera } from 'lucide-react'
+import { Camera, CheckCircle2, Upload, Loader2, X } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -205,6 +205,7 @@ export default function RegisterPage() {
   const [isPending, setIsPending] = useState(false)
   const [cvUploading, setCvUploading] = useState(false)
   const [cvFileName, setCvFileName] = useState('')
+  const [cvError, setCvError] = useState('')
 
   const [step1, setStep1] = useState<Step1Data>({
     firstName: '',
@@ -255,6 +256,7 @@ export default function RegisterPage() {
 
   async function handleCvUpload(file: File) {
     setCvUploading(true)
+    setCvError('')
     const formData = new FormData()
     formData.append('file', file)
     try {
@@ -263,14 +265,18 @@ export default function RegisterPage() {
         body: formData,
       })
       const data = await res.json()
-      if (data.success && data.data?.url) {
-        setStep2((prev) => ({ ...prev, cvUrl: data.data.url }))
-        setCvFileName(data.data.fileName || file.name)
+      const url = data?.data?.url || data?.url
+      if (url) {
+        setStep2((prev) => ({ ...prev, cvUrl: url }))
+        setCvFileName(data.data?.fileName || file.name)
+        console.log('[CV Upload] Success:', url)
       } else {
-        setError(ar ? 'فشل رفع الملف' : 'File upload failed')
+        console.error('[CV Upload] No URL in response:', data)
+        setCvError(ar ? 'فشل رفع السيرة الذاتية - حاول مرة أخرى' : 'CV upload failed — please try again')
       }
-    } catch {
-      setError(ar ? 'فشل رفع الملف' : 'File upload failed')
+    } catch (e) {
+      console.error('[CV Upload] Failed:', e)
+      setCvError(ar ? 'فشل رفع السيرة الذاتية - حاول مرة أخرى' : 'CV upload failed — please try again')
     } finally {
       setCvUploading(false)
     }
@@ -292,6 +298,10 @@ export default function RegisterPage() {
 
   async function handleSubmit() {
     if (!validateStep2()) return
+    if (['INSTRUCTOR', 'CONSULTANT'].includes(step2.accountType) && !step2.cvUrl) {
+      setError(ar ? 'يجب رفع السيرة الذاتية أولاً' : 'Please upload your CV before submitting')
+      return
+    }
     setError('')
     setLoading(true)
 
@@ -649,45 +659,66 @@ export default function RegisterPage() {
                 </p>
 
                 <Field label={ar ? 'السيرة الذاتية (PDF أو Word)' : 'CV / Resume (PDF or Word)'} error={errors2.cvUrl} mutedColor={colors.mutedColor}>
-                  <div
-                    className="rounded-xl p-5 text-center cursor-pointer transition-all duration-200"
-                    style={{
-                      border: `2px dashed ${errors2.cvUrl ? '#ef4444' : colors.subCardBorder}`,
-                      background: errors2.cvUrl ? 'rgba(239,68,68,0.06)' : colors.subCardBg,
-                    }}
-                    onClick={() => document.getElementById('cv-file-input')?.click()}
-                    onMouseEnter={(e) => {
-                      if (!errors2.cvUrl) e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)'
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!errors2.cvUrl) e.currentTarget.style.borderColor = colors.subCardBorder
-                    }}
-                  >
-                    <input
-                      id="cv-file-input"
-                      type="file"
-                      accept=".pdf,.doc,.docx"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file) handleCvUpload(file)
+                  {step2.cvUrl ? (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '12px 16px', borderRadius: 10,
+                      background: 'rgba(22,163,74,0.1)',
+                      border: '1px solid rgba(22,163,74,0.3)',
+                    }}>
+                      <CheckCircle2 size={18} color="#16a34a" />
+                      <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 600, flex: 1 }}>
+                        {cvFileName || (ar ? 'تم رفع السيرة الذاتية بنجاح' : 'CV uploaded successfully')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setStep2(prev => ({ ...prev, cvUrl: '' })); setCvFileName(''); setCvError('') }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', display: 'flex', alignItems: 'center' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label
+                      style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        padding: '24px', borderRadius: 10, cursor: cvUploading ? 'not-allowed' : 'pointer',
+                        border: `2px dashed ${cvError || errors2.cvUrl ? '#ef4444' : colors.subCardBorder}`,
+                        background: cvError || errors2.cvUrl ? 'rgba(239,68,68,0.05)' : colors.subCardBg,
+                        transition: 'border-color 0.2s',
                       }}
-                    />
-                    {cvUploading ? (
-                      <p className="text-sm" style={{ color: '#818CF8' }}>{ar ? 'جاري رفع الملف...' : 'Uploading...'}</p>
-                    ) : cvFileName ? (
-                      <p className="text-sm font-medium" style={{ color: '#34D399' }}>✅ {cvFileName}</p>
-                    ) : (
-                      <>
-                        <p className="text-sm font-medium transition-colors duration-200" style={{ color: colors.textColor }}>
-                          {ar ? 'اضغط لرفع السيرة الذاتية' : 'Click to upload your CV'}
-                        </p>
-                        <p className="text-xs mt-1" style={{ color: colors.mutedColor }}>
-                          {ar ? 'PDF أو Word — حجم أقصى 5MB' : 'PDF or Word — max 5 MB'}
-                        </p>
-                      </>
-                    )}
-                  </div>
+                      onMouseEnter={e => { if (!cvUploading && !cvError && !errors2.cvUrl) (e.currentTarget as HTMLLabelElement).style.borderColor = 'rgba(81,32,200,0.4)' }}
+                      onMouseLeave={e => { if (!cvUploading && !cvError && !errors2.cvUrl) (e.currentTarget as HTMLLabelElement).style.borderColor = colors.subCardBorder }}
+                    >
+                      {cvUploading ? (
+                        <Loader2 size={24} className="animate-spin" color="#5120c8" />
+                      ) : (
+                        <Upload size={24} color={cvError || errors2.cvUrl ? '#ef4444' : '#5120c8'} />
+                      )}
+                      <span style={{ fontSize: 14, marginTop: 8, color: colors.textColor, fontWeight: 500 }}>
+                        {cvUploading
+                          ? (ar ? 'جاري الرفع...' : 'Uploading...')
+                          : (ar ? 'اضغط لرفع السيرة الذاتية' : 'Click to upload your CV')}
+                      </span>
+                      <span style={{ fontSize: 12, marginTop: 4, color: colors.mutedColor }}>
+                        {ar ? 'PDF أو Word — حجم أقصى 5MB' : 'PDF or Word — max 5 MB'}
+                      </span>
+                      <input
+                        id="cv-file-input"
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        style={{ display: 'none' }}
+                        disabled={cvUploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleCvUpload(file)
+                        }}
+                      />
+                    </label>
+                  )}
+                  {cvError && (
+                    <p style={{ color: '#ef4444', fontSize: 13, marginTop: 6 }}>{cvError}</p>
+                  )}
                 </Field>
 
                 <div className="grid grid-cols-2 gap-3">
