@@ -159,13 +159,13 @@ export default function CourseDetailPage({
   const isDark = theme === 'dark'
 
   // Colors
-  const bg = isDark ? '#0f1221' : '#ffffff'
-  const cardBg = isDark ? '#181c30' : '#f8f8fa'
+  const bg = isDark ? 'rgb(0 0 0)' : '#ffffff'
+  const cardBg = isDark ? 'rgb(25 27 32)' : '#f8f8fa'
   const textPrimary = isDark ? '#ffffff' : '#0d0d0d'
   const textSecondary = isDark ? '#94a3b8' : '#64748b'
   const borderColor = isDark ? '#1e293b' : '#e5e7eb'
-  const surfaceBg = isDark ? '#151929' : '#ffffff'
-  const heroBg = isDark ? '#0a0e1a' : '#f1f0fb'
+  const surfaceBg = isDark ? 'rgb(25 27 32)' : '#ffffff'
+  const heroBg = isDark ? '#0d0d0d' : '#f1f0fb'
   const purple = '#6c3ce0'
   const teal = '#0d9488'
   const greenBg = isDark ? 'rgba(22,163,74,0.12)' : 'rgba(22,163,74,0.06)'
@@ -689,9 +689,9 @@ export default function CourseDetailPage({
 }
 
 function CourseSkeleton({ isDark }: { isDark: boolean }) {
-  const skBg = isDark ? '#181c30' : '#f1f5f9'
+  const skBg = isDark ? 'rgb(25 27 32)' : '#f1f5f9'
   return (
-    <div className="min-h-screen p-6 space-y-6" style={{ background: isDark ? '#0f1221' : '#fff' }}>
+    <div className="min-h-screen p-6 space-y-6" style={{ background: isDark ? 'rgb(0 0 0)' : '#fff' }}>
       <div className="max-w-6xl mx-auto">
         <div className="h-8 w-48 animate-pulse rounded-lg mb-4" style={{ background: skBg }} />
         <div className="h-64 animate-pulse rounded-2xl mb-6" style={{ background: skBg }} />
