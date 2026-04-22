@@ -18,7 +18,8 @@ const logger_middleware_1 = require("./common/middleware/logger.middleware");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
-    app.useStaticAssets((0, path_1.join)(__dirname, '..', 'uploads'), { prefix: '/uploads/' });
+    const uploadsPath = process.env.UPLOADS_PATH || (0, path_1.join)(process.cwd(), 'uploads');
+    app.useStaticAssets(uploadsPath, { prefix: '/uploads' });
     const configService = app.get(config_1.ConfigService);
     app.use((0, helmet_1.default)({
         contentSecurityPolicy: {
