@@ -4,41 +4,68 @@ import { useState, useRef, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Users, Settings, Video, Plus, X, Upload, CheckCircle } from 'lucide-react'
-import { get, post, patch } from '../../../../../../lib/api'
+import { 
+  BookOpen, Users, Settings, Video, Plus, X, Upload, CheckCircle,
+  FileText, Image, File, Download, Eye, Trash2, Edit3
+} from 'lucide-react'
+import { get, post, patch, del } from '../../../../../../lib/api'
 import { AuthGate } from '../../../../../components/AuthGate'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 type Tab = 'content' | 'lectures' | 'students' | 'settings'
+type MediaType = 'video' | 'file' | 'image' | null
 
-// ─── Video upload with progress ──────────────────────────────────────────────
+// ─── Upload Functions ──────────────────────────────────────────────────────
 
-async function uploadVideo(file: File, onProgress: (p: number) => void): Promise<string> {
+async function uploadMedia(
+  file: File, 
+  onProgress: (p: number) => void, 
+  type: 'video' | 'file' | 'image'
+): Promise<{ url: string; name: string; type: string }> {
   return new Promise((resolve, reject) => {
     const formData = new FormData()
-    formData.append('video', file)
+    const fieldName = type === 'video' ? 'video' : type === 'image' ? 'image' : 'file'
+    formData.append(fieldName, file)
+    
     const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
     const xhr = new XMLHttpRequest()
+    
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
     }
+    
     xhr.onload = () => {
-      try {
-        const data = JSON.parse(xhr.responseText)
-        resolve(data.data.url as string)
-      } catch {
-        reject(new Error('فشل رفع الفيديو'))
+      console.log(`${type} upload response:`, xhr.status, xhr.responseText)
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          resolve({ 
+            url: data.data?.url || data.url, 
+            name: file.name,
+            type: type
+          })
+        } catch {
+          reject(new Error(`فشل رفع ${type}: استجابة غير صالحة`))
+        }
+      } else {
+        let errorMsg = `فشل رفع ${type}`
+        try {
+          const errData = JSON.parse(xhr.responseText)
+          errorMsg = errData?.message || errData?.error || errorMsg
+        } catch {}
+        reject(new Error(errorMsg))
       }
     }
-    xhr.onerror = () => reject(new Error('فشل الاتصال'))
-    xhr.open('POST', `${API_URL}/upload/video`)
+    
+    xhr.onerror = () => reject(new Error('فشل الاتصال بالسيرفر'))
+    xhr.open('POST', `${API_URL}/upload/${type}`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
   })
 }
 
-// ─── Add Lecture Modal ────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────
 
 type LessonForm = {
   title: string
@@ -46,7 +73,13 @@ type LessonForm = {
   sectionId: string
   isFree: boolean
   videoUrl: string
+  fileUrl: string
+  fileName: string
+  imageUrl: string
+  contentType: 'video' | 'file' | 'image' | 'mixed'
 }
+
+// ─── Add Lecture Modal ────────────────────────────────────────────────────────
 
 function AddLectureModal({
   courseId,
@@ -65,45 +98,144 @@ function AddLectureModal({
     sectionId: sections[0]?.id ?? '',
     isFree: false,
     videoUrl: '',
+    fileUrl: '',
+    fileName: '',
+    imageUrl: '',
+    contentType: 'video',
   })
+  
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploadType, setUploadType] = useState<MediaType>(null)
+  
+  // Refs for file inputs
+  const videoRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const imageRef = useRef<HTMLInputElement>(null)
 
   const set = <K extends keyof LessonForm>(k: K, v: LessonForm[K]) =>
     setForm((f) => ({ ...f, [k]: v }))
 
+  // ─── Auto-detect content type ──────────────────────────────────────────
+  
+  useEffect(() => {
+    const hasVideo = !!form.videoUrl
+    const hasFile = !!form.fileUrl
+    const hasImage = !!form.imageUrl
+    
+    if (hasVideo && (hasFile || hasImage)) {
+      set('contentType', 'mixed')
+    } else if (hasVideo) {
+      set('contentType', 'video')
+    } else if (hasFile) {
+      set('contentType', 'file')
+    } else if (hasImage) {
+      set('contentType', 'image')
+    }
+  }, [form.videoUrl, form.fileUrl, form.imageUrl])
+
+  // ─── Video Handler ─────────────────────────────────────────────────────
+  
   async function handleVideoSelect(file: File) {
     setUploading(true)
     setProgress(0)
+    setError('')
     try {
-      const url = await uploadVideo(file, setProgress)
-      set('videoUrl', url)
-    } catch {
-      setError('فشل رفع الفيديو')
+      const result = await uploadMedia(file, setProgress, 'video')
+      set('videoUrl', result.url)
+    } catch (err) {
+      console.error('Video upload error:', err)
+      setError(err instanceof Error ? err.message : 'فشل رفع الفيديو')
     } finally {
       setUploading(false)
+      setUploadType(null)
     }
   }
 
+  // ─── File Handler (PDF, DOC, etc.) ─────────────────────────────────────
+  
+  async function handleFileSelect(file: File) {
+    setUploading(true)
+    setProgress(0)
+    setError('')
+    try {
+      const result = await uploadMedia(file, setProgress, 'file')
+      set('fileUrl', result.url)
+      set('fileName', result.name)
+    } catch (err) {
+      console.error('File upload error:', err)
+      setError(err instanceof Error ? err.message : 'فشل رفع الملف')
+    } finally {
+      setUploading(false)
+      setUploadType(null)
+    }
+  }
+
+  // ─── Image Handler ──────────────────────────────────────────────────────
+  
+  async function handleImageSelect(file: File) {
+    setUploading(true)
+    setProgress(0)
+    setError('')
+    try {
+      const result = await uploadMedia(file, setProgress, 'image')
+      set('imageUrl', result.url)
+    } catch (err) {
+      console.error('Image upload error:', err)
+      setError(err instanceof Error ? err.message : 'فشل رفع الصورة')
+    } finally {
+      setUploading(false)
+      setUploadType(null)
+    }
+  }
+
+  // ─── Remove Media Handlers ─────────────────────────────────────────────
+  
+  const removeVideo = () => set('videoUrl', '')
+  const removeFile = () => { set('fileUrl', ''); set('fileName', '') }
+  const removeImage = () => set('imageUrl', '')
+
+  // ─── Save Handler ───────────────────────────────────────────────────────
+  
   async function handleSave() {
     if (!form.title.trim()) { setError('اسم المحاضرة مطلوب'); return }
     if (!form.sectionId) { setError('اختر القسم'); return }
+    
+    // ✅ التحقق من وجود محتوى واحد على الأقل
+    if (!form.videoUrl && !form.fileUrl && !form.imageUrl) {
+      setError('يجب رفع فيديو أو ملف أو صورة واحدة على الأقل')
+      return
+    }
+    
     setSaving(true)
     setError('')
     try {
-      await post(`/courses/sections/${form.sectionId}/lessons`, {
+      // ✅ إرسال جميع البيانات للباك إند
+      const payload: any = {
         title: form.title,
-        description: form.description,
-        videoUrl: form.videoUrl || undefined,
+        description: form.description || undefined,
         isFree: form.isFree,
-      })
+        contentType: form.contentType,
+      }
+      
+      // ✅ إضافة الروابط فقط إذا موجودة
+      if (form.videoUrl) payload.videoUrl = form.videoUrl
+      if (form.fileUrl) {
+        payload.fileUrl = form.fileUrl
+        payload.fileName = form.fileName
+      }
+      if (form.imageUrl) payload.imageUrl = form.imageUrl
+      
+      console.log('Saving lesson with payload:', payload)
+      
+      await post(`/courses/sections/${form.sectionId}/lessons`, payload)
       onSaved()
       onClose()
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'حدث خطأ')
+      console.error('Save error:', e)
+      setError(e?.response?.data?.message || e?.message || 'حدث خطأ أثناء الحفظ')
     } finally {
       setSaving(false)
     }
@@ -111,15 +243,21 @@ function AddLectureModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" dir="rtl">
-      <div className="w-full max-w-md rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl">
+      <div className="w-full max-w-2xl rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        
+        {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold font-madinet text-foreground">رفع محاضرة جديدة</h2>
+          <h2 className="text-lg font-bold font-madinet text-foreground flex items-center gap-2">
+            <Plus className="h-5 w-5" />
+            إضافة محاضرة جديدة
+          </h2>
           <button onClick={onClose} className="rounded-full p-1.5 hover:bg-[color:var(--surface-2)] transition-colors">
             <X className="h-4 w-4 text-[color:var(--muted)]" />
           </button>
         </div>
 
         <div className="space-y-4">
+          {/* Title Input */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">اسم المحاضرة *</label>
             <input
@@ -130,16 +268,19 @@ function AddLectureModal({
             />
           </div>
 
+          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">وصف (اختياري)</label>
             <textarea
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               rows={2}
+              placeholder="وصف مختصر للمحتوى..."
               className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
             />
           </div>
 
+          {/* Section Select */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">القسم *</label>
             <select
@@ -153,51 +294,248 @@ function AddLectureModal({
             </select>
           </div>
 
-          {/* Video upload */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">ملف الفيديو</label>
-            <div
-              onClick={() => !uploading && fileRef.current?.click()}
-              className="flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)] p-5 cursor-pointer hover:border-primary/50 transition-colors"
-            >
+          {/* ═══════ MEDIA UPLOAD SECTION ═══════ */}
+          <div className="space-y-4 pt-2 border-t border-[color:var(--border)]">
+            <label className="block text-sm font-bold text-foreground flex items-center gap-2">
+              <Upload className="h-4 w-4 text-primary" />
+              الوسائط التعليمية
+              <span className="text-xs font-normal text-[color:var(--muted)]">(يمكن رفع أكثر من نوع)</span>
+            </label>
+            
+            {/* Video Upload */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                <Video className="h-3.5 w-3.5" />
+                فيديو (اختياري)
+              </label>
+              
               {form.videoUrl ? (
-                <div className="flex items-center gap-2 text-green-400">
-                  <CheckCircle className="h-5 w-5" />
-                  <span className="text-sm font-medium">تم رفع الفيديو ✓</span>
-                </div>
-              ) : uploading ? (
-                <div className="w-full space-y-2">
-                  <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
-                    <Upload className="h-4 w-4 animate-bounce" />
-                    <span className="text-sm">جارٍ الرفع... {progress}%</span>
+                <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-400">تم رفع الفيديو</p>
+                      <p className="text-xs text-[color:var(--muted)]">جاهز للعرض</p>
+                    </div>
                   </div>
-                  <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
+                  <button
+                    onClick={removeVideo}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               ) : (
-                <>
-                  <Video className="h-7 w-7 text-[color:var(--muted)] opacity-40" />
-                  <p className="text-xs text-[color:var(--muted)]">اضغط لرفع فيديو (MP4 — 500MB)</p>
-                </>
+                <div
+                  onClick={() => !uploading && videoRef.current?.click()}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
+                    uploading && uploadType === 'video'
+                      ? 'border-primary/50 bg-primary/5'
+                      : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-primary/50 hover:bg-primary/5'
+                  }`}
+                >
+                  {uploading && uploadType === 'video' ? (
+                    <div className="w-full space-y-2">
+                      <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                        <Upload className="h-4 w-4 animate-bounce" />
+                        <span className="text-sm">جارٍ رفع الفيديو... {progress}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Video className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
+                      <p className="text-xs text-[color:var(--muted)] text-center">MP4, WebM — حد أقصى 500MB</p>
+                      <span className="text-xs text-primary font-medium">اضغط لرفع الفيديو</span>
+                    </>
+                  )}
+                </div>
               )}
+              <input
+                ref={videoRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) { setUploadType('video'); handleVideoSelect(f) }
+                }}
+              />
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) handleVideoSelect(f)
-              }}
-            />
+
+            {/* File Upload (PDF, DOC, etc.) */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />
+                ملف PDF أو مستند (اختياري)
+              </label>
+              
+              {form.fileUrl ? (
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-blue-400 truncate max-w-[200px]">{form.fileName}</p>
+                      <p className="text-xs text-[color:var(--muted)]">ملف مرفوع ✓</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={removeFile}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
+                    uploading && uploadType === 'file'
+                      ? 'border-blue-500/50 bg-blue-500/5'
+                      : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-blue-500/50 hover:bg-blue-500/5'
+                  }`}
+                >
+                  {uploading && uploadType === 'file' ? (
+                    <div className="w-full space-y-2">
+                      <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                        <Upload className="h-4 w-4 animate-bounce" />
+                        <span className="text-sm">جارٍ رفع الملف... {progress}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <FileText className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
+                      <p className="text-xs text-[color:var(--muted)] text-center">PDF, Word, PowerPoint, Excel — حد أقصى 100MB</p>
+                      <span className="text-xs text-blue-500 font-medium">اضغط لرفع الملف</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) { setUploadType('file'); handleFileSelect(f) }
+                }}
+              />
+            </div>
+
+            {/* Image Upload */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                <Image className="h-3.5 w-3.5" />
+                صورة (اختياري)
+              </label>
+              
+              {form.imageUrl ? (
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-12 w-12 rounded-lg overflow-hidden border border-[color:var(--border)]">
+                      <img 
+                        src={form.imageUrl} 
+                        alt="Preview" 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-purple-400">تم رفع الصورة</p>
+                      <p className="text-xs text-[color:var(--muted)]">جاهزة للعرض</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={removeImage}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => !uploading && imageRef.current?.click()}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
+                    uploading && uploadType === 'image'
+                      ? 'border-purple-500/50 bg-purple-500/5'
+                      : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-purple-500/50 hover:bg-purple-500/5'
+                  }`}
+                >
+                  {uploading && uploadType === 'image' ? (
+                    <div className="w-full space-y-2">
+                      <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                        <Upload className="h-4 w-4 animate-bounce" />
+                        <span className="text-sm">جارٍ رفع الصورة... {progress}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-purple-500 transition-all duration-300"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Image className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
+                      <p className="text-xs text-[color:var(--muted)] text-center">JPG, PNG, WebP, GIF — حد أقصى 10MB</p>
+                      <span className="text-xs text-purple-500 font-medium">اضغط لرفع الصورة</span>
+                    </>
+                  )}
+                </div>
+              )}
+              <input
+                ref={imageRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) { setUploadType('image'); handleImageSelect(f) }
+                }}
+              />
+            </div>
           </div>
 
-          {/* Free toggle */}
+          {/* Content Type Indicator */}
+          {(form.videoUrl || form.fileUrl || form.imageUrl) && (
+            <div className="rounded-xl bg-[color:var(--surface-2)] p-3 flex items-center gap-2">
+              <span className="text-xs text-[color:var(--muted)]">نوع المحتوى:</span>
+              <div className="flex gap-2">
+                {form.videoUrl && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-400 flex items-center gap-1">
+                    <Video className="h-3 w-3" /> فيديو
+                  </span>
+                )}
+                {form.fileUrl && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 flex items-center gap-1">
+                    <FileText className="h-3 w-3" /> ملف
+                  </span>
+                )}
+                {form.imageUrl && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-purple-500/10 text-purple-400 flex items-center gap-1">
+                    <Image className="h-3 w-3" /> صورة
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Free Toggle */}
           <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-2)] px-4 py-3">
             <div>
               <div className="text-sm font-medium text-foreground">محاضرة مجانية؟</div>
@@ -214,14 +552,17 @@ function AddLectureModal({
             </button>
           </div>
 
+          {/* Error Message */}
           {error && (
-            <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-2.5 text-sm text-red-400">
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-2.5 text-sm text-red-400 flex items-center gap-2">
+              <X className="h-4 w-4 shrink-0" />
               {error}
             </div>
           )}
         </div>
 
-        <div className="flex gap-3 mt-5">
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-5 pt-4 border-t border-[color:var(--border)]">
           <button
             type="button"
             onClick={onClose}
@@ -235,8 +576,17 @@ function AddLectureModal({
             disabled={saving || uploading}
             className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all"
           >
-            {saving && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-            حفظ المحاضرة
+            {saving ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                جاري الحفظ...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                حفظ المحاضرة
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -377,8 +727,31 @@ export default function ManageCoursePage() {
                         key={lesson.id}
                         className="flex items-center gap-2 rounded-xl bg-[color:var(--surface-2)] px-3 py-2 text-sm"
                       >
-                        <Video className="h-3.5 w-3.5 text-[color:var(--muted)] shrink-0" />
+                        {/* ✅ Show appropriate icon based on content type */}
+                        {lesson.videoUrl ? (
+                          <Video className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                        ) : lesson.fileUrl ? (
+                          <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                        ) : lesson.imageUrl ? (
+                          <Image className="h-3.5 w-3.5 text-purple-400 shrink-0" />
+                        ) : (
+                          <File className="h-3.5 w-3.5 text-[color:var(--muted)] shrink-0" />
+                        )}
                         <span className="flex-1 text-foreground truncate">{lesson.title}</span>
+                        
+                        {/* Content type badges */}
+                        <div className="flex gap-1">
+                          {lesson.videoUrl && (
+                            <span className="text-xs rounded-full bg-red-500/10 text-red-400 px-1.5 py-0.5">فيديو</span>
+                          )}
+                          {lesson.fileUrl && (
+                            <span className="text-xs rounded-full bg-blue-500/10 text-blue-400 px-1.5 py-0.5">ملف</span>
+                          )}
+                          {lesson.imageUrl && (
+                            <span className="text-xs rounded-full bg-purple-500/10 text-purple-400 px-1.5 py-0.5">صورة</span>
+                          )}
+                        </div>
+                        
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5">مجانية</span>
                         )}
@@ -427,14 +800,14 @@ export default function ManageCoursePage() {
                   className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90 transition-all"
                 >
                   <Plus className="h-4 w-4" />
-                  رفع محاضرة
+                  إضافة محاضرة
                 </button>
               )}
             </div>
 
             {sections.length === 0 && (
               <div className="rounded-2xl border border-dashed border-[color:var(--border)] p-8 text-center text-sm text-[color:var(--muted)]">
-                أضف أقسام للكورس أولاً من تبويب "المحتوى"، ثم ارفع المحاضرات.
+                أضف أقسام للكورس أولاً من تبويب "المحتوى"، ثم أضف المحاضرات.
               </div>
             )}
 
@@ -448,14 +821,52 @@ export default function ManageCoursePage() {
                 {sec.lessons?.length > 0 ? (
                   <div className="divide-y divide-[color:var(--border)]">
                     {sec.lessons.map((lesson: any) => (
-                      <div key={lesson.id} className="flex items-center gap-3 px-5 py-3">
-                        <Video className={`h-4 w-4 shrink-0 ${lesson.videoUrl ? 'text-primary' : 'text-[color:var(--muted)] opacity-30'}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">{lesson.title}</div>
+                      <div key={lesson.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[color:var(--surface-2)] transition-colors">
+                        {/* ✅ Enhanced icon display */}
+                        <div className="flex gap-1">
                           {lesson.videoUrl && (
-                            <div className="text-xs text-green-400 mt-0.5">فيديو مرفوع ✓</div>
+                            <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                              <Video className="h-4 w-4 text-red-400" />
+                            </div>
+                          )}
+                          {lesson.fileUrl && (
+                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-blue-400" />
+                            </div>
+                          )}
+                          {lesson.imageUrl && (
+                            <div className="h-8 w-8 rounded-lg bg-purple-500/10 flex items-center justify-center overflow-hidden">
+                              <img src={lesson.imageUrl} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          )}
+                          {!lesson.videoUrl && !lesson.fileUrl && !lesson.imageUrl && (
+                            <div className="h-8 w-8 rounded-lg bg-[color:var(--surface-2)] flex items-center justify-center">
+                              <File className="h-4 w-4 text-[color:var(--muted)]" />
+                            </div>
                           )}
                         </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground truncate">{lesson.title}</div>
+                          <div className="flex gap-2 mt-1">
+                            {lesson.videoUrl && (
+                              <span className="text-xs text-green-400 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> فيديو
+                              </span>
+                            )}
+                            {lesson.fileUrl && (
+                              <span className="text-xs text-blue-400 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> {lesson.fileName || 'ملف'}
+                              </span>
+                            )}
+                            {lesson.imageUrl && (
+                              <span className="text-xs text-purple-400 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> صورة
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
                         )}
