@@ -10,6 +10,7 @@ exports.UploadModule = void 0;
 const common_1 = require("@nestjs/common");
 const upload_controller_1 = require("./upload.controller");
 const upload_service_1 = require("./upload.service");
+const cloudinary_service_1 = require("./cloudinary.service");
 const prisma_module_1 = require("../../prisma/prisma.module");
 const auth_module_1 = require("../auth/auth.module");
 let UploadModule = class UploadModule {
@@ -19,8 +20,8 @@ exports.UploadModule = UploadModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule, auth_module_1.AuthModule],
         controllers: [upload_controller_1.UploadController],
-        providers: [upload_service_1.UploadService],
-        exports: [upload_service_1.UploadService],
+        providers: [upload_service_1.UploadService, cloudinary_service_1.CloudinaryService],
+        exports: [upload_service_1.UploadService, cloudinary_service_1.CloudinaryService],
     })
 ], UploadModule);
 //# sourceMappingURL=upload.module.js.map

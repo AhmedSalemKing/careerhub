@@ -1,43 +1,10 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -54,36 +21,22 @@ const promises_1 = require("fs/promises");
 const fs_1 = require("fs");
 const swagger_1 = require("@nestjs/swagger");
 const upload_service_1 = require("./upload.service");
+const cloudinary_service_1 = require("./cloudinary.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
-async function getCloudinary() {
-    const { v2: cloudinary } = await Promise.resolve().then(() => __importStar(require('cloudinary')));
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-    return cloudinary;
-}
-function safeUrl(url) {
-    if (!url)
-        return url;
-    if (url.startsWith('http://') || url.startsWith('https://'))
-        return url;
-    return `https:${url}`;
-}
 let UploadController = class UploadController {
-    constructor(uploadService) {
+    constructor(uploadService, cloudinaryService) {
         this.uploadService = uploadService;
+        this.cloudinaryService = cloudinaryService;
     }
     async uploadCV(file) {
         if (!file)
             throw new common_1.BadRequestException('No file provided');
-        const result = await this.uploadService.uploadCV(file);
-        return { success: true, data: result };
+        const result = await this.cloudinaryService.uploadFile(file, 'cvs', 'raw');
+        return { success: true, data: { url: result.url, fileName: file.originalname, size: file.size } };
     }
     async uploadSingleFile(user, file, folder, isPublic) {
         const result = await this.uploadService.uploadSingleFile(user.id, file, {
@@ -102,40 +55,23 @@ let UploadController = class UploadController {
     async uploadImage(image) {
         if (!image)
             throw new common_1.BadRequestException('No image file provided');
-        const cloudinary = await getCloudinary();
-        const result = await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream({ folder: 'deveway/images' }, (error, result) => {
-                if (error)
-                    reject(error);
-                else
-                    resolve(result);
-            }).end(image.buffer);
-        });
+        const result = await this.cloudinaryService.uploadFile(image, 'images', 'image');
         return {
             success: true,
             message: 'Image uploaded successfully',
-            data: {
-                url: safeUrl(result.secure_url),
-                fileName: image.originalname,
-                size: image.size,
-                mimeType: image.mimetype,
-            },
+            data: { url: result.url, fileName: image.originalname, size: image.size, mimeType: image.mimetype },
         };
     }
     async uploadFile(file) {
         if (!file)
             throw new common_1.BadRequestException('No file provided');
-        const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = `file_${Date.now()}_${safeName}`;
-        const dir = (0, path_1.join)(process.cwd(), 'uploads', 'files');
-        await (0, promises_1.mkdir)(dir, { recursive: true });
-        await (0, promises_1.writeFile)((0, path_1.join)(dir, fileName), file.buffer);
-        const apiBase = (process.env.API_URL || '').replace(/\/+$/, '');
-        const url = apiBase ? `${apiBase}/uploads/files/${fileName}` : `/uploads/files/${fileName}`;
+        const resourceType = file.mimetype.startsWith('image/') ? 'image' : 'raw';
+        const folder = file.mimetype.startsWith('image/') ? 'images' : 'files';
+        const result = await this.cloudinaryService.uploadFile(file, folder, resourceType);
         return {
             success: true,
             data: {
-                url,
+                url: result.url,
                 fileName: file.originalname,
                 size: file.size,
                 type: file.mimetype,
@@ -145,28 +81,11 @@ let UploadController = class UploadController {
     async uploadVideo(video) {
         if (!video)
             throw new common_1.BadRequestException('No video file provided');
-        const cloudinary = await getCloudinary();
-        const result = await new Promise((resolve, reject) => {
-            cloudinary.uploader.upload_stream({
-                folder: 'deveway/videos',
-                resource_type: 'video',
-                chunk_size: 6000000,
-            }, (error, result) => {
-                if (error)
-                    reject(error);
-                else
-                    resolve(result);
-            }).end(video.buffer);
-        });
+        const result = await this.cloudinaryService.uploadFile(video, 'videos', 'video');
         return {
             success: true,
             message: 'Video uploaded successfully',
-            data: {
-                url: safeUrl(result.secure_url),
-                fileName: video.originalname,
-                size: video.size,
-                mimeType: video.mimetype,
-            },
+            data: { url: result.url, fileName: video.originalname, size: video.size, mimeType: video.mimetype },
         };
     }
     async uploadDocument(user, document, title, description) {
@@ -262,16 +181,14 @@ __decorate([
                 'application/msword',
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ];
-            if (allowed.includes(file.mimetype)) {
+            if (allowed.includes(file.mimetype))
                 cb(null, true);
-            }
-            else {
+            else
                 cb(new common_1.BadRequestException('Only PDF and Word files are allowed'), false);
-            }
         },
     })),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiOperation)({ summary: 'Upload CV (public — no auth)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload CV to Cloudinary (public — no auth)' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'CV uploaded successfully' }),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
@@ -358,7 +275,7 @@ __decorate([
         },
     })),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
-    (0, swagger_1.ApiOperation)({ summary: 'Upload lesson file (PDF, Word, Excel, PPT...)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload lesson file to Cloudinary (PDF, Word, Excel, PPT...)' }),
     __param(0, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -546,6 +463,7 @@ exports.UploadController = UploadController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.Controller)('upload'),
-    __metadata("design:paramtypes", [upload_service_1.UploadService])
+    __metadata("design:paramtypes", [upload_service_1.UploadService,
+        cloudinary_service_1.CloudinaryService])
 ], UploadController);
 //# sourceMappingURL=upload.controller.js.map
