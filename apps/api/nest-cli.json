@@ -6,10 +6,8 @@
     "deleteOutDir": true,
     "tsConfigPath": "tsconfig.build.json",
     "assets": [
-      {
-        "include": "modules/certificates/template.png",
-        "outDir": "./dist"
-      }
+      { "include": "modules/certificates/template.png", "outDir": "./dist" },
+      { "include": "modules/certificates/fonts/**/*", "outDir": "./dist" }
     ]
   }
 }

@@ -131,6 +131,30 @@ export class CertificatesService {
     throw new Error('Certificate template not found in any expected location')
   }
 
+  /** Register professional fonts from @fontsource packages (once per process is fine) */
+  private registerFonts() {
+    const fs = require('fs') as typeof import('fs')
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { GlobalFonts } = require('@napi-rs/canvas')
+    const base = path.join(process.cwd(), 'node_modules', '@fontsource')
+    const fonts = [
+      { file: path.join(base, 'playfair-display', 'files', 'playfair-display-latin-400-normal.woff2'), family: 'Playfair Display' },
+      { file: path.join(base, 'playfair-display', 'files', 'playfair-display-latin-400-italic.woff2'), family: 'Playfair Display' },
+      { file: path.join(base, 'cormorant-garamond', 'files', 'cormorant-garamond-latin-400-normal.woff2'), family: 'Cormorant Garamond' },
+      { file: path.join(base, 'cormorant-garamond', 'files', 'cormorant-garamond-latin-400-italic.woff2'), family: 'Cormorant Garamond' },
+      { file: path.join(base, 'great-vibes', 'files', 'great-vibes-latin-400-normal.woff2'), family: 'Great Vibes' },
+    ]
+    for (const f of fonts) {
+      if (fs.existsSync(f.file)) {
+        try { GlobalFonts.registerFromPath(f.file, f.family) }
+        catch { /* non-fatal */ }
+      } else {
+        console.warn('[Certificate] Font not found:', f.file)
+      }
+    }
+    console.log('[Certificate] Registered fonts:', GlobalFonts.families?.length ?? '?')
+  }
+
   private async createCertificateImage(data: {
     studentName: string
     courseTitle: string
@@ -139,120 +163,116 @@ export class CertificatesService {
     instructorName: string
     instructorSignatureUrl: string | null
   }): Promise<Buffer> {
-    const templatePath = this.resolveTemplatePath()
+    this.registerFonts()
 
+    const templatePath = this.resolveTemplatePath()
     const template = await loadImage(templatePath).catch((e: any) => {
       console.error('[Certificate] loadImage failed:', e.message, 'path:', templatePath)
       throw e
     })
     console.log(`[Certificate] Template loaded: ${template.width}x${template.height}`)
 
-    const canvas = createCanvas(template.width, template.height)
+    const W = template.width   // expected ~1900
+    const H = template.height  // expected ~1340
+    const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
-
     ctx.drawImage(template, 0, 0)
 
-    const W = template.width
-    const H = template.height
-
-    // --- Cover placeholder rectangles ---
-    const coverRects = [
-      [W * 0.2, H * 0.33, W * 0.6, H * 0.08],   // recipient name
-      [W * 0.15, H * 0.52, W * 0.7, H * 0.08],  // course title
-      [W * 0.25, H * 0.62, W * 0.5, H * 0.05],  // date
-      [W * 0.2, H * 0.82, W * 0.6, H * 0.04],   // cert ID
-      [W * 0.05, H * 0.73, W * 0.3, H * 0.06],  // instructor name
+    // ── Cover placeholder areas (match template background colour) ──────
+    const bg = 'rgba(238, 240, 248, 0.97)'
+    const covers: [number, number, number, number][] = [
+      [W * 0.15, H * 0.38, W * 0.70, H * 0.12],  // recipient name
+      [W * 0.15, H * 0.54, W * 0.70, H * 0.10],  // course title
+      [W * 0.25, H * 0.63, W * 0.50, H * 0.06],  // date
+      [W * 0.20, H * 0.86, W * 0.60, H * 0.04],  // cert ID
+      [W * 0.04, H * 0.76, W * 0.28, H * 0.05],  // instructor name
     ]
-    ctx.fillStyle = 'rgba(240, 242, 250, 0.95)'
-    for (const [x, y, w, h] of coverRects) ctx.fillRect(x, y, w, h)
+    ctx.fillStyle = bg
+    for (const [x, y, w, h] of covers) ctx.fillRect(x, y, w, h)
 
-    // --- Student name ---
-    ctx.fillStyle = '#1B2340'
-    ctx.font = `italic bold ${Math.floor(W * 0.048)}px Georgia, serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.shadowColor = 'rgba(0,0,0,0.15)'
-    ctx.shadowBlur = 4
-    ctx.fillText(data.studentName, W / 2, H * 0.372)
+
+    // ── Student Name (large italic Playfair) ────────────────────────────
+    const namePx = data.studentName.length > 24 ? Math.floor(W * 0.036) : Math.floor(W * 0.044)
+    ctx.font = `italic ${namePx}px "Playfair Display", Georgia, serif`
+    ctx.fillStyle = '#1c2a44'
+    ctx.shadowColor = 'rgba(0,0,0,0.10)'
+    ctx.shadowBlur = 3
+    ctx.fillText(data.studentName, W / 2, H * 0.44)
     ctx.shadowBlur = 0
 
-    // --- Course title (wrapped) ---
-    ctx.fillStyle = '#1B2340'
-    ctx.font = `bold ${Math.floor(W * 0.034)}px Georgia, serif`
-    ctx.textAlign = 'center'
-    this.wrapText(ctx, data.courseTitle, W / 2, H * 0.56, W * 0.65, Math.floor(W * 0.034) * 1.4)
+    // ── Course Title (bold Playfair, up to 2 lines) ─────────────────────
+    const titlePx = data.courseTitle.length > 35 ? Math.floor(W * 0.026) : Math.floor(W * 0.030)
+    ctx.font = `bold ${titlePx}px "Playfair Display", Georgia, serif`
+    ctx.fillStyle = '#1c2a44'
+    const titleLines = this.splitToLines(ctx, data.courseTitle, W * 0.65)
+    const titleLineH = titlePx * 1.45
+    const titleStartY = titleLines.length === 1 ? H * 0.584 : H * 0.570
+    titleLines.slice(0, 2).forEach((line, i) => ctx.fillText(line, W / 2, titleStartY + i * titleLineH))
 
-    // --- Issue date ---
-    ctx.fillStyle = '#4A5568'
-    ctx.font = `${Math.floor(W * 0.018)}px Georgia, serif`
-    ctx.textAlign = 'center'
-    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.645)
+    // ── Issue Date (Cormorant Garamond) ─────────────────────────────────
+    ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#4a5568'
+    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.665)
 
-    // --- Instructor name ---
-    ctx.fillStyle = '#2D3748'
-    ctx.font = `italic ${Math.floor(W * 0.018)}px Georgia, serif`
-    ctx.textAlign = 'center'
-    ctx.fillText(data.instructorName, W * 0.22, H * 0.77)
+    // ── Instructor Name (left column) ───────────────────────────────────
+    ctx.font = `${Math.floor(W * 0.014)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#2d3748'
+    ctx.fillText(data.instructorName, W * 0.22, H * 0.785)
 
-    // --- Certificate ID ---
-    ctx.fillStyle = '#718096'
-    ctx.font = `${Math.floor(W * 0.012)}px Courier New, monospace`
-    ctx.textAlign = 'center'
-    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.84)
+    // ── Certificate ID (monospace, small) ───────────────────────────────
+    ctx.font = `${Math.floor(W * 0.011)}px "Courier New", monospace`
+    ctx.fillStyle = '#6b7280'
+    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.883)
 
-    // --- Instructor signature image (optional) ---
+    // ── Instructor Signature image (optional) ───────────────────────────
     if (data.instructorSignatureUrl) {
       try {
         const sig = await loadImage(data.instructorSignatureUrl)
-        ctx.drawImage(sig, W * 0.08, H * 0.695, W * 0.18, H * 0.065)
+        ctx.drawImage(sig, W * 0.08, H * 0.730, W * 0.16, H * 0.055)
       } catch {
-        // skip if fails
+        console.warn('[Certificate] Instructor signature load failed')
       }
     }
 
-    // --- QR code ---
+    // ── QR Code (bottom-right, transparent background) ──────────────────
     const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
     try {
       const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 120,
+        width: 150,
         margin: 1,
-        color: { dark: '#1B2340', light: '#FFFFFF' },
+        color: { dark: '#1c2a44', light: 'rgba(255,255,255,0)' },
       })
       const qrImage = await loadImage(qrDataUrl)
-      ctx.drawImage(qrImage, W * 0.86, H * 0.70, W * 0.08, W * 0.08)
-      ctx.fillStyle = '#718096'
+      const qrSize = W * 0.09
+      ctx.drawImage(qrImage, W * 0.857, H * 0.72, qrSize, qrSize)
       ctx.font = `${Math.floor(W * 0.009)}px Arial, sans-serif`
-      ctx.textAlign = 'center'
-      ctx.fillText('Scan to verify', W * 0.9, H * 0.80)
-    } catch (e) {
-      console.error('[Certificate] QR generation failed:', e)
+      ctx.fillStyle = '#6b7280'
+      ctx.fillText('Scan to verify', W * 0.9, H * 0.825)
+    } catch (e: any) {
+      console.error('[Certificate] QR failed:', e.message)
     }
 
     return canvas.toBuffer('image/png')
   }
 
-  private wrapText(
-    ctx: any,
-    text: string,
-    x: number,
-    y: number,
-    maxWidth: number,
-    lineHeight: number,
-  ) {
+  /** Split text into lines that fit within maxWidth at the current ctx font. */
+  private splitToLines(ctx: any, text: string, maxWidth: number): string[] {
     const words = text.split(' ')
-    let line = ''
-    let currentY = y
-    for (let i = 0; i < words.length; i++) {
-      const testLine = line + words[i] + ' '
-      if (ctx.measureText(testLine).width > maxWidth && i > 0) {
-        ctx.fillText(line.trim(), x, currentY)
-        line = words[i] + ' '
-        currentY += lineHeight
+    const lines: string[] = []
+    let cur = ''
+    for (const word of words) {
+      const test = cur ? `${cur} ${word}` : word
+      if (ctx.measureText(test).width > maxWidth && cur) {
+        lines.push(cur)
+        cur = word
       } else {
-        line = testLine
+        cur = test
       }
     }
-    ctx.fillText(line.trim(), x, currentY)
+    if (cur) lines.push(cur)
+    return lines
   }
 
   private uploadToCloudinary(buffer: Buffer, serialNumber: string): Promise<string> {
