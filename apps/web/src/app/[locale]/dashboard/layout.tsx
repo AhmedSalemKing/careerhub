@@ -65,6 +65,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const locale = useLocale()
   const router = useRouter()
 
+  const accountType = user?.accountType || 'STUDENT'
+
+  const dockItems = useMemo(() => {
+    if (accountType === 'ADMIN') return getAdminItems(locale)
+    if (accountType === 'INSTRUCTOR') return getInstructorItems(locale)
+    if (accountType === 'CONSULTANT') return getConsultantItems(locale)
+    return getStudentItems(locale)
+  }, [accountType, locale])
+
   useEffect(() => {
     hydrate()
     setMounted(true)
@@ -109,15 +118,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     )
   }
-
-  const accountType = user?.accountType || 'STUDENT'
-
-  const dockItems = useMemo(() => {
-    if (accountType === 'ADMIN') return getAdminItems(locale)
-    if (accountType === 'INSTRUCTOR') return getInstructorItems(locale)
-    if (accountType === 'CONSULTANT') return getConsultantItems(locale)
-    return getStudentItems(locale)
-  }, [accountType, locale])
 
   function handleLogout() {
     localStorage.removeItem('deveway_token')
