@@ -150,13 +150,19 @@ export default function CoursesPage() {
     return () => { mounted = false }
   }, [])
 
+  const safeCourses = Array.isArray(courses) ? courses : []
+  
   const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
-      const matchesSearch = (course.title[locale] || '').toLowerCase().includes(searchQuery.toLowerCase())
+    return safeCourses.filter((course) => {
+      const titleObj = course.title as { ar?: string; en?: string } | undefined
+      const titleText = locale === 'ar' 
+        ? (titleObj?.ar || titleObj?.en || '')
+        : (titleObj?.en || titleObj?.ar || '')
+      const matchesSearch = titleText.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesLevel = !selectedLevel || course.level === selectedLevel
       return matchesSearch && matchesLevel
     })
-  }, [searchQuery, selectedLevel, locale, courses])
+  }, [searchQuery, selectedLevel, locale, safeCourses])
 
   const getLevelBadge = (level: string) => {
     switch (level) {

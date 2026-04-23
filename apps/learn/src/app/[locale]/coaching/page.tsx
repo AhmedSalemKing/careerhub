@@ -314,8 +314,10 @@ export default function CoachingPage() {
     }
   })
 
-  const filtered = consultants.filter(c => {
-    const name = `${c.profile.firstName} ${c.profile.lastName}`.toLowerCase()
+  const safeConsultants = Array.isArray(consultants) ? consultants : []
+  
+  const filtered = safeConsultants.filter(c => {
+    const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
     const spec = (c.speciality || '').toLowerCase()
     const q = search.toLowerCase()
     return !q || name.includes(q) || spec.includes(q)

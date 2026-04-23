@@ -495,9 +495,10 @@ export default function MyCoursesPage() {
   // Safe array conversion with proper typing
   const enrollments: Enrollment[] = Array.isArray(enrolledData) ? enrolledData : []
   
-  // Safe filtering
-  const filteredEnrollments = enrollments.filter((e: Enrollment) => {
-    if (!e) return false
+  // Defensive filtering with safe array
+  const safeEnrollments = enrollments.filter((e): e is Enrollment => !!e && typeof e === 'object')
+  
+  const filteredEnrollments = safeEnrollments.filter((e) => {
     const prog = e.progress || 0
     if (filter === 'in-progress') return prog > 0 && prog < 100
     if (filter === 'completed') return prog >= 100
@@ -591,13 +592,13 @@ export default function MyCoursesPage() {
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: 'var(--surface-hover)' }}>
                 <TrendingUp className="h-4 w-4" style={{ color: 'var(--primary)' }} />
                 <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {enrollments.filter(e => (e.progress || 0) > 0).length} {locale === 'ar' ? 'نشط' : 'Active'}
+                  {safeEnrollments.filter(e => (e.progress || 0) > 0).length} {locale === 'ar' ? 'نشط' : 'Active'}
                 </span>
               </div>
               <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: 'rgba(34,197,94,0.1)' }}>
                 <CheckCircle className="h-4 w-4" style={{ color: '#22c55e' }} />
                 <span className="text-sm font-medium" style={{ color: '#22c55e' }}>
-                  {enrollments.filter(e => (e.progress || 0) >= 100).length} {locale === 'ar' ? 'مكتمل' : 'Completed'}
+                  {safeEnrollments.filter(e => (e.progress || 0) >= 100).length} {locale === 'ar' ? 'مكتمل' : 'Completed'}
                 </span>
               </div>
             </div>
@@ -613,9 +614,9 @@ export default function MyCoursesPage() {
           <Filter className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
           
           {[
-            { key: 'all' as const, label: locale === 'ar' ? 'الكل' : 'All', count: enrollments.length },
-            { key: 'in-progress' as const, label: locale === 'ar' ? 'قيد التعلم' : 'In Progress', count: enrollments.filter(e => (e.progress || 0) > 0 && (e.progress || 0) < 100).length },
-            { key: 'completed' as const, label: locale === 'ar' ? 'مكتملة' : 'Completed', count: enrollments.filter(e => (e.progress || 0) >= 100).length },
+            { key: 'all' as const, label: locale === 'ar' ? 'الكل' : 'All', count: safeEnrollments.length },
+            { key: 'in-progress' as const, label: locale === 'ar' ? 'قيد التعلم' : 'In Progress', count: safeEnrollments.filter(e => (e.progress || 0) > 0 && (e.progress || 0) < 100).length },
+            { key: 'completed' as const, label: locale === 'ar' ? 'مكتملة' : 'Completed', count: safeEnrollments.filter(e => (e.progress || 0) >= 100).length },
           ].map((tab) => (
             <button
               key={tab.key}

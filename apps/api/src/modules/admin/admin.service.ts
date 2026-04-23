@@ -2,7 +2,6 @@ import {
   Injectable,
   Logger,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as path from 'path';
@@ -1147,7 +1146,7 @@ export class AdminService {
   async approveUser(userId: string, adminId?: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: 'ACTIVE', isActive: true, approvedAt: new Date() },
+      data: { status: 'ACTIVE', approvedAt: new Date() },
       include: { profile: true },
     });
     await this.notificationsService.createNotification({
@@ -1170,14 +1169,11 @@ export class AdminService {
       where: { id: userId },
       data: {
         status: 'REJECTED',
-        isActive: false,
         rejectedAt: new Date(),
         rejectedReason: reason || null,
       },
       include: { profile: true },
     });
-    // Force logout - delete all sessions
-    await this.prisma.session.deleteMany({ where: { userId } }).catch(() => {});
     await this.notificationsService.createNotification({
       userId,
       type: 'SYSTEM_ANNOUNCEMENT',
@@ -1200,8 +1196,6 @@ export class AdminService {
       where: { id: userId },
       data: { status: 'BANNED', isActive: false },
     });
-    // Force logout - delete all sessions
-    await this.prisma.session.deleteMany({ where: { userId } }).catch(() => {});
     await this.log('BAN_USER', 'User', userId, adminId);
     return user;
   }
@@ -1297,46 +1291,12 @@ export class AdminService {
   }
 
   // ── Change user role ──
-  async changeUserRole(userId: string, newRole: string, adminId: string) {
-    const validRoles = ['STUDENT', 'INSTRUCTOR', 'CONSULTANT', 'ADMIN']
-    if (!validRoles.includes(newRole)) {
-      throw new BadRequestException('دور غير صالح')
-    }
-    
-    if (userId === adminId) {
-      throw new BadRequestException('لا يمكنك تغيير دورك الخاص')
-    }
-    
-    const roleNames: Record<string, string> = {
-      STUDENT: 'طالب',
-      INSTRUCTOR: 'محاضر',
-      CONSULTANT: 'مستشار',
-      ADMIN: 'مدير',
-    }
-    
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data: { accountType: newRole as any },
-      include: { profile: true }
-    })
-    
-    // Send notification to user
-    try {
-      await this.notificationsService.createNotification({
-        userId,
-        type: 'SYSTEM_ANNOUNCEMENT',
-        titleEn: 'Your Role Has Been Updated',
-        titleAr: 'تم تغيير دورك',
-        contentEn: `Congratulations! You have been promoted to ${roleNames[newRole] || newRole}. New options are now available in your dashboard.`,
-        contentAr: `تهانينا! تم ترقيتك إلى ${roleNames[newRole] || newRole}. ستجد خيارات جديدة في لوحة التحكم.`,
-        data: { type: 'role_change', newRole, oldRole: user.accountType },
-      })
-    } catch(e) {
-      this.logger.warn(`[Admin] Failed to create notification: ${e.message}`)
-    }
-    
-    this.logger.log(`[Admin] Changed role of ${user.email} to ${newRole}`)
-    return { success: true, data: user }
+  async changeUserRole(id: string, accountType: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { accountType: accountType as any },
+      select: { id: true, email: true, accountType: true },
+    });
   }
 
   // ── Change user status ──
