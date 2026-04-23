@@ -1146,7 +1146,7 @@ export class AdminService {
   async approveUser(userId: string, adminId?: string) {
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: 'ACTIVE', approvedAt: new Date() },
+      data: { status: 'ACTIVE', isActive: true, approvedAt: new Date() },
       include: { profile: true },
     });
     await this.notificationsService.createNotification({
@@ -1169,6 +1169,7 @@ export class AdminService {
       where: { id: userId },
       data: {
         status: 'REJECTED',
+        isActive: false,
         rejectedAt: new Date(),
         rejectedReason: reason || null,
       },

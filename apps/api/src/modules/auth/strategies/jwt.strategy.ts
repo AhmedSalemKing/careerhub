@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -13,7 +13,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    console.log('[JwtStrategy] Payload:', payload); // 🔹 Logging payload
+    console.log('[JwtStrategy] Payload:', payload);
 
     if (!payload?.sub || !payload?.email) {
       throw new UnauthorizedException('Invalid JWT payload');
@@ -28,7 +28,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    console.log('[JwtStrategy] Validated user:', user); // 🔹 Logging user
+    // Check account status - block banned/rejected, but allow pending to access auth endpoints
+    if (user.status === 'BANNED') {
+      throw new UnauthorizedException('Account is banned');
+    }
+    if (user.status === 'REJECTED') {
+      throw new UnauthorizedException('Account was rejected');
+    }
+    // PENDING users can access auth endpoints but will be blocked by ApprovedGuard for dashboard
+
+    console.log('[JwtStrategy] Validated user:', user.email, 'status:', user.status, 'accountType:', user.accountType);
 
     return {
       id: user.id,
@@ -36,6 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       role: user.role,
       accountType: user.accountType,
+      status: user.status,
       profile: user.profile,
     };
   }

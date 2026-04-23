@@ -351,6 +351,19 @@ export class AuthController {
       const user = req.user;
       if (!user) throw new Error('No user returned from Google');
 
+      const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
+
+      // Check if user is banned or rejected BEFORE issuing token
+      if (user.status === 'BANNED' || user.status === 'REJECTED') {
+        return res.redirect(`${frontendUrl}/ar/login?error=account_rejected`);
+      }
+
+      // Check if pending approval (instructors/consultants)
+      if (user.status === 'PENDING') {
+        return res.redirect(`${frontendUrl}/ar/login?error=pending_approval`);
+      }
+
+      // Only issue token for ACTIVE users
       const tokens = await this.authService.generateTokens(user);
 
       const userData = encodeURIComponent(JSON.stringify({
@@ -362,8 +375,6 @@ export class AuthController {
         accessToken: tokens.accessToken,
         isNewUser: user.isNewUser || false,
       }));
-
-      const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
 
       if (user.isNewUser) {
         // New user → pre-fill register page and jump to account type step

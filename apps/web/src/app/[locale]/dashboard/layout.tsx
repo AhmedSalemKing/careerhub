@@ -47,7 +47,7 @@ function getConsultantItems(locale: string) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, hydrate } = useAuthStore()
+  const { user, hydrate, logout } = useAuthStore()
   const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const locale = useLocale()
@@ -57,6 +57,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     hydrate()
     setMounted(true)
   }, [hydrate])
+
+  useEffect(() => {
+    if (!mounted || !user) return
+
+    if (user.status === 'PENDING' || user.status === 'BANNED' || user.status === 'REJECTED') {
+      const error = user.status === 'PENDING' ? 'pending_approval' : 'account_rejected'
+      logout()
+      router.replace(`/${locale}/login?error=${error}`)
+    }
+  }, [mounted, user, locale, logout, router])
 
   // Full-screen mode for AI chat
   const isAiChat = pathname?.includes('ai-chat')

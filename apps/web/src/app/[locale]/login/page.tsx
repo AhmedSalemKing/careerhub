@@ -64,6 +64,19 @@ export default function LoginPage() {
     }
   }, [theme])
 
+  // Handle URL error params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const error = params.get('error')
+    if (error === 'pending_approval') {
+      setLoginError(ar ? 'حسابك في انتظار مراجعة الإدارة. سنخطرك عند القبول.' : 'Your account is under review. We will notify you when approved.')
+    } else if (error === 'account_rejected') {
+      setLoginError(ar ? 'تم رفض حسابك. تواصل مع الدعم للمزيد من المعلومات.' : 'Your application was rejected. Please contact support for more information.')
+    } else if (error === 'google_failed') {
+      setLoginError(ar ? 'فشل تسجيل الدخول بـ Google. حاول مرة أخرى.' : 'Google sign-in failed. Please try again.')
+    }
+  }, [ar])
+
   useEffect(() => {
     if (token && user) {
       const params = new URLSearchParams(window.location.search)
