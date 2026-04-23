@@ -294,41 +294,44 @@ export class CertificatesService {
     ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890)
 
     // ── QR CODE ─────────────────────────────────────────────────────────────
+    console.log('[QR] Starting QR generation')
+    console.log('[QR] canvas size:', W, 'x', H)
     try {
       const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
-      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 150,
-        margin: 1,
-        color: { dark: '#1a1a2e', light: 'rgba(255,255,255,0.9)' },
-      })
-      const qrImg = await loadImage(qrDataUrl)
+      console.log('[QR] URL:', verifyUrl)
 
-      // Position: bottom right, inside border
+      const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+        width: 200,
+        margin: 2,
+        type: 'png',
+        color: { dark: '#000000', light: '#ffffff' },
+      })
+      console.log('[QR] Buffer generated, size:', qrBuffer.length)
+
+      const qrImg = await loadImage(qrBuffer)
+      console.log('[QR] Image loaded:', qrImg.width, 'x', qrImg.height)
+
       const qrSize = Math.floor(W * 0.095)
       const qrX = Math.floor(W * 0.840)
       const qrY = Math.floor(H * 0.695)
 
-      console.log('[Certificate] Drawing QR at:', qrX, qrY, 'size:', qrSize)
+      console.log('[QR] Drawing at:', qrX, qrY, 'size:', qrSize)
 
-      // Solid white box
+      // White background
       ctx.fillStyle = '#ffffff'
-      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 28)
+      ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 30)
 
-      // Border
-      ctx.strokeStyle = '#e5e7eb'
-      ctx.lineWidth = 1
-      ctx.strokeRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 28)
-
-      // QR image
+      // Draw QR
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+      console.log('[QR] Drawn successfully')
 
       // Label
-      ctx.font = `${Math.floor(W * 0.0085)}px "Cormorant Garamond", Georgia, serif`
-      ctx.fillStyle = '#4a5568'
+      ctx.font = `${Math.floor(W * 0.009)}px Arial, sans-serif`
+      ctx.fillStyle = '#000000'
       ctx.textAlign = 'center'
-      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 18)
+      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 20)
     } catch (e: any) {
-      console.error('[Certificate] QR failed:', e.message)
+      console.error('[QR] FAILED:', e.message, e.stack?.split('\n')[1])
     }
 
     return canvas.toBuffer('image/png')
