@@ -201,7 +201,7 @@ export class CertificatesService {
     // "Certificate of Completion"
     ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1a1a2e'
-    ctx.fillText('Certificate of Completion', W / 2, H * 0.245)
+    ctx.fillText('Certificate of Completion', W / 2, H * 0.230)
 
     // "This is to certify that"
     ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
@@ -304,24 +304,29 @@ export class CertificatesService {
       const qrImg = await loadImage(qrDataUrl)
 
       // Position: bottom right, inside border
-      const qrSize = Math.floor(W * 0.090)
-      const qrX = W * 0.845
-      const qrY = H * 0.700
+      const qrSize = Math.floor(W * 0.095)
+      const qrX = Math.floor(W * 0.840)
+      const qrY = Math.floor(H * 0.695)
 
       console.log('[Certificate] Drawing QR at:', qrX, qrY, 'size:', qrSize)
 
-      // Solid white background behind QR
+      // Solid white box
       ctx.fillStyle = '#ffffff'
-      ctx.fillRect(qrX - 6, qrY - 6, qrSize + 12, qrSize + 24)
+      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 28)
 
-      // Draw QR
+      // Border
+      ctx.strokeStyle = '#e5e7eb'
+      ctx.lineWidth = 1
+      ctx.strokeRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 28)
+
+      // QR image
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
 
-      // "Scan to verify" label below QR
-      ctx.font = `${Math.floor(W * 0.008)}px Arial, sans-serif`
-      ctx.fillStyle = '#1a1a2e'
+      // Label
+      ctx.font = `${Math.floor(W * 0.0085)}px "Cormorant Garamond", Georgia, serif`
+      ctx.fillStyle = '#4a5568'
       ctx.textAlign = 'center'
-      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 16)
+      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 18)
     } catch (e: any) {
       console.error('[Certificate] QR failed:', e.message)
     }
