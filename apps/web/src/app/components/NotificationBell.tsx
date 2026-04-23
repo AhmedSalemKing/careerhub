@@ -45,7 +45,7 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const { data: notifications = [] } = useQuery<Notification[]>({
+  const { data: rawNotifications = [] } = useQuery<Notification[]>({
     queryKey: ['notifications'],
     enabled: !!token,
     queryFn: async () => {
@@ -60,6 +60,7 @@ export function NotificationBell() {
     refetchInterval: 30000,
   })
 
+  const notifications = Array.isArray(rawNotifications) ? rawNotifications : []
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
   const markAllRead = useMutation({
