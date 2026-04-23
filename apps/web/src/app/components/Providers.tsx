@@ -6,6 +6,7 @@ import type { Locale } from '../../i18n'
 import { ToastProvider } from '../../lib/toast'
 import { useAuthStore } from '../../stores/authStore'
 import { createQueryClient } from '../../lib/query-client'
+import { startKeepAlive } from '../../lib/keepAlive'
 import { ThemeProvider, useTheme } from 'next-themes'
 
 export const SITE_NAME = 'DeveWay'
@@ -97,6 +98,10 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
   useEffect(() => {
     hydrate()
   }, [hydrate])
+
+  useEffect(() => {
+    startKeepAlive()
+  }, [])
 
   // Load site settings
   useEffect(() => {

@@ -33,7 +33,7 @@ const getBaseURL = () => {
 export const api = axios.create({
   baseURL: getBaseURL(),
   withCredentials: true,
-  timeout: 30000,
+  timeout: 60000, // 60s for cold starts
 })
 
 // ✅ Log baseURL عند الإنشاء (لمرة واحدة)
@@ -63,6 +63,28 @@ api.interceptors.response.use(
     return response
   },
   async (error) => {
+    const config = error.config
+
+    // Retry on network errors or server sleeping (502/503)
+    if (config) {
+      if (!config._retryCount) config._retryCount = 0
+      const shouldRetry =
+        config._retryCount < 2 &&
+        (!error.response ||
+          error.response.status === 503 ||
+          error.response.status === 502 ||
+          error.code === 'ECONNABORTED' ||
+          error.code === 'ERR_NETWORK')
+
+      if (shouldRetry) {
+        config._retryCount++
+        const delay = config._retryCount * 2000 // 2s, 4s
+        console.log(`[API] ⟳ Retry ${config._retryCount} for ${config.url} in ${delay}ms`)
+        await new Promise((r) => setTimeout(r, delay))
+        return api(config)
+      }
+    }
+
     const status = error.response?.status
     const data = error.response?.data
     const message = data?.message || ''

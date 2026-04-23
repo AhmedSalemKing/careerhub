@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../../stores/authStore'
+import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
 import {
@@ -64,6 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const locale = useLocale()
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   const accountType = user?.accountType || 'STUDENT'
 
@@ -105,6 +108,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     hydrate()
     setMounted(true)
   }, [hydrate])
+
+  // Prefetch critical data on mount
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['auth', 'me'],
+      queryFn: () => get('/auth/me').then((r) => (r.data as any)?.data),
+      staleTime: 5 * 60 * 1000,
+    })
+    queryClient.prefetchQuery({
+      queryKey: ['notifications'],
+      queryFn: () => get('/notifications').then((r) => (r.data as any)?.data ?? []),
+      staleTime: 2 * 60 * 1000,
+    })
+  }, [queryClient])
 
   useEffect(() => {
     if (!mounted || !user) return
