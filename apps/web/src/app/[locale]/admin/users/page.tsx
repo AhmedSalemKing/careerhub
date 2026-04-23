@@ -132,24 +132,6 @@ export default function AdminUsersPage() {
     } finally { setCreating(false) }
   }
 
-  async function handleRoleChangeConfirm() {
-    if (!confirmDialog) return
-    try {
-      await patch(`/admin/users/${confirmDialog.userId}/role`, { accountType: confirmDialog.newRole })
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
-      notify.success(`${isAr ? 'تم تغيير دور' : 'Changed role of'} ${confirmDialog.userName} ${isAr ? 'إلى' : 'to'} ${roleLabels[confirmDialog.newRole]}`)
-    } catch (e: any) {
-      notify.error(e.response?.data?.message || (isAr ? 'فشل تغيير الدور' : 'Failed to change role'))
-    } finally {
-      setConfirmDialog(null)
-    }
-  }
-
-  async function handleRoleChangeRequest(userId: string, userName: string, currentRole: string, newRole: string) {
-    if (currentRole === newRole) return
-    setConfirmDialog({ open: true, userId, userName, currentRole, newRole })
-  }
-
   const statusBadge = (u: AdminUser) => {
     const map: Record<string, string> = {
       ACTIVE: 'bg-emerald-900/30 text-emerald-400 border-emerald-800',
