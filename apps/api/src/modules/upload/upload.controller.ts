@@ -1,4 +1,4 @@
-﻿import {
+import {
   Controller,
   Post,
   Get,
@@ -109,7 +109,7 @@ export class UploadController {
 
   @Public()
   @Post('image')
-  @UseInterceptors(FileInterceptor('image', {
+  @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
@@ -120,13 +120,13 @@ export class UploadController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload image — saved to Cloudinary' })
   @ApiResponse({ status: 201, description: 'Image uploaded successfully' })
-  async uploadImage(@UploadedFile() image: Express.Multer.File) {
-    if (!image) throw new BadRequestException('No image file provided');
-    const result = await this.cloudinaryService.uploadFile(image, 'images', 'image');
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No image file provided');
+    const result = await this.cloudinaryService.uploadFile(file, 'images', 'image');
     return {
       success: true,
       message: 'Image uploaded successfully',
-      data: { url: result.url, fileName: image.originalname, size: image.size, mimeType: image.mimetype },
+      data: { url: result.url, fileName: file.originalname, size: file.size, mimeType: file.mimetype },
     };
   }
 
@@ -171,10 +171,9 @@ export class UploadController {
     };
   }
 
+  @Public()
   @Post('video')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('video', {
+  @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
     limits: { fileSize: 500 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
@@ -185,30 +184,41 @@ export class UploadController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload video — saved to Cloudinary' })
   @ApiResponse({ status: 201, description: 'Video uploaded successfully' })
-  async uploadVideo(@UploadedFile() video: Express.Multer.File) {
-    if (!video) throw new BadRequestException('No video file provided');
-    const result = await this.cloudinaryService.uploadFile(video, 'videos', 'video');
+  async uploadVideo(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No video file provided');
+    const result = await this.cloudinaryService.uploadFile(file, 'videos', 'video');
     return {
       success: true,
       message: 'Video uploaded successfully',
-      data: { url: result.url, fileName: video.originalname, size: video.size, mimeType: video.mimetype },
+      data: { url: result.url, fileName: file.originalname, size: file.size, mimeType: file.mimetype },
     };
   }
 
-  @Post('document')
+@Post('document')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('document'))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowed = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (allowed.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('Only PDF and Word files are allowed'), false);
+    },
+  }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload document file' })
-  @ApiResponse({ status: 201, description: 'Document uploaded successfully' })
-  async uploadDocument(
+async uploadDocument(
     @CurrentUser() user: User,
-    @UploadedFile() document: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
     @Body('title') title?: string,
     @Body('description') description?: string,
   ) {
-    const result = await this.uploadService.uploadDocument(user.id, document, { title, description });
+    const result = await this.uploadService.uploadDocument(user.id, file, { title, description });
     return { success: true, message: 'Document uploaded successfully', data: result };
   }
 

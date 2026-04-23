@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, UseGuards, Param, Request } from '@nestjs/common';
 import { VerificationService } from './verification.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('verification')
@@ -23,20 +25,23 @@ export class VerificationController {
   }
 
   @Get('pending')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   async getPending() {
     const data = await this.verificationService.getPendingVerifications();
     return { success: true, data };
   }
 
   @Post('approve/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   async approve(@Param('userId') userId: string, @Request() req: any) {
     return this.verificationService.approveVerification(userId, req.user.id);
   }
 
   @Post('reject/:userId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   async reject(
     @Param('userId') userId: string,
     @Body() body: { reason?: string },

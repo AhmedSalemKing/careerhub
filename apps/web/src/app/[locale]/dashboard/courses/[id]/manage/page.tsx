@@ -25,8 +25,7 @@ async function uploadMedia(
 ): Promise<{ url: string; name: string; type: string }> {
   return new Promise((resolve, reject) => {
     const formData = new FormData()
-    const fieldName = type === 'video' ? 'video' : type === 'image' ? 'image' : 'file'
-    formData.append(fieldName, file)
+    formData.append('file', file)
     
     const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
     const xhr = new XMLHttpRequest()
