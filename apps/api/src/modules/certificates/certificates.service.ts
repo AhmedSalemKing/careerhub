@@ -165,6 +165,18 @@ export class CertificatesService {
   }): Promise<Buffer> {
     this.registerFonts()
 
+    // Register Arabic font
+    const fs = require('fs') as typeof import('fs')
+    const { GlobalFonts } = require('@napi-rs/canvas')
+    const arabicFontPath = path.join(__dirname, 'fonts', 'certificate.ttf')
+    if (fs.existsSync(arabicFontPath)) {
+      try { GlobalFonts.registerFromPath(arabicFontPath, 'CertificateArabic') }
+      catch { /* non-fatal */ }
+      console.log('[Certificate] Arabic font registered')
+    } else {
+      console.warn('[Certificate] Arabic font not found:', arabicFontPath)
+    }
+
     const templatePath = this.resolveTemplatePath()
     const template = await loadImage(templatePath).catch((e: any) => {
       console.error('[Certificate] loadImage failed:', e.message, 'path:', templatePath)
@@ -189,7 +201,7 @@ export class CertificatesService {
     // "Certificate of Completion"
     ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1a1a2e'
-    ctx.fillText('Certificate of Completion', W / 2, H * 0.195)
+    ctx.fillText('Certificate of Completion', W / 2, H * 0.155)
 
     // "This is to certify that"
     ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
@@ -213,42 +225,58 @@ export class CertificatesService {
     // "DeveWay CEO" label
     ctx.fillText('DeveWay CEO', W * 0.785, H * 0.855)
 
-    // "www.deveway.com"
+    // "www.deveway.com" - raised
     ctx.font = `${Math.floor(W * 0.010)}px "Cormorant Garamond", Georgia, serif`
     ctx.fillStyle = '#5a5a5a'
-    ctx.fillText('www.deveway.com', W / 2, H * 0.955)
+    ctx.fillText('www.deveway.com', W / 2, H * 0.920)
 
     // ═══ DYNAMIC TEXT ═══
 
-    // Student Name - italic bold Playfair Display
+    // Student Name
     const nameLen = data.studentName.length
     const nameFontSize = nameLen > 35 ? Math.floor(W * 0.030)
       : nameLen > 25 ? Math.floor(W * 0.036)
       : Math.floor(W * 0.042)
 
-    ctx.font = `italic bold ${nameFontSize}px "Playfair Display", Georgia, serif`
+    const nameHasArabic = /[\u0600-\u06FF]/.test(data.studentName)
+    if (nameHasArabic) {
+      ctx.font = `bold ${nameFontSize}px "CertificateArabic", Arial, sans-serif`
+      ctx.direction = 'rtl'
+    } else {
+      ctx.font = `italic bold ${nameFontSize}px "Playfair Display", Georgia, serif`
+      ctx.direction = 'ltr'
+    }
     ctx.fillStyle = '#1a1a2e'
     ctx.shadowColor = 'rgba(0,0,0,0.08)'
     ctx.shadowBlur = 2
     ctx.fillText(
       data.studentName.length > 40 ? data.studentName.substring(0, 38) + '...' : data.studentName,
       W / 2,
-      H * 0.375
+      H * 0.360
     )
     ctx.shadowBlur = 0
+    ctx.direction = 'ltr'
 
-    // Course Title - bold Playfair Display
+    // Course Title
     const courseFontSize = data.courseTitle.length > 35 ? Math.floor(W * 0.024) : Math.floor(W * 0.030)
-    ctx.font = `bold ${courseFontSize}px "Playfair Display", Georgia, serif`
+    const courseHasArabic = /[\u0600-\u06FF]/.test(data.courseTitle)
+    if (courseHasArabic) {
+      ctx.font = `bold ${courseFontSize}px "CertificateArabic", Arial, sans-serif`
+      ctx.direction = 'rtl'
+    } else {
+      ctx.font = `bold ${courseFontSize}px "Playfair Display", Georgia, serif`
+      ctx.direction = 'ltr'
+    }
     ctx.fillStyle = '#1a1a2e'
 
     const courseLines = this.splitText(ctx, data.courseTitle, W * 0.68)
     if (courseLines.length === 1) {
-      ctx.fillText(courseLines[0], W / 2, H * 0.540)
+      ctx.fillText(courseLines[0], W / 2, H * 0.520)
     } else {
-      ctx.fillText(courseLines[0], W / 2, H * 0.525)
-      ctx.fillText(courseLines[1] || '', W / 2, H * 0.560)
+      ctx.fillText(courseLines[0], W / 2, H * 0.505)
+      ctx.fillText(courseLines[1] || '', W / 2, H * 0.540)
     }
+    ctx.direction = 'ltr'
 
     // Date
     ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", Georgia, serif`
@@ -260,10 +288,10 @@ export class CertificatesService {
     ctx.fillStyle = '#1a1a2e'
     ctx.fillText(data.instructorName, W * 0.215, H * 0.800)
 
-    // Certificate ID
+    // Certificate ID - raised
     ctx.font = `${Math.floor(W * 0.009)}px "Courier New", monospace`
     ctx.fillStyle = '#5a5a5a'
-    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.912)
+    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890)
 
     // ── QR CODE ─────────────────────────────────────────────────────────────
     try {
