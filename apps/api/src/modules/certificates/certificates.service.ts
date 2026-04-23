@@ -179,30 +179,48 @@ export class CertificatesService {
     const ctx = canvas.getContext('2d')
     ctx.drawImage(template, 0, 0)
 
-    const bgSample = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.1), 1, 1).data
-    const bgColor = `rgb(${bgSample[0]}, ${bgSample[1]}, ${bgSample[2]})`
-    console.log('[Certificate] bgColor:', bgColor)
-
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    // ── COVER PLACEHOLDER TEXT ─────────────────────────────────────────────
-    ctx.fillStyle = bgColor
+    // ── Sample EXACT background colors at each placeholder location ────────
+    const namePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.36), 1, 1).data
+    const nameBg = `rgb(${namePixel[0]}, ${namePixel[1]}, ${namePixel[2]})`
 
-    // Cover [Recipient's Name] area
-    ctx.fillRect(W * 0.12, H * 0.295, W * 0.76, H * 0.135)
+    const coursePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.56), 1, 1).data
+    const courseBg = `rgb(${coursePixel[0]}, ${coursePixel[1]}, ${coursePixel[2]})`
 
-    // Cover [Course Title] area
-    ctx.fillRect(W * 0.10, H * 0.505, W * 0.80, H * 0.115)
+    const datePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.62), 1, 1).data
+    const dateBg = `rgb(${datePixel[0]}, ${datePixel[1]}, ${datePixel[2]})`
 
-    // Cover [Date of Completion]
-    ctx.fillRect(W * 0.22, H * 0.618, W * 0.56, H * 0.058)
+    const idPixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.87), 1, 1).data
+    const idBg = `rgb(${idPixel[0]}, ${idPixel[1]}, ${idPixel[2]})`
 
-    // Cover Certificate ID at bottom
-    ctx.fillRect(W * 0.15, H * 0.868, W * 0.70, H * 0.050)
+    const instrPixel = ctx.getImageData(Math.floor(W * 0.22), Math.floor(H * 0.78), 1, 1).data
+    const instrBg = `rgb(${instrPixel[0]}, ${instrPixel[1]}, ${instrPixel[2]})`
 
-    // Cover instructor name area (left)
-    ctx.fillRect(W * 0.03, H * 0.740, W * 0.35, H * 0.070)
+    console.log('[Certificate] overlay colors - name:', nameBg, 'course:', courseBg, 'date:', dateBg, 'id:', idBg)
+
+    // ── COVER PLACEHOLDER TEXT with tight bounds and exact background color ──
+
+    // [Recipient's Name] area - tight
+    ctx.fillStyle = nameBg
+    ctx.fillRect(W * 0.20, H * 0.315, W * 0.60, H * 0.095)
+
+    // [Course Title] area - tight
+    ctx.fillStyle = courseBg
+    ctx.fillRect(W * 0.15, H * 0.520, W * 0.70, H * 0.085)
+
+    // [Date of Completion] area - tight
+    ctx.fillStyle = dateBg
+    ctx.fillRect(W * 0.27, H * 0.622, W * 0.46, H * 0.048)
+
+    // Certificate ID at bottom - tight
+    ctx.fillStyle = idBg
+    ctx.fillRect(W * 0.20, H * 0.870, W * 0.60, H * 0.040)
+
+    // Instructor name area (left) - tight
+    ctx.fillStyle = instrBg
+    ctx.fillRect(W * 0.05, H * 0.755, W * 0.32, H * 0.055)
 
     // ── WRITE DYNAMIC TEXT ─────────────────────────────────────────────────
 
