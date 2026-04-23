@@ -9,7 +9,7 @@ import BottomDock from '../../../components/BottomDock'
 import {
   LayoutDashboard, BookOpen, Brain, MessageSquare, Users,
   Award, Settings, PlusCircle, BarChart2, DollarSign,
-  Calendar, Clock, Star,
+  Calendar, Clock, Star, Shield, UserCog, FileText, Bell,
 } from 'lucide-react'
 
 function getStudentItems(locale: string) {
@@ -42,6 +42,18 @@ function getConsultantItems(locale: string) {
     { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
     { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
     { icon: Star, labelAr: 'التقييمات', labelEn: 'Reviews', href: `/${locale}/dashboard/reviews` },
+    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
+  ]
+}
+
+function getAdminItems(locale: string) {
+  return [
+    { icon: LayoutDashboard, labelAr: 'لوحة الإدارة', labelEn: 'Admin Panel', href: `/${locale}/admin` },
+    { icon: Users, labelAr: 'المستخدمين', labelEn: 'Users', href: `/${locale}/admin/users` },
+    { icon: BookOpen, labelAr: 'الكورسات', labelEn: 'Courses', href: `/${locale}/admin/courses` },
+    { icon: Bell, labelAr: 'الموافقات', labelEn: 'Approvals', href: `/${locale}/admin/approvals` },
+    { icon: FileText, labelAr: 'التقارير', labelEn: 'Reports', href: `/${locale}/admin/reports` },
+    { icon: UserCog, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/admin/sessions` },
     { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
   ]
 }
@@ -100,8 +112,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isInstructor = user?.accountType === 'INSTRUCTOR'
   const isConsultant = user?.accountType === 'CONSULTANT'
+  const isAdmin = user?.accountType === 'ADMIN'
 
-  const dockItems = isInstructor
+  const dockItems = isAdmin
+    ? getAdminItems(locale)
+    : isInstructor
     ? getInstructorItems(locale)
     : isConsultant
     ? getConsultantItems(locale)

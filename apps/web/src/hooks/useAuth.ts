@@ -18,6 +18,7 @@ export function useAuth() {
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
     enabled: !!store.token,
+    refetchInterval: 5 * 60 * 1000, // 5 minutes - keeps role in sync with DB
     queryFn: async () => {
       const res = await api.get<ApiResponse<AuthUser>>('/auth/me')
       const user = res.data.data

@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
+import { useQueryClient } from '@tanstack/react-query'
 import { api, post, patch } from '../../../../lib/api'
-import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, Eye, X } from 'lucide-react'
+import { notify } from '../../../../lib/notify'
+import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, Eye, X, Shield } from 'lucide-react'
 import { getMediaUrl } from '../../../../lib/media'
 
 type AdminUser = {
@@ -32,6 +34,7 @@ const MODAL_INPUT = {
 export default function AdminUsersPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const queryClient = useQueryClient()
   const [users, setUsers] = useState<AdminUser[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -39,6 +42,40 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
+
+  // Role change confirmation dialog
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean
+    userId: string
+    userName: string
+    currentRole: string
+    newRole: string
+  } | null>(null)
+
+  const roleLabels: Record<string, string> = {
+    STUDENT: isAr ? 'طالب' : 'Student',
+    INSTRUCTOR: isAr ? 'محاضر' : 'Instructor',
+    CONSULTANT: isAr ? 'مستشار' : 'Consultant',
+    ADMIN: isAr ? 'أدمن' : 'Admin',
+  }
+
+  const handleRoleChangeRequest = (userId: string, userName: string, currentRole: string, newRole: string) => {
+    if (currentRole === newRole) return
+    setConfirmDialog({ open: true, userId, userName, currentRole, newRole })
+  }
+
+  const handleRoleChangeConfirm = async () => {
+    if (!confirmDialog) return
+    try {
+      await patch(`/admin/users/${confirmDialog.userId}/role`, { accountType: confirmDialog.newRole })
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      notify.success(`${isAr ? 'تم تغيير دور' : 'Changed role of'} ${confirmDialog.userName} ${isAr ? 'إلى' : 'to'} ${roleLabels[confirmDialog.newRole]}`)
+    } catch (e: any) {
+      notify.error(e.response?.data?.message || (isAr ? 'فشل تغيير الدور' : 'Failed to change role'))
+    } finally {
+      setConfirmDialog(null)
+    }
+  }
 
   // Create user modal
   const [showCreate, setShowCreate] = useState(false)
@@ -95,11 +132,22 @@ export default function AdminUsersPage() {
     } finally { setCreating(false) }
   }
 
-  async function handleRoleChange(userId: string, accountType: string) {
+  async function handleRoleChangeConfirm() {
+    if (!confirmDialog) return
     try {
-      await patch(`/admin/users/${userId}/role`, { accountType })
-      fetchUsers()
-    } catch (e) { console.error(e) }
+      await patch(`/admin/users/${confirmDialog.userId}/role`, { accountType: confirmDialog.newRole })
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      notify.success(`${isAr ? 'تم تغيير دور' : 'Changed role of'} ${confirmDialog.userName} ${isAr ? 'إلى' : 'to'} ${roleLabels[confirmDialog.newRole]}`)
+    } catch (e: any) {
+      notify.error(e.response?.data?.message || (isAr ? 'فشل تغيير الدور' : 'Failed to change role'))
+    } finally {
+      setConfirmDialog(null)
+    }
+  }
+
+  async function handleRoleChangeRequest(userId: string, userName: string, currentRole: string, newRole: string) {
+    if (currentRole === newRole) return
+    setConfirmDialog({ open: true, userId, userName, currentRole, newRole })
   }
 
   const statusBadge = (u: AdminUser) => {
@@ -201,16 +249,21 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-300">{u.role}</td>
-                    <td className="px-4 py-3">
+<td className="px-4 py-3">
                       <select
-                        defaultValue={u.accountType}
-                        onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                        value={u.accountType}
+                        onChange={(e) => handleRoleChangeRequest(
+                          u.id,
+                          `${u.profile?.firstName || ''} ${u.profile?.lastName || ''}`.trim() || u.email,
+                          u.accountType,
+                          e.target.value
+                        )}
                         style={{ padding: '4px 8px', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e0e0e0', fontSize: 12, cursor: 'pointer' }}
                       >
-                        <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
-                        <option value="INSTRUCTOR">{isAr ? 'محاضر' : 'Instructor'}</option>
-                        <option value="CONSULTANT">{isAr ? 'مستشار' : 'Consultant'}</option>
-                        <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
+                        <option value="STUDENT">{roleLabels.STUDENT}</option>
+                        <option value="INSTRUCTOR">{roleLabels.INSTRUCTOR}</option>
+                        <option value="CONSULTANT">{roleLabels.CONSULTANT}</option>
+                        <option value="ADMIN">{roleLabels.ADMIN}</option>
                       </select>
                     </td>
                     <td className="px-4 py-3">
@@ -345,6 +398,85 @@ export default function AdminUsersPage() {
                 style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
               >
                 {creating ? '...' : (isAr ? 'إنشاء المستخدم' : 'Create User')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Change Confirmation Dialog */}
+      {confirmDialog?.open && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }}
+        onClick={() => setConfirmDialog(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#161929',
+              borderRadius: 20, padding: 32, maxWidth: 440, width: '100%',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+              direction: 'rtl',
+            }}
+          >
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%',
+              background: 'rgba(245,158,11,0.1)', border: '2px solid rgba(245,158,11,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}>
+              <Shield size={24} color="#f59e0b" />
+            </div>
+            
+            <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
+              تأكيد تغيير الدور
+            </h3>
+            
+            <p style={{ color: '#6b7280', fontSize: 14, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
+              هل تريد تغيير دور <strong style={{ color: '#fff' }}>{confirmDialog.userName}</strong> من{' '}
+              <span style={{ color: '#5120c8', fontWeight: 600 }}>{roleLabels[confirmDialog.currentRole]}</span>{' '}
+              إلى{' '}
+              <span style={{ color: '#16a34a', fontWeight: 600 }}>{roleLabels[confirmDialog.newRole]}</span>
+            </p>
+            
+            {confirmDialog.newRole === 'ADMIN' && (
+              <div style={{
+                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                borderRadius: 10, padding: '10px 14px', marginBottom: 20,
+              }}>
+                <p style={{ color: '#fca5a5', fontSize: 13, margin: 0 }}>
+                  تحذير: ستمنح هذا المستخدم صلاحيات الأدمن الكاملة
+                </p>
+              </div>
+            )}
+            
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={handleRoleChangeConfirm}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 12,
+                  background: confirmDialog.newRole === 'ADMIN' ? '#ef4444' : '#5120c8',
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  fontSize: 15, fontWeight: 700,
+                }}
+              >
+                تأكيد التغيير
+              </button>
+              <button
+                onClick={() => setConfirmDialog(null)}
+                style={{
+                  flex: 1, padding: '12px', borderRadius: 12,
+                  background: 'transparent', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  cursor: 'pointer', fontSize: 15, fontWeight: 600,
+                }}
+              >
+                إلغاء
               </button>
             </div>
           </div>
