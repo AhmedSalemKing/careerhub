@@ -11,7 +11,8 @@ import {
   Shield, CheckCircle,
   Lock, ArrowRight, ArrowLeft, Users, BookOpen, Clock, Zap,
   CreditCard, Gift, Award, ChevronDown, CheckCheck, Sparkles,
-  Smartphone, Headphones, RefreshCw, Truck, Star, BadgeCheck
+  Smartphone, Headphones, RefreshCw, Truck, Star, BadgeCheck,
+  Wallet
 } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import {
@@ -200,6 +201,8 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [creatingIntent, setCreatingIntent] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card')
+  const [walletError, setWalletError] = useState('')
 
   useEffect(() => {
     const token = localStorage.getItem('deveway_token')
@@ -218,11 +221,40 @@ export default function CheckoutPage() {
     retry: false,
   })
 
+  const { data: walletData } = useQuery({
+    queryKey: ['wallet-balance'],
+    queryFn: async () => {
+      const res = await get('/wallet')
+      return res.data?.data
+    },
+  })
+
+  const walletBalance = walletData?.balance || 0
+  const canPayWithWallet = walletBalance >= (course?.price || 0)
+
   const handleStartPayment = useCallback(async () => {
     if (!agreed) {
       notify.error('يرجى الموافقة على الشروط أولاً')
       return
     }
+    
+    if (paymentMethod === 'wallet') {
+      setCreatingIntent(true)
+      setWalletError('')
+      try {
+        await post(`/wallet/pay/${courseId}`, {})
+        notify.success('تم الاشتراك بنجاح!')
+        setSuccess(true)
+        return
+      } catch (e: any) {
+        setWalletError(e.response?.data?.message || 'فشل الدفع بالمحفظة')
+        notify.error(e.response?.data?.message || 'فشل الدفع بالمحفظة')
+      } finally {
+        setCreatingIntent(false)
+      }
+      return
+    }
+    
     setCreatingIntent(true)
     try {
       const res = await post('/payment/create-intent', { courseId })
@@ -605,31 +637,68 @@ export default function CheckoutPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <div className="rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.01]" style={{ 
-                          background: c.primaryLight,
-                          border: `2px solid ${c.primary}`
-                        }}>
-                          <div className="h-12 w-12 rounded-xl flex items-center justify-center" style={{ background: c.primary }}>
+                        <button
+                          onClick={() => setPaymentMethod('card')}
+                          className="w-full rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.01]"
+                          style={{ 
+                            background: paymentMethod === 'card' ? c.primaryLight : 'transparent',
+                            border: `2px solid ${paymentMethod === 'card' ? c.primary : c.borderColor}`
+                          }}
+                        >
+                          <div className="h-12 w-12 rounded-xl flex items-center justify-center" style={{ background: paymentMethod === 'card' ? c.primary : c.surface2 }}>
                             <CreditCard className="h-6 w-6 text-white" />
                           </div>
-                          <div className="flex-1">
-                            <div className="font-bold" style={{ color: c.primary }}>بطاقة ائتمان / خصم</div>
+                          <div className="flex-1 text-right">
+                            <div className="font-bold" style={{ color: paymentMethod === 'card' ? c.primary : c.textPrimary }}>بطاقة ائتمان / خصم</div>
                             <div className="text-xs" style={{ color: c.muted }}>Visa, Mastercard, Mada</div>
                           </div>
-                          <CheckCircle className="h-6 w-6" style={{ color: c.primary }} />
-                        </div>
+                          {paymentMethod === 'card' && <CheckCircle className="h-6 w-6" style={{ color: c.primary }} />}
+                        </button>
                         
-                        <div className="flex items-center justify-center gap-3 pt-2">
-                          <div className="h-8 w-12 rounded bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">VISA</span>
+                        <button
+                          onClick={() => canPayWithWallet && setPaymentMethod('wallet')}
+                          className="w-full rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.01]"
+                          style={{ 
+                            opacity: canPayWithWallet ? 1 : 0.6,
+                            background: paymentMethod === 'wallet' ? c.primaryLight : 'transparent',
+                            border: `2px solid ${paymentMethod === 'wallet' ? c.primary : c.borderColor}`
+                          }}
+                        >
+                          <div className="h-12 w-12 rounded-xl flex items-center justify-center" style={{ background: paymentMethod === 'wallet' ? c.primary : '#16a34a20' }}>
+                            <Wallet className="h-6 w-6" style={{ color: paymentMethod === 'wallet' ? '#fff' : '#16a34a' }} />
                           </div>
-                          <div className="h-8 w-12 rounded bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">MC</span>
+                          <div className="flex-1 text-right">
+                            <div className="font-bold" style={{ color: paymentMethod === 'wallet' ? c.primary : c.textPrimary }}>محفظتي</div>
+                            <div className="text-xs" style={{ color: canPayWithWallet ? '#16a34a' : '#ef4444' }}>
+                              رصيد: {walletBalance.toFixed(2)} ر.س {canPayWithWallet ? '' : '(غير كافٍ)'}
+                            </div>
                           </div>
-                          <div className="h-8 w-12 rounded flex items-center justify-center" style={{ background: '#1e40af' }}>
-                            <span className="text-white text-xs font-bold">mada</span>
+                          {paymentMethod === 'wallet' && <CheckCircle className="h-6 w-6" style={{ color: c.primary }} />}
+                        </button>
+                        
+                        {!canPayWithWallet && walletBalance > 0 && (
+                          <p className="text-xs text-center" style={{ color: c.gold }}>
+                            رصيد محفظتك غير كافٍ. تحتاج {((course?.price || 0) - walletBalance).toFixed(2)} ر.س إضافية
+                          </p>
+                        )}
+                        
+                        {walletError && (
+                          <p className="text-xs text-center" style={{ color: c.red }}>{walletError}</p>
+                        )}
+                        
+                        {paymentMethod === 'card' && (
+                          <div className="flex items-center justify-center gap-3 pt-2">
+                            <div className="h-8 w-12 rounded bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">VISA</span>
+                            </div>
+                            <div className="h-8 w-12 rounded bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">MC</span>
+                            </div>
+                            <div className="h-8 w-12 rounded flex items-center justify-center" style={{ background: '#1e40af' }}>
+                              <span className="text-white text-xs font-bold">mada</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>

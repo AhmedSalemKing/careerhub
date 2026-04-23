@@ -104,6 +104,7 @@ model User {
   idVerifiedAt      DateTime?
   idRejectedReason String?
   isVerified        Boolean   @default(false)
+  walletBalance     Float     @default(0)
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -141,6 +142,7 @@ model User {
   givenRatings         Rating[]            @relation("GivenRatings")
   receivedRatings      Rating[]            @relation("ConsultantRatings")
   activities           UserActivity[]
+  walletTransactions   WalletTransaction[]
 
   @@index([email])
   @@index([role])
@@ -1039,4 +1041,22 @@ model CartItem {
   @@index([cartId])
   @@index([courseId])
   @@map("cart_items")
+}
+
+model WalletTransaction {
+  id                    String   @id @default(cuid())
+  userId                String
+  type                  String   // TOPUP | PAYMENT | REFUND
+  amount                Float
+  description           String?
+  status                String   @default("SUCCESS")
+  stripePaymentIntentId String?
+  courseId              String?
+  createdAt             DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("wallet_transactions")
 }

@@ -11,7 +11,7 @@ import BottomDock from '../../../components/BottomDock'
 import {
   LayoutDashboard, BookOpen, Brain, MessageSquare, Users,
   Award, Settings, PlusCircle, BarChart2, DollarSign,
-  Calendar, Clock, Star, Shield, UserCog, FileText, Bell,
+  Calendar, Clock, Star, Shield, UserCog, FileText, Bell, Wallet,
 } from 'lucide-react'
 
 function getStudentItems(locale: string) {
@@ -77,6 +77,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
       { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI Chat', href: `/${locale}/dashboard/ai-chat` },
       { icon: Award, labelAr: 'الشهادات', labelEn: 'Certificates', href: `/${locale}/dashboard/certificates` },
+      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
 

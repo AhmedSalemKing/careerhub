@@ -7,9 +7,8 @@ import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar' 
-import { CartIcon } from './CartDrawer'
 import { NotificationBell } from './NotificationBell'
-import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar } from 'lucide-react'
+import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { TRAINING_URL } from '../../lib/constants'
 
@@ -446,7 +445,21 @@ export function Navbar() {
               </div>
 
               <NotificationBell />
-              <CartIcon />
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/wallet`}
+                  title="محفظتي"
+                  className="relative flex h-9 w-auto items-center justify-center gap-1.5 rounded-xl px-3 transition-colors duration-150"
+                  style={{ background: 'rgba(81, 32, 200, 0.08)', border: '1px solid rgba(81, 32, 200, 0.15)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.15)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.08)' }}
+                >
+                  <Wallet className="h-[16px] w-[16px]" style={{ color: '#5120c8' }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#5120c8', fontFamily: NAV_FONT }}>
+                    رصيدي
+                  </span>
+                </Link>
+              )}
             </div>
 
             {/* Separator */}
