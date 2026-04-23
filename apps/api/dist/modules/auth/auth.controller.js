@@ -223,6 +223,7 @@ let AuthController = AuthController_1 = class AuthController {
     async googleAuth() {
     }
     async googleCallback(req, res) {
+        var _a, _b, _c;
         try {
             const user = req.user;
             if (!user)
@@ -239,7 +240,16 @@ let AuthController = AuthController_1 = class AuthController {
             }));
             const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
             if (user.isNewUser) {
-                res.redirect(`${frontendUrl}/ar/auth/google/complete?data=${userData}`);
+                const googleParam = encodeURIComponent(JSON.stringify({
+                    email: user.email,
+                    firstName: ((_a = user.profile) === null || _a === void 0 ? void 0 : _a.firstName) || '',
+                    lastName: ((_b = user.profile) === null || _b === void 0 ? void 0 : _b.lastName) || '',
+                    avatar: ((_c = user.profile) === null || _c === void 0 ? void 0 : _c.avatar) || '',
+                    googleId: user.googleId,
+                    accessToken: tokens.accessToken,
+                    userId: user.id,
+                }));
+                res.redirect(`${frontendUrl}/ar/register?google=${googleParam}&step=2`);
             }
             else {
                 res.redirect(`${frontendUrl}/ar/auth/google/success?data=${userData}`);
@@ -257,6 +267,9 @@ let AuthController = AuthController_1 = class AuthController {
             throw new common_1.BadRequestException('Invalid account type');
         }
         return this.authService.updateAccountType(user.id, body.accountType);
+    }
+    async updateProFields(user, body) {
+        return this.authService.updateProFields(user.id, body);
     }
     async testLogin(dto) {
         this.logger.log(`[TEST-LOGIN] attempt: ${dto.email}`);
@@ -447,6 +460,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "updateAccountType", null);
+__decorate([
+    (0, common_1.Patch)('update-pro-fields'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "updateProFields", null);
 __decorate([
     (0, common_1.Post)('test-login'),
     (0, public_decorator_1.Public)(),

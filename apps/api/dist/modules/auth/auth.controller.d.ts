@@ -227,6 +227,17 @@ export declare class AuthController {
     }): Promise<{
         success: boolean;
     }>;
+    updateProFields(user: User, body: {
+        cvUrl?: string;
+        speciality?: string;
+        experience?: number;
+        bio?: string;
+        linkedinUrl?: string;
+        hourlyRate?: number;
+        meetingMethod?: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     testLogin(dto: {
         email: string;
         password: string;

@@ -221,5 +221,16 @@ export declare class AuthService {
     updateAccountType(userId: string, accountType: string): Promise<{
         success: boolean;
     }>;
+    updateProFields(userId: string, data: {
+        cvUrl?: string;
+        speciality?: string;
+        experience?: number;
+        bio?: string;
+        linkedinUrl?: string;
+        hourlyRate?: number;
+        meetingMethod?: string;
+    }): Promise<{
+        success: boolean;
+    }>;
     private getTimezoneFromCountry;
 }

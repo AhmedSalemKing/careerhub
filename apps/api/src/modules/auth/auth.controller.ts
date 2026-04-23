@@ -366,7 +366,17 @@ export class AuthController {
       const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
 
       if (user.isNewUser) {
-        res.redirect(`${frontendUrl}/ar/auth/google/complete?data=${userData}`);
+        // New user → pre-fill register page and jump to account type step
+        const googleParam = encodeURIComponent(JSON.stringify({
+          email: user.email,
+          firstName: user.profile?.firstName || '',
+          lastName: user.profile?.lastName || '',
+          avatar: user.profile?.avatar || '',
+          googleId: user.googleId,
+          accessToken: tokens.accessToken,
+          userId: user.id,
+        }));
+        res.redirect(`${frontendUrl}/ar/register?google=${googleParam}&step=2`);
       } else {
         res.redirect(`${frontendUrl}/ar/auth/google/success?data=${userData}`);
       }
@@ -389,6 +399,24 @@ export class AuthController {
       throw new BadRequestException('Invalid account type');
     }
     return this.authService.updateAccountType(user.id, body.accountType);
+  }
+
+  @Patch('update-pro-fields')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateProFields(
+    @CurrentUser() user: User,
+    @Body() body: {
+      cvUrl?: string;
+      speciality?: string;
+      experience?: number;
+      bio?: string;
+      linkedinUrl?: string;
+      hourlyRate?: number;
+      meetingMethod?: string;
+    },
+  ) {
+    return this.authService.updateProFields(user.id, body);
   }
 
   @Post('test-login')

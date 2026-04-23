@@ -709,10 +709,37 @@ export class AuthService {
   }
 
   async updateAccountType(userId: string, accountType: string) {
+    const status = accountType === 'STUDENT' ? 'ACTIVE' : 'PENDING';
     await this.prisma.user.update({
       where: { id: userId },
-      data: { accountType },
+      data: { accountType, status },
     });
+    return { success: true };
+  }
+
+  async updateProFields(userId: string, data: {
+    cvUrl?: string;
+    speciality?: string;
+    experience?: number;
+    bio?: string;
+    linkedinUrl?: string;
+    hourlyRate?: number;
+    meetingMethod?: string;
+  }) {
+    const userFields: Record<string, unknown> = {};
+    if (data.cvUrl !== undefined) userFields.cvUrl = data.cvUrl;
+    if (data.speciality !== undefined) userFields.speciality = data.speciality;
+    if (data.experience !== undefined) userFields.experience = data.experience;
+    if (data.linkedinUrl !== undefined) userFields.linkedinUrl = data.linkedinUrl;
+    if (data.hourlyRate !== undefined) userFields.hourlyRate = data.hourlyRate;
+    if (data.meetingMethod !== undefined) userFields.meetingMethod = data.meetingMethod;
+
+    if (Object.keys(userFields).length > 0) {
+      await this.prisma.user.update({ where: { id: userId }, data: userFields });
+    }
+    if (data.bio !== undefined) {
+      await this.prisma.userProfile.update({ where: { userId }, data: { bio: data.bio } });
+    }
     return { success: true };
   }
 

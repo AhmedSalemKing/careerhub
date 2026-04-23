@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../../lib/api'
+import { useAuthStore } from '../../../stores/authStore'
 import { Camera, CheckCircle2, Upload, Loader2, X } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -94,6 +95,8 @@ function StepDots({ step, total, theme }: { step: number; total: number; theme: 
 export default function RegisterPage() {
   const locale = useLocale()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { setUser, setToken } = useAuthStore()
   const ar = locale === 'ar'
 
   // 🎨 حالة الثيم (فاتح/داكن)
@@ -231,6 +234,33 @@ export default function RegisterPage() {
   const [errors2, setErrors2] = useState<Partial<Record<keyof Step2Data, string>>>({})
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [googleData, setGoogleData] = useState<any>(null)
+
+  // Detect Google OAuth redirect (?google=...&step=2)
+  useEffect(() => {
+    const googleParam = searchParams.get('google')
+    const stepParam = searchParams.get('step')
+    if (!googleParam) return
+    try {
+      const data = JSON.parse(decodeURIComponent(googleParam))
+      setGoogleData(data)
+      setStep1(prev => ({
+        ...prev,
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        email: data.email || '',
+        password: 'GOOGLE_' + Math.random().toString(36),
+        confirmPassword: 'GOOGLE_MATCH',
+      }))
+      if (data.accessToken) {
+        localStorage.setItem('careerhub_token', data.accessToken)
+        localStorage.setItem('deveway_token', data.accessToken)
+        document.cookie = `careerhub_token=${data.accessToken}; path=/; max-age=${7 * 24 * 3600}; SameSite=None; Secure`
+        setToken(data.accessToken)
+      }
+      if (stepParam === '2' || stepParam === '3') setStep(2)
+    } catch {}
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Step 1 validation ────────────────────────────────────────────────────
 
@@ -240,13 +270,15 @@ export default function RegisterPage() {
     if (!step1.lastName.trim()) errs.lastName = ar ? 'مطلوب' : 'Required'
     if (!step1.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(step1.email))
       errs.email = ar ? 'بريد إلكتروني غير صحيح' : 'Invalid email'
-    if (step1.password.length < 8) errs.password = ar ? 'يجب أن تكون 8 أحرف على الأقل' : 'At least 8 characters'
-    else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(step1.password))
-      errs.password = ar
-        ? 'يجب أن تحتوي على حرف كبير وحرف صغير ورقم ورمز خاص (@$!%*?&)'
-        : 'Must include uppercase, lowercase, number, and special character (@$!%*?&)'
-    if (step1.password !== step1.confirmPassword)
-      errs.confirmPassword = ar ? 'كلمات المرور غير متطابقة' : 'Passwords do not match'
+    if (!googleData) {
+      if (step1.password.length < 8) errs.password = ar ? 'يجب أن تكون 8 أحرف على الأقل' : 'At least 8 characters'
+      else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(step1.password))
+        errs.password = ar
+          ? 'يجب أن تحتوي على حرف كبير وحرف صغير ورقم ورمز خاص (@$!%*?&)'
+          : 'Must include uppercase, lowercase, number, and special character (@$!%*?&)'
+      if (step1.password !== step1.confirmPassword)
+        errs.confirmPassword = ar ? 'كلمات المرور غير متطابقة' : 'Passwords do not match'
+    }
     if (!step1.country) errs.country = ar ? 'مطلوب' : 'Required'
     setErrors1(errs)
     return Object.keys(errs).length === 0
@@ -298,12 +330,67 @@ export default function RegisterPage() {
 
   async function handleSubmit() {
     if (!validateStep2()) return
-    if (['INSTRUCTOR', 'CONSULTANT'].includes(step2.accountType) && !step2.cvUrl) {
+    if (!googleData && ['INSTRUCTOR', 'CONSULTANT'].includes(step2.accountType) && !step2.cvUrl) {
       setError(ar ? 'يجب رفع السيرة الذاتية أولاً' : 'Please upload your CV before submitting')
       return
     }
     setError('')
     setLoading(true)
+
+    // ── Google OAuth flow ──────────────────────────────────────────────────
+    if (googleData) {
+      try {
+        const token = googleData.accessToken || localStorage.getItem('careerhub_token') || ''
+        const isPro = step2.accountType !== 'STUDENT'
+
+        await api.patch('/auth/update-account-type', { accountType: step2.accountType }, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        if (isPro) {
+          const proPayload: Record<string, unknown> = {}
+          if (step2.cvUrl) proPayload.cvUrl = step2.cvUrl
+          if (step2.speciality) proPayload.speciality = step2.speciality
+          if (step2.experience) proPayload.experience = parseInt(step2.experience)
+          if (step2.bio) proPayload.bio = step2.bio
+          if (step2.linkedinUrl) proPayload.linkedinUrl = step2.linkedinUrl
+          if (step2.accountType === 'CONSULTANT') {
+            if (step2.hourlyRate) proPayload.hourlyRate = parseFloat(step2.hourlyRate)
+            if (step2.meetingMethod) proPayload.meetingMethod = step2.meetingMethod
+          }
+          if (Object.keys(proPayload).length > 0) {
+            await api.patch('/auth/update-pro-fields', proPayload, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          }
+        }
+
+        const userData = {
+          id: googleData.userId,
+          email: googleData.email,
+          accountType: step2.accountType,
+          status: isPro ? 'PENDING' : 'ACTIVE',
+          profile: {
+            firstName: googleData.firstName,
+            lastName: googleData.lastName,
+            avatar: googleData.avatar,
+          },
+        }
+        localStorage.setItem('careerhub_user', JSON.stringify(userData))
+        localStorage.setItem('deveway_user', JSON.stringify(userData))
+        setUser(userData as any)
+        window.dispatchEvent(new Event('auth:updated'))
+        setIsPending(isPro)
+        setStep(3)
+      } catch (err: unknown) {
+        const msg = (err as any).response?.data?.message || (ar ? 'حدث خطأ' : 'An error occurred')
+        setError(Array.isArray(msg) ? msg.join(', ') : msg)
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+    // ── End Google OAuth flow ──────────────────────────────────────────────
 
     const isPro = step2.accountType !== 'STUDENT'
     const payload: Record<string, unknown> = {
@@ -500,29 +587,48 @@ export default function RegisterPage() {
                 />
               </Field>
 
-              <Field label={ar ? 'كلمة المرور' : 'Password'} error={errors1.password} mutedColor={colors.mutedColor}>
-                <input
-                  type="password"
-                  value={step1.password}
-                  onChange={(e) => setStep1({ ...step1, password: e.target.value })}
-                  className={`${INPUT_BASE} ${INPUT_FOCUS}`}
-                  style={INPUT_STYLE}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-              </Field>
-
-              <Field label={ar ? 'تأكيد كلمة المرور' : 'Confirm Password'} error={errors1.confirmPassword} mutedColor={colors.mutedColor}>
-                <input
-                  type="password"
-                  value={step1.confirmPassword}
-                  onChange={(e) => setStep1({ ...step1, confirmPassword: e.target.value })}
-                  className={`${INPUT_BASE} ${INPUT_FOCUS}`}
-                  style={INPUT_STYLE}
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-              </Field>
+              {!googleData ? (
+                <>
+                  <Field label={ar ? 'كلمة المرور' : 'Password'} error={errors1.password} mutedColor={colors.mutedColor}>
+                    <input
+                      type="password"
+                      value={step1.password}
+                      onChange={(e) => setStep1({ ...step1, password: e.target.value })}
+                      className={`${INPUT_BASE} ${INPUT_FOCUS}`}
+                      style={INPUT_STYLE}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                    />
+                  </Field>
+                  <Field label={ar ? 'تأكيد كلمة المرور' : 'Confirm Password'} error={errors1.confirmPassword} mutedColor={colors.mutedColor}>
+                    <input
+                      type="password"
+                      value={step1.confirmPassword}
+                      onChange={(e) => setStep1({ ...step1, confirmPassword: e.target.value })}
+                      className={`${INPUT_BASE} ${INPUT_FOCUS}`}
+                      style={INPUT_STYLE}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                    />
+                  </Field>
+                </>
+              ) : (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 16px', borderRadius: 12,
+                  background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  <span style={{ color: '#16a34a', fontSize: 14, fontWeight: 600 }}>
+                    {ar ? `تم ربط حسابك بـ Google — ${googleData.email}` : `Connected with Google — ${googleData.email}`}
+                  </span>
+                </div>
+              )}
 
               <Field label={ar ? 'الدولة' : 'Country'} error={errors1.country} mutedColor={colors.mutedColor}>
                 <select
