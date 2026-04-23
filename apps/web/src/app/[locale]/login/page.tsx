@@ -121,14 +121,29 @@ export default function LoginPage() {
     setLoginError(null)
     setIsSubmitting(true)
     try {
-      const res = await api.post<{ data?: { user?: { accountType?: string; [key: string]: unknown }; accessToken?: string; refreshToken?: string }; message?: string }>('/auth/login', values)
+      const res = await api.post<{ data?: { user?: { accountType?: string; status?: string; [key: string]: unknown }; accessToken?: string; refreshToken?: string; pendingApproval?: boolean }; message?: string }>('/auth/login', values)
       const data = res?.data
       const token = data?.data?.accessToken
       const refreshToken = data?.data?.refreshToken
-      const user = data?.data?.user
+      const user = data?.data?.user as any
+      const pendingApproval = data?.data?.pendingApproval
 
       if (!token || !user) {
         setLoginError(ar ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'Email or password is incorrect')
+        return
+      }
+
+      // Handle PENDING users - redirect to pending page
+      if (pendingApproval || user.status === 'PENDING') {
+        store.setToken(token)
+        setToken(token)
+        localStorage.setItem('deveway_token', token)
+        localStorage.setItem('careerhub_token', token)
+        localStorage.setItem('deveway_user', JSON.stringify(user))
+        localStorage.setItem('careerhub_user', JSON.stringify(user))
+        store.setUser(user)
+        window.dispatchEvent(new Event('auth:updated'))
+        router.push(`/${locale}/pending-approval`)
         return
       }
 
@@ -143,8 +158,8 @@ export default function LoginPage() {
         localStorage.setItem('deveway_refresh', refreshToken)
         localStorage.setItem('careerhub_refresh', refreshToken)
       }
-      store.setUser(user as Parameters<typeof store.setUser>[0])
-      setUser(user as Parameters<typeof setUser>[0])
+      store.setUser(user)
+      setUser(user)
       localStorage.setItem('deveway_user', JSON.stringify(user))
       localStorage.setItem('careerhub_user', JSON.stringify(user))
 
@@ -155,7 +170,6 @@ export default function LoginPage() {
       } else {
         const params = new URLSearchParams(window.location.search)
         const returnTo = params.get('redirect') || `/${locale}/dashboard`
-        // Append token to cross-domain redirects (e.g. learn app)
         if (returnTo.startsWith('http')) {
           try {
             const url = new URL(returnTo)

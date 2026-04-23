@@ -19,6 +19,18 @@ export default function GoogleAuthSuccess() {
       const data = JSON.parse(decodeURIComponent(dataParam))
       const { accessToken, ...user } = data
 
+      // Handle PENDING status - redirect to pending page
+      if (user.status === 'PENDING') {
+        localStorage.setItem('careerhub_token', accessToken)
+        localStorage.setItem('deveway_token', accessToken)
+        localStorage.setItem('careerhub_user', JSON.stringify(user))
+        localStorage.setItem('deveway_user', JSON.stringify(user))
+        setToken(accessToken)
+        setUser(user)
+        router.push('/ar/pending-approval')
+        return
+      }
+
       localStorage.setItem('careerhub_token', accessToken)
       localStorage.setItem('deveway_token', accessToken)
       localStorage.setItem('careerhub_user', JSON.stringify(user))

@@ -195,12 +195,12 @@ export class AuthService {
     if (user.status === 'BANNED') {
       throw new UnauthorizedException('Account is disabled');
     }
-    if (user.status === 'PENDING') {
-      throw new ForbiddenException('Account is under review. You will be notified within 48 hours.');
-    }
     if (user.status === 'REJECTED') {
       throw new ForbiddenException('Your application was rejected. Please contact support.');
     }
+
+    // PENDING users can login but get limited token for polling approval status
+    const isPendingUser = user.status === 'PENDING';
 
     // Auto-create profile if missing (e.g. admin users created without one)
     if (!user.profile) {
@@ -236,7 +236,17 @@ export class AuthService {
       data: { updatedAt: new Date() },
     });
 
-    this.logger.log(`[LOGIN] success: ${email}`);
+    this.logger.log(`[LOGIN] success: ${email}, status: ${user.status}`);
+
+    // If PENDING, return special response so frontend can redirect to pending page
+    if (isPendingUser) {
+      return {
+        user: this.sanitizeUser(user as any),
+        accessToken,
+        refreshToken,
+        pendingApproval: true,
+      };
+    }
 
     return {
       user: this.sanitizeUser(user as any),
