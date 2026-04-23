@@ -68,10 +68,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const accountType = user?.accountType || 'STUDENT'
 
   const dockItems = useMemo(() => {
-    if (accountType === 'ADMIN') return getAdminItems(locale)
-    if (accountType === 'INSTRUCTOR') return getInstructorItems(locale)
-    if (accountType === 'CONSULTANT') return getConsultantItems(locale)
-    return getStudentItems(locale)
+    const studentBase = [
+      { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
+      { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'My Courses', href: `/${locale}/dashboard/my-courses` },
+      { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
+      { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI Chat', href: `/${locale}/dashboard/ai-chat` },
+      { icon: Award, labelAr: 'الشهادات', labelEn: 'Certificates', href: `/${locale}/dashboard/certificates` },
+      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
+    ]
+
+    if (accountType === 'ADMIN') return [
+      { icon: Shield, labelAr: 'الإدارة', labelEn: 'Admin', href: `/${locale}/admin` },
+      { icon: Users, labelAr: 'المستخدمون', labelEn: 'Users', href: `/${locale}/admin/users` },
+      { icon: Bell, labelAr: 'الموافقات', labelEn: 'Approvals', href: `/${locale}/admin/approvals` },
+      ...studentBase,
+    ]
+
+    if (accountType === 'INSTRUCTOR') return [
+      { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New Course', href: `/${locale}/dashboard/create-course` },
+      { icon: BarChart2, labelAr: 'إحصائياتي', labelEn: 'Analytics', href: `/${locale}/dashboard/analytics` },
+      { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+      ...studentBase,
+    ]
+
+    if (accountType === 'CONSULTANT') return [
+      { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
+      { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+      { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+      ...studentBase,
+    ]
+
+    return studentBase
   }, [accountType, locale])
 
   useEffect(() => {

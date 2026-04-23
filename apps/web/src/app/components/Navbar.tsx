@@ -9,7 +9,7 @@ import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar' 
 import { CartIcon } from './CartDrawer'
 import { NotificationBell } from './NotificationBell'
-import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon } from 'lucide-react'
+import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { TRAINING_URL } from '../../lib/constants'
 
@@ -177,7 +177,7 @@ function UserDropdown({ locale }: { locale: string }) {
           </div>
 
           <Link
-            href={user?.accountType === 'ADMIN' ? `/${locale}/admin` : `/${locale}/dashboard`}
+            href={`/${locale}/dashboard`}
             onClick={() => setOpen(false)}
             className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
             style={{ color: 'var(--muted)' }}
@@ -187,6 +187,46 @@ function UserDropdown({ locale }: { locale: string }) {
             <LayoutDashboard className="h-4 w-4" />
             {t('dashboard')}
           </Link>
+
+          {user?.accountType === 'ADMIN' && (
+            <Link
+              href={`/${locale}/admin`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
+              style={{ color: '#5120c8', fontWeight: 600 }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.08)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <Shield className="h-4 w-4" color="#5120c8" />
+              لوحة الإدارة
+            </Link>
+          )}
+          {user?.accountType === 'INSTRUCTOR' && (
+            <Link
+              href={`/${locale}/dashboard/create-course`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
+              style={{ color: '#2BBFA3', fontWeight: 600 }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(43,191,163,0.08)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <BookOpen className="h-4 w-4" color="#2BBFA3" />
+              لوحة المحاضر
+            </Link>
+          )}
+          {user?.accountType === 'CONSULTANT' && (
+            <Link
+              href={`/${locale}/dashboard/my-sessions`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
+              style={{ color: '#f59e0b', fontWeight: 600 }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            >
+              <Calendar className="h-4 w-4" color="#f59e0b" />
+              لوحة المستشار
+            </Link>
+          )}
 
           <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
             <button
