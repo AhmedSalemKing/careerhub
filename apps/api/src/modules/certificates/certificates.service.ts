@@ -201,7 +201,7 @@ export class CertificatesService {
     // "Certificate of Completion"
     ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1a1a2e'
-    ctx.fillText('Certificate of Completion', W / 2, H * 0.155)
+    ctx.fillText('Certificate of Completion', W / 2, H * 0.195)
 
     // "This is to certify that"
     ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`

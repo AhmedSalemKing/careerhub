@@ -212,7 +212,7 @@ let CertificatesService = class CertificatesService {
         ctx.textBaseline = 'middle';
         ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`;
         ctx.fillStyle = '#1a1a2e';
-        ctx.fillText('Certificate of Completion', W / 2, H * 0.155);
+        ctx.fillText('Certificate of Completion', W / 2, H * 0.195);
         ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`;
         ctx.fillStyle = '#2c2c2c';
         ctx.fillText('This is to certify that', W / 2, H * 0.305);
