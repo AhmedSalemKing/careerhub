@@ -19,6 +19,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
             linkedinUrl: string | null;
             createdAt: Date;
             updatedAt: Date;
+            userId: string;
             firstName: string;
             lastName: string;
             phone: string | null;
@@ -30,7 +31,6 @@ export declare class JwtStrategy extends JwtStrategy_base {
             avatar: string | null;
             timezone: string;
             language: string;
-            userId: string;
         };
     }>;
 }

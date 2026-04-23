@@ -1,4 +1,4 @@
-﻿import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TrackActivityMiddleware } from './middleware/track-activity.middleware';
 import { HttpLoggerMiddleware } from './middleware/http-logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -26,6 +26,7 @@ import { AiModule } from './modules/ai/ai.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { EmailModule } from './modules/email/email.module';
 import { RatingsModule } from './modules/ratings/ratings.module';
+import { VerificationModule } from './modules/verification/verification.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { RatingsModule } from './modules/ratings/ratings.module';
     SessionsModule,
     EmailModule,
     RatingsModule,
+    VerificationModule,
   ],
   controllers: [],
   providers: [],

@@ -22,7 +22,7 @@ export default function ApprovalsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const qc = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'users' | 'courses'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'verification'>('users')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
@@ -57,6 +57,35 @@ export default function ApprovalsPage() {
       setRejectReason('')
     },
     onError: () => notify.error(isAr ? 'فشل رفض الطلب' : 'Failed to reject request'),
+  })
+
+  // ── Pending verification ─────────────────────────────────────
+  const { data: pendingVerifications = [], isLoading: verLoading } = useQuery({
+    queryKey: ['pending-verifications'],
+    queryFn: async () => {
+      const res = await get('/verification/pending')
+      const d = (res as any)?.data?.data ?? (res as any)?.data ?? []
+      return Array.isArray(d) ? d : []
+    },
+  })
+
+  const approveVerification = useMutation({
+    mutationFn: (userId: string) => post(`/verification/approve/${userId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pending-verifications'] })
+      notify.success(isAr ? 'تم توثيق الهوية' : 'Identity verified')
+    },
+    onError: () => notify.error(isAr ? 'فشل التوثيق' : 'Verification failed'),
+  })
+
+  const rejectVerification = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      post(`/verification/reject/${id}`, { reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['pending-verifications'] })
+      notify.info(isAr ? 'تم رفض طلب التوثيق' : 'Verification rejected')
+    },
+    onError: () => notify.error(isAr ? 'فشل الرفض' : 'Failed to reject'),
   })
 
   // ── Pending courses ────────────────────────────────────────────
@@ -136,6 +165,21 @@ export default function ApprovalsPage() {
           {pendingCourses.length > 0 && (
             <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {pendingCourses.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('verification')}
+          className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            activeTab === 'verification'
+              ? 'bg-green-600 text-white'
+              : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
+          }`}
+        >
+          {isAr ? 'توثيق الهوية' : 'ID Verification'}
+          {pendingVerifications.length > 0 && (
+            <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
+              {pendingVerifications.length}
             </span>
           )}
         </button>
@@ -411,6 +455,91 @@ export default function ApprovalsPage() {
                         rejectCourse.mutate({ id: course.id, reason })
                       }}
                       disabled={rejectCourse.isPending}
+                      className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/20 disabled:opacity-60 transition"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      {isAr ? 'رفض' : 'Reject'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Verification tab ──────────────────────────────────────────── */}
+      {activeTab === 'verification' && (
+        <>
+          {verLoading ? (
+            <div className="animate-pulse rounded-2xl bg-[color:var(--surface)] h-32" />
+          ) : pendingVerifications.length === 0 ? (
+            <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10">
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+              <h3 className="font-madinet text-xl font-bold text-foreground">{isAr ? 'لا توجد طلبات توثيق' : 'No verification requests'}</h3>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {(pendingVerifications as any[]).map((v) => (
+                <div
+                  key={v.id}
+                  className="rounded-2xl border border-green-500/30 bg-green-500/5 p-6"
+                >
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-600 text-white font-bold text-lg">
+                      {v.profile?.firstName?.[0] || v.email[0].toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-foreground">
+                        {v.profile?.firstName} {v.profile?.lastName}
+                      </h3>
+                      <p className="text-sm text-[color:var(--muted)]">{v.email}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="rounded-full bg-green-500/20 px-2 py-0.5 text-xs text-green-400">
+                          {v.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مستشار' : 'Consultant')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 mb-4">
+                    {v.idFrontUrl && (
+                      <div className="flex-1">
+                        <p className="text-xs text-[color:var(--muted)] mb-2">{isAr ? 'وجه البطاقة' : 'ID Front'}</p>
+                        <a href={v.idFrontUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <img src={v.idFrontUrl} alt="ID Front" className="h-24 w-auto rounded-lg border border-[color:var(--border)] object-cover" />
+                        </a>
+                      </div>
+                    )}
+                    {v.idBackUrl && (
+                      <div className="flex-1">
+                        <p className="text-xs text-[color:var(--muted)] mb-2">{isAr ? 'ظهر البطاقة' : 'ID Back'}</p>
+                        <a href={v.idBackUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <img src={v.idBackUrl} alt="ID Back" className="h-24 w-auto rounded-lg border border-[color:var(--border)] object-cover" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => approveVerification.mutate(v.id)}
+                      disabled={approveVerification.isPending}
+                      className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60 transition"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {approveVerification.isPending ? (isAr ? 'جاري...' : 'Processing...') : (isAr ? 'موافقة' : 'Approve')}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const reason = window.prompt(isAr ? 'سبب الرفض:' : 'Rejection reason:') || undefined
+                        if (reason !== null) {
+                          rejectVerification.mutate({ id: v.id, reason })
+                        }
+                      }}
+                      disabled={rejectVerification.isPending}
                       className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-sm font-bold text-red-400 hover:bg-red-500/20 disabled:opacity-60 transition"
                     >
                       <XCircle className="h-4 w-4" />

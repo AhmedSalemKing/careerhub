@@ -68,6 +68,7 @@ const ai_module_1 = require("./modules/ai/ai.module");
 const sessions_module_1 = require("./modules/sessions/sessions.module");
 const email_module_1 = require("./modules/email/email.module");
 const ratings_module_1 = require("./modules/ratings/ratings.module");
+const verification_module_1 = require("./modules/verification/verification.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(http_logger_middleware_1.HttpLoggerMiddleware, track_activity_middleware_1.TrackActivityMiddleware).forRoutes('*');
@@ -138,6 +139,7 @@ exports.AppModule = AppModule = __decorate([
             sessions_module_1.SessionsModule,
             email_module_1.EmailModule,
             ratings_module_1.RatingsModule,
+            verification_module_1.VerificationModule,
         ],
         controllers: [],
         providers: [],

@@ -96,6 +96,15 @@ model User {
   rejectedAt        DateTime?
   rejectedReason    String?
   lastSeenAt        DateTime?
+  
+  // Identity verification fields
+  idVerificationStatus String    @default("UNVERIFIED") // UNVERIFIED | PENDING | VERIFIED | REJECTED
+  idFrontUrl          String?
+  idBackUrl          String?
+  idVerifiedAt      DateTime?
+  idRejectedReason String?
+  isVerified        Boolean   @default(false)
+  
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
