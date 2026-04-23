@@ -337,35 +337,58 @@ export class AuthController {
   }
 
   @Get('google')
+  @Public()
   @UseGuards(AuthGuard('google'))
   async googleAuth() {
-    // Initiates Google OAuth flow
+    // Passport handles the redirect to Google
   }
 
   @Get('google/callback')
+  @Public()
   @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req: Request & { user: any }, @Res() res: any) {
+  async googleCallback(@Req() req: any, @Res() res: any) {
     try {
       const user = req.user;
+      if (!user) throw new Error('No user returned from Google');
+
       const tokens = await this.authService.generateTokens(user);
 
       const userData = encodeURIComponent(JSON.stringify({
         id: user.id,
         email: user.email,
         accountType: user.accountType,
+        status: user.status,
         profile: user.profile,
         accessToken: tokens.accessToken,
+        isNewUser: user.isNewUser || false,
       }));
 
       const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
-      const locale = 'ar';
 
-      res.redirect(`${frontendUrl}/${locale}/auth/google/success?data=${userData}`);
+      if (user.isNewUser) {
+        res.redirect(`${frontendUrl}/ar/auth/google/complete?data=${userData}`);
+      } else {
+        res.redirect(`${frontendUrl}/ar/auth/google/success?data=${userData}`);
+      }
     } catch (e) {
       this.logger.error(`[GOOGLE-CALLBACK] failed: ${e instanceof Error ? e.message : String(e)}`);
       const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
-      res.redirect(`${frontendUrl}/ar/login?error=google_auth_failed`);
+      res.redirect(`${frontendUrl}/ar/login?error=google_failed`);
     }
+  }
+
+  @Patch('update-account-type')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async updateAccountType(
+    @CurrentUser() user: User,
+    @Body() body: { accountType: string },
+  ) {
+    const valid = ['STUDENT', 'INSTRUCTOR', 'CONSULTANT'];
+    if (!valid.includes(body.accountType)) {
+      throw new BadRequestException('Invalid account type');
+    }
+    return this.authService.updateAccountType(user.id, body.accountType);
   }
 
   @Post('test-login')

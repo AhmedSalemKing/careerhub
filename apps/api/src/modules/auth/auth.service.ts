@@ -651,41 +651,38 @@ export class AuthService {
     avatar: string;
     provider: string;
   }) {
-    // Check if user exists with this googleId
-    let user = await this.prisma.user.findFirst({
+    // Check by googleId first
+    let user: any = await this.prisma.user.findFirst({
       where: { googleId: googleUser.googleId },
       include: { profile: true },
     });
 
     if (user) {
-      // Update avatar if changed
-      if (googleUser.avatar && user.profile) {
-        await this.prisma.userProfile.update({
-          where: { userId: user.id },
-          data: { avatar: googleUser.avatar },
-        });
-      }
+      user.isNewUser = false;
       return user;
     }
 
-    // Check if email already exists (local account)
-    const existingUser = await this.prisma.user.findUnique({
+    // Check by email (link existing local account)
+    const existing = await this.prisma.user.findUnique({
       where: { email: googleUser.email },
       include: { profile: true },
     });
 
-    if (existingUser) {
-      // Link Google to existing account
+    if (existing) {
       user = await this.prisma.user.update({
-        where: { id: existingUser.id },
+        where: { id: existing.id },
         data: { googleId: googleUser.googleId, provider: 'google' },
         include: { profile: true },
       });
+      user.isNewUser = false;
       return user;
     }
 
-    // Create new user
-    const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+    // Create brand-new user
+    const randomPassword = await bcrypt.hash(
+      Math.random().toString(36) + Date.now(),
+      10,
+    );
 
     user = await this.prisma.user.create({
       data: {
@@ -698,16 +695,25 @@ export class AuthService {
         provider: 'google',
         profile: {
           create: {
-            firstName: googleUser.firstName,
-            lastName: googleUser.lastName,
-            avatar: googleUser.avatar,
+            firstName: googleUser.firstName || googleUser.email.split('@')[0],
+            lastName: googleUser.lastName || '',
+            avatar: googleUser.avatar || null,
           },
         },
       },
       include: { profile: true },
     });
 
+    user.isNewUser = true;
     return user;
+  }
+
+  async updateAccountType(userId: string, accountType: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { accountType },
+    });
+    return { success: true };
   }
 
   private getTimezoneFromCountry(country?: string): string {
