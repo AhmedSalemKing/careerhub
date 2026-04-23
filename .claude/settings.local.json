@@ -45,7 +45,9 @@
       "Bash(cmd /c \"powershell -Command \"\"Get-Process node | Stop-Process -Force\"\"\")",
       "Bash(echo \"BUILD_EXIT:$?\")",
       "Bash(npx vercel:*)",
-      "Bash(ls D:/careerhub/*.yaml D:/careerhub/*.yml)"
+      "Bash(ls D:/careerhub/*.yaml D:/careerhub/*.yml)",
+      "Bash(ls apps/web/public/*.png)",
+      "Bash(ls apps/learn/public/*.png)"
     ]
   }
 }
