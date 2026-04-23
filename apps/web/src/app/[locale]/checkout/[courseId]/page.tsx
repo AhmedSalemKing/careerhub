@@ -230,6 +230,8 @@ export default function CheckoutPage() {
   })
 
   const walletBalance = walletData?.balance || 0
+
+  const course = data?.course
   const canPayWithWallet = walletBalance >= (course?.price || 0)
 
   const handleStartPayment = useCallback(async () => {
@@ -275,7 +277,6 @@ export default function CheckoutPage() {
     }
   }, [courseId, agreed])
 
-  const course = data?.course
   const alreadyEnrolled = data?.alreadyEnrolled
   const thumb = getMediaUrl(course?.thumbnail)
   const courseTitle = course?.titleAr || course?.titleEn || ''
