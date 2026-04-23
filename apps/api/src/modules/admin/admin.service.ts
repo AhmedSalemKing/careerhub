@@ -1175,6 +1175,8 @@ export class AdminService {
       },
       include: { profile: true },
     });
+    // Force logout - delete all sessions
+    await this.prisma.session.deleteMany({ where: { userId } }).catch(() => {});
     await this.notificationsService.createNotification({
       userId,
       type: 'SYSTEM_ANNOUNCEMENT',
@@ -1197,6 +1199,8 @@ export class AdminService {
       where: { id: userId },
       data: { status: 'BANNED', isActive: false },
     });
+    // Force logout - delete all sessions
+    await this.prisma.session.deleteMany({ where: { userId } }).catch(() => {});
     await this.log('BAN_USER', 'User', userId, adminId);
     return user;
   }

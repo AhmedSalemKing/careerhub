@@ -24,18 +24,41 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       include: { profile: true },
     });
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+    // User deleted - completely block
+    if (!user) {
+      throw new UnauthorizedException({
+        message: 'Account no longer exists',
+        code: 'ACCOUNT_DELETED',
+        statusCode: 401,
+      });
     }
 
-    // Check account status - block banned/rejected, but allow pending to access auth endpoints
+    // User banned - permanent block
     if (user.status === 'BANNED') {
-      throw new UnauthorizedException('Account is banned');
+      throw new UnauthorizedException({
+        message: 'حسابك محظور بشكل دائم',
+        code: 'ACCOUNT_BANNED',
+        statusCode: 401,
+      });
     }
+
+    // User rejected - block
     if (user.status === 'REJECTED') {
-      throw new UnauthorizedException('Account was rejected');
+      throw new UnauthorizedException({
+        message: 'تم رفض حسابك',
+        code: 'ACCOUNT_REJECTED',
+        statusCode: 401,
+      });
     }
-    // PENDING users can access auth endpoints but will be blocked by ApprovedGuard for dashboard
+
+    // Check isActive flag (soft delete)
+    if (!user.isActive) {
+      throw new UnauthorizedException({
+        message: 'Account is not active',
+        code: 'ACCOUNT_INACTIVE',
+        statusCode: 401,
+      });
+    }
 
     console.log('[JwtStrategy] Validated user:', user.email, 'status:', user.status, 'accountType:', user.accountType);
 

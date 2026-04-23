@@ -59,21 +59,68 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    // ✅ Debug: سجل كل استجابة ناجحة
     console.log(`[API] ✅ ${response.config.url} → ${response.status}`)
     return response
   },
-  (error) => {
-    // ✅ Debug: سجل كل خطأ بالتفصيل
-    console.error(`[API] ❌ Error:`, {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    })
+  async (error) => {
+    const status = error.response?.status
+    const data = error.response?.data
+    const message = data?.message || ''
+    const code = data?.code || message
     
-    console.error('[API]', error.config?.url, error.response?.status, error.response?.data?.message)
+    console.error('[API] ❌ Error:', {
+      url: error.config?.url,
+      status,
+      message,
+      code,
+    })
+
+    // Handle auth errors - force logout and redirect
+    if (status === 401) {
+      const isAuthPath = window.location.pathname.includes('/login')
+      const isRegisterPath = window.location.pathname.includes('/register')
+      
+      // Clear auth data
+      const clearAuth = () => {
+        localStorage.removeItem('careerhub_token')
+        localStorage.removeItem('careerhub_user')
+        localStorage.removeItem('deveway_token')
+        localStorage.removeItem('deveway_user')
+        document.cookie = 'careerhub_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+      }
+
+      // Check specific error codes
+      if (code === 'ACCOUNT_BANNED' || message.includes('محظور')) {
+        clearAuth()
+        window.location.href = '/ar/banned'
+        return Promise.reject(error)
+      }
+
+      if (code === 'ACCOUNT_REJECTED' || message.includes('رفض')) {
+        clearAuth()
+        window.location.href = '/ar/rejected'
+        return Promise.reject(error)
+      }
+
+      if (code === 'ACCOUNT_DELETED' || message.includes('no longer exists') || message.includes('not found')) {
+        clearAuth()
+        window.location.href = '/ar/login?error=account_deleted'
+        return Promise.reject(error)
+      }
+
+      if (code === 'ACCOUNT_INACTIVE') {
+        clearAuth()
+        window.location.href = '/ar/login?error=account_inactive'
+        return Promise.reject(error)
+      }
+
+      // Regular 401 - invalid token, redirect to login if not already there
+      clearAuth()
+      if (!isAuthPath && !isRegisterPath) {
+        window.location.href = '/ar/login'
+      }
+    }
+
     return Promise.reject(error)
   }
 )

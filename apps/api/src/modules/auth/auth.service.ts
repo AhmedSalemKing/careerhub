@@ -59,6 +59,10 @@ export class AuthService {
       where: { email },
     });
     if (existing) {
+      // Check if banned - permanent block
+      if (existing.status === 'BANNED') {
+        throw new ForbiddenException('هذا البريد الإلكتروني محظور من المنصة');
+      }
       throw new BadRequestException('Email already exists');
     }
 

@@ -70,6 +70,9 @@ let AuthService = AuthService_1 = class AuthService {
             where: { email },
         });
         if (existing) {
+            if (existing.status === 'BANNED') {
+                throw new common_1.ForbiddenException('هذا البريد الإلكتروني محظور من المنصة');
+            }
             throw new common_1.BadRequestException('Email already exists');
         }
         if (isPendingAccount && !cvUrl) {
