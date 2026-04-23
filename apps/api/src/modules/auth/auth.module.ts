@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshGuard } from './guards/refresh.guard';
@@ -34,6 +35,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     AuthService,
     JwtStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy,
     JwtAuthGuard,
     RolesGuard,
     RefreshGuard,

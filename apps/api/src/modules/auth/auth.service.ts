@@ -594,7 +594,7 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(user: User) {
+  async generateTokens(user: User) {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -641,6 +641,73 @@ export class AuthService {
         language: user.profile.language,
       } : null
     };
+  }
+
+  async findOrCreateGoogleUser(googleUser: {
+    googleId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatar: string;
+    provider: string;
+  }) {
+    // Check if user exists with this googleId
+    let user = await this.prisma.user.findFirst({
+      where: { googleId: googleUser.googleId },
+      include: { profile: true },
+    });
+
+    if (user) {
+      // Update avatar if changed
+      if (googleUser.avatar && user.profile) {
+        await this.prisma.userProfile.update({
+          where: { userId: user.id },
+          data: { avatar: googleUser.avatar },
+        });
+      }
+      return user;
+    }
+
+    // Check if email already exists (local account)
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: googleUser.email },
+      include: { profile: true },
+    });
+
+    if (existingUser) {
+      // Link Google to existing account
+      user = await this.prisma.user.update({
+        where: { id: existingUser.id },
+        data: { googleId: googleUser.googleId, provider: 'google' },
+        include: { profile: true },
+      });
+      return user;
+    }
+
+    // Create new user
+    const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+
+    user = await this.prisma.user.create({
+      data: {
+        email: googleUser.email,
+        password: randomPassword,
+        accountType: 'STUDENT',
+        isActive: true,
+        status: 'ACTIVE',
+        googleId: googleUser.googleId,
+        provider: 'google',
+        profile: {
+          create: {
+            firstName: googleUser.firstName,
+            lastName: googleUser.lastName,
+            avatar: googleUser.avatar,
+          },
+        },
+      },
+      include: { profile: true },
+    });
+
+    return user;
   }
 
   private getTimezoneFromCountry(country?: string): string {

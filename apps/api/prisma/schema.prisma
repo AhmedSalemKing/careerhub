@@ -89,6 +89,8 @@ model User {
   linkedinUrl       String?
   hourlyRate        Float?
   meetingMethod     String?   // ZOOM | GOOGLE_MEET | BOTH
+  googleId          String?   @unique
+  provider          String    @default("local")
   stripeCustomerId  String?
   approvedAt        DateTime?
   rejectedAt        DateTime?

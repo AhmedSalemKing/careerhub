@@ -15,6 +15,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request, Response } from 'express';
@@ -332,6 +333,38 @@ export class AuthController {
     } catch (error) {
       this.logger.error(`[AUTH CTRL] adminLogin FAILED for ${loginDto.email}: ${error instanceof Error ? error.stack || error.message : String(error)}`);
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
+    }
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    // Initiates Google OAuth flow
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Req() req: Request & { user: any }, @Res() res: any) {
+    try {
+      const user = req.user;
+      const tokens = await this.authService.generateTokens(user);
+
+      const userData = encodeURIComponent(JSON.stringify({
+        id: user.id,
+        email: user.email,
+        accountType: user.accountType,
+        profile: user.profile,
+        accessToken: tokens.accessToken,
+      }));
+
+      const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
+      const locale = 'ar';
+
+      res.redirect(`${frontendUrl}/${locale}/auth/google/success?data=${userData}`);
+    } catch (e) {
+      this.logger.error(`[GOOGLE-CALLBACK] failed: ${e instanceof Error ? e.message : String(e)}`);
+      const frontendUrl = process.env.FRONTEND_URL || 'https://deveway-teal.vercel.app';
+      res.redirect(`${frontendUrl}/ar/login?error=google_auth_failed`);
     }
   }
 
