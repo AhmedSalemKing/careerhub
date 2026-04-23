@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useLocale, useTranslations } from 'next-intl'
+import { useEffect, useRef } from 'react'
 import { api } from '../lib/api'
 import { setRefreshToken, setToken, setUser } from '../lib/auth'
 import { useAuthStore, type AuthUser } from '../stores/authStore'
@@ -14,11 +15,12 @@ export function useAuth() {
   const locale = useLocale() as 'ar' | 'en'
   const t = useTranslations('auth')
   const store = useAuthStore()
+  const prevRoleRef = useRef<string | null>(null)
 
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
     enabled: !!store.token,
-    refetchInterval: 5 * 60 * 1000, // 5 minutes - keeps role in sync with DB
+    refetchInterval: 30 * 1000, // 30 seconds - keeps role in sync with DB
     queryFn: async () => {
       const res = await api.get<ApiResponse<AuthUser>>('/auth/me')
       const user = res.data.data
@@ -29,6 +31,52 @@ export function useAuth() {
       return user ?? null
     },
   })
+
+  // Detect role changes and notify user
+  useEffect(() => {
+    if (!meQuery.data) return
+    
+    const prevRole = prevRoleRef.current || store.user?.accountType
+    
+    if (meQuery.data.accountType && prevRole && meQuery.data.accountType !== prevRole) {
+      const roleNames: Record<string, string> = {
+        STUDENT: 'طالب',
+        INSTRUCTOR: 'محاضر',
+        CONSULTANT: 'مستشار',
+        ADMIN: 'مدير',
+      }
+      
+      console.log(`[Auth] Role changed from ${prevRole} to ${meQuery.data.accountType}`)
+      
+      // Update store
+      store.setUser(meQuery.data)
+      localStorage.setItem('deveway_user', JSON.stringify({
+        ...meQuery.data,
+        accessToken: store.token,
+      }))
+      
+      // Show notification
+      toast({
+        variant: 'success',
+        description: `تم تحديث دورك إلى ${roleNames[meQuery.data.accountType] || meQuery.data.accountType}`,
+      })
+      
+      // Dispatch event for other listeners
+      window.dispatchEvent(new CustomEvent('role:changed', { detail: { role: meQuery.data.accountType } }))
+    }
+    
+    // Always sync latest data
+    if (meQuery.data.accountType !== store.user?.accountType || 
+        meQuery.data.isVerified !== store.user?.isVerified) {
+      store.setUser(meQuery.data)
+      localStorage.setItem('deveway_user', JSON.stringify({
+        ...meQuery.data,
+        accessToken: store.token,
+      }))
+    }
+    
+    prevRoleRef.current = meQuery.data.accountType
+  }, [meQuery.data, store, toast])
 
   const login = useMutation({
     mutationFn: async (payload: { email: string; password: string }) => {

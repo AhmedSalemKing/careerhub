@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft } from 'lucide-react'
+import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft, ChevronLeft, Shield } from 'lucide-react'
 import { get, patch } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
@@ -506,12 +506,50 @@ function ConsultantOverview() {
    ════════════════════════════════════════════════════════ */
 
 export default function DashboardPage() {
+  const locale = useLocale() as 'ar' | 'en'
+  const isAr = locale === 'ar'
   const { user } = useAuthStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  const accountType = user?.accountType || 'STUDENT'
+
+  const roleCard = useMemo(() => {
+    if (accountType === 'ADMIN') return {
+      icon: <Shield size={22} color="#fff"/>,
+      title: 'لوحة تحكم الإدارة',
+      desc: 'إدارة المستخدمين والكورسات والإعدادات',
+      href: `/${locale}/admin`,
+      bg: 'linear-gradient(135deg,rgba(81,32,200,0.2),rgba(124,58,237,0.15))',
+      border: 'rgba(81,32,200,0.3)',
+      iconBg: 'linear-gradient(135deg,#5120c8,#7c3aed)',
+      chevronColor: '#5120c8',
+    }
+    if (accountType === 'INSTRUCTOR') return {
+      icon: <BookOpen size={22} color="#fff"/>,
+      title: 'إنشاء كورس جديد',
+      desc: 'ابدأ في تدريس وإنشاء محتوى تعليمي احترافي',
+      href: `/${locale}/dashboard/create-course`,
+      bg: 'linear-gradient(135deg,rgba(43,191,163,0.15),rgba(5,150,105,0.1))',
+      border: 'rgba(43,191,163,0.3)',
+      iconBg: 'linear-gradient(135deg,#2BBFA3,#059669)',
+      chevronColor: '#2BBFA3',
+    }
+    if (accountType === 'CONSULTANT') return {
+      icon: <Calendar size={22} color="#fff"/>,
+      title: 'جلساتي القادمة',
+      desc: 'إدارة مواعيد الجلسات الاستشارية',
+      href: `/${locale}/dashboard/my-sessions`,
+      bg: 'linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1))',
+      border: 'rgba(245,158,11,0.3)',
+      iconBg: 'linear-gradient(135deg,#f59e0b,#d97706)',
+      chevronColor: '#f59e0b',
+    }
+    return null
+  }, [accountType, locale])
 
   if (!mounted) {
     return (
@@ -539,6 +577,30 @@ export default function DashboardPage() {
 
   return (
     <AuthGate>
+      {roleCard && (
+        <Link href={roleCard.href} style={{
+          display:'flex',alignItems:'center',gap:16,
+          padding:'18px 22px',borderRadius:16,marginBottom:24,
+          background:roleCard.bg,border:`1px solid ${roleCard.border}`,
+          textDecoration:'none',transition:'all 0.2s ease',
+        }}
+        onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-2px)')}
+        onMouseLeave={e=>(e.currentTarget.style.transform='translateY(0)')}
+        >
+          <div style={{
+            width:46,height:46,borderRadius:13,
+            background:roleCard.iconBg,
+            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,
+          }}>
+            {roleCard.icon}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{color:isAr?'#fff':'#0d0d0d',fontWeight:700,fontSize:15}}>{roleCard.title}</div>
+            <div style={{color:'#6b7280',fontSize:13,marginTop:2}}>{roleCard.desc}</div>
+          </div>
+          <ChevronLeft size={18} color={roleCard.chevronColor}/>
+        </Link>
+      )}
       {user?.accountType === 'INSTRUCTOR' ? <InstructorOverview /> :
        user?.accountType === 'CONSULTANT' ? <ConsultantOverview /> :
        <StudentOverview />}

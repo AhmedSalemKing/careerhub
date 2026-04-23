@@ -1307,11 +1307,33 @@ export class AdminService {
       throw new BadRequestException('لا يمكنك تغيير دورك الخاص')
     }
     
+    const roleNames: Record<string, string> = {
+      STUDENT: 'طالب',
+      INSTRUCTOR: 'محاضر',
+      CONSULTANT: 'مستشار',
+      ADMIN: 'مدير',
+    }
+    
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: { accountType: newRole as any },
       include: { profile: true }
     })
+    
+    // Send notification to user
+    try {
+      await this.notificationsService.createNotification({
+        userId,
+        type: 'SYSTEM_ANNOUNCEMENT',
+        titleEn: 'Your Role Has Been Updated',
+        titleAr: 'تم تغيير دورك',
+        contentEn: `Congratulations! You have been promoted to ${roleNames[newRole] || newRole}. New options are now available in your dashboard.`,
+        contentAr: `تهانينا! تم ترقيتك إلى ${roleNames[newRole] || newRole}. ستجد خيارات جديدة في لوحة التحكم.`,
+        data: { type: 'role_change', newRole, oldRole: user.accountType },
+      })
+    } catch(e) {
+      this.logger.warn(`[Admin] Failed to create notification: ${e.message}`)
+    }
     
     this.logger.log(`[Admin] Changed role of ${user.email} to ${newRole}`)
     return { success: true, data: user }

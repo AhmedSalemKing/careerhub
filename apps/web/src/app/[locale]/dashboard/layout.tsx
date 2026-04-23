@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useAuthStore } from '../../../stores/authStore'
@@ -110,17 +110,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     )
   }
 
-  const isInstructor = user?.accountType === 'INSTRUCTOR'
-  const isConsultant = user?.accountType === 'CONSULTANT'
-  const isAdmin = user?.accountType === 'ADMIN'
+  const accountType = user?.accountType || 'STUDENT'
 
-  const dockItems = isAdmin
-    ? getAdminItems(locale)
-    : isInstructor
-    ? getInstructorItems(locale)
-    : isConsultant
-    ? getConsultantItems(locale)
-    : getStudentItems(locale)
+  const dockItems = useMemo(() => {
+    if (accountType === 'ADMIN') return getAdminItems(locale)
+    if (accountType === 'INSTRUCTOR') return getInstructorItems(locale)
+    if (accountType === 'CONSULTANT') return getConsultantItems(locale)
+    return getStudentItems(locale)
+  }, [accountType, locale])
 
   function handleLogout() {
     localStorage.removeItem('deveway_token')
