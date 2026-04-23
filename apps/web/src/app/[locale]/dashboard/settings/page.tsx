@@ -9,7 +9,137 @@ import { useAuthStore } from '../../../../stores/authStore'
 import {
   Camera, User, Lock, Bell, Globe, Save,
   Eye, EyeOff, Check, AlertCircle, Moon, Sun,
+  Shield, CheckCircle, XCircle, Loader2, CreditCard,
 } from 'lucide-react'
+
+function VerificationSection({ user }: { user: any }) {
+  const isAr = true // locale check handled by parent
+  const [frontImage, setFrontImage] = useState(user?.idFrontUrl || '')
+  const [backImage, setBackImage] = useState(user?.idBackUrl || '')
+  const [uploading, setUploading] = useState<'front' | 'back' | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [status, setStatus] = useState(user?.idVerificationStatus || 'UNVERIFIED')
+  const queryClient = useQueryClient()
+
+  const { data: verificationStatus } = useQuery({
+    queryKey: ['verification-status'],
+    queryFn: async () => {
+      const res = await get('/verification/status')
+      return res?.data?.data
+    }
+  })
+
+  useEffect(() => {
+    if (verificationStatus) {
+      setStatus(verificationStatus.idVerificationStatus || 'UNVERIFIED')
+      setFrontImage(verificationStatus.idFrontUrl || '')
+      setBackImage(verificationStatus.idBackUrl || '')
+    }
+  }, [verificationStatus])
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      if (!frontImage || !backImage) return
+      return post('/verification/submit', { idFrontUrl: frontImage, idBackUrl: backImage })
+    },
+    onSuccess: () => {
+      setStatus('PENDING')
+      queryClient.invalidateQueries({ queryKey: ['verification-status'] })
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.message || 'Failed to submit')
+    }
+  })
+
+  const uploadImage = async (file: File, side: 'front' | 'back') => {
+    setUploading(side)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await api.post('/upload/image', formData)
+      const url = res.data?.data?.url || res.data?.url
+      if (side === 'front') setFrontImage(url)
+      else setBackImage(url)
+    } catch(e) {
+      console.error('Upload failed:', e)
+    } finally {
+      setUploading(null)
+    }
+  }
+
+  if (status === 'VERIFIED' || user?.isVerified) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(22,163,74,0.1)', border: '2px solid rgba(22,163,74,0.3)', borderRadius: 16, padding: '16px 28px', marginBottom: 16 }}>
+          <CheckCircle size={28} color="#16a34a" />
+          <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>هويتك موثقة بنجاح</span>
+        </div>
+        <p style={{ color: 'var(--muted)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك</p>
+      </div>
+    )
+  }
+
+  if (status === 'PENDING') {
+    return (
+      <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
+        <Loader2 size={48} color="#f59e0b" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
+        <p style={{ color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.</p>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    )
+  }
+
+  if (status === 'REJECTED') {
+    return (
+      <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
+        <XCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
+        {user?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {user.idRejectedReason}</p>}
+        <p style={{ color: 'var(--muted)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
+        <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
+      </div>
+    )
+  }
+
+  // UNVERIFIED - Show form
+  return (
+    <div style={{ padding: '24px 0', direction: 'rtl' }}>
+      <div style={{ marginBottom: 28 }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
+        <div style={{ background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', borderRadius: 12, padding: '14px 18px' }}>
+          <p style={{ color: '#A78BFA', fontSize: 14, margin: 0, lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
+            متطلبات التوثيق:
+            <br />1. رفع صورة واضحة لوجه بطاقة الهوية
+            <br />2. رفع صورة واضحة لظهر بطاقة الهوية
+          </p>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ color: 'var(--muted)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>وجه البطاقة (الأمامية)</label>
+        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--border)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+          {frontImage ? <img src={frontImage} alt="ID Front" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'front' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--muted)" />}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'front')} />
+        </label>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <label style={{ color: 'var(--muted)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>ظهر البطاقة (الخلفية)</label>
+        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--border)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+          {backImage ? <img src={backImage} alt="ID Back" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'back' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--muted)" />}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'back')} />
+        </label>
+      </div>
+
+      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--border)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
+        {submitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
+        {submitting ? 'جاري الإرسال...' : 'تقديم طلب التوثيق'}
+      </button>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const locale = useLocale()
@@ -107,6 +237,7 @@ export default function SettingsPage() {
     { key: 'security', label: isAr ? 'الأمان' : 'Security', icon: Lock },
     { key: 'preferences', label: isAr ? 'التفضيلات' : 'Preferences', icon: Globe },
     { key: 'notifications', label: isAr ? 'الإشعارات' : 'Notifications', icon: Bell },
+    ...(me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT' ? [{ key: 'verification', label: isAr ? 'توثيق الهوية' : 'ID Verification', icon: Shield }] : []),
   ]
 
   const inputStyle: React.CSSProperties = {
@@ -284,6 +415,11 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* VERIFICATION TAB */}
+      {activeTab === 'verification' && me?.accountType !== 'STUDENT' && (
+        <VerificationSection user={me} />
       )}
     </div>
   )
