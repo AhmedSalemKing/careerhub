@@ -297,12 +297,31 @@ export class CertificatesService {
     try {
       const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
       const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 120,
+        width: 150,
         margin: 1,
-        color: { dark: '#1a1a2e', light: 'rgba(255,255,255,0)' },
+        color: { dark: '#1a1a2e', light: 'rgba(255,255,255,0.9)' },
       })
       const qrImg = await loadImage(qrDataUrl)
-      ctx.drawImage(qrImg, W * 0.860, H * 0.730, W * 0.075, W * 0.075 * (H / W))
+
+      // Position: bottom right, inside border
+      const qrSize = W * 0.082
+      const qrX = W * 0.855
+      const qrY = H * 0.715
+
+      // White background behind QR
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'
+      ctx.beginPath()
+      ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8 + 20, 6)
+      ctx.fill()
+
+      // Draw QR
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+
+      // "Scan to verify" label below QR
+      ctx.font = `${Math.floor(W * 0.008)}px "Cormorant Garamond", Georgia, serif`
+      ctx.fillStyle = '#5a5a5a'
+      ctx.textAlign = 'center'
+      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 14)
     } catch (e: any) {
       console.error('[Certificate] QR failed:', e.message)
     }
