@@ -1291,7 +1291,7 @@ export class AdminService {
   }
 
   // ── Change user role ──
-  async changeUserRole(id: string, accountType: string) {
+  async changeUserRole(id: string, accountType: string, adminId?: string) {
     return this.prisma.user.update({
       where: { id },
       data: { accountType: accountType as any },
