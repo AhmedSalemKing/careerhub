@@ -204,7 +204,20 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update user profile' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully' })
-  async updateProfile(@CurrentUser() user: User, @Body() body: { firstName?: string; lastName?: string; bio?: string; phone?: string; avatar?: string }) {
+  async updateProfile(@CurrentUser() user: User, @Body() body: { 
+    firstName?: string; 
+    lastName?: string; 
+    bio?: string; 
+    phone?: string; 
+    avatar?: string;
+    country?: string;
+    city?: string;
+    linkedinUrl?: string;
+    speciality?: string;
+    experience?: number;
+    hourlyRate?: number;
+    meetingMethod?: string;
+  }) {
     return this.authService.updateProfile(user.id, body);
   }
 

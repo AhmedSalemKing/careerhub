@@ -511,26 +511,46 @@ export class AuthService {
     return user;
   }
 
-  async updateProfile(userId: string, data: { firstName?: string; lastName?: string; bio?: string; phone?: string; avatar?: string }) {
+  async updateProfile(userId: string, data: { 
+    firstName?: string; 
+    lastName?: string; 
+    bio?: string; 
+    phone?: string; 
+    avatar?: string;
+    country?: string;
+    city?: string;
+    linkedinUrl?: string;
+    speciality?: string;
+    experience?: number;
+    hourlyRate?: number;
+    meetingMethod?: string;
+  }) {
+    const profileData: any = {}
+    if (data.firstName !== undefined) profileData.firstName = data.firstName
+    if (data.lastName !== undefined) profileData.lastName = data.lastName
+    if (data.bio !== undefined) profileData.bio = data.bio
+    if (data.phone !== undefined) profileData.phone = data.phone
+    if (data.avatar !== undefined) profileData.avatar = data.avatar
+    if (data.country !== undefined) profileData.country = data.country
+    if (data.city !== undefined) profileData.city = data.city
+    if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
+    if (data.speciality !== undefined) profileData.speciality = data.speciality
+    if (data.experience !== undefined) profileData.experience = data.experience
+    if (data.hourlyRate !== undefined) profileData.hourlyRate = data.hourlyRate
+    if (data.meetingMethod !== undefined) profileData.meetingMethod = data.meetingMethod
+    
     const profile = await this.prisma.userProfile.upsert({
       where: { userId },
-      update: {
-        ...(data.firstName !== undefined && { firstName: data.firstName }),
-        ...(data.lastName !== undefined && { lastName: data.lastName }),
-        ...(data.bio !== undefined && { bio: data.bio }),
-        ...(data.phone !== undefined && { phone: data.phone }),
-        ...(data.avatar !== undefined && { avatar: data.avatar }),
-      },
-      create: {
-        userId,
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        bio: data.bio || null,
-        phone: data.phone || null,
-        avatar: data.avatar || null,
-      },
-    });
-    return { success: true, data: profile };
+      create: { userId, ...profileData },
+      update: profileData,
+    })
+    
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true }
+    })
+    
+    return { success: true, data: user }
   }
 
   async adminLogin(loginDto: { email: string; password: string }) {

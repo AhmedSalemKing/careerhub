@@ -6,6 +6,7 @@ import { get, patch, post } from '../../../../lib/api'
 import { getMediaUrl } from '../../../../lib/media'
 import api from '../../../../lib/api'
 import { useAuthStore } from '../../../../stores/authStore'
+import { notify } from '../../../../lib/notify'
 import {
   Camera, User, Lock, Bell, Globe, Save,
   Eye, EyeOff, Check, AlertCircle, Moon, Sun,
@@ -45,9 +46,10 @@ function VerificationSection({ user }: { user: any }) {
     onSuccess: () => {
       setStatus('PENDING')
       queryClient.invalidateQueries({ queryKey: ['verification-status'] })
+      notify.success(isAr ? 'تم إرسال طلب التوثيق بنجاح' : 'Verification request submitted successfully')
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.message || 'Failed to submit')
+      notify.error(err?.response?.data?.message || (isAr ? 'فشل إرسال المستندات' : 'Failed to submit verification'))
     }
   })
 
@@ -153,7 +155,19 @@ export default function SettingsPage() {
   const [showNewPass, setShowNewPass] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
 
-  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', bio: '', phone: '' })
+  const [profileForm, setProfileForm] = useState({ 
+    firstName: '', 
+    lastName: '', 
+    bio: '', 
+    phone: '',
+    country: '',
+    city: '',
+    linkedinUrl: '',
+    speciality: '',
+    experience: '',
+    hourlyRate: '',
+    meetingMethod: '',
+  })
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
   const [prefForm, setPrefForm] = useState({ emailNotifications: true, theme: 'dark' })
 
@@ -172,6 +186,13 @@ export default function SettingsPage() {
         lastName: me.profile?.lastName || '',
         bio: me.profile?.bio || '',
         phone: me.profile?.phone || '',
+        country: me.profile?.country || '',
+        city: me.profile?.city || '',
+        linkedinUrl: me.profile?.linkedinUrl || '',
+        speciality: me.profile?.speciality || '',
+        experience: me.profile?.experience?.toString() || '',
+        hourlyRate: me.profile?.hourlyRate?.toString() || '',
+        meetingMethod: me.profile?.meetingMethod || '',
       })
       if (me.profile?.avatar) {
         const av = me.profile.avatar
@@ -194,13 +215,24 @@ export default function SettingsPage() {
         const uploadRes = await api.post('/upload/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
         avatarUrl = uploadRes.data?.data?.url || uploadRes.data?.url
       }
-      const body: any = { ...profileForm }
+      const body: any = { 
+        firstName: profileForm.firstName,
+        lastName: profileForm.lastName,
+        bio: profileForm.bio,
+        phone: profileForm.phone,
+        country: profileForm.country,
+        city: profileForm.city,
+        linkedinUrl: profileForm.linkedinUrl,
+        speciality: profileForm.speciality,
+        experience: profileForm.experience ? parseInt(profileForm.experience) : undefined,
+        hourlyRate: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
+        meetingMethod: profileForm.meetingMethod,
+      }
       if (avatarUrl !== undefined) body.avatar = avatarUrl
       return patch('/auth/profile', body)
     },
     onSuccess: (res: any) => {
       queryClient.invalidateQueries({ queryKey: ['me'] })
-      // Sync updated profile to Zustand store so Navbar avatar updates immediately
       const current = authStore.user
       const updatedProfile = res?.data?.data ?? res?.data
       if (current) {
@@ -208,14 +240,18 @@ export default function SettingsPage() {
           ...current,
           profile: {
             ...current.profile,
-            firstName: updatedProfile?.firstName ?? profileForm.firstName,
-            lastName: updatedProfile?.lastName ?? profileForm.lastName,
-            avatar: updatedProfile?.avatar ?? current.profile?.avatar,
+            firstName: updatedProfile?.profile?.firstName ?? profileForm.firstName,
+            lastName: updatedProfile?.profile?.lastName ?? profileForm.lastName,
+            avatar: updatedProfile?.profile?.avatar ?? current.profile?.avatar,
           },
         })
       }
       setAvatarFile(null)
       showSuccess()
+      notify.success(isAr ? 'تم حفظ التغييرات بنجاح' : 'Changes saved successfully')
+    },
+    onError: (err: any) => {
+      notify.error(err?.response?.data?.message || (isAr ? 'فشل حفظ التغييرات' : 'Failed to save changes'))
     }
   })
 
@@ -229,6 +265,10 @@ export default function SettingsPage() {
     onSuccess: () => {
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' })
       showSuccess()
+      notify.success(isAr ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully')
+    },
+    onError: (err: any) => {
+      notify.error(err?.response?.data?.message || (isAr ? 'فشل تغيير كلمة المرور' : 'Failed to change password'))
     }
   })
 
@@ -325,6 +365,55 @@ export default function SettingsPage() {
             <label style={labelStyle}>{isAr ? 'نبذة عنك' : 'Bio'}</label>
             <textarea value={profileForm.bio} onChange={e => setProfileForm(f => ({ ...f, bio: e.target.value }))} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder={isAr ? 'اكتب نبذة عنك...' : 'Write about yourself...'} />
           </div>
+          
+          {/* Additional fields */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div>
+              <label style={labelStyle}>{isAr ? 'الدولة' : 'Country'}</label>
+              <input value={profileForm.country} onChange={e => setProfileForm(f => ({ ...f, country: e.target.value }))} style={inputStyle} placeholder={isAr ? 'مثال: السعودية' : 'e.g. Saudi Arabia'} />
+            </div>
+            <div>
+              <label style={labelStyle}>{isAr ? 'المدينة' : 'City'}</label>
+              <input value={profileForm.city} onChange={e => setProfileForm(f => ({ ...f, city: e.target.value }))} style={inputStyle} placeholder={isAr ? 'مثال: الرياض' : 'e.g. Riyadh'} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>{isAr ? 'رابط LinkedIn' : 'LinkedIn URL'}</label>
+            <input value={profileForm.linkedinUrl} onChange={e => setProfileForm(f => ({ ...f, linkedinUrl: e.target.value }))} style={inputStyle} placeholder="https://linkedin.com/in/..." />
+          </div>
+          
+          {/* Instructor/Consultant fields */}
+          {(me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT') && (
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 8 }}>
+              <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
+                {isAr ? 'معلومات المحاضر/المستشار' : 'Instructor/Consultant Info'}
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
+                <div>
+                  <label style={labelStyle}>{isAr ? 'التخصص' : 'Speciality'}</label>
+                  <input value={profileForm.speciality} onChange={e => setProfileForm(f => ({ ...f, speciality: e.target.value }))} style={inputStyle} placeholder={isAr ? 'مثال: البرمجة' : 'e.g. Programming'} />
+                </div>
+                <div>
+                  <label style={labelStyle}>{isAr ? 'سنوات الخبرة' : 'Experience (years)'}</label>
+                  <input type="number" value={profileForm.experience} onChange={e => setProfileForm(f => ({ ...f, experience: e.target.value }))} style={inputStyle} placeholder="5" min="0" />
+                </div>
+                <div>
+                  <label style={labelStyle}>{isAr ? 'السعر/ساعة (ر.س)' : 'Hourly Rate (SAR)'}</label>
+                  <input type="number" value={profileForm.hourlyRate} onChange={e => setProfileForm(f => ({ ...f, hourlyRate: e.target.value }))} style={inputStyle} placeholder="200" min="0" />
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>{isAr ? 'طريقة الاجتماع' : 'Meeting Method'}</label>
+                <select value={profileForm.meetingMethod} onChange={e => setProfileForm(f => ({ ...f, meetingMethod: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <option value="">{isAr ? 'اختر...' : 'Select...'}</option>
+                  <option value="ONLINE">{isAr ? 'أونلاين' : 'Online'} {isAr ? '(Zoom/Google Meet)' : '(Zoom/Google Meet)'}</option>
+                  <option value="IN_PERSON">{isAr ? 'حضوري' : 'In Person'}</option>
+                  <option value="BOTH">{isAr ? 'كلاهما' : 'Both'}</option>
+                </select>
+              </div>
+            </div>
+          )}
+          
           <button onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: profileMutation.isPending ? 0.7 : 1 }}>
             <Save size={16} />
             {profileMutation.isPending ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ التغييرات' : 'Save Changes')}

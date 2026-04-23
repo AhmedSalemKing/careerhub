@@ -892,9 +892,12 @@ export class AdminController {
     return { success: true, data: result };
   }
 
-  @Patch('users/:id/role')
-  async changeRole(@Param('id') id: string, @Body() body: { accountType: string }) {
-    const result = await this.adminService.changeUserRole(id, body.accountType);
+  @Patch('users/:userId/role')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change user role' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  async changeRole(@Param('userId') userId: string, @Body() body: { role: string }, @CurrentUser() admin: User) {
+    const result = await this.adminService.changeUserRole(userId, body.role, admin.id);
     return { success: true, data: result };
   }
 

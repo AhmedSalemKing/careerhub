@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as path from 'path';
@@ -1296,12 +1297,24 @@ export class AdminService {
   }
 
   // ── Change user role ──
-  async changeUserRole(id: string, accountType: string) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { accountType: accountType as any },
-      select: { id: true, email: true, accountType: true },
-    });
+  async changeUserRole(userId: string, newRole: string, adminId: string) {
+    const validRoles = ['STUDENT', 'INSTRUCTOR', 'CONSULTANT', 'ADMIN']
+    if (!validRoles.includes(newRole)) {
+      throw new BadRequestException('دور غير صالح')
+    }
+    
+    if (userId === adminId) {
+      throw new BadRequestException('لا يمكنك تغيير دورك الخاص')
+    }
+    
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { accountType: newRole as any },
+      include: { profile: true }
+    })
+    
+    this.logger.log(`[Admin] Changed role of ${user.email} to ${newRole}`)
+    return { success: true, data: user }
   }
 
   // ── Change user status ──
