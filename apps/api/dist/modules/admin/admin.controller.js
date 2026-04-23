@@ -480,7 +480,7 @@ let AdminController = class AdminController {
         return { success: true, data: result };
     }
     async changeRole(userId, body, admin) {
-        const result = await this.adminService.changeUserRole(userId, body.role, admin.id);
+        const result = await this.adminService.changeUserRole(userId, body.accountType, admin.id);
         return { success: true, data: result };
     }
     async changeStatus(id, body) {
