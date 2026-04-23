@@ -175,8 +175,8 @@ async function bootstrap() {
   });
 
   // Start server
-  const port = configService.get('PORT') || 3001;
-  await app.listen(port);
+  const port = process.env.PORT || configService.get('PORT') || 3001;
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`🚀 DeveWay API is running on port ${port}`);
   logger.log(`🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`);
