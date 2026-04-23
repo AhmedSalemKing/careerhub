@@ -177,52 +177,48 @@ export class CertificatesService {
 
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
+
+    // Draw BLANK template (no placeholder text)
     ctx.drawImage(template, 0, 0)
 
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
 
-    // ── Sample EXACT background colors at each placeholder location ────────
-    const namePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.36), 1, 1).data
-    const nameBg = `rgb(${namePixel[0]}, ${namePixel[1]}, ${namePixel[2]})`
+    // ═══ STATIC TEXT ═══
 
-    const coursePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.56), 1, 1).data
-    const courseBg = `rgb(${coursePixel[0]}, ${coursePixel[1]}, ${coursePixel[2]})`
+    // "Certificate of Completion"
+    ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`
+    ctx.fillStyle = '#1a1a2e'
+    ctx.fillText('Certificate of Completion', W / 2, H * 0.195)
 
-    const datePixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.62), 1, 1).data
-    const dateBg = `rgb(${datePixel[0]}, ${datePixel[1]}, ${datePixel[2]})`
+    // "This is to certify that"
+    ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#2c2c2c'
+    ctx.fillText('This is to certify that', W / 2, H * 0.305)
 
-    const idPixel = ctx.getImageData(Math.floor(W * 0.5), Math.floor(H * 0.87), 1, 1).data
-    const idBg = `rgb(${idPixel[0]}, ${idPixel[1]}, ${idPixel[2]})`
+    // "has successfully completed the course:"
+    ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#2c2c2c'
+    ctx.fillText('has successfully completed the course:', W / 2, H * 0.455)
 
-    const instrPixel = ctx.getImageData(Math.floor(W * 0.22), Math.floor(H * 0.78), 1, 1).data
-    const instrBg = `rgb(${instrPixel[0]}, ${instrPixel[1]}, ${instrPixel[2]})`
+    // Description text
+    ctx.font = `${Math.floor(W * 0.013)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillText('This certificate is awarded in recognition of their commitment and', W / 2, H * 0.650)
+    ctx.fillText('achievement in mastering the course material.', W / 2, H * 0.670)
 
-    console.log('[Certificate] overlay colors - name:', nameBg, 'course:', courseBg, 'date:', dateBg, 'id:', idBg)
+    // "DeveWay Instructor" label
+    ctx.font = `${Math.floor(W * 0.012)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillText('DeveWay Instructor', W * 0.215, H * 0.855)
 
-    // ── COVER PLACEHOLDER TEXT with tight bounds and exact background color ──
+    // "DeveWay CEO" label
+    ctx.fillText('DeveWay CEO', W * 0.785, H * 0.855)
 
-    // [Recipient's Name] area - tight
-    ctx.fillStyle = nameBg
-    ctx.fillRect(W * 0.20, H * 0.315, W * 0.60, H * 0.095)
+    // "www.deveway.com"
+    ctx.font = `${Math.floor(W * 0.010)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#5a5a5a'
+    ctx.fillText('www.deveway.com', W / 2, H * 0.955)
 
-    // [Course Title] area - tight
-    ctx.fillStyle = courseBg
-    ctx.fillRect(W * 0.15, H * 0.520, W * 0.70, H * 0.085)
-
-    // [Date of Completion] area - tight
-    ctx.fillStyle = dateBg
-    ctx.fillRect(W * 0.27, H * 0.622, W * 0.46, H * 0.048)
-
-    // Certificate ID at bottom - tight
-    ctx.fillStyle = idBg
-    ctx.fillRect(W * 0.20, H * 0.870, W * 0.60, H * 0.040)
-
-    // Instructor name area (left) - tight
-    ctx.fillStyle = instrBg
-    ctx.fillRect(W * 0.05, H * 0.755, W * 0.32, H * 0.055)
-
-    // ── WRITE DYNAMIC TEXT ─────────────────────────────────────────────────
+    // ═══ DYNAMIC TEXT ═══
 
     // Student Name - italic bold Playfair Display
     const nameLen = data.studentName.length
@@ -230,68 +226,55 @@ export class CertificatesService {
       : nameLen > 25 ? Math.floor(W * 0.036)
       : Math.floor(W * 0.042)
 
-    ctx.font = `italic bold ${nameFontSize}px "Playfair Display", "Georgia", serif`
+    ctx.font = `italic bold ${nameFontSize}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1a1a2e'
-    ctx.shadowColor = 'rgba(0,0,0,0.06)'
+    ctx.shadowColor = 'rgba(0,0,0,0.08)'
     ctx.shadowBlur = 2
     ctx.fillText(
       data.studentName.length > 40 ? data.studentName.substring(0, 38) + '...' : data.studentName,
       W / 2,
-      H * 0.362
+      H * 0.375
     )
     ctx.shadowBlur = 0
 
     // Course Title - bold Playfair Display
-    const courseFontSize = data.courseTitle.length > 35 ? Math.floor(W * 0.024) : Math.floor(W * 0.028)
-    ctx.font = `bold ${courseFontSize}px "Playfair Display", "Georgia", serif`
+    const courseFontSize = data.courseTitle.length > 35 ? Math.floor(W * 0.024) : Math.floor(W * 0.030)
+    ctx.font = `bold ${courseFontSize}px "Playfair Display", Georgia, serif`
     ctx.fillStyle = '#1a1a2e'
 
-    const maxCourseWidth = W * 0.68
-    const courseLines = this.splitText(ctx, data.courseTitle, maxCourseWidth)
-
+    const courseLines = this.splitText(ctx, data.courseTitle, W * 0.68)
     if (courseLines.length === 1) {
-      ctx.fillText(courseLines[0], W / 2, H * 0.563)
+      ctx.fillText(courseLines[0], W / 2, H * 0.540)
     } else {
-      const lineH = courseFontSize * 1.35
-      ctx.fillText(courseLines[0], W / 2, H * 0.548)
-      ctx.fillText(courseLines[1] || '', W / 2, H * 0.548 + lineH)
+      ctx.fillText(courseLines[0], W / 2, H * 0.525)
+      ctx.fillText(courseLines[1] || '', W / 2, H * 0.560)
     }
 
     // Date
-    ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", "Georgia", serif`
-    ctx.fillStyle = '#4a5568'
-    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.648)
+    ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", Georgia, serif`
+    ctx.fillStyle = '#2c2c2c'
+    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.610)
 
     // Instructor Name (left, under signature lines)
-    ctx.font = `${Math.floor(W * 0.012)}px "Cormorant Garamond", "Georgia", serif`
-    ctx.fillStyle = '#2d3748'
-    ctx.fillText(data.instructorName, W * 0.215, H * 0.793)
+    ctx.font = `italic ${Math.floor(W * 0.018)}px "Playfair Display", Georgia, serif`
+    ctx.fillStyle = '#1a1a2e'
+    ctx.fillText(data.instructorName, W * 0.215, H * 0.800)
 
     // Certificate ID
     ctx.font = `${Math.floor(W * 0.009)}px "Courier New", monospace`
-    ctx.fillStyle = '#6b7280'
-    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.893)
-
-    // ── INSTRUCTOR SIGNATURE IMAGE ─────────────────────────────────────────
-    if (data.instructorSignatureUrl) {
-      try {
-        const sig = await loadImage(data.instructorSignatureUrl)
-        ctx.drawImage(sig, W * 0.07, H * 0.720, W * 0.14, H * 0.055)
-      } catch (e: any) {
-        console.warn('[Certificate] Signature load failed:', e.message)
-      }
-    }
+    ctx.fillStyle = '#5a5a5a'
+    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.912)
 
     // ── QR CODE ─────────────────────────────────────────────────────────────
     try {
       const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
       const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
-        width: 130,
+        width: 120,
         margin: 1,
-        color: { dark: '#1a1a2e', light: 'rgba(238,240,248,0)' },
+        color: { dark: '#1a1a2e', light: 'rgba(255,255,255,0)' },
       })
       const qrImg = await loadImage(qrDataUrl)
-      ctx.drawImage(qrImg, W * 0.856, H * 0.715, W * 0.085, W * 0.085 * (H / W))
+      ctx.drawImage(qrImg, W * 0.860, H * 0.730, W * 0.075, W * 0.075 * (H / W))
     } catch (e: any) {
       console.error('[Certificate] QR failed:', e.message)
     }
