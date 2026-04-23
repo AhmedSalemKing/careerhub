@@ -5,7 +5,8 @@ import { useLocale } from 'next-intl'
 import { 
   BookOpen, Play, ArrowRight, CheckCircle, RefreshCw, 
   AlertTriangle, Loader2, Search, Filter, LayoutGrid,
-  Clock, Users, Star, TrendingUp, ChevronLeft, Award
+  Clock, Users, Star, TrendingUp, ChevronLeft, Award,
+  XCircle, Edit3
 } from 'lucide-react'
 import { Button } from '../../components/ui/button'
 import { useState, useEffect } from 'react'
@@ -381,13 +382,13 @@ export default function MyCoursesPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {(sessions as any[]).map((s: any) => (
                 <div key={s.id} className="rounded-xl p-5 transition-all hover:shadow-lg" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-3">
+<div className="flex items-center justify-between mb-3">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                       s.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' :
                       s.status === 'PENDING' ? 'bg-amber-500/20 text-amber-400' :
                       'bg-gray-500/20 text-gray-400'
                     }`}>
-                      {s.status === 'CONFIRMED' ? '✓ مؤكد' : s.status === 'PENDING' ? '⏳ معلقة' : '✗ ملغية'}
+                      {s.status === 'CONFIRMED' ? <><CheckCircle className="h-3 w-3 inline mr-1" />مؤكد</> : s.status === 'PENDING' ? <><Clock className="h-3 w-3 inline mr-1" />معلقة</> : <><XCircle className="h-3 w-3 inline mr-1" />ملغية</>}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {s.scheduledAt ? formatDate(s.scheduledAt) : ''}
@@ -709,7 +710,7 @@ export default function MyCoursesPage() {
                           : 'bg-black/50 text-white'
                     }`}>
                       {isCompleted ? (
-                        <><CheckCircle className="inline h-3.5 w-3.5 mr-1" /> مكتمل ✓</>
+                        <><CheckCircle className="inline h-3.5 w-3.5 mr-1" /> مكتمل</>
                       ) : isActive ? (
                         <><Play className="inline h-3.5 w-3.5 mr-1" /> {Math.round(progress)}%</>
                       ) : (

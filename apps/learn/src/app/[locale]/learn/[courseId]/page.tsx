@@ -1286,12 +1286,12 @@ function LearnPageInner() {
                         color: green,
                         border: `1.5px solid ${green}25`,
                         boxShadow: `0 4px 20px ${green}15`
-                      }}
-                    >
-                      <Award className="h-5 w-5" />
-                      <span>مكتمل ✓</span>
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
+                  }}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>مكتمل</span>
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
                   ) : (
                     <button 
                       onClick={handleMarkComplete}
@@ -1535,7 +1535,7 @@ function LearnPageInner() {
                     >
                       <Award size={26} className="animate-pulse" />
                       <div className="text-right">
-                        <div className="text-base">🎉 تهانينا! أكملت الكورس بنجاح</div>
+                        <div className="text-base">تهانينا! أكملت الكورس بنجاح</div>
                         <div className="text-sm opacity-90 font-normal">احصل على شهادتك الآن</div>
                       </div>
                       <ChevronLeft size={20} />

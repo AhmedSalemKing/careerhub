@@ -272,7 +272,7 @@ export default function CheckoutPage() {
             </div>
             
             <h2 className="text-3xl font-bold mb-3" style={{ color: c.textPrimary }}>
-              أنت مشترك بالفعل! ✨
+              أنت مشترك بالفعل!
             </h2>
             <p className="text-base mb-8" style={{ color: c.textSecondary }}>
               يمكنك الوصول لهذا الكورس مباشرة والبدء في التعلم
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
             </div>
             
             <h2 className="text-4xl font-bold mb-2" style={{ color: c.textPrimary }}>
-              تم الاشتراك بنجاح! 🎉
+              تم الاشتراك بنجاح!
             </h2>
             <p className="text-base mb-1" style={{ color: c.textSecondary }}>اشتركت في كورس</p>
             <p className="text-xl font-bold mb-8" style={{ color: c.primary }}>{courseTitle}</p>

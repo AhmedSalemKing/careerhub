@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Play, Users, BookOpen, Star, Clock, ArrowRight,
   Award, Globe, Code, Palette,
-  BarChart3, Briefcase, Sparkles
+  BarChart3, Briefcase, Sparkles, Laptop
 } from 'lucide-react'
 import { CareerPathsSection } from '../components/CareerPathsSection'
 import { Button } from '../components/ui/button'
@@ -415,7 +415,7 @@ export default function HomePage() {
                     <img src={thumbUrl(course.thumbnail)!} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-5xl">{['💻', '🌐', '📊'][index]}</span>
+                      <Laptop className="h-10 w-10 text-primary" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">

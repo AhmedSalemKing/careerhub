@@ -14,7 +14,7 @@
     "courses": "Courses"
   },
   "hero": {
-    "badge": "🚀 AI-Powered Career Platform",
+    "badge": "AI-Powered Career Platform",
     "title": "Discover your career path with DeveWay",
     "subtitle": "An all-in-one platform combining career guidance, professional training, and 1:1 coaching",
     "cta_primary": "Start your journey for free",
@@ -293,8 +293,8 @@
     "verify": "Verify",
     "issued": "Issued on",
     "serial": "Certificate serial",
-    "valid": "✅ Valid certificate",
-    "invalid": "❌ Certificate not found",
+    "valid": "Valid certificate",
+    "invalid": "Certificate not found",
     "empty": "Complete a course to earn your first certificate"
   },
   "errors": {
@@ -325,8 +325,8 @@
     "no": "No",
     "close": "Close",
     "confirm": "Confirm",
-    "egypt": "Egypt 🇪🇬",
-    "saudi": "Saudi Arabia 🇸🇦",
+    "egypt": "Egypt",
+    "saudi": "Saudi Arabia",
     "other": "Other",
     "egp": "EGP",
     "sar": "SAR"
@@ -411,8 +411,8 @@
   "verify": {
     "title": "Verify certificate",
     "subtitle": "Use the certificate serial number to verify authenticity.",
-    "valid": "✅ Valid certificate",
-    "invalid": "❌ Certificate not found",
+    "valid": "Valid certificate",
+    "invalid": "Certificate not found",
     "invalid_hint": "Double-check the serial number or try again later.",
     "serial": "Serial number",
     "issued": "Issued on",

@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft, ChevronLeft, Shield } from 'lucide-react'
+import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft, ChevronLeft, Shield, CheckCircle2, XCircle, AlertTriangle, Hand } from 'lucide-react'
 import { get, patch } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
@@ -61,7 +61,7 @@ function InstructorOverview() {
             </div>
             <div>
               <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight leading-tight">
-                مرحباً بك يا {firstName} 👋
+                مرحباً بك يا {firstName}
               </h1>
               <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المحاضر — أدر كورساتك وطلابك بكل سهولة</p>
             </div>
@@ -135,12 +135,12 @@ function InstructorOverview() {
                   <p className="text-xs text-muted font-medium">
                     {course._count?.enrollments ?? 0} طالب مسجل
                   </p>
-                  <span className={`inline-block text-[11px] font-bold px-3 py-1 rounded-full mt-2 ${
-                    course.status === 'PUBLISHED' 
-                      ? 'bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20' 
-                      : 'bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20'
-                  }`}>
-                    {course.status === 'PUBLISHED' ? '✓ منشور' : '✎ مسودة'}
+<span className={`inline-block text-[11px] font-bold px-3 py-1 rounded-full mt-2 ${
+                      course.status === 'PUBLISHED' 
+                        ? 'bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20' 
+                        : 'bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20'
+                    }`}>
+                    {course.status === 'PUBLISHED' ? <><CheckCircle2 className="h-3 w-3 inline ml-1" />منشور</> : <><Clock className="h-3 w-3 inline ml-1" />مسودة</>}
                   </span>
                 </div>
                 
@@ -215,7 +215,7 @@ function StudentOverview() {
       ) : q.isError ? (
         <div className="rounded-2xl p-8 border border-border bg-surface shadow-sm text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-            <span className="text-2xl">⚠️</span>
+            <AlertTriangle className="h-8 w-8 text-red-500" />
           </div>
           <p className="text-sm text-muted mb-5 font-medium">{c('empty')}</p>
           <button 
@@ -376,7 +376,7 @@ function ConsultantOverview() {
             </div>
             <div>
               <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight">
-                مرحباً يا {firstName} 👋
+                مرحباً يا {firstName}
               </h1>
               <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المستشار — تابع جلساتك واستشاراتك</p>
             </div>
@@ -437,13 +437,13 @@ function ConsultantOverview() {
                       onClick={() => confirmSession(s.id)} 
                       className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     >
-                      ✓ قبول
+                      <CheckCircle2 className="h-4 w-4 inline ml-1" />قبول
                     </button>
                     <button 
                       onClick={() => cancelSession(s.id)} 
                       className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-500 text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all duration-200"
                     >
-                      ✕ رفض
+                      <XCircle className="h-4 w-4 inline ml-1" />رفض
                     </button>
                   </div>
                 </div>

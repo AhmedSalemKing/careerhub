@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { api } from '@/lib/api'
+import { GraduationCap, User, Briefcase, Clock } from 'lucide-react'
 
 export default function GoogleCompleteProfile() {
   const searchParams = useSearchParams()
@@ -92,9 +93,9 @@ export default function GoogleCompleteProfile() {
           </label>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { value: 'STUDENT', label: 'طالب 🎓', desc: 'أريد التعلم واكتساب مهارات جديدة' },
-              { value: 'INSTRUCTOR', label: 'محاضر 👨‍🏫', desc: 'أريد تدريس ومشاركة معرفتي' },
-              { value: 'CONSULTANT', label: 'مستشار 🧑‍💼', desc: 'أريد تقديم جلسات استشارية' },
+              { value: 'STUDENT', label: 'طالب', icon: GraduationCap, desc: 'أريد التعلم واكتساب مهارات جديدة' },
+              { value: 'INSTRUCTOR', label: 'محاضر', icon: User, desc: 'أريد تدريس ومشاركة معرفتي' },
+              { value: 'CONSULTANT', label: 'مستشار', icon: Briefcase, desc: 'أريد تقديم جلسات استشارية' },
             ].map(type => (
               <div
                 key={type.value}
@@ -106,7 +107,7 @@ export default function GoogleCompleteProfile() {
                   transition: 'all 0.2s ease',
                 }}
               >
-                <div style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}>{type.label}</div>
+                <div style={{ color: '#fff', fontWeight: 600, fontSize: 15 }}><type.icon className="h-4 w-4 inline ml-2" />{type.label}</div>
                 <div style={{ color: '#6b7280', fontSize: 13, marginTop: 2 }}>{type.desc}</div>
               </div>
             ))}

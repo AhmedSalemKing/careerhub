@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../../lib/api'
 import { useAuthStore } from '../../../stores/authStore'
-import { Camera, CheckCircle2, Upload, Loader2, X } from 'lucide-react'
+import { Camera, CheckCircle2, Upload, Loader2, X, GraduationCap, User, Briefcase, PartyPopper, Clock } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -756,10 +756,10 @@ export default function RegisterPage() {
             {/* Account type cards */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               {([
-                { type: 'STUDENT' as const, icon: '🎓', label: ar ? 'طالب' : 'Student', sub: ar ? 'وصول فوري' : 'Instant access' },
-                { type: 'INSTRUCTOR' as const, icon: '👨‍🏫', label: ar ? 'مدرب' : 'Instructor', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
-                { type: 'CONSULTANT' as const, icon: '🧑‍💼', label: ar ? 'مستشار' : 'Consultant', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
-              ]).map(({ type, icon, label, sub }) => {
+                { type: 'STUDENT' as const, icon: GraduationCap, label: ar ? 'طالب' : 'Student', sub: ar ? 'وصول فوري' : 'Instant access' },
+                { type: 'INSTRUCTOR' as const, icon: User, label: ar ? 'مدرب' : 'Instructor', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
+                { type: 'CONSULTANT' as const, icon: Briefcase, label: ar ? 'مستشار' : 'Consultant', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
+              ]).map(({ type, icon: Icon, label, sub }) => {
                 const isActive = step2.accountType === type
                 return (
                   <button
@@ -784,7 +784,7 @@ export default function RegisterPage() {
                       }
                     }}
                   >
-                    <span className="text-2xl">{icon}</span>
+                    <Icon className="h-6 w-6 mb-1" />
                     <span className="font-semibold text-sm transition-colors duration-200" style={{ color: colors.textColor }}>{label}</span>
                     <span className="text-[11px]" style={{ color: colors.mutedColor }}>{sub}</span>
                   </button>
@@ -1032,7 +1032,11 @@ export default function RegisterPage() {
           <div className="text-center py-6">
             {isPending ? (
               <>
-                <div className="text-6xl mb-5">⏳</div>
+                <div className="flex items-center justify-center mb-5">
+                  <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <Clock className="h-10 w-10 text-amber-500" />
+                  </div>
+                </div>
                 <h1 className="text-2xl font-bold mb-3 transition-colors duration-300" style={{ color: colors.titleColor }}>
                   {ar ? 'تم إرسال طلبك!' : 'Application Submitted!'}
                 </h1>
@@ -1075,7 +1079,9 @@ export default function RegisterPage() {
               </>
             ) : (
               <>
-                <div className="text-6xl mb-5">🎉</div>
+                <div className="flex items-center justify-center mb-5">
+                  <PartyPopper className="h-16 w-16" style={{ color: '#5120c8' }} />
+                </div>
                 <h1 className="text-2xl font-bold mb-3 transition-colors duration-300" style={{ color: colors.titleColor }}>
                   {ar ? 'مرحباً بك في DeveWay!' : 'Welcome to DeveWay!'}
                 </h1>

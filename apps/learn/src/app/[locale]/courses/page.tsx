@@ -2,7 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
-import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight } from 'lucide-react'
+import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight, AlertTriangle } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -184,7 +184,9 @@ export default function CoursesPage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--background)' }}>
         <div className="text-center p-8">
-          <div className="text-6xl mb-4">⚠️</div>
+          <div className="flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-12 w-12 text-amber-500" />
+                </div>
           <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
             {locale === 'ar' ? 'حدث خطأ' : 'Error occurred'}
           </h2>
