@@ -919,8 +919,8 @@ export class AdminController {
   }
 
   @Get('users/:id/activity')
-  async getUserActivity(@Param('id') id: string, @Query('limit') limit = '30') {
-    const result = await this.adminService.getUserActivity(id, +limit);
+  async getUserActivity(@Param('id') id: string, @Query('filter') filter = 'all') {
+    const result = await this.adminService.getUserActivity(id, filter);
     return { success: true, data: result };
   }
 

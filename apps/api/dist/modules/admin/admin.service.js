@@ -1161,15 +1161,26 @@ let AdminService = AdminService_1 = class AdminService {
             return [];
         }
     }
-    async getUserActivity(userId, limit = 30) {
+    async getUserActivity(userId, filter = 'all') {
         try {
+            const where = { userId };
+            if (filter === '24h') {
+                where.createdAt = { gte: new Date(Date.now() - 86400000) };
+            }
+            else if (filter === '7d') {
+                where.createdAt = { gte: new Date(Date.now() - 604800000) };
+            }
+            else if (filter === '30d') {
+                where.createdAt = { gte: new Date(Date.now() - 2592000000) };
+            }
             return await this.prisma.userActivity.findMany({
-                where: { userId },
+                where,
                 orderBy: { createdAt: 'desc' },
-                take: limit,
+                take: 100,
             });
         }
-        catch {
+        catch (e) {
+            console.error('[getUserActivity] Error:', e.message);
             return [];
         }
     }
@@ -1237,7 +1248,7 @@ let AdminService = AdminService_1 = class AdminService {
                 where: { id },
                 include: { profile: true, _count: { select: { enrollments: true } } },
             }),
-            this.getUserActivity(id, 20),
+            this.getUserActivity(id, 'all'),
             this.prisma.payment.findMany({
                 where: { userId: id, status: 'SUCCESS' },
                 orderBy: { createdAt: 'desc' },

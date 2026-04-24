@@ -1467,7 +1467,7 @@ export declare class AdminService {
         entityId: string | null;
         ipAddress: string | null;
     })[]>;
-    getUserActivity(userId: string, limit?: number): Promise<{
+    getUserActivity(userId: string, filter?: string): Promise<{
         id: string;
         createdAt: Date;
         userId: string;
