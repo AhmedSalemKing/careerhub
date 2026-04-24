@@ -1,5 +1,0 @@
-import { Type } from '@nestjs/common';
-export declare const ApiStandardResponse: <TModel extends Type<any>>(model: TModel, description?: string) => <TFunction extends Function, Y>(target: TFunction | object, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<Y>) => void;
-export declare const ApiStandardResponseSingle: <TModel extends Type<any>>(model: TModel, description?: string) => <TFunction extends Function, Y>(target: TFunction | object, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<Y>) => void;
-export declare const ApiCreatedResponse: <TModel extends Type<any>>(model: TModel, description?: string) => <TFunction extends Function, Y>(target: TFunction | object, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<Y>) => void;
-export declare const ApiPaginatedResponse: <TModel extends Type<any>>(model: TModel, description?: string) => <TFunction extends Function, Y>(target: TFunction | object, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<Y>) => void;

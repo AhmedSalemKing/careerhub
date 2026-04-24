@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 import * as path from 'path'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
+import sharp from 'sharp'
 
 @Injectable()
 export class CertificatesService {
@@ -294,47 +295,48 @@ export class CertificatesService {
     ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890)
 
     // ── QR CODE ─────────────────────────────────────────────────────────────
+    const certBuffer = canvas.toBuffer('image/png')
+
     console.log('[QR] Starting QR generation')
-    console.log('[QR] canvas size:', W, 'x', H)
-    try {
-      const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
-      console.log('[QR] URL:', verifyUrl)
+    const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
+    console.log('[QR] URL:', verifyUrl)
 
-      const qrBuffer = await QRCode.toBuffer(verifyUrl, {
-        width: 200,
-        margin: 2,
-        type: 'png',
-        color: { dark: '#000000', light: '#ffffff' },
-      })
-      console.log('[QR] Buffer generated, size:', qrBuffer.length)
+    const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+      width: Math.floor(W * 0.095),
+      margin: 2,
+      type: 'png',
+      color: { dark: '#000000', light: '#ffffff' },
+    })
+    console.log('[QR] Buffer generated, size:', qrBuffer.length)
 
-      const qrImg = await loadImage(qrBuffer)
-      console.log('[QR] Image loaded:', qrImg.width, 'x', qrImg.height)
+    const qrSize = Math.floor(W * 0.095)
+    const qrX = Math.floor(W * 0.840)
+    const qrY = Math.floor(H * 0.695)
 
-      const qrSize = Math.floor(W * 0.095)
-      const qrX = Math.floor(W * 0.840)
-      const qrY = Math.floor(H * 0.695)
+    const qrWithBg = await sharp({
+      create: {
+        width: qrSize + 20,
+        height: qrSize + 35,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      },
+    })
+      .composite([{ input: qrBuffer, left: 10, top: 5 }])
+      .png()
+      .toBuffer()
 
-      console.log('[QR] Drawing at:', qrX, qrY, 'size:', qrSize)
+    const finalBuffer = await sharp(certBuffer)
+      .composite([{
+        input: qrWithBg,
+        left: qrX - 10,
+        top: qrY - 5,
+      }])
+      .png()
+      .toBuffer()
 
-      // White background
-      ctx.fillStyle = '#ffffff'
-      ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 30)
+    console.log('[QR] Composite complete')
 
-      // Draw QR
-      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
-      console.log('[QR] Drawn successfully')
-
-      // Label
-      ctx.font = `${Math.floor(W * 0.009)}px Arial, sans-serif`
-      ctx.fillStyle = '#000000'
-      ctx.textAlign = 'center'
-      ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 20)
-    } catch (e: any) {
-      console.error('[QR] FAILED:', e.message, e.stack?.split('\n')[1])
-    }
-
-    return canvas.toBuffer('image/png')
+    return finalBuffer
   }
 
   /** Split text into lines that fit within maxWidth at the current ctx font. */

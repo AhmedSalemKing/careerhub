@@ -6,13 +6,13 @@ export declare class CertificatesService {
         success: boolean;
         data: {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         };
     }>;
     private _doGenerate;
@@ -43,9 +43,7 @@ export declare class CertificatesService {
                 };
             } & {
                 id: string;
-                createdAt: Date;
                 email: string;
-                googleId: string | null;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
@@ -58,6 +56,7 @@ export declare class CertificatesService {
                 linkedinUrl: string | null;
                 hourlyRate: number | null;
                 meetingMethod: string | null;
+                googleId: string | null;
                 provider: string;
                 stripeCustomerId: string | null;
                 approvedAt: Date | null;
@@ -71,19 +70,20 @@ export declare class CertificatesService {
                 idRejectedReason: string | null;
                 isVerified: boolean;
                 walletBalance: number;
+                createdAt: Date;
                 updatedAt: Date;
                 deletedAt: Date | null;
             };
         };
     } & {
         id: string;
-        userId: string;
-        certificateUrl: string;
-        expiresAt: Date | null;
-        courseId: string;
         serialNumber: string;
+        userId: string;
+        courseId: string;
+        certificateUrl: string;
         qrCodeUrl: string;
         issuedAt: Date;
+        expiresAt: Date | null;
     })[]>;
     getAllCertificatesAdmin(): Promise<({
         user: {
@@ -93,9 +93,7 @@ export declare class CertificatesService {
             };
         } & {
             id: string;
-            createdAt: Date;
             email: string;
-            googleId: string | null;
             password: string;
             role: import(".prisma/client").$Enums.UserRole;
             isActive: boolean;
@@ -108,6 +106,7 @@ export declare class CertificatesService {
             linkedinUrl: string | null;
             hourlyRate: number | null;
             meetingMethod: string | null;
+            googleId: string | null;
             provider: string;
             stripeCustomerId: string | null;
             approvedAt: Date | null;
@@ -121,6 +120,7 @@ export declare class CertificatesService {
             idRejectedReason: string | null;
             isVerified: boolean;
             walletBalance: number;
+            createdAt: Date;
             updatedAt: Date;
             deletedAt: Date | null;
         };
@@ -130,13 +130,13 @@ export declare class CertificatesService {
         };
     } & {
         id: string;
-        userId: string;
-        certificateUrl: string;
-        expiresAt: Date | null;
-        courseId: string;
         serialNumber: string;
+        userId: string;
+        courseId: string;
+        certificateUrl: string;
         qrCodeUrl: string;
         issuedAt: Date;
+        expiresAt: Date | null;
     })[]>;
     getUserCertificates(userId: string, options: {
         page: number;
@@ -145,15 +145,15 @@ export declare class CertificatesService {
         certificates: ({
             course: {
                 id: string;
-                createdAt: Date;
                 status: import(".prisma/client").$Enums.CourseStatus;
+                createdAt: Date;
                 updatedAt: Date;
-                titleEn: string;
-                titleAr: string | null;
                 slug: string;
                 careerPathId: string | null;
                 instructorId: string | null;
                 categoryId: string | null;
+                titleEn: string;
+                titleAr: string | null;
                 descriptionEn: string | null;
                 descriptionAr: string | null;
                 thumbnail: string | null;
@@ -167,13 +167,13 @@ export declare class CertificatesService {
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         })[];
         meta: {
             total: number;

@@ -41,6 +41,9 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CertificatesService = void 0;
 const common_1 = require("@nestjs/common");
@@ -51,6 +54,7 @@ const uuid_1 = require("uuid");
 const path = __importStar(require("path"));
 const cloudinary_1 = require("cloudinary");
 const stream_1 = require("stream");
+const sharp_1 = __importDefault(require("sharp"));
 let CertificatesService = class CertificatesService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -183,7 +187,6 @@ let CertificatesService = class CertificatesService {
         console.log('[Certificate] Registered fonts:', (_b = (_a = GlobalFonts.families) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : '?');
     }
     async createCertificateImage(data) {
-        var _a;
         this.registerFonts();
         const fs = require('fs');
         const { GlobalFonts } = require('@napi-rs/canvas');
@@ -277,37 +280,41 @@ let CertificatesService = class CertificatesService {
         ctx.font = `${Math.floor(W * 0.009)}px "Courier New", monospace`;
         ctx.fillStyle = '#5a5a5a';
         ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890);
+        const certBuffer = canvas.toBuffer('image/png');
         console.log('[QR] Starting QR generation');
-        console.log('[QR] canvas size:', W, 'x', H);
-        try {
-            const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`;
-            console.log('[QR] URL:', verifyUrl);
-            const qrBuffer = await QRCode.toBuffer(verifyUrl, {
-                width: 200,
-                margin: 2,
-                type: 'png',
-                color: { dark: '#000000', light: '#ffffff' },
-            });
-            console.log('[QR] Buffer generated, size:', qrBuffer.length);
-            const qrImg = await (0, canvas_1.loadImage)(qrBuffer);
-            console.log('[QR] Image loaded:', qrImg.width, 'x', qrImg.height);
-            const qrSize = Math.floor(W * 0.095);
-            const qrX = Math.floor(W * 0.840);
-            const qrY = Math.floor(H * 0.695);
-            console.log('[QR] Drawing at:', qrX, qrY, 'size:', qrSize);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 30);
-            ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-            console.log('[QR] Drawn successfully');
-            ctx.font = `${Math.floor(W * 0.009)}px Arial, sans-serif`;
-            ctx.fillStyle = '#000000';
-            ctx.textAlign = 'center';
-            ctx.fillText('Scan to verify', qrX + qrSize / 2, qrY + qrSize + 20);
-        }
-        catch (e) {
-            console.error('[QR] FAILED:', e.message, (_a = e.stack) === null || _a === void 0 ? void 0 : _a.split('\n')[1]);
-        }
-        return canvas.toBuffer('image/png');
+        const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`;
+        console.log('[QR] URL:', verifyUrl);
+        const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+            width: Math.floor(W * 0.095),
+            margin: 2,
+            type: 'png',
+            color: { dark: '#000000', light: '#ffffff' },
+        });
+        console.log('[QR] Buffer generated, size:', qrBuffer.length);
+        const qrSize = Math.floor(W * 0.095);
+        const qrX = Math.floor(W * 0.840);
+        const qrY = Math.floor(H * 0.695);
+        const qrWithBg = await (0, sharp_1.default)({
+            create: {
+                width: qrSize + 20,
+                height: qrSize + 35,
+                channels: 4,
+                background: { r: 255, g: 255, b: 255, alpha: 1 },
+            },
+        })
+            .composite([{ input: qrBuffer, left: 10, top: 5 }])
+            .png()
+            .toBuffer();
+        const finalBuffer = await (0, sharp_1.default)(certBuffer)
+            .composite([{
+                input: qrWithBg,
+                left: qrX - 10,
+                top: qrY - 5,
+            }])
+            .png()
+            .toBuffer();
+        console.log('[QR] Composite complete');
+        return finalBuffer;
     }
     splitText(ctx, text, maxWidth) {
         const words = text.split(' ');

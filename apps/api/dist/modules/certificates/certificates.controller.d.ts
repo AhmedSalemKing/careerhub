@@ -6,13 +6,13 @@ export declare class CertificatesController {
         success: boolean;
         data: {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         };
     }>;
     getMy(req: any): Promise<{
@@ -30,9 +30,7 @@ export declare class CertificatesController {
                     };
                 } & {
                     id: string;
-                    createdAt: Date;
                     email: string;
-                    googleId: string | null;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
                     isActive: boolean;
@@ -45,6 +43,7 @@ export declare class CertificatesController {
                     linkedinUrl: string | null;
                     hourlyRate: number | null;
                     meetingMethod: string | null;
+                    googleId: string | null;
                     provider: string;
                     stripeCustomerId: string | null;
                     approvedAt: Date | null;
@@ -58,19 +57,20 @@ export declare class CertificatesController {
                     idRejectedReason: string | null;
                     isVerified: boolean;
                     walletBalance: number;
+                    createdAt: Date;
                     updatedAt: Date;
                     deletedAt: Date | null;
                 };
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         })[];
     }>;
     getMyCertificatesLegacy(req: any): Promise<{
@@ -88,9 +88,7 @@ export declare class CertificatesController {
                     };
                 } & {
                     id: string;
-                    createdAt: Date;
                     email: string;
-                    googleId: string | null;
                     password: string;
                     role: import(".prisma/client").$Enums.UserRole;
                     isActive: boolean;
@@ -103,6 +101,7 @@ export declare class CertificatesController {
                     linkedinUrl: string | null;
                     hourlyRate: number | null;
                     meetingMethod: string | null;
+                    googleId: string | null;
                     provider: string;
                     stripeCustomerId: string | null;
                     approvedAt: Date | null;
@@ -116,19 +115,20 @@ export declare class CertificatesController {
                     idRejectedReason: string | null;
                     isVerified: boolean;
                     walletBalance: number;
+                    createdAt: Date;
                     updatedAt: Date;
                     deletedAt: Date | null;
                 };
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         })[];
     }>;
     verifyByCode(verifyCode: string): Promise<{
@@ -153,9 +153,7 @@ export declare class CertificatesController {
                 };
             } & {
                 id: string;
-                createdAt: Date;
                 email: string;
-                googleId: string | null;
                 password: string;
                 role: import(".prisma/client").$Enums.UserRole;
                 isActive: boolean;
@@ -168,6 +166,7 @@ export declare class CertificatesController {
                 linkedinUrl: string | null;
                 hourlyRate: number | null;
                 meetingMethod: string | null;
+                googleId: string | null;
                 provider: string;
                 stripeCustomerId: string | null;
                 approvedAt: Date | null;
@@ -181,6 +180,7 @@ export declare class CertificatesController {
                 idRejectedReason: string | null;
                 isVerified: boolean;
                 walletBalance: number;
+                createdAt: Date;
                 updatedAt: Date;
                 deletedAt: Date | null;
             };
@@ -190,13 +190,13 @@ export declare class CertificatesController {
             };
         } & {
             id: string;
-            userId: string;
-            certificateUrl: string;
-            expiresAt: Date | null;
-            courseId: string;
             serialNumber: string;
+            userId: string;
+            courseId: string;
+            certificateUrl: string;
             qrCodeUrl: string;
             issuedAt: Date;
+            expiresAt: Date | null;
         })[];
     }>;
     getStats(): Promise<{
