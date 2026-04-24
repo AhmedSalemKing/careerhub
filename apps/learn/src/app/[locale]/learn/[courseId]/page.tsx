@@ -30,8 +30,8 @@ function LearnPageInner() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const lastTapRef = useRef<{ time: number; x: number } | null>(null)
 
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(null)
   const [localCompleted, setLocalCompleted] = useState<Set<string>>(new Set())
+  const [videoReady, setVideoReady] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [openSections, setOpenSections] = useState<Set<string>>(new Set())
   const [markingComplete, setMarkingComplete] = useState(false)
@@ -145,10 +145,20 @@ function LearnPageInner() {
     [sections]
   )
 
-  const activeLesson = useMemo(
-    () => allLessonsFlat.find((l: any) => l.id === activeLessonId),
-    [allLessonsFlat, activeLessonId]
-  )
+  // Single source of truth: URL param drives everything
+  const currentLesson = useMemo(() => {
+    if (!allLessonsFlat.length) return null
+    if (!lessonParam) return allLessonsFlat[0] || null
+    return allLessonsFlat.find((l: any) => l.id === lessonParam) || allLessonsFlat[0]
+  }, [lessonParam, allLessonsFlat])
+  const activeLesson = currentLesson
+  const activeLessonId = currentLesson?.id ?? null
+
+  const goToLesson = useCallback((lesson: any) => {
+    if (!lesson?.id) return
+    router.replace(`/${locale}/learn/${courseId}?lesson=${lesson.id}`, { scroll: false })
+  }, [router, locale, courseId])
+
   const activeLessonIndex = allLessonsFlat.findIndex((l: any) => l.id === activeLessonId)
   const prevLesson = activeLessonIndex > 0 ? allLessonsFlat[activeLessonIndex - 1] : null
   const nextLesson = activeLessonIndex < allLessonsFlat.length - 1 ? allLessonsFlat[activeLessonIndex + 1] : null
@@ -221,14 +231,10 @@ function LearnPageInner() {
     } catch {}
   }, [courseId])
 
-  // Auto-select lesson
+  // Reset video ready state when lesson changes
   useEffect(() => {
-    if (!course || !isEnrolled) return
-    if (lessonParam) { setActiveLessonId(lessonParam); return }
-    if (!activeLessonId && allLessonsFlat.length > 0) {
-      setActiveLessonId(allLessonsFlat[0].id)
-    }
-  }, [lessonParam, isEnrolled, course, activeLessonId, allLessonsFlat])
+    setVideoReady(false)
+  }, [activeLessonId])
 
   // Auto-open section containing active lesson
   useEffect(() => {
@@ -346,7 +352,7 @@ function LearnPageInner() {
       console.error('Error marking complete:', e)
     }
     setMarkingComplete(false)
-    if (nextLesson) setActiveLessonId(nextLesson.id)
+    if (nextLesson) goToLesson(nextLesson)
   }
 
   const handleGetCertificate = async () => {
@@ -381,8 +387,8 @@ function LearnPageInner() {
     }
   }
 
-  const goToNextLesson = () => { if (nextLesson) setActiveLessonId(nextLesson.id) }
-  const goToPrevLesson = () => { if (prevLesson) setActiveLessonId(prevLesson.id) }
+  const goToNextLesson = () => { if (nextLesson) goToLesson(nextLesson) }
+  const goToPrevLesson = () => { if (prevLesson) goToLesson(prevLesson) }
 
   // Detect media type — URL-based checks take priority over type field to handle
   // cases where images are stored in videoUrl (Cloudinary /image/upload/ URLs)
@@ -749,10 +755,7 @@ function LearnPageInner() {
                 <button
                   key={lesson.id}
                   onClick={() => {
-                    if (status !== 'locked') {
-                      router.replace(`/${locale}/learn/${courseId}?lesson=${lesson.id}`, { scroll: false })
-                      setActiveLessonId(lesson.id)
-                    }
+                    if (status !== 'locked') goToLesson(lesson)
                   }}
                   disabled={status === 'locked'}
                   className={`
@@ -953,7 +956,7 @@ function LearnPageInner() {
                     >
                       <video
                         ref={videoRef}
-                        key={activeLessonId}
+                        key={currentLesson?.id || 'no-lesson'}
                         src={videoUrl}
                         controls
                         autoPlay
@@ -962,26 +965,34 @@ function LearnPageInner() {
                         disablePictureInPicture
                         playsInline
                         onContextMenu={e => e.preventDefault()}
-                        onCanPlay={() => setIsLoadingMedia(false)}
+                        onCanPlay={() => { setVideoReady(true); setIsLoadingMedia(false) }}
                         onWaiting={() => setIsLoadingMedia(true)}
-                        onLoadedData={() => setIsLoadingMedia(false)}
-                        onError={() => { setIsLoadingMedia(false); setVideoError('فشل تحميل الفيديو') }}
-                        onEnded={() => { if (!isCurrentCompleted) handleMarkComplete() }}
+                        onLoadedData={() => { setVideoReady(true); setIsLoadingMedia(false) }}
+                        onError={() => { setIsLoadingMedia(false); setVideoReady(true); setVideoError('فشل تحميل الفيديو') }}
+                        onEnded={() => {
+                          if (!isCurrentCompleted) handleMarkComplete()
+                          else if (nextLesson) goToLesson(nextLesson)
+                        }}
                         style={{
                           filter: isLoadingMedia ? 'brightness(0.7)' : 'brightness(1)',
                           transition: 'filter 0.3s ease'
                         }}
                       />
 
-                      {/* Modern Loading Overlay */}
-                      {isLoadingMedia && (
-                        <div 
+                      {/* Loading Overlay — shown until video is ready */}
+                      {(!videoReady || isLoadingMedia) && (
+                        <div
                           className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-                          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+                          style={{ background: '#0a0a0a', backdropFilter: 'blur(4px)' }}
                         >
-                          <div className="relative">
-                            <Loader2 className="h-14 w-14 animate-spin text-white" strokeWidth={2} />
-                            <div className="absolute inset-0 h-14 w-14 rounded-full animate-ping opacity-20 bg-white" />
+                          <div className="relative flex items-center justify-center">
+                            <div style={{
+                              width: 48, height: 48,
+                              border: '3px solid rgba(124,58,237,0.3)',
+                              borderTopColor: '#7c3aed',
+                              borderRadius: '50%',
+                              animation: 'spin 0.8s linear infinite'
+                            }} />
                           </div>
                         </div>
                       )}
@@ -1603,7 +1614,7 @@ function LearnPageInner() {
                 </p>
                 
                 <button 
-                  onClick={() => { const first = allLessonsFlat[0]; if (first) setActiveLessonId(first.id) }}
+                  onClick={() => { const first = allLessonsFlat[0]; if (first) goToLesson(first) }}
                   className="
                     group inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold 
                     text-base transition-all duration-300 hover:scale-105
@@ -1694,6 +1705,10 @@ function LearnPageInner() {
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
         
         .animate-shimmer {
