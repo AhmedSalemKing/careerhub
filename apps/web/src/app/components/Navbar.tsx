@@ -10,6 +10,7 @@ import { SearchBar } from './SearchBar'
 import { NotificationBell } from './NotificationBell'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
+import { get } from '../../lib/api'
 import { TRAINING_URL } from '../../lib/constants'
 
 /* ════════════════════════════════════════
@@ -256,6 +257,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [walletData, setWalletData] = useState<{ balance: number } | null>(null)
   const { user, token, hydrate } = useAuthStore()
 
   useEffect(() => {
@@ -282,6 +284,14 @@ export function Navbar() {
       timers.forEach(clearTimeout)
     }
   }, [])
+
+  useEffect(() => {
+    if (!token) return
+    get('/wallet').then((res) => {
+      const data = (res?.data as any)?.data
+      if (data) setWalletData({ balance: data.balance || 0 })
+    }).catch(() => setWalletData(null))
+  }, [token])
 
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
@@ -448,15 +458,28 @@ export function Navbar() {
               {mounted && isLoggedIn && (
                 <Link
                   href={`/${locale}/dashboard/wallet`}
-                  title="محفظتي"
-                  className="relative flex h-9 w-auto items-center justify-center gap-1.5 rounded-xl px-3 transition-colors duration-150"
-                  style={{ background: 'rgba(81, 32, 200, 0.08)', border: '1px solid rgba(81, 32, 200, 0.15)' }}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    justifyContent: 'center', gap: 2,
+                    padding: '6px 10px', borderRadius: 12,
+                    background: 'rgba(81,32,200,0.08)',
+                    border: '1px solid rgba(81,32,200,0.15)',
+                    textDecoration: 'none', cursor: 'pointer',
+                    minWidth: 52,
+                    transition: 'all 0.2s ease',
+                  }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.15)' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.08)' }}
                 >
-                  <Wallet className="h-[16px] w-[16px]" style={{ color: '#5120c8' }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#5120c8', fontFamily: NAV_FONT }}>
-                    رصيدي
+                  <Wallet size={16} color="#5120c8" />
+                  <span style={{
+                    fontSize: 11, fontWeight: 800, color: '#5120c8',
+                    lineHeight: 1, whiteSpace: 'nowrap',
+                  }}>
+                    {token && walletData !== null
+                      ? `${(walletData?.balance || 0).toFixed(0)} ر.س`
+                      : '0 ر.س'
+                    }
                   </span>
                 </Link>
               )}
