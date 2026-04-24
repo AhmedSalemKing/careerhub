@@ -153,4 +153,45 @@ export class WalletService {
     
     return { success: true, message: 'تم الاشتراك بنجاح' };
   }
+
+  async transferFromEarnings(userId: string, amount: number) {
+    if (amount <= 0) throw new BadRequestException('المبلغ يجب أن يكون أكبر من صفر')
+    
+    const sessions = await this.prisma.consultingSession.findMany({
+      where: { consultantId: userId, status: 'COMPLETED' }
+    }).catch(() => [])
+    
+    const totalEarnings = (sessions as any[]).reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    
+    const transferred = await this.prisma.walletTransaction.aggregate({
+      where: { userId, type: 'EARNINGS_TRANSFER' },
+      _sum: { amount: true }
+    }).catch(() => ({ _sum: { amount: 0 } }))
+    
+    const availableEarnings = totalEarnings - (transferred._sum?.amount || 0)
+    
+    if (amount > availableEarnings) {
+      throw new BadRequestException({
+        message: `أرباحك المتاحة: ${availableEarnings.toFixed(2)} ر.س`,
+        code: 'INSUFFICIENT_EARNINGS',
+      })
+    }
+    
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { walletBalance: { increment: amount } }
+    })
+    
+    await this.prisma.walletTransaction.create({
+      data: {
+        userId,
+        type: 'EARNINGS_TRANSFER',
+        amount,
+        description: `تحويل من الأرباح - ${amount} ر.س`,
+        status: 'SUCCESS',
+      }
+    })
+    
+    return { success: true, newBalance: updated.walletBalance }
+  }
 }

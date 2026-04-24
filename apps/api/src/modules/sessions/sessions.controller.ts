@@ -179,6 +179,39 @@ export class SessionsController {
     return { success: true, data: sessions }
   }
 
+  @Get('my-earnings')
+  async getMyEarnings(@Request() req: any) {
+    const userId = req.user.sub
+    
+    const sessions = await this.prisma.consultingSession.findMany({
+      where: { consultantId: userId },
+      include: {
+        student: { select: { profile: { select: { firstName: true, lastName: true } } } }
+      },
+      orderBy: { createdAt: 'desc' }
+    }).catch(() => [])
+    
+    const completed = sessions.filter((s: any) => s.status === 'COMPLETED')
+    const pending = sessions.filter((s: any) => s.status === 'CONFIRMED')
+    
+    const total = completed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    const pendingAmount = pending.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    
+    return {
+      success: true,
+      data: {
+        total,
+        pending: pendingAmount,
+        sessions: completed.map((s: any) => ({
+          id: s.id,
+          studentName: s.student?.profile ? `${s.student.profile.firstName} ${s.student.profile.lastName}` : 'طالب',
+          amount: s.price,
+          date: s.createdAt,
+        }))
+      }
+    }
+  }
+
   @Patch(':id/confirm')
   async confirmSession(@Param('id') id: string, @Request() req: any, @Body() body: { meetingLink?: string }) {
     const session = await this.prisma.consultingSession.findFirst({

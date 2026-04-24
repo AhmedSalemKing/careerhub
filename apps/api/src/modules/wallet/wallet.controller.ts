@@ -30,4 +30,10 @@ export class WalletController {
     const data = await this.walletService.payWithWallet(req.user.id, courseId);
     return { success: true, data };
   }
+
+  @Post('transfer-from-earnings')
+  async transferFromEarnings(@Request() req: any, @Body() body: { amount: number }) {
+    const data = await this.walletService.transferFromEarnings(req.user.id, body.amount);
+    return { success: true, data };
+  }
 }

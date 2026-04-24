@@ -42,8 +42,8 @@ function getConsultantItems(locale: string) {
     { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
     { icon: Calendar, labelAr: 'جلساتي', labelEn: 'My Sessions', href: `/${locale}/dashboard/my-sessions` },
     { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
-    { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
-    { icon: Star, labelAr: 'التقييمات', labelEn: 'Reviews', href: `/${locale}/dashboard/reviews` },
+    { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
+    { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
     { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
   ]
 }
@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (accountType === 'CONSULTANT') return [
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
-      { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+      { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
       ...studentBase,
     ]
 
