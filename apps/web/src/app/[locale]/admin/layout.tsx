@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Calendar,
   Activity,
+  ExternalLink,
 } from 'lucide-react'
 import { api } from '../../../lib/api'
 import BottomDock from '../../../components/BottomDock'
@@ -60,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: TrendingUp, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/admin/revenue` },
     { icon: Activity, labelAr: 'النشاط', labelEn: 'Activity', href: `/${locale}/admin/activity` },
     { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/admin/site-settings` },
+    { icon: ExternalLink, labelAr: 'الموقع الرئيسي', labelEn: 'Main Site', href: `/${locale}` },
   ]
 
   function handleLogout() {
