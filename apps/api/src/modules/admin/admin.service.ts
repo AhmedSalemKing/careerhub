@@ -1353,6 +1353,69 @@ export class AdminService {
     } catch { return []; }
   }
 
+  // ── User financials ──
+  async getUserFinancials(userId: string) {
+    try {
+      const [user, enrollments, payments] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: { id: userId },
+          include: { profile: true }
+        }),
+        this.prisma.enrollment.findMany({
+          where: { userId },
+          include: { course: { select: { id: true, titleAr: true, titleEn: true, thumbnail: true, price: true } } },
+          take: 20,
+        }),
+        this.prisma.payment.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' }
+        }),
+      ])
+      
+      const totalSpent = (payments || []).reduce((s: number, p: any) => s + (p.amount || 0), 0)
+      
+      let totalEarnings = 0
+      if (user?.accountType === 'INSTRUCTOR') {
+        const courses = await this.prisma.course.findMany({
+          where: { instructorId: userId },
+          select: { id: true }
+        }).catch(() => [])
+        
+        if (courses.length > 0) {
+          const earnings = await this.prisma.payment.aggregate({
+            where: { courseId: { in: courses.map(c => c.id) } },
+            _sum: { amount: true }
+          }).catch(() => ({ _sum: { amount: 0 } }))
+          totalEarnings = Number(earnings._sum?.amount) || 0
+        }
+      }
+      
+      const walletTx = await this.prisma.walletTransaction.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }).catch(() => [])
+      
+      return {
+        success: true,
+        data: {
+          user,
+          totalSpent,
+          totalEarnings,
+          paymentsCount: (payments || []).length,
+          enrollmentsCount: (enrollments || []).length,
+          enrollments: enrollments || [],
+          walletBalance: user?.walletBalance || 0,
+          recentPayments: (payments || []).slice(0, 5),
+          walletTransactions: walletTx,
+        }
+      }
+    } catch(e) {
+      console.error('[getUserFinancials]', e.message)
+      return { success: true, data: {} }
+    }
+  }
+
   // ── User detail with full history ──
   async getUserDetail(id: string) {
     const [user, activities, payments, enrollments] = await Promise.all([

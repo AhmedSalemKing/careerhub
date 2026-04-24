@@ -913,6 +913,17 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Get('users/:id/financials')
+  async getUserFinancials(@Param('id') id: string) {
+    return this.adminService.getUserFinancials(id);
+  }
+
+  @Get('users/:id/activity')
+  async getUserActivity(@Param('id') id: string, @Query('limit') limit = '30') {
+    const result = await this.adminService.getUserActivity(id, +limit);
+    return { success: true, data: result };
+  }
+
   // ── Create Session WITH Image ──
   @Post('sessions/create')
   @UseInterceptors(FileInterceptor('image'))
@@ -949,12 +960,6 @@ export class AdminController {
   @Get('activity/stats')
   async getActivityStats() {
     const result = await this.adminService.getActivityStats();
-    return { success: true, data: result };
-  }
-
-  @Get('users/:id/activity')
-  async getUserActivity(@Param('id') id: string, @Query('limit') limit = '30') {
-    const result = await this.adminService.getUserActivity(id, +limit);
     return { success: true, data: result };
   }
 }
