@@ -317,17 +317,19 @@ export default function CreateCoursePage() {
               </div>
               {(categories as any[]).length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">المسار المهني</label>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">التخصص</label>
                   <select
                     value={form.careerPathId}
                     onChange={(e) => set('careerPathId', e.target.value)}
                     className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                   >
-                    <option value="">اختر المسار المهني</option>
-                    {(categories as any[]).map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.icon ? `${cat.icon} ` : ''}{cat.name}
-                      </option>
+                    <option value="">اختر التخصص</option>
+                    {(categories as any[]).filter((c: any) => !c.parentId).map((mainCat: any) => (
+                      <optgroup key={mainCat.id} label={mainCat.name}>
+                        {(mainCat.children || []).map((sub: any) => (
+                          <option key={sub.id} value={sub.id}>{sub.name}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>

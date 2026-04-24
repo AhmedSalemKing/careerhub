@@ -288,11 +288,14 @@ model AssessmentQuestion {
 }
 
 model Category {
-  id     String   @id @default(cuid())
-  nameAr String
-  nameEn String
-  slug   String   @unique
-  icon   String?
+  id       String    @id @default(cuid())
+  nameAr   String
+  nameEn   String
+  slug     String    @unique
+  icon     String?
+  parentId String?
+  parent   Category? @relation("SubCategories", fields: [parentId], references: [id])
+  children Category[] @relation("SubCategories")
 
   courses Course[]
 

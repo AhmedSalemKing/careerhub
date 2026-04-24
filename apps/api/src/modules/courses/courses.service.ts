@@ -470,28 +470,28 @@ export class CoursesService {
   }
 
   async getCategories(language: string = 'en') {
-    const careerPaths = await (this.prisma as any).careerPath.findMany({
-      where: { isActive: true },
+    const categories = await this.prisma.category.findMany({
       include: {
-        _count: {
-          select: {
-            courses: {
-              where: { status: 'PUBLISHED' },
-            },
-          },
-        },
+        _count: { select: { courses: true } },
+        children: {
+          include: { _count: { select: { courses: true } } }
+        }
       },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { nameAr: 'asc' },
     });
 
-    return careerPaths.map(path => ({
-      id: path.id,
-      slug: path.slug,
-      name: language === 'ar' ? path.titleAr : path.titleEn,
-      description: language === 'ar' ? path.descriptionAr : path.descriptionEn,
-      icon: path.icon,
-      color: path.color,
-      coursesCount: (path as any)._count.courses,
+    return categories.map(cat => ({
+      id: cat.id,
+      name: language === 'ar' ? cat.nameAr : cat.nameEn,
+      slug: cat.slug,
+      icon: cat.icon,
+      courseCount: (cat as any)._count.courses,
+      children: (cat as any).children.map((sub: any) => ({
+        id: sub.id,
+        name: language === 'ar' ? sub.nameAr : sub.nameEn,
+        slug: sub.slug,
+        courseCount: (sub as any)._count.courses,
+      })),
     }));
   }
 
