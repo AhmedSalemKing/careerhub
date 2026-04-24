@@ -24,10 +24,10 @@ export default function RevenuePage() {
   })
 
   const { data: walletData } = useQuery({
-    queryKey: ['wallet-balance'],
+    queryKey: ['wallet'],
     queryFn: async () => {
       const res = await get('/wallet')
-      return res.data?.data ?? { balance: 0 }
+      return res.data?.data ?? { balance: 0, transactions: [] }
     }
   })
 
@@ -39,11 +39,17 @@ export default function RevenuePage() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   }).reduce((s: number, p: any) => s + (p.amount || 0), 0)
 
+  const transferred = (walletData?.transactions ?? [])
+    .filter((t: any) => t.type === 'EARNINGS_TRANSFER')
+    .reduce((s: number, t: any) => s + (t.amount || 0), 0)
+
+  const netEarnings = total - transferred
+
   const handleTransfer = async () => {
     const amount = parseFloat(transferAmount)
     if (!amount || amount <= 0) return
-    if (amount > total) {
-      setMsg({ type:'error', text:'المبلغ أكبر من إيراداتك' })
+    if (amount > netEarnings) {
+      setMsg({ type:'error', text:'المبلغ أكبر من صافي أرباحك' })
       return
     }
     setTransferring(true)
@@ -69,14 +75,21 @@ export default function RevenuePage() {
           <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>سجل المدفوعات والإيرادات</p>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:24 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14, marginBottom:24 }}>
           {[
             { label:'إجمالي الإيرادات', value:`${total.toFixed(2)} ر.س`, icon:<DollarSign size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
             { label:'هذا الشهر', value:`${thisMonth.toFixed(2)} ر.س`, icon:<TrendingUp size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
-            { label:'عدد المعاملات', value:payments.length, icon:<ArrowUpRight size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
+            { label:'محول للمحفظة', value:`${transferred.toFixed(2)} ر.س`, icon:<Wallet size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
+            { label:'صافي الأرباح', value:`${netEarnings.toFixed(2)} ر.س`, icon:<ArrowUpRight size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)', highlight: true },
           ].map((s,i) => (
-            <div key={i} style={{ background: isDark?'#121212':'#fff', borderRadius:16, padding:'20px 18px', border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
-              <div style={{ width:40, height:40, borderRadius:10, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>{s.icon}</div>
+            <div key={i} style={{
+              background: s.highlight 
+                ? 'linear-gradient(135deg,rgba(43,191,163,0.15),rgba(81,32,200,0.1))'
+                : isDark?'#121212':'#fff',
+              borderRadius:16, padding:'20px 18px',
+              border:`1px solid ${s.highlight ? 'rgba(43,191,163,0.3)' : isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`,
+            }}>
+              <div style={{ width:40,height:40,borderRadius:10,background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:12 }}>{s.icon}</div>
               <div style={{ color: isDark?'#fff':'#0d0d0d', fontSize:18, fontWeight:800 }}>{s.value}</div>
               <div style={{ color:'#6b7280', fontSize:12, marginTop:4 }}>{s.label}</div>
             </div>
