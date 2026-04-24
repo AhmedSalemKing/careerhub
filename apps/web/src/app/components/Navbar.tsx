@@ -637,7 +637,16 @@ export function Navbar() {
                 </Link>
               )}
               <NotificationBell />
-              <CartIcon />
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/wallet`}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
+                >
+                  <Wallet className="h-3.5 w-3.5" />
+                  رصيدي
+                </Link>
+              )}
             </div>
 
             {/* Auth section */}
