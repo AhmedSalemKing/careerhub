@@ -296,47 +296,40 @@ export class CertificatesService {
 
     // ── QR CODE ─────────────────────────────────────────────────────────────
     const certBuffer = canvas.toBuffer('image/png')
+    console.log('[QR] Cert buffer size:', certBuffer.length)
 
-    console.log('[QR] Starting QR generation')
-    const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
-    console.log('[QR] URL:', verifyUrl)
+    try {
+      const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
+      console.log('[QR] URL:', verifyUrl)
 
-    const qrBuffer = await QRCode.toBuffer(verifyUrl, {
-      width: Math.floor(W * 0.095),
-      margin: 2,
-      type: 'png',
-      color: { dark: '#000000', light: '#ffffff' },
-    })
-    console.log('[QR] Buffer generated, size:', qrBuffer.length)
+      const qrSize = Math.floor(W * 0.095)
+      const qrX = Math.floor(W * 0.840)
+      const qrY = Math.floor(H * 0.695)
+      console.log('[QR] Position:', qrX, qrY, 'Size:', qrSize)
 
-    const qrSize = Math.floor(W * 0.095)
-    const qrX = Math.floor(W * 0.840)
-    const qrY = Math.floor(H * 0.695)
+      const qrPng = await QRCode.toBuffer(verifyUrl, {
+        width: qrSize,
+        margin: 2,
+        type: 'png',
+        color: { dark: '#000000', light: '#ffffff' },
+      })
+      console.log('[QR] Buffer generated, size:', qrPng.length)
 
-    const qrWithBg = await sharp({
-      create: {
-        width: qrSize + 20,
-        height: qrSize + 35,
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
-      },
-    })
-      .composite([{ input: qrBuffer, left: 10, top: 5 }])
-      .png()
-      .toBuffer()
+      const finalBuffer = await sharp(certBuffer)
+        .composite([{
+          input: qrPng,
+          left: qrX,
+          top: qrY,
+          blend: 'over',
+        }])
+        .toBuffer()
 
-    const finalBuffer = await sharp(certBuffer)
-      .composite([{
-        input: qrWithBg,
-        left: qrX - 10,
-        top: qrY - 5,
-      }])
-      .png()
-      .toBuffer()
-
-    console.log('[QR] Composite complete')
-
-    return finalBuffer
+      console.log('[QR] Composited successfully, final size:', finalBuffer.length)
+      return finalBuffer
+    } catch (e: any) {
+      console.error('[QR] Sharp composite failed:', e.message, e.stack?.split('\n')[1])
+      return certBuffer  // fallback without QR
+    }
   }
 
   /** Split text into lines that fit within maxWidth at the current ctx font. */

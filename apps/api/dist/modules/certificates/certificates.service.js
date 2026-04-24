@@ -187,6 +187,7 @@ let CertificatesService = class CertificatesService {
         console.log('[Certificate] Registered fonts:', (_b = (_a = GlobalFonts.families) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : '?');
     }
     async createCertificateImage(data) {
+        var _a;
         this.registerFonts();
         const fs = require('fs');
         const { GlobalFonts } = require('@napi-rs/canvas');
@@ -281,40 +282,36 @@ let CertificatesService = class CertificatesService {
         ctx.fillStyle = '#5a5a5a';
         ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890);
         const certBuffer = canvas.toBuffer('image/png');
-        console.log('[QR] Starting QR generation');
-        const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`;
-        console.log('[QR] URL:', verifyUrl);
-        const qrBuffer = await QRCode.toBuffer(verifyUrl, {
-            width: Math.floor(W * 0.095),
-            margin: 2,
-            type: 'png',
-            color: { dark: '#000000', light: '#ffffff' },
-        });
-        console.log('[QR] Buffer generated, size:', qrBuffer.length);
-        const qrSize = Math.floor(W * 0.095);
-        const qrX = Math.floor(W * 0.840);
-        const qrY = Math.floor(H * 0.695);
-        const qrWithBg = await (0, sharp_1.default)({
-            create: {
-                width: qrSize + 20,
-                height: qrSize + 35,
-                channels: 4,
-                background: { r: 255, g: 255, b: 255, alpha: 1 },
-            },
-        })
-            .composite([{ input: qrBuffer, left: 10, top: 5 }])
-            .png()
-            .toBuffer();
-        const finalBuffer = await (0, sharp_1.default)(certBuffer)
-            .composite([{
-                input: qrWithBg,
-                left: qrX - 10,
-                top: qrY - 5,
-            }])
-            .png()
-            .toBuffer();
-        console.log('[QR] Composite complete');
-        return finalBuffer;
+        console.log('[QR] Cert buffer size:', certBuffer.length);
+        try {
+            const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`;
+            console.log('[QR] URL:', verifyUrl);
+            const qrSize = Math.floor(W * 0.095);
+            const qrX = Math.floor(W * 0.840);
+            const qrY = Math.floor(H * 0.695);
+            console.log('[QR] Position:', qrX, qrY, 'Size:', qrSize);
+            const qrPng = await QRCode.toBuffer(verifyUrl, {
+                width: qrSize,
+                margin: 2,
+                type: 'png',
+                color: { dark: '#000000', light: '#ffffff' },
+            });
+            console.log('[QR] Buffer generated, size:', qrPng.length);
+            const finalBuffer = await (0, sharp_1.default)(certBuffer)
+                .composite([{
+                    input: qrPng,
+                    left: qrX,
+                    top: qrY,
+                    blend: 'over',
+                }])
+                .toBuffer();
+            console.log('[QR] Composited successfully, final size:', finalBuffer.length);
+            return finalBuffer;
+        }
+        catch (e) {
+            console.error('[QR] Sharp composite failed:', e.message, (_a = e.stack) === null || _a === void 0 ? void 0 : _a.split('\n')[1]);
+            return certBuffer;
+        }
     }
     splitText(ctx, text, maxWidth) {
         const words = text.split(' ');
