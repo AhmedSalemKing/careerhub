@@ -104,6 +104,13 @@ export class CoursesService {
           thumbnail: true,
           price: true,
           level: true,
+          instructor: {
+            select: {
+              id: true,
+              isVerified: true,
+              profile: { select: { firstName: true, lastName: true, avatar: true } }
+            }
+          },
         },
         orderBy: [
           { isFeatured: 'desc' },
@@ -121,6 +128,11 @@ export class CoursesService {
       thumbnail: course.thumbnail,
       price: course.price,
       level: course.level,
+      instructor: course.instructor ? {
+        id: course.instructor.id,
+        isVerified: course.instructor.isVerified,
+        profile: course.instructor.profile,
+      } : undefined,
     }));
 
     const data = {

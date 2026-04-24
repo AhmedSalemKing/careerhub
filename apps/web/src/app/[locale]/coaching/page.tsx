@@ -374,7 +374,7 @@ export default function CoachingPage() {
                   </div>
                 </div>
                 <div className="p-5 pt-10">
-                  <h3 className="font-bold text-foreground text-lg leading-tight">{name}</h3>
+                  <h3 className="font-bold text-foreground text-lg leading-tight flex items-center gap-1.5">{name}{consultant.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}</h3>
                   <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مستشار مهني'}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
                     {consultant.experience && (

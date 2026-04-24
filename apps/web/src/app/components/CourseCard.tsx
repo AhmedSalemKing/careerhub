@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import { TRAINING_URL } from '../../lib/constants'
 import { useState, useRef } from 'react'
 import { Clock, Signal, ExternalLink, Play, BookOpen } from 'lucide-react'
+import VerifiedBadge from '../../components/VerifiedBadge'
 
 export type CourseCardCourse = {
   id: string
@@ -13,7 +14,7 @@ export type CourseCardCourse = {
   level?: string | null
   duration?: number | null
   price?: number | null
-  instructor?: string | null
+  instructor?: string | { id?: string; isVerified?: boolean; profile?: { firstName?: string; lastName?: string; avatar?: string } } | null
   category?: string | null
 }
 
@@ -506,6 +507,16 @@ export function CourseCard({
           {course.category && (
             <span className="cc-meta-item">
               {course.category}
+            </span>
+          )}
+
+          {/* Instructor with Verified Badge */}
+          {typeof course.instructor === 'object' && course.instructor?.profile && (
+            <span className="cc-meta-item">
+              <span>
+                {course.instructor.profile.firstName} {course.instructor.profile.lastName}
+              </span>
+              {course.instructor.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
             </span>
           )}
         </div>

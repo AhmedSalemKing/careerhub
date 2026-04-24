@@ -15,6 +15,7 @@ import {
   BookOpen,
   Download,
 } from 'lucide-react'
+import VerifiedBadge from '../../../../components/VerifiedBadge'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -402,9 +403,10 @@ export default function ApprovalsPage() {
                         <p className="text-sm text-[color:var(--muted)]">{course.titleAr}</p>
                       )}
                       <div className="flex flex-wrap gap-3 mt-2 text-sm text-[color:var(--muted)]">
-                        <span>
+                        <span className="flex items-center gap-1">
                           {isAr ? 'المحاضر:' : 'Instructor:'} {course.instructor?.profile?.firstName}{' '}
                           {course.instructor?.profile?.lastName}
+                          {course.instructor?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                         </span>
                         <span>{isAr ? 'السعر:' : 'Price:'} {course.price} {isAr ? 'ريال' : 'SAR'}</span>
                         <span>{isAr ? 'المستوى:' : 'Level:'} {course.level}</span>
