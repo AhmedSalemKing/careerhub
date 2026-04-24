@@ -771,6 +771,13 @@ let CoursesService = CoursesService_1 = class CoursesService {
             if (dto.careerPathId && dto.careerPathId !== '') {
                 courseData.careerPathId = dto.careerPathId;
             }
+            if (dto.categoryId && dto.categoryId !== '') {
+                const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+                if (cat)
+                    courseData.categoryId = dto.categoryId;
+                else
+                    this.logger.warn(`[Courses] Category not found: ${dto.categoryId}, skipping`);
+            }
             if ((_a = dto.sections) === null || _a === void 0 ? void 0 : _a.length) {
                 courseData.sections = {
                     create: dto.sections.map((s, i) => ({

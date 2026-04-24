@@ -100,7 +100,7 @@ type CourseForm = {
   price: string
   level: string
   status: string
-  careerPathId: string
+  categoryId: string
   thumbnail: string
   previewVideo: string
   sections: Section[]
@@ -138,7 +138,7 @@ export default function CreateCoursePage() {
     price: '0',
     level: 'BEGINNER',
     status: 'DRAFT',
-    careerPathId: '',
+    categoryId: '',
     thumbnail: '',
     previewVideo: '',
     sections: [{ title: '' }],
@@ -220,7 +220,7 @@ export default function CreateCoursePage() {
         title: form.title,
         titleAr: form.titleAr,
         description: form.description,
-        careerPathId: form.careerPathId || undefined,
+        categoryId: form.categoryId || undefined,
         price: parseFloat(form.price) || 0,
         level: form.level,
         status: form.status,
@@ -319,8 +319,8 @@ export default function CreateCoursePage() {
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1.5">التخصص</label>
                   <select
-                    value={form.careerPathId}
-                    onChange={(e) => set('careerPathId', e.target.value)}
+                    value={form.categoryId}
+                    onChange={(e) => set('categoryId', e.target.value)}
                     className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                   >
                     <option value="">اختر التخصص</option>

@@ -872,6 +872,12 @@ export class CoursesService {
         courseData.careerPathId = dto.careerPathId;
       }
 
+      if (dto.categoryId && dto.categoryId !== '') {
+        const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+        if (cat) courseData.categoryId = dto.categoryId;
+        else this.logger.warn(`[Courses] Category not found: ${dto.categoryId}, skipping`);
+      }
+
       if (dto.sections?.length) {
         courseData.sections = {
           create: dto.sections.map((s: any, i: number) => ({
