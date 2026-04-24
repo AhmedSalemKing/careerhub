@@ -185,11 +185,11 @@ export declare class CoursesController {
             certificatesIssued: number;
             completionRate: number;
             courses: {
-                id: string;
-                title: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                price: number;
-                enrollments: number;
+                id: any;
+                title: any;
+                status: any;
+                price: any;
+                enrollments: any;
             }[];
         };
     }>;

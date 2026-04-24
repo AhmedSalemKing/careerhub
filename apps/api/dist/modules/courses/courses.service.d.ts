@@ -679,7 +679,7 @@ export declare class CoursesService {
             updatedAt: Date;
         };
     }>;
-    getInstructorStats(instructorId: string): Promise<{
+    getInstructorStats(userId: string): Promise<{
         success: boolean;
         data: {
             totalStudents: number;
@@ -690,11 +690,11 @@ export declare class CoursesService {
             certificatesIssued: number;
             completionRate: number;
             courses: {
-                id: string;
-                title: string;
-                status: import(".prisma/client").$Enums.CourseStatus;
-                price: number;
-                enrollments: number;
+                id: any;
+                title: any;
+                status: any;
+                price: any;
+                enrollments: any;
             }[];
         };
     }>;
