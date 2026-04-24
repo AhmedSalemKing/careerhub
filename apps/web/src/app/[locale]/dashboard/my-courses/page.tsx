@@ -49,10 +49,17 @@ export default function MyCoursesPage() {
           {canCreateCourse && (
             <Link
               href={`/${locale}/dashboard/create-course`}
-              className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 hover:scale-105 transition-all shadow-lg shadow-primary/20"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '10px 20px', borderRadius: 12,
+                background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
+                color: '#fff', textDecoration: 'none',
+                fontWeight: 700, fontSize: 14,
+                boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
+              }}
             >
-              <PlusCircle className="h-4 w-4" />
-              كورس جديد
+              <PlusCircle size={16} />
+              إنشاء كورس جديد
             </Link>
           )}
         </div>
@@ -81,10 +88,17 @@ export default function MyCoursesPage() {
             {canCreateCourse && (
               <Link
                 href={`/${locale}/dashboard/create-course`}
-                className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-all"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '12px 28px', borderRadius: 12, marginTop: 20,
+                  background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
+                  color: '#fff', textDecoration: 'none',
+                  fontWeight: 700, fontSize: 15,
+                  boxShadow: '0 4px 20px rgba(81,32,200,0.3)',
+                }}
               >
-                <PlusCircle className="h-4 w-4" />
-                أنشئ كورسك الأول
+                <PlusCircle size={18} />
+                إنشاء كورسك الأول
               </Link>
             )}
           </div>
