@@ -525,6 +525,9 @@ export class AuthService {
     hourlyRate?: number;
     meetingMethod?: string;
   }) {
+    console.log('[Profile] Updating user:', userId)
+    console.log('[Profile] Data:', JSON.stringify(data))
+    
     const profileData: any = {}
     if (data.firstName !== undefined) profileData.firstName = data.firstName
     if (data.lastName !== undefined) profileData.lastName = data.lastName
@@ -534,16 +537,26 @@ export class AuthService {
     if (data.country !== undefined) profileData.country = data.country
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
-    if (data.speciality !== undefined) profileData.speciality = data.speciality
-    if (data.experience !== undefined) profileData.experience = data.experience
-    if (data.hourlyRate !== undefined) profileData.hourlyRate = data.hourlyRate
-    if (data.meetingMethod !== undefined) profileData.meetingMethod = data.meetingMethod
+    
+    console.log('[Profile] Profile fields:', Object.keys(profileData))
     
     const profile = await this.prisma.userProfile.upsert({
       where: { userId },
       create: { userId, ...profileData },
       update: profileData,
     })
+    
+    const userFields: Record<string, unknown> = {}
+    if (data.speciality !== undefined) userFields.speciality = data.speciality
+    if (data.experience !== undefined) userFields.experience = data.experience
+    if (data.hourlyRate !== undefined) userFields.hourlyRate = data.hourlyRate
+    if (data.meetingMethod !== undefined) userFields.meetingMethod = data.meetingMethod
+    if (data.bio !== undefined) userFields.bio = data.bio
+    
+    if (Object.keys(userFields).length > 0) {
+      console.log('[Profile] User fields:', Object.keys(userFields))
+      await this.prisma.user.update({ where: { id: userId }, data: userFields })
+    }
     
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
