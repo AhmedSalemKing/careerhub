@@ -27,7 +27,7 @@ export default function VerifiedBadge({ size = 'sm', showTooltip = true, onAvata
         ...(onAvatar ? {
           position: 'absolute',
           bottom: 0,
-          right: 0,
+          left: 0,
         } : {})
       }}
     >
