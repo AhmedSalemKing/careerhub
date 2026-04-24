@@ -384,18 +384,50 @@ function LearnPageInner() {
   const goToNextLesson = () => { if (nextLesson) setActiveLessonId(nextLesson.id) }
   const goToPrevLesson = () => { if (prevLesson) setActiveLessonId(prevLesson.id) }
 
-  // Detect media type — checks lesson.type field first, then URL extension
+  // Detect media type — URL-based checks take priority over type field to handle
+  // cases where images are stored in videoUrl (Cloudinary /image/upload/ URLs)
   const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|svg|bmp)(\?.*)?$/i
+  const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv)(\?.*)?$/i
+  const PDF_EXT   = /\.pdf(\?.*)?$/i
   const getMediaType = (lesson: any): 'video' | 'file' | 'image' | 'none' => {
     if (!lesson) return 'none'
-    const type = (lesson.type || '').toUpperCase()
-    if (type === 'VIDEO') return 'video'
+    const type = (lesson.type || lesson.contentType || '').toUpperCase()
+
+    // Unambiguous type declarations — FILE/PDF/IMAGE trust immediately
     if (type === 'FILE' || type === 'PDF' || type === 'DOCUMENT') return 'file'
     if (type === 'IMAGE') return 'image'
-    // Inspect URL extension to catch mis-filed images stored in videoUrl
-    if (lesson.videoUrl) return IMAGE_EXTS.test(lesson.videoUrl) ? 'image' : 'video'
-    if (lesson.imageUrl) return 'image'
-    if (lesson.fileUrl) return 'file'
+
+    // Dedicated image field set — always image
+    if (lesson.imageUrl && !VIDEO_EXTS.test(lesson.imageUrl)) return 'image'
+
+    // fileUrl — check extension
+    if (lesson.fileUrl) {
+      if (IMAGE_EXTS.test(lesson.fileUrl)) return 'image'
+      if (PDF_EXT.test(lesson.fileUrl)) return 'file'
+      if (lesson.fileUrl.includes('/image/upload/')) return 'image'
+      return 'file'
+    }
+
+    // videoUrl — may actually be an image (Cloudinary image stored in videoUrl)
+    if (lesson.videoUrl) {
+      const url = lesson.videoUrl.split('?')[0]
+      if (IMAGE_EXTS.test(url)) return 'image'
+      if (PDF_EXT.test(url)) return 'file'
+      if (lesson.videoUrl.includes('/image/upload/') && !VIDEO_EXTS.test(url)) return 'image'
+      if (VIDEO_EXTS.test(url) || lesson.videoUrl.includes('/video/upload/')) return 'video'
+      // Fallback: trust VIDEO type if nothing else matched
+      if (type === 'VIDEO') return 'video'
+      return 'video'
+    }
+
+    // content field fallback
+    if (lesson.content && lesson.content.startsWith('http')) {
+      if (IMAGE_EXTS.test(lesson.content)) return 'image'
+      if (lesson.content.includes('/image/upload/')) return 'image'
+      if (VIDEO_EXTS.test(lesson.content)) return 'video'
+    }
+
+    if (type === 'VIDEO') return 'video'
     return 'none'
   }
 
