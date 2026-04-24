@@ -1041,109 +1041,70 @@ export class CoursesService {
     return { success: true, data: course };
   }
 
-  async getInstructorStats(instructorId: string) {
+  async getInstructorStats(userId: string) {
     try {
       const courses = await this.prisma.course.findMany({
-        where: { instructorId },
+        where: { instructorId: userId },
         select: {
-          id: true,
-          titleAr: true,
-          titleEn: true,
-          status: true,
-          price: true,
+          id: true, titleAr: true, titleEn: true,
+          status: true, price: true,
           _count: { select: { enrollments: true } }
         }
       }).catch(() => [])
       
       const courseIds = courses.map(c => c.id)
       
-      const totalStudents = courseIds.length > 0
-        ? await this.prisma.enrollment.count({ where: { courseId: { in: courseIds } } }).catch(() => 0)
-        : 0
-      
-      const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
-      
-      let avgRating = 0
-      if (courseIds.length > 0) {
-        try {
-          const ratings = await this.prisma.rating.findMany({
-            where: { courseId: { in: courseIds } },
-            select: { value: true }
-          })
-          const ratingsArr = ratings.map(r => r.value || 0)
-          avgRating = ratingsArr.length > 0
-            ? ratingsArr.reduce((a, b) => a + b, 0) / ratingsArr.length
-            : 0
-        } catch(e) {
-          console.log('[Stats] rating query error:', e.message)
-        }
-      }
+      const [totalStudents, certificatesIssued] = await Promise.all([
+        courseIds.length ? this.prisma.enrollment.count({
+          where: { courseId: { in: courseIds } }
+        }).catch(() => 0) : Promise.resolve(0),
+        courseIds.length ? this.prisma.certificate.count({
+          where: { courseId: { in: courseIds } }
+        }).catch(() => 0) : Promise.resolve(0),
+      ])
       
       let totalRevenue = 0
-      if (courseIds.length > 0) {
-        try {
-          const payments = await this.prisma.payment.findMany({
-            where: { 
-              courseId: { in: courseIds },
-              status: 'SUCCESS'
-            },
-            select: { amount: true }
-          })
-          totalRevenue = payments.reduce((s, p) => s + (p.amount || 0), 0)
-        } catch(e) {
-          console.log('[Stats] payment query error:', e.message)
-        }
+      if (courseIds.length) {
+        const rev = await this.prisma.payment.aggregate({
+          where: { courseId: { in: courseIds } },
+          _sum: { amount: true }
+        }).catch(() => ({ _sum: { amount: 0 } }))
+        totalRevenue = Number(rev._sum?.amount) || 0
       }
       
-      const certificatesIssued = courseIds.length > 0
-        ? await this.prisma.certificate.count({ where: { courseId: { in: courseIds } } }).catch(() => 0)
-        : 0
-      
-      const completedEnrollments = courseIds.length > 0
-        ? await this.prisma.enrollment.count({
-            where: { courseId: { in: courseIds }, completedAt: { not: null } }
-          }).catch(() => 0)
-        : 0
+      const completedEnrollments = courseIds.length ? await this.prisma.enrollment.count({
+        where: { courseId: { in: courseIds }, completedAt: { not: null } }
+      }).catch(() => 0) : 0
       
       const completionRate = totalStudents > 0
-        ? Math.round((completedEnrollments / totalStudents) * 100)
-        : 0
+        ? Math.round((completedEnrollments / totalStudents) * 100) : 0
       
       return {
         success: true,
         data: {
           totalStudents,
-          publishedCourses,
+          publishedCourses: courses.filter(c => c.status === 'PUBLISHED').length,
           totalCourses: courses.length,
-          avgRating: parseFloat(avgRating.toFixed(1)),
+          avgRating: 0,
           totalRevenue,
           certificatesIssued,
           completionRate,
           courses: courses.map(c => ({
             id: c.id,
-            title: c.titleAr || c.titleEn || '',
+            title: c.titleAr || c.titleEn || 'كورس',
             status: c.status,
             price: c.price || 0,
             enrollments: c._count.enrollments,
           }))
         }
       }
-      
     } catch(e: any) {
-      console.error('[Stats] Fatal error:', e.message)
-      return {
-        success: true,
-        data: {
-          totalStudents: 0,
-          publishedCourses: 0,
-          totalCourses: 0,
-          avgRating: 0,
-          totalRevenue: 0,
-          certificatesIssued: 0,
-          completionRate: 0,
-          courses: []
-        }
-      }
+      console.error('[InstructorStats]', e.message)
+      return { success: true, data: {
+        totalStudents: 0, publishedCourses: 0, totalCourses: 0,
+        avgRating: 0, totalRevenue: 0, certificatesIssued: 0,
+        completionRate: 0, courses: []
+      }}
     }
   }
 
