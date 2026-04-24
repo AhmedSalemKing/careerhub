@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, patch, get } from '../../../../lib/api'
 import { AuthGate } from '../../../components/AuthGate'
+import { useAuthStore } from '../../../../stores/authStore'
 import {
   BookOpen,
   Image as ImageIcon,
@@ -116,6 +117,15 @@ const LEVELS = [
 export default function CreateCoursePage() {
   const locale = useLocale()
   const router = useRouter()
+  const { user, hydrate } = useAuthStore()
+
+  useEffect(() => { hydrate() }, [hydrate])
+
+  useEffect(() => {
+    if (user && (user.accountType === 'CONSULTANT' || user.accountType === 'STUDENT')) {
+      router.push(`/${locale}/dashboard`)
+    }
+  }, [user, locale, router])
 
   const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)

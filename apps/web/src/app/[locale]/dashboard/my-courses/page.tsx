@@ -3,13 +3,28 @@
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import { BookOpen, Users, PlusCircle, Edit3, Settings } from 'lucide-react'
 import { get } from '../../../../lib/api'
 import { AuthGate } from '../../../components/AuthGate'
 import { getMediaUrl } from '../../../../lib/media'
+import { useAuthStore } from '../../../../stores/authStore'
 
 export default function MyCoursesPage() {
   const locale = useLocale()
+  const router = useRouter()
+  const { user, hydrate } = useAuthStore()
+
+  useEffect(() => { hydrate() }, [hydrate])
+
+  const canCreateCourse = user?.accountType === 'INSTRUCTOR' || user?.accountType === 'ADMIN'
+
+  useEffect(() => {
+    if (user && user.accountType === 'CONSULTANT') {
+      router.push(`/${locale}/dashboard`)
+    }
+  }, [user, locale, router])
 
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ['instructor-my-courses'],
@@ -31,13 +46,15 @@ export default function MyCoursesPage() {
               {courses.length > 0 ? `${courses.length} كورس` : 'لا توجد كورسات بعد'}
             </p>
           </div>
-          <Link
-            href={`/${locale}/dashboard/create-course`}
-            className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 hover:scale-105 transition-all shadow-lg shadow-primary/20"
-          >
-            <PlusCircle className="h-4 w-4" />
-            كورس جديد
-          </Link>
+          {canCreateCourse && (
+            <Link
+              href={`/${locale}/dashboard/create-course`}
+              className="flex items-center gap-2 rounded-2xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 hover:scale-105 transition-all shadow-lg shadow-primary/20"
+            >
+              <PlusCircle className="h-4 w-4" />
+              كورس جديد
+            </Link>
+          )}
         </div>
 
         {/* Loading */}
@@ -61,13 +78,15 @@ export default function MyCoursesPage() {
             <BookOpen className="h-12 w-12 opacity-20 mb-4" />
             <h2 className="text-lg font-bold font-madinet text-foreground mb-2">لا توجد كورسات بعد</h2>
             <p className="text-sm text-[color:var(--muted)] mb-6">ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب</p>
-            <Link
-              href={`/${locale}/dashboard/create-course`}
-              className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-all"
-            >
-              <PlusCircle className="h-4 w-4" />
-              أنشئ كورسك الأول
-            </Link>
+            {canCreateCourse && (
+              <Link
+                href={`/${locale}/dashboard/create-course`}
+                className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-all"
+              >
+                <PlusCircle className="h-4 w-4" />
+                أنشئ كورسك الأول
+              </Link>
+            )}
           </div>
         )}
 

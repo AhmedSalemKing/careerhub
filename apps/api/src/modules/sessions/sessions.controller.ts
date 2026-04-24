@@ -192,16 +192,20 @@ export class SessionsController {
     }).catch(() => [])
     
     const completed = sessions.filter((s: any) => s.status === 'COMPLETED')
-    const pending = sessions.filter((s: any) => s.status === 'CONFIRMED')
+    const confirmed = sessions.filter((s: any) => s.status === 'CONFIRMED')
+    const cancelled = sessions.filter((s: any) => s.status === 'CANCELLED')
     
     const total = completed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
-    const pendingAmount = pending.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    const pending = confirmed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    const refunded = cancelled.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
     
     return {
       success: true,
       data: {
         total,
-        pending: pendingAmount,
+        pending,
+        refunded,
+        available: total - refunded,
         sessions: completed.map((s: any) => ({
           id: s.id,
           studentName: s.student?.profile ? `${s.student.profile.firstName} ${s.student.profile.lastName}` : 'طالب',
