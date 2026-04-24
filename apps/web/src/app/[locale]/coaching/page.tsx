@@ -361,20 +361,23 @@ export default function CoachingPage() {
                 className="group rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 transition-all duration-300">
                 <div className="relative h-28 bg-[color:var(--surface-2)]">
                   <div className="absolute -bottom-7 right-5">
-                    {avatar ? (
-                      <img src={avatar} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-xl font-bold text-white shadow-md">
-                        {name[0]}
-                      </div>
-                    )}
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      {avatar ? (
+                        <img src={avatar} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
+                      ) : (
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-xl font-bold text-white shadow-md">
+                          {name[0]}
+                        </div>
+                      )}
+                      {consultant.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                    </div>
                   </div>
                   <div className="absolute top-3 left-3 rounded-full bg-black/20 backdrop-blur-sm px-2.5 py-1 text-xs text-white font-semibold">
                     {sessions} جلسة
                   </div>
                 </div>
                 <div className="p-5 pt-10">
-                  <h3 className="font-bold text-foreground text-lg leading-tight flex items-center gap-1.5">{name}{consultant.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}</h3>
+                  <h3 className="font-bold text-foreground text-lg leading-tight">{name}</h3>
                   <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مستشار مهني'}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
                     {consultant.experience && (

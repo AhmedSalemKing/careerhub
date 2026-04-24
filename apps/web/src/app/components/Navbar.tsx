@@ -137,21 +137,24 @@ function UserDropdown({ locale }: { locale: string }) {
         className="flex items-center gap-1.5 rounded-full focus:outline-none transition-opacity duration-200 hover:opacity-80"
         aria-label="User menu"
       >
-        {user?.profile?.avatar ? (
-          <img
-            src={user.profile.avatar}
-            alt="avatar"
-            className="h-8 w-8 rounded-full object-cover"
-            style={{ boxShadow: '0 0 0 2px var(--border)' }}
-          />
-        ) : (
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
-            style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
-          >
-            {initials}
-          </span>
-        )}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          {user?.profile?.avatar ? (
+            <img
+              src={user.profile.avatar}
+              alt="avatar"
+              className="h-8 w-8 rounded-full object-cover"
+              style={{ boxShadow: '0 0 0 2px var(--border)' }}
+            />
+          ) : (
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
+              style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+            >
+              {initials}
+            </span>
+          )}
+          {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+        </div>
         <ChevronDown
           className="h-3 w-3 transition-transform duration-200"
           style={{ color: 'var(--muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -504,6 +507,7 @@ export function Navbar() {
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                   >
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
                     {user?.profile?.avatar ? (
                       <img
                         src={user.profile.avatar}
@@ -519,6 +523,8 @@ export function Navbar() {
                         {initials || 'A'}
                       </div>
                     )}
+                    {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                  </div>
                     <span
                       className="rounded-full px-2 py-0.5 text-[10px] font-black"
                       style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
@@ -677,22 +683,25 @@ export function Navbar() {
             {/* Auth section */}
             {isLoggedIn ? (
               <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <div className="flex items-center gap-3 px-2">
-                  {user?.profile?.avatar ? (
-                    <img
-                      src={user.profile.avatar}
-                      alt="avatar"
-                      className="h-10 w-10 rounded-full object-cover"
-                      style={{ boxShadow: '0 0 0 2px var(--border)' }}
-                    />
-                  ) : (
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
-                      style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
-                    >
-                      {initials || '?'}
-                    </div>
-                  )}
+<div className="flex items-center gap-3 px-2">
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    {user?.profile?.avatar ? (
+                      <img
+                        src={user.profile.avatar}
+                        alt="avatar"
+                        className="h-10 w-10 rounded-full object-cover"
+                        style={{ boxShadow: '0 0 0 2px var(--border)' }}
+                      />
+                    ) : (
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
+                        style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+                      >
+                        {initials || '?'}
+                      </div>
+                    )}
+                    {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                  </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: 'var(--foreground)' }}>
                       {user?.profile?.firstName

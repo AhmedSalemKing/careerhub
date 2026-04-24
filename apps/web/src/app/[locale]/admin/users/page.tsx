@@ -217,17 +217,19 @@ export default function AdminUsersPage() {
                   <tr key={u.id} className="border-t border-gray-800 hover:bg-gray-800/40 transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
-                        {u.profile?.avatar ? (
-                          <img src={getMediaUrl(u.profile.avatar) ?? ''} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-bold text-white" style={{ background: '#5120c8' }}>
-                            {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}
-                          </div>
-                        )}
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          {u.profile?.avatar ? (
+                            <img src={getMediaUrl(u.profile.avatar) ?? ''} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-bold text-white" style={{ background: '#5120c8' }}>
+                              {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}
+                            </div>
+                          )}
+                          {u.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                        </div>
                         <div>
                           <p className="text-white font-medium flex items-center gap-1.5">
                             {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
-                            {u.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                           </p>
                           <p className="text-xs text-gray-400">{u.email}</p>
                         </div>
