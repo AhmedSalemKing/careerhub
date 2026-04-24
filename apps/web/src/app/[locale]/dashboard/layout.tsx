@@ -11,7 +11,7 @@ import BottomDock from '../../../components/BottomDock'
 import {
   LayoutDashboard, BookOpen, Brain, MessageSquare, Users,
   Award, Settings, PlusCircle, BarChart2, DollarSign,
-  Calendar, Clock, Star, Shield, UserCog, FileText, Bell, Wallet,
+  Calendar, Clock, Star, Shield, UserCog, FileText, Bell, Wallet, CalendarDays,
 } from 'lucide-react'
 
 function getStudentItems(locale: string) {
@@ -40,8 +40,8 @@ function getInstructorItems(locale: string) {
 function getConsultantItems(locale: string) {
   return [
     { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
-    { icon: Calendar, labelAr: 'جلساتي', labelEn: 'My Sessions', href: `/${locale}/dashboard/my-sessions` },
-    { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+    { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
+    { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
     { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
     { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
     { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
@@ -97,9 +97,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     if (accountType === 'CONSULTANT') return [
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
-      { icon: Clock, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
+      { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
-      ...studentBase,
+      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
+      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
 
     return studentBase
