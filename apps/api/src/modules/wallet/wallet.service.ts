@@ -93,7 +93,16 @@ export class WalletService {
         stripePaymentIntentId: paymentIntentId,
       }
     });
-    
+
+    await this.prisma.userActivity.create({
+      data: {
+        userId,
+        action: 'WALLET_TOPUP',
+        entity: 'Wallet',
+        metadata: { amountSAR: amount },
+      },
+    }).catch(() => {});
+
     return { balance: updated.walletBalance };
   }
 

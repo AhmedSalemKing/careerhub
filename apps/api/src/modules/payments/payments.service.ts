@@ -166,6 +166,16 @@ export class PaymentsService {
 
       this.logger.log(`Payment confirmed: ${paymentIntentId}`);
 
+      await this.prisma.userActivity.create({
+        data: {
+          userId,
+          action: 'PAYMENT',
+          entity: 'Payment',
+          entityId: payment.id,
+          metadata: { amount: payment.amount, currency: payment.currency, itemType: payment.itemType, itemId: payment.itemId },
+        },
+      }).catch(() => {});
+
       return {
         payment: {
           id: updatedPayment.id,

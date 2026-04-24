@@ -103,6 +103,8 @@ export function useAuth() {
         store.setUser(user)
         setUser(user)
         localStorage.setItem('deveway_user', JSON.stringify(user))
+
+        api.post('/users/track-activity', { action: 'LOGIN', page: '/login' }).catch(() => {})
       }
 
       toast({ variant: 'success', description: data.message || t('toast_login_success') })

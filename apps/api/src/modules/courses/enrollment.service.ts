@@ -1,17 +1,52 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class EnrollmentService {
+  private readonly logger = new Logger(EnrollmentService.name);
+
   constructor(private prisma: PrismaService) {}
 
-  async enrollUser(userId: string, courseId: string, paymentId?: string) { return { success: true, courseId, userId }; }
+  async enrollUser(userId: string, courseId: string, paymentId?: string) {
+    const existing = await this.prisma.enrollment.findFirst({
+      where: { userId, courseId },
+    });
+    if (existing) {
+      return { success: true, enrollment: existing, alreadyEnrolled: true };
+    }
+
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    const enrollment = await this.prisma.enrollment.create({
+      data: {
+        userId,
+        courseId,
+        status: 'ACTIVE',
+        progress: 0,
+      },
+    });
+
+    await this.prisma.userActivity.create({
+      data: {
+        userId,
+        action: 'ENROLL_COURSE',
+        entity: 'Course',
+        entityId: courseId,
+        metadata: { courseTitle: course.titleEn },
+      },
+    }).catch(() => {});
+
+    this.logger.log(`User ${userId} enrolled in course ${courseId}`);
+    return { success: true, enrollment };
+  }
 
   async getEnrollment(userId: string, courseId: string) {
     const enrollment = await this.prisma.enrollment.findFirst({ where: { userId, courseId } });
     if (!enrollment) return null;
 
-    // Fetch completed lesson IDs and total published lessons
     const [lessonProgressRecords, totalLessons] = await Promise.all([
       this.prisma.lessonProgress.findMany({
         where: {

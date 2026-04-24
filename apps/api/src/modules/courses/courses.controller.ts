@@ -21,6 +21,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -28,6 +29,7 @@ export class CoursesController {
   constructor(
     private readonly coursesService: CoursesService,
     private readonly enrollmentService: EnrollmentService,
+    private readonly prisma: PrismaService,
   ) { }
 
   @Get()
@@ -40,7 +42,7 @@ export class CoursesController {
   @ApiQuery({ name: 'level', required: false, description: 'Filter by level' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
-  async getCourses(
+async getCourses(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('careerPath') careerPath?: string,
@@ -48,6 +50,7 @@ export class CoursesController {
     @Query('level') level?: string,
     @Query('search') search?: string,
     @Query('language') language?: string,
+    @Request() req?: any,
   ) {
     const courses = await this.coursesService.getCourses({
       page: page || 1,
@@ -58,6 +61,18 @@ export class CoursesController {
       search,
       language: language || 'en',
     });
+
+    if (req?.user?.id && search) {
+      this.prisma.userActivity.create({
+        data: {
+          userId: req.user.id,
+          action: 'SEARCH_COURSES',
+          entity: 'Course',
+          metadata: { query: search },
+        },
+      }).catch(() => {});
+    }
+
     return {
       success: true,
       data: courses,
@@ -148,21 +163,38 @@ export class CoursesController {
   async getCourseBySlug(
     @Param('slug') slug: string,
     @Query('language') language?: string,
+    @Request() req?: any,
   ) {
     // Try by ID first (cuid format), then fall back to slug
     const isCuid = /^c[a-z0-9]{24,}$/.test(slug);
+    let courseData: any;
     if (isCuid) {
       try {
-        const course = await this.coursesService.getCourseById(slug);
-        return { success: true, data: { course } };
+        courseData = await this.coursesService.getCourseById(slug);
       } catch {
         // fall through to slug lookup
       }
     }
-    const course = await this.coursesService.getCourseBySlug(slug, language || 'en');
+    if (!courseData) {
+      courseData = await this.coursesService.getCourseBySlug(slug, language || 'en');
+    }
+
+    // Track VIEW_COURSE activity if user is authenticated
+    if (req?.user?.id) {
+      this.prisma.userActivity.create({
+        data: {
+          userId: req.user.id,
+          action: 'VIEW_COURSE',
+          entity: 'Course',
+          entityId: courseData.id,
+          metadata: { slug },
+        },
+      }).catch(() => {});
+    }
+
     return {
       success: true,
-      data: { course },
+      data: { course: courseData },
     };
   }
 
