@@ -240,6 +240,21 @@ export class AuthService {
       data: { updatedAt: new Date() },
     });
 
+    // Log login activity
+    try {
+      await this.prisma.userActivity.create({
+        data: {
+          userId: user.id,
+          action: 'LOGIN',
+          entity: 'User',
+          entityId: user.id,
+          metadata: { email: user.email, accountType: user.accountType },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`[LOGIN] Failed to log activity: ${e}`);
+    }
+
     this.logger.log(`[LOGIN] success: ${email}, status: ${user.status}`);
 
     // If PENDING, return special response so frontend can redirect to pending page

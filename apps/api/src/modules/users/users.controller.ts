@@ -12,6 +12,7 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   Query,
+ Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -20,13 +21,17 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly prisma: PrismaService,
+  ) { }
 
   @Get('profile')
   @ApiOperation({ summary: 'Get user profile' })
@@ -238,5 +243,25 @@ export class UsersController {
       success: true,
       data: stats,
     };
+  }
+
+  @Post('track-activity')
+  @ApiOperation({ summary: 'Track user activity from frontend' })
+  async trackActivity(
+    @CurrentUser() user: User,
+    @Body() body: { action: string; page?: string; metadata?: Record<string, any> },
+  ) {
+    try {
+      await this.prisma.userActivity.create({
+        data: {
+          userId: user.id,
+          action: body.action || 'PAGE_VIEW',
+          entity: body.page ? 'Page' : undefined,
+          entityId: body.page,
+          metadata: body.metadata,
+        },
+      });
+    } catch {}
+    return { success: true };
   }
 }

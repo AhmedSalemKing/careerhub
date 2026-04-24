@@ -913,6 +913,19 @@ export class PaymentsService {
           },
         });
 
+        // Log enrollment activity
+        try {
+          await this.prisma.userActivity.create({
+            data: {
+              userId,
+              action: 'ENROLL_COURSE',
+              entity: 'Course',
+              entityId: itemId,
+              metadata: { paymentId, enrollmentId: enrollment.id },
+            },
+          });
+        } catch {}
+
         // Send notification
         await this.notificationsService.createNotification({
           userId,
