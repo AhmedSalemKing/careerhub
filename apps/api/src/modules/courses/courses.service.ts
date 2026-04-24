@@ -1042,11 +1042,75 @@ export class CoursesService {
   }
 
   async getInstructorStats(instructorId: string) {
-    const [totalCourses, totalStudents] = await Promise.all([
-      this.prisma.course.count({ where: { instructorId } }),
-      this.prisma.enrollment.count({ where: { course: { instructorId } } }),
-    ]);
-    return { success: true, data: { totalCourses, totalStudents, revenue: 0 } };
+    const courses = await this.prisma.course.findMany({
+      where: { instructorId },
+      include: {
+        enrollments: true,
+        _count: { select: { enrollments: true } }
+      }
+    })
+    
+    const courseIds = courses.map(c => c.id)
+    
+    const totalStudents = await this.prisma.enrollment.count({
+      where: { courseId: { in: courseIds } }
+    })
+    
+    const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
+    
+    const ratings = await this.prisma.rating.findMany({
+      where: { courseId: { in: courseIds } }
+    }) as { value: number }[]
+    
+    const ratingsArr: number[] = ratings.map(r => r.value || 0)
+    const avgRating = ratingsArr.length > 0
+      ? ratingsArr.reduce((a, b) => a + b, 0) / ratingsArr.length
+      : 0
+    
+    const payments = await this.prisma.payment.findMany({
+      where: { 
+        courseId: { in: courseIds },
+        status: 'SUCCESS'
+      }
+    }) as { amount: number }[]
+    
+    const paymentsArr: number[] = payments.map(p => p.amount || 0)
+    const totalRevenue = paymentsArr.reduce((a, b) => a + b, 0)
+    
+    const certificatesIssued = await this.prisma.certificate.count({
+      where: { courseId: { in: courseIds } }
+    }).catch(() => 0)
+    
+    const completedEnrollments = await this.prisma.enrollment.count({
+      where: { 
+        courseId: { in: courseIds },
+        completedAt: { not: null }
+      }
+    }).catch(() => 0)
+    
+    const completionRate = totalStudents > 0
+      ? Math.round((completedEnrollments / totalStudents) * 100)
+      : 0
+    
+    return {
+      success: true,
+      data: {
+        totalStudents,
+        publishedCourses,
+        totalCourses: courses.length,
+        avgRating: parseFloat(avgRating.toFixed(1)),
+        totalRevenue,
+        certificatesIssued,
+        completionRate,
+        courses: courses.map(c => ({
+          id: c.id,
+          title: c.titleAr || c.titleEn || '',
+          status: c.status,
+          price: c.price || 0,
+          enrollments: c._count.enrollments,
+        }))
+      }
+    }
   }
 
   async updateSection(sectionId: string, instructorId: string, title: string) {
