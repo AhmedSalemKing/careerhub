@@ -8,57 +8,12 @@ import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
-import {
-  LayoutDashboard, BookOpen, Brain, MessageSquare, Users,
-  Award, Settings, PlusCircle, BarChart2, DollarSign,
-  Calendar, Clock, Star, Shield, UserCog, FileText, Bell, Wallet, CalendarDays,
+import { 
+  LayoutDashboard, BookOpen, PlusCircle, BarChart2,
+  Calendar, CalendarDays, DollarSign, Wallet,
+  Brain, MessageSquare, Award, Settings,
+  Shield, Users, Bell, ClipboardList
 } from 'lucide-react'
-
-function getStudentItems(locale: string) {
-  return [
-    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
-    { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
-    { icon: Brain, labelAr: 'التقييم', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
-    { icon: MessageSquare, labelAr: 'المحادثة', labelEn: 'AI Chat', href: `/${locale}/dashboard/ai-chat` },
-    { icon: Users, labelAr: 'الكوتشنج', labelEn: 'Coaching', href: `/${locale}/dashboard/my-sessions` },
-    { icon: Award, labelAr: 'الشهادات', labelEn: 'Certificates', href: `/${locale}/dashboard/certificates` },
-    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
-  ]
-}
-
-function getInstructorItems(locale: string) {
-  return [
-    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
-    { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'My Courses', href: `/${locale}/dashboard/my-courses` },
-    { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New Course', href: `/${locale}/dashboard/create-course` },
-    { icon: BarChart2, labelAr: 'التحليلات', labelEn: 'Analytics', href: `/${locale}/dashboard/analytics` },
-    { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
-    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
-  ]
-}
-
-function getConsultantItems(locale: string) {
-  return [
-    { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
-    { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
-    { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
-    { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
-    { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
-    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
-  ]
-}
-
-function getAdminItems(locale: string) {
-  return [
-    { icon: LayoutDashboard, labelAr: 'لوحة الإدارة', labelEn: 'Admin Panel', href: `/${locale}/admin` },
-    { icon: Users, labelAr: 'المستخدمين', labelEn: 'Users', href: `/${locale}/admin/users` },
-    { icon: BookOpen, labelAr: 'الكورسات', labelEn: 'Courses', href: `/${locale}/admin/courses` },
-    { icon: Bell, labelAr: 'الموافقات', labelEn: 'Approvals', href: `/${locale}/admin/approvals` },
-    { icon: FileText, labelAr: 'التقارير', labelEn: 'Reports', href: `/${locale}/admin/reports` },
-    { icon: UserCog, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/admin/sessions` },
-    { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
-  ]
-}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, hydrate, logout } = useAuthStore()
@@ -71,39 +26,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const accountType = user?.accountType || 'STUDENT'
 
   const dockItems = useMemo(() => {
-    const studentBase = [
-      { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Dashboard', href: `/${locale}/dashboard` },
-      { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'My Courses', href: `/${locale}/dashboard/my-courses` },
-      { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
-      { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI Chat', href: `/${locale}/dashboard/ai-chat` },
-      { icon: Award, labelAr: 'الشهادات', labelEn: 'Certificates', href: `/${locale}/dashboard/certificates` },
-      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
-      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
-    ]
-
     if (accountType === 'ADMIN') return [
       { icon: Shield, labelAr: 'الإدارة', labelEn: 'Admin', href: `/${locale}/admin` },
       { icon: Users, labelAr: 'المستخدمون', labelEn: 'Users', href: `/${locale}/admin/users` },
+      { icon: BookOpen, labelAr: 'الكورسات', labelEn: 'Courses', href: `/${locale}/admin/courses` },
       { icon: Bell, labelAr: 'الموافقات', labelEn: 'Approvals', href: `/${locale}/admin/approvals` },
-      ...studentBase,
+      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
-
+    
     if (accountType === 'INSTRUCTOR') return [
-      { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New Course', href: `/${locale}/dashboard/create-course` },
-      { icon: BarChart2, labelAr: 'إحصائياتي', labelEn: 'Analytics', href: `/${locale}/dashboard/analytics` },
+      { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
+      { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
+      { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New', href: `/${locale}/dashboard/create-course` },
+      { icon: BarChart2, labelAr: 'إحصائيات', labelEn: 'Stats', href: `/${locale}/dashboard/analytics` },
       { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
-      ...studentBase,
+      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
-
+    
     if (accountType === 'CONSULTANT') return [
+      { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
       { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
-
-    return studentBase
+    
+    return [
+      { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
+      { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
+      { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
+      { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI', href: `/${locale}/dashboard/ai-chat` },
+      { icon: Award, labelAr: 'الشهادات', labelEn: 'Certs', href: `/${locale}/dashboard/certificates` },
+      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
+      { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
+    ]
   }, [accountType, locale])
 
   useEffect(() => {
