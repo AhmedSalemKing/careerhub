@@ -281,6 +281,7 @@ export class CoursesService {
         instructor: {
           select: {
             id: true,
+            isVerified: true,
             profile: {
               select: { firstName: true, lastName: true, avatar: true },
             },

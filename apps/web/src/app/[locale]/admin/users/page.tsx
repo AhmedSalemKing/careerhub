@@ -6,6 +6,7 @@ import { api, post, patch } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
 import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, Eye, X, Shield } from 'lucide-react'
 import { getMediaUrl } from '../../../../lib/media'
+import VerifiedBadge from '../../../../components/VerifiedBadge'
 
 type AdminUser = {
   id: string
@@ -14,6 +15,7 @@ type AdminUser = {
   accountType: string
   isActive: boolean
   status: string
+  isVerified?: boolean
   createdAt: string
   profile?: { firstName: string; lastName: string; avatar?: string } | null
 }
@@ -223,8 +225,9 @@ export default function AdminUsersPage() {
                           </div>
                         )}
                         <div>
-                          <p className="text-white font-medium">
+                          <p className="text-white font-medium flex items-center gap-1.5">
                             {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
+                            {u.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                           </p>
                           <p className="text-xs text-gray-400">{u.email}</p>
                         </div>

@@ -12,6 +12,7 @@ import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
 import { Skeleton } from '../../components/ui/Skeleton'
+import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 
@@ -60,8 +61,9 @@ function InstructorOverview() {
               <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight leading-tight">
+              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight leading-tight flex items-center gap-2">
                 مرحباً بك يا {firstName}
+                {user?.isVerified && <VerifiedBadge size="sm" showTooltip={false} />}
               </h1>
               <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المحاضر — أدر كورساتك وطلابك بكل سهولة</p>
             </div>
@@ -375,8 +377,9 @@ function ConsultantOverview() {
               <Calendar className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight">
+              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight flex items-center gap-2">
                 مرحباً يا {firstName}
+                {user?.isVerified && <VerifiedBadge size="sm" showTooltip={false} />}
               </h1>
               <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المستشار — تابع جلساتك واستشاراتك</p>
             </div>

@@ -22,6 +22,7 @@ export class SessionsController {
       select: {
         id: true,
         email: true,
+        isVerified: true,
         hourlyRate: true,
         meetingMethod: true,
         bio: true,

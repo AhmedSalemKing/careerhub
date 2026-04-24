@@ -69,7 +69,7 @@ function VerificationSection({ user }: { user: any }) {
     }
   }
 
-  if (status === 'VERIFIED' || user?.isVerified) {
+  if (status === 'VERIFIED' || verificationStatus?.isVerified) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(22,163,74,0.1)', border: '2px solid rgba(22,163,74,0.3)', borderRadius: 16, padding: '16px 28px', marginBottom: 16 }}>
@@ -97,7 +97,7 @@ function VerificationSection({ user }: { user: any }) {
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <XCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
         <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
-        {user?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {user.idRejectedReason}</p>}
+        {verificationStatus?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {verificationStatus.idRejectedReason}</p>}
         <p style={{ color: 'var(--muted)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
         <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
       </div>

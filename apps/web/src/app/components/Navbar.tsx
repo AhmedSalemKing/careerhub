@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar' 
 import { NotificationBell } from './NotificationBell'
+import VerifiedBadge from '../../components/VerifiedBadge'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
@@ -168,10 +169,11 @@ function UserDropdown({ locale }: { locale: string }) {
           }}
         >
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
+            <p className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: 'var(--foreground)' }}>
               {user?.profile?.firstName
                 ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
                 : user?.email}
+              {user?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
             </p>
             <p className="text-xs truncate mt-0.5" style={{ color: 'var(--muted)' }}>{user?.email}</p>
           </div>
@@ -692,10 +694,11 @@ export function Navbar() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
+                    <p className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: 'var(--foreground)' }}>
                       {user?.profile?.firstName
                         ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
                         : user?.email}
+                      {user?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                     </p>
                     <p className="text-xs truncate" style={{ color: 'var(--muted)' }}>
                       {user?.email}

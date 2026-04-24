@@ -7,6 +7,7 @@ export type AuthUser = {
   role?: string
   accountType?: string // STUDENT | INSTRUCTOR | CONSULTANT | ADMIN
   status?: string
+  isVerified?: boolean
   profile?: { firstName?: string; lastName?: string; avatar?: string; language?: string }
 }
 

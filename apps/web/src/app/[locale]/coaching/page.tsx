@@ -7,11 +7,13 @@ import { useRouter } from 'next/navigation'
 import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
 import { notify } from '../../../lib/notify'
+import { useAuthStore } from '../../../stores/authStore'
 import {
   Clock, Globe, Video, Phone,
   X, User,
   Briefcase, Award, MapPin
 } from 'lucide-react'
+import VerifiedBadge from '../../../components/VerifiedBadge'
 
 interface Consultant {
   id: string
@@ -20,6 +22,7 @@ interface Consultant {
   bio: string
   speciality: string
   experience: number
+  isVerified?: boolean
   profile: { firstName: string; lastName: string; avatar: string | null; country: string }
   _count: { consultantSessions: number }
 }
@@ -85,7 +88,7 @@ function BookingModal({
               </div>
             )}
             <div>
-              <h3 className="font-bold text-foreground">{name}</h3>
+              <h3 className="font-bold text-foreground flex items-center gap-1.5">{name}{consultant.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}</h3>
               <p className="text-xs text-[color:var(--muted)]">{consultant.speciality}</p>
             </div>
           </div>
