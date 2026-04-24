@@ -748,7 +748,12 @@ function LearnPageInner() {
               return (
                 <button
                   key={lesson.id}
-                  onClick={() => status !== 'locked' && setActiveLessonId(lesson.id)}
+                  onClick={() => {
+                    if (status !== 'locked') {
+                      router.replace(`/${locale}/learn/${courseId}?lesson=${lesson.id}`, { scroll: false })
+                      setActiveLessonId(lesson.id)
+                    }
+                  }}
                   disabled={status === 'locked'}
                   className={`
                     group relative w-full text-right transition-all duration-200
@@ -948,9 +953,10 @@ function LearnPageInner() {
                     >
                       <video
                         ref={videoRef}
-                        key={videoUrl}
+                        key={activeLessonId}
                         src={videoUrl}
                         controls
+                        autoPlay
                         className="absolute top-0 left-0 w-full h-full object-contain"
                         controlsList="nodownload"
                         disablePictureInPicture
@@ -958,6 +964,7 @@ function LearnPageInner() {
                         onContextMenu={e => e.preventDefault()}
                         onCanPlay={() => setIsLoadingMedia(false)}
                         onWaiting={() => setIsLoadingMedia(true)}
+                        onLoadedData={() => setIsLoadingMedia(false)}
                         onError={() => { setIsLoadingMedia(false); setVideoError('فشل تحميل الفيديو') }}
                         onEnded={() => { if (!isCurrentCompleted) handleMarkComplete() }}
                         style={{
