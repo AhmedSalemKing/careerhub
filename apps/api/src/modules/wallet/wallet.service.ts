@@ -157,24 +157,69 @@ export class WalletService {
   async transferFromEarnings(userId: string, amount: number) {
     if (amount <= 0) throw new BadRequestException('المبلغ يجب أن يكون أكبر من صفر')
     
-    const sessions = await this.prisma.consultingSession.findMany({
-      where: { consultantId: userId, status: 'COMPLETED' }
-    }).catch(() => [])
+    let totalEarnings = 0
     
-    const totalEarnings = (sessions as any[]).reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+    // Check ConsultingSession (consultants)
+    try {
+      const sessions = await this.prisma.consultingSession.findMany({
+        where: { consultantId: userId, status: 'COMPLETED' }
+      })
+      totalEarnings = sessions.reduce((s: number, p: any) => s + (p.price || 0), 0)
+      console.log('[Wallet] consultingSession earnings:', totalEarnings)
+    } catch(e) {
+      console.log('[Wallet] consultingSession error:', e.message)
+    }
+    
+    // Check CoachingSession (coaches) - need to find coach by userId
+    if (totalEarnings === 0) {
+      try {
+        const coach = await this.prisma.coach.findUnique({ where: { userId } })
+        if (coach) {
+          const sessions = await this.prisma.coachingSession.findMany({
+            where: { coachId: coach.id, status: 'COMPLETED' }
+          })
+          totalEarnings = sessions.reduce((s: number, p: any) => s + (p.price || 0), 0)
+          console.log('[Wallet] coachingSession earnings:', totalEarnings)
+        }
+      } catch(e) {
+        console.log('[Wallet] coachingSession error:', e.message)
+      }
+    }
+    
+    // Check course payments for instructors
+    if (totalEarnings === 0) {
+      try {
+        const courses = await this.prisma.course.findMany({
+          where: { instructorId: userId },
+          select: { id: true }
+        })
+        const courseIds = courses.map((c: any) => c.id)
+        if (courseIds.length > 0) {
+          const payments = await this.prisma.payment.findMany({
+            where: { courseId: { in: courseIds }, status: 'SUCCESS' }
+          })
+          totalEarnings = payments.reduce((s: number, p: any) => s + (p.amount || 0), 0)
+          console.log('[Wallet] payments earnings:', totalEarnings)
+        }
+      } catch(e) {
+        console.log('[Wallet] payments error:', e.message)
+      }
+    }
+    
+    console.log('[Wallet] Total earnings found:', totalEarnings)
     
     const transferred = await this.prisma.walletTransaction.aggregate({
       where: { userId, type: 'EARNINGS_TRANSFER' },
       _sum: { amount: true }
     }).catch(() => ({ _sum: { amount: 0 } }))
     
-    const availableEarnings = totalEarnings - (transferred._sum?.amount || 0)
+    const alreadyTransferred = transferred._sum?.amount || 0
+    const available = totalEarnings - alreadyTransferred
     
-    if (amount > availableEarnings) {
-      throw new BadRequestException({
-        message: `أرباحك المتاحة: ${availableEarnings.toFixed(2)} ر.س`,
-        code: 'INSUFFICIENT_EARNINGS',
-      })
+    console.log('[Wallet] Already transferred:', alreadyTransferred, 'Available:', available)
+    
+    if (amount > available) {
+      throw new BadRequestException(`أرباحك المتاحة للتحويل: ${available.toFixed(2)} ر.س`)
     }
     
     const updated = await this.prisma.user.update({
@@ -192,6 +237,6 @@ export class WalletService {
       }
     })
     
-    return { success: true, newBalance: updated.walletBalance }
+    return { success: true, newBalance: updated.walletBalance, transferred: amount }
   }
 }
