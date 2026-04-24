@@ -1,20 +1,33 @@
 'use client'
-import { useQuery } from '@tanstack/react-query'
-import { get } from '@/lib/api'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { get, post } from '@/lib/api'
 import { useTheme } from 'next-themes'
-import { DollarSign, TrendingUp, Users, BookOpen, ArrowUpRight } from 'lucide-react'
+import { DollarSign, TrendingUp, Users, BookOpen, ArrowUpRight, Wallet } from 'lucide-react'
 import { useAuthStore } from '@/stores/authStore'
 
 export default function RevenuePage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const { user } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [transferAmount, setTransferAmount] = useState('')
+  const [transferring, setTransferring] = useState(false)
+  const [msg, setMsg] = useState<{type:'success'|'error',text:string}| null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['revenue'],
     queryFn: async () => {
       const res = await get('/payment/my-payments')
       return res.data?.data ?? []
+    }
+  })
+
+  const { data: walletData } = useQuery({
+    queryKey: ['wallet-balance'],
+    queryFn: async () => {
+      const res = await get('/wallet')
+      return res.data?.data ?? { balance: 0 }
     }
   })
 
@@ -25,6 +38,28 @@ export default function RevenuePage() {
     const now = new Date()
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
   }).reduce((s: number, p: any) => s + (p.amount || 0), 0)
+
+  const handleTransfer = async () => {
+    const amount = parseFloat(transferAmount)
+    if (!amount || amount <= 0) return
+    if (amount > total) {
+      setMsg({ type:'error', text:'المبلغ أكبر من إيراداتك' })
+      return
+    }
+    setTransferring(true)
+    try {
+      await post('/wallet/transfer-from-earnings', { amount })
+      setMsg({ type:'success', text:`تم تحويل ${amount} ر.س للمحفظة بنجاح ` })
+      setTransferAmount('')
+      queryClient.invalidateQueries({ queryKey: ['wallet'] })
+      queryClient.invalidateQueries({ queryKey: ['wallet-balance'] })
+    } catch(e: any) {
+      setMsg({ type:'error', text: e.response?.data?.message || 'فشل التحويل' })
+    } finally {
+      setTransferring(false)
+      setTimeout(() => setMsg(null), 4000)
+    }
+  }
 
   return (
     <div style={{ minHeight:'100vh', background: isDark?'#0d0d0d':'#fafafa', padding:'32px 24px 120px', direction:'rtl' }}>
@@ -46,6 +81,72 @@ export default function RevenuePage() {
               <div style={{ color:'#6b7280', fontSize:12, marginTop:4 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+
+        <div style={{
+          background: isDark?'#121212':'#fff',
+          borderRadius:20, padding:24, marginBottom:24,
+          border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`,
+          direction:'rtl',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <h3 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:16, fontWeight:700, margin:0 }}>
+              تحويل إلى المحفظة
+            </h3>
+            <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(81,32,200,0.1)', padding:'6px 12px', borderRadius:8 }}>
+              <Wallet size={14} color="#5120c8"/>
+              <span style={{ color:'#5120c8', fontSize:13, fontWeight:700 }}>
+                رصيد المحفظة: {(walletData?.balance||0).toFixed(2)} ر.س
+              </span>
+            </div>
+          </div>
+
+          {msg && (
+            <div style={{
+              padding:'12px 16px', borderRadius:10, marginBottom:16,
+              background: msg.type==='success'?'rgba(22,163,74,0.1)':'rgba(239,68,68,0.1)',
+              border:`1px solid ${msg.type==='success'?'rgba(22,163,74,0.3)':'rgba(239,68,68,0.3)'}`,
+              color: msg.type==='success'?'#16a34a':'#ef4444',
+              fontSize:14, fontWeight:600,
+            }}>
+              {msg.text}
+            </div>
+          )}
+
+          <div style={{ display:'flex', gap:10 }}>
+            <input
+              type="number"
+              value={transferAmount}
+              onChange={e => setTransferAmount(e.target.value)}
+              placeholder={`الحد الأقصى: ${total.toFixed(2)} ر.س`}
+              style={{
+                flex:1, padding:'12px 16px', borderRadius:10,
+                background: isDark?'#1a1a1a':'#f8f8fa',
+                color: isDark?'#fff':'#0d0d0d',
+                border:`1px solid ${isDark?'rgba(255,255,255,0.1)':'#e5e7eb'}`,
+                fontSize:15, outline:'none',
+              }}
+            />
+            <button
+              onClick={handleTransfer}
+              disabled={transferring || !transferAmount || parseFloat(transferAmount) <= 0}
+              style={{
+                padding:'12px 24px', borderRadius:10, border:'none',
+                background: transferring||!transferAmount ? '#374151' : 'linear-gradient(135deg,#5120c8,#7c3aed)',
+                color:'#fff', cursor: transferring||!transferAmount ? 'not-allowed':'pointer',
+                fontWeight:700, fontSize:14,
+                display:'flex', alignItems:'center', gap:6,
+              }}
+            >
+              {transferring
+                ? <><div style={{ width:16,height:16,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 1s linear infinite' }}/> جاري...</>
+                : <><Wallet size={16}/> تحويل</>
+              }
+            </button>
+          </div>
+          <p style={{ color:'#6b7280', fontSize:12, marginTop:8 }}>
+            سيتم تحويل المبلغ من إيراداتك إلى رصيد محفظتك فورا
+          </p>
         </div>
 
         <div style={{ background: isDark?'#121212':'#fff', borderRadius:20, padding:24, border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
