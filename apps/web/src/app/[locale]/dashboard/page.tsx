@@ -29,7 +29,7 @@ function InstructorOverview() {
     queryFn: async () => {
       const res = await get('/courses/instructor/stats')
       const d = (res?.data as any)?.data ?? {}
-      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.revenue ?? 0 }
+      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.totalRevenue ?? 0 }
     },
   })
 
