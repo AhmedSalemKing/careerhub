@@ -72,21 +72,34 @@ export default function CoursesPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [mainCategories, setMainCategories] = useState<{id: string; name: string}[]>([])
   const [courses, setCourses] = useState<NormalizedCourse[]>([])
   const [loading, setLoading] = useState(true)
-  
+
   // ✅ NEW: لإظهار الأخطاء
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch main categories for filter tabs
+  useEffect(() => {
+    api.get('/courses/categories?language=' + locale)
+      .then(res => {
+        const all: any[] = res.data?.data ?? res.data ?? []
+        setMainCategories(all.filter((c: any) => !c.parentId).map((c: any) => ({ id: c.id, name: c.name })))
+      })
+      .catch(() => {})
+  }, [locale])
 
   // ✅ FIXED: استدعاء API مع تحسين كامل
   useEffect(() => {
     let mounted = true
-    
-    // ✅ Debug: طباعة الـ URL المستخدم
-    console.log('[Courses] Fetching from:', `${API_BASE}/courses?status=PUBLISHED`)
-    console.log('[Courses] API Base URL:', API_BASE)
-    
-    api.get('/courses?status=PUBLISHED')
+
+    const url = selectedCategoryId
+      ? `/courses?status=PUBLISHED&categoryId=${selectedCategoryId}`
+      : '/courses?status=PUBLISHED'
+
+    setLoading(true)
+    api.get(url)
       .then((res) => {
         // ✅ Debug: طباعة الاستجابة الكاملة
         console.log('[Courses] Raw Axios Response:', res)
@@ -148,7 +161,7 @@ export default function CoursesPage() {
     
     // ✅ Cleanup function لمنع memory leaks
     return () => { mounted = false }
-  }, [])
+  }, [selectedCategoryId])
 
   const safeCourses = Array.isArray(courses) ? courses : []
   
@@ -236,6 +249,37 @@ export default function CoursesPage() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Category Tabs */}
+        {mainCategories.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedCategoryId(null)}
+              className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+              style={{
+                background: selectedCategoryId === null ? 'var(--primary)' : 'var(--surface)',
+                color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              {locale === 'ar' ? 'الكل' : 'All'}
+            </button>
+            {mainCategories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategoryId(cat.id)}
+                className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                style={{
+                  background: selectedCategoryId === cat.id ? 'var(--primary)' : 'var(--surface)',
+                  color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Filters Bar */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full sm:w-80">

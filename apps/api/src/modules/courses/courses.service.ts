@@ -25,11 +25,12 @@ export class CoursesService {
     page: number;
     limit: number;
     careerPath?: string;
+    categoryId?: string;
     level?: string;
     search?: string;
     language: string;
   }) {
-    const { page, limit, careerPath, level, search, language } = options;
+    const { page, limit, careerPath, categoryId, level, search, language } = options;
     const effectiveLimit = limit || 12;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
@@ -80,6 +81,17 @@ export class CoursesService {
           },
         },
       ];
+    }
+
+    if (categoryId) {
+      const cat = await this.prisma.category.findUnique({
+        where: { id: categoryId },
+        include: { children: { select: { id: true } } },
+      });
+      if (cat) {
+        const ids = [cat.id, ...((cat as any).children?.map((c: any) => c.id) || [])];
+        where.categoryId = { in: ids };
+      }
     }
 
     const [courses, total] = await Promise.all([
@@ -485,11 +497,13 @@ export class CoursesService {
       name: language === 'ar' ? cat.nameAr : cat.nameEn,
       slug: cat.slug,
       icon: cat.icon,
-      courseCount: (cat as any)._count.courses,
+      parentId: (cat as any).parentId ?? null,
+      courseCount: (cat as any)._count.courses + ((cat as any).children?.reduce((s: number, sub: any) => s + sub._count.courses, 0) || 0),
       children: (cat as any).children.map((sub: any) => ({
         id: sub.id,
         name: language === 'ar' ? sub.nameAr : sub.nameEn,
         slug: sub.slug,
+        parentId: sub.parentId,
         courseCount: (sub as any)._count.courses,
       })),
     }));

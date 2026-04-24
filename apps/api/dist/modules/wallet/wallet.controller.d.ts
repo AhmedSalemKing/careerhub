@@ -8,14 +8,14 @@ export declare class WalletController {
             balance: number;
             transactions: {
                 id: string;
-                status: string;
                 createdAt: Date;
                 userId: string;
+                status: string;
                 type: string;
-                amount: number;
                 description: string | null;
-                stripePaymentIntentId: string | null;
                 courseId: string | null;
+                amount: number;
+                stripePaymentIntentId: string | null;
             }[];
         };
     }>;

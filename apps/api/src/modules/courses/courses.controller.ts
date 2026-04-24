@@ -36,6 +36,7 @@ export class CoursesController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiQuery({ name: 'careerPath', required: false, description: 'Filter by career path' })
+  @ApiQuery({ name: 'categoryId', required: false, description: 'Filter by category (includes subcategories)' })
   @ApiQuery({ name: 'level', required: false, description: 'Filter by level' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
@@ -43,6 +44,7 @@ export class CoursesController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('careerPath') careerPath?: string,
+    @Query('categoryId') categoryId?: string,
     @Query('level') level?: string,
     @Query('search') search?: string,
     @Query('language') language?: string,
@@ -51,6 +53,7 @@ export class CoursesController {
       page: page || 1,
       limit: limit || 12,
       careerPath,
+      categoryId,
       level,
       search,
       language: language || 'en',

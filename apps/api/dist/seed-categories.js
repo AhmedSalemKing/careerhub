@@ -1,0 +1,82 @@
+const categories = {
+    'البرمجة والتطوير': [
+        'تطوير الويب الأمامي', 'تطوير الويب الخلفي', 'تطوير التطبيقات المحمولة',
+        'برمجة Python', 'برمجة JavaScript', 'برمجة Java', 'برمجة C++', 'برمجة PHP',
+        'تطوير iOS', 'تطوير Android', 'Flutter وDart', 'React وNext.js',
+        'Vue.js', 'Angular', 'Node.js', 'قواعد البيانات SQL',
+        'MongoDB وNoSQL', 'PostgreSQL', 'DevOps', 'AWS والسحابة',
+        'Docker وKubernetes', 'الأمن السيبراني', 'اختبار الاختراق',
+        'الذكاء الاصطناعي', 'تعلم الآلة', 'معالجة البيانات',
+        'Blockchain وWeb3', 'تطوير الألعاب', 'برمجة Arduino',
+        'تطوير API', 'GraphQL', 'TypeScript', 'Rust', 'Go',
+    ],
+    'التصميم والإبداع': [
+        'تصميم UI/UX', 'تصميم الجرافيك', 'تصميم الشعارات',
+        'Adobe Photoshop', 'Adobe Illustrator', 'Adobe XD', 'Figma',
+        'تصميم الموشن جرافيك', 'Adobe After Effects', 'Adobe Premiere Pro',
+        'تصميم الويب', 'الهوية البصرية', 'التصميم الداخلي',
+        'الرسم الرقمي', 'التصوير الفوتوغرافي', '3D Modeling',
+        'Blender', 'Maya', 'Cinema 4D', 'تصميم الإنفوجرافيك',
+        'تصميم وسائل التواصل', 'Typography', 'نظرية الألوان',
+        'تصميم الحملات الإعلانية', 'تصميم المطبوعات', 'Canva',
+    ],
+    'التسويق والأعمال الرقمية': [
+        'التسويق الرقمي', 'SEO وتحسين محركات البحث', 'التسويق بالمحتوى',
+        'إدارة وسائل التواصل الاجتماعي', 'Facebook Ads', 'Google Ads',
+        'Email Marketing', 'Influencer Marketing', 'Affiliate Marketing',
+        'التجارة الإلكترونية', 'Shopify', 'Amazon FBA',
+        'إدارة العلامة التجارية', 'استراتيجية التسويق',
+        'Google Analytics', 'Copywriting', 'التسويق بالفيديو',
+        'Podcast Marketing', 'Growth Hacking', 'CRM وإدارة العملاء',
+        'Community Management', 'تسويق التطبيقات', 'B2B Marketing',
+        'تسويق المحتوى العربي', 'الإعلانات المدفوعة',
+    ],
+    'إدارة الأعمال والتطوير المهني': [
+        'ريادة الأعمال', 'إدارة المشاريع', 'PMP الاحترافية',
+        'Agile وScrum', 'القيادة والإدارة', 'إدارة الفرق',
+        'المحاسبة والمالية', 'التحليل المالي', 'الاستثمار والبورصة',
+        'إدارة الموارد البشرية', 'التوظيف والاستقطاب',
+        'مهارات التفاوض', 'مهارات التواصل', 'العرض والتقديم',
+        'إنتاجية العمل', 'إدارة الوقت', 'تطوير الذات',
+        'اللغة الإنجليزية للأعمال', 'الكتابة الاحترافية',
+        'خدمة العملاء', 'المبيعات', 'التجارة الدولية',
+        'الاستشارات المهنية', 'إدارة التغيير', 'العمل الحر',
+    ],
+};
+async function seedCategories() {
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    let total = 0;
+    for (const [mainCat, subCats] of Object.entries(categories)) {
+        const slug = mainCat.replace(/\s+/g, '-').replace(/[^\w\u0600-\u06FF-]/g, '');
+        const main = await prisma.category.upsert({
+            where: { slug },
+            create: { nameAr: mainCat, nameEn: mainCat, slug },
+            update: {},
+        });
+        for (const subCat of subCats) {
+            const subSlug = subCat.replace(/\s+/g, '-').replace(/[^\w\u0600-\u06FF-]/g, '');
+            try {
+                await prisma.category.upsert({
+                    where: { slug: subSlug },
+                    create: {
+                        nameAr: subCat,
+                        nameEn: subCat,
+                        slug: subSlug,
+                        parentId: main.id
+                    },
+                    update: { parentId: main.id },
+                });
+                total++;
+            }
+            catch (e) {
+                console.log('Skip:', subCat);
+            }
+        }
+        console.log(`✓ ${mainCat}: ${subCats.length} subcategories`);
+    }
+    console.log(`\n✅ Done! Seeded ${total} subcategories across 4 main categories`);
+    await prisma.$disconnect();
+}
+seedCategories().catch(console.error);
+//# sourceMappingURL=seed-categories.js.map
