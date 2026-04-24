@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { sendNotification } from '../../common/utils/notify.util';
 
 @Injectable()
 export class VerificationService {
@@ -97,6 +98,14 @@ export class VerificationService {
 
     this.logger.log(`[Verification] Approved for user: ${user.email} by admin: ${adminId}`);
 
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تم توثيق هويتك',
+      'تهانينا! تم التحقق من هويتك بنجاح. يظهر الآن شارة التوثيق بجانب اسمك.',
+      'VERIFICATION_APPROVED'
+    );
+
     return { success: true, data: user };
   }
 
@@ -112,6 +121,14 @@ export class VerificationService {
     });
 
     this.logger.log(`[Verification] Rejected for user: ${user.email} by admin: ${adminId}`);
+
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تم رفض طلب التوثيق',
+      `للأسف تم رفض طلب توثيق هويتك. السبب: ${reason || 'الوثائق غير واضحة'}. يمكنك إعادة التقديم.`,
+      'VERIFICATION_REJECTED'
+    );
 
     return { success: true, data: user };
   }

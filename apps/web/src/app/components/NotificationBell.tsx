@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell } from 'lucide-react'
+import { Bell, CheckCircle, XCircle, AlertTriangle, Info, Award, CreditCard, User, Clock } from 'lucide-react'
 import { get, patch } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 
@@ -16,16 +16,62 @@ type Notification = {
   createdAt: string
 }
 
-function notifStyle(type: string) {
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'الآن'
+  if (mins < 60) return `منذ ${mins} دقيقة`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `منذ ${hrs} ساعة`
+  const days = Math.floor(hrs / 24)
+  return `منذ ${days} يوم`
+}
+
+function getIcon(type: string) {
   switch (type) {
-    case 'PAYMENT_CONFIRMED':
     case 'CERTIFICATE_EARNED':
-    case 'LESSON_COMPLETED':
-      return 'border-r-4 border-green-500 bg-green-500/5'
+      return <Award className="h-4 w-4 text-green-600" />
+    case 'PAYMENT_CONFIRMED':
+    case 'WALLET_TOPUP':
+      return <CreditCard className="h-4 w-4 text-green-600" />
+    case 'USER_BANNED':
+    case 'VERIFICATION_REJECTED':
+    case 'USER_REJECTED':
+      return <XCircle className="h-4 w-4 text-red-500" />
     case 'COACHING_REMINDER':
-      return 'border-r-4 border-amber-500 bg-amber-500/5'
+    case 'SESSION_BOOKED':
+    case 'SESSION_CONFIRMED':
+    case 'SESSION_CANCELLED':
+      return <Clock className="h-4 w-4 text-amber-500" />
+    case 'VERIFICATION_APPROVED':
+    case 'USER_APPROVED':
+    case 'COURSE_ENROLLMENT':
+      return <CheckCircle className="h-4 w-4 text-green-600" />
     default:
-      return 'border-r-4 border-primary bg-primary/5'
+      return <Info className="h-4 w-4 text-primary" />
+  }
+}
+
+function getBgColor(type: string): string {
+  switch (type) {
+    case 'CERTIFICATE_EARNED':
+    case 'PAYMENT_CONFIRMED':
+    case 'WALLET_TOPUP':
+    case 'VERIFICATION_APPROVED':
+    case 'USER_APPROVED':
+    case 'COURSE_ENROLLMENT':
+      return 'border-green-500 bg-green-500/5'
+    case 'USER_BANNED':
+    case 'VERIFICATION_REJECTED':
+    case 'USER_REJECTED':
+      return 'border-red-500 bg-red-500/5'
+    case 'COACHING_REMINDER':
+    case 'SESSION_BOOKED':
+    case 'SESSION_CONFIRMED':
+    case 'SESSION_CANCELLED':
+      return 'border-amber-500 bg-amber-500/5'
+    default:
+      return 'border-primary bg-primary/5'
   }
 }
 
@@ -116,20 +162,23 @@ export function NotificationBell() {
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`p-4 border-b border-[color:var(--border)] last:border-0 transition ${
-                      !n.isRead ? notifStyle(n.type) : 'opacity-60'
+                    className={`p-4 border-b border-[color:var(--border)] last:border-0 transition cursor-pointer ${
+                      !n.isRead ? getBgColor(n.type) : 'opacity-60'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">
-                          {n.titleAr || n.titleEn}
-                        </p>
-                        <p className="text-xs text-[color:var(--muted)] mt-0.5 leading-relaxed">
+                        <div className="flex items-center gap-2">
+                          {getIcon(n.type)}
+                          <p className="text-sm font-semibold text-foreground">
+                            {n.titleAr || n.titleEn}
+                          </p>
+                        </div>
+                        <p className="text-xs text-[color:var(--muted)] mt-0.5 leading-relaxed mr-6">
                           {n.contentAr || n.contentEn}
                         </p>
-                        <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60">
-                          {new Date(n.createdAt).toLocaleDateString('ar-SA')}
+                        <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60 mr-6">
+                          {timeAgo(n.createdAt)}
                         </p>
                       </div>
                       {!n.isRead && (

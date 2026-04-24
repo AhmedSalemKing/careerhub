@@ -1,6 +1,7 @@
 ﻿import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ZoomService } from './zoom.service';
+import { sendNotification } from '../../common/utils/notify.util';
 
 @Injectable()
 export class SchedulingService {
@@ -23,7 +24,15 @@ export class SchedulingService {
   }
 
   async bookSession(userId: string, bookingData: any) {
+    // When implemented, add notifications:
+    // Student: session booked
+    // Consultant: new booking request
     return { success: true, sessionId: 'stub-id' };
+  }
+
+  async confirmSession(sessionId: string) {
+    // When implemented: notify student of confirmation
+    return { success: true };
   }
 
   async rescheduleSession(sessionId: string, newSlotId: string, requestedBy?: string) {
@@ -31,6 +40,7 @@ export class SchedulingService {
   }
 
   async cancelSession(sessionId: string, requestedBy?: string, reason?: string) {
+    // When implemented: notify student of cancellation
     return { success: true };
   }
 

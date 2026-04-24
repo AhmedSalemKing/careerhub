@@ -11,6 +11,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AnalyticsService } from '../analytics/analytics.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
+import { sendNotification } from '../../common/utils/notify.util';
 
 @Injectable()
 export class AdminService {
@@ -1196,6 +1197,13 @@ export class AdminService {
       where: { id: userId },
       data: { status: 'BANNED', isActive: false },
     });
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تم تعليق حسابك',
+      'تم تعليق حسابك من منصة DeveWay. تواصل مع الدعم لمزيد من المعلومات.',
+      'USER_BANNED'
+    );
     await this.log('BAN_USER', 'User', userId, adminId);
     return user;
   }
@@ -1292,11 +1300,25 @@ export class AdminService {
 
   // ── Change user role ──
   async changeUserRole(id: string, accountType: string, adminId?: string) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id },
       data: { accountType: accountType as any },
       select: { id: true, email: true, accountType: true },
     });
+    const roleNames: Record<string, string> = {
+      STUDENT: 'طالب',
+      INSTRUCTOR: 'محاضر',
+      CONSULTANT: 'مستشار',
+      ADMIN: 'مدير'
+    };
+    await sendNotification(
+      this.prisma,
+      user.id,
+      `تم تغيير دورك إلى ${roleNames[accountType] || accountType}`,
+      `تم تحديث دورك في المنصة إلى ${roleNames[accountType] || accountType}. ستجد خيارات جديدة في لوحة التحكم.`,
+      'ROLE_CHANGED'
+    );
+    return user;
   }
 
   // ── Change user status ──

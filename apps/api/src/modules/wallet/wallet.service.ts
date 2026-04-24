@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import Stripe from 'stripe';
+import { sendNotification } from '../../common/utils/notify.util';
 
 @Injectable()
 export class WalletService {
@@ -103,6 +104,14 @@ export class WalletService {
       },
     }).catch(() => {});
 
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تم شحن محفظتك',
+      `تم إضافة ${amount} ريال إلى محفظتك بنجاح. رصيدك الحالي: ${updated.walletBalance} ريال`,
+      'WALLET_TOPUP'
+    );
+
     return { balance: updated.walletBalance };
   }
 
@@ -159,7 +168,15 @@ export class WalletService {
     await this.prisma.enrollment.create({
       data: { userId, courseId }
     });
-    
+
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تمت عملية الشراء',
+      `تم خصم ${price} ريال من محفظتك للاشتراك في "${course.titleEn}"`,
+      'COURSE_ENROLLMENT'
+    );
+
     return { success: true, message: 'تم الاشتراك بنجاح' };
   }
 

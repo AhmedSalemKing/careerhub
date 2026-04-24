@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { sendNotification } from '../../common/utils/notify.util';
 
 @Injectable()
 export class EnrollmentService {
@@ -28,6 +29,33 @@ export class EnrollmentService {
         progress: 0,
       },
     });
+
+    // Notify student
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تم الاشتراك في الكورس',
+      `تم اشتراكك بنجاح في كورس "${course.titleEn}". يمكنك البدء الآن!`,
+      'COURSE_ENROLLMENT',
+      { courseId: course.id }
+    );
+
+    // Notify instructor
+    if (course.instructorId && course.instructorId !== userId) {
+      const student = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { profile: true },
+      });
+      const studentName = `${student?.profile?.firstName || ''} ${student?.profile?.lastName || ''}`.trim() || 'طالب جديد';
+      await sendNotification(
+        this.prisma,
+        course.instructorId,
+        'طالب جديد اشترك في كورسك',
+        `${studentName} اشترك في كورس "${course.titleEn}"`,
+        'COURSE_ENROLLMENT',
+        { courseId: course.id, studentId: userId }
+      );
+    }
 
     await this.prisma.userActivity.create({
       data: {

@@ -7,6 +7,7 @@ import * as path from 'path'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
 import sharp from 'sharp'
+import { sendNotification } from '../../common/utils/notify.util'
 
 @Injectable()
 export class CertificatesService {
@@ -106,10 +107,19 @@ export class CertificatesService {
         courseId,
         serialNumber,
         certificateUrl,
-        qrCodeUrl: certificateUrl, // same image; QR is embedded inside
+        qrCodeUrl: certificateUrl,
         issuedAt: new Date(),
       },
     })
+
+    await sendNotification(
+      this.prisma,
+      userId,
+      'تهانينا! حصلت على شهادتك',
+      `أتممت كورس "${course.titleEn}" بنجاح وحصلت على شهادة إتمام. يمكنك تحميلها الآن!`,
+      'CERTIFICATE_EARNED',
+      { certificateId: certificate.id, courseId: course.id }
+    );
 
     return { success: true, data: certificate }
   } // end _doGenerate
