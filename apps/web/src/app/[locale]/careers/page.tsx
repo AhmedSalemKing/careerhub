@@ -28,13 +28,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
 }
 
 const CATEGORIES = [
-  { key: 'all', labelAr: '╪º┘ä┘â┘ä', labelEn: 'All' },
-  { key: 'Technology & Development', labelAr: '╪º┘ä╪¬┘é┘å┘è╪⌐', labelEn: 'Technology' },
-  { key: 'Cybersecurity', labelAr: '╪º┘ä╪ú┘à┘å ╪º┘ä╪│┘è╪¿╪▒╪º┘å┘è', labelEn: 'Cybersecurity' },
-  { key: 'Design & Creative', labelAr: '╪º┘ä╪¬╪╡┘à┘è┘à', labelEn: 'Design' },
-  { key: 'Marketing & Sales', labelAr: '╪º┘ä╪¬╪│┘ê┘è┘é', labelEn: 'Marketing' },
-  { key: 'Business & Management', labelAr: '╪Ñ╪»╪º╪▒╪⌐ ╪º┘ä╪ú╪╣┘à╪º┘ä', labelEn: 'Business' },
-  { key: 'Hybrid Tech + Business', labelAr: '┘ç╪¼┘è┘å', labelEn: 'Hybrid' },
+  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
+  { key: 'Technology & Development', labelAr: 'التقنية', labelEn: 'Technology' },
+  { key: 'Cybersecurity', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity' },
+  { key: 'Design & Creative', labelAr: 'التصميم', labelEn: 'Design' },
+  { key: 'Marketing & Sales', labelAr: 'التسويق', labelEn: 'Marketing' },
+  { key: 'Business & Management', labelAr: 'الأعمال', labelEn: 'Business' },
+  { key: 'Hybrid Tech + Business', labelAr: 'الهجين', labelEn: 'Hybrid' },
 ]
 
 export default function CareersPage() {
@@ -143,25 +143,25 @@ export default function CareersPage() {
           }}>
             <Sparkles size={14} color="#5120c8" />
             <span style={{ color:'#5120c8', fontSize:13, fontWeight:600 }}>
-              {isAr ? '╪º╪│╪¬┘â╪┤┘ü ╪º┘ä┘à╪│╪º╪▒╪º╪¬ ╪º┘ä┘à┘ç┘å┘è╪⌐' : 'Explore Career Paths'}
+              {isAr ? 'اكتشف مسارات العمل' : 'Explore Career Paths'}
             </span>
           </div>
           
           <h1 style={{ color:text, fontSize:'clamp(28px,4vw,42px)', fontWeight:900, margin:'0 0 16px', lineHeight:1.2 }}>
-            {isAr ? '╪º╪¿┘å ┘à╪│╪¬┘é╪¿┘ä┘â ╪º┘ä┘à┘ç┘å┘è' : 'Build Your Career Future'}
+            {isAr ? 'ابن مستقبلك المهني' : 'Build Your Career Future'}
           </h1>
           <p style={{ color:'#6b7280', fontSize:16, margin:'0 0 32px', lineHeight:1.7 }}>
             {isAr
-              ? '╪º╪«╪¬╪▒ ┘à╪│╪º╪▒┘â ╪º┘ä┘à┘ç┘å┘è ┘à┘å ╪¿┘è┘å ╪ú┘â╪½╪▒ ┘à┘å 30 ┘à╪│╪º╪▒╪º ┘à╪¬╪«╪╡╪╡╪º ┘ê╪º╪¿╪»╪ú ╪¿╪«╪╖╪⌐ ┘ê╪º╪╢╪¡╪⌐ ┘ê┘à┘å╪╕┘à╪⌐'
+              ? 'اختر مسارك من أكثر من 30 تخصص وابدأ بخطة واضحة ومنظمة'
               : 'Choose your career path from 30+ specialized paths and start with a clear structured plan'}
           </p>
           
           {/* Stats row */}
           <div style={{ display:'flex', justifyContent:'center', gap:32, flexWrap:'wrap', marginBottom:32 }}>
             {[
-              { value: allPaths.length.toString(), labelAr:'┘à╪│╪º╪▒ ┘à╪¬╪º╪¡', labelEn:'Paths Available' },
-              { value: CAREER_PATHS.length.toString(), labelAr:'╪¬╪«╪╡╪╡╪º╪¬', labelEn:'Specializations' },
-              { value: '100%', labelAr:'┘à╪¼╪º┘å┘è ┘ä┘ä╪º╪│╪¬┘â╪┤╪º┘ü', labelEn:'Free to Explore' },
+              { value: allPaths.length.toString(), labelAr:'مسار متاح', labelEn:'Paths Available' },
+              { value: CAREER_PATHS.length.toString(), labelAr:'تخصص', labelEn:'Specializations' },
+              { value: '100%', labelAr:'مجاني للاستكشاف', labelEn:'Free to Explore' },
             ].map((stat, i) => (
               <div key={i} style={{ textAlign:'center' }}>
                 <div style={{ color:'#5120c8', fontSize:28, fontWeight:900 }}>{stat.value}</div>
@@ -178,7 +178,7 @@ export default function CareersPage() {
             }} />
             <input
               type="text"
-              placeholder={isAr ? '╪º╪¿╪¡╪½ ╪╣┘å ┘à╪│╪º╪▒ ╪ú┘ê ┘à┘ç╪º╪▒╪⌐...' : 'Search paths or skills...'}
+              placeholder={isAr ? 'ابحث عن مسار أو مهارة...' : 'Search paths or skills...'}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -218,7 +218,7 @@ export default function CareersPage() {
         
         {/* Results count */}
         <div style={{ color:'#6b7280', fontSize:14, marginBottom:20 }}>
-          {isAr ? `${filteredPaths.length} ┘à╪│╪º╪▒ ┘à╪¬╪º╪¡` : `${filteredPaths.length} paths available`}
+          {isAr ? `${filteredPaths.length} مسار متاح` : `${filteredPaths.length} paths available`}
         </div>
         
         {/* Paths grid */}
@@ -293,8 +293,8 @@ export default function CareersPage() {
                       fontSize:11, fontWeight:700,
                     }}>
                       {(path.demand || '').toLowerCase().includes('very')
-                        ? (isAr?'╪╖┘ä╪¿ ┘à╪▒╪¬┘ü╪╣':'High')
-                        : (isAr?'╪╖┘ä╪¿ ╪¼┘è╪»':'Good')}
+                        ? (isAr?'طلب عالي':'High')
+                        : (isAr?'طلب جيد':'Good')}
                     </span>
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default function CareersPage() {
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <DollarSign size={13} color="#5120c8" />
                     <span style={{ color:'#5120c8', fontSize:12, fontWeight:700 }}>
-                      {path.salary} {isAr?'╪▒.╪│':'SAR'}
+                      {path.salary} {isAr?'ر.س':'SAR'}
                     </span>
                   </div>
                 </div>
@@ -383,7 +383,7 @@ export default function CareersPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity='0.9'}
                   onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity='1'}
                 >
-                  {isAr ? '╪º╪¿╪»╪ú ╪º┘ä┘à╪│╪º╪▒' : 'Start Path'}
+                  {isAr ? 'ابدأ المسار' : 'Start Path'}
                   <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
                 </button>
               </div>
@@ -409,11 +409,11 @@ export default function CareersPage() {
               <Sparkles size={24} color="#5120c8" />
             </div>
             <h2 style={{ color:text, fontSize:22, fontWeight:800, margin:'0 0 12px' }}>
-              {isAr ? '┘à╪┤ ╪╣╪º╪▒┘ü ╪¬╪«╪¬╪º╪▒' : "Not sure which path?"}
+              {isAr ? 'ما لمسار المناسب لك' : "Not sure which path?"}
             </h2>
             <p style={{ color:'#6b7280', fontSize:14, margin:'0 0 24px', lineHeight:1.7 }}>
               {isAr
-                ? '╪º╪╣┘à┘ä ╪º┘ä╪º╪«╪¬╪¿╪º╪▒ ╪º┘ä╪░┘â┘è ┘ê╪º╪¡┘å╪º ┘ç┘å╪▒╪┤╪¡ ┘ä┘â ╪º┘ä┘à╪│╪º╪▒ ╪º┘ä╪ú┘å╪│╪¿ ╪¿┘å╪º╪í ╪╣┘ä┘ë ┘à┘ç╪º╪▒╪º╪¬┘â ┘ê╪º┘ç╪¬┘à╪º┘à╪º╪¬┘â'
+                ? 'اختبر ذكاءنا الاصطناعي وسنرشح لك أفضل مسار بناءً على مهاراتك واهتماماتك'
                 : 'Take the AI assessment and we\'ll recommend the best path based on your skills and interests'}
             </p>
             <Link href={`/${locale}/dashboard/assessment`}>
@@ -425,7 +425,7 @@ export default function CareersPage() {
                 display:'inline-flex', alignItems:'center', gap:8,
               }}>
                 <Sparkles size={16} />
-                {isAr ? '╪º┘â╪¬╪┤┘ü ┘à╪│╪º╪▒┘â ╪¿╪º┘ä╪░┘â╪º╪í ╪º┘ä╪º╪╡╪╖┘å╪º╪╣┘è' : 'Discover Your Path with AI'}
+                {isAr ? 'اكتشف مسارك بالذكاء الاصطناعي' : 'Discover Your Path with AI'}
               </button>
             </Link>
           </div>
