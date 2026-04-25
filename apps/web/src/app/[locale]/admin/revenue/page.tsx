@@ -197,7 +197,7 @@ export default function AdminRevenuePage() {
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الطالب' : 'Student'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الكورس' : 'Course'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الحالة' : 'Status'}</th>
@@ -279,7 +279,7 @@ export default function AdminRevenuePage() {
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الطالب' : 'Student'}</th>
+                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستشار' : 'Consultant'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الموضوع' : 'Topic'}</th>
                     <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>

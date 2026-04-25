@@ -213,7 +213,7 @@ export default function AdminSessionsPage() {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
                   {[
-                    isAr ? 'الطالب' : 'Student',
+                    isAr ? 'مستخدم' : 'Student',
                     isAr ? 'المستشار' : 'Consultant',
                     isAr ? 'الموضوع' : 'Topic',
                     isAr ? 'الموعد' : 'Date & Time',

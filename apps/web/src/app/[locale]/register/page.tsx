@@ -756,7 +756,7 @@ export default function RegisterPage() {
             {/* Account type cards */}
             <div className="grid grid-cols-3 gap-3 mb-6">
               {([
-                { type: 'STUDENT' as const, icon: GraduationCap, label: ar ? 'طالب' : 'Student', sub: ar ? 'وصول فوري' : 'Instant access' },
+                { type: 'STUDENT' as const, icon: GraduationCap, label: ar ? 'مستخدم' : 'User', sub: ar ? 'وصول فوري' : 'Instant access' },
                 { type: 'INSTRUCTOR' as const, icon: User, label: ar ? 'مدرب' : 'Instructor', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
                 { type: 'CONSULTANT' as const, icon: Briefcase, label: ar ? 'مستشار' : 'Consultant', sub: ar ? 'يتطلب موافقة' : 'Requires approval' },
               ]).map(({ type, icon: Icon, label, sub }) => {

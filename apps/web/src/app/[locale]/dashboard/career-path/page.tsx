@@ -2,10 +2,13 @@
 
 import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { get, post } from '../../../../lib/api'
 import { AuthGate } from '../../../components/AuthGate'
 import { DashboardShell } from '../../../components/DashboardShell'
 import { CAREER_PATHS, findPathByTitle } from '../../../../lib/career-paths'
+import Link from 'next/link'
 import {
   Search, Target, ChevronLeft, Check, X,
   Compass, Sparkles, BookOpen, Users,
@@ -468,6 +471,8 @@ function PathModal({
 // ════════════════════════════════════════════════════════
 
 export default function DashboardCareerPathPage() {
+  const locale = useLocale()
+  const router = useRouter()
   const qc = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
   const [savingPathId, setSavingPathId] = useState<string | null>(null)
@@ -666,13 +671,13 @@ export default function DashboardCareerPathPage() {
                 <p className="mt-2 text-sm text-white/35 max-w-md mx-auto">
                   سيتم إضافة الكورسات المتخصصة لـ <span className="text-primary font-semibold">{myPath.pathTitle}</span> خلال الأيام القادمة
                 </p>
-                <button
-                  type="button"
+                <Link
+                  href={`/${locale}/coaching`}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-primary/40"
                 >
                   <Users className="h-4 w-4" />
                   احجز جلسة كوتشينج الآن
-                </button>
+                </Link>
               </div>
             </div>
           )}

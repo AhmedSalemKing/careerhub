@@ -89,14 +89,14 @@ export default function AdminOverviewPage() {
 	const accountTypeLabel = (t: string) => {
 		const map: Record<string, string> = isAr
 			? {
-					STUDENT: "طالب",
+					STUDENT: "مستخدم",
 					INSTRUCTOR: "محاضر",
 					CONSULTANT: "مستشار",
 					ADMIN: "مدير",
 					SUPER_ADMIN: "مدير أعلى",
 				}
 			: {
-					STUDENT: "Student",
+					STUDENT: "User",
 					INSTRUCTOR: "Instructor",
 					CONSULTANT: "Consultant",
 					ADMIN: "Admin",

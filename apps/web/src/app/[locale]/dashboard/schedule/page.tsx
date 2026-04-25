@@ -109,7 +109,7 @@ export default function SchedulePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <User size={14} color="#6b7280"/>
                     <span style={{ color: isDark ? '#f1f5f9' : '#0d0d0d', fontSize: 15, fontWeight: 600 }}>
-                      {session.student?.profile?.firstName || session.studentName || 'طالب'}
+                      {session.student?.profile?.firstName || session.studentName || 'مستخدم'}
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

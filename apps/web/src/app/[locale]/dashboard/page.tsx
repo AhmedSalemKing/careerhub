@@ -45,7 +45,7 @@ function InstructorOverview() {
 
   const statCards = [
     { label: 'إجمالي الكورسات', value: stats?.totalCourses ?? 0, icon: BookOpen, color: 'from-purple-500 to-violet-600' },
-    { label: 'إجمالي الطلاب', value: stats?.totalStudents ?? 0, icon: Users, color: 'from-teal-500 to-emerald-600' },
+    { label: 'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon: Users, color: 'from-teal-500 to-emerald-600' },
     { label: 'الإيرادات', value: `${stats?.revenue ?? 0} ريال`, icon: DollarSign, color: 'from-amber-500 to-orange-600' },
   ]
 

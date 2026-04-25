@@ -233,7 +233,7 @@ export default function MySessionsPage() {
                         ) : null}
                       </div>
                       <h3 className="font-bold text-foreground">
-                        {iAmConsultant ? 'طالب:' : 'مع:'} {otherName}
+                        {iAmConsultant ? 'مستخدم:' : 'مع:'} {otherName}
                       </h3>
                       {session.topic && (
                         <p className="text-sm text-[color:var(--muted)] mt-0.5">الموضوع: {session.topic}</p>

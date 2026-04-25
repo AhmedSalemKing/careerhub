@@ -55,7 +55,7 @@ export default function AdminUsersPage() {
   } | null>(null)
 
   const roleLabels: Record<string, string> = {
-    STUDENT: isAr ? 'طالب' : 'Student',
+    STUDENT: isAr ? 'مستخدم' : 'User',
     INSTRUCTOR: isAr ? 'محاضر' : 'Instructor',
     CONSULTANT: isAr ? 'مستشار' : 'Consultant',
     ADMIN: isAr ? 'أدمن' : 'Admin',
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
                 onChange={e => setCreateForm(f => ({ ...f, accountType: e.target.value }))}
                 style={MODAL_INPUT}
               >
-                <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
+                <option value="STUDENT">{isAr ? 'مستخدم' : 'User'}</option>
                 <option value="INSTRUCTOR">{isAr ? 'محاضر' : 'Instructor'}</option>
                 <option value="CONSULTANT">{isAr ? 'مستشار' : 'Consultant'}</option>
                 <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>

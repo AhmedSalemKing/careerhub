@@ -503,7 +503,7 @@ export default function CheckoutPage() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { icon: Users, value: course?._count?.enrollments || 0, label: isAr ? 'طالب' : 'Students' },
+                    { icon: Users, value: course?._count?.enrollments || 0, label: isAr ? 'مستخدمين' : 'Users' },
                     { icon: BookOpen, value: course?._count?.sections || 0, label: isAr ? 'قسم' : 'Sections' },
                     { icon: Clock, value: course?.duration || '-', label: isAr ? 'ساعة' : 'Hours' },
                   ].map(({ icon: Icon, value, label }, i) => (
