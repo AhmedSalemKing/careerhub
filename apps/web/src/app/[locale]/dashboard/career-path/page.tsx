@@ -727,13 +727,13 @@ export default function DashboardCareerPathPage() {
                 <p className="mt-2 text-sm max-w-md mx-auto" style={{ color: subtextColor }}>
                   سيتم إضافة الكورسات المتخصصة لـ <span className="text-primary font-semibold">{myPath.pathTitle}</span> خلال الأيام القادمة
                 </p>
-                <Link
-                  href={`/${locale}/coaching?speciality=${encodeURIComponent(myPath.pathTitle)}`}
+                <button
+                  onClick={() => router.push(`/${locale}/coaching?speciality=${encodeURIComponent(myPath.pathTitle)}`)}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-primary/40"
                 >
                   <Users className="h-4 w-4" />
                   احجز جلسة كوتشينج الآن
-                </Link>
+                </button>
               </div>
             </div>
           )}
