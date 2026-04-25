@@ -443,65 +443,88 @@ export default function MySessionsPage() {
             {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Payment method selector */}
-              <div>
-                <p className="text-sm font-semibold text-[color:var(--muted)] mb-3">
-                  {isAr ? 'اختر طريقة الدفع' : 'Select Payment Method'}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setPayMethod('wallet')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      payMethod === 'wallet' 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-[color:var(--border)]'
-                    }`}
-                  >
-                    <Wallet className={`h-5 w-5 mx-auto mb-2 ${payMethod === 'wallet' ? 'text-primary' : 'text-[color:var(--muted)]'}`} />
-                    <div className={`text-sm font-bold ${payMethod === 'wallet' ? 'text-primary' : 'text-foreground'}`}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 12, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  {isAr ? 'طريقة الدفع' : 'Payment Method'}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  
+                  {/* Wallet */}
+                  <button onClick={() => setPayMethod('wallet')} style={{
+                    padding: '16px 12px', borderRadius: 14, cursor: 'pointer',
+                    border: 'none',
+                    background: payMethod==='wallet' ? '#5120c8' : 'rgba(81,32,200,0.06)',
+                    transition: 'all 0.2s ease',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  }}>
+                    <Wallet size={22} color={payMethod==='wallet' ? '#fff' : '#6b7280'} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: payMethod==='wallet' ? '#fff' : 'var(--foreground)' }}>
                       {isAr ? 'المحفظة' : 'Wallet'}
-                    </div>
-                    <div className="text-xs text-[color:var(--muted)] mt-1">
-                      {walletBalance.toFixed(2)} SAR
-                    </div>
+                    </span>
+                    <span style={{ fontSize: 11, color: payMethod==='wallet' ? 'rgba(255,255,255,0.75)' : '#9ca3af' }}>
+                      {walletBalance.toFixed(2)} {isAr ? 'ر.س' : 'SAR'}
+                    </span>
                   </button>
-                  <button
-                    onClick={() => setPayMethod('card')}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      payMethod === 'card' 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-[color:var(--border)]'
-                    }`}
-                  >
-                    <CreditCard className={`h-5 w-5 mx-auto mb-2 ${payMethod === 'card' ? 'text-primary' : 'text-[color:var(--muted)]'}`} />
-                    <div className={`text-sm font-bold ${payMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>
+                  
+                  {/* Card */}
+                  <button onClick={() => setPayMethod('card')} style={{
+                    padding: '16px 12px', borderRadius: 14, cursor: 'pointer',
+                    border: 'none',
+                    background: payMethod==='card' ? '#5120c8' : 'rgba(81,32,200,0.06)',
+                    transition: 'all 0.2s ease',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  }}>
+                    <CreditCard size={22} color={payMethod==='card' ? '#fff' : '#6b7280'} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: payMethod==='card' ? '#fff' : 'var(--foreground)' }}>
                       {isAr ? 'بطاقة ائتمان' : 'Credit Card'}
-                    </div>
+                    </span>
+                    <span style={{ fontSize: 11, color: payMethod==='card' ? 'rgba(255,255,255,0.75)' : '#9ca3af' }}>
+                      Visa / Mastercard
+                    </span>
                   </button>
                 </div>
                 
                 {/* Insufficient balance warning */}
                 {payMethod === 'wallet' && walletBalance < (payingSession.price || 0) && (
-                  <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>
-                      {isAr 
-                        ? `رصيد غير كافٍ. تحتاج ${((payingSession.price || 0) - walletBalance).toFixed(2)} SAR إضافية`
-                        : `Insufficient balance. Need ${((payingSession.price || 0) - walletBalance).toFixed(2)} SAR more`
+                  <div style={{
+                    marginTop: 12, padding: '10px 14px', borderRadius: 10,
+                    background: 'rgba(239,68,68,0.06)',
+                    border: '1px solid rgba(239,68,68,0.15)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}>
+                    <AlertCircle size={14} color="#ef4444" />
+                    <span style={{ color: '#ef4444', fontSize: 12, fontWeight: 500 }}>
+                      {isAr
+                        ? `رصيد غير كافٍ تحتاج ${((payingSession.price || 0) - walletBalance).toFixed(2)} ر.س إضافية`
+                        : `Insufficient need ${((payingSession.price || 0) - walletBalance).toFixed(2)} SAR more`
                       }
                     </span>
                   </div>
                 )}
               </div>
               
-              {/* Session summary */}
-              <div className="p-4 rounded-xl bg-[color:var(--surface-2)]">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-[color:var(--muted)]">{isAr ? 'الموضوع' : 'Topic'}</span>
-                  <span className="font-semibold text-foreground">{payingSession.topic}</span>
+              {/* Session summary card */}
+              <div style={{
+                padding: '14px 16px', borderRadius: 14, marginBottom: 20,
+                background: 'rgba(81,32,200,0.06)',
+                border: '1px solid rgba(81,32,200,0.12)',
+              }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 8 }}>
+                  <span style={{ color:'#6b7280', fontSize:12, fontWeight:500 }}>
+                    {isAr ? 'الموضوع' : 'Topic'}
+                  </span>
+                  <span style={{ color:'var(--foreground)', fontSize:13, fontWeight:600 }}>
+                    {payingSession.topic}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-[color:var(--muted)]">{isAr ? 'المبلغ' : 'Amount'}</span>
-                  <span className="text-primary font-bold">{payingSession.price} SAR</span>
+                <div style={{ height: 1, background: 'rgba(81,32,200,0.12)', marginBottom: 8 }} />
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <span style={{ color:'#6b7280', fontSize:12, fontWeight:500 }}>
+                    {isAr ? 'المبلغ الإجمالي' : 'Total Amount'}
+                  </span>
+                  <span style={{ color:'#5120c8', fontSize:18, fontWeight:800 }}>
+                    {payingSession.price} {isAr ? 'ر.س' : 'SAR'}
+                  </span>
                 </div>
               </div>
               
