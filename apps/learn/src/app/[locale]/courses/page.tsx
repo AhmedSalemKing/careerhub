@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight, AlertTriangle } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
@@ -74,6 +74,14 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const { data: categoriesData } = useQuery({
     queryKey: ['main-categories', locale],
     queryFn: async () => {
@@ -88,16 +96,16 @@ export default function CoursesPage() {
   const { data: rawCourses, isLoading: loading, error: fetchError } = useQuery({
     queryKey: ['courses', selectedCategoryId],
     queryFn: async () => {
-      const url = selectedCategoryId
-        ? `/courses?status=PUBLISHED&categoryId=${selectedCategoryId}`
-        : '/courses?status=PUBLISHED'
-      const res = await api.get(url)
-      if (res.data?.data?.courses && Array.isArray(res.data.data.courses)) return res.data.data.courses as ApiCourse[]
-      if (res.data?.courses && Array.isArray(res.data.courses)) return res.data.courses as ApiCourse[]
-      if (Array.isArray(res.data)) return res.data as ApiCourse[]
-      if (res.data?.data && Array.isArray(res.data.data)) return res.data.data as ApiCourse[]
+      const params = new URLSearchParams({ status: 'PUBLISHED' })
+      if (selectedCategoryId) params.set('categoryId', selectedCategoryId)
+      const res = await api.get(`/courses?${params.toString()}`)
+      const data = res.data?.data ?? res.data
+      if (Array.isArray(data)) return data as ApiCourse[]
+      if (Array.isArray(data?.courses)) return data.courses as ApiCourse[]
+      if (Array.isArray(data?.items)) return data.items as ApiCourse[]
       return [] as ApiCourse[]
-    }
+    },
+    staleTime: 2 * 60 * 1000,
   })
   const courses = (rawCourses || []).map(normalizeCourse)
   const error = fetchError ? ((fetchError as any).message || 'Failed to load courses') : null
@@ -188,14 +196,26 @@ export default function CoursesPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Category Tabs */}
         {mainCategories.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div style={{
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            paddingBottom: 8,
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch' as any,
+            marginBottom: 24,
+          }}>
+            <style>{`.cat-scroll::-webkit-scrollbar { display: none }`}</style>
             <button
               onClick={() => setSelectedCategoryId(null)}
-              className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+              className="rounded-full text-sm font-medium transition-colors"
               style={{
+                flexShrink: 0,
+                padding: '6px 16px',
                 background: selectedCategoryId === null ? 'var(--primary)' : 'var(--surface)',
                 color: selectedCategoryId === null ? '#fff' : 'var(--text-primary)',
                 border: '1px solid var(--border)',
+                cursor: 'pointer',
               }}
             >
               {locale === 'ar' ? 'الكل' : 'All'} ({allCoursesCount})
@@ -204,11 +224,14 @@ export default function CoursesPage() {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
-                className="rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+                className="rounded-full text-sm font-medium transition-colors"
                 style={{
+                  flexShrink: 0,
+                  padding: '6px 16px',
                   background: selectedCategoryId === cat.id ? 'var(--primary)' : 'var(--surface)',
                   color: selectedCategoryId === cat.id ? '#fff' : 'var(--text-primary)',
                   border: '1px solid var(--border)',
+                  cursor: 'pointer',
                 }}
               >
                 {cat.name} ({cat.courseCount || 0})
@@ -271,7 +294,13 @@ export default function CoursesPage() {
         </p>
 
         {/* Courses Grid */}
-        <div className={viewMode === 'grid' ? 'dw-grid-3' : 'dw-grid-1'} style={{ gap: 24 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: viewMode === 'list'
+            ? '1fr'
+            : isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+          gap: isMobile ? 12 : 20,
+        }}>
           {filteredCourses.map((course, index) => {
             const levelBadge = getLevelBadge(course.level)
             return (
@@ -323,7 +352,7 @@ export default function CoursesPage() {
                   <p className="text-xs font-medium mb-2" style={{ color: 'var(--primary)' }}>
                     {course.category[locale]}
                   </p>
-                  <h3 className="font-bold text-lg line-clamp-2 mb-3 group-hover:text-blue-400 transition-colors" style={{ color: 'var(--text-primary)' }}>
+                  <h3 className={`font-bold line-clamp-2 mb-3 group-hover:text-blue-400 transition-colors ${isMobile ? 'text-sm' : 'text-lg'}`} style={{ color: 'var(--text-primary)' }}>
                     {course.title[locale]}
                   </h3>
 
