@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
-        {/* Script: Set initial theme only - NO forced colors on children */}
+        {/* Script: Set initial theme + prevent background flash */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -46,13 +46,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   var isDark = theme === 'dark' || (!theme && prefersDark);
 
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                    document.documentElement.style.colorScheme = 'dark';
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                    document.documentElement.style.colorScheme = 'light';
-                  }
+                  document.documentElement.classList.toggle('dark', isDark);
+                  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                  document.documentElement.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
+                  if (document.body) document.body.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
                 } catch(e) {}
 
                 window.addEventListener('load', function() {
@@ -70,12 +67,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           __html: `
             html.dark { color-scheme: dark; }
             html:not(.dark) { color-scheme: light; }
+            html, body { min-height: 100vh; }
+            html { background-color: #ffffff; }
+            html.dark { background-color: #0d0d0d; }
           `
         }} />
       </head>
       
       {/* Body uses CSS variables only */}
-      <body className="min-h-screen bg-background text-foreground">
+      <body className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <Providers locale={locale}>
             <LoadingProvider>

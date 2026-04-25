@@ -46,12 +46,11 @@ export default async function RootLayout({
                   var theme = localStorage.getItem('theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   var isDark = theme === 'dark' || (theme === 'system' && prefersDark) || (!theme && prefersDark);
-                  if (isDark) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
+
+                  document.documentElement.classList.toggle('dark', isDark);
                   document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                  document.documentElement.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
+                  if (document.body) document.body.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
                 } catch(e) {}
                 window.addEventListener('load', function() {
                   requestAnimationFrame(function() {
@@ -62,8 +61,15 @@ export default async function RootLayout({
             `,
           }}
         />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            html, body { min-height: 100vh; }
+            html { background-color: #ffffff; }
+            html.dark { background-color: #0d0d0d; }
+          `
+        }} />
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased">
+      <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
