@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
 import { useLocale, useTranslations } from 'next-intl'
+import { useTheme } from 'next-themes'
 import { SOCKET_URL } from '../../lib/constants'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
@@ -30,6 +31,15 @@ export function ChatInterface({
   const locale = useLocale() as 'ar' | 'en'
   const t = useTranslations('chat')
   const c = useTranslations('common')
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
+  const chatBg = isDark ? '#141414' : '#ffffff'
+  const chatBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const messageBg = isDark ? '#0A0A0A' : '#f3f4f6'
+  const messageBorder = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+  const textColor = isDark ? '#ffffff' : '#0d0d0d'
+  const mutedColor = isDark ? '#9CA3AF' : '#6b7280'
 
   const [connected, setConnected] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>(() => initialMessages ?? [])
@@ -113,20 +123,20 @@ export function ChatInterface({
     <div 
       className="rounded-2xl shadow-lg"
       style={{
-        background: '#141414',
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+        background: chatBg,
+        border: `1px solid ${chatBorder}`,
+        boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.1)'
       }}
     >
       {/* Header */}
       <div 
         className="flex items-center justify-between gap-3 p-4"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ borderBottom: `1px solid ${chatBorder}` }}
       >
-        <div className="text-sm font-extrabold" style={{ color: '#ffffff' }}>
+        <div className="text-sm font-extrabold" style={{ color: textColor }}>
           {t('title')}
         </div>
-        <div className="text-xs font-semibold" style={{ color: '#9CA3AF' }}>
+        <div className="text-xs font-semibold" style={{ color: mutedColor }}>
           {connected ? (
             <span style={{ color: '#34D399' }}>{t('connected')}</span>
           ) : (
@@ -150,15 +160,15 @@ export function ChatInterface({
                   <div
                     className="max-w-[82%] rounded-2xl px-4 py-3 text-sm font-semibold leading-6 shadow-sm"
                     style={{
-                      background: isUser ? '#5120c8' : '#0A0A0A', // Coach message is darker than container
-                      border: isUser ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                      color: isUser ? '#ffffff' : '#E6E6E6',
+                      background: isUser ? '#5120c8' : messageBg,
+                      border: isUser ? 'none' : `1px solid ${messageBorder}`,
+                      color: isUser ? '#ffffff' : textColor,
                     }}
                   >
                     <div className="whitespace-pre-wrap">{m.text}</div>
                     <div 
                       className="mt-2 text-[11px]"
-                      style={{ color: isUser ? 'rgba(255,255,255,0.7)' : '#9CA3AF' }}
+                      style={{ color: isUser ? 'rgba(255,255,255,0.7)' : mutedColor }}
                     >
                       {locale === 'ar' ? formatArabicTime(m.createdAt) : new Date(m.createdAt).toLocaleTimeString()}
                     </div>
@@ -169,14 +179,14 @@ export function ChatInterface({
             <div ref={endRef} />
           </div>
         ) : (
-          <div className="text-sm text-center" style={{ color: '#9CA3AF' }}>{t('empty')}</div>
+          <div className="text-sm text-center" style={{ color: mutedColor }}>{t('empty')}</div>
         )}
       </div>
 
       {/* Input Area */}
       <div 
         className="flex gap-2 p-4"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ borderTop: `1px solid ${chatBorder}` }}
       >
         <Input
           value={text}
@@ -185,15 +195,13 @@ export function ChatInterface({
           onKeyDown={(e) => {
             if (e.key === 'Enter') send()
           }}
-          // Override Input style for Glossy Theme if necessary, 
-          // assuming Input component supports className/style or relies on global theme
-          style={{ background: '#0A0A0A', border: '1px solid rgba(255,255,255,0.1)', color: '#E6E6E6' }}
+          style={{ background: messageBg, border: `1px solid ${messageBorder}`, color: textColor }}
         />
         <Button 
           type="button" 
           onClick={send} 
           disabled={!text.trim()}
-          style={{ background: '#5120c8' }} // Ensure button color
+          style={{ background: '#5120c8' }}
         >
           {c('confirm')}
         </Button>
