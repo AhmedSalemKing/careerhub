@@ -12,7 +12,7 @@ import {
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
   Brain, MessageSquare, Award, Settings,
-  Shield, Users, Bell, ClipboardList
+  Shield, Users, Bell, ClipboardList, CalendarCheck
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -52,9 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
     
-    return [
+return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
+      { icon: CalendarCheck, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
       { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI', href: `/${locale}/dashboard/ai-chat` },
       { icon: Award, labelAr: 'الشهادات', labelEn: 'Certs', href: `/${locale}/dashboard/certificates` },

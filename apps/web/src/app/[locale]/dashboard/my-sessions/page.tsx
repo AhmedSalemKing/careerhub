@@ -17,13 +17,15 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
-  PENDING:     { label: 'معلقة', color: 'amber', icon: AlertCircle },
-  CONFIRMED:   { label: 'مؤكدة', color: 'green', icon: CheckCircle },
-  RESCHEDULED: { label: 'تغيير موعد', color: 'blue', icon: RefreshCw },
-  COMPLETED:   { label: 'مكتملة', color: 'gray', icon: CheckCircle },
-  CANCELLED:   { label: 'ملغية', color: 'red', icon: XCircle },
-  REJECTED:    { label: 'مرفوضة', color: 'red', icon: XCircle },
+function getStatusConfig(isAr: boolean) {
+  return {
+    PENDING:     { label: isAr ? 'معلقة' : 'Pending', color: 'amber', icon: AlertCircle },
+    CONFIRMED:   { label: isAr ? 'مؤكدة' : 'Confirmed', color: 'green', icon: CheckCircle },
+    RESCHEDULED: { label: isAr ? 'تغيير موعد' : 'Rescheduled', color: 'blue', icon: RefreshCw },
+    COMPLETED:   { label: isAr ? 'مكتملة' : 'Completed', color: 'gray', icon: CheckCircle },
+    CANCELLED:   { label: isAr ? 'ملغية' : 'Cancelled', color: 'red', icon: XCircle },
+    REJECTED:    { label: isAr ? 'مرفوضة' : 'Rejected', color: 'red', icon: XCircle },
+  }
 }
 
 const colorClass: Record<string, string> = {
@@ -217,9 +219,12 @@ export default function MySessionsPage() {
       ) : (
         <div className="space-y-4">
           {(sessions as any[]).map((session) => {
-            const st = statusConfig[session.status] || statusConfig.PENDING
+            const statusCfg = getStatusConfig(locale === 'ar')
+            const st = statusCfg[session.status] || statusCfg.PENDING
             const Icon = st.icon
             const date = new Date(session.scheduledAt)
+            const dateStr = date.toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+            const timeStr = date.toLocaleTimeString(locale === 'ar' ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })
             // Per-session role: am I the consultant or student in THIS session?
             const iAmConsultant = session.consultant?.id === user?.id || session.consultantId === user?.id
             const other = iAmConsultant ? session.student : session.consultant
