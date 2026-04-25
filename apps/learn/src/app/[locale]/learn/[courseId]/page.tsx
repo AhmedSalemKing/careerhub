@@ -447,16 +447,17 @@ function LearnPageInner() {
     : imageUrl
   const hasMultipleTypes = [hasVideo, hasFile, hasImage].filter(Boolean).length > 1
 
-  // Colors - ✅ Professional Educational Platform Design
+  // Colors - Professional Educational Platform Design
   const isDark = theme === 'dark'
-  const bg = isDark ? '#0a0a0f' : '#fafbfc'
-  const sidebarBg = isDark ? '#12131a' : '#ffffff'
-  const headerBg = isDark ? '#0d0e14' : '#f8f9fc'
-  const textPrimary = isDark ? '#f1f5f9' : '#1e293b'
-  const textSecondary = isDark ? '#94a3b8' : '#64748b'
-  const borderColor = isDark ? '#1f2937' : '#e2e8f0'
-  const cardBg = isDark ? '#181a24' : '#ffffff'
-  const purple = '#7c3aed'
+  const bg = isDark ? '#0d0d0d' : '#ffffff'
+  const sidebarBg = isDark ? '#111111' : '#f8f8fa'
+  const headerBg = isDark ? '#0d0d0d' : '#ffffff'
+  const textPrimary = isDark ? '#f1f5f9' : '#0d0d0d'
+  const textSecondary = isDark ? '#94a3b8' : '#6b7280'
+  const borderColor = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'
+  const cardBg = isDark ? '#161616' : '#ffffff'
+  const purple = '#5120c8'
+  const purpleHover = '#6d35e0'
   const teal = '#0d9488'
   const green = '#10b981'
   const redColor = '#ef4444'
@@ -468,47 +469,28 @@ function LearnPageInner() {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: bg }}>
         <div className="text-center">
-          {/* Modern Loading Animation */}
-          <div className="relative mb-8">
-            <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center" style={{ 
-              background: `linear-gradient(135deg, ${purple}20, ${purpleColor}20)`,
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-            }}>
-              <GraduationCap className="h-8 w-8 animate-pulse" style={{ color: purple }} />
-            </div>
-            <div className="absolute inset-0 h-16 w-16 mx-auto rounded-2xl animate-ping opacity-20" style={{ background: purple }} />
+          <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center mb-6" style={{ background: `${purple}15` }}>
+            <GraduationCap className="h-8 w-8" style={{ color: purple }} />
           </div>
-          
           <h3 className="text-lg font-semibold mb-2" style={{ color: textPrimary }}>
             جاري تحميل المحتوى...
           </h3>
           <p className="text-sm max-w-xs mx-auto" style={{ color: textSecondary }}>
             نُعدّ تجربة تعليمية مميزة لك
           </p>
-          
-          {/* Progress dots */}
           <div className="flex justify-center gap-2 mt-6">
             {[0, 1, 2].map(i => (
               <div 
                 key={i}
-                className="h-2 rounded-full animate-pulse"
+                className="h-2 rounded-full"
                 style={{ 
                   width: i === 1 ? '32px' : '8px',
                   background: i === 1 ? purple : borderColor,
-                  transition: 'all 0.3s ease',
-                  animationDelay: `${i * 0.15}s`
                 }}
               />
             ))}
           </div>
         </div>
-        
-        <style jsx>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
-          }
-        `}</style>
       </div>
     )
   }
@@ -517,27 +499,21 @@ function LearnPageInner() {
     return (
       <div className="flex min-h-screen items-center justify-center p-6" dir="rtl" style={{ background: bg }}>
         <div className="text-center max-w-lg">
-          {/* Premium Lock Icon */}
           <div className="relative mx-auto mb-8">
-            <div className="h-28 w-28 rounded-3xl flex items-center justify-center mx-auto relative overflow-hidden" style={{
-              background: `linear-gradient(135deg, ${purple}15, ${purpleColor}10)`
+            <div className="h-28 w-28 rounded-3xl flex items-center justify-center mx-auto" style={{
+              background: `${purple}15`
             }}>
-              <Lock className="h-14 w-14 relative z-10" style={{ color: purple }} />
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+              <Lock className="h-14 w-14" style={{ color: purple }} />
             </div>
-            {/* Decorative elements */}
-            <div className="absolute -top-2 -right-2 h-8 w-8 rounded-full animate-bounce" style={{ background: `${amberColor}30`, animationDelay: '0.5s' }} />
-            <div className="absolute -bottom-1 -left-1 h-6 w-6 rounded-full animate-bounce" style={{ background: `${teal}30`, animationDelay: '1s' }} />
           </div>
 
-          <h2 className="text-3xl font-bold mb-4 tracking-tight" style={{ color: textPrimary }}>
+          <h2 className="text-3xl font-bold mb-4" style={{ color: textPrimary }}>
             الكورس مقيّد
           </h2>
           <p className="mb-8 text-base leading-relaxed max-w-md mx-auto" style={{ color: textSecondary }}>
             يجب الاشتراك في هذا الكورس للوصول إلى المحتوى التعليمي المميز
           </p>
 
-          {/* CTA Button with gradient */}
           <a 
             href={`${MAIN_URL}/${locale}/checkout/${courseId}`}
             className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
@@ -631,26 +607,12 @@ function LearnPageInner() {
                 </div>
               </div>
               
-              {/* Elegant Progress Bar */}
+              {/* Progress Bar */}
               <div className="relative h-2 rounded-full overflow-hidden" style={{ background: borderColor }}>
                 <div 
-                  className="h-full rounded-full transition-all duration-700 ease-out relative overflow-hidden"
-                  style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${purple}, ${purpleColor})` }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                </div>
-                
-                {/* Glow effect at the end */}
-                {progress > 0 && (
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 h-4 w-4 rounded-full blur-md transition-all duration-700"
-                    style={{ 
-                      left: `calc(${progress}% - 8px)`,
-                      background: purple,
-                      opacity: 0.4
-                    }}
-                  />
-                )}
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${progress}%`, background: purple }}
+                />
               </div>
             </div>
 
@@ -770,11 +732,10 @@ function LearnPageInner() {
                     borderRadius: '14px',
                     border: 'none',
                     background: isActive 
-                      ? `linear-gradient(135deg, ${purple}08, ${purpleColor}05)` 
+                      ? `${purple}10`
                       : 'transparent',
                     borderRight: isActive ? `3px solid ${purple}` : '3px solid transparent',
                     marginBottom: '4px',
-                    boxShadow: isActive ? `0 4px 20px ${purple}15` : 'none'
                   }}
                 >
                   {/* Status Indicator */}
@@ -785,18 +746,13 @@ function LearnPageInner() {
                       height: '36px',
                       borderRadius: '12px',
                       background: status === 'completed' 
-                        ? `linear-gradient(135deg, ${green}, #059669)` 
+                        ? green 
                         : status === 'available' 
-                          ? `linear-gradient(135deg, ${purple}, ${purpleColor})`
+                          ? purple
                           : borderColor
                     }}
                   >
-                    {status === 'completed' && (
-                      <>
-                        <CheckCircle2 size={17} color="#fff" strokeWidth={2.5} />
-                        <div className="absolute inset-0 rounded-xl animate-ping opacity-20" style={{ background: green }} />
-                      </>
-                    )}
+                    {status === 'completed' && <CheckCircle2 size={17} color="#fff" strokeWidth={2.5} />}
                     {status === 'available' && <Play size={16} color="#fff" fill="#fff" />}
                     {status === 'locked' && <Lock size={14} color={isDark ? '#6b7280' : '#9ca3af'} />}
                   </div>
@@ -1061,12 +1017,12 @@ function LearnPageInner() {
                             className={`
                               px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200
                               ${playbackRate === speed 
-                                ? 'text-white scale-105 shadow-lg' 
+                                ? 'text-white shadow-lg' 
                                 : 'hover:scale-105'}
                             `}
                             style={{
                               background: playbackRate === speed 
-                                ? `linear-gradient(135deg, ${purple}, ${purpleColor})` 
+                                ? purple 
                                 : 'transparent',
                               color: playbackRate === speed ? '#fff' : textSecondary,
                               border: `1.5px solid ${playbackRate === speed ? 'transparent' : borderColor}`,
@@ -1635,20 +1591,31 @@ function LearnPageInner() {
       </div>
 
       {/* Floating AI Assistant Button */}
-      <a 
-        href={`${MAIN_URL}/${locale}/dashboard/ai-chat`}
-        title="اسأل الذكاء الاصطناعي"
-        className="
-          fixed bottom-8 left-8 z-50 flex h-16 w-16 items-center justify-center rounded-2xl
-          transition-all duration-300 hover:scale-110 active:scale-95 group
-        "
-        style={{ 
-          background: `linear-gradient(135deg, ${purple}, #8b5cf6)`,
-          boxShadow: `0 8px 32px ${purple}50`
+<a
+        href={`/${locale}/learn/${courseId}/ai`}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          left: 24,
+          width: 48,
+          height: 48,
+          borderRadius: 14,
+          background: '#5120c8',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
+          transition: 'all 0.2s ease',
+          zIndex: 50,
+          textDecoration: 'none',
         }}
+        onMouseEnter={e => (e.currentTarget.style.background = '#6d35e0')}
+        onMouseLeave={e => (e.currentTarget.style.background = '#5120c8')}
+        title="المساعد الذكي"
       >
-        <Sparkles className="h-7 w-7 text-white group-hover:rotate-12 transition-transform" />
-        <div className="absolute inset-0 rounded-2xl animate-ping opacity-20 bg-white" />
+        <Sparkles size={20} color="#fff" />
       </a>
 
       {/* Video Protection Component */}
@@ -1681,7 +1648,7 @@ function LearnPageInner() {
               className="h-full rounded-full transition-all duration-500"
               style={{ 
                 width: `${progress}%`, 
-                background: `linear-gradient(90deg, ${purple}, ${purpleColor})` 
+                background: purple
               }}
             />
           </div>
@@ -1700,19 +1667,10 @@ function LearnPageInner() {
         </button>
       </div>
 
-      {/* Global Styles for Animations */}
+      {/* Global Styles */}
       <style jsx global>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-
         @keyframes spin {
           to { transform: rotate(360deg); }
-        }
-        
-        .animate-shimmer {
-          animation: shimmer 2s infinite;
         }
         
         /* Smooth scrolling */
@@ -1757,15 +1715,10 @@ export default function LearnPage() {
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center" style={{ background: '#fafbfc' }}>
         <div className="text-center">
-          <div className="relative mb-6">
-            <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center" style={{ 
-              background: 'linear-gradient(135deg, #7c3aed15, #8b5cf615)',
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-            }}>
-              <GraduationCap className="h-8 w-8 animate-pulse" style={{ color: '#7c3aed' }} />
-            </div>
+          <div className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center mb-6" style={{ background: '#7c3aed15' }}>
+            <GraduationCap className="h-8 w-8" style={{ color: '#7c3aed' }} />
           </div>
-          <p className="text-sm font-medium text-gray-600">جاري تحميل صفحة التعلم...</p>
+          <p className="text-sm font-medium" style={{ color: '#4b5563' }}>جاري تحميل صفحة التعلم...</p>
         </div>
       </div>
     }>
