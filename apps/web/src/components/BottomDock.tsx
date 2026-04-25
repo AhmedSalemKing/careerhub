@@ -71,7 +71,7 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
     <>
       {/* RESPONSIVE: small icon button to expand on mobile - hidden on desktop (lg+) */}
       <div
-        className="fixed lg:flex z-[9998] hidden"
+        className="fixed lg:hidden z-[9998]"
         style={{
           ...(position === 'bottom' ? { bottom: '24px', right: '16px' } : { top: '16px', right: '16px' }),
         }}
@@ -101,9 +101,11 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
         </button>
       </div>
 
-      {/* MAIN DOCK - hidden on desktop (lg+), show only on mobile */}
+      {/* MAIN DOCK - show only on mobile (hidden on lg+) */}
       <div
-        className={`flex lg:hidden ${expanded ? '!flex' : ''}`}
+        className={`flex ${expanded ? '!flex' : ''}`}
+        style={{ ...dockStyle }}
+      >
         style={dockStyle}
       >
         {items.map((item, i) => {
