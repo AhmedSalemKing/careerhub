@@ -103,7 +103,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Drawer */}
           <div className={`fixed top-0 bottom-0 z-50 w-[280px] bg-[color:var(--surface)] shadow-2xl transition-transform duration-300 lg:hidden ${
             drawerOpen ? (isAr ? 'translate-x-0' : 'translate-x-0') : (isAr ? 'translate-x-full' : '-translate-x-full')
-          }`} style={{ [isAr ? 'right' : 'left']: 0 }}>
+          }`} style={{ right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0 }}>
             {/* Drawer header */}
             <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
               <span className="font-bold text-foreground text-lg">DeveWay</span>
