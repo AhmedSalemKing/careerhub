@@ -71,6 +71,7 @@ function PathDetailPanel({
   const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'tasks' | 'skills' | 'qualifications' | 'progression'>('tasks')
 
   const detailPath = useMemo(() => {
@@ -227,6 +228,21 @@ function PathDetailPanel({
               ))}
             </div>
           )}
+        </div>
+
+        <div style={{ padding: '16px 24px 24px', borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'}` }}>
+          <button
+            onClick={() => {
+              router.push(`/${locale}/coaching?speciality=${encodeURIComponent(isAr ? detailPath.titleAr : detailPath.title)}`)
+            }}
+            style={{
+              width: '100%', padding: '12px', borderRadius: 12,
+              background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer',
+              fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {isAr ? 'احجز جلسة كوتشينج لهذا المسار' : 'Book Coaching Session'}
+          </button>
         </div>
       </div>
     </div>
@@ -425,9 +441,10 @@ function PathModal({
 
               <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {cat.paths.map((path, pathIndex) => {
-                  const isSelected = currentPathId === path.id
+                  const isSelected = currentPathId === path.id || selectedPaths.includes(path.id)
                   const isSavingThis = isSaving && savingPathId === path.id
                   const isHovered = hoveredCard === path.id
+                  const isMultiSelected = selectedPaths.includes(path.id)
                   
                   return (
                     <div
@@ -436,15 +453,21 @@ function PathModal({
                       style={{
                         background: cardBg,
                         borderColor: isSelected ? 'rgba(81,32,200,0.5)' : cardBorder,
+                        borderWidth: isMultiSelected ? '2px' : '1px',
                         cursor: isSaving ? 'not-allowed' : 'pointer',
                         opacity: isSaving && !isSavingThis ? 0.6 : 1,
                       }}
                       onMouseEnter={() => setHoveredCard(path.id)}
                       onMouseLeave={() => setHoveredCard(null)}
                     >
-                      {isSelected && (
+                      {isSelected && !isMultiSelected && (
                         <div className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40">
                           <Check className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                      {isMultiSelected && (
+                        <div className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/40">
+                          <CheckCircle2 className="h-4 w-4 text-white" />
                         </div>
                       )}
 
@@ -558,6 +581,7 @@ export default function DashboardCareerPathPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [detailPathId, setDetailPathId] = useState<string | null>(null)
   const [savingPathId, setSavingPathId] = useState<string | null>(null)
+  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
 
   const { data: myPath, isLoading } = useQuery({
     queryKey: ['my-career-path'],
@@ -599,12 +623,17 @@ export default function DashboardCareerPathPage() {
 
   const handleSelect = (pathId: string, pathTitle: string, pathCategory: string) => {
     setSavingPathId(pathId)
+    setSelectedPaths(prev => prev.includes(pathId) ? prev.filter(p => p !== pathId) : [...prev, pathId])
     savePath.mutate({
       pathId,
       pathTitle,
       pathCategory,
       aiRecommended: pathId === aiRecommendedPathId,
     })
+  }
+
+  const togglePath = (pathId: string) => {
+    setSelectedPaths(prev => prev.includes(pathId) ? prev.filter(p => p !== pathId) : [...prev, pathId])
   }
 
   const selectedCatEntry = myPath

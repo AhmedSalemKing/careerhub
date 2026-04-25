@@ -532,18 +532,19 @@ function ResultsScreen({ report, onRetake, onSavePath, locale }: {
 // ════════════════════════════════════════════════════════════════════════════════
 
 export default function AssessmentPage() {
-	const locale = useLocale() as "ar" | "en";
-	const isAr = locale === "ar";
-	const [phase, setPhase] = useState<Phase>("start");
-	const [sessionId, setSessionId] = useState<string | null>(null);
-	const [currentIdx, setCurrentIdx] = useState(0);
-	const [selectedOption, setSelectedOption] = useState<number | null>(null);
-	const [answers, setAnswers] = useState<Array<{ questionId: number; answer: string }>>([]);
-	const [report, setReport] = useState<Report | null>(null);
-	const [error, setError] = useState("");
-	const [exitConfirm, setExitConfirm] = useState(false);
+  const locale = useLocale() as "ar" | "en";
+  const isAr = locale === "ar";
+  const [phase, setPhase] = useState<Phase>("start");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<Array<{ questionId: number; answer: string }>>([]);
+  const [report, setReport] = useState<Report | null>(null);
+  const [error, setError] = useState("");
+  const [exitConfirm, setExitConfirm] = useState(false);
+  const [ready, setReady] = useState(false);
 
-	useEffect(() => { injectStyles(); }, []);
+  useEffect(() => { injectStyles(); setReady(true); }, []);
 
 	// ── Queries ──
 	const questionsQ = useQuery({
@@ -564,8 +565,14 @@ export default function AssessmentPage() {
 		},
 	});
 
-	// Use API questions or fallback to demo
-	const questions: Question[] = questionsQ.data?.length ? questionsQ.data : DEMO_QUESTIONS;
+	// Use API questions or fallback to demo, then shuffle on mount
+	const baseQuestions: Question[] = questionsQ.data?.length ? questionsQ.data : DEMO_QUESTIONS
+	const [questions, setQuestions] = useState<Question[]>(baseQuestions)
+
+	useEffect(() => {
+		const shuffled = [...baseQuestions].sort(() => Math.random() - 0.5)
+		setQuestions(shuffled)
+	}, [])
 
 	// ── Mutations ──
 	const startMutation = useMutation({
@@ -716,64 +723,71 @@ export default function AssessmentPage() {
 		return () => window.removeEventListener("keydown", handler);
 	}, [phase, handleSelect, handleNext, handlePrev]);
 
-	return (
-		<AuthGate>
-			<DashboardShell title={isAr ? 'اختبار المسار المهني' : 'Career Path Assessment'} subtitle={isAr ? 'اكتشف مسارك المهني المثالي' : 'Discover your ideal career path'}>
-				<div className="bg-[#fafafa] dark:bg-[#0f1221] min-h-[60vh]">
-					{phase === "start" && (
-						<StartScreen onStart={handleStart} isStarting={startMutation.isPending} questionCount={questions.length} isAr={isAr} />
-					)}
+return (
+    <AuthGate>
+      <DashboardShell title={isAr ? 'اختبار المسار المهني' : 'Career Path Assessment'} subtitle={isAr ? 'اكتشف مسارك المهني المثالي' : 'Discover your ideal career path'}>
+        {!ready ? (
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="h-9 w-9 animate-spin rounded-full border-4 border-[#5120c8] border-t-transparent" />
+          </div>
+        ) : (
+          <>
+          <div className="bg-[#fafafa] dark:bg-[#0f1221] min-h-[60vh]">
+            {phase === "start" && (
+              <StartScreen onStart={handleStart} isStarting={startMutation.isPending} questionCount={questions.length} isAr={isAr} />
+            )}
 
-					{phase === "quiz" && (
-						<QuizScreen questions={questions} currentIdx={currentIdx}
-							selectedOption={selectedOption} onSelect={handleSelect}
-							onNext={handleNext} onPrev={handlePrev} onExit={handleExit} isAr={isAr} />
-					)}
+            {phase === "quiz" && (
+              <QuizScreen questions={questions} currentIdx={currentIdx}
+                selectedOption={selectedOption} onSelect={handleSelect}
+                onNext={handleNext} onPrev={handlePrev} onExit={handleExit} isAr={isAr} />
+            )}
 
-					{phase === "loading" && <LoadingScreen isAr={isAr} />}
+            {phase === "loading" && <LoadingScreen isAr={isAr} />}
 
-					{phase === "error" && (
-						<div className="flex min-h-[60vh] items-center justify-center" dir="rtl">
-							<div className="text-center" style={{ animation: "fadeInUp 0.4s ease-out" }}>
-								<div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-									<AlertTriangle size={32} className="text-[#dc2626]" />
-								</div>
-								<h3 className="mt-4 text-lg font-bold text-[#0d0d0d] dark:text-[#f1f5f9]">حدث خطأ</h3>
-								<p className="mt-2 text-sm text-[#dc2626]">{error}</p>
-								<button onClick={handleRetake}
-									className="mt-6 inline-flex h-11 items-center gap-2 rounded-xl bg-[#5120c8] px-6 text-sm font-bold text-white hover:bg-[#5120c8]/90">
-									<RefreshCw size={16} /> حاول مرة أخرى
-								</button>
-							</div>
-						</div>
-					)}
+            {phase === "error" && (
+              <div className="flex min-h-[60vh] items-center justify-center" dir="rtl">
+                <div className="text-center" style={{ animation: "fadeInUp 0.4s ease-out" }}>
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                    <AlertTriangle size={32} className="text-[#dc2626]" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-[#0d0d0d] dark:text-[#f1f5f9]">حدث خطأ</h3>
+                  <p className="mt-2 text-sm text-[#dc2626]">{error}</p>
+                  <button onClick={handleRetake}
+                    className="mt-6 inline-flex h-11 items-center gap-2 rounded-xl bg-[#5120c8] px-6 text-sm font-bold text-white hover:bg-[#5120c8]/90">
+                    <RefreshCw size={16} /> حاول مرة أخرى
+                  </button>
+                </div>
+              </div>
+            )}
 
-					{phase === "results" && report && (
-						<ResultsScreen report={report} onRetake={handleRetake} onSavePath={handleSavePath} locale={locale} />
-					)}
-				</div>
+            {phase === "results" && report && (
+              <ResultsScreen report={report} onRetake={handleRetake} onSavePath={handleSavePath} locale={locale} />
+            )}
+          </div>
 
-				{/* Exit Confirm Dialog */}
-				{exitConfirm && (
-					<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" dir="rtl">
-						<div className="mx-4 w-full max-w-sm rounded-2xl bg-white dark:bg-[#161929] p-6 shadow-xl"
-							style={{ animation: "scaleIn 0.2s ease-out" }}>
-							<h3 className="text-lg font-bold text-[#0d0d0d] dark:text-[#f1f5f9]">هل تريد الخروج؟</h3>
-							<p className="mt-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">سيتم فقدان تقدمك الحالي في الاختبار</p>
-							<div className="mt-5 flex gap-3">
-								<button onClick={confirmExit}
-									className="flex-1 rounded-xl bg-[#dc2626] py-2.5 text-sm font-bold text-white hover:bg-[#dc2626]/90">
-									نعم، اخرج
-								</button>
-								<button onClick={() => setExitConfirm(false)}
-									className="flex-1 rounded-xl border-2 border-[#e5e7eb] dark:border-[rgba(255,255,255,0.08)] py-2.5 text-sm font-bold text-[#0d0d0d] dark:text-[#f1f5f9] hover:bg-[#f4f4f6] dark:hover:bg-[#1e2235]">
-									متابعة الاختبار
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
-			</DashboardShell>
-		</AuthGate>
-	);
+          {exitConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" dir="rtl">
+              <div className="mx-4 w-full max-w-sm rounded-2xl bg-white dark:bg-[#161929] p-6 shadow-xl"
+                style={{ animation: "scaleIn 0.2s ease-out" }}>
+                <h3 className="text-lg font-bold text-[#0d0d0d] dark:text-[#f1f5f9]">هل تريد الخروج؟</h3>
+                <p className="mt-2 text-sm text-[#6b7280] dark:text-[#94a3b8]">سيتم فقدان تقدمك الحالي في الاختبار</p>
+                <div className="mt-5 flex gap-3">
+                  <button onClick={confirmExit}
+                    className="flex-1 rounded-xl bg-[#dc2626] py-2.5 text-sm font-bold text-white hover:bg-[#dc2626]/90">
+                    نعم، اخرج
+                  </button>
+                  <button onClick={() => setExitConfirm(false)}
+                    className="flex-1 rounded-xl border-2 border-[#e5e7eb] dark:border-[rgba(255,255,255,0.08)] py-2.5 text-sm font-bold text-[#0d0d0d] dark:text-[#f1f5f9] hover:bg-[#f4f4f6] dark:hover:bg-[#1e2235]">
+                    متابعة الاختبار
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          </>
+        )}
+      </DashboardShell>
+    </AuthGate>
+  );
 }
