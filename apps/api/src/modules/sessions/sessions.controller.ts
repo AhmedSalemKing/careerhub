@@ -1,7 +1,7 @@
 import {
   Controller, Get, Post, Patch,
   Body, Param, Request, UseGuards, Query,
-  NotFoundException, BadRequestException,
+  NotFoundException, BadRequestException, ForbiddenException,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { PrismaService } from '../../prisma/prisma.service'
@@ -534,5 +534,120 @@ export class SessionsController {
     }).catch(() => {})
 
     return { success: true }
+  }
+
+  @Post(':id/pay-wallet')
+  async payWithWallet(@Param('id') id: string, @Request() req: any) {
+    const userId = req.user.id
+    
+    const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.studentId !== userId) throw new ForbiddenException('Not your session')
+    
+    const user = await this.prisma.user.findUnique({ where: { id: userId } })
+    const price = session.price || 0
+    
+    if (price > 0 && (user?.walletBalance || 0) < price) {
+      throw new BadRequestException('Insufficient wallet balance')
+    }
+    
+    // Deduct from wallet
+    if (price > 0) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { walletBalance: { decrement: price } }
+      })
+      await this.prisma.walletTransaction.create({
+        data: { userId, type: 'SESSION_PAYMENT', amount: -price, description: 'دفع جلسة استشارية' }
+      }).catch(() => {})
+    }
+    
+    await this.prisma.consultingSession.update({
+      where: { id },
+      data: { status: 'CONFIRMED', paymentStatus: 'PAID' }
+    })
+    
+    // Notify student
+    await this.prisma.notification.create({
+      data: { userId, titleEn: 'تم تأكيد الجلسة', titleAr: 'تم تأكيد الجلسة', contentEn: 'تم الدفع وتأكيد جلستك بنجاح', contentAr: 'تم الدفع وتأكيد جلستك بنجاح', type: 'SUCCESS' as any, isRead: false }
+    }).catch(() => {})
+    
+    // Notify consultant
+    if (session.consultantId) {
+      await this.prisma.notification.create({
+        data: { userId: session.consultantId, titleEn: 'تم تأكيد جلستك', titleAr: 'تم تأكيد جلستك', contentEn: 'قام المستخدم بتأكيد الجلسة', contentAr: 'قام المستخدم بتأكيد الجلسة', type: 'INFO' as any, isRead: false }
+      }).catch(() => {})
+    }
+    
+    return { success: true, message: 'Session confirmed' }
+  }
+
+  @Patch(':id/complete')
+  async completeSession(@Param('id') id: string, @Request() req: any) {
+    const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
+    if (!session) throw new NotFoundException('Session not found')
+    
+    const isAllowed = session.consultantId === req.user.id || 
+                      session.studentId === req.user.id || 
+                      req.user.accountType === 'ADMIN'
+    if (!isAllowed) throw new ForbiddenException()
+    
+    // Add earnings to consultant (85%)
+    if (session.consultantId && (session.price || 0) > 0) {
+      const earnings = (session.price || 0) * 0.85
+      await this.prisma.user.update({
+        where: { id: session.consultantId },
+        data: { walletBalance: { increment: earnings } }
+      }).catch(() => {})
+    }
+    
+    await this.prisma.consultingSession.update({
+      where: { id },
+      data: { status: 'COMPLETED', completedAt: new Date() }
+    })
+    
+    return { success: true }
+  }
+
+  @Patch(':id/cancel-refund')
+  async cancelWithRefund(@Param('id') id: string, @Request() req: any) {
+    const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
+    if (!session) throw new NotFoundException('Session not found')
+    
+    const isAllowed = session.consultantId === req.user.id ||
+                      session.studentId === req.user.id ||
+                      req.user.accountType === 'ADMIN'
+    if (!isAllowed) throw new ForbiddenException()
+    
+    // Refund if was paid
+    if (session.paymentStatus === 'PAID' && (session.price || 0) > 0 && session.studentId) {
+      await this.prisma.user.update({
+        where: { id: session.studentId },
+        data: { walletBalance: { increment: session.price } }
+      })
+      await this.prisma.walletTransaction.create({
+        data: { userId: session.studentId, type: 'REFUND', amount: session.price, description: 'استرداد رسوم جلسة ملغاة' }
+      }).catch(() => {})
+      
+      // Remove consultant earnings
+      if (session.consultantId) {
+        await this.prisma.user.update({
+          where: { id: session.consultantId },
+          data: { walletBalance: { decrement: (session.price || 0) * 0.85 } }
+        }).catch(() => {})
+      }
+      
+      // Notify student
+      await this.prisma.notification.create({
+        data: { userId: session.studentId, titleEn: 'تم الاسترداد', titleAr: 'تم الاسترداد', contentEn: `تم إرجاع ${session.price} ريال لمحفظتك`, contentAr: `تم إرجاع ${session.price} ريال لمحفظتك`, type: 'SUCCESS' as any, isRead: false }
+      }).catch(() => {})
+    }
+    
+    await this.prisma.consultingSession.update({
+      where: { id },
+      data: { status: 'CANCELLED', cancelledAt: new Date() }
+    })
+    
+    return { success: true, refunded: session.paymentStatus === 'PAID' }
   }
 }

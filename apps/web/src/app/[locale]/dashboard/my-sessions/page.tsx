@@ -10,7 +10,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import {
   Calendar, Clock, Video, Globe, Phone,
   CheckCircle, XCircle, AlertCircle,
-  CreditCard, RefreshCw,
+  CreditCard, RefreshCw, Wallet,
 } from 'lucide-react'
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -140,6 +140,21 @@ export default function MySessionsPage() {
   const cancel = useMutation({
     mutationFn: (id: string) => patch(`/sessions/${id}/cancel`, {}),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-sessions'] }); notify.info('تم إلغاء الاستشارة') }
+  })
+
+  const payWithWallet = useMutation({
+    mutationFn: (id: string) => post(`/sessions/${id}/pay-wallet`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-sessions'] }); notify.success('تم الدفع من المحفظة') }
+  })
+
+  const completeSession = useMutation({
+    mutationFn: (id: string) => patch(`/sessions/${id}/complete`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-sessions'] }); notify.success('تم إكمال الجلسة') }
+  })
+
+  const cancelWithRefund = useMutation({
+    mutationFn: (id: string) => patch(`/sessions/${id}/cancel-refund`, {}),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['my-sessions'] }); notify.success('تم الإلغاء والاسترداد') }
   })
 
   const startPayment = async (session: any) => {
@@ -342,14 +357,37 @@ export default function MySessionsPage() {
                         </button>
                       )}
                       {session.status === 'CONFIRMED' && session.paymentStatus === 'UNPAID' && session.price > 0 && (
-                        <button
-                          onClick={() => startPayment(session)}
-                          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">
-                          <CreditCard className="h-4 w-4" />
-                          ادفع {session.price} ريال
-                        </button>
+                        <>
+                          {user?.walletBalance && user.walletBalance >= session.price && (
+                            <button
+                              onClick={() => payWithWallet.mutate(session.id)}
+                              disabled={payWithWallet.isPending}
+                              className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60 transition">
+                              <Wallet className="h-4 w-4" />
+                              {payWithWallet.isPending ? 'جاري الدفع...' : `دفع ${session.price} ريال من المحفظة`}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => startPayment(session)}
+                            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">
+                            <CreditCard className="h-4 w-4" />
+                            دفع {session.price} ريال
+                          </button>
+                        </>
                       )}
-                      {['PENDING', 'CONFIRMED'].includes(session.status) && (
+                      {session.status === 'CONFIRMED' && session.paymentStatus === 'PAID' && (
+                        <>
+                          <button onClick={() => completeSession.mutate(session.id)} disabled={completeSession.isPending}
+                            className="flex-1 rounded-xl bg-green-600 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60 transition">
+                            {completeSession.isPending ? 'جاري...' : 'تأكيد الإكمال'}
+                          </button>
+                          <button onClick={() => cancelWithRefund.mutate(session.id)} disabled={cancelWithRefund.isPending}
+                            className="rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition">
+                            {cancelWithRefund.isPending ? 'جاري...' : 'إلغاء مع استرداد'}
+                          </button>
+                        </>
+                      )}
+                      {['PENDING', 'RESCHEDULED'].includes(session.status) && (
                         <button onClick={() => cancel.mutate(session.id)} disabled={cancel.isPending}
                           className="rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition">
                           إلغاء

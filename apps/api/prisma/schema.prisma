@@ -944,6 +944,8 @@ model ConsultingSession {
   price         Float     @default(0)
   paymentStatus String    @default("UNPAID")
   paymentId     String?
+  completedAt   DateTime?
+  cancelledAt   DateTime?
   proposedAt    DateTime?
   proposedTime  DateTime?
   createdAt     DateTime  @default(now())
