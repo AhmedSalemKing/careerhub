@@ -144,7 +144,7 @@ export default function AdminCreateCoursePage() {
     queryKey: ['instructors-list'],
     queryFn: async () => {
       try {
-        const res = await get('/users?role=INSTRUCTOR&limit=100')
+        const res = await get('/users/instructors?limit=100')
         return (res?.data as any)?.data ?? []
       } catch { return [] }
     },
