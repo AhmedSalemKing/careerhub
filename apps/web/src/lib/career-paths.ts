@@ -16,7 +16,7 @@ export type CareerPathEntry = {
 
 export type CareerCategory = {
   category: string
-  emoji: string
+  icon: string
   color: string
   paths: CareerPathEntry[]
 }
@@ -24,7 +24,7 @@ export type CareerCategory = {
 export const CAREER_PATHS: CareerCategory[] = [
   {
     category: "Technology & Development",
-    emoji: "💻",
+    icon: "code",
     color: "blue",
     paths: [
       { 
@@ -85,7 +85,7 @@ export const CAREER_PATHS: CareerCategory[] = [
   },
   {
     category: "Cybersecurity",
-    emoji: "🔐",
+    icon: "shield",
     color: "red",
     paths: [
       { 
@@ -128,7 +128,7 @@ export const CAREER_PATHS: CareerCategory[] = [
   },
   {
     category: "Networking & Cloud",
-    emoji: "🌐",
+    icon: "cloud",
     color: "green",
     paths: [
       { 
@@ -171,7 +171,7 @@ export const CAREER_PATHS: CareerCategory[] = [
   },
   {
     category: "Data & AI",
-    emoji: "📊",
+    icon: "brain",
     color: "purple",
     paths: [
       { 
@@ -223,7 +223,7 @@ export const CAREER_PATHS: CareerCategory[] = [
   },
   {
     category: "Design & Creative",
-    emoji: "🎨",
+    icon: "palette",
     color: "pink",
     paths: [
       { 
@@ -266,7 +266,7 @@ export const CAREER_PATHS: CareerCategory[] = [
   },
   {
     category: "Business & Management",
-    emoji: "📈",
+    icon: "briefcase",
     color: "amber",
     paths: [
       { 
@@ -307,9 +307,9 @@ export const CAREER_PATHS: CareerCategory[] = [
       },
     ]
   },
-  {
-    category: "Marketing & Growth",
-    emoji: "📣",
+{
+    category: "Marketing & Sales",
+    icon: "megaphone",
     color: "orange",
     paths: [
       { 
@@ -351,8 +351,8 @@ export const CAREER_PATHS: CareerCategory[] = [
     ]
   },
   {
-    category: "Hybrid Tech + Business 🔥",
-    emoji: "🚀",
+    category: "Hybrid Tech + Business",
+    icon: "rocket",
     color: "gradient",
     paths: [
       { 

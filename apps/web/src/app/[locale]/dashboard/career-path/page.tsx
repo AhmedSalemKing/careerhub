@@ -14,8 +14,25 @@ import {
   Search, Target, ChevronLeft, Check, X,
   Compass, Sparkles, BookOpen, Users,
   ArrowRight, Filter, Grid3X3, Star, Zap,
-  DollarSign, CheckCircle2,
+  DollarSign, CheckCircle2, Code, Palette, TrendingUp,
+  BarChart3, Shield, Package, Settings, Briefcase, Cloud,
+  Megaphone, Rocket, Brain, ShieldCheck, Eye, Globe,
+  MapPin, CheckCircle, Clock, Award
 } from 'lucide-react'
+
+const getCategoryIcon = (icon: string, size = 20, color = '#5120c8') => {
+  const iconMap: Record<string, React.ReactNode> = {
+    code: <Code size={size} color={color} />,
+    palette: <Palette size={size} color={color} />,
+    brain: <Brain size={size} color={color} />,
+    shield: <Shield size={size} color={color} />,
+    cloud: <Globe size={size} color={color} />,
+    megaphone: <Megaphone size={size} color={color} />,
+    briefcase: <Briefcase size={size} color={color} />,
+    rocket: <Rocket size={size} color={color} />,
+  }
+  return iconMap[icon] || <Briefcase size={size} color={color} />
+}
 
 type SavedCareerPath = {
   id: string
@@ -381,7 +398,7 @@ function PathModal({
                   }}
                 >
                   <span className="flex items-center gap-1.5">
-                    <span>{cat.emoji}</span>
+                    <span>{getCategoryIcon(cat.icon, 16, 'inherit')}</span>
                     <span>{cat.category}</span>
                     <span className="text-xs" style={{ opacity: isActive ? 0.8 : 0.4 }}>
                       ({cat.paths.length})
@@ -398,7 +415,7 @@ function PathModal({
             <section key={cat.category}>
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: cardBg }}>
-                  <span className="text-lg">{cat.emoji}</span>
+                  {getCategoryIcon(cat.icon, 20)}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold" style={{ color: textColor }}>{cat.category}</h3>
@@ -458,7 +475,7 @@ function PathModal({
                         </div>
 
                         <div className="flex items-center gap-1.5 pt-3" style={{ borderTop: `1px solid ${cardBorder}` }}>
-                          <span className="text-base">💰</span>
+                          <DollarSign size={16} style={{ color: subtextColor }} />
                           <span className="text-sm font-bold" style={{ color: textColor }}>{path.salary}</span>
                           <span className="text-xs" style={{ color: subtextColor }}>SAR / شهرياً</span>
                         </div>
@@ -666,8 +683,8 @@ export default function DashboardCareerPathPage() {
               <div className="rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 p-6" style={{ background: isDark ? '#111118' : '#ffffff' }}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-2xl ring-1 ring-primary/20">
-                      {selectedCatEntry?.emoji ?? '🎯'}
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 ring-1 ring-primary/20">
+                      {selectedCatEntry?.icon ? getCategoryIcon(selectedCatEntry.icon, 28) : <Target size={28} color="#5120c8" />}
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
