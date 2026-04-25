@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { join } from 'path';
+import express from 'express';
 const compression = require('compression');
 const morgan = require('morgan');
 import { AppModule } from './app.module';
@@ -15,6 +16,10 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Body parser limits - IMPORTANT for file uploads
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
   // Serve uploaded files as static assets
   const uploadsPath = process.env.UPLOADS_PATH || join(process.cwd(), 'uploads');

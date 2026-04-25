@@ -102,7 +102,7 @@ export default function AdminCreateSessionPage() {
     setImageUploading(true)
     try {
       const formData = new FormData()
-      formData.append('image', file)
+      formData.append('file', file)
       const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
       
       const res = await fetch(`${API_URL}/upload/image`, {

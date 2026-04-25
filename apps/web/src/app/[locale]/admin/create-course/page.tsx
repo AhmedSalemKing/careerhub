@@ -22,7 +22,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 async function uploadImageFile(file: File): Promise<string> {
   const formData = new FormData()
-  formData.append('image', file)
+  formData.append('file', file)
   const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
   const res = await fetch(`${API_URL}/upload/image`, {
     method: 'POST',
@@ -40,7 +40,7 @@ async function uploadVideoFile(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const formData = new FormData()
-    formData.append('video', file)
+    formData.append('file', file)
     const token = typeof window !== 'undefined' ? localStorage.getItem('deveway_token') : null
     const xhr = new XMLHttpRequest()
     xhr.upload.onprogress = (e) => {

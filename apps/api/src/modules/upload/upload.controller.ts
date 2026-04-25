@@ -194,7 +194,7 @@ export class UploadController {
     };
   }
 
-@Post('document')
+  @Post('document')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @UseInterceptors(FileInterceptor('file', {
@@ -212,7 +212,7 @@ export class UploadController {
   }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload document file' })
-async uploadDocument(
+  async uploadDocument(
     @CurrentUser() user: User,
     @UploadedFile() file: Express.Multer.File,
     @Body('title') title?: string,
