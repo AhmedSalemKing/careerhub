@@ -15,6 +15,7 @@ import {
   CheckCircle,
   Upload,
   X,
+  User,
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -337,7 +338,10 @@ export default function AdminCreateCoursePage() {
             
             {/* اختيار المحاضر */}
             <div className="p-4 rounded-xl bg-[color:var(--surface-2)] border border-[color:var(--border)]">
-              <label className="block text-sm font-medium text-foreground mb-2">👤 تعيين المحاضر</label>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                <User size={14} className="inline ml-1" />
+                {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
+              </label>
               <select
                 value={form.isInstructor ? 'self' : form.instructorId}
                 onChange={(e) => {
@@ -351,7 +355,7 @@ export default function AdminCreateCoursePage() {
                 }}
                 className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
               >
-                <option value="self">✅ الأدمن هو صاحب الكورس</option>
+                <option value="self">{isAr ? '✅ الأدمن هو صاحب الكورس' : '✅ Admin is the course owner'}</option>
                 {(instructors as any[]).map((inst: any) => (
                   <option key={inst.id} value={inst.id}>
                     {inst.profile?.firstName} {inst.profile?.lastName} ({inst.email})
@@ -362,7 +366,7 @@ export default function AdminCreateCoursePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">عنوان الكورس (إنجليزي) *</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'عنوان الكورس (إنجليزي) *' : 'Course Title (English) *'}</label>
                 <input
                   value={form.titleEn}
                   onChange={(e) => set('titleEn', e.target.value)}
@@ -371,7 +375,7 @@ export default function AdminCreateCoursePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">عنوان الكورس (عربي)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'عنوان الكورس (عربي)' : 'Course Title (Arabic)'}</label>
                 <input
                   value={form.titleAr}
                   onChange={(e) => set('titleAr', e.target.value)}
@@ -383,7 +387,7 @@ export default function AdminCreateCoursePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">وصف الكورس (إنجليزي)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'وصف الكورس (إنجليزي)' : 'Course Description (English)'}</label>
                 <textarea
                   value={form.descriptionEn}
                   onChange={(e) => set('descriptionEn', e.target.value)}
@@ -393,7 +397,7 @@ export default function AdminCreateCoursePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">وصف الكورس (عربي)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'وصف الكورس (عربي)' : 'Course Description (Arabic)'}</label>
                 <textarea
                   value={form.descriptionAr}
                   onChange={(e) => set('descriptionAr', e.target.value)}
@@ -406,7 +410,7 @@ export default function AdminCreateCoursePage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">السعر (ريال)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'السعر (ريال)' : 'Price (SAR)'}</label>
                 <input
                   type="number"
                   min="0"
@@ -416,7 +420,7 @@ export default function AdminCreateCoursePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">المدة (ساعة)</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المدة (ساعة)' : 'Duration (hours)'}</label>
                 <input
                   type="number"
                   min="0"
@@ -426,7 +430,7 @@ export default function AdminCreateCoursePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">المستوى</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المستوى' : 'Level'}</label>
                 <select
                   value={form.level}
                   onChange={(e) => set('level', e.target.value)}
@@ -438,15 +442,15 @@ export default function AdminCreateCoursePage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">العملة</label>
+                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'العملة' : 'Currency'}</label>
                 <select
                   value={form.currency}
                   onChange={(e) => set('currency', e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                 >
-                  <option value="SAR">ريال سعودي</option>
-                  <option value="USD">دولار أمريكي</option>
-                  <option value="EGP">جنيه مصري</option>
+                  <option value="SAR">{isAr ? 'ريال سعودي' : 'Saudi Riyal'}</option>
+                  <option value="USD">{isAr ? 'دولار أمريكي' : 'US Dollar'}</option>
+                  <option value="EGP">{isAr ? 'جنيه مصري' : 'Egyptian Pound'}</option>
                 </select>
               </div>
             </div>
@@ -454,26 +458,26 @@ export default function AdminCreateCoursePage() {
             {(categories as any[]).length > 0 && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">المسار المهني</label>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المسار المهني' : 'Career Path'}</label>
                   <select
                     value={form.careerPathId}
                     onChange={(e) => set('careerPathId', e.target.value)}
                     className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                   >
-                    <option value="">اختر المسار</option>
+                    <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
                     {(categories as any[]).map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">التصنيف</label>
+                  <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'التصنيف' : 'Category'}</label>
                   <select
                     value={form.categoryId}
                     onChange={(e) => set('categoryId', e.target.value)}
                     className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                   >
-                    <option value="">اختر التصنيف</option>
+                    <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
                     {(categories as any[]).map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}

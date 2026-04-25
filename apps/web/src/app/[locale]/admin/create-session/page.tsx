@@ -16,6 +16,9 @@ import {
   Upload,
   X,
   DollarSign,
+  GraduationCap,
+  FileText,
+  Plus,
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -210,7 +213,7 @@ export default function AdminCreateSessionPage() {
                 type="text"
                 value={form.topic}
                 onChange={(e) => set('topic', e.target.value)}
-                placeholder="مثال: استشارة في التسويق الرقمي"
+                placeholder={isAr ? 'مثال: استشارة في التسويق الرقمي' : 'e.g. Digital Marketing Consultation'}
                 className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
               />
             </div>
@@ -219,14 +222,15 @@ export default function AdminCreateSessionPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  👤 الطالب (اختياري)
+                  <User size={14} className="inline ml-1" />
+                  {isAr ? 'الطالب (اختياري)' : 'Student (optional)'}
                 </label>
                 <select
                   value={form.studentId}
                   onChange={(e) => set('studentId', e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                 >
-                  <option value="">-- اختر الطالب --</option>
+                  <option value="">-- {isAr ? 'اختر الطالب' : 'Select Student'} --</option>
                   {(students as any[]).map((student: any) => (
                     <option key={student.id} value={student.id}>
                       {student.profile?.firstName} {student.profile?.lastName}
@@ -237,14 +241,15 @@ export default function AdminCreateSessionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  🎓 المستشار / المحاضر (اختياري)
+                  <GraduationCap size={14} className="inline ml-1" />
+                  {isAr ? 'المستشار / المحاضر (اختياري)' : 'Consultant / Instructor (optional)'}
                 </label>
                 <select
                   value={form.consultantId}
                   onChange={(e) => set('consultantId', e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                 >
-                  <option value="">-- اختر المستشار --</option>
+                  <option value="">-- {isAr ? 'اختر المستشار' : 'Select Consultant'} --</option>
                   {(consultants as any[]).map((cons: any) => (
                     <option key={cons.id} value={cons.id}>
                       {cons.profile?.firstName} {cons.profile?.lastName} - {cons.email}
@@ -258,7 +263,8 @@ export default function AdminCreateSessionPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  📅 الموعد والتوقيت *
+                  <Calendar size={14} className="inline ml-1" />
+                  {isAr ? 'الموعد والتوقيت *' : 'Date & Time *'}
                 </label>
                 <input
                   type="datetime-local"
@@ -270,23 +276,25 @@ export default function AdminCreateSessionPage() {
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  ⏱️ المدة (دقيقة)
+                  <Clock size={14} className="inline ml-1" />
+                  {isAr ? 'المدة (دقيقة)' : 'Duration (minutes)'}
                 </label>
                 <select
                   value={form.duration}
                   onChange={(e) => set('duration', e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                 >
-                  <option value="30">30 دقيقة</option>
-                  <option value="60">60 دقيقة</option>
-                  <option value="90">90 دقيقة</option>
-                  <option value="120">120 دقيقة</option>
+                  <option value="30">{isAr ? '30 دقيقة' : '30 minutes'}</option>
+                  <option value="60">{isAr ? '60 دقيقة' : '60 minutes'}</option>
+                  <option value="90">{isAr ? '90 دقيقة' : '90 minutes'}</option>
+                  <option value="120">{isAr ? '120 دقيقة' : '120 minutes'}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
-                  💰 السعر (ريال)
+                  <DollarSign size={14} className="inline ml-1" />
+                  {isAr ? 'السعر (ريال)' : 'Price (SAR)'}
                 </label>
                 <input
                   type="number"
@@ -301,7 +309,8 @@ export default function AdminCreateSessionPage() {
             {/* Meeting Method */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground mb-2">
-                📍 طريقة الاجتماع
+                <MapPin size={14} className="inline ml-1" />
+                {isAr ? 'طريقة الاجتماع' : 'Meeting Method'}
               </label>
               <div className="grid grid-cols-3 gap-3">
                 {(isAr ? MEETING_METHODS_AR : MEETING_METHODS_EN).map((method) => (
@@ -325,7 +334,8 @@ export default function AdminCreateSessionPage() {
             {/* Notes */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                📝 ملاحظات (اختياري)
+                <FileText size={14} className="inline ml-1" />
+                {isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}
               </label>
               <textarea
                 value={form.notes}
@@ -341,7 +351,7 @@ export default function AdminCreateSessionPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-primary" />
-              صورة الجلسة (اختياري)
+              {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (optional)'}
             </h2>
             
             <div
@@ -366,12 +376,12 @@ export default function AdminCreateSessionPage() {
               ) : imageUploading ? (
                 <div className="flex items-center gap-2 text-[color:var(--muted)]">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-sm">جارٍ الرفع...</span>
+                  <span className="text-sm">{isAr ? 'جارٍ الرفع...' : 'Uploading...'}</span>
                 </div>
               ) : (
                 <>
                   <Upload className="h-8 w-8 text-[color:var(--muted)] opacity-50" />
-                  <p className="text-sm text-[color:var(--muted)]">اضغط لإضافة صورة</p>
+                  <p className="text-sm text-[color:var(--muted)]">{isAr ? 'اضغط لإضافة صورة' : 'Click to add image'}</p>
                 </>
               )}
             </div>
@@ -414,17 +424,17 @@ export default function AdminCreateSessionPage() {
             {saving ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                جارٍ الإنشاء...
+                {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
               </>
             ) : success ? (
               <>
                 <CheckCircle className="h-4 w-4" />
-                تم بنجاح!
+                {isAr ? 'تم بنجاح!' : 'Success!'}
               </>
             ) : (
               <>
                 <Calendar className="h-4 w-4" />
-                إنشاء الجلسة
+                {isAr ? 'إنشاء الجلسة' : 'Create Session'}
               </>
             )}
           </button>

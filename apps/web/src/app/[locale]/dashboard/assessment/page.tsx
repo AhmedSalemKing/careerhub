@@ -174,8 +174,8 @@ function gradeBadge(score: number): { label: string; color: string } {
 //   PHASE 1: START SCREEN
 // ════════════════════════════════════════════════════════════════════════════════
 
-function StartScreen({ onStart, isStarting, questionCount }: {
-	onStart: () => void; isStarting: boolean; questionCount: number;
+function StartScreen({ onStart, isStarting, questionCount, isAr }: {
+	onStart: () => void; isStarting: boolean; questionCount: number; isAr: boolean;
 }) {
 	return (
 		<div className="flex min-h-[60vh] items-center justify-center px-4" dir="rtl">
@@ -186,18 +186,18 @@ function StartScreen({ onStart, isStarting, questionCount }: {
 
 				<h1 className="mt-6 text-3xl font-bold tracking-tight text-[#0d0d0d] dark:text-[#f1f5f9] sm:text-4xl"
 					style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-					اختبار تحديد المسار المهني
+					{isAr ? 'اختبار تحديد المسار المهني' : 'Career Path Assessment'}
 				</h1>
 				<p className="mt-3 text-base text-[#6b7280] dark:text-[#94a3b8]"
 					style={{ fontFamily: "'DM Sans', sans-serif" }}>
-					اكتشف مسارك المهني المثالي بناء على مهاراتك واهتماماتك
+					{isAr ? 'اكتشف مسارك المهني المثالي بناء على مهاراتك واهتماماتك' : 'Discover your ideal career based on your skills and interests'}
 				</p>
 
 				<div className="mt-8 grid grid-cols-3 gap-3">
 					{[
-						{ icon: HelpCircle, label: `${questionCount} سؤال`, sub: "عدد الأسئلة" },
-						{ icon: Clock, label: "10 دقائق", sub: "المدة التقريبية" },
-						{ icon: Zap, label: "فورية", sub: "النتيجة" },
+						{ icon: HelpCircle, label: isAr ? `${questionCount} سؤال` : `${questionCount} Questions`, sub: isAr ? 'عدد الأسئلة' : 'Number of Questions' },
+						{ icon: Clock, label: isAr ? '10 دقائق' : '10 Minutes', sub: isAr ? 'المدة التقريبية' : 'Estimated Duration' },
+						{ icon: Zap, label: isAr ? 'فورية' : 'Instant', sub: isAr ? 'النتيجة' : 'Results' },
 					].map((item) => (
 						<div key={item.sub}
 							className="rounded-xl border border-[#e5e7eb] dark:border-[rgba(255,255,255,0.08)] bg-white dark:bg-[#161929] p-4">
@@ -211,14 +211,14 @@ function StartScreen({ onStart, isStarting, questionCount }: {
 				<button onClick={onStart} disabled={isStarting}
 					className="mt-8 inline-flex h-12 items-center gap-2 rounded-xl bg-[#5120c8] px-8 text-base font-bold text-white transition-all hover:bg-[#5120c8]/90 disabled:opacity-60 disabled:cursor-not-allowed">
 					{isStarting ? (
-						<><RefreshCw size={18} className="animate-spin" /> جارٍ البدء...</>
+						<><RefreshCw size={18} className="animate-spin" /> {isAr ? 'جارٍ البدء...' : 'Starting...'}</>
 					) : (
-						<><ArrowLeft size={18} /> ابدأ الاختبار الآن</>
+						<><ArrowLeft size={18} /> {isAr ? 'ابدأ الاختبار الآن' : 'Start Assessment Now'}</>
 					)}
 				</button>
 
 				<p className="mt-4 text-xs text-[#6b7280] dark:text-[#94a3b8]">
-					اجاباتك سرية ولن تؤثر على حسابك
+					{isAr ? 'اجاباتك سرية ولن تؤثر على حسابك' : 'Your answers are confidential and won\'t affect your account'}
 				</p>
 			</div>
 		</div>
@@ -229,10 +229,10 @@ function StartScreen({ onStart, isStarting, questionCount }: {
 //   PHASE 2: QUIZ IN PROGRESS
 // ════════════════════════════════════════════════════════════════════════════════
 
-function QuizScreen({ questions, currentIdx, selectedOption, onSelect, onNext, onPrev, onExit }: {
+function QuizScreen({ questions, currentIdx, selectedOption, onSelect, onNext, onPrev, onExit, isAr }: {
 	questions: Question[]; currentIdx: number; selectedOption: number | null;
 	onSelect: (idx: number) => void; onNext: () => void; onPrev: () => void;
-	onExit: () => void;
+	onExit: () => void; isAr: boolean;
 }) {
 	const q = questions[currentIdx];
 	if (!q) return null;
@@ -248,7 +248,7 @@ function QuizScreen({ questions, currentIdx, selectedOption, onSelect, onNext, o
 			<div className="sticky top-0 z-10 border-b border-[#e5e7eb] dark:border-[rgba(255,255,255,0.08)] bg-[#fafafa]/95 dark:bg-[#0f1221]/95 backdrop-blur-sm px-4 py-3">
 				<div className="mx-auto flex max-w-2xl items-center justify-between">
 					<span className="text-sm font-semibold text-[#6b7280] dark:text-[#94a3b8]">
-						السؤال {currentIdx + 1} من {questions.length}
+						{isAr ? `السؤال ${currentIdx + 1} من ${questions.length}` : `Question ${currentIdx + 1} of ${questions.length}`}
 					</span>
 					<button onClick={onExit}
 						className="flex h-8 w-8 items-center justify-center rounded-lg text-[#6b7280] hover:bg-[#f4f4f6] dark:hover:bg-[#1e2235] transition-colors">
@@ -315,15 +315,15 @@ function QuizScreen({ questions, currentIdx, selectedOption, onSelect, onNext, o
 					<button onClick={() => { setSlideDir("left"); onPrev(); }}
 						disabled={currentIdx === 0}
 						className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-[#6b7280] hover:text-[#0d0d0d] dark:hover:text-[#f1f5f9] hover:bg-[#f4f4f6] dark:hover:bg-[#1e2235] transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-						<ArrowRight size={16} /> السابق
+						<ArrowRight size={16} /> {isAr ? 'السابق' : 'Previous'}
 					</button>
 					<span className="text-xs text-[#6b7280] dark:text-[#94a3b8]">
-						اضغط 1-4 للإجابة
+						{isAr ? 'اضغط 1-4 للإجابة' : 'Press 1-4 to answer'}
 					</span>
 					<button onClick={() => { setSlideDir("right"); onNext(); }}
 						disabled={selectedOption === null}
 						className="inline-flex items-center gap-2 rounded-lg bg-[#5120c8] px-6 py-2 text-sm font-bold text-white transition-all hover:bg-[#5120c8]/90 disabled:opacity-40 disabled:cursor-not-allowed">
-						{currentIdx === questions.length - 1 ? "ارسال" : "التالي"} <ArrowLeft size={16} />
+						{currentIdx === questions.length - 1 ? (isAr ? 'ارسال' : 'Submit') : (isAr ? 'التالي' : 'Next')} <ArrowLeft size={16} />
 					</button>
 				</div>
 			</div>
@@ -335,16 +335,33 @@ function QuizScreen({ questions, currentIdx, selectedOption, onSelect, onNext, o
 //   LOADING SCREEN
 // ════════════════════════════════════════════════════════════════════════════════
 
-function LoadingScreen() {
+function LoadingScreen({ isAr }: { isAr: boolean }) {
 	const [msgIdx, setMsgIdx] = useState(0);
 	const [prog, setProg] = useState(0);
 
+	const LOADING_MSGS_AR = [
+		"جارٍ تحليل شخصيتك المهنية...",
+		"مطابقة مهاراتك مع متطلبات السوق...",
+		"اكتشاف أفضل المسارات لك...",
+		"بناء خطة التعلم الخاصة بك...",
+		"شارفنا على الانتهاء...",
+	];
+	const LOADING_MSGS_EN = [
+		"Analyzing your personality...",
+		"Matching your skills with market demands...",
+		"Discovering the best paths for you...",
+		"Building your personalized learning plan...",
+		"Almost there...",
+	];
+
 	useEffect(() => {
-		const t1 = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MESSAGES.length), 2200);
+		const t1 = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MSGS_AR.length), 2200);
 		const start = Date.now();
 		const t2 = setInterval(() => setProg(Math.min(((Date.now() - start) / 18000) * 100, 95)), 200);
 		return () => { clearInterval(t1); clearInterval(t2); };
 	}, []);
+
+	const loadingMsgs = isAr ? LOADING_MSGS_AR : LOADING_MSGS_EN;
 
 	return (
 		<div className="flex min-h-[60vh] items-center justify-center" dir="rtl">
@@ -355,13 +372,13 @@ function LoadingScreen() {
 				</div>
 				<div className="mt-6 text-base font-semibold text-[#0d0d0d] dark:text-[#f1f5f9]"
 					style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-					{LOADING_MESSAGES[msgIdx]}
+					{loadingMsgs[msgIdx]}
 				</div>
 				<div className="mx-auto mt-6 h-2 w-64 overflow-hidden rounded-full bg-[#f4f4f6] dark:bg-[#1e2235]">
 					<div className="h-full rounded-full bg-[#5120c8] transition-all duration-300" style={{ width: `${prog}%` }} />
 				</div>
 				<p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-[#6b7280] dark:text-[#94a3b8]">
-					<Clock size={12} /> قد يستغرق الأمر حتى 30 ثانية
+					<Clock size={12} /> {isAr ? 'قد يستغرق الأمر حتى 30 ثانية' : 'This may take up to 30 seconds'}
 				</p>
 			</div>
 		</div>
@@ -700,19 +717,19 @@ export default function AssessmentPage() {
 
 	return (
 		<AuthGate>
-			<DashboardShell title="اختبار المسار المهني" subtitle="اكتشف مسارك المهني المثالي">
+			<DashboardShell title={isAr ? 'اختبار المسار المهني' : 'Career Path Assessment'} subtitle={isAr ? 'اكتشف مسارك المهني المثالي' : 'Discover your ideal career path'}>
 				<div className="bg-[#fafafa] dark:bg-[#0f1221] min-h-[60vh]">
 					{phase === "start" && (
-						<StartScreen onStart={handleStart} isStarting={startMutation.isPending} questionCount={questions.length} />
+						<StartScreen onStart={handleStart} isStarting={startMutation.isPending} questionCount={questions.length} isAr={isAr} />
 					)}
 
 					{phase === "quiz" && (
 						<QuizScreen questions={questions} currentIdx={currentIdx}
 							selectedOption={selectedOption} onSelect={handleSelect}
-							onNext={handleNext} onPrev={handlePrev} onExit={handleExit} />
+							onNext={handleNext} onPrev={handlePrev} onExit={handleExit} isAr={isAr} />
 					)}
 
-					{phase === "loading" && <LoadingScreen />}
+					{phase === "loading" && <LoadingScreen isAr={isAr} />}
 
 					{phase === "error" && (
 						<div className="flex min-h-[60vh] items-center justify-center" dir="rtl">
