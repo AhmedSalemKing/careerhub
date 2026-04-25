@@ -256,6 +256,7 @@ function PathModal({
   onShowDetails,
   isSaving,
   savingPathId,
+  selectedPaths,
 }: {
   onClose: () => void
   currentPathId?: string
@@ -263,6 +264,7 @@ function PathModal({
   onShowDetails: (pathId: string) => void
   isSaving: boolean
   savingPathId: string | null
+  selectedPaths: string[]
 }) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -793,6 +795,7 @@ export default function DashboardCareerPathPage() {
             onShowDetails={(pathId) => setDetailPathId(pathId)}
             isSaving={savePath.isPending}
             savingPathId={savingPathId}
+            selectedPaths={selectedPaths}
           />
         )}
 
