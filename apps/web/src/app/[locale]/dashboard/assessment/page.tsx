@@ -533,6 +533,7 @@ function ResultsScreen({ report, onRetake, onSavePath, locale }: {
 
 export default function AssessmentPage() {
 	const locale = useLocale() as "ar" | "en";
+	const isAr = locale === "ar";
 	const [phase, setPhase] = useState<Phase>("start");
 	const [sessionId, setSessionId] = useState<string | null>(null);
 	const [currentIdx, setCurrentIdx] = useState(0);
