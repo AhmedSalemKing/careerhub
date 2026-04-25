@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
@@ -8,7 +8,7 @@ import Link from 'next/link'
 import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
   Briefcase, Package, ChevronRight, Clock, Star, DollarSign,
-  Flame, Zap, Sparkles, ArrowLeft, Users, BookOpen, Globe, Megaphone, Rocket, Brain, X
+  Flame, Zap, Sparkles, ArrowLeft, Users, BookOpen, Globe, Megaphone, Rocket, Brain
 } from 'lucide-react'
 import { CAREER_PATHS } from '@/lib/career-paths'
 
@@ -28,13 +28,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
 }
 
 const CATEGORIES = [
-  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
-  { key: 'Technology & Development', labelAr: 'التقنية', labelEn: 'Technology' },
-  { key: 'Cybersecurity', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity' },
-  { key: 'Design & Creative', labelAr: 'التصميم', labelEn: 'Design' },
-  { key: 'Marketing & Sales', labelAr: 'التسويق', labelEn: 'Marketing' },
-  { key: 'Business & Management', labelAr: 'إدارة الأعمال', labelEn: 'Business' },
-  { key: 'Hybrid Tech + Business', labelAr: 'هجين', labelEn: 'Hybrid' },
+  { key: 'all', labelAr: '╪º┘ä┘â┘ä', labelEn: 'All' },
+  { key: 'Technology & Development', labelAr: '╪º┘ä╪¬┘é┘å┘è╪⌐', labelEn: 'Technology' },
+  { key: 'Cybersecurity', labelAr: '╪º┘ä╪ú┘à┘å ╪º┘ä╪│┘è╪¿╪▒╪º┘å┘è', labelEn: 'Cybersecurity' },
+  { key: 'Design & Creative', labelAr: '╪º┘ä╪¬╪╡┘à┘è┘à', labelEn: 'Design' },
+  { key: 'Marketing & Sales', labelAr: '╪º┘ä╪¬╪│┘ê┘è┘é', labelEn: 'Marketing' },
+  { key: 'Business & Management', labelAr: '╪Ñ╪»╪º╪▒╪⌐ ╪º┘ä╪ú╪╣┘à╪º┘ä', labelEn: 'Business' },
+  { key: 'Hybrid Tech + Business', labelAr: '┘ç╪¼┘è┘å', labelEn: 'Hybrid' },
 ]
 
 export default function CareersPage() {
@@ -126,137 +126,69 @@ export default function CareersPage() {
       
       {/* Hero Section */}
       <div style={{
-        position: 'relative',
-        overflow: 'hidden',
-        padding: '80px 24px 60px',
+        background: isDark
+          ? 'linear-gradient(180deg, rgba(81,32,200,0.12) 0%, transparent 100%)'
+          : 'linear-gradient(180deg, rgba(81,32,200,0.05) 0%, transparent 100%)',
         borderBottom: `1px solid ${border}`,
+        padding: '60px 24px 40px',
+        textAlign: 'center',
       }}>
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: isDark
-            ? 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)'
-            : 'linear-gradient(rgba(81,32,200,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(81,32,200,0.04) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-          maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%)',
-        }} />
-        <div style={{
-          position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)',
-          width: 600, height: 300,
-          background: 'radial-gradient(ellipse, rgba(81,32,200,0.15) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
-        <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth:800, margin:'0 auto' }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '8px 20px', borderRadius: 100,
-            background: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)',
-            border: '1px solid rgba(81,32,200,0.25)',
-            marginBottom: 28,
+            display:'inline-flex', alignItems:'center', gap:8,
+            padding:'6px 16px', borderRadius:20,
+            background:'rgba(81,32,200,0.08)',
+            border:'1px solid rgba(81,32,200,0.2)',
+            marginBottom:20,
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#5120c8' }} />
-            <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 700, letterSpacing: '0.03em' }}>
-              {isAr ? 'استكشف المسارات المهنية' : 'Explore Career Paths'}
+            <Sparkles size={14} color="#5120c8" />
+            <span style={{ color:'#5120c8', fontSize:13, fontWeight:600 }}>
+              {isAr ? '╪º╪│╪¬┘â╪┤┘ü ╪º┘ä┘à╪│╪º╪▒╪º╪¬ ╪º┘ä┘à┘ç┘å┘è╪⌐' : 'Explore Career Paths'}
             </span>
-            <Sparkles size={13} color="#5120c8" />
           </div>
-          <h1 style={{
-            color: text,
-            fontSize: 'clamp(32px, 5vw, 52px)',
-            fontWeight: 900,
-            margin: '0 0 20px',
-            lineHeight: 1.15,
-            letterSpacing: '-0.02em',
-          }}>
-            {isAr ? (
-              <><span style={{ color: '#5120c8' }}>مستقبلك</span> المهني</>
-            ) : (
-              <>Build Your <span style={{ color: '#5120c8' }}>Career</span> Future</>
-            )}
+          
+          <h1 style={{ color:text, fontSize:'clamp(28px,4vw,42px)', fontWeight:900, margin:'0 0 16px', lineHeight:1.2 }}>
+            {isAr ? '╪º╪¿┘å ┘à╪│╪¬┘é╪¿┘ä┘â ╪º┘ä┘à┘ç┘å┘è' : 'Build Your Career Future'}
           </h1>
-          <p style={{
-            color: '#6b7280', fontSize: 16, margin: '0 0 40px',
-            lineHeight: 1.75, maxWidth: 540, marginLeft: 'auto', marginRight: 'auto',
-          }}>
+          <p style={{ color:'#6b7280', fontSize:16, margin:'0 0 32px', lineHeight:1.7 }}>
             {isAr
-              ? 'اختر من بين أكثر من 100 مسار مهني متخصص مع تفاصيل المهام والرواتب والمهارات المطلوبة'
-              : 'Choose from 100+ specialized career paths with tasks, salaries and required skills'}
+              ? '╪º╪«╪¬╪▒ ┘à╪│╪º╪▒┘â ╪º┘ä┘à┘ç┘å┘è ┘à┘å ╪¿┘è┘å ╪ú┘â╪½╪▒ ┘à┘å 30 ┘à╪│╪º╪▒╪º ┘à╪¬╪«╪╡╪╡╪º ┘ê╪º╪¿╪»╪ú ╪¿╪«╪╖╪⌐ ┘ê╪º╪╢╪¡╪⌐ ┘ê┘à┘å╪╕┘à╪⌐'
+              : 'Choose your career path from 30+ specialized paths and start with a clear structured plan'}
           </p>
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: 0,
-            marginBottom: 36,
-            background: isDark ? 'rgba(255,255,255,0.04)' : '#ffffff',
-            border: `1px solid ${border}`,
-            borderRadius: 16, overflow: 'hidden',
-            maxWidth: 480, margin: '0 auto 36px',
-            boxShadow: isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.06)',
-          }}>
+          
+          {/* Stats row */}
+          <div style={{ display:'flex', justifyContent:'center', gap:32, flexWrap:'wrap', marginBottom:32 }}>
             {[
-              { value: allPaths.length.toString(), labelAr: 'مسار متاح', labelEn: 'Paths' },
-              { value: CAREER_PATHS.length.toString(), labelAr: 'تخصصات', labelEn: 'Specializations' },
-              { value: '100%', labelAr: 'مجاني', labelEn: 'Free' },
+              { value: allPaths.length.toString(), labelAr:'┘à╪│╪º╪▒ ┘à╪¬╪º╪¡', labelEn:'Paths Available' },
+              { value: CAREER_PATHS.length.toString(), labelAr:'╪¬╪«╪╡╪╡╪º╪¬', labelEn:'Specializations' },
+              { value: '100%', labelAr:'┘à╪¼╪º┘å┘è ┘ä┘ä╪º╪│╪¬┘â╪┤╪º┘ü', labelEn:'Free to Explore' },
             ].map((stat, i) => (
-              <div key={i} style={{
-                flex: 1, padding: '18px 12px', textAlign: 'center',
-                borderRight: i < 2 ? `1px solid ${border}` : 'none',
-              }}>
-                <div style={{ color: '#5120c8', fontSize: 24, fontWeight: 900, lineHeight: 1 }}>
-                  {stat.value}
-                </div>
-                <div style={{ color: '#6b7280', fontSize: 12, marginTop: 4, fontWeight: 500 }}>
-                  {isAr ? stat.labelAr : stat.labelEn}
-                </div>
+              <div key={i} style={{ textAlign:'center' }}>
+                <div style={{ color:'#5120c8', fontSize:28, fontWeight:900 }}>{stat.value}</div>
+                <div style={{ color:'#6b7280', fontSize:13 }}>{isAr ? stat.labelAr : stat.labelEn}</div>
               </div>
             ))}
           </div>
-          <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto' }}>
-            <div style={{
-              position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-              right: isAr ? 18 : 'auto', left: isAr ? 'auto' : 18,
-              display: 'flex', alignItems: 'center',
-            }}>
-              <Search size={17} color="#9ca3af" />
-            </div>
+          
+          {/* Search bar */}
+          <div style={{ position:'relative', maxWidth:480, margin:'0 auto' }}>
+            <Search size={16} color="#6b7280" style={{
+              position:'absolute', top:'50%', transform:'translateY(-50%)',
+              right: isAr ? 16 : 'auto', left: isAr ? 'auto' : 16,
+            }} />
             <input
               type="text"
-              placeholder={isAr ? 'ابحث عن مسار أو مهارة...' : 'Search paths or skills...'}
+              placeholder={isAr ? '╪º╪¿╪¡╪½ ╪╣┘å ┘à╪│╪º╪▒ ╪ú┘ê ┘à┘ç╪º╪▒╪⌐...' : 'Search paths or skills...'}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
-                width: '100%',
-                padding: isAr ? '16px 52px 16px 56px' : '16px 56px 16px 52px',
-                borderRadius: 14,
-                border: `1.5px solid ${searchQuery ? 'rgba(81,32,200,0.4)' : border}`,
-                background: isDark ? '#111111' : '#ffffff',
-                color: text, fontSize: 15, outline: 'none',
-                boxSizing: 'border-box',
-                transition: 'border-color 0.2s',
-                boxShadow: isDark ? 'none' : '0 2px 16px rgba(0,0,0,0.06)',
+                width:'100%', padding: isAr ? '14px 44px 14px 16px' : '14px 16px 14px 44px',
+                borderRadius:14, border:`1px solid ${border}`,
+                background: cardBg, color:text,
+                fontSize:14, outline:'none',
+                boxSizing:'border-box',
               }}
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-                  left: isAr ? 'auto' : 18, right: isAr ? 18 : 'auto',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#9ca3af', display: 'flex', alignItems: 'center',
-                }}>
-                <X size={16} />
-              </button>
-            )}
-            {!searchQuery && (
-              <kbd style={{
-                position: 'absolute', top: '50%', transform: 'translateY(-50%)',
-                left: isAr ? 'auto' : 18, right: isAr ? 18 : 'auto',
-                background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
-                border: `1px solid ${border}`,
-                borderRadius: 6, padding: '2px 8px',
-                fontSize: 11, color: '#9ca3af', fontFamily: 'monospace',
-              }}>
-                /
-              </kbd>
-            )}
           </div>
         </div>
       </div>
@@ -286,7 +218,7 @@ export default function CareersPage() {
         
         {/* Results count */}
         <div style={{ color:'#6b7280', fontSize:14, marginBottom:20 }}>
-          {isAr ? `${filteredPaths.length} مسار متاح` : `${filteredPaths.length} paths available`}
+          {isAr ? `${filteredPaths.length} ┘à╪│╪º╪▒ ┘à╪¬╪º╪¡` : `${filteredPaths.length} paths available`}
         </div>
         
         {/* Paths grid */}
@@ -361,8 +293,8 @@ export default function CareersPage() {
                       fontSize:11, fontWeight:700,
                     }}>
                       {(path.demand || '').toLowerCase().includes('very')
-                        ? (isAr?'طلب مرتفع':'High')
-                        : (isAr?'طلب جيد':'Good')}
+                        ? (isAr?'╪╖┘ä╪¿ ┘à╪▒╪¬┘ü╪╣':'High')
+                        : (isAr?'╪╖┘ä╪¿ ╪¼┘è╪»':'Good')}
                     </span>
                   </div>
                 </div>
@@ -390,7 +322,7 @@ export default function CareersPage() {
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <DollarSign size={13} color="#5120c8" />
                     <span style={{ color:'#5120c8', fontSize:12, fontWeight:700 }}>
-                      {path.salary} {isAr?'ر.س':'SAR'}
+                      {path.salary} {isAr?'╪▒.╪│':'SAR'}
                     </span>
                   </div>
                 </div>
@@ -451,7 +383,7 @@ export default function CareersPage() {
                   onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity='0.9'}
                   onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity='1'}
                 >
-                  {isAr ? 'ابدأ المسار' : 'Start Path'}
+                  {isAr ? '╪º╪¿╪»╪ú ╪º┘ä┘à╪│╪º╪▒' : 'Start Path'}
                   <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
                 </button>
               </div>
@@ -460,79 +392,42 @@ export default function CareersPage() {
         </div>
         
         {/* Bottom CTA */}
-        <div style={{ marginTop: 64, position: 'relative', overflow: 'hidden' }}>
-          <div style={{
-            borderRadius: 24, overflow: 'hidden',
-            background: isDark
-              ? 'linear-gradient(135deg, #1a0a3c 0%, #0d1f3c 50%, #0a2a1a 100%)'
-              : 'linear-gradient(135deg, #f5f0ff 0%, #eff6ff 50%, #f0fdf4 100%)',
-            border: `1px solid ${isDark ? 'rgba(81,32,200,0.2)' : 'rgba(81,32,200,0.12)'}`,
-            padding: '56px 32px',
-            textAlign: 'center',
-            position: 'relative',
-          }}>
+        <div style={{
+          marginTop:60, padding:'48px 32px', borderRadius:24,
+          background: isDark
+            ? 'linear-gradient(135deg, rgba(81,32,200,0.15), rgba(43,191,163,0.08))'
+            : 'linear-gradient(135deg, rgba(81,32,200,0.06), rgba(43,191,163,0.04))',
+          border:`1px solid ${isDark?'rgba(81,32,200,0.2)':'rgba(81,32,200,0.15)'}`,
+          textAlign:'center',
+        }}>
+          <div style={{ maxWidth:500, margin:'0 auto' }}>
             <div style={{
-              position: 'absolute', top: -60, right: -60,
-              width: 200, height: 200, borderRadius: '50%',
-              background: 'rgba(81,32,200,0.08)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{
-              position: 'absolute', bottom: -40, left: -40,
-              width: 150, height: 150, borderRadius: '50%',
-              background: 'rgba(43,191,163,0.06)',
-              pointerEvents: 'none',
-            }} />
-            <div style={{ position: 'relative', zIndex: 1, maxWidth: 560, margin: '0 auto' }}>
-              <div style={{
-                width: 64, height: 64, borderRadius: 18, margin: '0 auto 24px',
-                background: 'rgba(81,32,200,0.1)',
-                border: '1px solid rgba(81,32,200,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 30px rgba(81,32,200,0.15)',
-              }}>
-                <Sparkles size={26} color="#5120c8" />
-              </div>
-              <h2 style={{
-                color: text, fontSize: 26, fontWeight: 900,
-                margin: '0 0 12px', letterSpacing: '-0.02em',
-              }}>
-                {isAr ? 'مش عارف تختار مسارك' : "Not Sure Which Path?"}
-              </h2>
-              <p style={{
-                color: '#6b7280', fontSize: 15, margin: '0 0 32px', lineHeight: 1.75,
-              }}>
-                {isAr
-                  ? 'اعمل الاختبار الذكي في 5 دقائق وهنرشح لك المسار الأنسب بناء على مهاراتك واهتماماتك وخبرتك'
-                  : "Take the 5-minute AI assessment and we'll recommend the perfect path based on your skills and interests"}
-              </p>
-              <Link href={`/${locale}/dashboard/assessment`}>
-                <button style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 10,
-                  padding: '16px 36px', borderRadius: 14,
-                  background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer',
-                  fontSize: 15, fontWeight: 700,
-                  boxShadow: '0 8px 24px rgba(81,32,200,0.35)',
-                  transition: 'all 0.2s ease',
-                  letterSpacing: '-0.01em',
-                }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'
-                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 32px rgba(81,32,200,0.45)'
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
-                  ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(81,32,200,0.35)'
-                }}>
-                  <Sparkles size={17} />
-                  {isAr ? 'اكتشف مسارك بالذكاء الاصطناعي' : 'Discover Your Path with AI'}
-                  <ArrowLeft size={16} style={{ transform: isAr ? 'none' : 'rotate(180deg)' }} />
-                </button>
-              </Link>
-              <p style={{ color: '#9ca3af', fontSize: 12, marginTop: 16 }}>
-                {isAr ? 'مجاني جدا لا يتطلب بطاقة ائتمانية' : 'Completely free  no credit card required'}
-              </p>
+              width:56, height:56, borderRadius:16, margin:'0 auto 16px',
+              background:'rgba(81,32,200,0.1)',
+              display:'flex', alignItems:'center', justifyContents:'center',
+            }}>
+              <Sparkles size={24} color="#5120c8" />
             </div>
+            <h2 style={{ color:text, fontSize:22, fontWeight:800, margin:'0 0 12px' }}>
+              {isAr ? '┘à╪┤ ╪╣╪º╪▒┘ü ╪¬╪«╪¬╪º╪▒' : "Not sure which path?"}
+            </h2>
+            <p style={{ color:'#6b7280', fontSize:14, margin:'0 0 24px', lineHeight:1.7 }}>
+              {isAr
+                ? '╪º╪╣┘à┘ä ╪º┘ä╪º╪«╪¬╪¿╪º╪▒ ╪º┘ä╪░┘â┘è ┘ê╪º╪¡┘å╪º ┘ç┘å╪▒╪┤╪¡ ┘ä┘â ╪º┘ä┘à╪│╪º╪▒ ╪º┘ä╪ú┘å╪│╪¿ ╪¿┘å╪º╪í ╪╣┘ä┘ë ┘à┘ç╪º╪▒╪º╪¬┘â ┘ê╪º┘ç╪¬┘à╪º┘à╪º╪¬┘â'
+                : 'Take the AI assessment and we\'ll recommend the best path based on your skills and interests'}
+            </p>
+            <Link href={`/${locale}/dashboard/assessment`}>
+              <button style={{
+                padding:'14px 32px', borderRadius:14,
+                background:'#5120c8', color:'#fff', border:'none', cursor:'pointer',
+                fontSize:14, fontWeight:700,
+                boxShadow:'0 4px 20px rgba(81,32,200,0.3)',
+                display:'inline-flex', alignItems:'center', gap:8,
+              }}>
+                <Sparkles size={16} />
+                {isAr ? '╪º┘â╪¬╪┤┘ü ┘à╪│╪º╪▒┘â ╪¿╪º┘ä╪░┘â╪º╪í ╪º┘ä╪º╪╡╪╖┘å╪º╪╣┘è' : 'Discover Your Path with AI'}
+              </button>
+            </Link>
           </div>
         </div>
       </div>
