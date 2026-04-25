@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
@@ -19,11 +19,10 @@ import {
   GraduationCap,
   FileText,
   Plus,
+  Phone,
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
-
-// ─── Types ──────────────────────────────────────────────────────────────────
 
 type SessionForm = {
   studentId: string
@@ -37,23 +36,25 @@ type SessionForm = {
   imageUrl: string
 }
 
-const MEETING_METHODS_AR = [
-  { value: 'ONLINE', label: 'عبر الإنترنت (Zoom/Meet)', icon: Video },
-  { value: 'IN_PERSON', label: 'حضورياً في المقر', icon: MapPin },
-  { value: 'PHONE', label: 'اتصال هاتفي', icon: Phone },
+const MEETING_METHODS = [
+  { value: 'ONLINE', labelAr: 'أونلاين', labelEn: 'Online', icon: Video },
+  { value: 'IN_PERSON', labelAr: 'حضوري', labelEn: 'In Person', icon: MapPin },
+  { value: 'PHONE', labelAr: 'هاتف', labelEn: 'Phone Call', icon: Phone },
 ]
-const MEETING_METHODS_EN = [
-  { value: 'ONLINE', label: 'Online (Zoom/Meet)', icon: Video },
-  { value: 'IN_PERSON', label: 'In Person', icon: MapPin },
-  { value: 'PHONE', label: 'Phone Call', icon: Phone },
-]
-
-// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminCreateSessionPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
+    check()
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', check)
+    return () => media.removeEventListener('change', check)
+  }, [])
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -74,7 +75,6 @@ export default function AdminCreateSessionPage() {
   const [imageUploading, setImageUploading] = useState(false)
   const imageRef = useRef<HTMLInputElement>(null)
 
-  // جلب الطلاب
   const { data: students = [] } = useQuery({
     queryKey: ['students-list'],
     queryFn: async () => {
@@ -85,7 +85,6 @@ export default function AdminCreateSessionPage() {
     },
   })
 
-  // جلب المستشارين/المحاضرين
   const { data: consultants = [] } = useQuery({
     queryKey: ['consultants-list'],
     queryFn: async () => {
@@ -98,8 +97,6 @@ export default function AdminCreateSessionPage() {
 
   const set = (key: keyof SessionForm, value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
-
-  // ─── Image Upload ───────────────────────────────────────────
 
   async function handleImageUpload(file: File) {
     setImageUploading(true)
@@ -118,13 +115,11 @@ export default function AdminCreateSessionPage() {
       const data = await res.json()
       set('imageUrl', data.data.url)
     } catch {
-      setError('فشل رفع الصورة')
+      setError(isAr ? 'فشل رفع الصورة' : 'Image upload failed')
     } finally {
       setImageUploading(false)
     }
   }
-
-  // ─── Submit ─────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -146,15 +141,11 @@ export default function AdminCreateSessionPage() {
         duration: parseInt(form.duration) || 60,
         notes: form.notes || undefined,
         imageUrl: form.imageUrl || undefined,
-        status: 'SCHEDULED', // حالة افتراضية
+        status: 'SCHEDULED',
       }
 
-      // ✅ استخدام endpoint sessions العادي (يعمل مع الأدمن أيضاً)
       await post('/sessions', payload)
-      
       setSuccess(true)
-      
-      // Redirect بعد ثانيتين
       setTimeout(() => {
         router.push(`/${locale}/admin/sessions`)
       }, 1500)
@@ -167,70 +158,114 @@ export default function AdminCreateSessionPage() {
     }
   }
 
-  // ─── Render ──────────────────────────────────────────────────
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '12px 16px', borderRadius: 10,
+    background: isDark ? '#1a1a1a' : '#f8fafc',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+    color: isDark ? '#f1f5f9' : '#0d0d0d',
+    fontSize: 14, outline: 'none', transition: 'border-color 0.2s',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block', color: isDark ? '#94a3b8' : '#6b7280',
+    fontSize: 13, fontWeight: 600, marginBottom: 8,
+  }
+
+  const cardStyle: React.CSSProperties = {
+    background: isDark ? '#111111' : '#fff',
+    borderRadius: 20, padding: 32,
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
+    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+  }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto" dir="rtl">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Calendar className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}</h1>
-            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'جدولة جلسة استشارة أو محاضرة' : 'Schedule a consultation or lecture session'}</p>
+    <div style={{
+      minHeight: '100vh',
+      background: isDark ? '#0d0d0d' : '#f8fafc',
+      padding: '32px 16px',
+      direction: isAr ? 'rtl' : 'ltr',
+    }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        
+        {/* Header */}
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: 'rgba(81,32,200,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Calendar size={24} color="#5120c8" />
+            </div>
+            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 28, fontWeight: 800, margin: 0 }}>
+              {isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}
+            </h1>
           </div>
+          <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+            {isAr ? 'جدولة جلسة استشارة أو محاضرة' : 'Schedule a consultation or lecture session'}
+          </p>
         </div>
-      </div>
 
-      {/* Success State */}
-      {success && (
-        <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center gap-3">
-          <CheckCircle className="h-6 w-6 text-green-500" />
-          <div>
-            <p className="font-bold text-green-400">{isAr ? 'تم إنشاء الجلسة بنجاح!' : 'Session created successfully!'}</p>
-            <p className="text-sm text-green-300">{isAr ? 'جاري التحويل لصفحة الجلسات...' : 'Redirecting to sessions...'}</p>
+        {/* Success State */}
+        {success && (
+          <div style={{
+            marginBottom: 24, padding: 16, borderRadius: 14,
+            background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            <CheckCircle size={24} color="#22c55e" />
+            <div>
+              <p style={{ color: '#22c55e', fontWeight: 700, margin: 0 }}>
+                {isAr ? 'تم إنشاء الجلسة بنجاح!' : 'Session created successfully!'}
+              </p>
+              <p style={{ color: 'rgba(34,197,94,0.7)', fontSize: 13, margin: 0 }}>
+                {isAr ? 'جاري التحويل لصفحة الجلسات...' : 'Redirecting to sessions...'}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 space-y-5">
+        {/* Form Card */}
+        <form onSubmit={handleSubmit} style={cardStyle}>
           
-          {/* 基本信息 */}
-          <div>
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              {isAr ? 'معلومات الجلسة' : 'Session Information'}
-            </h2>
+          {/* Session Info Section */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <User size={18} color="#5120c8" />
+              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                {isAr ? 'معلومات الجلسة' : 'Session Information'}
+              </h3>
+            </div>
 
             {/* Topic */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                موضوع الجلسة *
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                {isAr ? 'موضوع الجلسة *' : 'Session Topic *'}
               </label>
               <input
                 type="text"
                 value={form.topic}
                 onChange={(e) => set('topic', e.target.value)}
                 placeholder={isAr ? 'مثال: استشارة في التسويق الرقمي' : 'e.g. Digital Marketing Consultation'}
-                className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                style={inputStyle}
+                onFocus={(e: any) => e.target.style.borderColor = '#5120c8'}
+                onBlur={(e: any) => e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}
               />
             </div>
 
             {/* Student & Consultant */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  <User size={14} className="inline ml-1" />
+                <label style={labelStyle}>
+                  <User size={14} style={{ marginRight: 4 }} />
                   {isAr ? 'الطالب (اختياري)' : 'Student (optional)'}
                 </label>
                 <select
                   value={form.studentId}
                   onChange={(e) => set('studentId', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 >
-                  <option value="">-- {isAr ? 'اختر الطالب' : 'Select Student'} --</option>
+                  <option value="">{isAr ? 'اختر الطالب' : 'Select Student'}</option>
                   {(students as any[]).map((student: any) => (
                     <option key={student.id} value={student.id}>
                       {student.profile?.firstName} {student.profile?.lastName}
@@ -240,148 +275,171 @@ export default function AdminCreateSessionPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  <GraduationCap size={14} className="inline ml-1" />
+                <label style={labelStyle}>
+                  <GraduationCap size={14} style={{ marginRight: 4 }} />
                   {isAr ? 'المستشار / المحاضر (اختياري)' : 'Consultant / Instructor (optional)'}
                 </label>
                 <select
                   value={form.consultantId}
                   onChange={(e) => set('consultantId', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 >
-                  <option value="">-- {isAr ? 'اختر المستشار' : 'Select Consultant'} --</option>
+                  <option value="">{isAr ? 'اختر المستشار' : 'Select Consultant'}</option>
                   {(consultants as any[]).map((cons: any) => (
                     <option key={cons.id} value={cons.id}>
-                      {cons.profile?.firstName} {cons.profile?.lastName} - {cons.email}
+                      {cons.profile?.firstName} {cons.profile?.lastName}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
 
-            {/* Schedule & Duration */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            {/* Schedule, Duration, Price */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  <Calendar size={14} className="inline ml-1" />
+                <label style={labelStyle}>
+                  <Calendar size={14} style={{ marginRight: 4 }} />
                   {isAr ? 'الموعد والتوقيت *' : 'Date & Time *'}
                 </label>
                 <input
                   type="datetime-local"
                   value={form.scheduledAt}
                   onChange={(e) => set('scheduledAt', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  <Clock size={14} className="inline ml-1" />
-                  {isAr ? 'المدة (دقيقة)' : 'Duration (minutes)'}
+                <label style={labelStyle}>
+                  <Clock size={14} style={{ marginRight: 4 }} />
+                  {isAr ? 'المدة' : 'Duration'}
                 </label>
                 <select
                   value={form.duration}
                   onChange={(e) => set('duration', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 >
-                  <option value="30">{isAr ? '30 دقيقة' : '30 minutes'}</option>
-                  <option value="60">{isAr ? '60 دقيقة' : '60 minutes'}</option>
-                  <option value="90">{isAr ? '90 دقيقة' : '90 minutes'}</option>
-                  <option value="120">{isAr ? '120 دقيقة' : '120 minutes'}</option>
+                  <option value="30">{isAr ? '30 دقيقة' : '30 min'}</option>
+                  <option value="60">{isAr ? '60 دقيقة' : '60 min'}</option>
+                  <option value="90">{isAr ? '90 دقيقة' : '90 min'}</option>
+                  <option value="120">{isAr ? '120 دقيقة' : '120 min'}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">
-                  <DollarSign size={14} className="inline ml-1" />
-                  {isAr ? 'السعر (ريال)' : 'Price (SAR)'}
+                <label style={labelStyle}>
+                  <DollarSign size={14} style={{ marginRight: 4 }} />
+                  {isAr ? 'السعر' : 'Price'}
                 </label>
                 <input
                   type="number"
                   min="0"
                   value={form.price}
                   onChange={(e) => set('price', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 />
               </div>
             </div>
 
             {/* Meeting Method */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                <MapPin size={14} className="inline ml-1" />
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...labelStyle, marginBottom: 12 }}>
+                <MapPin size={14} style={{ marginRight: 4 }} />
                 {isAr ? 'طريقة الاجتماع' : 'Meeting Method'}
               </label>
-              <div className="grid grid-cols-3 gap-3">
-                {(isAr ? MEETING_METHODS_AR : MEETING_METHODS_EN).map((method) => (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                {MEETING_METHODS.map((method) => (
                   <button
                     key={method.value}
                     type="button"
                     onClick={() => set('meetingMethod', method.value)}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      form.meetingMethod === method.value
-                        ? 'border-primary bg-primary/10 text-primary ring-2 ring-primary/30'
-                        : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-foreground hover:border-primary/30'
-                    }`}
+                    style={{
+                      padding: '12px', borderRadius: 12,
+                      border: `2px solid ${form.meetingMethod === method.value ? '#5120c8' : isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                      background: form.meetingMethod === method.value ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      color: form.meetingMethod === method.value ? '#5120c8' : isDark ? '#94a3b8' : '#6b7280',
+                      cursor: 'pointer',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                      transition: 'all 0.2s',
+                    }}
                   >
-                    <method.icon className={`h-5 w-5 mx-auto mb-1 ${form.meetingMethod === method.value ? 'text-primary' : 'text-[color:var(--muted)]'}`} />
-                    <span className="text-xs font-medium">{method.label}</span>
+                    <method.icon size={20} />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      {isAr ? method.labelAr : method.labelEn}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Notes */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                <FileText size={14} className="inline ml-1" />
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                <FileText size={14} style={{ marginRight: 4 }} />
                 {isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}
               </label>
               <textarea
                 value={form.notes}
                 onChange={(e) => set('notes', e.target.value)}
-                placeholder="أي ملاحظات إضافية عن الجلسة..."
+                placeholder={isAr ? 'أي ملاحظات إضافية عن الجلسة...' : 'Any additional notes about the session...'}
                 rows={3}
-                className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
+                style={{ ...inputStyle, resize: 'none' }}
               />
             </div>
           </div>
 
+          {/* Divider */}
+          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+
           {/* Image Upload */}
           <div>
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-primary" />
-              {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (optional)'}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <ImageIcon size={18} color="#5120c8" />
+              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (optional)'}
+              </h3>
+            </div>
             
             <div
               onClick={() => !imageUploading && imageRef.current?.click()}
-              className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)] p-6 cursor-pointer hover:border-primary/50 transition-colors"
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+                borderRadius: 16, padding: 24,
+                border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                background: isDark ? '#1a1a1a' : '#f8fafc',
+                cursor: 'pointer', transition: 'border-color 0.2s',
+              }}
             >
               {form.imageUrl ? (
-                <>
+                <div style={{ position: 'relative' }}>
                   <img 
                     src={form.imageUrl.startsWith('http') ? form.imageUrl : `${API_URL}${form.imageUrl}`}
-                    className="h-32 w-auto max-w-full object-cover rounded-xl" 
+                    style={{ height: 120, maxWidth: '100%', objectFit: 'cover', borderRadius: 12 }} 
                     alt="session" 
                   />
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); set('imageUrl', '') }}
-                    className="absolute top-2 left-2 rounded-full bg-red-500/80 p-1 text-white"
+                    onClick={(e: any) => { e.stopPropagation(); set('imageUrl', '') }}
+                    style={{
+                      position: 'absolute', top: 4, right: 4,
+                      background: 'rgba(239,68,68,0.8)', padding: 4, borderRadius: 6,
+                      border: 'none', cursor: 'pointer',
+                    }}
                   >
-                    <X className="h-3 w-3" />
+                    <X size={12} color="#fff" />
                   </button>
-                </>
+                </div>
               ) : imageUploading ? (
-                <div className="flex items-center gap-2 text-[color:var(--muted)]">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-sm">{isAr ? 'جارٍ الرفع...' : 'Uploading...'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                  <span style={{ fontSize: 14 }}>{isAr ? 'جارٍ الرفع...' : 'Uploading...'}</span>
                 </div>
               ) : (
                 <>
-                  <Upload className="h-8 w-8 text-[color:var(--muted)] opacity-50" />
-                  <p className="text-sm text-[color:var(--muted)]">{isAr ? 'اضغط لإضافة صورة' : 'Click to add image'}</p>
+                  <Upload size={32} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
+                  <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 14, margin: 0 }}>
+                    {isAr ? 'اضغط لإضافة صورة' : 'Click to add image'}
+                  </p>
                 </>
               )}
             </div>
@@ -389,66 +447,72 @@ export default function AdminCreateSessionPage() {
               ref={imageRef}
               type="file"
               accept="image/*"
-              className="hidden"
+              style={{ display: 'none' }}
               onChange={(e) => {
                 const file = e.target.files?.[0]
                 if (file) handleImageUpload(file)
               }}
             />
           </div>
-        </div>
 
-        {/* Error */}
-        {error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 flex items-start gap-3">
-            <X className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-400">{error}</p>
+          {/* Error */}
+          {error && (
+            <div style={{
+              marginTop: 16, padding: 12, borderRadius: 12,
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <X size={20} color="#ef4444" />
+              <p style={{ color: '#ef4444', fontSize: 14, margin: 0 }}>{error}</p>
+            </div>
+          )}
+
+          {/* Submit Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {isAr ? 'إلغاء' : 'Cancel'}
+            </button>
+            
+            <button
+              type="submit"
+              disabled={saving || success}
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: '#5120c8', color: '#fff', fontSize: 14, fontWeight: 700,
+                boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
+                display: 'flex', alignItems: 'center', gap: 8,
+                transition: 'all 0.2s ease', opacity: saving || success ? 0.7 : 1,
+              }}
+            >
+              {saving ? (
+                <>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                  {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle size={16} />
+                  {isAr ? 'تم بنجاح!' : 'Success!'}
+                </>
+              ) : (
+                <>
+                  <Plus size={16} />
+                  {isAr ? 'إنشاء الجلسة' : 'Create Session'}
+                </>
+              )}
+            </button>
           </div>
-        )}
-
-        {/* Submit Button */}
-        <div className="flex items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-xl border border-[color:var(--border)] px-6 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] transition-all"
-          >
-            {isAr ? 'إلغاء' : 'Cancel'}
-          </button>
-          
-          <button
-            type="submit"
-            disabled={saving || success}
-            className="rounded-xl bg-primary px-8 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
-              </>
-            ) : success ? (
-              <>
-                <CheckCircle className="h-4 w-4" />
-                {isAr ? 'تم بنجاح!' : 'Success!'}
-              </>
-            ) : (
-              <>
-                <Calendar className="h-4 w-4" />
-                {isAr ? 'إنشاء الجلسة' : 'Create Session'}
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
-  )
-}
-
-// Missing import for Phone icon
-function Phone(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-    </svg>
   )
 }

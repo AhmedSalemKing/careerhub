@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
@@ -19,8 +19,6 @@ import {
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
 
 async function uploadImageFile(file: File): Promise<string> {
   const formData = new FormData()
@@ -63,35 +61,6 @@ async function uploadVideoFile(
   })
 }
 
-// ─── Step Indicator ─────────────────────────────────────────────────────────
-
-function StepIndicator({ step, total }: { step: number; total: number }) {
-  return (
-    <div className="flex items-center gap-2 mb-8" dir="rtl">
-      {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
-        <div key={n} className="flex items-center gap-2">
-          <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
-              step > n
-                ? 'bg-green-500 text-white'
-                : step === n
-                ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                : 'bg-[color:var(--surface-2)] text-[color:var(--muted)]'
-            }`}
-          >
-            {step > n ? <CheckCircle className="h-4 w-4" /> : n}
-          </div>
-          {n < total && (
-            <div className={`h-0.5 w-12 transition-all ${step > n ? 'bg-primary' : 'bg-[color:var(--border)]'}`} />
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 type Section = { title: string }
 type CourseForm = {
   titleEn: string
@@ -112,25 +81,32 @@ type CourseForm = {
   duration: string
 }
 
-const LEVELS_AR = [
-  { value: 'BEGINNER', label: 'مبتدئ' },
-  { value: 'INTERMEDIATE', label: 'متوسط' },
-  { value: 'ADVANCED', label: 'متقدم' },
-]
-const LEVELS_EN = [
-  { value: 'BEGINNER', label: 'Beginner' },
-  { value: 'INTERMEDIATE', label: 'Intermediate' },
-  { value: 'ADVANCED', label: 'Advanced' },
+const LEVELS = [
+  { value: 'BEGINNER', labelAr: 'مبتدئ', labelEn: 'Beginner' },
+  { value: 'INTERMEDIATE', labelAr: 'متوسط', labelEn: 'Intermediate' },
+  { value: 'ADVANCED', labelAr: 'متقدم', labelEn: 'Advanced' },
 ]
 
-// ─── Main Page ───────────────────────────────────────────────────────────────
+const CURRENCIES = [
+  { value: 'SAR', labelAr: 'ريال سعودي', labelEn: 'SAR' },
+  { value: 'USD', labelAr: 'دولار أمريكي', labelEn: 'USD' },
+  { value: 'EGP', labelAr: 'جنيه مصري', labelEn: 'EGP' },
+]
 
 export default function AdminCreateCoursePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const [isDark, setIsDark] = useState(false)
 
-  const [step, setStep] = useState(1)
+  useEffect(() => {
+    const check = () => setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
+    check()
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', check)
+    return () => media.removeEventListener('change', check)
+  }, [])
+
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' })
@@ -154,7 +130,6 @@ export default function AdminCreateCoursePage() {
     duration: '0',
   })
 
-  // جلب التصنيفات
   const { data: categories = [] } = useQuery({
     queryKey: ['course-categories'],
     queryFn: async () => {
@@ -165,7 +140,6 @@ export default function AdminCreateCoursePage() {
     },
   })
 
-  // جلب قائمة المحاضرين (للاختيار)
   const { data: instructors = [] } = useQuery({
     queryKey: ['instructors-list'],
     queryFn: async () => {
@@ -176,7 +150,6 @@ export default function AdminCreateCoursePage() {
     },
   })
 
-  // Upload states
   const [thumbUploading, setThumbUploading] = useState(false)
   const [videoUploading, setVideoUploading] = useState(false)
   const [videoProgress, setVideoProgress] = useState(0)
@@ -185,8 +158,6 @@ export default function AdminCreateCoursePage() {
 
   const set = (key: keyof CourseForm, value: string | boolean) =>
     setForm((f) => ({ ...f, [key]: value }))
-
-  // ─── Upload handlers ─────────────────────────────────────────
 
   async function handleThumbUpload(file: File) {
     setThumbUploading(true)
@@ -213,8 +184,6 @@ export default function AdminCreateCoursePage() {
     }
   }
 
-  // ─── Sections ────────────────────────────────────────────────
-
   function addSection() {
     setForm((f) => ({ ...f, sections: [...f.sections, { title: '' }] }))
   }
@@ -231,16 +200,11 @@ export default function AdminCreateCoursePage() {
     })
   }
 
-  // ─── Submit - استخدام endpoint الأدمن الصحيح ───────────────
-
   async function handleSubmit() {
     if (!form.titleEn.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
     setSaving(true)
     setError('')
     try {
-      console.log('[Admin] Submitting course creation...')
-      
-      // ✅ Prepare payload with ALL data
       const payload = {
         titleEn: form.titleEn.trim(),
         titleAr: form.titleAr?.trim() || form.titleEn.trim(),
@@ -251,49 +215,28 @@ export default function AdminCreateCoursePage() {
         price: parseFloat(form.price) || 0,
         currency: form.currency,
         level: form.level,
-        status: form.status === 'PENDING_REVIEW' ? 'PUBLISHED' : (form.status === 'APPROVED' ? 'PUBLISHED' : form.status),
+        status: form.status === 'PENDING_REVIEW' ? 'PUBLISHED' : form.status,
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         duration: parseInt(form.duration) || 0,
         isInstructor: form.isInstructor,
         instructorId: !form.isInstructor ? form.instructorId : undefined,
-        sections: form.sections
-          .filter((s) => s.title && s.title.trim())
-          .map((s) => ({ title: s.title.trim() })),
+        sections: form.sections.filter((s) => s.title && s.title.trim()).map((s) => ({ title: s.title.trim() })),
       }
       
-      console.log('[Admin] Payload:', JSON.stringify(payload, null, 2))
-      
-      // ✅ Call the FIXED endpoint
       const response = await post('/admin/courses/create', payload)
       
-      console.log('[Admin] ✅ Course created successfully!', response)
-      
-      // Success notification
       const msg = form.status === 'PUBLISHED'
         ? (isAr ? 'تم إنشاء الكورس ونشره بنجاح!' : 'Course created and published successfully!')
         : (isAr ? 'تم حفظ الكورس كمسودة بنجاح!' : 'Course saved as draft successfully!')
       setToast({ show: true, message: msg, type: 'success' })
 
-      // Redirect to courses list after a brief delay so the toast is visible
       setTimeout(() => router.push(`/${locale}/admin/courses`), 1500)
       
     } catch (e: any) {
-      console.error('[Admin] ❌ Create course error:', e)
-      
-      // Better error messages
-      let errorMsg = 'حدث خطأ، حاول مرة أخرى'
-      
-      if (e?.response?.status === 404) {
-        errorMsg = 'خطأ: الـ endpoint غير موجود (404) - تأكد من تشغيل السيرفر'
-      } else if (e?.response?.status === 401 || e?.response?.status === 403) {
-        errorMsg = 'ليس لديك صلاحية لإنشاء كورس'
-      } else if (e?.response?.data?.message) {
-        errorMsg = e.response.data.message
-      } else if (e?.message) {
-        errorMsg = e.message
-      }
-      
+      console.error('[Admin] Create course error:', e)
+      let errorMsg = isAr ? 'حدث خطأ، حاول مرة أخرى' : 'An error occurred, please try again'
+      if (e?.response?.data?.message) errorMsg = e.response.data.message
       setError(errorMsg)
       setToast({ show: true, message: errorMsg, type: 'error' })
     } finally {
@@ -301,45 +244,82 @@ export default function AdminCreateCoursePage() {
     }
   }
 
-  // ─── Validation per step ─────────────────────────────────────
-
-  function canProceed(): boolean {
-    if (step === 1) return form.titleEn.trim().length > 0
-    if (step === 2) return true
-    if (step === 3) return true
-    return true
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '12px 16px', borderRadius: 10,
+    background: isDark ? '#1a1a1a' : '#f8fafc',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+    color: isDark ? '#f1f5f9' : '#0d0d0d',
+    fontSize: 14, outline: 'none', transition: 'border-color 0.2s',
   }
 
-  // ─── Render ──────────────────────────────────────────────────
+  const labelStyle: React.CSSProperties = {
+    display: 'block', color: isDark ? '#94a3b8' : '#6b7280',
+    fontSize: 13, fontWeight: 600, marginBottom: 8,
+  }
+
+  const cardStyle: React.CSSProperties = {
+    background: isDark ? '#111111' : '#fff',
+    borderRadius: 20, padding: 32,
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
+    boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+  }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto" dir="rtl">
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <BookOpen className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{isAr ? 'إضافة كورس جديد (لوحة التحكم)' : 'Add New Course (Admin)'}</h1>
-            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'أنشئ كورس جديد بنفس طريقة المحاضر' : 'Create a new course as an instructor'}</p>
-          </div>
-        </div>
-      </div>
-
-      <StepIndicator step={step} total={4} />
-
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 space-y-5">
+    <div style={{
+      minHeight: '100vh',
+      background: isDark ? '#0d0d0d' : '#f8fafc',
+      padding: '32px 16px',
+      direction: isAr ? 'rtl' : 'ltr',
+    }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
         
-        {/* ── Step 1: Basic Info ── */}
-        {step === 1 && (
-          <>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">1</span>
-              {isAr ? 'المعلومات الأساسية' : 'Basic Information'}
-            </h2>
-            
-            {/* اختيار المحاضر */}
-            <div className="p-4 rounded-xl bg-[color:var(--surface-2)] border border-[color:var(--border)]">
-              <label className="block text-sm font-medium text-foreground mb-2">
-                <User size={14} className="inline ml-1" />
+        {/* Header */}
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: 'rgba(81,32,200,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <BookOpen size={24} color="#5120c8" />
+            </div>
+            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 28, fontWeight: 800, margin: 0 }}>
+              {isAr ? 'إضافة كورس جديد' : 'Add New Course'}
+            </h1>
+          </div>
+          <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+            {isAr ? 'أضف كورسا جديدا للمنصة' : 'Add a new course to the platform'}
+          </p>
+        </div>
+
+        {/* Toast */}
+        {toast.show && (
+          <div style={{
+            position: 'fixed', top: 20, right: isAr ? 'auto' : 20, left: isAr ? 20 : 'auto',
+            padding: '12px 20px', borderRadius: 12, zIndex: 50,
+            background: toast.type === 'success' ? '#22c55e' : '#ef4444',
+            color: '#fff', fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          }}>
+            {toast.message}
+          </div>
+        )}
+
+        {/* Form Card */}
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit() }} style={cardStyle}>
+          
+          {/* Basic Info Section */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <BookOpen size={18} color="#5120c8" />
+              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                {isAr ? 'المعلومات الأساسية' : 'Basic Information'}
+              </h3>
+            </div>
+
+            {/* Assign Instructor */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                <User size={14} style={{ marginRight: 4 }} />
                 {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
               </label>
               <select
@@ -353,116 +333,125 @@ export default function AdminCreateCoursePage() {
                     set('instructorId', e.target.value)
                   }
                 }}
-                className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary"
+                style={inputStyle}
               >
-                <option value="self">{isAr ? '✅ الأدمن هو صاحب الكورس' : '✅ Admin is the course owner'}</option>
+                <option value="self">{isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}</option>
                 {(instructors as any[]).map((inst: any) => (
                   <option key={inst.id} value={inst.id}>
-                    {inst.profile?.firstName} {inst.profile?.lastName} ({inst.email})
+                    {inst.profile?.firstName} {inst.profile?.lastName}
                   </option>
                 ))}
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Title */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'عنوان الكورس (إنجليزي) *' : 'Course Title (English) *'}</label>
+                <label style={labelStyle}>{isAr ? 'عنوان الكورس (إنجليزي) *' : 'Course Title (English) *'}</label>
                 <input
                   value={form.titleEn}
                   onChange={(e) => set('titleEn', e.target.value)}
-                  placeholder="Course Title in English"
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  placeholder="e.g. Introduction to Programming"
+                  style={inputStyle}
+                  onFocus={(e: any) => e.target.style.borderColor = '#5120c8'}
+                  onBlur={(e: any) => e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'عنوان الكورس (عربي)' : 'Course Title (Arabic)'}</label>
+                <label style={labelStyle}>{isAr ? 'عنوان الكورس (عربي)' : 'Course Title (Arabic)'}</label>
                 <input
                   value={form.titleAr}
                   onChange={(e) => set('titleAr', e.target.value)}
-                  placeholder="عنوان الكورس بالعربية"
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  placeholder="مثال: مقدمة في البرمجة"
+                  style={inputStyle}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Description */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'وصف الكورس (إنجليزي)' : 'Course Description (English)'}</label>
+                <label style={labelStyle}>{isAr ? 'وصف الكورس (إنجليزي)' : 'Course Description (English)'}</label>
                 <textarea
                   value={form.descriptionEn}
                   onChange={(e) => set('descriptionEn', e.target.value)}
-                  placeholder="Course description..."
+                  placeholder="Describe the course..."
                   rows={3}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
+                  style={{ ...inputStyle, resize: 'none' }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'وصف الكورس (عربي)' : 'Course Description (Arabic)'}</label>
+                <label style={labelStyle}>{isAr ? 'وصف الكورس (عربي)' : 'Course Description (Arabic)'}</label>
                 <textarea
                   value={form.descriptionAr}
                   onChange={(e) => set('descriptionAr', e.target.value)}
-                  placeholder="وصف الكورس بالعربية..."
+                  placeholder="وصف الكورس..."
                   rows={3}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
+                  style={{ ...inputStyle, resize: 'none' }}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Price, Duration, Level, Currency */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'السعر (ريال)' : 'Price (SAR)'}</label>
+                <label style={labelStyle}>{isAr ? 'السعر' : 'Price'}</label>
                 <input
                   type="number"
                   min="0"
                   value={form.price}
                   onChange={(e) => set('price', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المدة (ساعة)' : 'Duration (hours)'}</label>
+                <label style={labelStyle}>{isAr ? 'المدة' : 'Duration'}</label>
                 <input
                   type="number"
                   min="0"
                   value={form.duration}
                   onChange={(e) => set('duration', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  placeholder={isAr ? 'بالساعات' : 'Hours'}
+                  style={inputStyle}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المستوى' : 'Level'}</label>
+                <label style={labelStyle}>{isAr ? 'المستوى' : 'Level'}</label>
                 <select
                   value={form.level}
                   onChange={(e) => set('level', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 >
-                  {(isAr ? LEVELS_AR : LEVELS_EN).map((l) => (
-                    <option key={l.value} value={l.value}>{l.label}</option>
+                  {LEVELS.map((l) => (
+                    <option key={l.value} value={l.value}>
+                      {isAr ? l.labelAr : l.labelEn}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'العملة' : 'Currency'}</label>
+                <label style={labelStyle}>{isAr ? 'العملة' : 'Currency'}</label>
                 <select
                   value={form.currency}
                   onChange={(e) => set('currency', e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                  style={inputStyle}
                 >
-                  <option value="SAR">{isAr ? 'ريال سعودي' : 'Saudi Riyal'}</option>
-                  <option value="USD">{isAr ? 'دولار أمريكي' : 'US Dollar'}</option>
-                  <option value="EGP">{isAr ? 'جنيه مصري' : 'Egyptian Pound'}</option>
+                  {CURRENCIES.map((c) => (
+                    <option key={c.value} value={c.value}>{c.labelAr}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
+            {/* Career Path & Category */}
             {(categories as any[]).length > 0 && (
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'المسار المهني' : 'Career Path'}</label>
+                  <label style={labelStyle}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
                   <select
                     value={form.careerPathId}
                     onChange={(e) => set('careerPathId', e.target.value)}
-                    className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                    style={inputStyle}
                   >
                     <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
                     {(categories as any[]).map((cat) => (
@@ -471,11 +460,11 @@ export default function AdminCreateCoursePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-1.5">{isAr ? 'التصنيف' : 'Category'}</label>
+                  <label style={labelStyle}>{isAr ? 'التصنيف' : 'Category'}</label>
                   <select
                     value={form.categoryId}
                     onChange={(e) => set('categoryId', e.target.value)}
-                    className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                    style={inputStyle}
                   >
                     <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
                     {(categories as any[]).map((cat) => (
@@ -485,278 +474,197 @@ export default function AdminCreateCoursePage() {
                 </div>
               </div>
             )}
-          </>
-        )}
+          </div>
 
-        {/* ── Step 2: Media ── */}
-        {step === 2 && (
-          <>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">2</span>
-              {isAr ? 'الصورة والفيديو التعريفي' : 'Thumbnail & Preview Video'}
-            </h2>
+          {/* Divider */}
+          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+
+          {/* Media Section */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+              <ImageIcon size={18} color="#5120c8" />
+              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                {isAr ? 'الوسائط' : 'Media'}
+              </h3>
+            </div>
 
             {/* Thumbnail */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">صورة الغلاف (Thumbnail)</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>{isAr ? 'صورة الغلاف' : 'Thumbnail Image'}</label>
               <div
-                onClick={() => thumbRef.current?.click()}
-                className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)] p-8 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => !thumbUploading && thumbRef.current?.click()}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  borderRadius: 12, padding: 20,
+                  border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                  background: isDark ? '#1a1a1a' : '#f8fafc',
+                  cursor: 'pointer',
+                }}
               >
                 {form.thumbnail ? (
-                  <>
-                    <img 
-                      src={form.thumbnail.startsWith('http') ? form.thumbnail : `${API_URL}${form.thumbnail}`}
-                      className="h-40 w-auto max-w-full object-cover rounded-xl" 
-                      alt="thumbnail" 
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); set('thumbnail', '') }}
-                      className="absolute top-3 left-3 rounded-full bg-red-500/80 p-1.5 text-white hover:bg-red-500"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <p className="text-xs text-green-400 mt-2">✓ تم رفع الصورة</p>
-                  </>
+                  <img 
+                    src={form.thumbnail.startsWith('http') ? form.thumbnail : `${API_URL}${form.thumbnail}`}
+                    style={{ height: 100, maxWidth: '100%', objectFit: 'cover', borderRadius: 8 }} 
+                    alt="thumbnail" 
+                  />
                 ) : thumbUploading ? (
-                  <div className="flex items-center gap-2 text-[color:var(--muted)]">
-                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span>جارٍ رفع الصورة...</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                    {isAr ? 'جارٍ الرفع...' : 'Uploading...'}
                   </div>
                 ) : (
                   <>
-                    <ImageIcon className="h-12 w-12 text-[color:var(--muted)] opacity-40" />
-                    <p className="text-sm text-[color:var(--muted)] text-center">اضغط لاختيار صورة<br/><span className="text-xs">(JPG, PNG — أقصى 10MB)</span></p>
+                    <Upload size={28} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
+                    <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 13, margin: 0 }}>
+                      {isAr ? 'اضغط لرفع صورة' : 'Click to upload image'}
+                    </p>
                   </>
                 )}
               </div>
-              <input
-                ref={thumbRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleThumbUpload(file)
-                }}
+              <input ref={thumbRef} type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={(e) => { const file = e.target.files?.[0]; if (file) handleThumbUpload(file) }}
               />
             </div>
 
             {/* Preview Video */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">فيديو تعريفي (اختياري)</label>
+              <label style={labelStyle}>{isAr ? 'فيديو المعاينة' : 'Preview Video'}</label>
               <div
                 onClick={() => !videoUploading && videoRef.current?.click()}
-                className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)] p-8 cursor-pointer hover:border-primary/50 transition-colors"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  borderRadius: 12, padding: 20,
+                  border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                  background: isDark ? '#1a1a1a' : '#f8fafc',
+                  cursor: 'pointer',
+                }}
               >
                 {form.previewVideo ? (
-                  <>
-                    <Video className="h-12 w-12 text-green-400" />
-                    <p className="text-sm font-medium text-green-400">✓ تم رفع الفيديو</p>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); set('previewVideo', '') }}
-                      className="absolute top-3 left-3 rounded-full bg-red-500/80 p-1.5 text-white"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </>
+                  <Video size={32} color="#22c55e" />
                 ) : videoUploading ? (
-                  <div className="w-full max-w-xs space-y-3">
-                    <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
-                      <Upload className="h-5 w-5 animate-bounce text-primary" />
-                      <span className="text-sm">جارٍ رفع الفيديو... {videoProgress}%</span>
-                    </div>
-                    <div className="h-3 rounded-full bg-[color:var(--border)] overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all duration-300"
-                        style={{ width: `${videoProgress}%` }}
-                      />
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                    {isAr ? `جارٍ الرفع... ${videoProgress}%` : `Uploading... ${videoProgress}%`}
                   </div>
                 ) : (
                   <>
-                    <Video className="h-12 w-12 text-[color:var(--muted)] opacity-40" />
-                    <p className="text-sm text-[color:var(--muted)] text-center">اضغط لاختيار فيديو<br/><span className="text-xs">(MP4 — أقصى 500MB)</span></p>
+                    <Video size={28} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
+                    <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 13, margin: 0 }}>
+                      {isAr ? 'اضغط لرفع فيديو' : 'Click to upload video'}
+                    </p>
                   </>
                 )}
               </div>
-              <input
-                ref={videoRef}
-                type="file"
-                accept="video/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleVideoUpload(file)
-                }}
+              <input ref={videoRef} type="file" accept="video/*" style={{ display: 'none' }}
+                onChange={(e) => { const file = e.target.files?.[0]; if (file) handleVideoUpload(file) }}
               />
             </div>
-          </>
-        )}
+          </div>
 
-        {/* ── Step 3: Sections ── */}
-        {step === 3 && (
-          <>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">3</span>
-              {isAr ? 'أقسام الكورس' : 'Course Sections'}
-            </h2>
-            <p className="text-sm text-[color:var(--muted)] -mt-3 mb-4">{isAr ? 'أضف الأقسام (يمكنك إضافة المحاضرات لاحقاً من صفحة الكورس)' : 'Add sections (you can add lessons later from the course page)'}</p>
-            
-            <div className="space-y-3">
-              {form.sections.map((section, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[color:var(--surface-2)] border border-[color:var(--border)]">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-                    {i + 1}
-                  </span>
-                  <input
-                    value={section.title}
-                    onChange={(e) => updateSection(i, e.target.value)}
-                    placeholder={`اسم القسم ${i + 1}...`}
-                    className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
-                  />
-                  {form.sections.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeSection(i)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+          {/* Divider */}
+          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+
+          {/* Sections */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Plus size={18} color="#5120c8" />
+                <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                  {isAr ? 'المحتوى' : 'Content'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={addSection}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, border: 'none',
+                  background: 'rgba(81,32,200,0.1)', color: '#5120c8',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                }}
+              >
+                <Plus size={14} />
+                {isAr ? 'إضافة درس' : 'Add Lesson'}
+              </button>
             </div>
-            
+
+            {form.sections.map((section, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <input
+                  value={section.title}
+                  onChange={(e) => updateSection(i, e.target.value)}
+                  placeholder={isAr ? `الدرس ${i + 1}` : `Lesson ${i + 1}`}
+                  style={{ ...inputStyle, flex: 1 }}
+                />
+                {form.sections.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSection(i)}
+                    style={{
+                      padding: 8, borderRadius: 8, border: 'none',
+                      background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div style={{
+              padding: 12, borderRadius: 12,
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16,
+            }}>
+              <X size={20} color="#ef4444" />
+              <p style={{ color: '#ef4444', fontSize: 14, margin: 0 }}>{error}</p>
+            </div>
+          )}
+
+          {/* Submit Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button
               type="button"
-              onClick={addSection}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[color:var(--border)] text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
+              onClick={() => router.back()}
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              }}
             >
-              <Plus className="h-4 w-4" />
-              {isAr ? 'إضافة قسم آخر' : 'Add Another Section'}
+              {isAr ? 'إلغاء' : 'Cancel'}
             </button>
-          </>
-        )}
-
-        {/* ── Step 4: Review & Publish ── */}
-        {step === 4 && (
-          <>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <span className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-sm text-green-500">4</span>
-              {isAr ? 'مراجعة ونشر' : 'Review & Publish'}
-            </h2>
             
-            <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-5 space-y-4">
-              <Row label="العنوان (EN)" value={form.titleEn || '—'} />
-              <Row label="العنوان (AR)" value={form.titleAr || '—'} />
-              <Row label="السعر" value={`${form.price} ${form.currency}`} />
-              <Row label="المستوى" value={(isAr ? LEVELS_AR : LEVELS_EN).find(l => l.value === form.level)?.label} />
-              <Row label="المدة" value={`${form.duration} ساعة`} />
-              <Row label="المحاضر" value={form.isInstructor ? 'الأدمن' : 'محادر محدد'} />
-              <Row label="الصورة" value={form.thumbnail ? '✓ تم الرفع' : '✗ لا توجد'} />
-              <Row label="الفيديو" value={form.previewVideo ? '✓ تم الرفع' : '—'} />
-              <Row label="الأقسام" value={`${form.sections.filter(s => s.title.trim()).length} قسم`} />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-3">حالة النشر</label>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { value: 'DRAFT', label: '📝 حفظ كمسودة', desc: 'لن يظهر للطلاب', color: 'border-[color:var(--border)]' },
-                  { value: 'PUBLISHED', label: '✅ نشر مباشرة', desc: 'يظهر فوراً (صلاحيات الأدمن)', color: 'border-green-500' },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => set('status', opt.value)}
-                    className={`rounded-xl border p-4 text-right transition-all ${
-                      form.status === opt.value
-                        ? `${opt.color} bg-opacity-10 ring-2 ring-primary/30`
-                        : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-primary/30'
-                    }`}
-                  >
-                    <div className="text-sm font-bold">{opt.label}</div>
-                    <div className="text-xs text-[color:var(--muted)] mt-1">{opt.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 flex items-start gap-3">
-            <X className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-400">خطأ</p>
-              <p className="text-xs text-red-300 mt-1">{error}</p>
-            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: '#5120c8', color: '#fff', fontSize: 14, fontWeight: 700,
+                boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
+                display: 'flex', alignItems: 'center', gap: 8,
+                transition: 'all 0.2s ease', opacity: saving ? 0.7 : 1,
+              }}
+            >
+              {saving ? (
+                <>
+                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                  {isAr ? 'جارٍ الحفظ...' : 'Saving...'}
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={16} />
+                  {isAr ? 'حفظ الكورس' : 'Save Course'}
+                </>
+              )}
+            </button>
           </div>
-        )}
+        </form>
       </div>
-
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between mt-6">
-        <button
-          type="button"
-          onClick={() => setStep((s) => Math.max(1, s - 1))}
-          disabled={step === 1}
-          className="rounded-xl border border-[color:var(--border)] px-6 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] disabled:opacity-30 transition-all"
-        >
-          {isAr ? '← السابق' : '← Back'}
-        </button>
-
-        {step < 4 ? (
-          <button
-            type="button"
-            onClick={() => { setError(''); setStep((s) => s + 1) }}
-            disabled={!canProceed()}
-            className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2"
-          >
-            {isAr ? 'التالي →' : 'Next →'}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={saving}
-            className="rounded-xl bg-green-500 px-8 py-2.5 text-sm font-bold text-white hover:bg-green-600 disabled:opacity-50 transition-all flex items-center gap-2"
-          >
-            {saving ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-4 w-4" />
-                {form.status === 'PUBLISHED' ? (isAr ? 'نشر الكورس ✓' : 'Publish Course ✓') : (isAr ? 'حفظ كمسودة' : 'Save as Draft')}
-              </>
-            )}
-          </button>
-        )}
-      </div>
-      <Toast
-        message={toast.message}
-        show={toast.show}
-        type={toast.type}
-        onClose={() => setToast({ show: false, message: '', type: 'success' })}
-      />
-    </div>
-  )
-}
-
-// ─── Helper Component ────────────────────────────────────────────────────────
-
-function Row({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4 pb-3 border-b border-[color:var(--border)] last:border-0">
-      <span className="text-[color:var(--muted)] text-sm shrink-0">{label}</span>
-      <span className="text-foreground font-medium text-sm text-left break-all">{value || '—'}</span>
     </div>
   )
 }
