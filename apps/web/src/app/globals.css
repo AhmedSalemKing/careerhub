@@ -1283,11 +1283,16 @@ html.no-transition *::after {
     backdrop-filter: none;
 }
 
-/* Kill #0f172a if injected by admin settings or other sources */
+/* Fix #0f172a if injected by admin settings - be theme-aware */
 html[style*="#0f172a"],
 html[style*="--background: #0f172a"],
 html[style*="--background:#0f172a"] {
     --background: #0D0D0D !important;
+}
+html:not(.dark)[style*="#0f172a"],
+html:not(.dark)[style*="--background: #0f172a"],
+html:not(.dark)[style*="--background:#0f172a"] {
+    --background: #ffffff !important;
 }
 
 /* Course images always visible */
