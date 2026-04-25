@@ -287,54 +287,60 @@ export class CoursesService {
   }
 
 async getMyEnrollments(userId: string) {
-    const enrollments = await this.prisma.enrollment.findMany({
-      where: { userId },
-      include: {
-        course: {
-          include: {
-            instructor: {
-              select: {
-                id: true,
-                isVerified: true,
-                profile: { select: { firstName: true, lastName: true, avatar: true } }
-              }
-            },
-            sections: {
-              include: { _count: { select: { lessons: true } } },
-            },
-            _count: { select: { enrollments: true } }
+    try {
+const enrollments: any[] = await this.prisma.enrollment.findMany({
+        where: { userId },
+        include: {
+          course: {
+            include: {
+              instructor: {
+                select: {
+                  id: true,
+                  isVerified: true,
+                  profile: { select: { firstName: true, lastName: true, avatar: true } }
+                }
+              },
+              sections: {
+                include: { _count: { select: { lessons: true } } },
+              },
+              _count: { select: { enrollments: true } }
+            }
           }
-        }
-      },
-      orderBy: { enrolledAt: 'desc' }
-    });
-
-    return enrollments.map(enrollment => ({
-      id: enrollment.id,
-      progress: enrollment.progress,
-      status: enrollment.status,
-      enrolledAt: enrollment.enrolledAt,
-      completedAt: enrollment.completedAt,
-      course: {
-        id: enrollment.course.id,
-        slug: enrollment.course.slug,
-        titleEn: enrollment.course.titleEn,
-        titleAr: enrollment.course.titleAr,
-        descriptionEn: enrollment.course.descriptionEn,
-        descriptionAr: enrollment.course.descriptionAr,
-        thumbnail: enrollment.course.thumbnail,
-        duration: (enrollment as any).course.duration,
-        level: enrollment.course.level,
-        instructor: enrollment.course.instructor,
-        _count: {
-          enrollments: enrollment.course._count.enrollments,
-          lessons: (enrollment as any).course.sections.reduce(
-            (sum: number, s: any) => sum + s._count.lessons, 0
-          ),
-          sections: (enrollment as any).course.sections.length,
         },
-      },
-    }));
+        orderBy: { enrolledAt: 'desc' }
+      });
+
+      console.log('[MyEnrollments] Found:', enrollments.length, 'for user:', userId)
+      return enrollments.map(enrollment => ({
+        id: enrollment.id,
+        progress: enrollment.progress,
+        status: enrollment.status,
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: enrollment.completedAt,
+        course: {
+          id: enrollment.course.id,
+          slug: enrollment.course.slug,
+          titleEn: enrollment.course.titleEn,
+          titleAr: enrollment.course.titleAr,
+          descriptionEn: enrollment.course.descriptionEn,
+          descriptionAr: enrollment.course.descriptionAr,
+          thumbnail: enrollment.course.thumbnail,
+          duration: (enrollment as any).course.duration,
+          level: enrollment.course.level,
+          instructor: enrollment.course.instructor,
+          _count: {
+            enrollments: enrollment.course._count.enrollments,
+            lessons: (enrollment as any).course.sections.reduce(
+              (sum: number, s: any) => sum + s._count.lessons, 0
+            ),
+            sections: (enrollment as any).course.sections.length,
+          },
+        },
+      }));
+    } catch(e: any) {
+      console.error('[MyEnrollments] Error:', e.message)
+      return []
+    }
   }
 
   async getCourseById(id: string) {
