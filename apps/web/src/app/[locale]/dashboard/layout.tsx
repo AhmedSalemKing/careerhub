@@ -12,16 +12,27 @@ import {
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
   Brain, MessageSquare, Award, Settings,
-  Shield, Users, Bell, ClipboardList, CalendarCheck
+  Shield, Users, Bell, ClipboardList, CalendarCheck,
+  X, Menu
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, hydrate, logout } = useAuthStore()
   const [mounted, setMounted] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
   const locale = useLocale()
   const router = useRouter()
   const queryClient = useQueryClient()
+  const isAr = locale === 'ar'
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const accountType = user?.accountType || 'STUDENT'
 
@@ -133,6 +144,21 @@ return [
 
   return (
     <div className="min-h-screen dashboard-root" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" />
+      )}
+      
+      {/* Mobile header */}
+      {isMobile && (
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3 lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center p-1 -mr-1">
+            <Menu className="h-6 w-6 text-foreground" />
+          </button>
+          <span className="font-bold text-foreground">{isAr ? 'لوحة التحكم' : 'Dashboard'}</span>
+        </div>
+      )}
+
       {/* Page content */}
       <main className="main-content">
         <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
