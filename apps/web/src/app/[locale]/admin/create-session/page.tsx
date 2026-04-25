@@ -34,16 +34,22 @@ type SessionForm = {
   imageUrl: string
 }
 
-const MEETING_METHODS = [
+const MEETING_METHODS_AR = [
   { value: 'ONLINE', label: 'عبر الإنترنت (Zoom/Meet)', icon: Video },
   { value: 'IN_PERSON', label: 'حضورياً في المقر', icon: MapPin },
   { value: 'PHONE', label: 'اتصال هاتفي', icon: Phone },
+]
+const MEETING_METHODS_EN = [
+  { value: 'ONLINE', label: 'Online (Zoom/Meet)', icon: Video },
+  { value: 'IN_PERSON', label: 'In Person', icon: MapPin },
+  { value: 'PHONE', label: 'Phone Call', icon: Phone },
 ]
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminCreateSessionPage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const router = useRouter()
 
   const [saving, setSaving] = useState(false)
@@ -120,8 +126,8 @@ export default function AdminCreateSessionPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
-    if (!form.topic.trim()) { setError('موضوع الجلسة مطلوب'); return }
-    if (!form.scheduledAt) { setError('موعد الجلسة مطلوب'); return }
+    if (!form.topic.trim()) { setError(isAr ? 'موضوع الجلسة مطلوب' : 'Session topic is required'); return }
+    if (!form.scheduledAt) { setError(isAr ? 'موعد الجلسة مطلوب' : 'Session date/time is required'); return }
     
     setSaving(true)
     setError('')
@@ -152,7 +158,7 @@ export default function AdminCreateSessionPage() {
       
     } catch (e: any) {
       console.error('Create session error:', e)
-      setError(e?.response?.data?.message || e?.message || 'حدث خطأ أثناء إنشاء الجلسة')
+      setError(e?.response?.data?.message || e?.message || (isAr ? 'حدث خطأ أثناء إنشاء الجلسة' : 'Error creating session'))
     } finally {
       setSaving(false)
     }
@@ -167,8 +173,8 @@ export default function AdminCreateSessionPage() {
         <div className="flex items-center gap-3 mb-2">
           <Calendar className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">إضافة جلسة جديدة</h1>
-            <p className="text-sm text-[color:var(--muted)]">جدولة جلسة استشارة أو محاضرة</p>
+            <h1 className="text-2xl font-bold text-foreground">{isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}</h1>
+            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'جدولة جلسة استشارة أو محاضرة' : 'Schedule a consultation or lecture session'}</p>
           </div>
         </div>
       </div>
@@ -178,8 +184,8 @@ export default function AdminCreateSessionPage() {
         <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/30 flex items-center gap-3">
           <CheckCircle className="h-6 w-6 text-green-500" />
           <div>
-            <p className="font-bold text-green-400">تم إنشاء الجلسة بنجاح!</p>
-            <p className="text-sm text-green-300">جاري التحويل لصفحة الجلسات...</p>
+            <p className="font-bold text-green-400">{isAr ? 'تم إنشاء الجلسة بنجاح!' : 'Session created successfully!'}</p>
+            <p className="text-sm text-green-300">{isAr ? 'جاري التحويل لصفحة الجلسات...' : 'Redirecting to sessions...'}</p>
           </div>
         </div>
       )}
@@ -192,7 +198,7 @@ export default function AdminCreateSessionPage() {
           <div>
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <User className="h-5 w-5 text-primary" />
-              معلومات الجلسة
+              {isAr ? 'معلومات الجلسة' : 'Session Information'}
             </h2>
 
             {/* Topic */}
@@ -298,7 +304,7 @@ export default function AdminCreateSessionPage() {
                 📍 طريقة الاجتماع
               </label>
               <div className="grid grid-cols-3 gap-3">
-                {MEETING_METHODS.map((method) => (
+                {(isAr ? MEETING_METHODS_AR : MEETING_METHODS_EN).map((method) => (
                   <button
                     key={method.value}
                     type="button"
@@ -397,7 +403,7 @@ export default function AdminCreateSessionPage() {
             onClick={() => router.back()}
             className="rounded-xl border border-[color:var(--border)] px-6 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] transition-all"
           >
-            إلغاء
+            {isAr ? 'إلغاء' : 'Cancel'}
           </button>
           
           <button

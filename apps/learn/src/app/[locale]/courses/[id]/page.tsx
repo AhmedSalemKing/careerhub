@@ -20,6 +20,7 @@ export default function CourseDetailPage({
 }) {
   const courseId = params.id
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const t = useTranslations('course')
   const router = useRouter()
   const [openSection, setOpenSection] = useState<string | null>(null)
@@ -242,7 +243,7 @@ export default function CourseDetailPage({
                 {course.duration && (
                   <span className="flex items-center gap-1.5">
                     <Clock className="h-4 w-4" style={{ color: purple }} />
-                    {course.duration} ساعة
+                    {course.duration} {isAr ? 'ساعة' : 'hours'}
                   </span>
                 )}
               </div>
@@ -299,7 +300,7 @@ export default function CourseDetailPage({
                   style={{ background: purple }}
                 >
                   <PlayCircle className="h-4 w-4" />
-                  ابدأ التعلم الآن
+                  {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
                 </div>
               </div>
             </div>
@@ -443,19 +444,19 @@ export default function CourseDetailPage({
                                       {lesson.videoUrl && (
                                         <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded" style={{ background: `${redColor}12`, color: redColor }}>
                                           <Video className="h-3 w-3" />
-                                          فيديو
+                                          {isAr ? 'فيديو' : 'Video'}
                                         </span>
                                       )}
                                       {lesson.fileUrl && (
                                         <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded" style={{ background: `${blueColor}12`, color: blueColor }}>
                                           <FileText className="h-3 w-3" />
-                                          {lesson.fileName || 'ملف'}
+                                          {lesson.fileName || (isAr ? 'ملف' : 'File')}
                                         </span>
                                       )}
                                       {lesson.imageUrl && (
                                         <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded" style={{ background: `${purpleColor}12`, color: purpleColor }}>
                                           <Image className="h-3 w-3" />
-                                          صورة
+                                          {isAr ? 'صورة' : 'Image'}
                                         </span>
                                       )}
                                     </div>
@@ -463,7 +464,7 @@ export default function CourseDetailPage({
                                     {lesson.duration && (
                                       <span className="text-xs mt-0.5 block" style={{ color: textSecondary }}>
                                         <Clock className="inline h-3 w-3 ml-0.5" />
-                                        {lesson.duration}
+                                        {lesson.duration} {isAr ? 'دقيقة' : 'min'}
                                       </span>
                                     )}
                                   </div>
@@ -471,12 +472,11 @@ export default function CourseDetailPage({
                                 
                                 <div className="flex items-center gap-2 shrink-0">
                                   {lesson.isFree && (
-                                    <span
-                                      className="text-xs rounded-full px-2.5 py-0.5 font-medium flex items-center gap-1"
+                                    <span className="text-xs rounded-full px-2.5 py-0.5 font-medium flex items-center gap-1"
                                       style={{ background: `${teal}18`, color: teal }}
                                     >
                                       <Gift className="h-3 w-3" />
-                                      {t('free')}
+                                      {isAr ? 'مجاني' : 'Free'}
                                     </span>
                                   )}
                                   {canAccess && (
@@ -554,8 +554,8 @@ export default function CourseDetailPage({
               <div className="text-center pb-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
                 {isFree ? (
                   <div>
-                    <span className="text-3xl font-bold" style={{ color: teal }}>{t('free')}</span>
-                    <p className="text-xs mt-1" style={{ color: textSecondary }}>وصول مدى الحياة</p>
+                    <span className="text-3xl font-bold" style={{ color: teal }}>{isAr ? 'مجاني' : 'Free'}</span>
+                    <p className="text-xs mt-1" style={{ color: textSecondary }}>{isAr ? 'وصول مدى الحياة' : 'Lifetime access'}</p>
                   </div>
                 ) : (
                   <div>
@@ -584,7 +584,7 @@ export default function CourseDetailPage({
                     }}
                   >
                     <PlayCircle size={22} strokeWidth={2.5} />
-                    ابدأ التعلم الآن
+                    {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
                   </button>
                   
                   <div 
@@ -592,7 +592,7 @@ export default function CourseDetailPage({
                     style={{ background: greenBg, color: '#16a34a' }}
                   >
                     <CheckCircle2 size={18} strokeWidth={2.5} />
-                    <span>تم الاشتراك بنجاح</span>
+                    <span>{isAr ? 'تم الاشتراك بنجاح' : 'Enrolled successfully'}</span>
                   </div>
                 </>
               ) : course?.price === 0 || !course?.price ? (
@@ -608,12 +608,12 @@ export default function CourseDetailPage({
                   {enrolling ? (
                     <>
                       <Loader2 size={20} className="animate-spin" />
-                      جاري الاشتراك...
+                      {isAr ? 'جاري الاشتراك...' : 'Enrolling...'}
                     </>
                   ) : (
                     <>
                       <Gift size={20} />
-                      اشترك مجاناً
+                      {isAr ? 'اشترك مجاناً' : 'Enroll for Free'}
                     </>
                   )}
                 </button>
@@ -627,7 +627,7 @@ export default function CourseDetailPage({
                   }}
                 >
                   <ShoppingCart size={20} />
-                  اشترك الآن – {course?.price} ريال
+                  {isAr ? 'اشترك الآن' : 'Enroll Now'} – {course?.price} {isAr ? 'ريال' : 'SAR'}
                 </a>
               )}
 
@@ -637,7 +637,7 @@ export default function CourseDetailPage({
                 style={{ color: textSecondary }}
               >
                 <Shield className="h-4 w-4" style={{ color: teal }} />
-                <span>ضمان استرداد الأموال خلال 30 يوم</span>
+                <span>{isAr ? 'ضمان استرداد الأموال خلال 30 يوم' : '30-day money-back guarantee'}</span>
               </div>
 
               {/* Course stats */}
@@ -652,8 +652,8 @@ export default function CourseDetailPage({
                            course.level === 'INTERMEDIATE' ? t('intermediate') : t('advanced'),
                   },
                   { icon: Users, label: t('subscribers'), value: `${course._count?.enrollments || 0} ${t('student')}` },
-                  { icon: Clock, label: 'المدة', value: course.duration ? `${course.duration} ساعة` : 'غير محددة' },
-                  { icon: Award, label: 'الشهادة', value: 'شهادة إتمام' },
+                  { icon: Clock, label: isAr ? 'المدة' : 'Duration', value: course.duration ? `${course.duration} ${isAr ? 'ساعة' : 'hours'}` : (isAr ? 'غير محددة' : 'Not specified') },
+                  { icon: Award, label: isAr ? 'الشهادة' : 'Certificate', value: isAr ? 'شهادة إتمام' : 'Completion Certificate' },
                 ].map(({ icon: Icon, label, value }, i) => (
                   <div key={i} className="flex items-center justify-between text-sm py-1">
                     <span className="flex items-center gap-2" style={{ color: textSecondary }}>
@@ -668,11 +668,11 @@ export default function CourseDetailPage({
               {/* Features list */}
               <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>
                 {[
-                  { icon: Video, text: 'فيديوهات عالية الجودة' },
-                  { icon: FileText, text: 'موارد قابلة للتحميل' },
-                  { icon: Award, text: 'شهادة إتمام معتمدة' },
-                  { icon: Clock, text: 'وصول مدى الحياة' },
-                  { icon: Smartphone, text: 'متوافق مع جميع الأجهزة' },
+                  { icon: Video, text: isAr ? 'فيديوهات عالية الجودة' : 'High-quality videos' },
+                  { icon: FileText, text: isAr ? 'موارد قابلة للتحميل' : 'Downloadable resources' },
+                  { icon: Award, text: isAr ? 'شهادة إتمام معتمدة' : 'Verified completion certificate' },
+                  { icon: Clock, text: isAr ? 'وصول مدى الحياة' : 'Lifetime access' },
+                  { icon: Smartphone, text: isAr ? 'متوافق مع جميع الأجهزة' : 'Works on all devices' },
                 ].map(({ icon: Icon, text }, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs" style={{ color: textSecondary }}>
                     <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: teal }} />

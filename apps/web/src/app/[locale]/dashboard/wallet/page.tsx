@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '@/lib/api'
 import { useTheme } from 'next-themes'
+import { useLocale } from 'next-intl'
 import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowRight, CreditCard, History, TrendingUp, TrendingDown, Receipt } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
@@ -17,6 +18,8 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
   const [error, setError] = useState('')
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   
   const quickAmounts = [25, 50, 100, 200, 500]
   
@@ -35,24 +38,24 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
       })
       
       if (stripeError) {
-        setError(stripeError.message || 'فشل الدفع')
+        setError(stripeError.message || (isAr ? 'فشل الدفع' : 'Payment failed'))
         return
       }
-      
+
       const confirmRes = await post('/wallet/topup/confirm', { paymentIntentId })
       onSuccess(confirmRes.data.data.balance)
     } catch(e: any) {
-      setError(e.response?.data?.message || 'حدث خطأ')
+      setError(e.response?.data?.message || (isAr ? 'حدث خطأ' : 'An error occurred'))
     } finally {
       setLoading(false)
     }
   }
   
   return (
-    <div style={{ direction: 'rtl' }}>
+    <div style={{ direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ marginBottom: 20 }}>
         <label style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500 }}>
-          اختر مبلغ الشحن
+          {isAr ? 'اختر مبلغ الشحن' : 'Choose Top-up Amount'}
         </label>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           {quickAmounts.map(a => (
@@ -80,13 +83,13 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
             outline: 'none',
           }}
-          placeholder="أو أدخل مبلغاً مخصصاً"
+          placeholder={isAr ? 'أو أدخل مبلغاً مخصصاً' : 'Or enter a custom amount'}
         />
       </div>
       
       <div style={{ marginBottom: 20 }}>
         <label style={{ color: isDark ? '#9ca3af' : '#6b7280', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500 }}>
-          بيانات البطاقة
+          {isAr ? 'بيانات البطاقة' : 'Card Details'}
         </label>
         <div style={{
           padding: '16px', borderRadius: 12,
@@ -128,7 +131,7 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
         ) : (
           <CreditCard size={18} />
         )}
-        {loading ? 'جاري الشحن...' : `شحن ${amount} ريال`}
+        {loading ? (isAr ? 'جاري الشحن...' : 'Processing...') : (isAr ? `شحن ${amount} ريال` : `Top up ${amount} SAR`)}
       </button>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
@@ -138,6 +141,8 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
 export default function WalletPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const queryClient = useQueryClient()
   const [showTopup, setShowTopup] = useState(false)
   const [successMsg, setSuccessMsg] = useState('')
@@ -168,7 +173,7 @@ export default function WalletPage() {
     queryClient.invalidateQueries({ queryKey: ['wallet'] })
     queryClient.invalidateQueries({ queryKey: ['wallet-balance'] })
     setShowTopup(false)
-    setSuccessMsg(`تم شحن المحفظة بنجاح! رصيدك الجديد: ${newBalance.toFixed(2)} ر.س`)
+    setSuccessMsg(isAr ? `تم شحن المحفظة بنجاح! رصيدك الجديد: ${newBalance.toFixed(2)} ر.س` : `Wallet topped up! New balance: ${newBalance.toFixed(2)} SAR`)
     setTimeout(() => setSuccessMsg(''), 6000)
   }
 
@@ -184,7 +189,7 @@ export default function WalletPage() {
       minHeight: '100vh',
       background: bg,
       padding: '32px 24px 120px',
-      direction: 'rtl',
+      direction: isAr ? 'rtl' : 'ltr',
     }}>
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
         
@@ -201,9 +206,9 @@ export default function WalletPage() {
             </div>
             <div>
               <h1 style={{ color: text, fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
-                محفظتي
+                {isAr ? 'محفظتي' : 'My Wallet'}
               </h1>
-              <p style={{ color: textSecondary, fontSize: 13, margin: 4, marginTop: 2 }}>إدارة رصيدك ومشترياتك</p>
+              <p style={{ color: textSecondary, fontSize: 13, margin: 4, marginTop: 2 }}>{isAr ? 'إدارة رصيدك ومشترياتك' : 'Manage your balance and purchases'}</p>
             </div>
           </div>
         </div>
@@ -240,10 +245,10 @@ export default function WalletPage() {
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <Wallet size={16} color="rgba(255,255,255,0.6)" />
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500 }}>محفظة DeveWay</span>
+              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500 }}>{isAr ? 'محفظة DeveWay' : 'DeveWay Wallet'}</span>
             </div>
             
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 8 }}>الرصيد المتاح</p>
+            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 8 }}>{isAr ? 'الرصيد المتاح' : 'Available Balance'}</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 28 }}>
               <span style={{ color: '#fff', fontSize: 52, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}>
                 {isLoading ? '...' : balance.toFixed(2)}
@@ -265,7 +270,7 @@ export default function WalletPage() {
                 }}
               >
                 <Plus size={18} />
-                شحن الرصيد
+                {isAr ? 'شحن الرصيد' : 'Top Up'}
               </button>
               <button
                 onClick={() => document.getElementById('transactions')?.scrollIntoView({ behavior: 'smooth' })}
@@ -280,7 +285,7 @@ export default function WalletPage() {
                 }}
               >
                 <History size={18} />
-                سجل المعاملات
+                {isAr ? 'سجل المعاملات' : 'Transaction History'}
               </button>
             </div>
           </div>
@@ -293,7 +298,7 @@ export default function WalletPage() {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(22,163,74,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingUp size={18} color="#16a34a" />
               </div>
-              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>إجمالي الشحن</span>
+              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي الشحن' : 'Total Top-ups'}</span>
             </div>
             <p style={{ color: '#16a34a', fontSize: 22, fontWeight: 700, margin: 0 }}>{stats.totalTopups.toFixed(2)} ر.س</p>
           </div>
@@ -302,7 +307,7 @@ export default function WalletPage() {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(239,68,68,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <TrendingDown size={18} color="#ef4444" />
               </div>
-              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>إجمالي المدفوعات</span>
+              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</span>
             </div>
             <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{stats.totalPayments.toFixed(2)} ر.س</p>
           </div>
@@ -311,7 +316,7 @@ export default function WalletPage() {
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Receipt size={18} color="#5120c8" />
               </div>
-              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>عدد المعاملات</span>
+              <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'عدد المعاملات' : 'Total Transactions'}</span>
             </div>
             <p style={{ color: '#5120c8', fontSize: 22, fontWeight: 700, margin: 0 }}>{stats.totalTransactions}</p>
           </div>
@@ -327,7 +332,7 @@ export default function WalletPage() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
               <h3 style={{ color: text, fontSize: 18, fontWeight: 700, margin: 0 }}>
-                شحن المحفظة
+                {isAr ? 'شحن المحفظة' : 'Top Up Wallet'}
               </h3>
               <button onClick={() => setShowTopup(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
                 <span style={{ color: textSecondary, fontSize: 20 }}>×</span>
@@ -346,14 +351,14 @@ export default function WalletPage() {
           border: `1px solid ${border}`,
         }}>
           <h3 style={{ color: text, fontSize: 18, fontWeight: 700, marginBottom: 20 }}>
-            سجل المعاملات
+            {isAr ? 'سجل المعاملات' : 'Transaction History'}
           </h3>
           
           {transactions.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 24px', color: textSecondary }}>
               <Wallet size={48} style={{ margin: '0 auto 16px', opacity: 0.25 }} />
-              <p style={{ fontSize: 15, margin: 0 }}>لا توجد معاملات بعد</p>
-              <p style={{ fontSize: 13, marginTop: 8, opacity: 0.7 }}>ابدأ بشحن رصيدك第一部</p>
+              <p style={{ fontSize: 15, margin: 0 }}>{isAr ? 'لا توجد معاملات بعد' : 'No transactions yet'}</p>
+              <p style={{ fontSize: 13, marginTop: 8, opacity: 0.7 }}>{isAr ? 'ابدأ بشحن رصيدك' : 'Start by topping up your balance'}</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -375,10 +380,10 @@ export default function WalletPage() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ color: text, fontSize: 14, fontWeight: 600, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {tx.description || (tx.type === 'TOPUP' ? 'شحن رصيد' : 'دفع مشتريات')}
+                      {tx.description || (tx.type === 'TOPUP' ? (isAr ? 'شحن رصيد' : 'Top Up') : (isAr ? 'دفع مشتريات' : 'Purchase Payment'))}
                     </div>
                     <div style={{ color: textSecondary, fontSize: 12 }}>
-                      {new Date(tx.createdAt).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(tx.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                   <div style={{

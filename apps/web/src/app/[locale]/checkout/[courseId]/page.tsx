@@ -94,6 +94,8 @@ function StripeForm({
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState('')
   const c = useColors()
+  const locale = useLocale()
+  const isAr = locale === 'ar'
 
   const handlePay = async () => {
     if (!stripe || !elements) return
@@ -102,7 +104,7 @@ function StripeForm({
 
     const { error: submitErr } = await elements.submit()
     if (submitErr) {
-      setError(submitErr.message || 'خطأ')
+      setError(submitErr.message || (isAr ? 'خطأ' : 'Error'))
       setProcessing(false)
       return
     }
@@ -113,7 +115,7 @@ function StripeForm({
     })
 
     if (result.error) {
-      setError(result.error.message || 'فشل الدفع')
+      setError(result.error.message || (isAr ? 'فشل الدفع' : 'Payment failed'))
       setProcessing(false)
       return
     }
@@ -126,7 +128,7 @@ function StripeForm({
         })
         onSuccess()
       } catch (e: any) {
-        setError(e?.response?.data?.message || 'حدث خطأ في التأكيد')
+        setError(e?.response?.data?.message || (isAr ? 'حدث خطأ في التأكيد' : 'Confirmation error'))
       }
     }
     setProcessing(false)
@@ -167,12 +169,12 @@ function StripeForm({
         {processing ? (
           <>
             <div className="h-6 w-6 animate-spin rounded-full border-3 border-white border-t-transparent" />
-            جاري المعالجة...
+            {isAr ? 'جاري المعالجة...' : 'Processing...'}
           </>
         ) : (
           <>
             <Lock className="h-6 w-6" />
-            ادفع {amount} ريال الآن
+            {isAr ? `ادفع ${amount} ريال الآن` : `Pay ${amount} SAR Now`}
           </>
         )}
       </button>
@@ -180,7 +182,7 @@ function StripeForm({
       <div className="flex items-center justify-center gap-4 pt-2">
         <div className="flex items-center gap-1.5" style={{ color: c.muted }}>
           <Shield className="h-4 w-4" style={{ color: c.green }} />
-          <span className="text-xs">دفع آمن مشفر</span>
+          <span className="text-xs">{isAr ? 'دفع آمن مشفر' : 'Secure Payment'}</span>
         </div>
         <div className="h-4 w-px" style={{ background: c.borderColor }} />
         <span className="text-xs" style={{ color: c.muted }}>SSL 256-bit</span>
@@ -194,6 +196,7 @@ export default function CheckoutPage() {
   const params = useParams()
   const courseId = params.courseId as string
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const router = useRouter()
   const c = useColors()
 
@@ -236,7 +239,7 @@ export default function CheckoutPage() {
 
   const handleStartPayment = useCallback(async () => {
     if (!agreed) {
-      notify.error('يرجى الموافقة على الشروط أولاً')
+      notify.error(isAr ? 'يرجى الموافقة على الشروط أولاً' : 'Please agree to the terms first')
       return
     }
     
@@ -245,12 +248,12 @@ export default function CheckoutPage() {
       setWalletError('')
       try {
         await post(`/wallet/pay/${courseId}`, {})
-        notify.success('تم الاشتراك بنجاح!')
+        notify.success(isAr ? 'تم الاشتراك بنجاح!' : 'Subscription successful!')
         setSuccess(true)
         return
       } catch (e: any) {
-        setWalletError(e.response?.data?.message || 'فشل الدفع بالمحفظة')
-        notify.error(e.response?.data?.message || 'فشل الدفع بالمحفظة')
+        setWalletError(e.response?.data?.message || (isAr ? 'فشل الدفع بالمحفظة' : 'Wallet payment failed'))
+        notify.error(e.response?.data?.message || (isAr ? 'فشل الدفع بالمحفظة' : 'Wallet payment failed'))
       } finally {
         setCreatingIntent(false)
       }
@@ -263,7 +266,7 @@ export default function CheckoutPage() {
       const d = res?.data?.data
 
       if (d?.free || d?.sandbox) {
-        notify.success('تم الاشتراك بنجاح!')
+        notify.success(isAr ? 'تم الاشتراك بنجاح!' : 'Subscription successful!')
         setSuccess(true)
         return
       }
@@ -271,7 +274,7 @@ export default function CheckoutPage() {
         setClientSecret(d.clientSecret)
       }
     } catch (err: any) {
-      notify.error(err?.response?.data?.message || 'حدث خطأ')
+      notify.error(err?.response?.data?.message || (isAr ? 'حدث خطأ' : 'An error occurred'))
     } finally {
       setCreatingIntent(false)
     }
@@ -284,7 +287,7 @@ export default function CheckoutPage() {
   if (isLoading) return <Skeleton />
 
   if (alreadyEnrolled) return (
-    <div className="min-h-screen flex items-center justify-center p-6" dir="rtl" style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 100%)` }}>
+    <div className="min-h-screen flex items-center justify-center p-6" dir={isAr ? 'rtl' : 'ltr'} style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 100%)` }}>
       <div className="max-w-lg w-full">
         <div className="rounded-3xl p-10 text-center relative overflow-hidden" style={{ 
           background: c.surface, 
@@ -305,10 +308,10 @@ export default function CheckoutPage() {
             </div>
             
             <h2 className="text-3xl font-bold mb-3" style={{ color: c.textPrimary }}>
-              أنت مشترك بالفعل!
+              {isAr ? 'أنت مشترك بالفعل!' : 'You are already enrolled!'}
             </h2>
             <p className="text-base mb-8" style={{ color: c.textSecondary }}>
-              يمكنك الوصول لهذا الكورس مباشرة والبدء في التعلم
+              {isAr ? 'يمكنك الوصول لهذا الكورس مباشرة والبدء في التعلم' : 'You can access this course directly and start learning'}
             </p>
             
             <a
@@ -319,7 +322,7 @@ export default function CheckoutPage() {
                 boxShadow: `0 8px 32px rgba(13, 148, 136, 0.35)`
               }}
             >
-              ابدأ التعلم الآن
+              {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
               <ArrowLeft className="h-5 w-5" />
             </a>
           </div>
@@ -329,7 +332,7 @@ export default function CheckoutPage() {
   )
 
   if (success) return (
-    <div className="min-h-screen flex items-center justify-center p-6" dir="rtl" style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 100%)` }}>
+    <div className="min-h-screen flex items-center justify-center p-6" dir={isAr ? 'rtl' : 'ltr'} style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 100%)` }}>
       <div className="max-w-lg w-full">
         <div className="rounded-3xl p-10 text-center relative overflow-hidden" style={{ 
           background: c.surface, 
@@ -352,9 +355,9 @@ export default function CheckoutPage() {
             </div>
             
             <h2 className="text-4xl font-bold mb-2" style={{ color: c.textPrimary }}>
-              تم الاشتراك بنجاح!
+              {isAr ? 'تم الاشتراك بنجاح!' : 'Enrollment Successful!'}
             </h2>
-            <p className="text-base mb-1" style={{ color: c.textSecondary }}>اشتركت في كورس</p>
+            <p className="text-base mb-1" style={{ color: c.textSecondary }}>{isAr ? 'اشتركت في كورس' : 'You enrolled in'}</p>
             <p className="text-xl font-bold mb-8" style={{ color: c.primary }}>{courseTitle}</p>
 
             {/* Receipt Card */}
@@ -365,19 +368,19 @@ export default function CheckoutPage() {
               <div className="flex justify-between items-center pb-4" style={{ borderBottom: `1px solid ${c.borderColor}` }}>
                 <div className="flex items-center gap-2">
                   <Award className="h-5 w-5" style={{ color: c.green }} />
-                  <span className="font-semibold" style={{ color: c.green }}>مدفوع بنجاح</span>
+                  <span className="font-semibold" style={{ color: c.green }}>{isAr ? 'مدفوع بنجاح' : 'Paid Successfully'}</span>
                 </div>
-                <span className="text-sm" style={{ color: c.muted }}>الحالة</span>
+                <span className="text-sm" style={{ color: c.muted }}>{isAr ? 'الحالة' : 'Status'}</span>
               </div>
               
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg" style={{ color: c.primary }}>{course?.price} ريال</span>
-                <span className="text-sm" style={{ color: c.muted }}>المبلغ</span>
+                <span className="text-sm" style={{ color: c.muted }}>{isAr ? 'المبلغ' : 'Amount'}</span>
               </div>
               
               <div className="flex justify-between items-center pt-4" style={{ borderTop: `1px solid ${c.borderColor}` }}>
                 <span className="text-sm" style={{ color: c.textSecondary }}>
-                  {new Date().toLocaleDateString('ar-SA', { 
+                  {new Date().toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
                     year: 'numeric', 
                     month: 'long', 
                     day: 'numeric',
@@ -385,7 +388,7 @@ export default function CheckoutPage() {
                     minute: '2-digit'
                   })}
                 </span>
-                <span className="text-sm" style={{ color: c.muted }}>التاريخ</span>
+                <span className="text-sm" style={{ color: c.muted }}>{isAr ? 'التاريخ' : 'Date'}</span>
               </div>
             </div>
 
@@ -399,7 +402,7 @@ export default function CheckoutPage() {
                 }}
               >
                 <Sparkles className="h-6 w-6" />
-                ابدأ التعلم الآن
+                {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
                 <ArrowLeft className="h-5 w-5" />
               </a>
               
@@ -412,7 +415,7 @@ export default function CheckoutPage() {
                   border: `1px solid ${c.borderColor}`
                 }}
               >
-                العودة للداشبورد
+                {isAr ? 'العودة للداشبورد' : 'Back to Dashboard'}
               </button>
             </div>
           </div>
@@ -422,7 +425,7 @@ export default function CheckoutPage() {
   )
 
   return (
-    <div className="min-h-screen py-8 px-4" dir="rtl" style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 50%, ${c.bg} 100%)` }}>
+    <div className="min-h-screen py-8 px-4" dir={isAr ? 'rtl' : 'ltr'} style={{ background: `linear-gradient(180deg, ${c.bg} 0%, ${c.headerBg} 50%, ${c.bg} 100%)` }}>
       <div className="mx-auto max-w-6xl">
         
         {/* Header */}
@@ -432,13 +435,13 @@ export default function CheckoutPage() {
             color: c.primary 
           }}>
             <Lock className="h-4 w-4" />
-            دفع آمن ومشفر
+            {isAr ? 'دفع آمن ومشفر' : 'Secure Encrypted Payment'}
           </div>
           <h1 className="text-4xl font-bold mb-3" style={{ color: c.textPrimary }}>
-            إتمام الاشتراك
+            {isAr ? 'إتمام الاشتراك' : 'Complete Enrollment'}
           </h1>
           <p className="text-lg" style={{ color: c.textSecondary }}>
-            أنت على بعد خطوة واحدة من بدء رحلتك التعليمية
+            {isAr ? 'أنت على بعد خطوة واحدة من بدء رحلتك التعليمية' : 'You are one step away from starting your learning journey'}
           </p>
         </div>
 
@@ -465,14 +468,14 @@ export default function CheckoutPage() {
                           background: 'rgba(0,0,0,0.5)',
                           backdropFilter: 'blur(10px)'
                         }}>
-                          كورس تعليمي
+                          {isAr ? 'كورس تعليمي' : 'Course'}
                         </div>
                         {course?.level && (
                           <div className="px-3 py-1.5 rounded-xl text-sm font-medium" style={{ 
                             background: `${c.primary}cc`,
                             color: 'white'
                           }}>
-                            {course.level === 'BEGINNER' ? 'مبتدئ' : course.level === 'INTERMEDIATE' ? 'متوسط' : 'متقدم'}
+                            {course.level === 'BEGINNER' ? (isAr ? 'مبتدئ' : 'Beginner') : course.level === 'INTERMEDIATE' ? (isAr ? 'متوسط' : 'Intermediate') : (isAr ? 'متقدم' : 'Advanced')}
                           </div>
                         )}
                       </div>
@@ -500,9 +503,9 @@ export default function CheckoutPage() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { icon: Users, value: course?._count?.enrollments || 0, label: 'طالب' },
-                    { icon: BookOpen, value: course?._count?.sections || 0, label: 'قسم' },
-                    { icon: Clock, value: course?.duration || '-', label: 'ساعة' },
+                    { icon: Users, value: course?._count?.enrollments || 0, label: isAr ? 'طالب' : 'Students' },
+                    { icon: BookOpen, value: course?._count?.sections || 0, label: isAr ? 'قسم' : 'Sections' },
+                    { icon: Clock, value: course?.duration || '-', label: isAr ? 'ساعة' : 'Hours' },
                   ].map(({ icon: Icon, value, label }, i) => (
                     <div key={i} className="rounded-xl p-3 text-center" style={{ 
                       background: c.surface2,
@@ -527,14 +530,14 @@ export default function CheckoutPage() {
                 <div className="h-10 w-10 rounded-xl flex items-center justify-center" style={{ background: c.primaryLight }}>
                   <CreditCard className="h-5 w-5" style={{ color: c.primary }} />
                 </div>
-                <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>ملخص الطلب</h3>
+                <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>{isAr ? 'ملخص الطلب' : 'Order Summary'}</h3>
               </div>
               
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3" style={{ borderBottom: `1px dashed ${c.borderColor}` }}>
                   <div className="flex items-center gap-2" style={{ color: c.textSecondary }}>
                     <BookOpen className="h-4 w-4" />
-                    <span>سعر الكورس</span>
+                    <span>{isAr ? 'سعر الكورس' : 'Course Price'}</span>
                   </div>
                   <span className="font-semibold text-lg">{course?.price} ريال</span>
                 </div>
@@ -542,19 +545,19 @@ export default function CheckoutPage() {
                 <div className="flex justify-between items-center py-3" style={{ borderBottom: `1px dashed ${c.borderColor}` }}>
                   <div className="flex items-center gap-2" style={{ color: c.textSecondary }}>
                     <RefreshCw className="h-4 w-4" />
-                    <span>الضريبة</span>
+                    <span>{isAr ? 'الضريبة' : 'Tax'}</span>
                   </div>
                   <span className="px-3 py-1 rounded-lg text-sm font-medium" style={{ 
                     background: `${c.green}15`, 
                     color: c.green 
-                  }}>مجاني</span>
+                  }}>{isAr ? 'مجاني' : 'Free'}</span>
                 </div>
                 
                 <div className="flex justify-between items-center py-4 mt-2 rounded-xl px-4" style={{ 
                   background: c.primaryLight,
                   border: `1px solid ${c.primary}30`
                 }}>
-                  <span className="font-bold text-lg">الإجمالي</span>
+                  <span className="font-bold text-lg">{isAr ? 'الإجمالي' : 'Total'}</span>
                   <span className="font-bold text-2xl" style={{ color: c.primary }}>{course?.price} ريال</span>
                 </div>
               </div>
@@ -563,10 +566,10 @@ export default function CheckoutPage() {
             {/* Features Grid */}
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Shield, title: 'حماية مشفرة', desc: 'SSL 256-bit', color: c.green },
-                { icon: Zap, title: 'وصول فوري', desc: 'بعد الدفع مباشرة', color: c.gold },
-                { icon: RefreshCw, title: 'ضمان استرداد', desc: 'خلال 7 أيام', color: c.blue },
-                { icon: Headphones, title: 'دعم متواصل', desc: 'على مدار الساعة', color: c.teal },
+                { icon: Shield, title: isAr ? 'حماية مشفرة' : 'Encrypted Protection', desc: 'SSL 256-bit', color: c.green },
+                { icon: Zap, title: isAr ? 'وصول فوري' : 'Instant Access', desc: isAr ? 'بعد الدفع مباشرة' : 'Right after payment', color: c.gold },
+                { icon: RefreshCw, title: isAr ? 'ضمان استرداد' : 'Refund Guarantee', desc: isAr ? 'خلال 7 أيام' : 'Within 7 days', color: c.blue },
+                { icon: Headphones, title: isAr ? 'دعم متواصل' : 'Continuous Support', desc: isAr ? 'على مدار الساعة' : '24/7', color: c.teal },
               ].map(({ icon: Icon, title, desc, color }, i) => (
                 <div key={i} className="rounded-2xl p-4 flex items-start gap-3 transition-transform hover:scale-[1.02]" style={{ 
                   background: c.surface, 
@@ -590,10 +593,10 @@ export default function CheckoutPage() {
               border: `1px solid ${c.borderColor}`
             }}>
               {[
-                { icon: Shield, label: 'آمن 100%', color: c.green },
-                { icon: Lock, label: 'بيانات محمية', color: c.blue },
-                { icon: CreditCard, label: 'دفع متعدد', color: c.primary },
-                { icon: Award, label: 'شهادة معتمدة', color: c.gold },
+                { icon: Shield, label: isAr ? 'آمن 100%' : '100% Secure', color: c.green },
+                { icon: Lock, label: isAr ? 'بيانات محمية' : 'Data Protected', color: c.blue },
+                { icon: CreditCard, label: isAr ? 'دفع متعدد' : 'Multiple Payment', color: c.primary },
+                { icon: Award, label: isAr ? 'شهادة معتمدة' : 'Certified', color: c.gold },
               ].map(({ icon: Icon, label, color }, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <Icon className="h-5 w-5" style={{ color }} />
@@ -622,8 +625,8 @@ export default function CheckoutPage() {
                         <CreditCard className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>وسيلة الدفع</h3>
-                        <p className="text-xs" style={{ color: c.muted }}>اختر طريقة الدفع المناسبة</p>
+                        <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>{isAr ? 'وسيلة الدفع' : 'Payment Method'}</h3>
+                        <p className="text-xs" style={{ color: c.muted }}>{isAr ? 'اختر طريقة الدفع المناسبة' : 'Choose your preferred payment method'}</p>
                       </div>
                     </div>
 
@@ -633,8 +636,8 @@ export default function CheckoutPage() {
                         border: `1px dashed ${c.gold}40` 
                       }}>
                         <Sparkles className="h-8 w-8 mx-auto" style={{ color: c.gold }} />
-                        <p className="font-semibold" style={{ color: c.gold }}>وضع تجريبي</p>
-                        <p className="text-sm" style={{ color: c.muted }}>لن يتم خصم أي مبلغ حقيقي</p>
+                        <p className="font-semibold" style={{ color: c.gold }}>{isAr ? 'وضع تجريبي' : 'Test Mode'}</p>
+                        <p className="text-sm" style={{ color: c.muted }}>{isAr ? 'لن يتم خصم أي مبلغ حقيقي' : 'No real amount will be charged'}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
@@ -650,7 +653,7 @@ export default function CheckoutPage() {
                             <CreditCard className="h-6 w-6 text-white" />
                           </div>
                           <div className="flex-1 text-right">
-                            <div className="font-bold" style={{ color: paymentMethod === 'card' ? c.primary : c.textPrimary }}>بطاقة ائتمان / خصم</div>
+                            <div className="font-bold" style={{ color: paymentMethod === 'card' ? c.primary : c.textPrimary }}>{isAr ? 'بطاقة ائتمان / خصم' : 'Credit / Debit Card'}</div>
                             <div className="text-xs" style={{ color: c.muted }}>Visa, Mastercard, Mada</div>
                           </div>
                           {paymentMethod === 'card' && <CheckCircle className="h-6 w-6" style={{ color: c.primary }} />}
@@ -669,9 +672,9 @@ export default function CheckoutPage() {
                             <Wallet className="h-6 w-6" style={{ color: paymentMethod === 'wallet' ? '#fff' : '#16a34a' }} />
                           </div>
                           <div className="flex-1 text-right">
-                            <div className="font-bold" style={{ color: paymentMethod === 'wallet' ? c.primary : c.textPrimary }}>محفظتي</div>
+                            <div className="font-bold" style={{ color: paymentMethod === 'wallet' ? c.primary : c.textPrimary }}>{isAr ? 'محفظتي' : 'My Wallet'}</div>
                             <div className="text-xs" style={{ color: canPayWithWallet ? '#16a34a' : '#ef4444' }}>
-                              رصيد: {walletBalance.toFixed(2)} ر.س {canPayWithWallet ? '' : '(غير كافٍ)'}
+                              {isAr ? 'رصيد:' : 'Balance:'} {walletBalance.toFixed(2)} {isAr ? 'ر.س' : 'SAR'} {canPayWithWallet ? '' : (isAr ? '(غير كافٍ)' : '(insufficient)')}
                             </div>
                           </div>
                           {paymentMethod === 'wallet' && <CheckCircle className="h-6 w-6" style={{ color: c.primary }} />}
@@ -679,7 +682,7 @@ export default function CheckoutPage() {
                         
                         {!canPayWithWallet && walletBalance > 0 && (
                           <p className="text-xs text-center" style={{ color: c.gold }}>
-                            رصيد محفظتك غير كافٍ. تحتاج {((course?.price || 0) - walletBalance).toFixed(2)} ر.س إضافية
+                            {isAr ? `رصيد محفظتك غير كافٍ. تحتاج ${((course?.price || 0) - walletBalance).toFixed(2)} ر.س إضافية` : `Insufficient wallet balance. You need ${((course?.price || 0) - walletBalance).toFixed(2)} SAR more`}
                           </p>
                         )}
                         
@@ -725,17 +728,17 @@ export default function CheckoutPage() {
                       {agreed && <CheckCheck className="h-4 w-4 text-white" />}
                     </div>
                     <span className="text-sm leading-relaxed" style={{ color: c.textSecondary }}>
-                      أوافق على{' '}
+                      {isAr ? 'أوافق على' : 'I agree to the'}{' '}
                       <span className="font-semibold cursor-pointer hover:underline" style={{ color: c.primary }}>
-                        شروط الاستخدام
+                        {isAr ? 'شروط الاستخدام' : 'Terms of Use'}
                       </span>{' '}
-                      و{' '}
+                      {isAr ? 'و' : 'and'}{' '}
                       <span className="font-semibold cursor-pointer hover:underline" style={{ color: c.primary }}>
-                        سياسة الخصوصية
+                        {isAr ? 'سياسة الخصوصية' : 'Privacy Policy'}
                       </span>
-                      {' '}و{' '}
+                      {' '}{isAr ? 'و' : 'and'}{' '}
                       <span className="font-semibold cursor-pointer hover:underline" style={{ color: c.primary }}>
-                        سياسة الاسترداد
+                        {isAr ? 'سياسة الاسترداد' : 'Refund Policy'}
                       </span>
                     </span>
                   </label>
@@ -757,19 +760,19 @@ export default function CheckoutPage() {
                     {creatingIntent ? (
                       <>
                         <div className="h-6 w-6 animate-spin rounded-full border-3 border-white border-t-transparent" />
-                        جاري التحضير...
+                        {isAr ? 'جاري التحضير...' : 'Preparing...'}
                       </>
                     ) : (
                       <>
                         {course?.price === 0 ? (
                           <>
                             <Gift className="h-6 w-6" />
-                            اشترك مجاناً
+                            {isAr ? 'اشترك مجاناً' : 'Enroll for Free'}
                           </>
                         ) : (
                           <>
                             <Lock className="h-6 w-6" />
-                            ادفع {course?.price} ريال
+                            {isAr ? `ادفع ${course?.price} ريال` : `Pay ${course?.price} SAR`}
                           </>
                         )}
                       </>
@@ -783,10 +786,10 @@ export default function CheckoutPage() {
                       color: c.green
                     }}>
                       <Shield className="h-4 w-4" />
-                      ضمان استرداد خلال 7 أيام
+                      {isAr ? 'ضمان استرداد خلال 7 أيام' : '7-day money back guarantee'}
                     </div>
                     <p className="text-xs" style={{ color: c.muted }}>
-                      إذا لم تكن راضياً عن المحتوى، نعيد لك المبلغ بالكامل
+                      {isAr ? 'إذا لم تكن راضياً عن المحتوى، نعيد لك المبلغ بالكامل' : 'If you are not satisfied with the content, we will refund you in full'}
                     </p>
                   </div>
                 </>
@@ -804,8 +807,8 @@ export default function CheckoutPage() {
                         <CreditCard className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>بيانات البطاقة</h3>
-                        <p className="text-xs" style={{ color: c.muted }}>معلوماتك آمنة ومشفرة 100%</p>
+                        <h3 className="text-xl font-bold" style={{ color: c.textPrimary }}>{isAr ? 'بيانات البطاقة' : 'Card Details'}</h3>
+                        <p className="text-xs" style={{ color: c.muted }}>{isAr ? 'معلوماتك آمنة ومشفرة 100%' : 'Your information is 100% secure and encrypted'}</p>
                       </div>
                     </div>
                     
@@ -837,7 +840,7 @@ export default function CheckoutPage() {
                         courseId={courseId}
                         amount={course?.price || 0}
                         onSuccess={() => {
-                          notify.success('تم الاشتراك بنجاح!')
+                          notify.success(isAr ? 'تم الاشتراك بنجاح!' : 'Subscription successful!')
                           setSuccess(true)
                         }}
                       />
@@ -852,7 +855,7 @@ export default function CheckoutPage() {
                   background: c.surface2,
                   border: `1px dashed ${c.borderColor}`
                 }}>
-                  <p className="text-xs font-medium" style={{ color: c.muted }}>بطاقة اختبار:</p>
+                  <p className="text-xs font-medium" style={{ color: c.muted }}>{isAr ? 'بطاقة اختبار:' : 'Test card:'}</p>
                   <code className="text-sm font-mono px-3 py-1.5 rounded-lg" style={{ 
                     background: c.surface,
                     color: c.primary,

@@ -111,16 +111,22 @@ type CourseForm = {
   duration: string
 }
 
-const LEVELS = [
+const LEVELS_AR = [
   { value: 'BEGINNER', label: 'مبتدئ' },
   { value: 'INTERMEDIATE', label: 'متوسط' },
   { value: 'ADVANCED', label: 'متقدم' },
+]
+const LEVELS_EN = [
+  { value: 'BEGINNER', label: 'Beginner' },
+  { value: 'INTERMEDIATE', label: 'Intermediate' },
+  { value: 'ADVANCED', label: 'Advanced' },
 ]
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function AdminCreateCoursePage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const router = useRouter()
 
   const [step, setStep] = useState(1)
@@ -187,7 +193,7 @@ export default function AdminCreateCoursePage() {
       const url = await uploadImageFile(file)
       set('thumbnail', url)
     } catch {
-      setError('فشل رفع الصورة')
+      setError(isAr ? 'فشل رفع الصورة' : 'Image upload failed')
     } finally {
       setThumbUploading(false)
     }
@@ -200,7 +206,7 @@ export default function AdminCreateCoursePage() {
       const url = await uploadVideoFile(file, setVideoProgress)
       set('previewVideo', url)
     } catch {
-      setError('فشل رفع الفيديو')
+      setError(isAr ? 'فشل رفع الفيديو' : 'Video upload failed')
     } finally {
       setVideoUploading(false)
     }
@@ -227,7 +233,7 @@ export default function AdminCreateCoursePage() {
   // ─── Submit - استخدام endpoint الأدمن الصحيح ───────────────
 
   async function handleSubmit() {
-    if (!form.titleEn.trim()) { setError('عنوان الكورس مطلوب'); return }
+    if (!form.titleEn.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
     setSaving(true)
     setError('')
     try {
@@ -264,8 +270,8 @@ export default function AdminCreateCoursePage() {
       
       // Success notification
       const msg = form.status === 'PUBLISHED'
-        ? 'تم إنشاء الكورس ونشره بنجاح!'
-        : 'تم حفظ الكورس كمسودة بنجاح!'
+        ? (isAr ? 'تم إنشاء الكورس ونشره بنجاح!' : 'Course created and published successfully!')
+        : (isAr ? 'تم حفظ الكورس كمسودة بنجاح!' : 'Course saved as draft successfully!')
       setToast({ show: true, message: msg, type: 'success' })
 
       // Redirect to courses list after a brief delay so the toast is visible
@@ -311,8 +317,8 @@ export default function AdminCreateCoursePage() {
         <div className="flex items-center gap-3 mb-2">
           <BookOpen className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold text-foreground">إضافة كورس جديد (لوحة التحكم)</h1>
-            <p className="text-sm text-[color:var(--muted)]">أنشئ كورس جديد بنفس طريقة المحاضر</p>
+            <h1 className="text-2xl font-bold text-foreground">{isAr ? 'إضافة كورس جديد (لوحة التحكم)' : 'Add New Course (Admin)'}</h1>
+            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'أنشئ كورس جديد بنفس طريقة المحاضر' : 'Create a new course as an instructor'}</p>
           </div>
         </div>
       </div>
@@ -326,7 +332,7 @@ export default function AdminCreateCoursePage() {
           <>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">1</span>
-              المعلومات الأساسية
+              {isAr ? 'المعلومات الأساسية' : 'Basic Information'}
             </h2>
             
             {/* اختيار المحاضر */}
@@ -426,7 +432,7 @@ export default function AdminCreateCoursePage() {
                   onChange={(e) => set('level', e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
                 >
-                  {LEVELS.map((l) => (
+                  {(isAr ? LEVELS_AR : LEVELS_EN).map((l) => (
                     <option key={l.value} value={l.value}>{l.label}</option>
                   ))}
                 </select>
@@ -483,7 +489,7 @@ export default function AdminCreateCoursePage() {
           <>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">2</span>
-              الصورة والفيديو التعريفي
+              {isAr ? 'الصورة والفيديو التعريفي' : 'Thumbnail & Preview Video'}
             </h2>
 
             {/* Thumbnail */}
@@ -591,9 +597,9 @@ export default function AdminCreateCoursePage() {
           <>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-sm">3</span>
-              أقسام الكورس
+              {isAr ? 'أقسام الكورس' : 'Course Sections'}
             </h2>
-            <p className="text-sm text-[color:var(--muted)] -mt-3 mb-4">أضف الأقسام (يمكنك إضافة المحاضرات لاحقاً من صفحة الكورس)</p>
+            <p className="text-sm text-[color:var(--muted)] -mt-3 mb-4">{isAr ? 'أضف الأقسام (يمكنك إضافة المحاضرات لاحقاً من صفحة الكورس)' : 'Add sections (you can add lessons later from the course page)'}</p>
             
             <div className="space-y-3">
               {form.sections.map((section, i) => (
@@ -626,7 +632,7 @@ export default function AdminCreateCoursePage() {
               className="flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[color:var(--border)] text-sm font-medium text-primary hover:bg-primary/5 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              إضافة قسم آخر
+              {isAr ? 'إضافة قسم آخر' : 'Add Another Section'}
             </button>
           </>
         )}
@@ -636,14 +642,14 @@ export default function AdminCreateCoursePage() {
           <>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-sm text-green-500">4</span>
-              مراجعة ونشر
+              {isAr ? 'مراجعة ونشر' : 'Review & Publish'}
             </h2>
             
             <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-5 space-y-4">
               <Row label="العنوان (EN)" value={form.titleEn || '—'} />
               <Row label="العنوان (AR)" value={form.titleAr || '—'} />
               <Row label="السعر" value={`${form.price} ${form.currency}`} />
-              <Row label="المستوى" value={LEVELS.find(l => l.value === form.level)?.label} />
+              <Row label="المستوى" value={(isAr ? LEVELS_AR : LEVELS_EN).find(l => l.value === form.level)?.label} />
               <Row label="المدة" value={`${form.duration} ساعة`} />
               <Row label="المحاضر" value={form.isInstructor ? 'الأدمن' : 'محادر محدد'} />
               <Row label="الصورة" value={form.thumbnail ? '✓ تم الرفع' : '✗ لا توجد'} />
@@ -697,7 +703,7 @@ export default function AdminCreateCoursePage() {
           disabled={step === 1}
           className="rounded-xl border border-[color:var(--border)] px-6 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] disabled:opacity-30 transition-all"
         >
-          ← السابق
+          {isAr ? '← السابق' : '← Back'}
         </button>
 
         {step < 4 ? (
@@ -707,7 +713,7 @@ export default function AdminCreateCoursePage() {
             disabled={!canProceed()}
             className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2"
           >
-            التالي →
+            {isAr ? 'التالي →' : 'Next →'}
           </button>
         ) : (
           <button
@@ -719,12 +725,12 @@ export default function AdminCreateCoursePage() {
             {saving ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                جارٍ الإنشاء...
+                {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
               </>
             ) : (
               <>
                 <CheckCircle className="h-4 w-4" />
-                {form.status === 'PUBLISHED' ? 'نشر الكورس ✓' : 'حفظ كمسودة'}
+                {form.status === 'PUBLISHED' ? (isAr ? 'نشر الكورس ✓' : 'Publish Course ✓') : (isAr ? 'حفظ كمسودة' : 'Save as Draft')}
               </>
             )}
           </button>

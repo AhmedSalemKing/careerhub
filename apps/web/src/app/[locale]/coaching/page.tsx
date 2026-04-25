@@ -36,6 +36,8 @@ function BookingModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const [step, setStep] = useState<'details' | 'schedule' | 'confirm'>('details')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -60,12 +62,12 @@ function BookingModal({
       return (res?.data as any)?.data
     },
     onSuccess: () => {
-      notify.success('تم إرسال طلب الاستشارة بنجاح!')
+      notify.success(isAr ? 'تم إرسال طلب الاستشارة بنجاح!' : 'Consultation request sent successfully!')
       onSuccess()
       onClose()
     },
     onError: (err: any) => {
-      notify.error(err?.response?.data?.message || 'حدث خطأ في الحجز')
+      notify.error(err?.response?.data?.message || (isAr ? 'حدث خطأ في الحجز' : 'Booking error'))
     }
   })
 
@@ -75,7 +77,7 @@ function BookingModal({
   const minDateStr = minDate.toISOString().split('T')[0]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-lg rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
@@ -99,9 +101,9 @@ function BookingModal({
 
         <div className="flex border-b border-[color:var(--border)]">
           {([
-            { id: 'details', label: 'التفاصيل' },
-            { id: 'schedule', label: 'الموعد' },
-            { id: 'confirm', label: 'تأكيد' },
+            { id: 'details', label: isAr ? 'التفاصيل' : 'Details' },
+            { id: 'schedule', label: isAr ? 'الموعد' : 'Schedule' },
+            { id: 'confirm', label: isAr ? 'تأكيد' : 'Confirm' },
           ] as const).map((s, i) => (
             <div key={s.id}
               className={`flex-1 py-3 text-center text-xs font-semibold transition ${
@@ -118,18 +120,18 @@ function BookingModal({
           {step === 'details' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">موضوع الاستشارة *</label>
-                <input type="text" placeholder="ما الذي تريد مناقشته؟" value={topic}
+                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'موضوع الاستشارة *' : 'Consultation Topic *'}</label>
+                <input type="text" placeholder={isAr ? 'ما الذي تريد مناقشته؟' : 'What would you like to discuss?'} value={topic}
                   onChange={e => setTopic(e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">طريقة الاجتماع *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'طريقة الاجتماع *' : 'Meeting Method *'}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {([
                     { id: 'ZOOM' as const, label: 'Zoom', icon: Video },
                     { id: 'GOOGLE_MEET' as const, label: 'Meet', icon: Globe },
-                    { id: 'PHONE' as const, label: 'هاتف', icon: Phone },
+                    { id: 'PHONE' as const, label: isAr ? 'هاتف' : 'Phone', icon: Phone },
                   ]).map(m => (
                     <button key={m.id} onClick={() => setMethod(m.id)}
                       className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-semibold transition ${
@@ -141,14 +143,14 @@ function BookingModal({
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">ملاحظات إضافية</label>
-                <textarea placeholder="أي تفاصيل تريد إضافتها..." value={notes}
+                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'ملاحظات إضافية' : 'Additional Notes'}</label>
+                <textarea placeholder={isAr ? 'أي تفاصيل تريد إضافتها...' : 'Any details you want to add...'} value={notes}
                   onChange={e => setNotes(e.target.value)} rows={3}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none resize-none" />
               </div>
               <button onClick={() => setStep('schedule')} disabled={!topic.trim()}
                 className="w-full rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition">
-                التالي — اختر الموعد
+                {isAr ? 'التالي — اختر الموعد' : 'Next — Choose Time'}
               </button>
             </div>
           )}
@@ -156,14 +158,14 @@ function BookingModal({
           {step === 'schedule' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">اختر التاريخ *</label>
+                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'اختر التاريخ *' : 'Choose Date *'}</label>
                 <input type="date" min={minDateStr} value={selectedDate}
                   onChange={e => setSelectedDate(e.target.value)}
                   className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none" />
               </div>
               {selectedDate && (
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">اختر الوقت *</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'اختر الوقت *' : 'Choose Time *'}</label>
                   <div className="grid grid-cols-4 gap-2">
                     {timeSlots.map(time => (
                       <button key={time} onClick={() => setSelectedTime(time)}
@@ -177,11 +179,11 @@ function BookingModal({
               <div className="flex gap-3">
                 <button onClick={() => setStep('details')}
                   className="flex-1 rounded-2xl border border-[color:var(--border)] py-3 text-sm hover:bg-[color:var(--surface-2)] transition">
-                  السابق
+                  {isAr ? 'السابق' : 'Back'}
                 </button>
                 <button onClick={() => setStep('confirm')} disabled={!selectedDate || !selectedTime}
                   className="flex-1 rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition">
-                  التالي — تأكيد
+                  {isAr ? 'التالي — تأكيد' : 'Next — Confirm'}
                 </button>
               </div>
             </div>
@@ -189,16 +191,16 @@ function BookingModal({
 
           {step === 'confirm' && (
             <div className="space-y-4">
-              <h4 className="font-bold text-foreground text-lg">ملخص الحجز</h4>
+              <h4 className="font-bold text-foreground text-lg">{isAr ? 'ملخص الحجز' : 'Booking Summary'}</h4>
               <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] divide-y divide-[color:var(--border)]">
                 {[
-                  { label: 'المستشار', value: name },
-                  { label: 'الموضوع', value: topic },
-                  { label: 'التاريخ', value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
-                  { label: 'الوقت', value: selectedTime },
-                  { label: 'طريقة الاجتماع', value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : 'هاتف' },
-                  { label: 'المدة', value: '60 دقيقة' },
-                  { label: 'السعر', value: `${consultant.hourlyRate || 0} ريال` },
+                  { label: isAr ? 'المستشار' : 'Consultant', value: name },
+                  { label: isAr ? 'الموضوع' : 'Topic', value: topic },
+                  { label: isAr ? 'التاريخ' : 'Date', value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
+                  { label: isAr ? 'الوقت' : 'Time', value: selectedTime },
+                  { label: isAr ? 'طريقة الاجتماع' : 'Meeting Method', value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : (isAr ? 'هاتف' : 'Phone') },
+                  { label: isAr ? 'المدة' : 'Duration', value: isAr ? '60 دقيقة' : '60 minutes' },
+                  { label: isAr ? 'السعر' : 'Price', value: `${consultant.hourlyRate || 0} ${isAr ? 'ريال' : 'SAR'}` },
                 ].map(item => (
                   <div key={item.label} className="flex justify-between px-4 py-3 text-sm">
                     <span className="text-[color:var(--muted)]">{item.label}</span>
@@ -208,22 +210,22 @@ function BookingModal({
               </div>
               {consultant.hourlyRate > 0 && (
                 <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-400">
-                  سيتم الدفع بعد تأكيد المستشار للموعد
+                  {isAr ? 'سيتم الدفع بعد تأكيد المستشار للموعد' : 'Payment will be due after consultant confirms the appointment'}
                 </div>
               )}
               <div className="flex gap-3">
                 <button onClick={() => setStep('schedule')}
                   className="flex-1 rounded-2xl border border-[color:var(--border)] py-3 text-sm hover:bg-[color:var(--surface-2)] transition">
-                  السابق
+                  {isAr ? 'السابق' : 'Back'}
                 </button>
                 <button onClick={() => bookMutation.mutate()} disabled={bookMutation.isPending}
                   className="flex-1 rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-60 transition">
                   {bookMutation.isPending ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      جاري الحجز...
+                      {isAr ? 'جاري الحجز...' : 'Booking...'}
                     </span>
-                  ) : 'تأكيد الحجز'}
+                  ) : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}
                 </button>
               </div>
             </div>
@@ -243,12 +245,14 @@ function ConsultantModal({
   onClose: () => void
   onBook: () => void
 }) {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const name = `${consultant.profile.firstName} ${consultant.profile.lastName}`
   const avatar = getMediaUrl(consultant.profile.avatar)
   const sessions = consultant._count.consultantSessions
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden">
         <div className="relative h-32 bg-[color:var(--surface-2)]">
@@ -271,30 +275,30 @@ function ConsultantModal({
           <p className="text-primary text-sm font-medium mt-0.5">{consultant.speciality}</p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
             {consultant.experience && (
-              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{consultant.experience} سنة خبرة</span>
+              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{consultant.experience} {isAr ? 'سنة خبرة' : 'yrs exp'}</span>
             )}
-            <span className="flex items-center gap-1"><Award className="h-4 w-4" />{sessions} جلسة مكتملة</span>
+            <span className="flex items-center gap-1"><Award className="h-4 w-4" />{sessions} {isAr ? 'جلسة مكتملة' : 'sessions'}</span>
             {consultant.profile.country && (
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{consultant.profile.country}</span>
             )}
           </div>
           {consultant.bio && (
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-1">نبذة مهنية</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-1">{isAr ? 'نبذة مهنية' : 'About'}</h4>
               <p className="text-sm text-[color:var(--muted)] leading-relaxed">{consultant.bio}</p>
             </div>
           )}
           <div className="mt-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 flex justify-between items-center">
             <div>
-              <p className="text-xs text-[color:var(--muted)]">سعر الجلسة (60 دقيقة)</p>
+              <p className="text-xs text-[color:var(--muted)]">{isAr ? 'سعر الجلسة (60 دقيقة)' : 'Session Price (60 min)'}</p>
               <p className="text-2xl font-bold text-primary mt-0.5">
-                {consultant.hourlyRate || 'مجاني'} {consultant.hourlyRate ? 'ريال' : ''}
+                {consultant.hourlyRate || (isAr ? 'مجاني' : 'Free')} {consultant.hourlyRate ? (isAr ? 'ريال' : 'SAR') : ''}
               </p>
             </div>
           </div>
           <button onClick={() => { onClose(); onBook() }}
             className="mt-4 w-full rounded-2xl bg-primary py-3.5 font-bold text-white hover:bg-primary/90 transition shadow-lg shadow-primary/20">
-            احجز جلسة الآن
+            {isAr ? 'احجز جلسة الآن' : 'Book a Session Now'}
           </button>
         </div>
       </div>
@@ -304,6 +308,7 @@ function ConsultantModal({
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const router = useRouter()
   const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null)
   const [bookingConsultant, setBookingConsultant] = useState<Consultant | null>(null)
@@ -326,15 +331,15 @@ export default function CoachingPage() {
   })
 
   return (
-    <div className="min-h-screen p-6" dir="rtl">
+    <div className="min-h-screen p-6" dir={isAr ? 'rtl' : 'ltr'}>
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-foreground mb-2">احجز استشارة مهنية</h1>
+        <h1 className="text-4xl font-bold text-foreground mb-2">{isAr ? 'احجز استشارة مهنية' : 'Book a Professional Consultation'}</h1>
         <p className="text-[color:var(--muted)] text-lg max-w-xl mx-auto">
-          تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي
+          {isAr ? 'تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي' : 'Connect with top professional consultants for personalized guidance'}
         </p>
       </div>
       <div className="mb-8 max-w-lg mx-auto">
-        <input type="text" placeholder="ابحث عن مستشار أو تخصص..."
+        <input type="text" placeholder={isAr ? 'ابحث عن مستشار أو تخصص...' : 'Search for a consultant or specialty...'}
           value={search} onChange={e => setSearch(e.target.value)}
           className="w-full rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-5 py-3.5 text-sm text-foreground focus:border-primary focus:outline-none shadow-sm" />
       </div>
@@ -347,8 +352,8 @@ export default function CoachingPage() {
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center">
           <User className="mx-auto mb-4 h-16 w-16 text-[color:var(--muted)] opacity-20" />
-          <h3 className="text-xl font-bold text-foreground mb-2">لا يوجد مستشارون</h3>
-          <p className="text-[color:var(--muted)]">لم يتم إضافة مستشارين بعد</p>
+          <h3 className="text-xl font-bold text-foreground mb-2">{isAr ? 'لا يوجد مستشارون' : 'No consultants found'}</h3>
+          <p className="text-[color:var(--muted)]">{isAr ? 'لم يتم إضافة مستشارين بعد' : 'No consultants have been added yet'}</p>
         </div>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -373,17 +378,17 @@ export default function CoachingPage() {
                     </div>
                   </div>
                   <div className="absolute top-3 left-3 rounded-full bg-black/20 backdrop-blur-sm px-2.5 py-1 text-xs text-white font-semibold">
-                    {sessions} جلسة
+                    {sessions} {isAr ? 'جلسة' : 'sessions'}
                   </div>
                 </div>
                 <div className="p-5 pt-10">
                   <h3 className="font-bold text-foreground text-lg leading-tight">{name}</h3>
-                  <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مستشار مهني'}</p>
+                  <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || (isAr ? 'مستشار مهني' : 'Professional Consultant')}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
                     {consultant.experience && (
-                      <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} سنة</span>
+                      <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} {isAr ? 'سنة' : 'yrs'}</span>
                     )}
-                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />60 دقيقة</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{isAr ? '60 دقيقة' : '60 min'}</span>
                   </div>
                   {consultant.bio && (
                     <p className="mt-3 text-xs text-[color:var(--muted)] line-clamp-2 leading-relaxed">{consultant.bio}</p>
@@ -391,16 +396,16 @@ export default function CoachingPage() {
                   <div className="mt-4 flex items-center justify-between">
                     <p className="text-2xl font-bold text-primary">
                       {consultant.hourlyRate || 0}
-                      <span className="text-sm font-normal text-[color:var(--muted)] mr-1">ريال</span>
+                      <span className="text-sm font-normal text-[color:var(--muted)] mr-1">{isAr ? 'ريال' : 'SAR'}</span>
                     </p>
                     <div className="flex gap-2">
                       <button onClick={() => setSelectedConsultant(consultant)}
                         className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-xs font-semibold hover:bg-[color:var(--surface-2)] transition">
-                        التفاصيل
+                        {isAr ? 'التفاصيل' : 'Details'}
                       </button>
                       <button onClick={() => setBookingConsultant(consultant)}
                         className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary/90 transition shadow-sm shadow-primary/20">
-                        احجز
+                        {isAr ? 'احجز' : 'Book'}
                       </button>
                     </div>
                   </div>

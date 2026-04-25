@@ -9,6 +9,7 @@ import { useAuthStore } from '../../../../stores/authStore'
 
 export default function DashboardCoachingPage() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const { user } = useAuthStore()
 
   const { data: sessions = [], isLoading } = useQuery({
@@ -21,8 +22,12 @@ export default function DashboardCoachingPage() {
   })
 
   const statusLabel: Record<string, string> = {
-    PENDING: 'معلقة', CONFIRMED: 'مؤكدة', RESCHEDULED: 'تغيير موعد',
-    COMPLETED: 'مكتملة', CANCELLED: 'ملغية', REJECTED: 'مرفوضة',
+    PENDING: isAr ? 'معلقة' : 'Pending',
+    CONFIRMED: isAr ? 'مؤكدة' : 'Confirmed',
+    RESCHEDULED: isAr ? 'تغيير موعد' : 'Rescheduled',
+    COMPLETED: isAr ? 'مكتملة' : 'Completed',
+    CANCELLED: isAr ? 'ملغية' : 'Cancelled',
+    REJECTED: isAr ? 'مرفوضة' : 'Rejected',
   }
   const statusColor: Record<string, string> = {
     PENDING: 'bg-amber-500/20 text-amber-400',
@@ -36,15 +41,15 @@ export default function DashboardCoachingPage() {
   const isConsultant = user?.accountType === 'CONSULTANT'
 
   return (
-    <div className="p-6 space-y-6" dir="rtl">
+    <div className="p-6 space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {isConsultant ? 'جلساتي الاستشارية' : 'الاستشارات المهنية'}
+            {isConsultant ? (isAr ? 'جلساتي الاستشارية' : 'My Sessions') : (isAr ? 'الاستشارات المهنية' : 'Professional Consulting')}
           </h1>
           <p className="text-[color:var(--muted)] text-sm mt-1">
-            {isConsultant ? 'إدارة وقبول طلبات الاستشارة' : 'احجز جلسة مع مستشار مهني متخصص'}
+            {isConsultant ? (isAr ? 'إدارة وقبول طلبات الاستشارة' : 'Manage and accept consultation requests') : (isAr ? 'احجز جلسة مع مستشار مهني متخصص' : 'Book a session with a professional consultant')}
           </p>
         </div>
         {!isConsultant && (
@@ -52,7 +57,7 @@ export default function DashboardCoachingPage() {
             href={`/${locale}/coaching`}
             className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition shadow-sm shadow-primary/20"
           >
-            احجز استشارة
+            {isAr ? 'احجز استشارة' : 'Book Session'}
             <ChevronLeft className="h-4 w-4" />
           </Link>
         )}
@@ -61,10 +66,10 @@ export default function DashboardCoachingPage() {
       {/* Recent sessions preview */}
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--border)]">
-          <h2 className="font-semibold text-foreground">آخر الجلسات</h2>
+          <h2 className="font-semibold text-foreground">{isAr ? 'آخر الجلسات' : 'Recent Sessions'}</h2>
           <Link href={`/${locale}/dashboard/my-sessions`}
             className="text-sm text-primary hover:underline flex items-center gap-1">
-            عرض الكل <ChevronLeft className="h-3.5 w-3.5" />
+            {isAr ? 'عرض الكل' : 'View All'} <ChevronLeft className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -75,11 +80,11 @@ export default function DashboardCoachingPage() {
         ) : (sessions as any[]).length === 0 ? (
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-3 h-10 w-10 opacity-20" />
-            <p className="text-[color:var(--muted)] text-sm">لا توجد جلسات بعد</p>
+            <p className="text-[color:var(--muted)] text-sm">{isAr ? 'لا توجد جلسات بعد' : 'No sessions yet'}</p>
             {!isConsultant && (
               <Link href={`/${locale}/coaching`}
                 className="mt-3 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
-                احجز أول استشارة
+                {isAr ? 'احجز أول استشارة' : 'Book First Session'}
               </Link>
             )}
           </div>
@@ -93,7 +98,7 @@ export default function DashboardCoachingPage() {
                   <div>
                     <p className="font-medium text-foreground text-sm">{name}</p>
                     <p className="text-xs text-[color:var(--muted)] mt-0.5">
-                      {new Date(s.scheduledAt).toLocaleDateString('ar-SA', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(s.scheduledAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                       {s.topic ? ` — ${s.topic}` : ''}
                     </p>
                   </div>
@@ -111,12 +116,12 @@ export default function DashboardCoachingPage() {
       {!isConsultant && (
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-foreground mb-1">تحتاج توجيه مهني؟</h3>
-            <p className="text-sm text-[color:var(--muted)]">تواصل مع مستشار متخصص للحصول على خارطة طريق واضحة</p>
+            <h3 className="font-bold text-foreground mb-1">{isAr ? 'تحتاج توجيه مهني؟' : 'Need career guidance?'}</h3>
+            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'تواصل مع مستشار متخصص للحصول على خارطة طريق واضحة' : 'Connect with a specialist for a clear roadmap'}</p>
           </div>
           <Link href={`/${locale}/coaching`}
             className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">
-            تصفح المستشارين
+            {isAr ? 'تصفح المستشارين' : 'Browse Consultants'}
           </Link>
         </div>
       )}
