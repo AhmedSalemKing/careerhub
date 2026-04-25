@@ -16,6 +16,8 @@ import {
   Upload,
   X,
   User,
+  FileText,
+  Globe,
 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -200,7 +202,7 @@ export default function AdminCreateCoursePage() {
     })
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED') {
     if (!form.titleEn.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
     setSaving(true)
     setError('')
@@ -215,7 +217,7 @@ export default function AdminCreateCoursePage() {
         price: parseFloat(form.price) || 0,
         currency: form.currency,
         level: form.level,
-        status: form.status === 'PENDING_REVIEW' ? 'PUBLISHED' : form.status,
+        status,
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         duration: parseInt(form.duration) || 0,
@@ -226,7 +228,7 @@ export default function AdminCreateCoursePage() {
       
       const response = await post('/admin/courses/create', payload)
       
-      const msg = form.status === 'PUBLISHED'
+      const msg = status === 'PUBLISHED'
         ? (isAr ? 'تم إنشاء الكورس ونشره بنجاح!' : 'Course created and published successfully!')
         : (isAr ? 'تم حفظ الكورس كمسودة بنجاح!' : 'Course saved as draft successfully!')
       setToast({ show: true, message: msg, type: 'success' })
@@ -305,7 +307,7 @@ export default function AdminCreateCoursePage() {
         )}
 
         {/* Form Card */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit() }} style={cardStyle}>
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit('PUBLISHED') }} style={cardStyle}>
           
           {/* Basic Info Section */}
           <div style={{ marginBottom: 24 }}>
@@ -540,7 +542,42 @@ export default function AdminCreateCoursePage() {
                 }}
               >
                 {form.previewVideo ? (
-                  <Video size={32} color="#22c55e" />
+                  <div style={{ width: '100%', textAlign: 'center' }}>
+                    <video
+                      src={form.previewVideo}
+                      style={{
+                        width: '100%',
+                        maxHeight: 180,
+                        borderRadius: 8,
+                        objectFit: 'cover',
+                        background: '#000',
+                      }}
+                      preload="metadata"
+                      onLoadedMetadata={(e) => { e.currentTarget.currentTime = 1 }}
+                    />
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      marginTop: 8, padding: '4px 8px',
+                      background: 'rgba(34,197,94,0.1)', borderRadius: 6,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <CheckCircle size={14} color="#22c55e" />
+                        <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 600 }}>
+                          {isAr ? 'تم الرفع' : 'Uploaded'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); set('previewVideo', '') }}
+                        style={{
+                          background: 'rgba(239,68,68,0.1)', border: 'none', borderRadius: 4,
+                          padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                        }}
+                      >
+                        <X size={12} color="#ef4444" />
+                      </button>
+                    </div>
+                  </div>
                 ) : videoUploading ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
@@ -640,25 +677,44 @@ export default function AdminCreateCoursePage() {
             </button>
             
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSubmit('DRAFT')}
+              disabled={saving}
+              style={{
+                padding: '12px 24px', borderRadius: 12, cursor: 'pointer',
+                background: 'transparent',
+                border: `2px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#e5e7eb'}`,
+                color: isDark ? '#94a3b8' : '#6b7280',
+                fontSize: 14, fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <FileText size={16} />
+              {saving ? (isAr ? 'جاري...' : 'Saving...') : (isAr ? 'حفظ كمسودة' : 'Save as Draft')}
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => handleSubmit('PUBLISHED')}
               disabled={saving}
               style={{
                 padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: '#5120c8', color: '#fff', fontSize: 14, fontWeight: 700,
+                background: saving ? '#4b5563' : '#5120c8',
+                color: '#fff', fontSize: 14, fontWeight: 700,
                 boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
-                display: 'flex', alignItems: 'center', gap: 8,
-                transition: 'all 0.2s ease', opacity: saving ? 0.7 : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                transition: 'all 0.2s',
               }}
             >
               {saving ? (
                 <>
                   <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-                  {isAr ? 'جارٍ الحفظ...' : 'Saving...'}
+                  {isAr ? 'جاري النشر...' : 'Publishing...'}
                 </>
               ) : (
                 <>
-                  <CheckCircle size={16} />
-                  {isAr ? 'حفظ الكورس' : 'Save Course'}
+                  <Globe size={16} />
+                  {isAr ? 'نشر الكورس' : 'Publish Course'}
                 </>
               )}
             </button>
