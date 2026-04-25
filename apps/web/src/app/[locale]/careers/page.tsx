@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -46,6 +46,7 @@ export default function CareersPage() {
   
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set())
   
   const allPaths = useMemo(() => {
     return CAREER_PATHS.flatMap(cat => 
@@ -64,6 +65,56 @@ export default function CareersPage() {
       return matchCategory && matchSearch
     })
   }, [allPaths, activeCategory, searchQuery])
+  
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const styleId = 'careers-animation-styles'
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style')
+        style.id = styleId
+        style.textContent = `
+          @keyframes cardReveal {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .career-card {
+            opacity: 0;
+            transform: translateY(24px) scale(0.97);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+          }
+          .career-card-visible {
+            animation: cardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          .career-card-visible:nth-child(1) { animation-delay: 0s; }
+          .career-card-visible:nth-child(2) { animation-delay: 0.06s; }
+          .career-card-visible:nth-child(3) { animation-delay: 0.12s; }
+          .career-card-visible:nth-child(4) { animation-delay: 0.18s; }
+          .career-card-visible:nth-child(5) { animation-delay: 0.24s; }
+          .career-card-visible:nth-child(6) { animation-delay: 0.30s; }
+          .career-card-visible:nth-child(7) { animation-delay: 0.36s; }
+          .career-card-visible:nth-child(8) { animation-delay: 0.42s; }
+          .career-card-visible:nth-child(9) { animation-delay: 0.48s; }
+          .career-card-visible:nth-child(n+10) { animation-delay: 0.54s; }
+        `
+        document.head.appendChild(style)
+      }
+    }
+    
+    const cards = document.querySelectorAll('.career-card')
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('career-card-visible')
+            observer.unobserve(entry.target)
+          }
+        })
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    )
+    cards.forEach(card => observer.observe(card))
+    return () => observer.disconnect()
+  }, [filteredPaths])
   
   const bg = isDark ? '#0d0d0d' : '#f8fafc'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -171,7 +222,7 @@ export default function CareersPage() {
         </div>
         
         {/* Paths grid */}
-        <div style={{
+        <div key={`grid-${activeCategory}-${searchQuery}`} style={{
           display:'grid',
           gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))',
           gap:20,
@@ -180,13 +231,12 @@ export default function CareersPage() {
             const IconComp = ICON_MAP[path.icon] || Briefcase
             
             return (
-              <div key={path.id} style={{
+              <div key={path.id} className="career-card" style={{
                 background: cardBg,
                 borderRadius:20,
                 border:`1px solid ${border}`,
                 padding:24,
                 cursor:'pointer',
-                transition:'all 0.25s ease',
                 position:'relative',
                 overflow:'hidden',
               }}
