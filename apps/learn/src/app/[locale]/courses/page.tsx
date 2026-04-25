@@ -3,7 +3,8 @@
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight, AlertTriangle } from 'lucide-react'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { api } from '../../../lib/api'
@@ -73,100 +74,36 @@ export default function CoursesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [mainCategories, setMainCategories] = useState<{id: string; name: string}[]>([])
-  const [courses, setCourses] = useState<NormalizedCourse[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: categoriesData } = useQuery({
+    queryKey: ['main-categories', locale],
+    queryFn: async () => {
+      const res = await api.get('/courses/categories?language=' + locale)
+      const all: any[] = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
+      return all.filter((c: any) => !c.parentId)
+    }
+  })
+  const mainCategories = categoriesData || []
+  const allCoursesCount = mainCategories.reduce((sum: number, cat: any) => sum + (cat.courseCount || 0), 0)
 
-  // ✅ NEW: لإظهار الأخطاء
-  const [error, setError] = useState<string | null>(null)
+  const { data: rawCourses, isLoading: loading, error: fetchError } = useQuery({
+    queryKey: ['courses', selectedCategoryId],
+    queryFn: async () => {
+      const url = selectedCategoryId
+        ? `/courses?status=PUBLISHED&categoryId=${selectedCategoryId}`
+        : '/courses?status=PUBLISHED'
+      const res = await api.get(url)
+      if (res.data?.data?.courses && Array.isArray(res.data.data.courses)) return res.data.data.courses as ApiCourse[]
+      if (res.data?.courses && Array.isArray(res.data.courses)) return res.data.courses as ApiCourse[]
+      if (Array.isArray(res.data)) return res.data as ApiCourse[]
+      if (res.data?.data && Array.isArray(res.data.data)) return res.data.data as ApiCourse[]
+      return [] as ApiCourse[]
+    }
+  })
+  const courses = (rawCourses || []).map(normalizeCourse)
+  const error = fetchError ? ((fetchError as any).message || 'Failed to load courses') : null
 
-  // Fetch main categories for filter tabs
-  useEffect(() => {
-    api.get('/courses/categories?language=' + locale)
-      .then(res => {
-        const all: any[] = res.data?.data ?? res.data ?? []
-        setMainCategories(all.filter((c: any) => !c.parentId).map((c: any) => ({ id: c.id, name: c.name })))
-      })
-      .catch(() => {})
-  }, [locale])
-
-  // ✅ FIXED: استدعاء API مع تحسين كامل
-  useEffect(() => {
-    let mounted = true
-
-    const url = selectedCategoryId
-      ? `/courses?status=PUBLISHED&categoryId=${selectedCategoryId}`
-      : '/courses?status=PUBLISHED'
-
-    setLoading(true)
-    api.get(url)
-      .then((res) => {
-        // ✅ Debug: طباعة الاستجابة الكاملة
-        console.log('[Courses] Raw Axios Response:', res)
-        console.log('[Courses] Response Data (res.data):', res.data)
-        console.log('[Courses] Response Status:', res.status)
-        
-        if (!mounted) return
-        
-        // ✅ FIXED: استخراج البيانات بشكل صحيح مع دعم جميع الهياكل المحتملة
-        
-        // الحالة 1: { success: true, data: { courses: [...] } } ← الأكثر شيوعاً
-        let rawCourses: ApiCourse[] = []
-        
-        if (res.data?.data?.courses && Array.isArray(res.data.data.courses)) {
-          // ✅ الهيكل الصحيح: res.data.data.courses
-          console.log('[Courses] ✅ Found courses at: res.data.data.courses')
-          rawCourses = res.data.data.courses
-        } 
-        else if (res.data?.courses && Array.isArray(res.data.courses)) {
-          // الحالة 2: { courses: [...] } بدون data wrapper
-          console.log('[Courses] ✅ Found courses at: res.data.courses')
-          rawCourses = res.data.courses
-        }
-        else if (Array.isArray(res.data)) {
-          // الحالة 3: [...] مصفوفة مباشرة
-          console.log('[Courses] ✅ Found courses as array at: res.data')
-          rawCourses = res.data
-        }
-        else if (res.data?.data && Array.isArray(res.data.data)) {
-          // الحالة 4: { data: [...] }
-          console.log('[Courses] ✅ Found courses at: res.data.data (array)')
-          rawCourses = res.data.data
-        }
-        else {
-          // ❌ لم يتم العثور على كورسات
-          console.warn('[Courses] ⚠️ No courses found in response. Full structure:')
-          console.warn(JSON.stringify(res.data, null, 2))
-        }
-        
-        console.log(`[Courses] 📊 Extracted ${rawCourses.length} courses`)
-        
-        setCourses(rawCourses.map(normalizeCourse))
-        setError(null)
-      })
-      .catch((err) => {
-        // ✅ FIXED: عرض الخطأ بدلاً من إخفائه
-        console.error('[Courses] ❌ Error fetching courses:', err)
-        console.error('[Courses] Error config:', err.config?.url)
-        console.error('[Courses] Error response:', err.response?.status, err.response?.data)
-        
-        if (mounted) {
-          setError(err.message || 'Failed to load courses')
-          setCourses([])
-        }
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
-    
-    // ✅ Cleanup function لمنع memory leaks
-    return () => { mounted = false }
-  }, [selectedCategoryId])
-
-  const safeCourses = Array.isArray(courses) ? courses : []
-  
   const filteredCourses = useMemo(() => {
-    return safeCourses.filter((course) => {
+    return courses.filter((course) => {
       const titleObj = course.title as { ar?: string; en?: string } | undefined
       const titleText = locale === 'ar' 
         ? (titleObj?.ar || titleObj?.en || '')
@@ -175,7 +112,7 @@ export default function CoursesPage() {
       const matchesLevel = !selectedLevel || course.level === selectedLevel
       return matchesSearch && matchesLevel
     })
-  }, [searchQuery, selectedLevel, locale, safeCourses])
+  }, [searchQuery, selectedLevel, locale, courses])
 
   const getLevelBadge = (level: string) => {
     switch (level) {
@@ -261,9 +198,9 @@ export default function CoursesPage() {
                 border: '1px solid var(--border)',
               }}
             >
-              {locale === 'ar' ? 'الكل' : 'All'}
+              {locale === 'ar' ? 'الكل' : 'All'} ({allCoursesCount})
             </button>
-            {mainCategories.map(cat => (
+            {mainCategories.map((cat: any) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategoryId(cat.id)}
@@ -274,7 +211,7 @@ export default function CoursesPage() {
                   border: '1px solid var(--border)',
                 }}
               >
-                {cat.name}
+                {cat.name} ({cat.courseCount || 0})
               </button>
             ))}
           </div>
