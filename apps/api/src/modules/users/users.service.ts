@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { User, UserProfile, Enrollment, Certificate, Notification } from '@prisma/client';
+import { User, UserProfile, Enrollment, Certificate, Notification, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as AWS from 'aws-sdk';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -29,6 +29,30 @@ export class UsersService {
       secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
       region: this.configService.get('AWS_REGION'),
     });
+  }
+
+  async getUsers(filters: { role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'; limit?: number; search?: string }) {
+    const where: Prisma.UserWhereInput = {};
+
+    if (filters.role) {
+      where.accountType = filters.role;
+    }
+
+    if (filters.search) {
+      where.OR = [
+        { email: { contains: filters.search } },
+        { profile: { firstName: { contains: filters.search } } },
+      ];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      include: { profile: true },
+      take: filters.limit || 100,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return users.map(({ password, ...user }) => user);
   }
 
   async getProfile(userId: string) {

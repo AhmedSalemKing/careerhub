@@ -33,6 +33,39 @@ export class UsersController {
     private readonly prisma: PrismaService,
   ) { }
 
+  @Get()
+  @ApiOperation({ summary: 'Get list of users' })
+  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
+  async getUsers(
+    @Query('role') role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN',
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const users = await this.usersService.getUsers({
+      role,
+      limit: limit ? parseInt(limit, 10) : undefined,
+      search,
+    });
+    return {
+      success: true,
+      data: users,
+    };
+  }
+
+  @Get('instructors')
+  @ApiOperation({ summary: 'Get instructors list' })
+  @ApiResponse({ status: 200, description: 'Instructors retrieved successfully' })
+  async getInstructors(@Query('limit') limit?: string) {
+    const users = await this.usersService.getUsers({
+      role: 'INSTRUCTOR',
+      limit: limit ? parseInt(limit, 10) : 100,
+    });
+    return {
+      success: true,
+      data: users,
+    };
+  }
+
   @Get('profile')
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({ status: 200, description: 'User profile retrieved successfully' })
