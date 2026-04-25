@@ -8,7 +8,7 @@ import { get, post } from '../../../../lib/api'
 import {
   Lock, Play, BookOpen, ArrowRight, ArrowLeft, Sparkles,
   CheckCircle2, ChevronDown, CheckCheck, Video, FileText,
-  Clock, Award, ChevronLeft, Settings,
+  Clock, Award, ChevronLeft, ChevronRight, Settings,
   Download, Share2, MessageSquare, ThumbsUp,
   TrendingUp,
   Loader2, Gift, ShoppingCart, PlayCircle, Image, File, ExternalLink,
@@ -56,6 +56,15 @@ function LearnPageInner() {
       if (t) setTheme(t)
     }, 500)
     return () => clearInterval(interval)
+  }, [])
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
   // Auth guard
@@ -659,16 +668,26 @@ function LearnPageInner() {
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Responsive Body */}
+      <div 
+        className="flex flex-1"
+        style={{
+          flexDirection: isMobile ? 'column' : 'row',
+          overflow: isMobile ? 'auto' : 'hidden',
+          height: isMobile ? 'auto' : 'calc(100vh - 88px)',
+        }}
+      >
 
         {/* ✨ Modern Sidebar */}
         <aside 
-          className="w-full lg:w-[340px] xl:w-[380px] shrink-0 overflow-y-auto lg:h-[calc(100vh-88px)] lg:sticky lg:top-[88px]"
+          className="overflow-y-auto"
           style={{ 
+            width: isMobile ? '100%' : '340px',
+            height: isMobile ? 'auto' : '100%',
             background: sidebarBg,
-            borderLeft: `1px solid ${borderColor}`,
-            boxShadow: isDark ? '-2px 0 12px rgba(0,0,0,0.2)' : '-2px 0 12px rgba(0,0,0,0.03)'
+            borderLeft: isMobile ? 'none' : `1px solid ${borderColor}`,
+            borderTop: isMobile ? `1px solid ${borderColor}` : 'none',
+            order: isMobile ? 1 : 0,
           }}
         >
           {/* Sidebar Header */}
@@ -834,12 +853,50 @@ function LearnPageInner() {
           </div>
         </aside>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-auto flex flex-col">
+        {/* Main Content Area - Video & Lesson Info */}
+        <main 
+          className="flex-1 overflow-auto flex flex-col"
+          style={{ 
+            order: isMobile ? 0 : 1,
+          }}
+        >
           {activeLessonId && activeLesson ? (
             <>
+              {/* Mobile Compact Header */}
+              {isMobile && (
+                <div style={{
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#0d0d0d',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  flexShrink: 0,
+                }}>
+                  <button onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4 }}>
+                    <ArrowRight size={18} />
+                  </button>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ color: '#fff', fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {currentLesson?.title || course?.titleAr}
+                    </div>
+                  </div>
+                  <span style={{ color: '#6b7280', fontSize: 11 }}>
+                    {activeLessonIndex + 1}/{totalLessons}
+                  </span>
+                </div>
+              )}
+
               {/* Media Viewer Container */}
-              <div className="bg-black w-full relative" style={{ minHeight: '450px', maxHeight: '72vh' }}>
+              <div 
+                className="w-full relative"
+                style={{ 
+                  background: '#000',
+                  minHeight: isMobile ? 'auto' : '450px',
+                  maxHeight: isMobile ? 'none' : '72vh',
+                  aspectRatio: isMobile ? '16/9' : undefined,
+                }}
+              >
                 
                 {/* Mode Tabs - Modern Design */}
                 {hasMultipleTypes && (
@@ -897,16 +954,17 @@ function LearnPageInner() {
                   </div>
                 )}
 
-                {/* VIDEO PLAYER - Enhanced */}
+{/* VIDEO PLAYER - Enhanced */}
                 {(viewerMode === 'video' || viewerMode === 'all') && hasVideo && videoUrl && (
                   <div className="relative">
                     {/* Video Container with Aspect Ratio */}
                     <div
                       className="video-container relative overflow-hidden"
                       style={{ 
-                        paddingTop: '56.25%', 
+                        paddingTop: isMobile ? '56.25%' : '56.25%', 
                         background: '#000',
-                        borderRadius: 0 
+                        borderRadius: 0,
+                        minHeight: isMobile ? '200px' : undefined,
                       }}
                       onTouchEnd={handleVideoTap}
                     >
@@ -997,9 +1055,9 @@ function LearnPageInner() {
                       )}
                     </div>
 
-                    {/* Speed Controls - Modern */}
+                    {/* Speed Controls - Modern - Hidden on Mobile */}
                     <div 
-                      className="flex items-center gap-3 px-6 py-4 flex-wrap"
+                      className="hidden sm:flex items-center gap-3 px-6 py-4 flex-wrap"
                       style={{ 
                         background: isDark ? '#0d0e14' : '#f8f9fc', 
                         borderBottom: `1px solid ${borderColor}` 
@@ -1205,6 +1263,65 @@ function LearnPageInner() {
                   </div>
                 )}
               </div>
+
+              {/* Mobile Navigation Controls */}
+              {isMobile && (
+                <div style={{
+                  padding: '12px 16px',
+                  background: '#111111',
+                  borderTop: '1px solid rgba(255,255,255,0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}>
+                  <button 
+                    onClick={() => prevLesson && goToLesson(prevLesson)} 
+                    disabled={!prevLesson}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: 'none',
+                      cursor: prevLesson ? 'pointer' : 'not-allowed',
+                      background: prevLesson ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                      color: prevLesson ? '#f1f5f9' : '#374151',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <ChevronRight size={16} />
+                    السابق
+                  </button>
+                  
+                  <button 
+                    onClick={() => nextLesson && goToLesson(nextLesson)} 
+                    disabled={!nextLesson}
+                    style={{
+                      flex: 1,
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: 'none',
+                      cursor: nextLesson ? 'pointer' : 'not-allowed',
+                      background: nextLesson ? '#5120c8' : 'rgba(255,255,255,0.03)',
+                      color: nextLesson ? '#fff' : '#374151',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      boxShadow: nextLesson ? '0 2px 8px rgba(81,32,200,0.3)' : 'none',
+                    }}
+                  >
+                    التالي
+                    <ChevronLeft size={16} />
+                  </button>
+                </div>
+              )}
 
               {/* Lesson Information Section */}
               <div 
@@ -1621,7 +1738,8 @@ function LearnPageInner() {
       {/* Video Protection Component */}
       <VideoProtection userName={undefined} userEmail={undefined} />
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar - Hidden (using inline controls instead) */}
+      {/* 
       <div 
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 px-4 py-4 flex items-center justify-between backdrop-blur-xl"
         style={{ 
@@ -1666,6 +1784,7 @@ function LearnPageInner() {
           <ArrowLeft className="h-5 w-5" />
         </button>
       </div>
+      */}
 
       {/* Global Styles */}
       <style jsx global>{`
