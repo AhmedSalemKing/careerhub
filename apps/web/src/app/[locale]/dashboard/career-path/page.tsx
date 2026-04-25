@@ -664,7 +664,7 @@ export default function DashboardCareerPathPage() {
                 </div>
               </div>
 
-              {/* Courses placeholder */}
+              {/* Career-related coaching */}
               <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-10 text-center">
                 <BookOpen className="mx-auto mb-4 h-12 w-12 text-white/20" />
                 <h3 className="text-lg font-bold text-white/70">الكورسات المتاحة قريباً</h3>
@@ -672,7 +672,7 @@ export default function DashboardCareerPathPage() {
                   سيتم إضافة الكورسات المتخصصة لـ <span className="text-primary font-semibold">{myPath.pathTitle}</span> خلال الأيام القادمة
                 </p>
                 <Link
-                  href={`/${locale}/coaching`}
+                  href={`/${locale}/coaching?speciality=${encodeURIComponent(myPath.pathTitle)}`}
                   className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-primary/40"
                 >
                   <Users className="h-4 w-4" />

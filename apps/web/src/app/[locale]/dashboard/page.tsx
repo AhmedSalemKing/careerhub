@@ -135,7 +135,7 @@ function InstructorOverview() {
                     {course.titleEn}
                   </h3>
                   <p className="text-xs text-muted font-medium">
-                    {course._count?.enrollments ?? 0} طالب مسجل
+                    {course._count?.enrollments ?? 0} مستخدم مسجل
                   </p>
 <span className={`inline-block text-[11px] font-bold px-3 py-1 rounded-full mt-2 ${
                       course.status === 'PUBLISHED' 

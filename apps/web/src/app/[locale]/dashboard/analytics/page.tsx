@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
   const courses = stats?.courses ?? []
 
   const statCards = [
-    { label:'إجمالي الطلاب', value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
+    { label:'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
     { label:'الكورسات المنشورة', value: stats?.publishedCourses ?? 0, icon:<BookOpen size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)' },
     { label:'متوسط التقييم', value: stats?.avgRating ? `${stats.avgRating}` : 'لا يوجد', icon:<Star size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
     { label:'إجمالي الإيرادات', value: `${(stats?.totalRevenue || 0).toFixed(0)} ر.س`, icon:<TrendingUp size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
@@ -65,7 +65,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div style={{ flex:1 }}>
                     <div style={{ color: isDark?'#f1f5f9':'#0d0d0d', fontSize:14, fontWeight:600 }}>{c.title}</div>
-                    <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} طالب  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
+                    <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
                   </div>
                   <div style={{ color: isDark?'#94a3b8':'#6b7280', fontSize:13, fontWeight:600 }}>
                     {(c.price || 0)} ر.س

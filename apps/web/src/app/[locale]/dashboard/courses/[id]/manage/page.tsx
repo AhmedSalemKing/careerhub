@@ -674,7 +674,7 @@ export default function ManageCoursePage() {
             </span>
           </div>
           <div className="mt-2 flex gap-4 text-sm text-[color:var(--muted)]">
-            <span>{course._count?.enrollments ?? 0} طالب</span>
+            <span>{course._count?.enrollments ?? 0} مستخدم</span>
             <span>·</span>
             <span>{sections.length} قسم</span>
           </div>

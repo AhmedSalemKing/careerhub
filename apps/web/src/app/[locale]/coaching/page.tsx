@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
 import { notify } from '../../../lib/notify'
@@ -12,7 +12,7 @@ import {
   Clock, Globe, Video, Phone,
   X, User,
   Briefcase, Award, MapPin,
-  Search, Users
+  Search, Users, Info
 } from 'lucide-react'
 import VerifiedBadge from '../../../components/VerifiedBadge'
 
@@ -311,10 +311,13 @@ export default function CoachingPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const specialityParam = searchParams.get('speciality')
+  
   const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null)
   const [bookingConsultant, setBookingConsultant] = useState<Consultant | null>(null)
-  const [search, setSearch] = useState('')
-  const [specialityFilter, setSpecialityFilter] = useState<string | null>(null)
+  const [search, setSearch] = useState(specialityParam || '')
+  const [specialityFilter, setSpecialityFilter] = useState<string | null>(specialityParam)
   const [visibleCount, setVisibleCount] = useState(6)
 
   const { data: consultants = [], isLoading } = useQuery<Consultant[]>({
@@ -336,9 +339,21 @@ export default function CoachingPage() {
   const filteredConsultants = useMemo(() => {
     return (consultants || []).filter((c: any) => {
       const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
-      const spec = (c.speciality || '').toLowerCase()
-      const matchSearch = !search || name.includes(search.toLowerCase()) || spec.includes(search.toLowerCase())
-      const matchFilter = !specialityFilter || c.speciality === specialityFilter
+      const spec = (c.profile?.speciality || c.speciality || '').toLowerCase()
+      const areas = (c.profile?.consultingAreas || '').toLowerCase()
+      const bio = (c.profile?.bio || c.bio || '').toLowerCase()
+      const searchLower = search.toLowerCase()
+      
+      const matchSearch = !search || 
+        name.includes(searchLower) || 
+        spec.includes(searchLower) ||
+        areas.includes(searchLower) ||
+        bio.includes(searchLower)
+      
+      const matchFilter = !specialityFilter || 
+        spec.includes(specialityFilter.toLowerCase()) ||
+        areas.includes(specialityFilter.toLowerCase())
+      
       return matchSearch && matchFilter
     })
   }, [consultants, search, specialityFilter])
@@ -353,6 +368,33 @@ export default function CoachingPage() {
           {isAr ? 'تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي' : 'Connect with top professional consultants for personalized guidance'}
         </p>
       </div>
+
+      {/* Filter banner from career path */}
+      {specialityParam && (
+        <div style={{
+          padding:'12px 16px', borderRadius:12, marginBottom:16,
+          background:'rgba(81,32,200,0.08)',
+          border:'1px solid rgba(81,32,200,0.2)',
+          display:'flex', alignItems:'center', gap:8,
+        }}>
+          <Info size={14} color="#5120c8" />
+          <span style={{ color:'#5120c8', fontSize:13, fontWeight:600 }}>
+            {isAr 
+              ? `عرض المستشارين في تخصص: ${specialityParam}`
+              : `Showing consultants for: ${specialityParam}`
+            }
+          </span>
+          <button 
+            onClick={() => { setSpecialityFilter(null); setSearch('') }} 
+            style={{
+              marginInlineStart:'auto', background:'none', border:'none', 
+              color:'#94a3b8', cursor:'pointer', fontSize:18 
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6 max-w-lg mx-auto">

@@ -157,7 +157,7 @@ function CourseCard({ course, locale }: { course: any; locale: string }) {
         <div className="flex items-center gap-4 mt-3 text-sm text-[color:var(--muted)]">
           <div className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />
-            <span>{course._count?.enrollments ?? 0} طالب</span>
+            <span>{course._count?.enrollments ?? 0} مستخدم</span>
           </div>
           <div className="flex items-center gap-1.5">
             <BookOpen className="h-3.5 w-3.5" />

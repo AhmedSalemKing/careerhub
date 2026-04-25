@@ -258,14 +258,14 @@ export default function AdminCreateSessionPage() {
               <div>
                 <label style={labelStyle}>
                   <User size={14} style={{ marginRight: 4 }} />
-                  {isAr ? 'الطالب (اختياري)' : 'Student (optional)'}
+                  {isAr ? 'المستخدم (اختياري)' : 'User (optional)'}
                 </label>
                 <select
                   value={form.studentId}
                   onChange={(e) => set('studentId', e.target.value)}
                   style={inputStyle}
                 >
-                  <option value="">{isAr ? 'اختر الطالب' : 'Select Student'}</option>
+                  <option value="">{isAr ? 'اختر المستخدم' : 'Select User'}</option>
                   {(students as any[]).map((student: any) => (
                     <option key={student.id} value={student.id}>
                       {student.profile?.firstName} {student.profile?.lastName}

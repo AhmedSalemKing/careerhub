@@ -78,7 +78,7 @@ export default function AdminCertificatesPage() {
               <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
                 <tr>
                   <th className="px-4 py-3 text-right font-semibold">{t('th_serial')}</th>
-                  <th className="px-4 py-3 text-right font-semibold">الطالب</th>
+                  <th className="px-4 py-3 text-right font-semibold">المستخدم</th>
                   <th className="px-4 py-3 text-right font-semibold">الكورس</th>
                   <th className="px-4 py-3 text-right font-semibold">{t('th_issued')}</th>
                   <th className="px-4 py-3 text-right font-semibold">عرض</th>

@@ -491,7 +491,7 @@
   },
   "course": {
     "not_found": "الكورس غير موجود",
-    "student": "طالب",
+    "student": "مستخدم",
     "lesson": "درس",
     "section": "قسم",
     "beginner": "مبتدئ",
