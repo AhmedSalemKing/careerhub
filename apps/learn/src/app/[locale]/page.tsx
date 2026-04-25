@@ -85,7 +85,15 @@ export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null)
   const [apiCourses, setApiCourses] = useState<any[]>([])
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -145,7 +153,7 @@ export default function HomePage() {
     { icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 35, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
   ]
 
-  const featuredCourses = apiCourses.slice(0, 3).map((c: any, i: number) => ({
+  const featuredCourses = apiCourses.map((c: any, i: number) => ({
     id: c.id,
     title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
     duration: c.duration || 0,
@@ -407,7 +415,13 @@ export default function HomePage() {
             </div>
           )}
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile 
+              ? 'repeat(2, 1fr)'
+              : 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: isMobile ? 12 : 20,
+          }}>
             {featuredCourses.map((course, index) => (
               <div key={course.id} className="group relative rounded-xl overflow-hidden card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--navy)' }}>
