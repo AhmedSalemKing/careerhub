@@ -145,6 +145,15 @@ async getCourses(
     return { success: true, data: courses };
   }
 
+  @Get('my-enrollments')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get enrolled courses for current user with progress' })
+  async getMyEnrollments(@Request() req: any) {
+    const enrollments = await this.coursesService.getMyEnrollments(req.user.id);
+    return { success: true, data: enrollments };
+  }
+
   // ─── Instructor endpoints ─────────────────────────────────────
   @Get('instructor/stats')
   @UseGuards(JwtAuthGuard)

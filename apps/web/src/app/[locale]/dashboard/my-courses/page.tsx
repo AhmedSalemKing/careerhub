@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { BookOpen, Users, PlusCircle, Edit3, Settings } from 'lucide-react'
+import { BookOpen, Clock, Users, Play, CheckCircle2, Award } from 'lucide-react'
 import { get } from '../../../../lib/api'
 import { AuthGate } from '../../../components/AuthGate'
 import { getMediaUrl } from '../../../../lib/media'
@@ -18,53 +18,27 @@ export default function MyCoursesPage() {
 
   useEffect(() => { hydrate() }, [hydrate])
 
-  const canCreateCourse = user?.accountType === 'INSTRUCTOR' || user?.accountType === 'ADMIN'
-
-  useEffect(() => {
-    if (user && user.accountType === 'CONSULTANT') {
-      router.push(`/${locale}/dashboard`)
-    }
-  }, [user, locale, router])
-
-  const { data: courses = [], isLoading } = useQuery({
-    queryKey: ['instructor-my-courses'],
+  const { data: enrollments = [], isLoading } = useQuery({
+    queryKey: ['my-enrollments'],
     queryFn: async () => {
-      const res = await get('/courses/my-courses')
-      const d = (res?.data as any)?.data ?? (res?.data as any)
-      return Array.isArray(d) ? d : []
+      const res = await get('/courses/my-enrollments')
+      const data = res.data?.data ?? res.data
+      return Array.isArray(data) ? data : []
     },
   })
 
   return (
     <AuthGate>
       <div className="p-6" dir="rtl">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold font-madinet text-foreground">كورساتي</h1>
             <p className="text-sm text-[color:var(--muted)] mt-0.5">
-              {courses.length > 0 ? `${courses.length} كورس` : 'لا توجد كورسات بعد'}
+              {enrollments.length > 0 ? `${enrollments.length} كورس مشترك` : 'لا توجد كورسات بعد'}
             </p>
           </div>
-          {canCreateCourse && (
-            <Link
-              href={`/${locale}/dashboard/create-course`}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '10px 20px', borderRadius: 12,
-                background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
-                color: '#fff', textDecoration: 'none',
-                fontWeight: 700, fontSize: 14,
-                boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
-              }}
-            >
-              <PlusCircle size={16} />
-              إنشاء كورس جديد
-            </Link>
-          )}
         </div>
 
-        {/* Loading */}
         {isLoading && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -79,107 +53,130 @@ export default function MyCoursesPage() {
           </div>
         )}
 
-        {/* Empty */}
-        {!isLoading && courses.length === 0 && (
+        {!isLoading && enrollments.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[color:var(--border)] p-16 text-center">
             <BookOpen className="h-12 w-12 opacity-20 mb-4" />
             <h2 className="text-lg font-bold font-madinet text-foreground mb-2">لا توجد كورسات بعد</h2>
-            <p className="text-sm text-[color:var(--muted)] mb-6">ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب</p>
-            {canCreateCourse && (
-              <Link
-                href={`/${locale}/dashboard/create-course`}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '12px 28px', borderRadius: 12, marginTop: 20,
-                  background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
-                  color: '#fff', textDecoration: 'none',
-                  fontWeight: 700, fontSize: 15,
-                  boxShadow: '0 4px 20px rgba(81,32,200,0.3)',
-                }}
-              >
-                <PlusCircle size={18} />
-                إنشاء كورسك الأول
-              </Link>
-            )}
+            <p className="text-sm text-[color:var(--muted)] mb-6">ابدأ رحلة التعلم واشترك في كورسك الأول</p>
+            <Link
+              href={`/${locale}/courses`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                padding: '12px 28px', borderRadius: 12, marginTop: 20,
+                background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
+                color: '#fff', textDecoration: 'none',
+                fontWeight: 700, fontSize: 15,
+                boxShadow: '0 4px 20px rgba(81,32,200,0.3)',
+              }}
+            >
+              استكشف الكورسات
+            </Link>
           </div>
         )}
 
-        {/* Grid */}
-        {!isLoading && courses.length > 0 && (
+        {!isLoading && enrollments.length > 0 && (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course: any) => (
-              <CourseCard key={course.id} course={course} locale={locale} />
-            ))}
+            {enrollments.map((enrollment: any) => {
+              const course = enrollment.course || enrollment
+              const progress = enrollment.progress || 0
+              const completed = enrollment.completedAt
+              const instructor = course.instructor
+              const instructorName = instructor?.profile 
+                ? `${instructor.profile.firstName || ''} ${instructor.profile.lastName || ''}`.trim()
+                : ''
+
+              return (
+                <div 
+                  key={enrollment.id} 
+                  className="group rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 cursor-pointer"
+                  onClick={() => router.push(`/${locale}/learn/${course.id}`)}
+                >
+                  <div className="relative h-44 bg-[color:var(--surface-2)] overflow-hidden">
+                    {course.thumbnail ? (
+                      <img
+                        src={getMediaUrl(course.thumbnail) ?? ''}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        alt={course.titleEn}
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <BookOpen className="h-10 w-10 opacity-20" />
+                      </div>
+                    )}
+                    {completed && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-lg bg-green-500 px-2.5 py-1">
+                        <CheckCircle2 className="h-3 w-3 text-white" />
+                        <span className="text-[11px] font-bold text-white">مكتمل</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-4">
+                    <h3 className="font-bold text-foreground truncate">{course.titleEn}</h3>
+                    {course.titleAr && (
+                      <p className="text-sm text-[color:var(--muted)] truncate mt-0.5">{course.titleAr}</p>
+                    )}
+                    {instructorName && (
+                      <p className="text-xs text-[color:var(--muted)] mt-1">بقلم {instructorName}</p>
+                    )}
+
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-[color:var(--muted)]">التقدم</span>
+                        <span className={`text-xs font-bold ${progress >= 100 ? 'text-green-500' : 'text-primary'}`}>
+                          {Math.round(progress)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-[color:var(--surface-2)] overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ 
+                            width: `${Math.min(progress, 100)}%`,
+                            background: progress >= 100 ? '#16a34a' : '#5120c8'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 mt-3 text-xs text-[color:var(--muted)]">
+                      <div className="flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        <span>{course._count?.lessons ?? 0} دروس</span>
+                      </div>
+                      {course.duration > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{course.duration} ساعة</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      className={`mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition-colors ${
+                        completed 
+                          ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                          : 'bg-primary text-white hover:bg-primary/90'
+                      }`}
+                    >
+                      {completed ? (
+                        <>
+                          <Award className="h-4 w-4" />
+                          عرض الشهادة
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4" />
+                          {progress > 0 ? 'متابعة' : 'ابدأ التعلم'}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
     </AuthGate>
-  )
-}
-
-function CourseCard({ course, locale }: { course: any; locale: string }) {
-  const statusConfig = {
-    PUBLISHED: { label: 'منشور', class: 'bg-green-500/20 text-green-400' },
-    DRAFT: { label: 'مسودة', class: 'bg-amber-500/20 text-amber-400' },
-    ARCHIVED: { label: 'مؤرشف', class: 'bg-gray-500/20 text-gray-400' },
-  }
-  const status = statusConfig[course.status as keyof typeof statusConfig] ?? statusConfig.DRAFT
-
-  return (
-    <div className="group rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5">
-      {/* Thumbnail */}
-      <div className="relative h-44 bg-[color:var(--surface-2)] overflow-hidden">
-        {course.thumbnail ? (
-          <img
-            src={getMediaUrl(course.thumbnail) ?? ''}
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-            alt={course.titleEn}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <BookOpen className="h-10 w-10 opacity-20" />
-          </div>
-        )}
-        <div className="absolute top-3 right-3">
-          <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.class}`}>
-            {status.label}
-          </span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="p-4" dir="rtl">
-        <h3 className="font-bold text-foreground truncate">{course.titleEn}</h3>
-        {course.titleAr && (
-          <p className="text-sm text-[color:var(--muted)] truncate mt-0.5">{course.titleAr}</p>
-        )}
-
-        <div className="flex items-center gap-4 mt-3 text-sm text-[color:var(--muted)]">
-          <div className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" />
-            <span>{course._count?.enrollments ?? 0} مستخدم</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <BookOpen className="h-3.5 w-3.5" />
-            <span>{course._count?.sections ?? 0} قسم</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-[color:var(--border)]">
-          <span className="text-sm font-bold text-foreground">
-            {course.price === 0 ? 'مجاني' : `${course.price} ريال`}
-          </span>
-          <div className="flex gap-2">
-            <Link
-              href={`/${locale}/dashboard/courses/${course.id}/manage`}
-              className="flex items-center gap-1.5 rounded-xl bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-            >
-              <Settings className="h-3.5 w-3.5" />
-              إدارة
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
   )
 }
