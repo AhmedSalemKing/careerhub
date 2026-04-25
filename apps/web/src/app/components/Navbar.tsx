@@ -203,7 +203,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               <Shield className="h-4 w-4" color="#5120c8" />
-              لوحة الإدارة
+              {t('admin')}
             </Link>
           )}
           {user?.accountType === 'INSTRUCTOR' && (
@@ -216,7 +216,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               <BookOpen className="h-4 w-4" color="#2BBFA3" />
-              لوحة المحاضر
+              {locale === 'ar' ? 'لوحة المحاضر' : 'Instructor Panel'}
             </Link>
           )}
           {user?.accountType === 'CONSULTANT' && (
@@ -229,7 +229,7 @@ function UserDropdown({ locale }: { locale: string }) {
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
               <Calendar className="h-4 w-4" color="#f59e0b" />
-              لوحة المستشار
+              {locale === 'ar' ? 'لوحة المستشار' : 'Consultant Panel'}
             </Link>
           )}
 
@@ -344,7 +344,7 @@ export function Navbar() {
         <div className="dw-container flex h-[68px] items-center justify-between">
 
           {/* ═══ Branding (Logo + Text) ═══ */}
-          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:mr-6 md:mr-8" style={{ marginRight: '12px' }}>
+          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:me-6 md:me-8" style={{ marginInlineEnd: '12px' }}>
             <img
               src="/logo-icon.png"
               alt="DeveWay"
@@ -430,7 +430,7 @@ export function Navbar() {
               }}
             >
               {t('training')}
-              <span className="inline-block ml-1 text-[10px] opacity-35">↗</span>
+              <span className="inline-block ms-1 text-[10px] opacity-35">↗</span>
             </a>
           </nav>
 
@@ -482,8 +482,8 @@ export function Navbar() {
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
-                      ? `${(walletData?.balance || 0).toFixed(0)} ر.س`
-                      : '0 ر.س'
+                      ? `${(walletData?.balance || 0).toFixed(0)} ${isAr ? 'ر.س' : 'SAR'}`
+                      : `0 ${isAr ? 'ر.س' : 'SAR'}`
                     }
                   </span>
                 </Link>
@@ -675,7 +675,7 @@ export function Navbar() {
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Wallet className="h-3.5 w-3.5" />
-                  رصيدي
+                  {isAr ? 'رصيدي' : 'Wallet'}
                 </Link>
               )}
             </div>

@@ -23,10 +23,11 @@ export function LanguageSwitcher() {
   const currentLang = languages.find((l) => l.code === locale)
 
   const switchLocale = (newLocale: string) => {
+    if (newLocale === locale) { setIsOpen(false); return }
     const segments = pathname.split('/')
     segments[1] = newLocale
-    router.push(segments.join('/'))
     setIsOpen(false)
+    window.location.href = segments.join('/')
   }
 
   useEffect(() => {
