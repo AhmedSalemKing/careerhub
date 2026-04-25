@@ -104,8 +104,6 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
       {/* MAIN DOCK - show only on mobile (hidden on lg+) */}
       <div
         className={`flex ${expanded ? '!flex' : ''}`}
-        style={{ ...dockStyle }}
-      >
         style={dockStyle}
       >
         {items.map((item, i) => {
