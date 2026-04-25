@@ -313,7 +313,7 @@ export function Navbar() {
 
   /* ═══ Navigation Links ═══ */
   const links = [
-    { href: `/#career-paths`, label: t('careers'), isAnchor: true, sectionId: 'career-paths' },
+    { href: `/${locale}/careers`, label: t('careers') },
     { href: `/${locale}/coaching`, label: t('coaches') },
   ]
 
