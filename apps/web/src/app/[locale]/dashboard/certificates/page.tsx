@@ -113,7 +113,7 @@ export default function CertificatesPage() {
             أكمل كورسًا للحصول على شهادتك الأولى
           </p>
           <Link
-            href="/ar/courses"
+            href={`https://devewayhub.vercel.app/ar/courses`}
             style={{
               padding: '12px 28px',
               background: '#5120c8',
@@ -254,7 +254,7 @@ export default function CertificatesPage() {
                     <Download size={15} /> تحميل
                   </a>
                   <a
-                    href={`${process.env.NEXT_PUBLIC_LEARN_URL || ''}/ar/certificate/${cert.serialNumber}`}
+                    href={`https://devewayhub.vercel.app/ar/certificate/${cert.serialNumber}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
