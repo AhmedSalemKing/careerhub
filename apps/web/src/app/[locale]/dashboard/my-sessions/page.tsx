@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get, patch, post } from '../../../../lib/api'
@@ -10,7 +10,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import {
   Calendar, Clock, Video, Globe, Phone,
   CheckCircle, XCircle, AlertCircle,
-  CreditCard, RefreshCw, Wallet,
+  CreditCard, RefreshCw, Wallet, X
 } from 'lucide-react'
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -94,6 +94,19 @@ export default function MySessionsPage() {
   const [newDate, setNewDate] = useState('')
   const [payingSession, setPayingSession] = useState<any>(null)
   const [clientSecret, setClientSecret] = useState('')
+  const [payMethod, setPayMethod] = useState<'wallet' | 'card'>('wallet')
+  const [walletBalance, setWalletBalance] = useState(0)
+  const isAr = locale === 'ar'
+
+  // Fetch wallet when opening payment modal
+  useEffect(() => {
+    if (payingSession) {
+      get('/wallet').then(res => {
+        const data = res.data?.data ?? {}
+        setWalletBalance(data.walletBalance || data.balance || 0)
+      }).catch(() => {})
+    }
+  }, [payingSession])
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['my-sessions', activeTab],
@@ -376,7 +389,7 @@ export default function MySessionsPage() {
                             onClick={() => startPayment(session)}
                             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">
                             <CreditCard className="h-4 w-4" />
-                            دفع {session.price} ريال
+                            {isAr ? 'ادفع' : 'Pay'} {session.price} SAR
                           </button>
                         </>
                       )}
@@ -407,35 +420,135 @@ export default function MySessionsPage() {
         </div>
       )}
 
-      {/* Stripe Payment Modal */}
-      {payingSession && clientSecret && stripePromise && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
-          <div className="absolute inset-0 bg-black/70" onClick={() => { setPayingSession(null); setClientSecret('') }} />
-          <div className="relative z-10 w-full max-w-md rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-            <h3 className="font-bold text-foreground text-xl mb-2">
-              دفع رسوم الاستشارة
-            </h3>
-            <p className="text-[color:var(--muted)] text-sm mb-4">
-              {payingSession.price} ريال — استشارة مع{' '}
-              {payingSession.consultant?.profile?.firstName}
-            </p>
-            <Elements stripe={stripePromise} options={{
-              clientSecret,
-              appearance: {
-                theme: 'night',
-                variables: { colorPrimary: '#5120c8', borderRadius: '12px' }
-              }
-            }}>
-              <SessionPayForm
-                sessionId={payingSession.id}
-                onSuccess={() => {
-                  setPayingSession(null)
-                  setClientSecret('')
-                  notify.success('تم الدفع بنجاح!')
-                  qc.invalidateQueries({ queryKey: ['my-sessions'] })
+      {/* Payment Modal - Bottom Sheet */}
+      {payingSession && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70">
+          <div className="absolute inset-0" onClick={() => setPayingSession(null)} />
+          <div className="relative z-10 w-full max-w-lg bg-[color:var(--surface)] rounded-t-3xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5 shrink-0">
+              <div>
+                <h3 className="font-bold text-foreground text-lg">
+                  {isAr ? 'دفع رسوم الجلسة' : 'Pay Session Fee'}
+                </h3>
+                <p className="text-sm text-[color:var(--muted)] mt-1">
+                  {isAr ? 'اختر طريقة الدفع' : 'Choose payment method'}
+                </p>
+              </div>
+              <button onClick={() => setPayingSession(null)} className="p-2 rounded-full bg-[color:var(--surface-2)]">
+                <X className="h-4 w-4 text-[color:var(--muted)]" />
+              </button>
+            </div>
+            
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Payment method selector */}
+              <div>
+                <p className="text-sm font-semibold text-[color:var(--muted)] mb-3">
+                  {isAr ? 'اختر طريقة الدفع' : 'Select Payment Method'}
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setPayMethod('wallet')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      payMethod === 'wallet' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-[color:var(--border)]'
+                    }`}
+                  >
+                    <Wallet className={`h-5 w-5 mx-auto mb-2 ${payMethod === 'wallet' ? 'text-primary' : 'text-[color:var(--muted)]'}`} />
+                    <div className={`text-sm font-bold ${payMethod === 'wallet' ? 'text-primary' : 'text-foreground'}`}>
+                      {isAr ? 'المحفظة' : 'Wallet'}
+                    </div>
+                    <div className="text-xs text-[color:var(--muted)] mt-1">
+                      {walletBalance.toFixed(2)} SAR
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setPayMethod('card')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      payMethod === 'card' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-[color:var(--border)]'
+                    }`}
+                  >
+                    <CreditCard className={`h-5 w-5 mx-auto mb-2 ${payMethod === 'card' ? 'text-primary' : 'text-[color:var(--muted)]'}`} />
+                    <div className={`text-sm font-bold ${payMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>
+                      {isAr ? 'بطاقة ائتمان' : 'Credit Card'}
+                    </div>
+                  </button>
+                </div>
+                
+                {/* Insufficient balance warning */}
+                {payMethod === 'wallet' && walletBalance < (payingSession.price || 0) && (
+                  <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-red-500/10 text-red-400 text-sm">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>
+                      {isAr 
+                        ? `رصيد غير كافٍ. تحتاج ${((payingSession.price || 0) - walletBalance).toFixed(2)} SAR إضافية`
+                        : `Insufficient balance. Need ${((payingSession.price || 0) - walletBalance).toFixed(2)} SAR more`
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Session summary */}
+              <div className="p-4 rounded-xl bg-[color:var(--surface-2)]">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-[color:var(--muted)]">{isAr ? 'الموضوع' : 'Topic'}</span>
+                  <span className="font-semibold text-foreground">{payingSession.topic}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[color:var(--muted)]">{isAr ? 'المبلغ' : 'Amount'}</span>
+                  <span className="text-primary font-bold">{payingSession.price} SAR</span>
+                </div>
+              </div>
+              
+              {/* Stripe form only when card selected */}
+              {payMethod === 'card' && clientSecret && stripePromise && (
+                <Elements stripe={stripePromise} options={{
+                  clientSecret,
+                  appearance: { theme: 'night', variables: { colorPrimary: '#5120c8', borderRadius: '12px' } }
+                }}>
+                  <SessionPayForm
+                    sessionId={payingSession.id}
+                    onSuccess={() => {
+                      setPayingSession(null)
+                      setClientSecret('')
+                      notify.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+                      qc.invalidateQueries({ queryKey: ['my-sessions'] })
+                    }}
+                  />
+                </Elements>
+              )}
+            </div>
+            
+            {/* Sticky footer */}
+            <div className="border-t border-[color:var(--border)] p-5 shrink-0">
+              <button
+                onClick={async () => {
+                  if (payMethod === 'wallet') {
+                    if (walletBalance < (payingSession.price || 0)) return
+                    try {
+                      await post(`/sessions/${payingSession.id}/pay-wallet`, {})
+                      notify.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+                      setPayingSession(null)
+                      qc.invalidateQueries({ queryKey: ['my-sessions'] })
+                    } catch(e: any) {
+                      notify.error(e?.response?.data?.message || e?.message || (isAr ? 'خطأ في الدفع' : 'Payment error'))
+                    }
+                  }
                 }}
-              />
-            </Elements>
+                disabled={payMethod === 'wallet' && walletBalance < (payingSession.price || 0)}
+                className="w-full rounded-xl bg-primary py-3 font-bold text-white disabled:opacity-60"
+              >
+                {payMethod === 'wallet' 
+                  ? `${isAr ? 'ادفع ' : 'Pay '}${payingSession.price} SAR`
+                  : `${isAr ? 'ادفع الآن ' : 'Pay Now '}${payingSession.price} SAR`
+                }
+              </button>
+            </div>
           </div>
         </div>
       )}
