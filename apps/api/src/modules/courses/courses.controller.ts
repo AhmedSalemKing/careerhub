@@ -113,6 +113,15 @@ async getCourses(
     };
   }
 
+  @Get('bundles')
+  @ApiOperation({ summary: 'Get all course bundles' })
+  @ApiResponse({ status: 200, description: 'Bundles retrieved successfully' })
+  @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
+  async getBundles(@Query('language') language?: string) {
+    const bundles = await this.coursesService.getBundles(language || 'en');
+    return { success: true, data: bundles };
+  }
+
   @Get('enrolled')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

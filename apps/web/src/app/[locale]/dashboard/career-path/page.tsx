@@ -603,6 +603,15 @@ export default function DashboardCareerPathPage() {
     },
   })
 
+  const { data: bundles = [] } = useQuery({
+    queryKey: ['course-bundles'],
+    queryFn: async () => {
+      const res = await get('/courses/bundles')
+      const d = res as any
+      return d?.data?.data ?? d?.data ?? []
+    },
+  })
+
   const latestAiTitle = sessions
     ?.find((s: HistorySession) => s.status === 'COMPLETED' && s.report?.topSpecializations?.length)
     ?.report?.topSpecializations?.[0]?.titleEn
@@ -768,6 +777,53 @@ export default function DashboardCareerPathPage() {
                   </button>
                 </div>
               </div>
+
+              {bundles.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <h4 style={{ color: textColor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
+                    {isAr ? 'حزم الكورسات الداعمة' : 'Supporting Course Bundles'}
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {bundles.map((bundle: any) => (
+                      <div key={bundle.id} style={{
+                        padding: '16px 18px', borderRadius: 14,
+                        border: `1px solid ${cardBorder}`,
+                        background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa',
+                        display: 'flex', alignItems: 'center', gap: 14,
+                      }}>
+                        <div style={{
+                          width: 42, height: 42, borderRadius: 10, flexShrink: 0,
+                          background: 'rgba(81,32,200,0.1)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                          <Package size={18} color="#5120c8" />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ color: textColor, fontSize: 14, fontWeight: 700 }}>
+                            {bundle.title}
+                          </div>
+                          <div style={{ color: subtextColor, fontSize: 12, marginTop: 3 }}>
+                            {bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')}
+                          style={{
+                            padding: '8px 14px', borderRadius: 10,
+                            background: '#5120c8', color: '#fff',
+                            border: 'none', cursor: 'pointer',
+                            fontSize: 12, fontWeight: 700,
+                            transition: 'opacity 0.15s',
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                          onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
+                          {isAr ? 'عرض' : 'View'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-2xl border p-10 text-center" style={{ background: cardBg, borderColor: cardBorder }}>
                 <BookOpen className="mx-auto mb-4 h-12 w-12" style={{ color: subtextColor }} />

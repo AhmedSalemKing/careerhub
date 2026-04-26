@@ -208,6 +208,51 @@ export class CoursesService {
     }));
   }
 
+  async getBundles(language: string = 'en') {
+    try {
+      const bundles = await this.prisma.courseBundle.findMany({
+        where: { isActive: true },
+        include: {
+          bundles: {
+            include: {
+              course: {
+                select: { id: true, slug: true, titleEn: true, titleAr: true, thumbnail: true, price: true }
+              }
+            },
+            orderBy: { order: 'asc' }
+          },
+          _count: {
+            select: { bundles: true }
+          }
+        },
+        orderBy: [
+          { isFeatured: 'desc' },
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' }
+        ]
+      });
+
+      return bundles.map(bundle => ({
+        id: bundle.id,
+        title: language === 'ar' ? bundle.titleAr : bundle.titleEn,
+        description: bundle.description,
+        price: bundle.price,
+        discount: bundle.discount,
+        isFeatured: bundle.isFeatured,
+        courses: bundle.bundles.map(bc => ({
+          id: bc.course.id,
+          slug: bc.course.slug,
+          title: language === 'ar' ? bc.course.titleAr : bc.course.titleEn,
+          thumbnail: bc.course.thumbnail,
+          price: bc.course.price
+        })),
+        coursesCount: bundle._count.bundles
+      }));
+    } catch {
+      return [];
+    }
+  }
+
   async getMyCourses(userId: string, options: { page: number; limit: number; status?: string }) {
     const { page, limit, status } = options;
     const skip = (page - 1) * limit;

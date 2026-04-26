@@ -345,6 +345,7 @@ model Course {
   payments     Payment[]
   cartItems    CartItem[]
   ratings      Rating[]
+  bundles     BundleCourse[]
 
   @@index([status])
   @@index([isFeatured])
@@ -352,6 +353,39 @@ model Course {
   @@index([instructorId])
   @@index([categoryId])
   @@index([careerPathId, status])
+}
+
+model CourseBundle {
+  id          String   @id @default(cuid())
+  titleEn      String
+  titleAr     String
+  description String?
+  price       Float    @default(0)
+  discount    Float    @default(0)
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bundles     BundleCourse[]
+
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([sortOrder])
+}
+
+model BundleCourse {
+  id        String      @id @default(cuid())
+  bundleId  String
+  courseId  String
+  order    Int         @default(0)
+  bundle   CourseBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  course   Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+  @@index([courseId])
+  @@unique([bundleId, courseId])
 }
 
 model Section {
