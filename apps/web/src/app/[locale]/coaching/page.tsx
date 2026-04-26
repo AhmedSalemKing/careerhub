@@ -244,8 +244,7 @@ export default function CoachingPage() {
                         {areas.length > 3 && <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, background: isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8', border: `1px solid ${border}`, color: subtext }}>+{areas.length - 3}</span>}
                       </div>
                     )}
-                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <div style={{ marginTop: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                       <span style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>
                         {price > 0 ? String(price) : (isAr ? 'مجاني' : 'Free')}
                       </span>
@@ -254,7 +253,6 @@ export default function CoachingPage() {
                           {isAr ? 'ر.س / جلسة' : 'SAR / session'}
                         </span>
                       )}
-                    </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => setSelectedConsultant(c)} style={{ padding: '9px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 12, fontWeight: 600 }}>{isAr ? 'التفاصيل' : 'Details'}</button>
                         <button onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)} style={{ padding: '9px 16px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{isAr ? 'احجز' : 'Book'}<ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} /></button>
