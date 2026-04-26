@@ -11,6 +11,7 @@ import {
   Camera, User, Lock, Bell, Globe, Save,
   Eye, EyeOff, Check, AlertCircle, Moon, Sun,
   Shield, CheckCircle, XCircle, Loader2, CreditCard,
+  ArrowLeftRight
 } from 'lucide-react'
 
 function VerificationSection({ user }: { user: any }) {
@@ -410,6 +411,22 @@ export default function SettingsPage() {
                   <option value="IN_PERSON">{isAr ? 'حضوري' : 'In Person'}</option>
                   <option value="BOTH">{isAr ? 'كلاهما' : 'Both'}</option>
                 </select>
+              </div>
+              <div style={{ marginTop: 16 }}>
+                <a href={`/${locale}/dashboard/consultant-profile`} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '12px 16px', borderRadius: 12,
+                  background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.15)',
+                  textDecoration: 'none', color: '#5120c8',
+                }}>
+                  <ArrowLeftRight size={16} />
+                  <span style={{ flex: 1, fontWeight: 600, fontSize: 13 }}>
+                    {isAr ? 'ملف المستشار المهني (متقدم)' : 'Advanced Consultant Profile'}
+                  </span>
+                  <span style={{ fontSize: 12, opacity: 0.7 }}>
+                    {isAr ? 'تعديل' : 'Edit'}
+                  </span>
+                </a>
               </div>
             </div>
           )}
