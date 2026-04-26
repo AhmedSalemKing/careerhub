@@ -83,6 +83,7 @@ export default function AssessmentPage() {
       setTimeout(() => {
         const res = calculateResults(questions, newAnswers, locale)
         setResults(res)
+        localStorage.setItem('assessmentResults', JSON.stringify(res))
         setPhase('results')
       }, 2500)
     }

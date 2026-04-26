@@ -1,606 +1,73 @@
 'use client'
 
-import { useMemo, useState, useEffect, useCallback } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { useTheme } from 'next-themes'
 import { get, post } from '../../../../lib/api'
-import { AuthGate } from '../../../components/AuthGate'
-import { DashboardShell } from '../../../components/DashboardShell'
-import { CAREER_PATHS, findPathByTitle, CareerPathEntry } from '../../../../lib/career-paths'
-import Link from 'next/link'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Search, Target, ChevronLeft, Check, X,
-  Compass, Sparkles, BookOpen, Users,
-  ArrowRight, Filter, Grid3X3, Star, Zap,
-  DollarSign, CheckCircle2, Code, Palette, TrendingUp,
-  BarChart3, Shield, Package, Settings, Briefcase, Cloud,
-  Megaphone, Rocket, Brain, ShieldCheck, Eye, Globe,
-  MapPin, CheckCircle, Clock, Award
+  Sparkles, Plus, CheckCircle2, BookOpen, BarChart3,
+  ChevronRight, Target, Briefcase, RefreshCw, X,
+  Code2, Palette, TrendingUp, Shield, Settings, Package,
+  BarChart, Users, Award
 } from 'lucide-react'
+import { CAREER_PATHS } from '../../../../lib/career-paths'
 
-const getCategoryIcon = (icon: string, size = 20, color = '#5120c8') => {
-  const iconMap: Record<string, React.ReactNode> = {
-    code: <Code size={size} color={color} />,
-    palette: <Palette size={size} color={color} />,
-    brain: <Brain size={size} color={color} />,
-    shield: <Shield size={size} color={color} />,
-    cloud: <Globe size={size} color={color} />,
-    megaphone: <Megaphone size={size} color={color} />,
-    briefcase: <Briefcase size={size} color={color} />,
-    rocket: <Rocket size={size} color={color} />,
-  }
-  return iconMap[icon] || <Briefcase size={size} color={color} />
+type TabKey = 'paths' | 'assessment' | 'courses'
+
+type AssessmentResult = {
+  track: string
+  score: number
+  normalized: number
+  titleAr: string
+  titleEn: string
 }
 
-type SavedCareerPath = {
-  id: string
-  userId: string
-  pathId: string
-  pathTitle: string
-  pathCategory: string
-  aiRecommended: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-type HistorySession = {
-  id: string
-  status: string
-  completedAt: string | null
-  report: {
-    topSpecializations?: { titleEn?: string; title?: string }[]
-  } | null
-}
-
-const DEMAND_AR: Record<string, string> = {
-  'Very High': 'طلب عالي جداً',
-  'High': 'طلب عالي',
-  'Medium': 'طلب متوسط',
-}
-
-function PathDetailPanel({ 
-  pathId, 
-  onClose 
-}: { 
-  pathId: string
-  onClose: () => void
-}) {
+export default function CareerPathPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'tasks' | 'skills' | 'qualifications' | 'progression'>('tasks')
-
-  const detailPath = useMemo(() => {
-    for (const cat of CAREER_PATHS) {
-      const path = cat.paths.find(p => p.id === pathId)
-      if (path) return path
-    }
-    return null
-  }, [pathId])
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
-
-  if (!detailPath) return null
-
-  const parseSalary = (salaryStr: string) => {
-    const parts = salaryStr.split('-').map(s => parseInt(s.replace(/,/g, '').trim()))
-    return { min: parts[0] || 0, max: parts[1] || 0 }
-  }
-  const salary = parseSalary(detailPath.salary)
-
-  return (
-    <div 
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.7)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-      }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div style={{
-        width: '100%', maxWidth: 600,
-        background: isDark ? '#111111' : '#ffffff',
-        borderRadius: '20px 20px 0 0',
-        maxHeight: '90vh',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
-      }}>
-        <div style={{ padding: '24px 24px 0', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <div>
-              <h2 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 20, fontWeight: 800, margin: 0 }}>
-                {isAr ? detailPath.titleAr : detailPath.title}
-              </h2>
-              <p style={{ color: '#6b7280', fontSize: 13, marginTop: 6 }}>
-                {isAr ? (detailPath.descriptionAr || '') : (detailPath.descriptionEn || '')}
-              </p>
-            </div>
-            <button onClick={onClose} style={{
-              background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4,
-            }}>
-              <X size={20} />
-            </button>
-          </div>
-
-          <div style={{
-            padding: '12px 16px', borderRadius: 12, marginBottom: 16,
-            background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <DollarSign size={16} color="#5120c8" />
-              <span style={{ color: '#6b7280', fontSize: 13 }}>
-                {isAr ? 'متوسط الراتب الشهري' : 'Monthly Salary Range'}
-              </span>
-            </div>
-            <span style={{ color: '#5120c8', fontWeight: 800, fontSize: 15 }}>
-              {salary.min.toLocaleString()} - {salary.max.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 0, scrollbarWidth: 'none' }}>
-            {[
-              { key: 'tasks', label: isAr ? 'المهام' : 'Tasks' },
-              { key: 'skills', label: isAr ? 'المهارات' : 'Skills' },
-              { key: 'qualifications', label: isAr ? 'المؤهلات' : 'Qualifications' },
-              { key: 'progression', label: isAr ? 'التدرج الوظيفي' : 'Career Path' },
-            ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{
-                padding: '8px 14px', borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
-                background: activeTab === tab.key ? '#5120c8' : isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
-                color: activeTab === tab.key ? '#fff' : '#6b7280',
-                fontSize: 13, fontWeight: 600,
-              }}>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 24px' }}>
-          {activeTab === 'tasks' && detailPath.tasks && (
-            <div>
-              {detailPath.tasks.map((task: string, i: number) => (
-                <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc'}` }}>
-                  <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <span style={{ color: '#5120c8', fontSize: 11, fontWeight: 700 }}>{i + 1}</span>
-                  </div>
-                  <span style={{ color: isDark ? '#f1f5f9' : '#374151', fontSize: 14, lineHeight: 1.6 }}>{task}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'skills' && detailPath.skills && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {detailPath.skills.map((skill: string, i: number) => (
-                <div key={i} style={{
-                  padding: '8px 16px', borderRadius: 20,
-                  background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)',
-                  border: '1px solid rgba(81,32,200,0.2)',
-                  color: '#5120c8', fontSize: 13, fontWeight: 600,
-                }}>
-                  {skill}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'qualifications' && detailPath.qualifications && (
-            <div>
-              {detailPath.qualifications.map((qual: string, i: number) => (
-                <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc'}` }}>
-                  <CheckCircle2 size={16} color="#16a34a" style={{ flexShrink: 0, marginTop: 2 }} />
-                  <span style={{ color: isDark ? '#f1f5f9' : '#374151', fontSize: 14 }}>{qual}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'progression' && detailPath.progression && (
-            <div style={{ padding: '8px 0' }}>
-              {detailPath.progression.map((level: string, i: number) => (
-                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    background: i === 0 ? '#5120c8' : isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: i > 0 ? `2px dashed ${isDark ? 'rgba(255,255,255,0.12)' : '#e5e7eb'}` : 'none',
-                  }}>
-                    <span style={{ color: i === 0 ? '#fff' : '#6b7280', fontSize: 13, fontWeight: 700 }}>{i + 1}</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: isDark ? '#f1f5f9' : '#0d0d0d', fontWeight: 600, fontSize: 14 }}>{level}</div>
-                    {i < detailPath.progression.length - 1 && (
-                      <div style={{ color: '#6b7280', fontSize: 11, marginTop: 2 }}>
-                        {isAr ? 'المرحلة التالية' : 'Next level'}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding: '16px 24px 24px', borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'}` }}>
-          <button
-            onClick={() => {
-              router.push(`/${locale}/coaching?speciality=${encodeURIComponent(isAr ? detailPath.titleAr : detailPath.title)}`)
-            }}
-            style={{
-              width: '100%', padding: '12px', borderRadius: 12,
-              background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer',
-              fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}
-          >
-            {isAr ? 'احجز جلسة كوتشينج لهذا المسار' : 'Book Coaching Session'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function PathModal({
-  onClose,
-  currentPathId,
-  onSelect,
-  onShowDetails,
-  isSaving,
-  savingPathId,
-  selectedPaths,
-}: {
-  onClose: () => void
-  currentPathId?: string
-  onSelect: (pathId: string, pathTitle: string, pathCategory: string) => void
-  onShowDetails: (pathId: string) => void
-  isSaving: boolean
-  savingPathId: string | null
-  selectedPaths: string[]
-}) {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
-  const locale = useLocale()
-  const isAr = locale === 'ar'
-  const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
-  const [isVisible, setIsVisible] = useState(false)
-  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
-
-  useEffect(() => {
-    requestAnimationFrame(() => setIsVisible(true))
-  }, [])
-
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose()
-    }
-    window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [])
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
-  }, [])
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q && !activeCategory) return CAREER_PATHS
-    let result = CAREER_PATHS.map((cat) => ({
-      ...cat,
-      paths: cat.paths.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.titleAr.includes(q),
-      ),
-    })).filter((cat) => cat.paths.length > 0)
-    if (activeCategory) {
-      result = result.filter((c) => c.category === activeCategory)
-    }
-    return result
-  }, [search, activeCategory])
-
-  const handleClose = useCallback(() => {
-    setIsVisible(false)
-    setTimeout(onClose, 200)
-  }, [onClose])
-
-  const totalPaths = filtered.reduce((acc, cat) => acc + cat.paths.length, 0)
-
-  const modalBg = isDark ? '#111118' : '#f8fafc'
-  const cardBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
-  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
-  const textColor = isDark ? '#ffffff' : '#0d0d0d'
-  const subtextColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
-
-  return (
-    <div
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 transition-opacity duration-300 ${
-        isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-      }`}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={handleClose} />
-      <div
-        className={`relative z-10 flex h-[93vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl border shadow-2xl shadow-black/50 transition-all duration-300 ease-out ${
-          isVisible ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
-        }`}
-        dir="rtl"
-        style={{ background: modalBg, borderColor: cardBorder }}
-      >
-        <div className="relative flex items-center justify-between border-b px-6 py-5 sm:px-8" style={{ borderColor: cardBorder }}>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 ring-1 ring-primary/20">
-                <Compass className="h-6 w-6 text-primary" />
-              </div>
-              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
-                {totalPaths}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold sm:text-2xl" style={{ color: textColor, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                اختر مسارك المهني
-              </h2>
-              <p className="mt-0.5 text-sm" style={{ color: subtextColor }}>
-                {totalPaths} مسار متاح · اختر ما يناسب طموحاتك
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="group flex h-10 w-10 items-center justify-center rounded-xl transition-all"
-            style={{ background: cardBg, color: subtextColor }}
-          >
-            <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
-          </button>
-        </div>
-
-        <div className="relative space-y-4 border-b px-6 py-5 sm:px-8" style={{ borderColor: cardBorder }}>
-          <div className="relative group">
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-primary">
-              <Search className="h-4 w-4" style={{ color: subtextColor }} />
-            </div>
-            <input
-              type="text"
-              placeholder="ابحث عن تخصص، مهارة، أو كلمة مفتاحية..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-2xl border py-3.5 pr-12 pl-12 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/20"
-              style={{ 
-                background: cardBg, 
-                borderColor: cardBorder, 
-                color: textColor,
-                placeholder: { color: subtextColor }
-              }}
-              autoFocus
-            />
-          </div>
-
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <Filter className="h-4 w-4 shrink-0" style={{ color: subtextColor }} />
-            <button
-              type="button"
-              onClick={() => setActiveCategory(null)}
-              className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
-              style={{
-                background: !activeCategory ? '#5120c8' : cardBg,
-                color: !activeCategory ? '#fff' : subtextColor,
-              }}
-            >
-              <span className="flex items-center gap-1.5">
-                <Grid3X3 className="h-3.5 w-3.5" />
-                الكل ({totalPaths})
-              </span>
-            </button>
-            {CAREER_PATHS.map((cat) => {
-              const isActive = activeCategory === cat.category
-              return (
-                <button
-                  key={cat.category}
-                  type="button"
-                  onClick={() => setActiveCategory(isActive ? null : cat.category)}
-                  className="shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-all duration-200"
-                  style={{
-                    background: isActive ? '#5120c8' : cardBg,
-                    color: isActive ? '#fff' : subtextColor,
-                  }}
-                >
-                  <span className="flex items-center gap-1.5">
-                    <span>{getCategoryIcon(cat.icon, 16, 'inherit')}</span>
-                    <span>{cat.category}</span>
-                    <span className="text-xs" style={{ opacity: isActive ? 0.8 : 0.4 }}>
-                      ({cat.paths.length})
-                    </span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6 sm:px-8">
-          {filtered.map((cat, catIndex) => (
-            <section key={cat.category}>
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: cardBg }}>
-                  {getCategoryIcon(cat.icon, 20)}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold" style={{ color: textColor }}>{cat.category}</h3>
-                  <p className="text-xs" style={{ color: subtextColor }}>{cat.paths.length} تخصص متاح</p>
-                </div>
-              </div>
-
-              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {cat.paths.map((path, pathIndex) => {
-                  const isSelected = currentPathId === path.id || selectedPaths.includes(path.id)
-                  const isSavingThis = isSaving && savingPathId === path.id
-                  const isHovered = hoveredCard === path.id
-                  const isMultiSelected = selectedPaths.includes(path.id)
-                  
-                  return (
-                    <div
-                      key={path.id}
-                      className="group relative overflow-hidden rounded-2xl border p-4 text-right transition-all duration-300 ease-out"
-                      style={{
-                        background: cardBg,
-                        borderColor: isSelected ? 'rgba(81,32,200,0.5)' : cardBorder,
-                        borderWidth: isMultiSelected ? '2px' : '1px',
-                        cursor: isSaving ? 'not-allowed' : 'pointer',
-                        opacity: isSaving && !isSavingThis ? 0.6 : 1,
-                      }}
-                      onMouseEnter={() => setHoveredCard(path.id)}
-                      onMouseLeave={() => setHoveredCard(null)}
-                    >
-                      {isSelected && !isMultiSelected && (
-                        <div className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/40">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-                      {isMultiSelected && (
-                        <div className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/40">
-                          <CheckCircle2 className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-
-                      {isSavingThis && (
-                        <div className="absolute left-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                        </div>
-                      )}
-
-                      <div className="relative">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <h4 className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: textColor }}>
-                            {path.title}
-                          </h4>
-                        </div>
-
-                        <p className="text-xs line-clamp-1 mb-3" style={{ color: subtextColor }}>
-                          {path.titleAr}
-                        </p>
-
-                        <div className="mb-3 flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: 'rgba(81,32,200,0.1)', color: '#5120c8' }}>
-                            {DEMAND_AR[path.demand] ?? path.demand}
-                          </span>
-                          <span className="rounded-full border px-2.5 py-1 text-[11px]" style={{ borderColor: cardBorder, color: subtextColor }}>
-                            {path.level}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 pt-3" style={{ borderTop: `1px solid ${cardBorder}` }}>
-                          <DollarSign size={16} style={{ color: subtextColor }} />
-                          <span className="text-sm font-bold" style={{ color: textColor }}>{path.salary}</span>
-                          <span className="text-xs" style={{ color: subtextColor }}>SAR / شهرياً</span>
-                        </div>
-
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onShowDetails(path.id) }}
-                          className="mt-3 w-full rounded-lg py-2 text-xs font-medium transition-all"
-                          style={{ 
-                            background: cardBg, 
-                            border: `1px solid ${cardBorder}`, 
-                            color: subtextColor 
-                          }}
-                        >
-                          {isAr ? 'التفاصيل' : 'Details'}
-                        </button>
-
-                        <button
-                          onClick={() => onSelect(path.id, path.title, cat.category)}
-                          disabled={isSaving}
-                          className="mt-2 w-full rounded-lg py-2 text-xs font-bold text-white transition-all disabled:opacity-60"
-                          style={{ background: '#5120c8' }}
-                        >
-                          {isAr ? 'اختيار' : 'Select'}
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          ))}
-
-          {filtered.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl" style={{ background: cardBg }}>
-                <Search className="h-8 w-8" style={{ color: subtextColor }} />
-              </div>
-              <h3 className="text-lg font-semibold" style={{ color: textColor }}>لا توجد نتائج</h3>
-              <p className="mt-2 max-w-sm text-sm" style={{ color: subtextColor }}>
-                لم نجد أي تخصص يطابق &ldquo;{search}&rdquo;
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="relative flex items-center justify-between border-t px-6 py-4 sm:px-8" style={{ borderColor: cardBorder, background: cardBg }}>
-          <div className="flex items-center gap-3 text-xs" style={{ color: subtextColor }}>
-            <Zap className="h-3.5 w-3.5" />
-            <span>اختر المسار وسيتم تحديث خطة التعلم تلقائياً</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="rounded-xl border px-5 py-2.5 text-sm font-medium transition"
-              style={{ borderColor: cardBorder, color: subtextColor }}
-            >
-              إلغاء
-            </button>
-            {currentPathId && (
-              <div className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium" style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-                <Star className="h-4 w-4" />
-                تم اختيار مسار بالفعل
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default function DashboardCareerPathPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
-  const locale = useLocale()
-  const isAr = locale === 'ar'
-  const router = useRouter()
-  const qc = useQueryClient()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [detailPathId, setDetailPathId] = useState<string | null>(null)
-  const [savingPathId, setSavingPathId] = useState<string | null>(null)
+  
+  const [activeTab, setActiveTab] = useState<TabKey>('paths')
   const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+  const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
+  
+  const bg = isDark ? '#0d0d0d' : '#fafafa'
+  const cardBg = isDark ? '#111111' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
+  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const subtext = isDark ? '#94a3b8' : '#6b7280'
 
-  const { data: myPath, isLoading } = useQuery({
-    queryKey: ['my-career-path'],
-    queryFn: async () => {
-      const res = await get('/career/my-path')
-      const d = (res as any)?.data?.data
-      return d?.path ?? null
-    },
-  })
+  useEffect(() => {
+    try {
+      const savedPaths = localStorage.getItem('selectedCareerPaths')
+      const savedResults = localStorage.getItem('assessmentResults')
+      if (savedPaths) setSelectedPaths(JSON.parse(savedPaths))
+      if (savedResults) setAssessmentResults(JSON.parse(savedResults))
+      else if (!savedResults) setActiveTab('assessment')
+    } catch(e) {}
+  }, [])
 
-  const { data: sessions } = useQuery({
-    queryKey: ['ai-assessment-history-career'],
+  const togglePath = (id: string) => {
+    setSelectedPaths(prev => {
+      const next = prev.includes(id)
+        ? prev.filter(p => p !== id)
+        : [...prev, id]
+      localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
+      return next
+    })
+  }
+
+  const { data: courses = [] } = useQuery({
+    queryKey: ['career-courses', selectedPaths],
     queryFn: async () => {
-      const res = await get('/career/assessment/session/history')
-      const d = (res as any)?.data?.data
-      return Array.isArray(d?.sessions) ? d.sessions : []
+      const res = await get('/courses?status=PUBLISHED&limit=12')
+      return res.data?.data ?? res.data?.courses ?? []
     },
+    enabled: selectedPaths.length > 0,
   })
 
   const { data: bundles = [] } = useQuery({
@@ -612,253 +79,303 @@ export default function DashboardCareerPathPage() {
     },
   })
 
-  const latestAiTitle = sessions
-    ?.find((s: HistorySession) => s.status === 'COMPLETED' && s.report?.topSpecializations?.length)
-    ?.report?.topSpecializations?.[0]?.titleEn
+  const TABS = [
+    { key: 'paths' as TabKey, labelAr: 'مساراتي المهنية', labelEn: 'My Career Paths', icon: <Target size={15} /> },
+    { key: 'assessment' as TabKey, labelAr: 'الاختبار الذكي', labelEn: 'Smart Assessment', icon: <Sparkles size={15} /> },
+    { key: 'courses' as TabKey, labelAr: 'الكورسات المقترحة', labelEn: 'Recommended Courses', icon: <BookOpen size={15} /> },
+  ]
 
-  const aiRecommendedPathId = latestAiTitle ? findPathByTitle(latestAiTitle)?.path.id : undefined
-
-  const savePath = useMutation({
-    mutationFn: async (data: { pathId: string; pathTitle: string; pathCategory: string; aiRecommended?: boolean }) => {
-      await post('/career/my-path', data)
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['my-career-path'] })
-      setModalOpen(false)
-      setSavingPathId(null)
-    },
-    onError: () => {
-      setSavingPathId(null)
-    },
-  })
-
-  const handleSelect = (pathId: string, pathTitle: string, pathCategory: string) => {
-    setSavingPathId(pathId)
-    setSelectedPaths(prev => prev.includes(pathId) ? prev.filter(p => p !== pathId) : [...prev, pathId])
-    savePath.mutate({
-      pathId,
-      pathTitle,
-      pathCategory,
-      aiRecommended: pathId === aiRecommendedPathId,
-    })
-  }
-
-  const togglePath = (pathId: string) => {
-    setSelectedPaths(prev => prev.includes(pathId) ? prev.filter(p => p !== pathId) : [...prev, pathId])
-  }
-
-  const selectedCatEntry = myPath
-    ? CAREER_PATHS.find((c) => c.category === myPath.pathCategory)
-    : null
-  const selectedPathEntry = selectedCatEntry?.paths.find((p) => p.id === myPath?.pathId)
-
-  const pageBg = isDark ? '#0f1221' : '#fafafa'
-  const cardBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
-  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
-  const textColor = isDark ? '#ffffff' : '#0d0d0d'
-  const subtextColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'
-
-  if (isLoading) {
-    return (
-      <AuthGate>
-        <DashboardShell title="مساري المهني" subtitle="خارطة طريقك المهنية">
-          <div className="flex min-h-[60vh] items-center justify-center" dir="rtl">
-            <div className="h-9 w-9 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          </div>
-        </DashboardShell>
-      </AuthGate>
-    )
+  const ICON_MAP: Record<string, any> = {
+    code: Code2, design: Palette, marketing: TrendingUp,
+    data: BarChart, security: Shield, devops: Settings,
+    product: Package, business: Briefcase, creative: Users,
   }
 
   return (
-    <AuthGate>
-      <DashboardShell title="مساري المهني" subtitle="خارطة طريقك المهنية">
-        <div dir="rtl" style={{ background: pageBg, minHeight: '100%' }}>
-          {!myPath ? (
-            <div className="space-y-6 p-6">
-              <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 p-10 text-center" style={{ background: isDark ? '#111118' : '#ffffff', borderColor: cardBorder }}>
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/20 via-transparent to-transparent" />
-                <div className="relative">
-                  <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/20 ring-1 ring-primary/30">
-                    <Compass className="h-8 w-8 text-primary" />
-                  </div>
-                  <h2 className="mb-3 text-2xl font-bold" style={{ color: textColor, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                    لم تختر مسارك المهني بعد
-                  </h2>
-                  <p className="mb-8 mx-auto max-w-md" style={{ color: subtextColor }}>
-                    اختر تخصصك المهني لنعرض لك الكورسات المناسبة وخطة التعلم المخصصة
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(true)}
-                    className="group inline-flex items-center gap-3 rounded-2xl bg-primary px-8 py-4 text-base font-bold text-white shadow-lg shadow-primary/30 transition-all hover:scale-105 hover:shadow-primary/50"
-                  >
-                    <Target className="h-5 w-5" />
-                    اختر مسارك المهني
-                    <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
-                  </button>
-                </div>
-              </div>
+    <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ padding: '28px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ marginBottom: 20 }}>
+            <h1 style={{ color: text, fontSize: 22, fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+              {isAr ? 'المسار المهني' : 'Career Path'}
+            </h1>
+            <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
+              {isAr ? 'اكتشف مسارك احفظ تقدمك واستكشف الكورسات المناسبة' : 'Discover your path, save progress, and explore matching courses'}
+            </p>
+          </div>
+          
+          <div style={{ display: 'flex', gap: 0 }}>
+            {TABS.map(tab => (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 700,
+                color: activeTab === tab.key ? '#5120c8' : subtext,
+                borderBottom: `2px solid ${activeTab === tab.key ? '#5120c8' : 'transparent'}`,
+                transition: 'all 0.15s',
+                marginBottom: -1,
+              }}>
+                {tab.icon}
+                {isAr ? tab.labelAr : tab.labelEn}
+                {tab.key === 'paths' && selectedPaths.length > 0 && (
+                  <span style={{ padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 800, background: '#5120c8', color: '#ffffff' }}>
+                    {selectedPaths.length}
+                  </span>
+                )}
+                {tab.key === 'assessment' && assessmentResults.length > 0 && (
+                  <CheckCircle2 size={13} color="#16a34a" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {[
-                  { label: 'تخصص متاح', value: '40+', Icon: Target, color: 'text-blue-500' },
-                  { label: 'كورس احترافي', value: '150+', Icon: BookOpen, color: 'text-emerald-500' },
-                  { label: 'كوتش خبير', value: '50+', Icon: Users, color: 'text-purple-500' },
-                ].map(({ label, value, Icon, color }) => (
-                  <div
-                    key={label}
-                    className="group rounded-2xl border p-6 text-center transition-all"
-                    style={{ background: cardBg, borderColor: cardBorder }}
-                  >
-                    <Icon className={`mx-auto mb-2 h-6 w-6 ${color} transition-transform group-hover:scale-110`} />
-                    <div className="text-2xl font-extrabold" style={{ color: textColor }}>{value}</div>
-                    <div className="text-sm" style={{ color: subtextColor }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6 p-6">
-              <div className="rounded-3xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 p-6" style={{ background: isDark ? '#111118' : '#ffffff' }}>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 ring-1 ring-primary/20">
-                      {selectedCatEntry?.icon ? getCategoryIcon(selectedCatEntry.icon, 28) : <Target size={28} color="#5120c8" />}
-                    </div>
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">
-                          {myPath.pathCategory}
-                        </span>
-                        {myPath.aiRecommended && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold text-amber-400">
-                            <Sparkles className="h-3 w-3" />
-                            توصية AI
-                          </span>
-                        )}
-                      </div>
-                      <h2 className="mt-1 text-xl font-extrabold" style={{ color: textColor }}>
-                        {myPath.pathTitle}
-                      </h2>
-                      {selectedPathEntry && (
-                        <p className="mt-0.5 text-sm" style={{ color: subtextColor }}>
-                          {selectedPathEntry.titleAr}
-                        </p>
-                      )}
-                      <p className="mt-2 text-xs" style={{ color: subtextColor }}>
-                        تم الاختيار في{' '}
-                        {new Date(myPath.createdAt).toLocaleDateString('ar-SA', {
-                          year: 'numeric', month: 'long', day: 'numeric',
-                        })}
-                      </p>
-                      {selectedPathEntry && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium" style={{ background: 'rgba(81,32,200,0.1)', color: '#5120c8' }}>
-                            {DEMAND_AR[selectedPathEntry.demand] ?? selectedPathEntry.demand}
-                          </span>
-                          <span className="rounded-full border px-2.5 py-0.5 text-xs" style={{ borderColor: cardBorder, color: subtextColor }}>
-                            {selectedPathEntry.level}
-                          </span>
-                          <span className="text-xs" style={{ color: subtextColor }}>
-                            💰 {selectedPathEntry.salary} SAR
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setModalOpen(true)}
-                    className="shrink-0 rounded-xl border px-4 py-2.5 text-sm transition"
-                    style={{ borderColor: cardBorder, color: subtextColor }}
-                  >
-                    تغيير المسار
-                  </button>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '28px 24px' }}>
+        {activeTab === 'paths' && (
+          <div>
+            {assessmentResults.length > 0 && (
+              <div style={{
+                padding: '16px 20px', borderRadius: 14, marginBottom: 24,
+                border: '1px solid rgba(81,32,200,0.2)',
+                background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.03)',
+                display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+              }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <BarChart3 size={18} color="#5120c8" />
                 </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
+                    {isAr ? 'نتيجة الاختبار الذكي' : 'Smart Assessment Result'}
+                  </div>
+                  <div style={{ color: subtext, fontSize: 12 }}>
+                    {isAr ? `المسار الأنسب: ${assessmentResults[0]?.titleAr} (${assessmentResults[0]?.normalized}%)` : `Best match: ${assessmentResults[0]?.titleEn} (${assessmentResults[0]?.normalized}%)`}
+                  </div>
+                </div>
+                <button onClick={() => setActiveTab('assessment')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(81,32,200,0.3)', background: 'transparent', color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+                  <RefreshCw size={12} />
+                  {isAr ? 'أعد الاختبار' : 'Retake'}
+                </button>
               </div>
+            )}
 
-              {bundles.length > 0 && (
-                <div style={{ marginTop: 24 }}>
-                  <h4 style={{ color: textColor, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>
-                    {isAr ? 'حزم الكورسات الداعمة' : 'Supporting Course Bundles'}
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {bundles.map((bundle: any) => (
-                      <div key={bundle.id} style={{
-                        padding: '16px 18px', borderRadius: 14,
-                        border: `1px solid ${cardBorder}`,
-                        background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa',
-                        display: 'flex', alignItems: 'center', gap: 14,
-                      }}>
-                        <div style={{
-                          width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                          background: 'rgba(81,32,200,0.1)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <Package size={18} color="#5120c8" />
+            {selectedPaths.length > 0 && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'مساراتي المختارة' : 'My Selected Paths'}</h3>
+                  <span style={{ color: subtext, fontSize: 12 }}>{selectedPaths.length} / 5 {isAr ? 'مسارات' : 'paths'}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {selectedPaths.map(id => {
+                    const path = CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === id)
+                    if (!path) return null
+                    const IconComp = ICON_MAP[path.icon] || Briefcase
+                    const category = CAREER_PATHS.find(c => c.paths.some(p => p.id === id))
+                    return (
+                      <div key={id} style={{ padding: '16px 20px', borderRadius: 14, border: '1.5px solid rgba(81,32,200,0.3)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)', display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconComp size={18} color="#5120c8" />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ color: textColor, fontSize: 14, fontWeight: 700 }}>
-                            {bundle.title}
-                          </div>
-                          <div style={{ color: subtextColor, fontSize: 12, marginTop: 3 }}>
-                            {bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}
-                          </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? path.titleAr : path.title}</div>
+                          <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>${path.salary} SAR{isAr ? '/شهرياً' : '/month'}</div>
                         </div>
-                        <button
-                          onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')}
-                          style={{
-                            padding: '8px 14px', borderRadius: 10,
-                            background: '#5120c8', color: '#fff',
-                            border: 'none', cursor: 'pointer',
-                            fontSize: 12, fontWeight: 700,
-                            transition: 'opacity 0.15s',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
-                          onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                          {isAr ? 'عرض' : 'View'}
+                        <button onClick={() => setActiveTab('courses')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                          <BookOpen size={12} />
+                          {isAr ? 'كورسات' : 'Courses'}
                         </button>
+                        <button onClick={() => togglePath(id)} style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'استكشف المسارات' : 'Explore Paths'}</h3>
+              {selectedPaths.length < 5 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subtext, fontSize: 12 }}>
+                  <Plus size={13} />
+                  {isAr ? `يمكنك إضافة ${5 - selectedPaths.length} مسارات أخرى` : `You can add ${5 - selectedPaths.length} more paths`}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+              {CAREER_PATHS.slice(0, 18).map(cat => cat.paths.slice(0, 3).map(path => {
+                const IconComp = ICON_MAP[path.icon] || Briefcase
+                const isSelected = selectedPaths.includes(path.id)
+                return (
+                  <div key={path.id} style={{
+                    padding: '18px', borderRadius: 14,
+                    border: `1.5px solid ${isSelected ? 'rgba(81,32,200,0.4)' : border}`,
+                    background: isSelected ? (isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.03)') : cardBg,
+                    cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative',
+                  }}
+                  onClick={() => { if (!isSelected && selectedPaths.length >= 5) return; togglePath(path.id) }}>
+                    {isSelected && (
+                      <div style={{ position: 'absolute', top: 12, left: isAr ? 12 : 'auto', right: isAr ? 'auto' : 12 }}>
+                        <CheckCircle2 size={18} color="#5120c8" />
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 9, background: isSelected ? 'rgba(81,32,200,0.12)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <IconComp size={16} color={isSelected ? '#5120c8' : subtext} />
+                      </div>
+                      <h4 style={{ color: text, fontSize: 13, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{isAr ? path.titleAr : path.title}</h4>
+                    </div>
+                    <p style={{ color: subtext, fontSize: 12, margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{isAr ? path.descriptionAr : path.descriptionEn}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>${path.salary}+</span>
+                      <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: isSelected ? 'rgba(81,32,200,0.1)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), color: isSelected ? '#5120c8' : subtext, border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}` }}>
+                        {isSelected ? (isAr ? 'تم الاختيار' : 'Selected') : (isAr ? 'اختر' : 'Select')}
+                      </span>
+                    </div>
+                  </div>
+                )
+              })).flat()}
+            </div>
+            
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <button onClick={() => router.push(`/${locale}/careers`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 13, fontWeight: 600 }}>
+                {isAr ? `عرض جميع المسارات (${CAREER_PATHS.length}+)` : `View All Paths (${CAREER_PATHS.length}+)`}
+                <ChevronRight size={14} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'assessment' && (
+          <div>
+            {assessmentResults.length > 0 ? (
+              <div>
+                <div style={{ padding: '20px', borderRadius: 14, marginBottom: 24, border: '1px solid rgba(22,163,74,0.2)', background: isDark ? 'rgba(22,163,74,0.06)' : 'rgba(22,163,74,0.03)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <CheckCircle2 size={20} color="#16a34a" />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? 'لديك نتيجة محفوظة' : 'You have a saved result'}</div>
+                    <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>{isAr ? 'يمكنك إعادة الاختبار في أي وقت للحصول على نتيجة أحدث' : 'You can retake the assessment anytime for a newer result'}</div>
+                  </div>
+                </div>
+                
+                <h3 style={{ color: text, fontSize: 15, fontWeight: 800, marginBottom: 16 }}>{isAr ? 'نتائج آخر اختبار' : 'Last Assessment Results'}</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  {assessmentResults.slice(0, 5).map((result, idx) => (
+                    <div key={idx} style={{ padding: '16px 20px', borderRadius: 12, border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.3)' : border}`, background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)') : cardBg, display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 800 }}>{idx + 1}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? result.titleAr : result.titleEn}</div>
+                        <div style={{ marginTop: 6, height: 4, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ width: `${result.normalized}%`, height: '100%', background: idx === 0 ? '#5120c8' : '#94a3b8', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                      <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
+                      <button onClick={() => togglePath(result.track)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: selectedPaths.includes(result.track) ? 'transparent' : '#5120c8', color: selectedPaths.includes(result.track) ? subtext : '#ffffff', border: `1px solid ${selectedPaths.includes(result.track) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {selectedPaths.includes(result.track) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => { localStorage.removeItem('assessmentResults'); setAssessmentResults([]); router.push(`/${locale}/dashboard/assessment`) }} style={{ flex: 1, padding: '13px', borderRadius: 12, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <RefreshCw size={15} />
+                    {isAr ? 'إعادة الاختبار الذكي' : 'Retake Smart Assessment'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                <div style={{ width: 64, height: 64, borderRadius: 18, margin: '0 auto 20px', background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Sparkles size={26} color="#5120c8" />
+                </div>
+                <h2 style={{ color: text, fontSize: 22, fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>{isAr ? 'اكتشف مسارك المثالي' : 'Discover Your Ideal Path'}</h2>
+                <p style={{ color: subtext, fontSize: 14, margin: '0 0 28px', lineHeight: 1.75, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
+                  {isAr ? '15 سؤال ذكي يحلل اهتماماتك ومهاراتك ليرشح لك المسار الأنسب بدقة' : '15 smart questions analyze your interests and skills to recommend the perfect path'}
+                </p>
+                <button onClick={() => router.push(`/${locale}/dashboard/assessment`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 14, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 700, boxShadow: '0 4px 16px rgba(81,32,200,0.3)' }}>
+                  <Sparkles size={16} />
+                  {isAr ? 'ابدأ الاختبار الذكي' : 'Start Smart Assessment'}
+                  <ChevronRight size={15} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
+                </button>
+                <p style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#d1d5db', fontSize: 12, marginTop: 12 }}>{isAr ? 'مجاني  يستغرق 3-5 دقائق فقط' : 'Free  takes only 3-5 minutes'}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'courses' && (
+          <div>
+            {selectedPaths.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                <BookOpen size={40} color={subtext} style={{ marginBottom: 16 }} />
+                <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'اختر مسارا أولا' : 'Select a Path First'}</h3>
+                <p style={{ color: subtext, fontSize: 14, margin: '0 0 20px' }}>{isAr ? 'اختر مسارك المهني لنعرض لك الكورسات المناسبة' : 'Choose your career path to see matching courses'}</p>
+                <button onClick={() => setActiveTab('paths')} style={{ padding: '10px 22px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 700 }}>{isAr ? 'اختر مسارا' : 'Choose a Path'}</button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ marginBottom: 20 }}>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة لمساراتك' : 'Recommended Courses for Your Paths'}</h3>
+                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? `بناء على ${selectedPaths.length} مسار مختار` : `Based on ${selectedPaths.length} selected path${selectedPaths.length > 1 ? 's' : ''}`}</p>
+                </div>
+                
+                {courses.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
+                    {courses.map((course: any) => (
+                      <div key={course.id} style={{ borderRadius: 14, border: `1px solid ${border}`, background: cardBg, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
+                      onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/courses/${course.slug || course.id}`, '_blank')}>
+                        <div style={{ height: 120, background: isDark ? '#1a1a1a' : '#f8f8fa', overflow: 'hidden' }}>
+                          {course.thumbnail ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={28} color={subtext} /></div>}
+                        </div>
+                        <div style={{ padding: '14px' }}>
+                          <h4 style={{ color: text, fontSize: 13, fontWeight: 700, margin: '0 0 6px', lineHeight: 1.4 }}>{isAr ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr)}</h4>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 800 }}>{course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</span>
+                            <Award size={13} color={subtext} />
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 24px', color: subtext }}>{isAr ? 'جاري تحميل الكورسات...' : 'Loading courses...'}</div>
+                )}
+                
+                {bundles.length > 0 && (
+                  <div style={{ marginTop: 32 }}>
+                    <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{isAr ? 'حزم الكورسات الداعمة' : 'Supporting Course Bundles'}</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {bundles.map((bundle: any) => (
+                        <div key={bundle.id} style={{ padding: '16px 18px', borderRadius: 14, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{ width: 42, height: 42, borderRadius: 10, flexShrink: 0, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Package size={18} color="#5120c8" />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{bundle.title}</div>
+                            <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</div>
+                          </div>
+                          <button onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{isAr ? 'عرض' : 'View'}</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div style={{ textAlign: 'center', marginTop: 24 }}>
+                  <button onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/courses`, '_blank')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
+                    <BookOpen size={14} />
+                    {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
+                    <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
+                  </button>
                 </div>
-              )}
-
-              <div className="rounded-2xl border p-10 text-center" style={{ background: cardBg, borderColor: cardBorder }}>
-                <BookOpen className="mx-auto mb-4 h-12 w-12" style={{ color: subtextColor }} />
-                <h3 className="text-lg font-bold" style={{ color: textColor }}>الكورسات المتاحة قريباً</h3>
-                <p className="mt-2 text-sm max-w-md mx-auto" style={{ color: subtextColor }}>
-                  سيتم إضافة الكورسات المتخصصة لـ <span className="text-primary font-semibold">{myPath.pathTitle}</span> خلال الأيام القادمة
-                </p>
-                <button
-                  onClick={() => router.push(`/${locale}/coaching?speciality=${encodeURIComponent(myPath.pathTitle)}`)}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-primary/40"
-                >
-                  <Users className="h-4 w-4" />
-                  احجز جلسة كوتشينج الآن
-                </button>
               </div>
-            </div>
-          )}
-        </div>
-
-        {modalOpen && (
-          <PathModal
-            onClose={() => setModalOpen(false)}
-            currentPathId={myPath?.pathId}
-            onSelect={handleSelect}
-            onShowDetails={(pathId) => setDetailPathId(pathId)}
-            isSaving={savePath.isPending}
-            savingPathId={savingPathId}
-            selectedPaths={selectedPaths}
-          />
+            )}
+          </div>
         )}
-
-        {detailPathId && (
-          <PathDetailPanel pathId={detailPathId} onClose={() => setDetailPathId(null)} />
-        )}
-      </DashboardShell>
-    </AuthGate>
+      </div>
+    </div>
   )
 }

@@ -67,7 +67,7 @@ return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: BookOpen, labelAr: 'كورساتي', labelEn: 'Courses', href: `/${locale}/dashboard/my-courses` },
       { icon: CalendarCheck, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
-      { icon: Brain, labelAr: 'اختبار المسار', labelEn: 'Assessment', href: `/${locale}/dashboard/assessment` },
+      { icon: Brain, labelAr: 'المسار المهني', labelEn: 'Career', href: `/${locale}/dashboard/career-path` },
       { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI', href: `/${locale}/dashboard/ai-chat` },
       { icon: Award, labelAr: 'الشهادات', labelEn: 'Certs', href: `/${locale}/dashboard/certificates` },
       { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
