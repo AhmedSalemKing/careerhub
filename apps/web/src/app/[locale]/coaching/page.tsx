@@ -42,9 +42,19 @@ export default function CoachingPage() {
   const { data: consultants = [], isLoading } = useQuery({
     queryKey: ['consultants'],
     queryFn: async () => {
-      const res = await get('/users?role=INSTRUCTOR&limit=50')
-      const arr = res.data?.data ?? res.data?.users ?? res.data ?? []
-      return Array.isArray(arr) ? arr : []
+      const [res1, res2] = await Promise.all([
+        get('/users?role=INSTRUCTOR&limit=50'),
+        get('/users?role=CONSULTANT&limit=50'),
+      ])
+      const arr1 = res1.data?.data ?? res1.data?.users ?? res1.data ?? []
+      const arr2 = res2.data?.data ?? res2.data?.users ?? res2.data ?? []
+      const all = [...arr1, ...arr2]
+      const seen = new Set()
+      return all.filter(c => {
+        if (seen.has(c.id)) return false
+        seen.add(c.id)
+        return true
+      })
     }
   })
 
@@ -67,10 +77,13 @@ export default function CoachingPage() {
       const filterDef = SPECIALITY_FILTERS.find(f => f.key === activeFilter)
       if (filterDef?.keywords) {
         result = result.filter(c => {
-          const speciality = (c.profile?.speciality || '').toLowerCase()
-          const areas = (c.profile?.consultingAreas || []).join(' ').toLowerCase()
-          const bio = (c.profile?.bio || '').toLowerCase()
-          const combined = `${speciality} ${areas} ${bio}`
+          const combined = [
+            c.profile?.speciality || '',
+            c.profile?.bio || '',
+            ...(c.profile?.consultingAreas || []),
+            ...(c.profile?.qualifications || []),
+            c.email || '',
+          ].join(' ').toLowerCase()
           return filterDef.keywords.some(kw => combined.includes(kw.toLowerCase()))
         })
       }
@@ -148,13 +161,26 @@ export default function CoachingPage() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {SPECIALITY_FILTERS.map(f => (
-              <button key={f.key} onClick={() => setActiveFilter(f.key)} style={{ padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s', border: activeFilter === f.key ? 'none' : `1px solid ${border}`, background: activeFilter === f.key ? '#5120c8' : 'transparent', color: activeFilter === f.key ? '#ffffff' : subtext }}>
-                {isAr ? f.labelAr : f.labelEn}
-              </button>
-            ))}
-          </div>
+<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {SPECIALITY_FILTERS.map(f => {
+                const count = f.key === 'all' 
+                  ? consultants.length 
+                  : consultants.filter(c => {
+                      const combined = [
+                        c.profile?.speciality || '',
+                        c.profile?.bio || '',
+                        ...(c.profile?.consultingAreas || []),
+                      ].join(' ').toLowerCase()
+                      return (f.keywords || []).some(kw => combined.includes(kw.toLowerCase()))
+                    }).length
+                return (
+                  <button key={f.key} onClick={() => setActiveFilter(f.key)} style={{ padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s', border: activeFilter === f.key ? 'none' : `1px solid ${border}`, background: activeFilter === f.key ? '#5120c8' : 'transparent', color: activeFilter === f.key ? '#ffffff' : subtext }}>
+                    <span>{isAr ? f.labelAr : f.labelEn}</span>
+                    <span style={{ marginRight: isAr ? 0 : 4, marginLeft: isAr ? 4 : 0, opacity: 0.75, fontSize: 11 }}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <SlidersHorizontal size={14} color={subtext} />
             <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: `1px solid ${border}`, background: cardBg, color: text, cursor: 'pointer', outline: 'none' }}>
@@ -321,11 +347,17 @@ export default function CoachingPage() {
         )}
 
         {!isLoading && filteredConsultants.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '80px 24px' }}>
+          <div style={{ textAlign: 'center', padding: '60px 24px' }}>
             <Users size={40} color={subtext} style={{ marginBottom: 16 }} />
-            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'لا يوجد مستشارون متاحون' : 'No consultants found'}</h3>
-            <p style={{ color: subtext, fontSize: 14, marginBottom: 20 }}>{isAr ? 'جرب البحث بكلمات مختلفة' : 'Try different search terms'}</p>
-            <button onClick={() => { setSearch(''); setActiveFilter('all') }} style={{ padding: '10px 20px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 13 }}>{isAr ? 'إعادة الضبط' : 'Reset'}</button>
+            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
+              {search ? (isAr ? 'لا توجد نتائج' : 'No results found') : (isAr ? 'لا يوجد مستشارون في هذا التخصص حتى الآن' : 'No consultants in this category yet')}
+            </h3>
+            <p style={{ color: subtext, fontSize: 14, marginBottom: 20 }}>
+              {isAr ? 'جرب تصفح جميع المستشارين' : 'Browse all consultants instead'}
+            </p>
+            <button onClick={() => { setSearch(''); setActiveFilter('all') }} style={{ padding: '10px 24px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              {isAr ? 'عرض الكل' : 'Show All'}
+            </button>
           </div>
         )}
       </div>
