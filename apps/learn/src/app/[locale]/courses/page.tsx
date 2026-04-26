@@ -2,7 +2,8 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
-import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight, AlertTriangle } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { Search, Grid3X3, List, Clock, Users, Star, Play, BookOpen, ChevronRight, AlertTriangle, Target, Sparkles } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '../../components/ui/button'
@@ -12,8 +13,8 @@ import { api } from '../../../lib/api'
 // ✅ FIXED: تأكد أن API_BASE واضح وصحيح
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
 
-function thumbUrl(thumbnail?: string) {
-  if (!thumbnail) return null
+function thumbUrl(thumbnail?: string | null) {
+  if (!thumbnail) return undefined
   if (thumbnail.startsWith('http')) return thumbnail
   return thumbnail.startsWith('/') ? thumbnail : `/${thumbnail}`
 }
@@ -70,11 +71,27 @@ function normalizeCourse(c: ApiCourse): NormalizedCourse {
 
 export default function CoursesPage() {
   const locale = useLocale() as 'ar' | 'en'
+  const searchParams = useSearchParams()
+  const careerPathParam = searchParams.get('careerPath')
+  const categoryParam = searchParams.get('category')
+  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  
+  const hasCareerPath = !!(careerPathParam || categoryParam)
+  
+  const { data: careerCourses = [] } = useQuery({
+    queryKey: ['career-courses', categoryParam],
+    queryFn: async () => {
+      if (!categoryParam) return []
+      const res = await api.get(`/courses/by-career-path?category=${categoryParam}`)
+      return res.data?.data ?? []
+    },
+    enabled: !!categoryParam,
+  })
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
@@ -292,6 +309,73 @@ export default function CoursesPage() {
             <span> ({locale === 'ar' ? 'من' : 'of'} {courses.length} {locale === 'ar' ? 'إجمالي' : 'total'})</span>
           )}
         </p>
+
+        {/* Career Path Section */}
+        {careerCourses.length > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(81,32,200,0.1)', border: '1px solid rgba(81,32,200,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Target size={16} color="#5120c8" />
+                </div>
+                <div>
+                  <h2 style={{ color: 'var(--text-primary)', fontSize: 16, fontWeight: 800, margin: 0 }}>
+                    {locale === 'ar' ? 'كورسات مرتبطة بمسارك المهني' : 'Courses for Your Career Path'}
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 12, margin: 0 }}>
+                    {locale === 'ar' ? `${careerCourses.length} كورس مناسب لمسارك` : `${careerCourses.length} courses matching your path`}
+                  </p>
+                </div>
+              </div>
+              <a href={`https://devewayhub.vercel.app/${locale}/dashboard/career-path`} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(81,32,200,0.25)', background: 'rgba(81,32,200,0.06)', color: '#5120c8', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                <Target size={12} />
+                {locale === 'ar' ? 'تعديل المسار' : 'Edit Path'}
+              </a>
+            </div>
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
+              {careerCourses.map((course: any) => (
+                <div key={course.id} style={{ minWidth: 220, maxWidth: 220, flexShrink: 0, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--surface)', overflow: 'hidden', cursor: 'pointer' }}
+                  onClick={() => window.location.href = `/${locale}/courses/${course.slug || course.id}`}>
+                  <div style={{ height: 100, background: 'var(--background)', overflow: 'hidden' }}>
+                    {course.thumbnail ? <img src={thumbUrl(course.thumbnail)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={24} color="var(--text-muted)" /></div>}
+                  </div>
+                  <div style={{ padding: '12px' }}>
+                    <h4 style={{ color: 'var(--text-primary)', fontSize: 12, fontWeight: 700, margin: '0 0 6px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {locale === 'ar' ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr)}
+                    </h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 800 }}>{course.price > 0 ? `${course.price} ر.س` : (locale === 'ar' ? 'مجاني' : 'Free')}</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 11 }}>{course._count?.lessons || 0} {locale === 'ar' ? 'درس' : 'lessons'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ height: 1, background: 'var(--border)', margin: '28px 0' }} />
+          </div>
+        )}
+
+        {!hasCareerPath && (
+          <div style={{ padding: 24, borderRadius: 16, marginBottom: 28, border: '1px solid var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, flexShrink: 0, background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={22} color="#5120c8" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ color: 'var(--text-primary)', fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{locale === 'ar' ? 'اعرف الكورسات المناسبة لمسارك' : 'Find Courses Matching Your Career Path'}</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, margin: 0, lineHeight: 1.6 }}>{locale === 'ar' ? 'اختبر مسارك المهني لنعرض لك الكورسات الأنسب لك بدقة' : 'Take your career assessment to see the most relevant courses for you'}</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexShrink: 0, flexWrap: 'wrap' }}>
+              <a href={`https://devewayhub.vercel.app/${locale}/dashboard/assessment`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                <Sparkles size={14} />
+                {locale === 'ar' ? 'ابدأ الاختبار' : 'Start Assessment'}
+              </a>
+              <a href={`https://devewayhub.vercel.app/${locale}/careers`} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+                <Target size={14} />
+                {locale === 'ar' ? 'اختر مسارا' : 'Choose Path'}
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Courses Grid */}
         <div style={{

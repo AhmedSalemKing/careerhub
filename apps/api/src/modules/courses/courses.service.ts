@@ -253,6 +253,47 @@ export class CoursesService {
     }
   }
 
+  async getCoursesByCareerPath(category: string = 'tech', limit: number = 8) {
+    try {
+      const categoryCondition: any = {}
+      if (category === 'tech') {
+        categoryCondition.OR = [
+          { category: { name: { contains: 'Tech', mode: 'insensitive' } } },
+          { category: { name: { contains: 'Development', mode: 'insensitive' } } },
+          { category: { nameAr: { contains: 'برمجة' } } },
+        ]
+      } else if (category === 'design') {
+        categoryCondition.OR = [
+          { category: { name: { contains: 'Design', mode: 'insensitive' } } },
+          { category: { nameAr: { contains: 'تصميم' } } },
+        ]
+      } else if (category === 'marketing') {
+        categoryCondition.OR = [
+          { category: { name: { contains: 'Marketing', mode: 'insensitive' } } },
+          { category: { nameAr: { contains: 'تسويق' } } },
+        ]
+      } else if (category === 'business') {
+        categoryCondition.OR = [
+          { category: { name: { contains: 'Business', mode: 'insensitive' } } },
+          { category: { nameAr: { contains: 'أعمال' } } },
+        ]
+      }
+      
+      const courses = await this.prisma.course.findMany({
+        where: {
+          status: 'PUBLISHED',
+          ...categoryCondition,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+      })
+      return courses
+    } catch (e) {
+      console.error('[getCoursesByCareerPath]', e)
+      return []
+    }
+  }
+
   async getMyCourses(userId: string, options: { page: number; limit: number; status?: string }) {
     const { page, limit, status } = options;
     const skip = (page - 1) * limit;

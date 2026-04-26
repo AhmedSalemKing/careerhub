@@ -122,6 +122,19 @@ async getCourses(
     return { success: true, data: bundles };
   }
 
+  @Get('by-career-path')
+  @ApiOperation({ summary: 'Get courses by career path category' })
+  @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
+  @ApiQuery({ name: 'category', required: false, description: 'Career path category (tech, design, marketing, business)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of courses to return' })
+  async getCoursesByCareerPath(
+    @Query('category') category?: string,
+    @Query('limit') limit?: number,
+  ) {
+    const courses = await this.coursesService.getCoursesByCareerPath(category || 'tech', limit || 8);
+    return { success: true, data: courses };
+  }
+
   @Get('enrolled')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

@@ -365,7 +365,17 @@ export default function CareerPathPage() {
                 )}
                 
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
-                  <button onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/courses`, '_blank')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
+                  <button onClick={() => {
+                    const firstPathId = selectedPaths[0]
+                    const firstPath = CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === firstPathId)
+                    const catEntry = CAREER_PATHS.find(c => c.paths.some(p => p.id === firstPathId))
+                    const category = catEntry?.category.toLowerCase().includes('tech') ? 'tech' 
+                      : catEntry?.category.toLowerCase().includes('design') ? 'design'
+                      : catEntry?.category.toLowerCase().includes('marketing') ? 'marketing'
+                      : catEntry?.category.toLowerCase().includes('business') ? 'business'
+                      : 'tech'
+                    window.open(`https://devewayhub.vercel.app/${locale}/courses?category=${category}`, '_blank')
+                  }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
                     <BookOpen size={14} />
                     {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
                     <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
