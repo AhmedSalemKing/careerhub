@@ -977,21 +977,22 @@ model ConsultingSession {
   student       User      @relation("StudentSessions", fields: [studentId], references: [id])
   consultant    User      @relation("ConsultantSessions", fields: [consultantId], references: [id])
   scheduledAt   DateTime
-  duration      Int       @default(60)
+  duration     Int       @default(60)
   meetingMethod String    @default("ZOOM")
-  meetingLink   String?
-  topic         String?
-  notes         String?
-  status        String    @default("PENDING")
-  price         Float     @default(0)
-  paymentStatus String    @default("UNPAID")
-  paymentId     String?
-  completedAt   DateTime?
-  cancelledAt   DateTime?
-  proposedAt    DateTime?
-  proposedTime  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  meetingLink  String?
+  topic        String?
+  notes        String?
+  status       String    @default("PENDING")
+  price        Float     @default(0)
+  paymentStatus String   @default("UNPAID")
+  paymentId    String?
+  cancelReason String?
+  completedAt  DateTime?
+  cancelledAt  DateTime?
+  proposedAt   DateTime?
+  proposedTime DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([studentId])
   @@index([consultantId])

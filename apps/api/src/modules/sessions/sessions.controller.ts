@@ -12,8 +12,8 @@ export class SessionsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('consultants')
-  async getConsultants() {
-    console.log('[Sessions] Fetching consultants...')
+  async getConsultants(@Query('sort') sort?: string) {
+    console.log('[Sessions] Fetching consultants...', { sort })
     const consultants = await this.prisma.user.findMany({
       where: {
         accountType: 'CONSULTANT',
@@ -247,6 +247,86 @@ export class SessionsController {
         isRead: false,
       }
     }).catch(() => {})
+
+    return { success: true, data: updated }
+  }
+
+  @Patch(':id/meeting-link')
+  async addMeetingLink(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { meetingLink: string; meetingType?: string }
+  ) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id, consultantId: req.user.sub },
+      include: { student: { include: { profile: true } } }
+    })
+    if (!session) throw new NotFoundException('Session not found')
+
+    const isZoom = body.meetingLink?.includes('zoom.us')
+    const isMeet = body.meetingLink?.includes('meet.google.com')
+    if (!isZoom && !isMeet) throw new BadRequestException('Only Zoom or Google Meet links are allowed')
+
+    const meetingType = body.meetingType || (isZoom ? 'zoom' : 'meet')
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id },
+      data: {
+        meetingLink: body.meetingLink,
+        meetingMethod: meetingType.toUpperCase(),
+        status: 'CONFIRMED',
+      },
+      include: {
+        student: { include: { profile: true } },
+        consultant: { include: { profile: true } }
+      }
+    })
+
+    await this.prisma.notification.create({
+      data: {
+        userId: session.studentId,
+        type: 'SYSTEM_ANNOUNCEMENT' as any,
+        titleEn: 'Meeting Link Added',
+        titleAr: 'رابط الجلسة متاح الآن',
+        contentEn: `Your session on ${session.scheduledAt.toLocaleDateString('ar-SA')} now has a meeting link.`,
+        contentAr: `تتوفر رابط الجلسة لجلستك في ${session.scheduledAt.toLocaleDateString('ar-SA')}`,
+        isRead: false,
+      }
+    }).catch(() => {})
+
+    return { success: true, data: updated }
+  }
+
+  @Patch(':id/status')
+  async updateSessionStatus(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { status: string; cancelReason?: string }
+  ) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: {
+        id,
+        OR: [{ studentId: req.user.sub }, { consultantId: req.user.sub }]
+      }
+    })
+    if (!session) throw new NotFoundException('Session not found')
+
+    const allowedStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'EXPIRED']
+    if (!allowedStatuses.includes(body.status)) {
+      throw new BadRequestException('Invalid status')
+    }
+
+    const updateData: any = { status: body.status }
+    if (body.status === 'COMPLETED') updateData.completedAt = new Date()
+    if (body.status === 'CANCELLED') {
+      updateData.cancelledAt = new Date()
+      if (body.cancelReason) updateData.cancelReason = body.cancelReason
+    }
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id },
+      data: updateData
+    })
 
     return { success: true, data: updated }
   }

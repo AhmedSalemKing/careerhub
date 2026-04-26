@@ -29,6 +29,19 @@ export default function DashboardBookCoachingPage() {
   const [notes, setNotes] = useState<string>('')
   const [confirmation, setConfirmation] = useState<{ sessionId?: string; zoomJoinUrl?: string } | null>(null)
 
+  const today = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const currentHour = now.getHours()
+  const availableTimeSlots = [
+    '09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'
+  ].filter(t => {
+    const slotHour = parseInt(t.split(':')[0])
+    if (date === today) {
+      return slotHour > currentHour + 1
+    }
+    return true
+  })
+
   const coachesQ = useQuery({
     queryKey: ['consultants', locale],
     queryFn: async () => {
@@ -147,7 +160,15 @@ export default function DashboardBookCoachingPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="md:col-span-1">
                 <Label htmlFor="date">{t('step2_title')}</Label>
-                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-2" />
+                <Input id="date" type="date" min={today} value={date} onChange={(e) => {
+                  const newDate = e.target.value
+                  if (newDate >= today) {
+                    setDate(newDate)
+                    if (new Date(newDate) > new Date()) {
+                      setSelectedTime('09:00')
+                    }
+                  }
+                }} className="mt-2" />
                 <div className="mt-4 flex gap-2">
                   <Button variant="secondary" onClick={() => setStep(1)}>
                     {c('back')}
