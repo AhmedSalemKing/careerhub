@@ -102,7 +102,10 @@ export class RecommendationService {
         orderBy: { createdAt: 'desc' },
       });
 
+      console.log('[Recommendation] Found courses:', courses.length, 'Paths:', userPaths);
+
       if (!userPaths || userPaths.length === 0) {
+        console.log('[Recommendation] No paths, returning all courses');
         return courses.slice(0, limit);
       }
 
