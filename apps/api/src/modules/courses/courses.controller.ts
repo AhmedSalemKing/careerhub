@@ -124,8 +124,15 @@ async getCourses(
     @Query('paths') paths: string,
     @Query('limit') limit?: string,
   ) {
+    const limitNum = parseInt(limit || '12')
     const pathIds = paths ? paths.split(',').filter(Boolean) : [];
-    const courses = await this.recommendationService.getRecommendedCourses(pathIds, undefined, parseInt(limit || '12'));
+    
+    // Bypass scoring - just return published courses
+    const courses = await this.prisma.course.findMany({
+      where: { status: 'PUBLISHED' },
+      take: limitNum,
+    });
+    
     return { success: true, data: courses };
   }
 
