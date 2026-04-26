@@ -328,6 +328,8 @@ model Course {
   currency      String       @default("USD")
   duration      Int?
   level         String       @default("BEGINNER")
+  tags          String[]     @default([])
+  careerPaths  String[]     @default([])
   status        CourseStatus @default(DRAFT)
   isFeatured    Boolean      @default(false)
   sortOrder     Int          @default(0)

@@ -73,22 +73,24 @@ export default function CareerPathPage() {
     
     setCoursesLoading(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-    fetch(`${apiUrl}/courses?status=PUBLISHED&limit=12`, {
+    const pathsParam = selectedPaths.join(',')
+    
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') || '' : ''
+    
+    fetch(`${apiUrl}/courses/recommended?paths=${pathsParam}&limit=12`, {
       headers: {
         'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token')
-          ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
-          : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     })
       .then(r => r.json())
       .then(data => {
-        console.log('[CareerCourses raw]', data)
-        const arr = data?.data?.courses ?? data?.data ?? data?.courses ?? data ?? []
+        console.log('[Recommended courses]', data)
+        const arr = data?.data ?? data ?? []
         setCourses(Array.isArray(arr) ? arr : [])
       })
       .catch(e => {
-        console.error('[CareerCourses error]', e)
+        console.error('[Recommended error]', e)
         setCourses([])
       })
       .finally(() => setCoursesLoading(false))

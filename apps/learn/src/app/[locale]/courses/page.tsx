@@ -104,7 +104,7 @@ export default function CoursesPage() {
     queryFn: async () => {
       const res = await api.get('/courses/categories?language=' + locale)
       const all: any[] = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : []
-      return all.filter((c: any) => !c.parentId)
+      return all
     }
   })
   const mainCategories = categoriesData || []

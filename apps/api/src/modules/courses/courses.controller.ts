@@ -16,6 +16,7 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
 import { EnrollmentService } from './enrollment.service';
+import { RecommendationService } from './recommendation.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -29,6 +30,7 @@ export class CoursesController {
   constructor(
     private readonly coursesService: CoursesService,
     private readonly enrollmentService: EnrollmentService,
+    private readonly recommendationService: RecommendationService,
     private readonly prisma: PrismaService,
   ) { }
 
@@ -92,6 +94,39 @@ async getCourses(
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
   async getCategories(@Query('language') language?: string) {
     return this.coursesService.getCategories(language || 'en');
+  }
+
+  @Get('recommended')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get recommended courses by career paths' })
+  @ApiQuery({ name: 'paths', required: false, description: 'Comma-separated career path IDs' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of courses to return' })
+  async getRecommended(
+    @Request() req: any,
+    @Query('paths') paths: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pathIds = paths ? paths.split(',').filter(Boolean) : [];
+    const courses = await this.recommendationService.getRecommendedCourses(
+      pathIds,
+      req.user?.sub || req.user?.id,
+      parseInt(limit || '12')
+    );
+    return { success: true, data: courses };
+  }
+
+  @Get('recommended-public')
+  @ApiOperation({ summary: 'Get recommended courses (public, no auth)' })
+  @ApiQuery({ name: 'paths', required: false, description: 'Comma-separated career path IDs' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of courses to return' })
+  async getRecommendedPublic(
+    @Query('paths') paths: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pathIds = paths ? paths.split(',').filter(Boolean) : [];
+    const courses = await this.recommendationService.getRecommendedCourses(pathIds, undefined, parseInt(limit || '12'));
+    return { success: true, data: courses };
   }
 
   @Get('featured')
