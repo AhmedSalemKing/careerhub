@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { get, post } from '../../../../lib/api'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Sparkles, Plus, CheckCircle2, BookOpen, BarChart3,
   ChevronRight, Target, Briefcase, RefreshCw, X,
@@ -61,30 +59,55 @@ export default function CareerPathPage() {
     })
   }
 
-  const { data: courses = [] } = useQuery({
-    queryKey: ['career-courses', selectedPaths],
-    queryFn: async () => {
-      try {
-        const res = await get('/courses?status=PUBLISHED&limit=12')
-        console.log('[debug courses]', res.data)
-        const arr = res.data?.data ?? res.data?.courses ?? res.data ?? []
-        return Array.isArray(arr) ? arr : []
-      } catch(e: any) {
-        console.error('[courses error]', e.message)
-        return []
-      }
-    },
-    enabled: selectedPaths.length > 0,
-  })
+  const [courses, setCourses] = useState<any[]>([])
+  const [coursesLoading, setCoursesLoading] = useState(false)
+  const [bundles, setBundles] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_bundlesLoading, setBundlesLoading] = useState(false)
 
-  const { data: bundles = [] } = useQuery({
-    queryKey: ['course-bundles'],
-    queryFn: async () => {
-      const res = await get('/courses/bundles')
-      const d = res as any
-      return d?.data?.data ?? d?.data ?? []
-    },
-  })
+  useEffect(() => {
+    if (selectedPaths.length === 0) {
+      setCourses([])
+      return
+    }
+    
+    setCoursesLoading(true)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    fetch(`${apiUrl}/courses?status=PUBLISHED&limit=12`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(typeof window !== 'undefined' && localStorage.getItem('token')
+          ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          : {}),
+      },
+    })
+      .then(r => r.json())
+      .then(data => {
+        console.log('[CareerCourses raw]', data)
+        const arr = data?.data?.courses ?? data?.data ?? data?.courses ?? data ?? []
+        setCourses(Array.isArray(arr) ? arr : [])
+      })
+      .catch(e => {
+        console.error('[CareerCourses error]', e)
+        setCourses([])
+      })
+      .finally(() => setCoursesLoading(false))
+  }, [selectedPaths])
+
+  useEffect(() => {
+    setBundlesLoading(true)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    fetch(`${apiUrl}/courses/bundles`, {
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const arr = data?.data?.data ?? data?.data ?? data ?? []
+        setBundles(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => setBundles([]))
+      .finally(() => setBundlesLoading(false))
+  }, [])
 
   const TABS = [
     { key: 'paths' as TabKey, labelAr: 'مساراتي المهنية', labelEn: 'My Career Paths', icon: <Target size={15} /> },
@@ -332,7 +355,15 @@ export default function CareerPathPage() {
                   <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? `بناء على ${selectedPaths.length} مسار مختار` : `Based on ${selectedPaths.length} selected path${selectedPaths.length > 1 ? 's' : ''}`}</p>
                 </div>
                 
-                {courses.length > 0 ? (
+                {coursesLoading ? (
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14 }}>
+                    {[1,2,3,4,5,6].map(i => (
+                      <div key={i} style={{ height:200, borderRadius:14, background: isDark?'#1a1a1a':'#f4f4f8' }}>
+                        <div style={{ width:'100%', height:'100%', borderRadius:14, animation:'pulse 1.5s infinite', background: isDark?'#222':'#efefef' }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : courses.length > 0 ? (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
                     {courses.map((course: any) => (
                       <div key={course.id} style={{ borderRadius: 14, border: `1px solid ${border}`, background: cardBg, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
@@ -351,7 +382,21 @@ export default function CareerPathPage() {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '40px 24px', color: subtext }}>{isAr ? 'جاري تحميل الكورسات...' : 'Loading courses...'}</div>
+                  <div style={{ textAlign:'center', padding:'60px 24px' }}>
+                    <BookOpen size={36} color={subtext} style={{ marginBottom:12 }} />
+                    <p style={{ color:subtext, fontSize:14, marginBottom:16 }}>
+                      {isAr ? 'لا توجد كورسات منشورة حالياً' : 'No published courses yet'}
+                    </p>
+                    <button
+                      onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/courses`, '_blank')}
+                      style={{
+                        padding:'10px 22px', borderRadius:10,
+                        background:'#5120c8', color:'#ffffff', border:'none', cursor:'pointer',
+                        fontSize:13, fontWeight:700,
+                      }}>
+                      {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
+                    </button>
+                  </div>
                 )}
                 
                 {bundles.length > 0 && (
