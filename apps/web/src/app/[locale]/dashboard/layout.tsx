@@ -13,7 +13,7 @@ import {
   Calendar, CalendarDays, DollarSign, Wallet,
   Brain, MessageSquare, Award, Settings,
   Shield, Users, Bell, ClipboardList, CalendarCheck,
-  X, Menu
+  X, Menu, Briefcase
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -51,6 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: PlusCircle, labelAr: 'كورس جديد', labelEn: 'New', href: `/${locale}/dashboard/create-course` },
       { icon: BarChart2, labelAr: 'إحصائيات', labelEn: 'Stats', href: `/${locale}/dashboard/analytics` },
       { icon: DollarSign, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/dashboard/revenue` },
+      { icon: Award, labelAr: 'ملفي', labelEn: 'Profile', href: `/${locale}/dashboard/consultant-profile` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
     
@@ -59,6 +60,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
+      { icon: Award, labelAr: 'ملفي', labelEn: 'Profile', href: `/${locale}/dashboard/consultant-profile` },
       { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
