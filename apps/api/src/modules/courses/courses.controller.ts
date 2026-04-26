@@ -107,13 +107,13 @@ async getCourses(
     @Query('paths') paths: string,
     @Query('limit') limit?: string,
   ) {
-    const pathIds = paths ? paths.split(',').filter(Boolean) : [];
-    const courses = await this.recommendationService.getRecommendedCourses(
-      pathIds,
-      req.user?.sub || req.user?.id,
-      parseInt(limit || '12')
-    );
-    return { success: true, data: courses };
+    const limitNum = parseInt(limit || '12')
+    const courses = await this.coursesService.getCourses({
+      page: 1,
+      limit: limitNum,
+      language: 'en',
+    });
+    return { success: true, data: courses.courses };
   }
 
   @Get('recommended-public')
@@ -127,18 +127,13 @@ async getCourses(
     const limitNum = parseInt(limit || '12')
     const pathIds = paths ? paths.split(',').filter(Boolean) : [];
     
-    console.log('[recommended-public] paths:', pathIds, 'limit:', limitNum);
-    
-    // Direct Prisma query
-    const courses = await this.prisma.course.findMany({
-      where: { status: 'PUBLISHED' },
-      take: limitNum,
-      orderBy: { createdAt: 'desc' },
+    const courses = await this.coursesService.getCourses({
+      page: 1,
+      limit: limitNum,
+      language: 'en',
     });
     
-    console.log('[recommended-public] found:', courses.length);
-    
-    return { success: true, data: courses };
+    return { success: true, data: courses.courses };
   }
 
   @Get('featured')
