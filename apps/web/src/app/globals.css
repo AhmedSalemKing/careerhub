@@ -1305,6 +1305,53 @@ a[href*="/courses"] img {
 }
 
 /* ══════════════════════════════════════
+   FORCE WHITE TEXT ON #5120C8 BUTTONS
+   All purple buttons must always have white text
+   ══════════════════════════════════════ */
+
+/* Target inline styles with #5120c8 background */
+button[style*="#5120c8"],
+button[style*="background: #5120c8"],
+button[style*="background:#5120c8"],
+button[style*="background-color: #5120c8"],
+button[style*="background-color:#5120c8"],
+button[style*="background: rgb(81, 32, 200)"],
+button[style*="background:rgba(81, 32, 200)"],
+a[style*="#5120c8"],
+a[style*="background: #5120c8"],
+a[style*="background:#5120c8"],
+a[style*="background-color: #5120c8"] {
+    color: #ffffff !important;
+}
+
+/* Also target style prop on elements */
+*[style*="background: #5120c8"],
+*[style*="background:#5120c8"],
+*[style*="background-color: #5120c8"],
+*[style*="background-color:#5120c8"],
+*[style*="background: rgb(81, 32, 200)"],
+*[style*="background: rgba(81, 32, 200)"],
+*[style*="background: #5120c8 !important"],
+*[style*="background-color: #5120c8 !important"] {
+    color: #ffffff !important;
+}
+
+/* Ensure SVG icons in purple buttons are white */
+button[style*="#5120c8"] svg,
+a[style*="#5120c8"] svg {
+    fill: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+/* Use CSS custom property for primary */
+button,
+a,
+input[type="submit"],
+input[type="button"] {
+    color: var(--primary-fg, #ffffff);
+}
+
+/* ══════════════════════════════════════
    END OF FILE
    DeveWay Dashboard Design System v4.0
    ══════════════════════════════════════ */
