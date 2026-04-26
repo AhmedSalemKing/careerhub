@@ -190,72 +190,127 @@ export default function CoachingPage() {
               const quals = c.profile?.qualifications || []
 
               return (
-                <div key={c.id} style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.transform = 'translateY(0)' }}>
+                <div key={c.id} style={{
+                  background: cardBg, borderRadius: 16,
+                  border: `1px solid ${border}`,
+                  overflow: 'hidden', transition: 'all 0.2s ease',
+                  display: 'flex', flexDirection: 'column',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(81,32,200,0.3)'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = border
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}>
                   <div style={{ height: 80, background: isDark ? '#1a1a1a' : '#f8f8fa', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: 10, left: isAr ? 'auto' : 10, right: isAr ? 10 : 'auto', padding: '3px 10px', borderRadius: 20, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{
+                      position: 'absolute', top: 10,
+                      left: isAr ? 'auto' : 10, right: isAr ? 10 : 'auto',
+                      padding: '3px 10px', borderRadius: 20,
+                      background: 'rgba(0,0,0,0.4)',
+                      color: '#fff', fontSize: 11, fontWeight: 700,
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}>
                       <Calendar size={10} />
-                      {sessionCount} {isAr ? 'جلسة' : 'sessions'}
+                      <span><span>{sessionCount}</span> <span>{isAr ? 'جلسة' : 'sessions'}</span></span>
                     </div>
-                    {c.isVerified && (
-                      <div style={{ position: 'absolute', top: 10, right: isAr ? 'auto' : 10, left: isAr ? 10 : 'auto', padding: '3px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.85)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <CheckCircle2 size={10} />
-                        {isAr ? 'موثق' : 'Verified'}
-                      </div>
-                    )}
-                    <div style={{ position: 'absolute', bottom: -24, right: isAr ? 20 : 'auto', left: isAr ? 'auto' : 20 }}>
+                    <div style={{
+                      position: 'absolute', bottom: -24,
+                      right: isAr ? 20 : 'auto', left: isAr ? 'auto' : 20,
+                    }}>
                       {c.profile?.avatar ? (
-                        <img src={c.profile.avatar} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover', border: `3px solid ${cardBg}` }} />
+                        <img src={c.profile.avatar} alt=""
+                          style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover', border: `3px solid ${cardBg}` }} />
                       ) : (
-                        <div style={{ width: 52, height: 52, borderRadius: 14, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 800 }}>
-                          {getInitials(c)}
+                        <div style={{
+                          width: 52, height: 52, borderRadius: 14,
+                          background: '#5120c8', border: `3px solid ${cardBg}`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          color: '#fff', fontSize: 18, fontWeight: 800,
+                        }}>
+                          <span>{getInitials(c)}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div style={{ padding: '32px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ marginBottom: 12 }}>
-                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: '0 0 3px' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
-                      {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: 0 }}>{c.profile.speciality}</p>}
+
+                  <div style={{ padding: '32px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div>
+                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0 }}>
+                        <span>{c.profile?.firstName || ''} {c.profile?.lastName || ''}</span>
+                      </h3>
+                      {c.profile?.speciality ? (
+                        <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: '3px 0 0' }}>
+                          <span>{c.profile.speciality}</span>
+                        </p>
+                      ) : null}
                     </div>
-                    <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-                      {years > 0 && (
+
+                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                      {years > 0 ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                           <Briefcase size={12} color={subtext} />
-                          <span style={{ color: subtext, fontSize: 12 }}>{String(years)} {isAr ? 'سنة' : 'yrs'}</span>
+                          <span style={{ color: subtext, fontSize: 12 }}><span>{years}</span> <span>{isAr ? 'سنة' : 'yrs'}</span></span>
                         </div>
-                      )}
+                      ) : null}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Clock size={12} color={subtext} />
-                        <span style={{ color: subtext, fontSize: 12 }}>{String(duration)} {isAr ? 'دقيقة' : 'min'}</span>
+                        <span style={{ color: subtext, fontSize: 12 }}><span>{duration}</span> <span>{isAr ? 'دقيقة' : 'min'}</span></span>
                       </div>
-                      {quals.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <GraduationCap size={12} color={subtext} />
-                          <span style={{ color: subtext, fontSize: 12 }}>{String(quals.length)} {isAr ? 'مؤهل' : 'quals'}</span>
-                        </div>
-                      )}
                     </div>
-                    {c.profile?.bio && <p style={{ color: subtext, fontSize: 12, lineHeight: 1.65, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.profile.bio}</p>}
-                    {areas.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
-                        {areas.slice(0, 3).map((area: string, i: number) => <span key={i} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.15)', color: '#5120c8' }}>{area}</span>)}
-                        {areas.length > 3 && <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, background: isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8', border: `1px solid ${border}`, color: subtext }}>+{areas.length - 3}</span>}
+
+                    {c.profile?.bio ? (
+                      <p style={{
+                        color: subtext, fontSize: 12, lineHeight: 1.65, margin: 0,
+                        display: '-webkit-box', WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                      }}>
+                        <span>{c.profile.bio}</span>
+                      </p>
+                    ) : null}
+
+                    {areas.length > 0 ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                        {areas.slice(0, 3).map((area: string, i: number) => (
+                          <span key={i} style={{
+                            padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                            background: 'rgba(81,32,200,0.06)',
+                            border: '1px solid rgba(81,32,200,0.15)',
+                            color: '#5120c8',
+                          }}>
+                            {area}
+                          </span>
+                        ))}
                       </div>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <span style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>
-                        {price > 0 ? String(price) : (isAr ? 'مجاني' : 'Free')}
-                      </span>
-                      {price > 0 && (
-                        <span style={{ color: subtext, fontSize: 12, marginRight: 4, marginLeft: 4 }}>
-                          {isAr ? 'ر.س / جلسة' : 'SAR / session'}
-                        </span>
-                      )}
+                    ) : null}
+
+                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingTop: 8 }}>
+                      <div>
+                        <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900, lineHeight: 1 }}>
+                          <span>{price > 0 ? (price + (isAr ? ' ر.س' : ' SAR')) : (isAr ? 'مجاني' : 'Free')}</span>
+                        </div>
+                      </div>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => setSelectedConsultant(c)} style={{ padding: '9px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 12, fontWeight: 600 }}>{isAr ? 'التفاصيل' : 'Details'}</button>
-                        <button onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)} style={{ padding: '9px 16px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{isAr ? 'احجز' : 'Book'}<ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} /></button>
+                        <button
+                          onClick={() => setSelectedConsultant(c)}
+                          style={{
+                            padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                            border: `1px solid ${border}`, background: 'transparent',
+                            color: text, fontSize: 12, fontWeight: 600,
+                          }}>
+                          <span>{isAr ? 'التفاصيل' : 'Details'}</span>
+                        </button>
+                        <button
+                          onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)}
+                          style={{
+                            padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
+                            background: '#5120c8', color: '#ffffff',
+                            border: 'none', fontSize: 12, fontWeight: 700,
+                          }}>
+                          <span>{isAr ? 'احجز' : 'Book'}</span>
+                        </button>
                       </div>
                     </div>
                   </div>
