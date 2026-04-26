@@ -84,7 +84,20 @@ export default function AssessmentPage() {
         const res = calculateResults(questions, newAnswers, locale)
         setResults(res)
         localStorage.setItem('assessmentResults', JSON.stringify(res))
-        setPhase('results')
+        
+        const trackMapping: Record<string,string> = {
+          'frontend':'frontend-dev','backend':'backend-dev','fullstack':'fullstack-dev',
+          'mobile':'mobile-dev','devops':'devops','data-science':'data-scientist',
+          'ai-ml':'ai-engineer','cybersecurity':'cybersecurity','ui-ux':'ui-ux',
+          'graphic-design':'graphic-designer','digital-marketing':'digital-marketing',
+          'seo':'digital-marketing','content':'content-creator',
+          'product-manager':'product-manager','business-analyst':'business-analyst',
+          'project-manager':'project-manager','sales':'sales-manager',
+          'entrepreneur':'entrepreneur',
+        }
+        const pathIds = res.slice(0,3).map((r: any) => trackMapping[r.track] || r.track)
+        localStorage.setItem('selectedCareerPaths', JSON.stringify(pathIds))
+        router.push(`/${locale}/dashboard/career-path`)
       }, 2500)
     }
   }

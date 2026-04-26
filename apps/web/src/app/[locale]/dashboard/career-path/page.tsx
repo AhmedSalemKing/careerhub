@@ -64,8 +64,15 @@ export default function CareerPathPage() {
   const { data: courses = [] } = useQuery({
     queryKey: ['career-courses', selectedPaths],
     queryFn: async () => {
-      const res = await get('/courses?status=PUBLISHED&limit=12')
-      return res.data?.data ?? res.data?.courses ?? []
+      try {
+        const res = await get('/courses?status=PUBLISHED&limit=12')
+        console.log('[debug courses]', res.data)
+        const arr = res.data?.data ?? res.data?.courses ?? res.data ?? []
+        return Array.isArray(arr) ? arr : []
+      } catch(e: any) {
+        console.error('[courses error]', e.message)
+        return []
+      }
     },
     enabled: selectedPaths.length > 0,
   })
@@ -272,7 +279,10 @@ export default function CareerPathPage() {
                         </div>
                       </div>
                       <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
-                      <button onClick={() => togglePath(result.track)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: selectedPaths.includes(result.track) ? 'transparent' : '#5120c8', color: selectedPaths.includes(result.track) ? subtext : '#ffffff', border: `1px solid ${selectedPaths.includes(result.track) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <button onClick={() => {
+                        const m:Record<string,string> = {'frontend':'frontend-dev','backend':'backend-dev','fullstack':'fullstack-dev','mobile':'mobile-dev','devops':'devops','data-science':'data-scientist','ai-ml':'ai-engineer','cybersecurity':'cybersecurity','ui-ux':'ui-ux','graphic-design':'graphic-designer','digital-marketing':'digital-marketing','seo':'digital-marketing','content':'content-creator','product-manager':'product-manager','business-analyst':'business-analyst','project-manager':'project-manager','sales':'sales-manager','entrepreneur':'entrepreneur'}
+                        togglePath(m[result.track] || result.track)
+                      }} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: selectedPaths.includes(result.track) ? 'transparent' : '#5120c8', color: selectedPaths.includes(result.track) ? subtext : '#ffffff', border: `1px solid ${selectedPaths.includes(result.track) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
                         {selectedPaths.includes(result.track) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
                       </button>
                     </div>
