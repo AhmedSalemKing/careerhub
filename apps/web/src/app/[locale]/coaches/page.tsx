@@ -14,7 +14,7 @@ export default function CoachesPage() {
 
   const q = useQuery({
     queryKey: ['coaches'],
-    queryFn: async () => (await get<CoachCardCoach[]>('/api/coaching/coaches')).data,
+    queryFn: async () => (await get<CoachCardCoach[]>('/coaching/coaches')).data,
   })
 
   return (

@@ -30,7 +30,7 @@ export default function DashboardChatPage() {
   const q = useQuery({
     queryKey: ['session', id],
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<unknown>>(`/api/coaching/sessions/${encodeURIComponent(id)}`)).data
+      const raw = (await get<ApiEnvelope<unknown>>(`/coaching/sessions/${encodeURIComponent(id)}`)).data
       const data = unwrapData(raw) as any
       return (data?.session ?? data?.data?.session ?? data) as SessionDetails
     },
