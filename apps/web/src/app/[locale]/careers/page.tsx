@@ -8,7 +8,8 @@ import Link from 'next/link'
 import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
   Briefcase, Package, ChevronRight, Clock, Star, DollarSign,
-  Flame, Zap, Sparkles, ArrowLeft, Users, BookOpen, Globe, Megaphone, Rocket, Brain
+  Flame, Zap, Sparkles, ArrowLeft, Users, BookOpen, Globe, Megaphone, Rocket, Brain,
+  X, CheckCircle2
 } from 'lucide-react'
 import { CAREER_PATHS } from '@/lib/career-paths'
 
@@ -47,6 +48,8 @@ export default function CareersPage() {
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set())
+  const [detailPath, setDetailPath] = useState<any>(null)
+  const [detailTab, setDetailTab] = useState<'tasks'|'skills'|'qualifications'|'progression'>('tasks')
   
   const allPaths = useMemo(() => {
     return CAREER_PATHS.flatMap(cat => 
@@ -120,6 +123,8 @@ export default function CareersPage() {
   const cardBg = isDark ? '#111111' : '#ffffff'
   const border = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const subtext = isDark ? '#94a3b8' : '#6b7280'
+  const textMuted = isDark ? '#64748b' : '#9ca3af'
   
   return (
     <div style={{ minHeight:'100vh', background:bg, direction:isAr?'rtl':'ltr' }}>
@@ -369,23 +374,45 @@ export default function CareersPage() {
                   </div>
                 )}
                 
-                {/* CTA Button */}
-                <button
-                  onClick={() => router.push(`/${locale}/dashboard/career-path?path=${path.id}`)}
-                  style={{
-                    width:'100%', padding:'12px', borderRadius:12,
-                    background:'#5120c8', color:'#fff', border:'none', cursor:'pointer',
-                    fontSize:13, fontWeight:700,
-                    display:'flex', alignItems:'center', justifyContents:'center', gap:6,
-                    boxShadow:'0 4px 12px rgba(81,32,200,0.25)',
-                    transition:'opacity 0.2s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.opacity='0.9'}
-                  onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.opacity='1'}
-                >
-                  {isAr ? 'ابدأ المسار' : 'Start Path'}
-                  <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
-                </button>
+                {/* CTA Buttons */}
+                <div style={{ display:'flex', gap:8, marginTop:'auto' }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
+                    style={{
+                      flex:1, padding:'10px', borderRadius:10,
+                      background:'transparent',
+                      border:`1px solid ${border}`,
+                      color:subtext, cursor:'pointer', fontSize:13, fontWeight:600,
+                      transition:'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'; e.currentTarget.style.color='#5120c8' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor=border; e.currentTarget.style.color=subtext }}>
+                    {isAr ? 'التفاصيل' : 'Details'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      try {
+                        const saved = localStorage.getItem('selectedCareerPaths')
+                        const current: string[] = saved ? JSON.parse(saved) : []
+                        if (!current.includes(path.id)) {
+                          localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, path.id].slice(0,5)))
+                        }
+                      } catch(e) {}
+                      router.push(`/${locale}/dashboard/career-path`)
+                    }}
+                    style={{
+                      flex:1, padding:'10px', borderRadius:10,
+                      background:'#5120c8', color:'#ffffff',
+                      border:'none', cursor:'pointer', fontSize:13, fontWeight:700,
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                      transition:'opacity 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.opacity='0.88'}
+                    onMouseLeave={e => e.currentTarget.style.opacity='1'}>
+                    <ChevronRight size={14} style={{ transform: isAr?'rotate(180deg)':'none' }} />
+                    {isAr ? 'ابدأ المسار' : 'Start Path'}
+                  </button>
+                </div>
               </div>
             )
           })}
@@ -431,6 +458,264 @@ export default function CareersPage() {
           </div>
         </div>
       </div>
+      
+      {/* Detail Panel */}
+      {detailPath && (
+        <>
+          <div
+            onClick={() => setDetailPath(null)}
+            style={{
+              position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
+              zIndex:100, backdropFilter:'blur(4px)',
+            }}
+          />
+          
+          <div style={{
+            position:'fixed', top:0, bottom:0,
+            right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0,
+            width: Math.min(520, window.innerWidth),
+            background: cardBg,
+            borderLeft: isAr ? 'none' : `1px solid ${border}`,
+            borderRight: isAr ? `1px solid ${border}` : 'none',
+            zIndex:101, display:'flex', flexDirection:'column',
+            overflowY:'auto',
+            animation: 'slideIn 0.25s ease',
+          }}>
+            <style>{`
+              @keyframes slideIn {
+                from { transform: translateX(${isAr ? '100%' : '-100%'}); opacity: 0; }
+                to   { transform: translateX(0); opacity: 1; }
+              }
+            `}</style>
+            
+            <div style={{
+              padding:'20px 24px', borderBottom:`1px solid ${border}`,
+              display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:12,
+              position:'sticky', top:0, background:cardBg, zIndex:10,
+            }}>
+              <div style={{ flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+                  {(() => { const IconComp = ICON_MAP[detailPath.icon] || Briefcase; return <IconComp size={18} color="#5120c8" /> })()}
+                  <h2 style={{ color:text, fontSize:18, fontWeight:900, margin:0, letterSpacing:'-0.02em' }}>
+                    {isAr ? detailPath.titleAr : detailPath.titleEn}
+                  </h2>
+                </div>
+                <p style={{ color:subtext, fontSize:13, margin:0, lineHeight:1.6 }}>
+                  {isAr ? detailPath.descriptionAr : detailPath.descriptionEn}
+                </p>
+              </div>
+              <button onClick={() => setDetailPath(null)} style={{
+                width:32, height:32, borderRadius:8, flexShrink:0,
+                border:`1px solid ${border}`, background:'transparent',
+                cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:subtext,
+              }}>
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div style={{ padding:'16px 24px', borderBottom:`1px solid ${border}`, display:'flex', gap:12 }}>
+              <div style={{
+                flex:1, padding:'14px', borderRadius:12,
+                border:'1px solid rgba(81,32,200,0.2)',
+                background: isDark?'rgba(81,32,200,0.08)':'rgba(81,32,200,0.04)',
+              }}>
+                <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:4 }}>
+                  <DollarSign size={13} color="#5120c8" />
+                  <span style={{ color:subtext, fontSize:11, fontWeight:600 }}>
+                    {isAr ? 'الراتب الشهري' : 'Monthly Salary'}
+                  </span>
+                </div>
+                <div style={{ color:'#5120c8', fontWeight:900, fontSize:16 }}>
+                  ${detailPath.salary?.toLocaleString() || '0'}
+                  <span style={{ fontSize:11, fontWeight:500, marginRight:4, color:subtext }}> SAR</span>
+                </div>
+              </div>
+              <div style={{
+                flex:1, padding:'14px', borderRadius:12,
+                border:`1px solid ${border}`,
+                background: isDark?'rgba(255,255,255,0.03)':'#fafafa',
+              }}>
+                <div style={{ color:subtext, fontSize:11, fontWeight:600, marginBottom:4 }}>
+                  {isAr ? 'الطلب في السوق' : 'Market Demand'}
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  {(detailPath.demand || '').toLowerCase().includes('very')
+                    ? <Flame size={14} color="#16a34a" />
+                    : <Zap size={14} color="#d97706" />}
+                  <span style={{
+                    fontWeight:700, fontSize:14,
+                    color: (detailPath.demand || '').toLowerCase().includes('very')?'#16a34a':'#d97706',
+                  }}>
+                    {(detailPath.demand || '').toLowerCase().includes('very')
+                      ? (isAr?'طلب عالٍ جداً':'Very High')
+                      : (isAr?'طلب جيد':'Good')}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div style={{
+              display:'flex', borderBottom:`1px solid ${border}`,
+              overflowX:'auto', scrollbarWidth:'none',
+              position:'sticky', top:93, background:cardBg, zIndex:9,
+            }}>
+              {[
+                { key:'tasks', labelAr:'المهام', labelEn:'Tasks' },
+                { key:'skills', labelAr:'المهارات', labelEn:'Skills' },
+                { key:'qualifications', labelAr:'المؤهلات', labelEn:'Qualifications' },
+                { key:'progression', labelAr:'التدرج الوظيفي', labelEn:'Career Path' },
+              ].map(tab => (
+                <button key={tab.key} onClick={() => setDetailTab(tab.key as any)} style={{
+                  padding:'12px 20px', background:'none', border:'none', cursor:'pointer',
+                  fontSize:13, fontWeight:700, flexShrink:0,
+                  color: detailTab===tab.key ? '#5120c8' : subtext,
+                  borderBottom: `2px solid ${detailTab===tab.key ? '#5120c8' : 'transparent'}`,
+                  marginBottom:-1, transition:'all 0.15s',
+                }}>
+                  {isAr ? tab.labelAr : tab.labelEn}
+                </button>
+              ))}
+            </div>
+            
+            <div style={{ padding:'20px 24px', flex:1 }}>
+              
+              {detailTab === 'tasks' && (
+                <div>
+                  <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
+                    {isAr ? 'المهام الوظيفية' : 'Job Tasks'}
+                  </h3>
+                  {(detailPath.tasks || []).map((task: string, i: number) => (
+                    <div key={i} style={{
+                      display:'flex', gap:12, padding:'10px 0',
+                      borderBottom: i < (detailPath.tasks?.length || 0)-1 ? `1px solid ${border}` : 'none',
+                    }}>
+                      <div style={{
+                        width:24, height:24, borderRadius:6, flexShrink:0,
+                        background:'rgba(81,32,200,0.08)',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        marginTop:1,
+                      }}>
+                        <span style={{ color:'#5120c8', fontSize:11, fontWeight:800 }}>{i+1}</span>
+                      </div>
+                      <span style={{ color: isDark?'#e2e8f0':'#374151', fontSize:13, lineHeight:1.65 }}>{task}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {detailTab === 'skills' && (
+                <div>
+                  <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
+                    {isAr ? 'المهارات المطلوبة' : 'Required Skills'}
+                  </h3>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                    {(detailPath.skills || []).map((skill: string, i: number) => (
+                      <div key={i} style={{
+                        padding:'8px 16px', borderRadius:20,
+                        background: isDark?'rgba(81,32,200,0.1)':'rgba(81,32,200,0.06)',
+                        border:'1px solid rgba(81,32,200,0.2)',
+                        color:'#5120c8', fontSize:13, fontWeight:600,
+                        display:'flex', alignItems:'center', gap:6,
+                      }}>
+                        <div style={{ width:5, height:5, borderRadius:'50%', background:'#5120c8', flexShrink:0 }} />
+                        {skill}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {detailTab === 'qualifications' && (
+                <div>
+                  <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
+                    {isAr ? 'المؤهلات المطلوبة' : 'Required Qualifications'}
+                  </h3>
+                  {(detailPath.qualifications || []).map((q: string, i: number) => (
+                    <div key={i} style={{
+                      display:'flex', gap:10, padding:'10px 0',
+                      borderBottom: i < (detailPath.qualifications?.length || 0)-1 ? `1px solid ${border}` : 'none',
+                    }}>
+                      <CheckCircle2 size={16} color="#16a34a" style={{ flexShrink:0, marginTop:2 }} />
+                      <span style={{ color: isDark?'#e2e8f0':'#374151', fontSize:13, lineHeight:1.6 }}>{q}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {detailTab === 'progression' && (
+                <div>
+                  <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:20 }}>
+                    {isAr ? 'التدرج الوظيفي' : 'Career Progression'}
+                  </h3>
+                  <div style={{ position:'relative' }}>
+                    <div style={{
+                      position:'absolute', top:20, bottom:20,
+                      right: isAr ? 19 : 'auto', left: isAr ? 'auto' : 19,
+                      width:2, background: isDark?'rgba(255,255,255,0.06)':'#e5e7eb',
+                    }} />
+                    {(detailPath.progression || []).map((level: string, i: number) => (
+                      <div key={i} style={{ display:'flex', gap:14, alignItems:'center', marginBottom:16, position:'relative' }}>
+                        <div style={{
+                          width:40, height:40, borderRadius:'50%', flexShrink:0,
+                          background: i===0 ? '#5120c8' : (isDark?'rgba(255,255,255,0.06)':'#f4f4f8'),
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                          border: i>0 ? `1px solid ${border}` : 'none',
+                          zIndex:1,
+                        }}>
+                          <span style={{ color: i===0?'#ffffff':subtext, fontSize:12, fontWeight:800 }}>{i+1}</span>
+                        </div>
+                        <div>
+                          <div style={{ color:text, fontWeight:700, fontSize:14 }}>{level}</div>
+                          {i===0 && <div style={{ color:'#5120c8', fontSize:11, marginTop:2 }}>{isAr?'نقطة البداية':'Starting Point'}</div>}
+                          {i===(detailPath.progression?.length || 1)-1 && <div style={{ color:'#16a34a', fontSize:11, marginTop:2 }}>{isAr?'الهدف النهائي':'End Goal'}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div style={{
+              padding:'16px 24px', borderTop:`1px solid ${border}`,
+              display:'flex', gap:10,
+              position:'sticky', bottom:0, background:cardBg,
+            }}>
+              <button
+                onClick={() => {
+                  try {
+                    const saved = localStorage.getItem('selectedCareerPaths')
+                    const current: string[] = saved ? JSON.parse(saved) : []
+                    if (!current.includes(detailPath.id)) {
+                      localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, detailPath.id].slice(0,5)))
+                    }
+                  } catch(e) {}
+                  router.push(`/${locale}/dashboard/career-path`)
+                }}
+                style={{
+                  flex:1, padding:'13px', borderRadius:12,
+                  background:'#5120c8', color:'#ffffff', border:'none', cursor:'pointer',
+                  fontSize:14, fontWeight:700, transition:'opacity 0.15s',
+                  display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                }}>
+                <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
+                {isAr ? 'ابدأ هذا المسار' : 'Start This Path'}
+              </button>
+              <button
+                onClick={() => router.push(`/${locale}/coaching`)}
+                style={{
+                  padding:'13px 18px', borderRadius:12, cursor:'pointer',
+                  border:`1px solid ${border}`, background:'transparent',
+                  color:subtext, fontSize:13, fontWeight:600,
+                  display:'flex', alignItems:'center', gap:5,
+                }}>
+                <Users size={14} />
+                {isAr ? 'كوتشينج' : 'Coaching'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
