@@ -127,11 +127,16 @@ async getCourses(
     const limitNum = parseInt(limit || '12')
     const pathIds = paths ? paths.split(',').filter(Boolean) : [];
     
-    // Bypass scoring - just return published courses
+    console.log('[recommended-public] paths:', pathIds, 'limit:', limitNum);
+    
+    // Direct Prisma query
     const courses = await this.prisma.course.findMany({
       where: { status: 'PUBLISHED' },
       take: limitNum,
+      orderBy: { createdAt: 'desc' },
     });
+    
+    console.log('[recommended-public] found:', courses.length);
     
     return { success: true, data: courses };
   }
