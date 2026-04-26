@@ -268,8 +268,8 @@ export default function CoachingPage() {
                         <div style={{
                           position: 'absolute',
                           bottom: -4,
-                          left: isAr ? 'auto' : -6,
-                          right: isAr ? -6 : 'auto',
+                          left: -6,
+                          right: 'auto',
                           width: 22,
                           height: 22,
                           borderRadius: '50%',
