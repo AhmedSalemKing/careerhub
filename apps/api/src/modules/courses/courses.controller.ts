@@ -107,13 +107,11 @@ async getCourses(
     @Query('paths') paths: string,
     @Query('limit') limit?: string,
   ) {
-    const limitNum = parseInt(limit || '12')
-    const courses = await this.coursesService.getCourses({
+    return this.coursesService.getCourses({
       page: 1,
-      limit: limitNum,
+      limit: parseInt(limit || '12'),
       language: 'en',
     });
-    return { success: true, data: courses.courses };
   }
 
   @Get('recommended-public')
@@ -124,16 +122,12 @@ async getCourses(
     @Query('paths') paths: string,
     @Query('limit') limit?: string,
   ) {
-    const limitNum = parseInt(limit || '12')
-    const pathIds = paths ? paths.split(',').filter(Boolean) : [];
-    
-    const courses = await this.coursesService.getCourses({
+    // Simple: return all published courses
+    return this.coursesService.getCourses({
       page: 1,
-      limit: limitNum,
+      limit: parseInt(limit || '12'),
       language: 'en',
     });
-    
-    return { success: true, data: courses.courses };
   }
 
   @Get('featured')
