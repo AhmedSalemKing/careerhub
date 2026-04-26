@@ -97,7 +97,7 @@ export default function CoachingPage() {
       if (c.profile?.qualifications?.length > 0) score += c.profile.qualifications.length * 2
       if (c.profile?.consultingAreas?.length > 0) score += c.profile.consultingAreas.length * 2
       if (c.profile?.linkedinUrl) score += 2
-      if (c.isVerified) score += 10
+      if (c.isVerified || c.verified) score += 10
       return { ...c, _score: score }
     })
 
@@ -242,6 +242,20 @@ export default function CoachingPage() {
                       <Calendar size={10} />
                       <span><span>{sessionCount}</span> <span>{isAr ? 'جلسة' : 'sessions'}</span></span>
                     </div>
+                    {(c.isVerified || c.verified) && (
+                      <div style={{
+                        position: 'absolute', top: 10,
+                        right: isAr ? 'auto' : 10, left: isAr ? 10 : 'auto',
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        padding: '4px 10px', borderRadius: 20,
+                        background: 'rgba(22,163,74,0.9)',
+                      }}>
+                        <CheckCircle2 size={11} color="#ffffff" />
+                        <span style={{ color: '#ffffff', fontSize: 11, fontWeight: 700 }}>
+                          {isAr ? 'موثق' : 'Verified'}
+                        </span>
+                      </div>
+                    )}
                     <div style={{
                       position: 'absolute', bottom: -24,
                       right: isAr ? 20 : 'auto', left: isAr ? 'auto' : 20,
@@ -264,8 +278,9 @@ export default function CoachingPage() {
 
                   <div style={{ padding: '32px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
-                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0 }}>
+                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span>{c.profile?.firstName || ''} {c.profile?.lastName || ''}</span>
+                        {(c.isVerified || c.verified) && <CheckCircle2 size={15} color="#16a34a" />}
                       </h3>
                       {c.profile?.speciality ? (
                         <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: '3px 0 0' }}>
