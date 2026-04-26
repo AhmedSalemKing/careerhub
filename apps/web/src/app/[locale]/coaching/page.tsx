@@ -237,7 +237,7 @@ export default function CoachingPage() {
                   <div style={{ height: 80, background: isDark ? '#1a1a1a' : '#f8f8fa', position: 'relative' }}>
                     <div style={{
                       position: 'absolute', top: 10,
-                      left: isAr ? 'auto' : 10, right: isAr ? 10 : 'auto',
+                      left: 10, right: 'auto',
                       padding: '3px 10px', borderRadius: 20,
                       background: 'rgba(0,0,0,0.4)',
                       color: '#fff', fontSize: 11, fontWeight: 700,
