@@ -1,507 +1,244 @@
 'use client'
-
 import { useState, useMemo } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { get, post } from '../../../lib/api'
-import { getMediaUrl } from '../../../lib/media'
-import { notify } from '../../../lib/notify'
-import { useAuthStore } from '../../../stores/authStore'
+import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { get } from '@/lib/api'
 import {
-  Clock, Globe, Video, Phone,
-  X, User,
-  Briefcase, Award, MapPin,
-  Search, Users, Info
+  Search, Star, Clock, Briefcase, CheckCircle2, X,
+  GraduationCap, ChevronRight, Filter, SlidersHorizontal,
+  DollarSign, Linkedin, Award, Users, Calendar
 } from 'lucide-react'
-import VerifiedBadge from '../../../components/VerifiedBadge'
 
-interface Consultant {
-  id: string
-  hourlyRate: number
-  meetingMethod: string
-  bio: string
-  speciality: string
-  experience: number
-  isVerified?: boolean
-  profile: { firstName: string; lastName: string; avatar: string | null; country: string }
-  _count: { consultantSessions: number }
-}
-
-function BookingModal({
-  consultant,
-  onClose,
-  onSuccess,
-}: {
-  consultant: Consultant
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const locale = useLocale()
-  const isAr = locale === 'ar'
-  const [step, setStep] = useState<'details' | 'schedule' | 'confirm'>('details')
-  const [selectedDate, setSelectedDate] = useState('')
-  const [selectedTime, setSelectedTime] = useState('')
-  const [method, setMethod] = useState<'ZOOM' | 'GOOGLE_MEET' | 'PHONE'>('ZOOM')
-  const [topic, setTopic] = useState('')
-  const [notes, setNotes] = useState('')
-
-  const name = `${consultant.profile.firstName} ${consultant.profile.lastName}`
-  const avatar = getMediaUrl(consultant.profile.avatar)
-
-  const bookMutation = useMutation({
-    mutationFn: async () => {
-      const scheduledAt = new Date(`${selectedDate}T${selectedTime}:00`)
-      const res = await post('/sessions/book', {
-        consultantId: consultant.id,
-        scheduledAt: scheduledAt.toISOString(),
-        meetingMethod: method,
-        topic,
-        notes,
-        duration: 60,
-      })
-      return (res?.data as any)?.data
-    },
-    onSuccess: () => {
-      notify.success(isAr ? 'تم إرسال طلب الاستشارة بنجاح!' : 'Consultation request sent successfully!')
-      onSuccess()
-      onClose()
-    },
-    onError: (err: any) => {
-      notify.error(err?.response?.data?.message || (isAr ? 'حدث خطأ في الحجز' : 'Booking error'))
-    }
-  })
-
-  const timeSlots = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
-  const minDate = new Date()
-  minDate.setDate(minDate.getDate() + 1)
-  const minDateStr = minDate.toISOString().split('T')[0]
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
-          <div className="flex items-center gap-3">
-            {avatar ? (
-              <img src={avatar} className="h-10 w-10 rounded-full object-cover" alt={name} />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white font-bold">
-                {name[0]}
-              </div>
-            )}
-            <div>
-              <h3 className="font-bold text-foreground flex items-center gap-1.5">{name}{consultant.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}</h3>
-              <p className="text-xs text-[color:var(--muted)]">{consultant.speciality}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="rounded-xl p-2 hover:bg-[color:var(--surface-2)] transition">
-            <X className="h-5 w-5 text-[color:var(--muted)]" />
-          </button>
-        </div>
-
-        <div className="flex border-b border-[color:var(--border)]">
-          {([
-            { id: 'details', label: isAr ? 'التفاصيل' : 'Details' },
-            { id: 'schedule', label: isAr ? 'الموعد' : 'Schedule' },
-            { id: 'confirm', label: isAr ? 'تأكيد' : 'Confirm' },
-          ] as const).map((s, i) => (
-            <div key={s.id}
-              className={`flex-1 py-3 text-center text-xs font-semibold transition ${
-                step === s.id
-                  ? 'text-primary border-b-2 border-primary bg-primary/5'
-                  : 'text-[color:var(--muted)]'
-              }`}>
-              {i + 1}. {s.label}
-            </div>
-          ))}
-        </div>
-
-        <div className="p-5">
-          {step === 'details' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'موضوع الاستشارة *' : 'Consultation Topic *'}</label>
-                <input type="text" placeholder={isAr ? 'ما الذي تريد مناقشته؟' : 'What would you like to discuss?'} value={topic}
-                  onChange={e => setTopic(e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'طريقة الاجتماع *' : 'Meeting Method *'}</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { id: 'ZOOM' as const, label: 'Zoom', icon: Video },
-                    { id: 'GOOGLE_MEET' as const, label: 'Meet', icon: Globe },
-                    { id: 'PHONE' as const, label: isAr ? 'هاتف' : 'Phone', icon: Phone },
-                  ]).map(m => (
-                    <button key={m.id} onClick={() => setMethod(m.id)}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-semibold transition ${
-                        method === m.id ? 'border-primary bg-primary/10 text-primary' : 'border-[color:var(--border)] hover:border-primary/40'
-                      }`}>
-                      <m.icon className="h-5 w-5" />{m.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'ملاحظات إضافية' : 'Additional Notes'}</label>
-                <textarea placeholder={isAr ? 'أي تفاصيل تريد إضافتها...' : 'Any details you want to add...'} value={notes}
-                  onChange={e => setNotes(e.target.value)} rows={3}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none resize-none" />
-              </div>
-              <button onClick={() => setStep('schedule')} disabled={!topic.trim()}
-                className="w-full rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition">
-                {isAr ? 'التالي — اختر الموعد' : 'Next — Choose Time'}
-              </button>
-            </div>
-          )}
-
-          {step === 'schedule' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'اختر التاريخ *' : 'Choose Date *'}</label>
-                <input type="date" min={minDateStr} value={selectedDate}
-                  onChange={e => setSelectedDate(e.target.value)}
-                  className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none" />
-              </div>
-              {selectedDate && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">{isAr ? 'اختر الوقت *' : 'Choose Time *'}</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {timeSlots.map(time => (
-                      <button key={time} onClick={() => setSelectedTime(time)}
-                        className={`rounded-xl border py-2 text-xs font-semibold transition ${
-                          selectedTime === time ? 'border-primary bg-primary/15 text-primary' : 'border-[color:var(--border)] hover:border-primary/40 text-[color:var(--muted)]'
-                        }`}>{time}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button onClick={() => setStep('details')}
-                  className="flex-1 rounded-2xl border border-[color:var(--border)] py-3 text-sm hover:bg-[color:var(--surface-2)] transition">
-                  {isAr ? 'السابق' : 'Back'}
-                </button>
-                <button onClick={() => setStep('confirm')} disabled={!selectedDate || !selectedTime}
-                  className="flex-1 rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition">
-                  {isAr ? 'التالي — تأكيد' : 'Next — Confirm'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {step === 'confirm' && (
-            <div className="space-y-4">
-              <h4 className="font-bold text-foreground text-lg">{isAr ? 'ملخص الحجز' : 'Booking Summary'}</h4>
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] divide-y divide-[color:var(--border)]">
-                {[
-                  { label: isAr ? 'المستشار' : 'Consultant', value: name },
-                  { label: isAr ? 'الموضوع' : 'Topic', value: topic },
-                  { label: isAr ? 'التاريخ' : 'Date', value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
-                  { label: isAr ? 'الوقت' : 'Time', value: selectedTime },
-                  { label: isAr ? 'طريقة الاجتماع' : 'Meeting Method', value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : (isAr ? 'هاتف' : 'Phone') },
-                  { label: isAr ? 'المدة' : 'Duration', value: isAr ? '60 دقيقة' : '60 minutes' },
-                  { label: isAr ? 'السعر' : 'Price', value: `${consultant.hourlyRate || 0} ${isAr ? 'ريال' : 'SAR'}` },
-                ].map(item => (
-                  <div key={item.label} className="flex justify-between px-4 py-3 text-sm">
-                    <span className="text-[color:var(--muted)]">{item.label}</span>
-                    <span className="font-semibold text-foreground">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-              {consultant.hourlyRate > 0 && (
-                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-400">
-                  {isAr ? 'سيتم الدفع بعد تأكيد المستشار للموعد' : 'Payment will be due after consultant confirms the appointment'}
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button onClick={() => setStep('schedule')}
-                  className="flex-1 rounded-2xl border border-[color:var(--border)] py-3 text-sm hover:bg-[color:var(--surface-2)] transition">
-                  {isAr ? 'السابق' : 'Back'}
-                </button>
-                <button onClick={() => bookMutation.mutate()} disabled={bookMutation.isPending}
-                  className="flex-1 rounded-2xl bg-primary py-3 font-bold text-white hover:bg-primary/90 disabled:opacity-60 transition">
-                  {bookMutation.isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      {isAr ? 'جاري الحجز...' : 'Booking...'}
-                    </span>
-                  ) : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function ConsultantModal({
-  consultant,
-  onClose,
-  onBook,
-}: {
-  consultant: Consultant
-  onClose: () => void
-  onBook: () => void
-}) {
-  const locale = useLocale()
-  const isAr = locale === 'ar'
-  const name = `${consultant.profile.firstName} ${consultant.profile.lastName}`
-  const avatar = getMediaUrl(consultant.profile.avatar)
-  const sessions = consultant._count.consultantSessions
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-2xl overflow-hidden">
-        <div className="relative h-32 bg-[color:var(--surface-2)]">
-          <button onClick={onClose}
-            className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-xl bg-black/30 text-white hover:bg-black/50">
-            <X className="h-4 w-4" />
-          </button>
-          <div className="absolute -bottom-8 right-5">
-            {avatar ? (
-              <img src={avatar} className="h-16 w-16 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-lg" alt={name} />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-2xl font-bold text-white shadow-lg">
-                {name[0]}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="p-5 pt-12">
-          <h2 className="text-xl font-bold text-foreground">{name}</h2>
-          <p className="text-primary text-sm font-medium mt-0.5">{consultant.speciality}</p>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
-            {consultant.experience && (
-              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{consultant.experience} {isAr ? 'سنة خبرة' : 'yrs exp'}</span>
-            )}
-            <span className="flex items-center gap-1"><Award className="h-4 w-4" />{sessions} {isAr ? 'جلسة مكتملة' : 'sessions'}</span>
-            {consultant.profile.country && (
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{consultant.profile.country}</span>
-            )}
-          </div>
-          {consultant.bio && (
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-1">{isAr ? 'نبذة مهنية' : 'About'}</h4>
-              <p className="text-sm text-[color:var(--muted)] leading-relaxed">{consultant.bio}</p>
-            </div>
-          )}
-          <div className="mt-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 flex justify-between items-center">
-            <div>
-              <p className="text-xs text-[color:var(--muted)]">{isAr ? 'سعر الجلسة (60 دقيقة)' : 'Session Price (60 min)'}</p>
-              <p className="text-2xl font-bold text-primary mt-0.5">
-                {consultant.hourlyRate || (isAr ? 'مجاني' : 'Free')} {consultant.hourlyRate ? (isAr ? 'ريال' : 'SAR') : ''}
-              </p>
-            </div>
-          </div>
-          <button onClick={() => { onClose(); onBook() }}
-            className="mt-4 w-full rounded-2xl bg-primary py-3.5 font-bold text-white hover:bg-primary/90 transition shadow-lg shadow-primary/20">
-            {isAr ? 'احجز جلسة الآن' : 'Book a Session Now'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
+const SPECIALITY_FILTERS = [
+  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
+  { key: 'tech', labelAr: 'التقنية', labelEn: 'Technology', keywords: ['تقنية', 'برمجة', 'software', 'tech', 'engineering', 'هندسة'] },
+  { key: 'data', labelAr: 'البيانات والذكاء الاصطناعي', labelEn: 'Data & AI', keywords: ['بيانات', 'data', 'ai', 'ذكاء', 'machine learning'] },
+  { key: 'design', labelAr: 'التصميم', labelEn: 'Design', keywords: ['تصميم', 'design', 'ui', 'ux'] },
+  { key: 'business', labelAr: 'الأعمال', labelEn: 'Business', keywords: ['أعمال', 'business', 'management', 'إدارة', 'ريادة'] },
+  { key: 'marketing', labelAr: 'التسويق', labelEn: 'Marketing', keywords: ['تسويق', 'marketing', 'digital', 'رقمي'] },
+  { key: 'security', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity', keywords: ['أمن', 'security', 'cyber', 'سيبراني'] },
+]
 
 export default function CoachingPage() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const specialityParam = searchParams.get('speciality')
-  
-  const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null)
-  const [bookingConsultant, setBookingConsultant] = useState<Consultant | null>(null)
-  const [search, setSearch] = useState(specialityParam || '')
-  const [specialityFilter, setSpecialityFilter] = useState<string | null>(specialityParam)
-  const [visibleCount, setVisibleCount] = useState(6)
 
-  const { data: consultants = [], isLoading } = useQuery<Consultant[]>({
+  const [search, setSearch] = useState('')
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [sortBy, setSortBy] = useState<'sessions'|'experience'|'price-low'|'price-high'>('sessions')
+  const [selectedConsultant, setSelectedConsultant] = useState<any>(null)
+
+  const bg = isDark ? '#0d0d0d' : '#fafafa'
+  const cardBg = isDark ? '#111111' : '#ffffff'
+  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
+  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const subtext = isDark ? '#94a3b8' : '#6b7280'
+
+  const { data: consultants = [], isLoading } = useQuery({
     queryKey: ['consultants'],
     queryFn: async () => {
-      const res = await get('/sessions/consultants')
-      const d = (res?.data as any)?.data ?? []
-      return Array.isArray(d) ? d : []
+      const res = await get('/users?role=INSTRUCTOR&limit=50')
+      const arr = res.data?.data ?? res.data?.users ?? res.data ?? []
+      return Array.isArray(arr) ? arr : []
     }
   })
 
-  const allSpecialities = useMemo(() => {
-    const specs = consultants
-      .map((c: any) => c.speciality)
-      .filter(Boolean)
-    return [...new Set(specs)] as string[]
-  }, [consultants])
-
   const filteredConsultants = useMemo(() => {
-    return (consultants || []).filter((c: any) => {
-      const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
-      const spec = (c.profile?.speciality || c.speciality || '').toLowerCase()
-      const areas = (c.profile?.consultingAreas || '').toLowerCase()
-      const bio = (c.profile?.bio || c.bio || '').toLowerCase()
-      const searchLower = search.toLowerCase()
-      
-      const matchSearch = !search || 
-        name.includes(searchLower) || 
-        spec.includes(searchLower) ||
-        areas.includes(searchLower) ||
-        bio.includes(searchLower)
-      
-      const matchFilter = !specialityFilter || 
-        spec.includes(specialityFilter.toLowerCase()) ||
-        areas.includes(specialityFilter.toLowerCase())
-      
-      return matchSearch && matchFilter
-    })
-  }, [consultants, search, specialityFilter])
+    let result = [...consultants]
 
-  const visibleConsultants = filteredConsultants.slice(0, visibleCount)
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(c => {
+        const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
+        const speciality = (c.profile?.speciality || '').toLowerCase()
+        const bio = (c.profile?.bio || '').toLowerCase()
+        const areas = (c.profile?.consultingAreas || []).join(' ').toLowerCase()
+        const quals = (c.profile?.qualifications || []).join(' ').toLowerCase()
+        return name.includes(q) || speciality.includes(q) || bio.includes(q) || areas.includes(q) || quals.includes(q)
+      })
+    }
+
+    if (activeFilter !== 'all') {
+      const filterDef = SPECIALITY_FILTERS.find(f => f.key === activeFilter)
+      if (filterDef?.keywords) {
+        result = result.filter(c => {
+          const speciality = (c.profile?.speciality || '').toLowerCase()
+          const areas = (c.profile?.consultingAreas || []).join(' ').toLowerCase()
+          const bio = (c.profile?.bio || '').toLowerCase()
+          const combined = `${speciality} ${areas} ${bio}`
+          return filterDef.keywords.some(kw => combined.includes(kw.toLowerCase()))
+        })
+      }
+    }
+
+    result = result.map(c => {
+      let score = 0
+      score += (c._count?.consultingSessions || c.sessionCount || 0) * 2
+      if (c.profile?.speciality) score += 5
+      if (c.profile?.bio) score += 3
+      if (c.profile?.qualifications?.length > 0) score += c.profile.qualifications.length * 2
+      if (c.profile?.consultingAreas?.length > 0) score += c.profile.consultingAreas.length * 2
+      if (c.profile?.linkedinUrl) score += 2
+      if (c.isVerified) score += 10
+      return { ...c, _score: score }
+    })
+
+    switch(sortBy) {
+      case 'sessions':
+        result.sort((a, b) => (b._count?.consultingSessions || 0) - (a._count?.consultingSessions || 0))
+        break
+      case 'experience':
+        result.sort((a, b) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0))
+        break
+      case 'price-low':
+        result.sort((a, b) => (a.profile?.sessionPrice || 0) - (b.profile?.sessionPrice || 0))
+        break
+      case 'price-high':
+        result.sort((a, b) => (b.profile?.sessionPrice || 0) - (a.profile?.sessionPrice || 0))
+        break
+    }
+
+    return result
+  }, [consultants, search, activeFilter, sortBy])
+
+  const getInitials = (c: any) => {
+    const f = c.profile?.firstName?.[0] || ''
+    const l = c.profile?.lastName?.[0] || ''
+    return (f + l).toUpperCase() || 'C'
+  }
 
   return (
-    <div className="min-h-screen p-6" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-foreground mb-2">{isAr ? 'احجز استشارة مهنية' : 'Book a Professional Consultation'}</h1>
-        <p className="text-[color:var(--muted)] text-lg max-w-xl mx-auto">
-          {isAr ? 'تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي' : 'Connect with top professional consultants for personalized guidance'}
-        </p>
-      </div>
-
-      {/* Filter banner from career path */}
-      {specialityParam && (
-        <div style={{
-          padding:'12px 16px', borderRadius:12, marginBottom:16,
-          background:'rgba(81,32,200,0.08)',
-          border:'1px solid rgba(81,32,200,0.2)',
-          display:'flex', alignItems:'center', gap:8,
-        }}>
-          <Info size={14} color="#5120c8" />
-          <span style={{ color:'#5120c8', fontSize:13, fontWeight:600 }}>
-            {isAr 
-              ? `عرض المستشارين في تخصص: ${specialityParam}`
-              : `Showing consultants for: ${specialityParam}`
-            }
-          </span>
-          <button 
-            onClick={() => { setSpecialityFilter(null); setSearch('') }} 
-            style={{
-              marginInlineStart:'auto', background:'none', border:'none', 
-              color:'#94a3b8', cursor:'pointer', fontSize:18 
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="mb-6 max-w-lg mx-auto">
-        <div className="relative">
-          <Search className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[color:var(--muted)]" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => { setSearch(e.target.value); setVisibleCount(6); setSpecialityFilter(null) }}
-            placeholder={isAr ? 'ابحث عن مستشار...' : 'Search consultants...'}
-            className="w-full rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-12 py-3.5 text-sm text-foreground focus:border-primary focus:outline-none shadow-sm"
-          />
+    <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ borderBottom: `1px solid ${border}`, background: cardBg, padding: '48px 24px 36px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 100, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.04)' : '#f4f4f8', marginBottom: 20 }}>
+            <Users size={12} color="#5120c8" />
+            <span style={{ color: subtext, fontSize: 12, fontWeight: 600 }}>
+              {isAr ? `${consultants.length} مستشار متاح` : `${consultants.length} consultants available`}
+            </span>
+          </div>
+          <h1 style={{ color: text, fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
+            {isAr ? 'احجز استشارة مهنية' : 'Book a Professional Consultation'}
+          </h1>
+          <p style={{ color: subtext, fontSize: 15, margin: '0 0 28px', lineHeight: 1.7 }}>
+            {isAr ? 'تواصل مع أفضل المستشارين المهنيين للحصول على توجيه شخصي متخصص' : 'Connect with top professional consultants for personalized expert guidance'}
+          </p>
+          <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto' }}>
+            <Search size={16} color={subtext} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', right: isAr ? 16 : 'auto', left: isAr ? 'auto' : 16, pointerEvents: 'none' }} />
+            <input
+              type="text"
+              placeholder={isAr ? 'ابحث باسم المستشار أو التخصص...' : 'Search by name or speciality...'}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '14px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 14, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }}
+            />
+            {search && (
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: isAr ? 'auto' : 14, right: isAr ? 14 : 'auto', background: 'none', border: 'none', cursor: 'pointer', color: subtext }}>
+                <X size={15} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Speciality filters */}
-      {allSpecialities.length > 0 && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2 max-w-lg mx-auto" style={{ scrollbarWidth: 'none' }}>
-          <button
-            onClick={() => { setSpecialityFilter(null); setVisibleCount(6) }}
-            className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-              !specialityFilter ? 'bg-primary text-white' : 'bg-[color:var(--surface-2)] text-[color:var(--muted)]'
-            }`}
-          >
-            {isAr ? 'الكل' : 'All'}
-          </button>
-          {allSpecialities.map((s: string) => (
-            <button
-              key={s}
-              onClick={() => { setSpecialityFilter(s); setVisibleCount(6) }}
-              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition whitespace-nowrap ${
-                specialityFilter === s ? 'bg-primary text-white' : 'bg-[color:var(--surface-2)] text-[color:var(--muted)]'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {SPECIALITY_FILTERS.map(f => (
+              <button key={f.key} onClick={() => setActiveFilter(f.key)} style={{ padding: '8px 16px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s', border: activeFilter === f.key ? 'none' : `1px solid ${border}`, background: activeFilter === f.key ? '#5120c8' : 'transparent', color: activeFilter === f.key ? '#ffffff' : subtext }}>
+                {isAr ? f.labelAr : f.labelEn}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <SlidersHorizontal size={14} color={subtext} />
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} style={{ padding: '8px 12px', borderRadius: 10, fontSize: 12, fontWeight: 600, border: `1px solid ${border}`, background: cardBg, color: text, cursor: 'pointer', outline: 'none' }}>
+              <option value="sessions">{isAr ? 'الأكثر جلسات' : 'Most Sessions'}</option>
+              <option value="experience">{isAr ? 'الأكثر خبرة' : 'Most Experience'}</option>
+              <option value="price-low">{isAr ? 'السعر: الأقل' : 'Price: Low'}</option>
+              <option value="price-high">{isAr ? 'السعر: الأعلى' : 'Price: High'}</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      {isLoading ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-64 animate-pulse rounded-3xl bg-[color:var(--surface)]" />
-          ))}
+        <div style={{ color: subtext, fontSize: 13, marginBottom: 20 }}>
+          {isAr ? `${filteredConsultants.length} مستشار` : `${filteredConsultants.length} consultants`}
         </div>
-      ) : filteredConsultants.length === 0 ? (
-        <div className="py-20 text-center">
-          <Users className="mx-auto mb-4 h-16 w-16 text-[color:var(--muted)] opacity-20" />
-          <h3 className="text-xl font-bold text-foreground mb-2">{isAr ? 'لا يوجد مستشارون مطابقون' : 'No consultants found'}</h3>
-          <p className="text-[color:var(--muted)]">{isAr ? 'جرب فلتر مختلف' : 'Try a different filter'}</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleConsultants.map(consultant => {
-              const name = `${consultant.profile.firstName} ${consultant.profile.lastName}`
-              const avatar = getMediaUrl(consultant.profile.avatar)
-              const sessions = consultant._count.consultantSessions
+
+        {isLoading && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 16 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ height: 280, borderRadius: 16, background: isDark?'#1a1a1a':'#f4f4f8', animation: 'pulse 1.5s infinite' }} />
+            ))}
+            <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
+          </div>
+        )}
+
+        {!isLoading && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            {filteredConsultants.map((c: any) => {
+              const sessionCount = c._count?.consultingSessions || c.sessionCount || 0
+              const price = parseFloat(c.profile?.sessionPrice || 0)
+              const duration = c.profile?.sessionDuration || 60
+              const years = c.profile?.yearsExperience || 0
+              const areas = c.profile?.consultingAreas || []
+              const quals = c.profile?.qualifications || []
+
               return (
-                <div key={consultant.id}
-                  className="group rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 transition-all duration-300">
-                  <div className="relative h-28 bg-[color:var(--surface-2)]">
-                    <div className="absolute -bottom-7 right-5">
-                      <div style={{ position: 'relative', display: 'inline-block' }}>
-                        {avatar ? (
-                          <img src={avatar} className="h-14 w-14 rounded-2xl object-cover border-4 border-[color:var(--surface)] shadow-md" alt={name} />
-                        ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary border-4 border-[color:var(--surface)] text-xl font-bold text-white shadow-md">
-                            {name[0]}
-                          </div>
-                        )}
-                        {consultant.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
-                      </div>
+                <div key={c.id} style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.transform = 'translateY(0)' }}>
+                  <div style={{ height: 80, background: isDark ? '#1a1a1a' : '#f8f8fa', position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 10, left: isAr ? 'auto' : 10, right: isAr ? 10 : 'auto', padding: '3px 10px', borderRadius: 20, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <Calendar size={10} />
+                      {sessionCount} {isAr ? 'جلسة' : 'sessions'}
                     </div>
-                    <div className="absolute top-3 left-3 rounded-full bg-black/20 backdrop-blur-sm px-2.5 py-1 text-xs text-white font-semibold">
-                      {sessions} {isAr ? 'جلسة' : 'sessions'}
+                    {c.isVerified && (
+                      <div style={{ position: 'absolute', top: 10, right: isAr ? 'auto' : 10, left: isAr ? 10 : 'auto', padding: '3px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.85)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <CheckCircle2 size={10} />
+                        {isAr ? 'موثق' : 'Verified'}
+                      </div>
+                    )}
+                    <div style={{ position: 'absolute', bottom: -24, right: isAr ? 20 : 'auto', left: isAr ? 'auto' : 20 }}>
+                      {c.profile?.avatar ? (
+                        <img src={c.profile.avatar} alt="" style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover', border: `3px solid ${cardBg}` }} />
+                      ) : (
+                        <div style={{ width: 52, height: 52, borderRadius: 14, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18, fontWeight: 800 }}>
+                          {getInitials(c)}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="p-5 pt-10">
-                    <h3 className="font-bold text-foreground text-lg leading-tight">{name}</h3>
-                    {consultant.speciality && (
-                      <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality}</p>
-                    )}
-                    <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
-                      {consultant.experience && (
-                        <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} {isAr ? 'سنة' : 'yrs'}</span>
-                      )}
-                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{isAr ? '60 دقيقة' : '60 min'}</span>
+                  <div style={{ padding: '32px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ marginBottom: 12 }}>
+                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: '0 0 3px' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
+                      {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: 0 }}>{c.profile.speciality}</p>}
                     </div>
-                    {consultant.bio && (
-                      <p className="mt-3 text-xs text-[color:var(--muted)] line-clamp-2 leading-relaxed">{consultant.bio}</p>
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                      {years > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Briefcase size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{years} {isAr ? 'سنة' : 'yrs'}</span></div>}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{duration} {isAr ? 'دقيقة' : 'min'}</span></div>}
+                      {quals.length > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><GraduationCap size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{quals.length} {isAr ? 'مؤهل' : 'quals'}</span></div>}
+                    </div>
+                    {c.profile?.bio && <p style={{ color: subtext, fontSize: 12, lineHeight: 1.65, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.profile.bio}</p>}
+                    {areas.length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 12 }}>
+                        {areas.slice(0, 3).map((area: string, i: number) => <span key={i} style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.15)', color: '#5120c8' }}>{area}</span>)}
+                        {areas.length > 3 && <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, background: isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8', border: `1px solid ${border}`, color: subtext }}>+{areas.length - 3}</span>}
+                      </div>
                     )}
-                    <div className="mt-4 flex items-center justify-between">
-                      <p className="text-2xl font-bold text-primary">
-                        {consultant.hourlyRate || 0}
-                        <span className="text-sm font-normal text-[color:var(--muted)] mr-1">{isAr ? 'ريال' : 'SAR'}</span>
-                      </p>
-                      <div className="flex gap-2">
-                        <button onClick={() => setSelectedConsultant(consultant)}
-                          className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-xs font-semibold hover:bg-[color:var(--surface-2)] transition">
-                          {isAr ? 'التفاصيل' : 'Details'}
-                        </button>
-                        <button onClick={() => setBookingConsultant(consultant)}
-                          className="rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white hover:bg-primary/90 transition shadow-sm shadow-primary/20">
-                          {isAr ? 'احجز' : 'Book'}
-                        </button>
+                    <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div>
+                        <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{price > 0 ? `${price}` : (isAr ? 'مجاني' : 'Free')}{price > 0 && <span style={{ fontSize: 12, fontWeight: 500, color: subtext, marginRight: 3 }}> {isAr ? 'ر.س' : 'SAR'}</span>}</div>
+                        {price > 0 && <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'للجلسة' : 'per session'}</div>}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => setSelectedConsultant(c)} style={{ padding: '9px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 12, fontWeight: 600 }}>{isAr ? 'التفاصيل' : 'Details'}</button>
+                        <button onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)} style={{ padding: '9px 16px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{isAr ? 'احجز' : 'Book'}<ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} /></button>
                       </div>
                     </div>
                   </div>
@@ -509,34 +246,52 @@ export default function CoachingPage() {
               )
             })}
           </div>
+        )}
 
-          {/* Load More */}
-          {visibleCount < filteredConsultants.length && (
-            <div className="text-center mt-8">
-              <button
-                onClick={() => setVisibleCount(v => v + 6)}
-                className="rounded-2xl border border-[color:var(--border)] px-8 py-3 text-sm font-semibold hover:bg-[color:var(--surface-2)] transition"
-              >
-                {isAr ? `عرض المزيد (${filteredConsultants.length - visibleCount})` : `Load More (${filteredConsultants.length - visibleCount})`}
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        {!isLoading && filteredConsultants.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '80px 24px' }}>
+            <Users size={40} color={subtext} style={{ marginBottom: 16 }} />
+            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'لا يوجد مستشارون متاحون' : 'No consultants found'}</h3>
+            <p style={{ color: subtext, fontSize: 14, marginBottom: 20 }}>{isAr ? 'جرب البحث بكلمات مختلفة' : 'Try different search terms'}</p>
+            <button onClick={() => { setSearch(''); setActiveFilter('all') }} style={{ padding: '10px 20px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 13 }}>{isAr ? 'إعادة الضبط' : 'Reset'}</button>
+          </div>
+        )}
+      </div>
 
       {selectedConsultant && (
-        <ConsultantModal
-          consultant={selectedConsultant}
-          onClose={() => setSelectedConsultant(null)}
-          onBook={() => setBookingConsultant(selectedConsultant)}
-        />
-      )}
-      {bookingConsultant && (
-        <BookingModal
-          consultant={bookingConsultant}
-          onClose={() => setBookingConsultant(null)}
-          onSuccess={() => router.push(`/${locale}/dashboard/my-sessions`)}
-        />
+        <>
+          <div onClick={() => setSelectedConsultant(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, backdropFilter: 'blur(4px)' }} />
+          <div style={{ position: 'fixed', top: 0, bottom: 0, right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0, width: Math.min(480, typeof window !== 'undefined' ? window.innerWidth : 480), background: cardBg, borderLeft: isAr ? 'none' : `1px solid ${border}`, borderRight: isAr ? `1px solid ${border}` : 'none', zIndex: 101, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: cardBg, zIndex: 10 }}>
+              <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0 }}>{isAr ? 'تفاصيل المستشار' : 'Consultant Details'}</h3>
+              <button onClick={() => setSelectedConsultant(null)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={15} /></button>
+            </div>
+            <div style={{ padding: '24px', flex: 1 }}>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 20 }}>
+                {selectedConsultant.profile?.avatar ? <img src={selectedConsultant.profile.avatar} alt="" style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover' }} /> : <div style={{ width: 64, height: 64, borderRadius: 16, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 22, fontWeight: 800 }}>{getInitials(selectedConsultant)}</div>}
+                <div>
+                  <h2 style={{ color: text, fontSize: 18, fontWeight: 900, margin: '0 0 3px' }}>{selectedConsultant.profile?.firstName} {selectedConsultant.profile?.lastName}</h2>
+                  {selectedConsultant.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>{selectedConsultant.profile.speciality}</p>}
+                  {selectedConsultant.isVerified && <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} color="#16a34a" /><span style={{ color: '#16a34a', fontSize: 11, fontWeight: 700 }}>{isAr ? 'مستشار موثق' : 'Verified Consultant'}</span></div>}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
+                {[{ icon: <Briefcase size={14} color="#5120c8" />, val: `${selectedConsultant.profile?.yearsExperience || 0}`, labelAr: 'سنة خبرة', labelEn: 'yrs exp' }, { icon: <Clock size={14} color="#5120c8" />, val: `${selectedConsultant.profile?.sessionDuration || 60}`, labelAr: 'دقيقة', labelEn: 'min' }, { icon: <Calendar size={14} color="#5120c8" />, val: `${selectedConsultant._count?.consultingSessions || 0}`, labelAr: 'جلسة', labelEn: 'sessions' }].map((s, i) => <div key={i} style={{ padding: '12px', borderRadius: 12, textAlign: 'center', border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa' }}><div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>{s.icon}</div><div style={{ color: text, fontSize: 16, fontWeight: 800 }}>{s.val}</div><div style={{ color: subtext, fontSize: 11 }}>{isAr ? s.labelAr : s.labelEn}</div></div>)}
+              </div>
+              {selectedConsultant.profile?.bio && <div style={{ marginBottom: 20 }}><h4 style={{ color: text, fontSize: 13, fontWeight: 800, marginBottom: 8 }}>{isAr ? 'نبذة مهنية' : 'Professional Bio'}</h4><p style={{ color: subtext, fontSize: 13, lineHeight: 1.7, margin: 0 }}>{selectedConsultant.profile.bio}</p></div>}
+              {selectedConsultant.profile?.consultingAreas?.length > 0 && <div style={{ marginBottom: 20 }}><h4 style={{ color: text, fontSize: 13, fontWeight: 800, marginBottom: 10 }}>{isAr ? 'مجالات ��لا��تشارات' : 'Consulting Areas'}</h4><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{selectedConsultant.profile.consultingAreas.map((area: string, i: number) => <span key={i} style={{ padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', color: '#5120c8' }}>{area}</span>)}</div></div>}
+              {selectedConsultant.profile?.qualifications?.length > 0 && <div style={{ marginBottom: 20 }}><h4 style={{ color: text, fontSize: 13, fontWeight: 800, marginBottom: 10 }}><GraduationCap size={14} style={{ marginLeft: isAr ? 0 : 5, marginRight: isAr ? 5 : 0 }} />{isAr ? 'المؤهلات والشهادات' : 'Qualifications'}</h4><div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>{selectedConsultant.profile.qualifications.map((q: string, i: number) => <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}><Award size={14} color="#5120c8" style={{ flexShrink: 0, marginTop: 2 }} /><span style={{ color: isDark ? '#e2e8f0' : '#374151', fontSize: 13, lineHeight: 1.5 }}>{q}</span></div>)}</div></div>}
+              {selectedConsultant.profile?.linkedinUrl && <a href={selectedConsultant.profile.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', textDecoration: 'none', marginBottom: 20, color: text, fontSize: 13, fontWeight: 600 }}><Linkedin size={16} color="#0077b5" />{isAr ? 'عرض الملف على LinkedIn' : 'View LinkedIn Profile'}<ChevronRight size={13} color={subtext} style={{ marginRight: isAr ? 'auto' : 0, marginLeft: isAr ? 0 : 'auto', transform: isAr ? 'rotate(180deg)' : 'none' }} /></a>}
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: `1px solid ${border}`, position: 'sticky', bottom: 0, background: cardBg, display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>{parseFloat(selectedConsultant.profile?.sessionPrice || 0) > 0 ? `${selectedConsultant.profile.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
+                <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'لكل جلسة' : 'per session'}</div>
+              </div>
+              <button onClick={() => { setSelectedConsultant(null); router.push(`/${locale}/dashboard/coaching?consultant=${selectedConsultant.id}`) }} style={{ flex: 2, padding: '13px', borderRadius: 12, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Calendar size={15} />{isAr ? 'احجز جلسة الآن' : 'Book Session Now'}</button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
