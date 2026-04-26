@@ -62,7 +62,7 @@ export class UsersService {
           select: {
             enrollments: true,
             certificates: true,
-            coachingSessions: true,
+            consultantSessions: true,
           },
         },
       },
@@ -82,7 +82,7 @@ export class UsersService {
           select: {
             enrollments: true,
             certificates: true,
-            coachingSessions: true,
+            consultantSessions: true,
           },
         },
       },

@@ -213,7 +213,13 @@ export default function CoachingPage() {
         {!isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
             {filteredConsultants.map((c: any) => {
-              const sessionCount = c._count?.consultingSessions || c.sessionCount || 0
+              const sessionCount = 
+                c._count?.consultantSessions ?? 
+                c._count?.consultingSessions ?? 
+                c._count?.sessions ??
+                c.consultingSessionsCount ??
+                c.sessionCount ??
+                0
               const price = parseFloat(c.profile?.sessionPrice || 0)
               const duration = c.profile?.sessionDuration || 60
               const years = c.profile?.yearsExperience || 0
