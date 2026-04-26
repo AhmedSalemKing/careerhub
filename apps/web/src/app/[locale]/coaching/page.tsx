@@ -32,6 +32,8 @@ export default function CoachingPage() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [sortBy, setSortBy] = useState<'sessions'|'experience'|'price-low'|'price-high'>('sessions')
   const [selectedConsultant, setSelectedConsultant] = useState<any>(null)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [bookingConsultant, setBookingConsultant] = useState<any>(null)
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
