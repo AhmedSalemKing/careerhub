@@ -219,10 +219,23 @@ export default function CoachingPage() {
                       <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: '0 0 3px' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
                       {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: 0 }}>{c.profile.speciality}</p>}
                     </div>
-                    <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
-                      {years > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Briefcase size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{years} {isAr ? 'سنة' : 'yrs'}</span></div>}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{duration} {isAr ? 'دقيقة' : 'min'}</span></div>}
-                      {quals.length > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><GraduationCap size={13} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{quals.length} {isAr ? 'مؤهل' : 'quals'}</span></div>}
+                    <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                      {years > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Briefcase size={12} color={subtext} />
+                          <span style={{ color: subtext, fontSize: 12 }}>{String(years)} {isAr ? 'سنة' : 'yrs'}</span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Clock size={12} color={subtext} />
+                        <span style={{ color: subtext, fontSize: 12 }}>{String(duration)} {isAr ? 'دقيقة' : 'min'}</span>
+                      </div>
+                      {quals.length > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <GraduationCap size={12} color={subtext} />
+                          <span style={{ color: subtext, fontSize: 12 }}>{String(quals.length)} {isAr ? 'مؤهل' : 'quals'}</span>
+                        </div>
+                      )}
                     </div>
                     {c.profile?.bio && <p style={{ color: subtext, fontSize: 12, lineHeight: 1.65, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{c.profile.bio}</p>}
                     {areas.length > 0 && (
@@ -232,10 +245,16 @@ export default function CoachingPage() {
                       </div>
                     )}
                     <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <div>
-                        <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900, lineHeight: 1 }}>{price > 0 ? `${price}` : (isAr ? 'مجاني' : 'Free')}{price > 0 && <span style={{ fontSize: 12, fontWeight: 500, color: subtext, marginRight: 3 }}> {isAr ? 'ر.س' : 'SAR'}</span>}</div>
-                        {price > 0 && <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'للجلسة' : 'per session'}</div>}
-                      </div>
+                      <div style={{ marginTop: 'auto' }}>
+                      <span style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>
+                        {price > 0 ? String(price) : (isAr ? 'مجاني' : 'Free')}
+                      </span>
+                      {price > 0 && (
+                        <span style={{ color: subtext, fontSize: 12, marginRight: 4, marginLeft: 4 }}>
+                          {isAr ? 'ر.س / جلسة' : 'SAR / session'}
+                        </span>
+                      )}
+                    </div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button onClick={() => setSelectedConsultant(c)} style={{ padding: '9px 14px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 12, fontWeight: 600 }}>{isAr ? 'التفاصيل' : 'Details'}</button>
                         <button onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)} style={{ padding: '9px 16px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>{isAr ? 'احجز' : 'Book'}<ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} /></button>
