@@ -217,6 +217,7 @@ export default function CoachingPage() {
               const years = c.profile?.yearsExperience || 0
               const areas = c.profile?.consultingAreas || []
               const quals = c.profile?.qualifications || []
+              const verified = c.isVerified === true || c.verified === true
 
               return (
                 <div key={c.id} style={{
@@ -245,23 +246,10 @@ export default function CoachingPage() {
                       <Calendar size={10} />
                       <span><span>{sessionCount}</span> <span>{isAr ? 'جلسة' : 'sessions'}</span></span>
                     </div>
-                    {(c.isVerified || c.verified) && (
-                      <div style={{
-                        position: 'absolute', top: 10,
-                        right: isAr ? 'auto' : 10, left: isAr ? 10 : 'auto',
-                        display: 'flex', alignItems: 'center', gap: 4,
-                        padding: '4px 10px', borderRadius: 20,
-                        background: 'rgba(22,163,74,0.9)',
-                      }}>
-                        <CheckCircle2 size={11} color="#ffffff" />
-                        <span style={{ color: '#ffffff', fontSize: 11, fontWeight: 700 }}>
-                          {isAr ? 'موثق' : 'Verified'}
-                        </span>
-                      </div>
-                    )}
                     <div style={{
                       position: 'absolute', bottom: -24,
                       right: isAr ? 20 : 'auto', left: isAr ? 'auto' : 20,
+                      position: 'relative', display: 'inline-block',
                     }}>
                       {c.profile?.avatar ? (
                         <img src={c.profile.avatar} alt=""
@@ -276,14 +264,35 @@ export default function CoachingPage() {
                           <span>{getInitials(c)}</span>
                         </div>
                       )}
+                      {verified && (
+                        <div style={{
+                          position: 'absolute',
+                          bottom: -4,
+                          left: isAr ? 'auto' : -6,
+                          right: isAr ? -6 : 'auto',
+                          width: 22,
+                          height: 22,
+                          borderRadius: '50%',
+                          background: '#5120c8',
+                          border: '2.5px solid #ffffff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(81,32,200,0.5)',
+                          zIndex: 2,
+                        }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div style={{ padding: '32px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div>
-                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0 }}>
                         <span>{c.profile?.firstName || ''} {c.profile?.lastName || ''}</span>
-                        {(c.isVerified || c.verified) && <CheckCircle2 size={15} color="#16a34a" />}
                       </h3>
                       {c.profile?.speciality ? (
                         <p style={{ color: '#5120c8', fontSize: 13, fontWeight: 600, margin: '3px 0 0' }}>
