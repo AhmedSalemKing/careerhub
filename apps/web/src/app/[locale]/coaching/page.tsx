@@ -12,13 +12,13 @@ import {
 } from 'lucide-react'
 
 const SPECIALITY_FILTERS = [
-  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
-  { key: 'tech', labelAr: 'التقنية', labelEn: 'Technology', keywords: ['تقنية', 'برمجة', 'software', 'tech', 'engineering', 'هندسة'] },
-  { key: 'data', labelAr: 'البيانات والذكاء الاصطناعي', labelEn: 'Data & AI', keywords: ['بيانات', 'data', 'ai', 'ذكاء', 'machine learning'] },
-  { key: 'design', labelAr: 'التصميم', labelEn: 'Design', keywords: ['تصميم', 'design', 'ui', 'ux'] },
-  { key: 'business', labelAr: 'الأعمال', labelEn: 'Business', keywords: ['أعمال', 'business', 'management', 'إدارة', 'ريادة'] },
-  { key: 'marketing', labelAr: 'التسويق', labelEn: 'Marketing', keywords: ['تسويق', 'marketing', 'digital', 'رقمي'] },
-  { key: 'security', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity', keywords: ['أمن', 'security', 'cyber', 'سيبراني'] },
+  { key: 'all', labelAr: 'الكل', labelEn: 'All', keywords: [] },
+  { key: 'tech', labelAr: 'التقنية', labelEn: 'Technology', keywords: ['تقنية', 'برمجة', 'software', 'tech', 'engineering', 'هندسة', 'developer', 'مطور', 'web', 'mobile', 'fullstack', 'frontend', 'backend', 'python', 'javascript', 'react', 'node', 'app', 'ios', 'android'] },
+  { key: 'data', labelAr: 'البيانات والذكاء الاصطناعي', labelEn: 'Data & AI', keywords: ['بيانات', 'data', 'ai', 'ذكاء', 'machine learning', 'deep learning', 'تعلم', 'analytics', 'ml', 'nlp', ' artificial', 'python'] },
+  { key: 'design', labelAr: 'التصميم', labelEn: 'Design', keywords: ['تصميم', 'design', 'ui', 'ux', 'figma', 'graphic', 'جرافيك', 'واجهة', 'creative', 'visual'] },
+  { key: 'business', labelAr: 'الأعمال', labelEn: 'Business', keywords: ['أعمال', 'business', 'management', 'إدارة', 'ريادة', 'entrepreneur', 'مبيعات', 'sales', 'تجارة', 'finance', 'مالية', 'hr', 'موارد', 'استراتيجية'] },
+  { key: 'marketing', labelAr: 'التسويق', labelEn: 'Marketing', keywords: ['تسويق', 'marketing', 'digital', 'رقمي', 'seo', 'content', 'محتوى', 'social media', 'ads', 'إعلان', 'brand', ' marque', 'growth'] },
+  { key: 'security', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity', keywords: ['أمن', 'security', 'cyber', 'سيبراني', 'hacking', 'network', 'penetration', 'linux', ' infosec'] },
 ]
 
 export default function CoachingPage() {
@@ -42,6 +42,7 @@ export default function CoachingPage() {
   const { data: consultants = [], isLoading } = useQuery({
     queryKey: ['consultants'],
     queryFn: async () => {
+      const FAKE_NAMES = ['elon', 'musk', 'messi', 'lionel', 'gakpo', 'salah', 'gonzalo', 'نىمقسي', 'test', 'fake', 'demo']
       const [res1, res2] = await Promise.all([
         get('/users?role=INSTRUCTOR&limit=50'),
         get('/users?role=CONSULTANT&limit=50'),
@@ -53,6 +54,8 @@ export default function CoachingPage() {
       return all.filter(c => {
         if (seen.has(c.id)) return false
         seen.add(c.id)
+        const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
+        if (FAKE_NAMES.some(fake => name.includes(fake))) return false
         return true
       })
     }

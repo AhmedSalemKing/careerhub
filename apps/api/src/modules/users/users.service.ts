@@ -56,7 +56,16 @@ export class UsersService {
 
     const users = await this.prisma.user.findMany({
       where,
-      include: { profile: includeProfile },
+      include: { 
+        profile: includeProfile,
+        _count: {
+          select: {
+            enrollments: true,
+            certificates: true,
+            coachingSessions: true,
+          },
+        },
+      },
       take: filters.limit || 100,
       orderBy: { createdAt: 'desc' },
     });
