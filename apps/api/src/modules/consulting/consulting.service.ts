@@ -146,9 +146,6 @@ export class ConsultingService {
     return { success: true, data: session }
   }
 
-  async getSessions(userId: string, role: string) {
-    const isConsultant = ['COACH'].includes(role)
-
   async getSessions(userId: string, accountType: string) {
     const isConsultant = accountType === 'CONSULTANT'
 
