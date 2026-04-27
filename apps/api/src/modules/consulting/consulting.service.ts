@@ -149,24 +149,47 @@ export class ConsultingService {
   async getSessions(userId: string, role: string) {
     const isConsultant = ['COACH'].includes(role)
 
-    const sessions = await this.prisma.consultingSession.findMany({
-      where: isConsultant ? { consultantId: userId } : { userId },
-      include: {
-        user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-        consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
-      },
-      orderBy: { scheduledAt: 'desc' },
-    })
+  async getSessions(userId: string, accountType: string) {
+    const isConsultant = accountType === 'CONSULTANT'
 
-    const now = new Date()
-    for (const s of sessions) {
-      if (['PENDING','CONFIRMED','SCHEDULED'].includes(s.status) && new Date(s.scheduledAt).getTime() + (s.duration || 60) * 60000 + 1800000 < now.getTime()) {
-        await this.prisma.consultingSession.update({ where: { id: s.id }, data: { status: 'EXPIRED' } }).catch(() => {})
-        s.status = 'EXPIRED'
+    try {
+      const mySessions = await this.prisma.consultingSession.findMany({
+        where: { userId },
+        include: {
+          user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
+          consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
+        },
+        orderBy: { scheduledAt: 'desc' },
+      })
+
+      const clientSessions = isConsultant
+        ? await this.prisma.consultingSession.findMany({
+            where: { consultantId: userId },
+            include: {
+              user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
+              consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
+            },
+            orderBy: { scheduledAt: 'desc' },
+          })
+        : []
+
+      const now = new Date()
+      const allSessions = [...mySessions, ...clientSessions]
+      for (const s of allSessions) {
+        if (['PENDING','CONFIRMED','SCHEDULED'].includes(s.status)) {
+          const endTime = new Date(s.scheduledAt).getTime() + (s.duration || 60) * 60000 + 1800000
+          if (endTime < now.getTime()) {
+            await this.prisma.consultingSession.update({ where: { id: s.id }, data: { status: 'EXPIRED' } }).catch(() => {})
+            s.status = 'EXPIRED'
+          }
+        }
       }
-    }
 
-    return { success: true, data: sessions }
+      return { success: true, data: { mySessions, clientSessions, isConsultant } }
+    } catch(e: any) {
+      console.error('[getSessions]', e.message)
+      return { success: true, data: { mySessions: [], clientSessions: [], isConsultant } }
+    }
   }
 
   async getSession(sessionId: string, userId: string) {

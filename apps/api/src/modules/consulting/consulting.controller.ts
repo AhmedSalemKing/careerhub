@@ -25,7 +25,7 @@ export class ConsultingController {
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
   async getSessions(@Request() req: any) {
-    return this.consultingService.getSessions(req.user.id, req.user.role)
+    return this.consultingService.getSessions(req.user.id, req.user.accountType || req.user.role)
   }
 
   @Get('sessions/:id')
