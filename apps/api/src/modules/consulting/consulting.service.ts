@@ -18,10 +18,7 @@ export class ConsultingService {
     try {
       const users = await this.prisma.user.findMany({
         where: {
-          OR: [
-            { role: 'COACH' },
-            { accountType: 'CONSULTANT' },
-          ]
+          accountType: 'CONSULTANT',
         },
         include: {
           profile: {
