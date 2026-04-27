@@ -157,28 +157,45 @@ export class CoachingService {
   }
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
-    const consultants = await this.prisma.user.findMany({
-      where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
-      include: {
-        profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
-        _count: { select: { consultantSessions: { where: { status: 'COMPLETED' } } } }
-      },
-    });
+    try {
+      const consultants = await this.prisma.user.findMany({
+        where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
+        include: {
+          profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
+          _count: { select: { consultantSessions: true } }
+        },
+      });
 
-    let scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') }));
+      let scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') }));
 
-    if (query.filter && query.filter !== 'all') scored = scored.filter((c: any) => c._score > 0);
-    if (query.search) scored = scored.filter((c: any) => c._score > 0);
+      if (query.filter && query.filter !== 'all') scored = scored.filter((c: any) => c._score > 0);
+      if (query.search) scored = scored.filter((c: any) => c._score > 0);
 
-    switch(query.sort) {
-      case 'price-low': scored.sort((a: any, b: any) => (parseFloat(a.profile?.sessionPrice || '0') - parseFloat(b.profile?.sessionPrice || '0'))); break;
-      case 'price-high': scored.sort((a: any, b: any) => (parseFloat(b.profile?.sessionPrice || '0') - parseFloat(a.profile?.sessionPrice || '0'))); break;
-      case 'experience': scored.sort((a: any, b: any) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0)); break;
-      case 'sessions': scored.sort((a: any, b: any) => (b._count?.consultantSessions || 0) - (a._count?.consultantSessions || 0)); break;
-      default: scored.sort((a: any, b: any) => b._score - a._score);
+      switch(query.sort) {
+        case 'price-low': scored.sort((a: any, b: any) => (parseFloat(a.profile?.sessionPrice || '0') - parseFloat(b.profile?.sessionPrice || '0'))); break;
+        case 'price-high': scored.sort((a: any, b: any) => (parseFloat(b.profile?.sessionPrice || '0') - parseFloat(a.profile?.sessionPrice || '0'))); break;
+        case 'experience': scored.sort((a: any, b: any) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0)); break;
+        case 'sessions': scored.sort((a: any, b: any) => (b._count?.consultantSessions || 0) - (a._count?.consultantSessions || 0)); break;
+        default: scored.sort((a: any, b: any) => b._score - a._score);
+      }
+
+      return { success: true, data: scored.slice(0, query.limit || 50) };
+    } catch(e: any) {
+      this.logger.error('[getConsultants] error:', e.message);
+      try {
+        const consultants = await this.prisma.user.findMany({
+          where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
+          include: {
+            profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
+          },
+        });
+        const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
+        return { success: true, data: scored.slice(0, query.limit || 50) };
+      } catch(e2: any) {
+        this.logger.error('[getConsultants] fallback error:', e2.message);
+        return { success: true, data: [] };
+      }
     }
-
-    return { success: true, data: scored.slice(0, query.limit || 50) };
   }
 
   async getCoach(id: string, language: string = 'en') {
