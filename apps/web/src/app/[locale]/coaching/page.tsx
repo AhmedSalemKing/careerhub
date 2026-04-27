@@ -34,6 +34,15 @@ export default function CoachingPage() {
   const [selectedConsultant, setSelectedConsultant] = useState<any>(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [bookingConsultant, setBookingConsultant] = useState<any>(null)
+  const [bookingStep, setBookingStep] = useState<1|2|3>(1)
+  const [bookingData, setBookingData] = useState({
+    date: '',
+    time: '',
+    meetingType: 'zoom' as 'zoom'|'meet',
+    notes: '',
+  })
+  const [bookingLoading, setBookingLoading] = useState(false)
+  const [bookingSuccess, setBookingSuccess] = useState(false)
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -159,9 +168,117 @@ export default function CoachingPage() {
               <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: isAr ? 'auto' : 14, right: isAr ? 14 : 'auto', background: 'none', border: 'none', cursor: 'pointer', color: subtext }}>
                 <X size={15} />
               </button>
-            )}
+)}
+      </div>
+
+      {bookingConsultant && (
+        <>
+          <div onClick={() => setBookingConsultant(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, backdropFilter: 'blur(4px)' }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '90%', maxWidth: 440, background: cardBg, borderRadius: 20, zIndex: 201, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: '20px 24px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {bookingConsultant.profile?.avatar ? <img src={bookingConsultant.profile.avatar} alt="" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover' }} /> : <div style={{ width: 40, height: 40, borderRadius: 10, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 800 }}>{getInitials(bookingConsultant)}</div>}
+                <div>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{bookingConsultant.profile?.firstName} {bookingConsultant.profile?.lastName}</h3>
+                  <p style={{ color: subtext, fontSize: 12, margin: 0 }}>{isAr ? 'احجز جلسة' : 'Book Session'}</p>
+                </div>
+              </div>
+              <button onClick={() => setBookingConsultant(null)} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={15} /></button>
+            </div>
+            <div style={{ padding: 24 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+                {[1,2,3].map(s => <div key={s} style={{ flex: 1, height: 4, borderRadius: 2, background: bookingStep >= s ? '#5120c8' : border }} />)}
+              </div>
+              
+              {bookingSuccess ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}><CheckCircle2 size={32} color="#fff" /></div>
+                  <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'تم الحجز بنجاح!' : 'Booking Confirmed!'}</h3>
+                  <p style={{ color: subtext, fontSize: 13, marginBottom: 20 }}>{isAr ? 'سيتم إرسال رابط الاجتماع عبر البريد الإلكتروني' : 'Meeting link will be sent to your email'}</p>
+                  <button onClick={() => setBookingConsultant(null)} style={{ padding: '12px 32px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>{isAr ? 'تم' : 'Done'}</button>
+                </div>
+              ) : (
+                <>
+                  {bookingStep === 1 && (
+                    <div>
+                      <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{isAr ? 'اختر التاريخ والوقت' : 'Select Date & Time'}</h4>
+                      <input type="date" value={bookingData.date} onChange={e => setBookingData({...bookingData, date: e.target.value, time: ''})} min={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 14, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
+                      {bookingData.date && (
+                        <>
+                          <h5 style={{ color: text, fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{isAr ? 'المواعيد المتاحة' : 'Available Slots'}</h5>
+                          {(() => {
+                            const isToday = bookingData.date === new Date().toISOString().split('T')[0]
+                            const currentHour = new Date().getHours()
+                            const timeSlots = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
+                            const availableSlots = timeSlots.filter(t => {
+                              if (!isToday) return true
+                              return parseInt(t.split(':')[0]) > currentHour + 1
+                            })
+                            return (
+                              <>
+                                {availableSlots.length === 0 ? (
+                                  <p style={{ color: '#d97706', fontSize: 13 }}>{isAr ? 'لا توجد مواعيد متاحة اليوم، اختر تاريخاً آخر' : 'No available slots today, please choose another date'}</p>
+                                ) : (
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+                                    {availableSlots.map(t => (
+                                      <button key={t} onClick={() => setBookingData({...bookingData, time: t})} style={{ padding: '10px 8px', borderRadius: 8, border: bookingData.time === t ? 'none' : `1px solid ${border}`, background: bookingData.time === t ? '#5120c8' : 'transparent', color: bookingData.time === t ? '#fff' : text, cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.15s' }}>{t}</button>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )
+                          })()}
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
+                  {bookingStep === 2 && (
+                    <div>
+                      <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{isAr ? 'نوع الاجتماع' : 'Meeting Type'}</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <button onClick={() => setBookingData({...bookingData, meetingType: 'zoom'})} style={{ padding: '16px', borderRadius: 12, border: bookingData.meetingType === 'zoom' ? '2px solid #5120c8' : `1px solid ${border}`, background: bookingData.meetingType === 'zoom' ? 'rgba(81,32,200,0.08)' : 'transparent', cursor: 'pointer', textAlign: 'right' as any, display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#2D8CFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M2 6.5C2 5.12 3.12 4 4.5 4h9C14.88 4 16 5.12 16 6.5v11c0 1.38-1.12 2.5-2.5 2.5h-9C3.12 20 2 18.88 2 17.5v-11z" fill="#fff"/><path d="M22 8.5v7c0 1.38-1.12 2.5-2.5 2.5h-2l3 3v-3h1c1.38 0 2.5-1.12 2.5-2.5v-7z" fill="#2D8CFF"/></svg></div>
+                          <div style={{ flex: 1 }}><div style={{ color: text, fontSize: 14, fontWeight: 700 }}>Zoom</div><div style={{ color: subtext, fontSize: 11 }}>zoom.us</div></div>
+                          {bookingData.meetingType === 'zoom' && <CheckCircle2 size={18} color="#5120c8" />}
+                        </button>
+                        <button onClick={() => setBookingData({...bookingData, meetingType: 'meet'})} style={{ padding: '16px', borderRadius: 12, border: bookingData.meetingType === 'meet' ? '2px solid #5120c8' : `1px solid ${border}`, background: bookingData.meetingType === 'meet' ? 'rgba(81,32,200,0.08)' : 'transparent', cursor: 'pointer', textAlign: 'right' as any, display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#00897B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#fff"/></svg></div>
+                          <div style={{ flex: 1 }}><div style={{ color: text, fontSize: 14, fontWeight: 700 }}>Google Meet</div><div style={{ color: subtext, fontSize: 11 }}>meet.google.com</div></div>
+                          {bookingData.meetingType === 'meet' && <CheckCircle2 size={18} color="#5120c8" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {bookingStep === 3 && (
+                    <div>
+                      <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 16 }}>{isAr ? 'تأكيد الحجز' : 'Confirm Booking'}</h4>
+                      <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fafafa', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'المستشار' : 'Consultant'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingConsultant.profile?.firstName} {bookingConsultant.profile?.lastName}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'التاريخ' : 'Date'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.date}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'الوقت' : 'Time'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.time}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'نوع الاجتماع' : 'Meeting'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.meetingType === 'zoom' ? 'Zoom' : 'Google Meet'}</span></div>
+                      </div>
+                      <textarea value={bookingData.notes} onChange={e => setBookingData({...bookingData, notes: e.target.value})} placeholder={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, marginBottom: 12, outline: 'none', boxSizing: 'border-box', resize: 'none', height: 80 }} />
+                    </div>
+                  )}
+                  
+                  <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                    {bookingStep > 1 && <button onClick={() => setBookingStep(s => (s - 1) as 1|2|3)} style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: text, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>}
+                    {bookingStep < 3 ? (
+                      <button onClick={() => setBookingStep(s => (s + 1) as 1|2|3)} disabled={(bookingStep === 1 && (!bookingData.date || !bookingData.time))} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: (bookingStep === 1 && (!bookingData.date || !bookingData.time)) ? '#ccc' : '#5120c8', color: '#fff', cursor: (bookingStep === 1 && (!bookingData.date || !bookingData.time)) ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{isAr ? 'التالي' : 'Next'}</button>
+                    ) : (
+                      <button onClick={async () => { setBookingLoading(true); const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''; await fetch('https://deve-way.onrender.com/api/sessions/book', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ consultantId: bookingConsultant.id, scheduledAt: `${bookingData.date}T${bookingData.time}:00`, meetingMethod: bookingData.meetingType, notes: bookingData.notes, topic: 'Career Consultation' }) }); setBookingLoading(false); setBookingSuccess(true) }} disabled={bookingLoading} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: bookingLoading ? '#ccc' : '#16a34a', color: '#fff', cursor: bookingLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{bookingLoading ? (isAr ? 'جاري...' : 'Loading...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}</button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </>
+      )}
+    </div>
       </div>
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
@@ -364,7 +481,12 @@ export default function CoachingPage() {
                           <span>{isAr ? 'التفاصيل' : 'Details'}</span>
                         </button>
                         <button
-                          onClick={() => router.push(`/${locale}/dashboard/coaching?consultant=${c.id}`)}
+                          onClick={() => {
+                            setBookingConsultant(c)
+                            setBookingStep(1)
+                            setBookingSuccess(false)
+                            setBookingData({ date:'', time:'', meetingType:'zoom', notes:'' })
+                          }}
                           style={{
                             padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
                             background: '#5120c8', color: '#ffffff',
@@ -427,7 +549,7 @@ export default function CoachingPage() {
                 <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>{parseFloat(selectedConsultant.profile?.sessionPrice || 0) > 0 ? `${selectedConsultant.profile.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'لكل جلسة' : 'per session'}</div>
               </div>
-              <button onClick={() => { setSelectedConsultant(null); router.push(`/${locale}/dashboard/coaching?consultant=${selectedConsultant.id}`) }} style={{ flex: 2, padding: '13px', borderRadius: 12, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Calendar size={15} />{isAr ? 'احجز جلسة الآن' : 'Book Session Now'}</button>
+              <button onClick={() => { setSelectedConsultant(null); setBookingConsultant(selectedConsultant); setBookingStep(1); setBookingSuccess(false); setBookingData({ date:'', time:'', meetingType:'zoom', notes:'' }) }} style={{ flex: 2, padding: '13px', borderRadius: 12, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Calendar size={15} />{isAr ? 'احجز جلسة الآن' : 'Book Session Now'}</button>
             </div>
           </div>
         </>
