@@ -154,6 +154,74 @@ export class CoachingController {
     return { success: true, message: 'Session cancelled', data: session };
   }
 
+  @Patch('consulting/:id/request-reschedule')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request reschedule (CONSULTANT only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async requestReschedule(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() body: { proposedDate: string; proposedTime: string; reason?: string },
+  ) {
+    const result = await this.coachingService.requestReschedule(id, user.id, body);
+    return result;
+  }
+
+  @Patch('consulting/:id/approve-reschedule')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Approve reschedule (user only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async approveReschedule(@CurrentUser() user: any, @Param('id') id: string) {
+    const result = await this.coachingService.approveReschedule(id, user.id);
+    return result;
+  }
+
+  @Patch('consulting/:id/reject-reschedule')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reject reschedule (user only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async rejectReschedule(@CurrentUser() user: any, @Param('id') id: string) {
+    const result = await this.coachingService.rejectReschedule(id, user.id);
+    return result;
+  }
+
+  @Patch('consulting/:id/meeting-link')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add meeting link (CONSULTANT only)' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async addMeetingLink(
+    @CurrentUser() user: any,
+    @Param('id') id: string,
+    @Body() body: { meetingLink: string; meetingType: string },
+  ) {
+    const result = await this.coachingService.addMeetingLink(id, user.id, body);
+    return result;
+  }
+
+  @Patch('consulting/:id/complete')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mark session as completed' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async completeConsultingSession(@CurrentUser() user: any, @Param('id') id: string) {
+    const session = await this.coachingService.completeConsultingSession(id, user.id);
+    return { success: true, message: 'Session completed', data: session };
+  }
+
+  @Patch('consulting/:id/pay')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mark session as paid' })
+  @ApiParam({ name: 'id', description: 'Session ID' })
+  async payConsultingSession(@CurrentUser() user: any, @Param('id') id: string) {
+    const session = await this.coachingService.payConsultingSession(id, user.id);
+    return { success: true, message: 'Payment successful', data: session };
+  }
+
   @Get('sessions/my-sessions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

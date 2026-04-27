@@ -898,7 +898,7 @@ export class CoachingService {
           student: {
             select: {
               id: true,
-              profile: { select: { firstName: true, lastName: true, avatar: true } },
+              profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } },
             },
           },
         },
@@ -911,12 +911,150 @@ export class CoachingService {
         consultant: {
           select: {
             id: true,
-            profile: { select: { firstName: true, lastName: true, avatar: true } },
+            profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } },
           },
         },
       },
       orderBy: { scheduledAt: 'desc' },
     });
+  }
+
+  async requestReschedule(sessionId: string, consultantId: string, data: { proposedDate: string; proposedTime: string; reason?: string }) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, consultantId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const proposedAt = new Date(`${data.proposedDate}T${data.proposedTime}:00`);
+    if (proposedAt < new Date()) throw new BadRequestException('Cannot propose past time');
+
+    const existingNotes = session.notes || '';
+    const rescheduleNote = `\n[RESCHEDULE_PROPOSED:${proposedAt.toISOString()}${data.reason ? ':' + data.reason : ''}]`;
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        status: 'RESCHEDULE_REQUESTED',
+        notes: existingNotes + rescheduleNote,
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: session.studentId,
+        type: 'SYSTEM_ANNOUNCEMENT' as any,
+        titleEn: 'Reschedule Request',
+        titleAr: 'طلب تغيير موعد',
+        contentEn: `New time proposed: ${proposedAt.toLocaleDateString()} - ${data.reason || 'No reason'}`,
+        contentAr: `تم اقتراح موعد جديد: ${proposedAt.toLocaleDateString('ar-SA')} - ${data.reason || 'بدون سبب'}`,
+        isRead: false,
+      },
+    }).catch(() => {});
+
+    return { success: true, data: updated };
+  }
+
+  async approveReschedule(sessionId: string, studentId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, studentId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const match = session.notes?.match(/\[RESCHEDULE_PROPOSED:([^:\]]+)/);
+    if (!match) throw new BadRequestException('No reschedule proposal found');
+
+    const proposedAt = new Date(match[1]);
+    const cleanNotes = (session.notes || '').replace(/\n?\[RESCHEDULE_PROPOSED:[^\]]+\]/g, '');
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        scheduledAt: proposedAt,
+        status: 'CONFIRMED',
+        notes: cleanNotes,
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: session.consultantId,
+        type: 'SYSTEM_ANNOUNCEMENT' as any,
+        titleEn: 'Reschedule Approved',
+        titleAr: 'تمت الموافقة على تغيير الموعد',
+        contentEn: `Session rescheduled to ${proposedAt.toLocaleDateString()}`,
+        contentAr: `تم تغيير موعد الجلسة إلى ${proposedAt.toLocaleDateString('ar-SA')}`,
+        isRead: false,
+      },
+    }).catch(() => {});
+
+    return { success: true, data: updated };
+  }
+
+  async rejectReschedule(sessionId: string, studentId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, studentId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const cleanNotes = (session.notes || '').replace(/\n?\[RESCHEDULE_PROPOSED:[^\]]+\]/g, '');
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        status: 'CONFIRMED',
+        notes: cleanNotes,
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: session.consultantId,
+        type: 'SYSTEM_ANNOUNCEMENT' as any,
+        titleEn: 'Reschedule Rejected',
+        titleAr: 'رفض طلب تغيير الموعد',
+        contentEn: 'User rejected the reschedule request',
+        contentAr: 'رفض المستخدم طلب تغيير موعد الجلسة',
+        isRead: false,
+      },
+    }).catch(() => {});
+
+    return { success: true, data: updated };
+  }
+
+  async getMeetingLink(sessionId: string, userId: string, role: string) {
+    const where = role === 'CONSULTANT'
+      ? { id: sessionId, consultantId: userId }
+      : { id: sessionId, studentId: userId };
+    return this.prisma.consultingSession.findFirst({ where });
+  }
+
+  async addMeetingLink(sessionId: string, consultantId: string, data: { meetingLink: string; meetingType: string }) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, consultantId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        meetingLink: data.meetingLink,
+        meetingMethod: data.meetingType?.toUpperCase() || 'ZOOM',
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        userId: session.studentId,
+        type: 'SYSTEM_ANNOUNCEMENT' as any,
+        titleEn: 'Meeting Link Added',
+        titleAr: 'تمت إضافة رابط الاجتماع',
+        contentEn: `Meeting link: ${data.meetingLink}`,
+        contentAr: `رابط الاجتماع: ${data.meetingLink}`,
+        isRead: false,
+      },
+    }).catch(() => {});
+
+    return { success: true, data: updated };
   }
 
   async confirmConsultingSession(sessionId: string, consultantId: string) {
@@ -938,6 +1076,34 @@ export class CoachingService {
     return this.prisma.consultingSession.update({
       where: { id: sessionId },
       data: { status: 'CANCELLED' },
+    });
+  }
+
+  async completeConsultingSession(sessionId: string, userId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, OR: [{ consultantId: userId }, { studentId: userId }] },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    return this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: { status: 'COMPLETED' },
+    });
+  }
+
+  async payConsultingSession(sessionId: string, userId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, studentId: userId },
+    });
+    if (!session) throw new NotFoundException('Session not found');
+    if (session.paymentStatus === 'PAID') {
+      throw new BadRequestException('Already paid');
+    }
+    return this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: { 
+        paymentStatus: 'PAID',
+        status: session.status === 'PENDING' ? 'CONFIRMED' : session.status,
+      },
     });
   }
 
