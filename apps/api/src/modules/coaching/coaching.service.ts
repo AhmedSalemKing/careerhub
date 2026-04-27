@@ -159,7 +159,7 @@ export class CoachingService {
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
       const consultants = await this.prisma.user.findMany({
-        where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
+        where: { role: { in: ['COACH' as any, 'ADMIN' as any] } },
         include: { profile: true },
       });
 
