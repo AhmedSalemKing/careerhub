@@ -159,13 +159,8 @@ export class CoachingService {
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
       const allUsers = await this.prisma.user.findMany({ include: { profile: true } });
-      
-      // Debug: return first 2 users to see data structure
-      const debugUsers = allUsers.slice(0, 2).map((u: any) => ({ id: u.id, role: u.role, accountType: u.accountType, profile: u.profile ? { firstName: u.profile.firstName, lastName: u.profile.lastName } : null }));
-      this.logger.log(`[getConsultants] Users debug: ${JSON.stringify(debugUsers)}`);
 
       const consultants = allUsers.filter((u: any) => u.role === 'COACH' || ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType));
-      this.logger.log(`[getConsultants] Matched consultants: ${consultants.length}`);
 
       const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
 
