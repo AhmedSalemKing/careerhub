@@ -161,6 +161,7 @@ export class CoachingService {
       this.logger.log('[getConsultants] starting...');
       const consultants = await this.prisma.user.findMany({
         where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
+        include: { profile: true },
       });
       this.logger.log(`[getConsultants] found ${consultants.length} users`);
 
