@@ -158,21 +158,23 @@ export class CoachingService {
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
-      const consultants = await this.prisma.user.findMany({
-        where: { 
-          OR: [
-            { role: 'COACH' as any },
-            { accountType: { in: ['INSTRUCTOR', 'CONSULTANT', 'COACH'] } }
-          ]
-        },
-        include: { profile: true },
-      });
+      const allUsers = await this.prisma.user.findMany({ include: { profile: true } });
+      this.logger.log(`[getConsultants] Total users: ${allUsers.length}, first user: ${JSON.stringify(allUsers[0]?.accountType)}`);
+
+      const consultants = allUsers.filter((u: any) => u.role === 'COACH' || ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType));
+      this.logger.log(`[getConsultants] Matched consultants: ${consultants.length}`);
 
       const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
 
       let filtered = scored;
-      if (query.filter && query.filter !== 'all') filtered = scored.filter((c: any) => c._score > 0);
-      if (query.search) filtered = scored.filter((c: any) => c._score > 0);
+      if (query.filter && query.filter !== 'all') filtered = filtered.filter((c: any) => c._score > 0);
+      if (query.search) {
+        const q = query.search.toLowerCase();
+        filtered = filtered.filter((c: any) => {
+          const combined = [c.profile?.firstName, c.profile?.lastName, c.profile?.speciality, c.profile?.bio].join(' ').toLowerCase();
+          return combined.includes(q);
+        });
+      }
 
       switch(query.sort) {
         case 'price-low': filtered.sort((a: any, b: any) => (parseFloat(a.profile?.sessionPrice || '0') - parseFloat(b.profile?.sessionPrice || '0'))); break;
