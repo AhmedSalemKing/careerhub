@@ -57,6 +57,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (accountType === 'CONSULTANT') return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
+      { icon: Users, labelAr: 'جلسات عملائي', labelEn: 'Client Sessions', href: `/${locale}/dashboard/client-sessions` },
       { icon: CalendarDays, labelAr: 'الجدول', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
       { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
