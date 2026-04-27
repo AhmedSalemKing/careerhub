@@ -160,7 +160,10 @@ export class CoachingService {
     try {
       const allUsers = await this.prisma.user.findMany({ include: { profile: true } });
 
-      const consultants = allUsers.filter((u: any) => u.role === 'COACH' || ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType));
+      const consultants = allUsers.filter((u: any) => 
+        u.role === 'COACH' || 
+        ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType)
+      );
 
       const scored = consultants.map((c: any) => {
         const { password, googleId, stripeCustomerId, ...rest } = c;
