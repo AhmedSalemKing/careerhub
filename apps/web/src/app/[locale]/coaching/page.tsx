@@ -40,6 +40,8 @@ export default function CoachingPage() {
     time: '',
     meetingType: 'zoom' as 'zoom'|'meet',
     notes: '',
+    topic: '',
+    sessionName: '',
   })
   const [bookingLoading, setBookingLoading] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
@@ -202,6 +204,50 @@ export default function CoachingPage() {
                   {bookingStep === 1 && (
                     <div>
                       <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{isAr ? 'اختر التاريخ والوقت' : 'Select Date & Time'}</h4>
+                      
+                      <div>
+                        <label style={{ color:text, fontSize:13, fontWeight:700, marginBottom:8, display:'block' }}>
+                          {isAr ? 'هدف الجلسة' : 'Session Goal'} *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={isAr ? 'مثال: تطوير مساري في البرمجة، الانتقال لوظيفة جديدة...' : 'e.g. Improve my programming career, transition to new role...'}
+                          value={bookingData.topic}
+                          onChange={e => setBookingData(d => ({ ...d, topic: e.target.value }))}
+                          style={{
+                            width:'100%', padding:'12px 14px', borderRadius:10,
+                            border:`1.5px solid ${bookingData.topic ? '#5120c8' : border}`,
+                            background:isDark?'#0d0d0d':'#fafafa',
+                            color:text, fontSize:14, outline:'none', boxSizing:'border-box',
+                            marginBottom:16,
+                          }}
+                        />
+                        {!bookingData.topic && bookingData.date && (
+                          <p style={{ color:'#d97706', fontSize:11, marginTop:-12, marginBottom:12 }}>
+                            {isAr ? '* هذا الحقل إجباري' : '* This field is required'}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label style={{ color:text, fontSize:13, fontWeight:700, marginBottom:8, display:'block' }}>
+                          {isAr ? 'اسم الجلسة' : 'Session Name'} *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder={isAr ? 'مثال: جلسة تطوير المسار المهني الأولى' : 'e.g. First career development session'}
+                          value={bookingData.sessionName || ''}
+                          onChange={e => setBookingData(d => ({ ...d, sessionName: e.target.value }))}
+                          style={{
+                            width:'100%', padding:'12px 14px', borderRadius:10,
+                            border:`1.5px solid ${bookingData.sessionName ? '#5120c8' : border}`,
+                            background:isDark?'#0d0d0d':'#fafafa',
+                            color:text, fontSize:14, outline:'none', boxSizing:'border-box',
+                            marginBottom:16,
+                          }}
+                        />
+                      </div>
+
                       <input type="date" value={bookingData.date} onChange={e => setBookingData({...bookingData, date: e.target.value, time: ''})} min={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 14, marginBottom: 16, outline: 'none', boxSizing: 'border-box' }} />
                       {bookingData.date && (
                         <>
@@ -256,6 +302,8 @@ export default function CoachingPage() {
                       <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 16 }}>{isAr ? 'تأكيد الحجز' : 'Confirm Booking'}</h4>
                       <div style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#fafafa', borderRadius: 12, padding: 16, marginBottom: 16 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'المستشار' : 'Consultant'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingConsultant.profile?.firstName} {bookingConsultant.profile?.lastName}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'هدف الجلسة' : 'Session Goal'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.topic}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'اسم الجلسة' : 'Session Name'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.sessionName}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'التاريخ' : 'Date'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.date}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'الوقت' : 'Time'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.time}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: subtext, fontSize: 12 }}>{isAr ? 'نوع الاجتماع' : 'Meeting'}</span><span style={{ color: text, fontSize: 13, fontWeight: 600 }}>{bookingData.meetingType === 'zoom' ? 'Zoom' : 'Google Meet'}</span></div>
@@ -267,9 +315,9 @@ export default function CoachingPage() {
                   <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                     {bookingStep > 1 && <button onClick={() => setBookingStep(s => (s - 1) as 1|2|3)} style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: text, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>}
                     {bookingStep < 3 ? (
-                      <button onClick={() => setBookingStep(s => (s + 1) as 1|2|3)} disabled={(bookingStep === 1 && (!bookingData.date || !bookingData.time))} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: (bookingStep === 1 && (!bookingData.date || !bookingData.time)) ? '#ccc' : '#5120c8', color: '#fff', cursor: (bookingStep === 1 && (!bookingData.date || !bookingData.time)) ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{isAr ? 'التالي' : 'Next'}</button>
+                      <button onClick={() => setBookingStep(s => (s + 1) as 1|2|3)} disabled={(bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName))} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: (bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName)) ? '#ccc' : '#5120c8', color: '#fff', cursor: (bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName)) ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{isAr ? 'التالي' : 'Next'}</button>
                     ) : (
-                      <button onClick={async () => { setBookingLoading(true); const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''; await fetch('https://deve-way.onrender.com/api/sessions/book', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ consultantId: bookingConsultant.id, scheduledAt: `${bookingData.date}T${bookingData.time}:00`, meetingMethod: bookingData.meetingType, notes: bookingData.notes, topic: 'Career Consultation' }) }); setBookingLoading(false); setBookingSuccess(true) }} disabled={bookingLoading} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: bookingLoading ? '#ccc' : '#16a34a', color: '#fff', cursor: bookingLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{bookingLoading ? (isAr ? 'جاري...' : 'Loading...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}</button>
+                      <button onClick={async () => { setBookingLoading(true); const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''; await fetch('https://deve-way.onrender.com/api/sessions/book', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ consultantId: bookingConsultant.id, scheduledAt: `${bookingData.date}T${bookingData.time}:00`, meetingMethod: bookingData.meetingType, notes: bookingData.notes, topic: bookingData.topic, sessionName: bookingData.sessionName }) }); setBookingLoading(false); setBookingSuccess(true) }} disabled={bookingLoading} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: bookingLoading ? '#ccc' : '#16a34a', color: '#fff', cursor: bookingLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{bookingLoading ? (isAr ? 'جاري...' : 'Loading...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}</button>
                     )}
                   </div>
                 </>
@@ -485,7 +533,7 @@ export default function CoachingPage() {
                             setBookingConsultant(c)
                             setBookingStep(1)
                             setBookingSuccess(false)
-                            setBookingData({ date:'', time:'', meetingType:'zoom', notes:'' })
+                            setBookingData({ date:'', time:'', meetingType:'zoom', notes:'', topic:'', sessionName:'' })
                           }}
                           style={{
                             padding: '9px 16px', borderRadius: 10, cursor: 'pointer',
@@ -549,7 +597,7 @@ export default function CoachingPage() {
                 <div style={{ color: '#5120c8', fontSize: 20, fontWeight: 900 }}>{parseFloat(selectedConsultant.profile?.sessionPrice || 0) > 0 ? `${selectedConsultant.profile.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'لكل جلسة' : 'per session'}</div>
               </div>
-              <button onClick={() => { setSelectedConsultant(null); setBookingConsultant(selectedConsultant); setBookingStep(1); setBookingSuccess(false); setBookingData({ date:'', time:'', meetingType:'zoom', notes:'' }) }} style={{ flex: 2, padding: '13px', borderRadius: 12, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Calendar size={15} />{isAr ? 'احجز جلسة الآن' : 'Book Session Now'}</button>
+              <button onClick={() => { setSelectedConsultant(null); setBookingConsultant(selectedConsultant); setBookingStep(1); setBookingSuccess(false); setBookingData({ date:'', time:'', meetingType:'zoom', notes:'', topic:'', sessionName:'' }) }} style={{ flex: 2, padding: '13px', borderRadius: 12, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}><Calendar size={15} />{isAr ? 'احجز جلسة الآن' : 'Book Session Now'}</button>
             </div>
           </div>
         </>
