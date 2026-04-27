@@ -297,11 +297,11 @@ export class AdminService {
   // ── Create Session WITH Image ──
   async createSessionWithImage(data: any, image?: Express.Multer.File) {
     const sessionData: any = {
-      studentId: data.studentId,
+      userId: data.userId,
       consultantId: data.consultantId,
       scheduledAt: new Date(data.scheduledAt),
       topic: data.topic || '',
-      meetingMethod: data.meetingMethod || 'ONLINE',
+      meetingType: data.meetingType || 'ONLINE',
       price: Number(data.price) || 0,
       duration: data.duration || 60,
       status: 'CONFIRMED',
@@ -1014,7 +1014,7 @@ export class AdminService {
           speciality: true,
           linkedinUrl: true,
           hourlyRate: true,
-          meetingMethod: true,
+          // meetingType not on User
           createdAt: true,
           profile: {
             select: {
@@ -1260,7 +1260,7 @@ export class AdminService {
   async getAllSessions() {
     const sessions = await this.prisma.consultingSession.findMany({
       include: {
-        student: {
+        user: {
           select: {
             email: true,
             profile: { select: { firstName: true, lastName: true } },
@@ -1334,11 +1334,11 @@ export class AdminService {
   async createSession(data: any) {
     return this.prisma.consultingSession.create({
       data: {
-        studentId: data.studentId,
+        userId: data.userId,
         consultantId: data.consultantId,
         scheduledAt: new Date(data.scheduledAt),
         topic: data.topic || '',
-        meetingMethod: data.meetingMethod || 'ONLINE',
+        meetingType: data.meetingType || 'ONLINE',
         price: Number(data.price) || 0,
         status: 'CONFIRMED',
         paymentStatus: 'UNPAID',

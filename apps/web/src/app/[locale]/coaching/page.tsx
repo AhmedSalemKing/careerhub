@@ -52,88 +52,23 @@ export default function CoachingPage() {
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
-  const { data: consultants = [], isLoading } = useQuery({
-    queryKey: ['consultants'],
+  const { data: consultantsData, isLoading } = useQuery({
+    queryKey: ['consultants', activeFilter, search, sortBy],
     queryFn: async () => {
-      const FAKE_NAMES = ['elon', 'musk', 'messi', 'lionel', 'gakpo', 'salah', 'gonzalo', 'نىمقسي', 'test', 'fake', 'demo']
-      const [res1, res2] = await Promise.all([
-        get('/users?role=INSTRUCTOR&limit=50'),
-        get('/users?role=CONSULTANT&limit=50'),
-      ])
-      const arr1 = res1.data?.data ?? res1.data?.users ?? res1.data ?? []
-      const arr2 = res2.data?.data ?? res2.data?.users ?? res2.data ?? []
-      const all = [...arr1, ...arr2]
-      const seen = new Set()
-      return all.filter(c => {
-        if (seen.has(c.id)) return false
-        seen.add(c.id)
-        const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
-        if (FAKE_NAMES.some(fake => name.includes(fake))) return false
-        return true
-      })
-    }
+      const params = new URLSearchParams()
+      if (activeFilter !== 'all') params.set('filter', activeFilter)
+      if (search) params.set('search', search)
+      if (sortBy !== 'sessions') params.set('sort', sortBy)
+      params.set('limit', '50')
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/coaching/consultants?${params}`)
+      const data = await res.json()
+      return data?.data ?? []
+    },
+    staleTime: 60000,
   })
 
-  const filteredConsultants = useMemo(() => {
-    let result = [...consultants]
-
-    if (search.trim()) {
-      const q = search.toLowerCase()
-      result = result.filter(c => {
-        const name = `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.toLowerCase()
-        const speciality = (c.profile?.speciality || '').toLowerCase()
-        const bio = (c.profile?.bio || '').toLowerCase()
-        const areas = (c.profile?.consultingAreas || []).join(' ').toLowerCase()
-        const quals = (c.profile?.qualifications || []).join(' ').toLowerCase()
-        return name.includes(q) || speciality.includes(q) || bio.includes(q) || areas.includes(q) || quals.includes(q)
-      })
-    }
-
-    if (activeFilter !== 'all') {
-      const filterDef = SPECIALITY_FILTERS.find(f => f.key === activeFilter)
-      if (filterDef?.keywords) {
-        result = result.filter(c => {
-          const combined = [
-            c.profile?.speciality || '',
-            c.profile?.bio || '',
-            ...(c.profile?.consultingAreas || []),
-            ...(c.profile?.qualifications || []),
-            c.email || '',
-          ].join(' ').toLowerCase()
-          return filterDef.keywords.some(kw => combined.includes(kw.toLowerCase()))
-        })
-      }
-    }
-
-    result = result.map(c => {
-      let score = 0
-      score += (c._count?.consultingSessions || c.sessionCount || 0) * 2
-      if (c.profile?.speciality) score += 5
-      if (c.profile?.bio) score += 3
-      if (c.profile?.qualifications?.length > 0) score += c.profile.qualifications.length * 2
-      if (c.profile?.consultingAreas?.length > 0) score += c.profile.consultingAreas.length * 2
-      if (c.profile?.linkedinUrl) score += 2
-      if (c.isVerified || c.verified) score += 10
-      return { ...c, _score: score }
-    })
-
-    switch(sortBy) {
-      case 'sessions':
-        result.sort((a, b) => (b._count?.consultingSessions || 0) - (a._count?.consultingSessions || 0))
-        break
-      case 'experience':
-        result.sort((a, b) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0))
-        break
-      case 'price-low':
-        result.sort((a, b) => (a.profile?.sessionPrice || 0) - (b.profile?.sessionPrice || 0))
-        break
-      case 'price-high':
-        result.sort((a, b) => (b.profile?.sessionPrice || 0) - (a.profile?.sessionPrice || 0))
-        break
-    }
-
-    return result
-  }, [consultants, search, activeFilter, sortBy])
+  const consultants = consultantsData || []
 
   const getInitials = (c: any) => {
     const f = c.profile?.firstName?.[0] || ''
@@ -317,7 +252,7 @@ export default function CoachingPage() {
                     {bookingStep < 3 ? (
                       <button onClick={() => setBookingStep(s => (s + 1) as 1|2|3)} disabled={(bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName))} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: (bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName)) ? '#ccc' : '#5120c8', color: '#fff', cursor: (bookingStep === 1 && (!bookingData.date || !bookingData.time || !bookingData.topic || !bookingData.sessionName)) ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{isAr ? 'التالي' : 'Next'}</button>
                     ) : (
-                      <button onClick={async () => { setBookingLoading(true); const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''; await fetch('https://deve-way.onrender.com/api/sessions/book', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ consultantId: bookingConsultant.id, scheduledAt: `${bookingData.date}T${bookingData.time}:00`, meetingMethod: bookingData.meetingType, notes: bookingData.notes, topic: bookingData.topic, sessionName: bookingData.sessionName }) }); setBookingLoading(false); setBookingSuccess(true) }} disabled={bookingLoading} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: bookingLoading ? '#ccc' : '#16a34a', color: '#fff', cursor: bookingLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{bookingLoading ? (isAr ? 'جاري...' : 'Loading...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}</button>
+                      <button onClick={async () => { setBookingLoading(true); const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''; await fetch('https://deve-way.onrender.com/api/coaching/consulting/sessions/book', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ consultantId: bookingConsultant.id, sessionName: bookingData.sessionName, topic: bookingData.topic, description: bookingData.notes, scheduledAt: `${bookingData.date}T${bookingData.time}:00`, meetingType: bookingData.meetingType }) }); setBookingLoading(false); setBookingSuccess(true) }} disabled={bookingLoading} style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: bookingLoading ? '#ccc' : '#16a34a', color: '#fff', cursor: bookingLoading ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700 }}>{bookingLoading ? (isAr ? 'جاري...' : 'Loading...') : (isAr ? 'تأكيد الحجز' : 'Confirm Booking')}</button>
                     )}
                   </div>
                 </>
@@ -363,7 +298,7 @@ export default function CoachingPage() {
         </div>
 
         <div style={{ color: subtext, fontSize: 13, marginBottom: 20 }}>
-          {isAr ? `${filteredConsultants.length} مستشار` : `${filteredConsultants.length} consultants`}
+          {isAr ? `${consultants.length} مستشار` : `${consultants.length} consultants`}
         </div>
 
         {isLoading && (
@@ -377,7 +312,7 @@ export default function CoachingPage() {
 
         {!isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-            {filteredConsultants.map((c: any) => {
+            {consultants.map((c: any) => {
               const sessionCount = 
                 c._count?.consultantSessions ?? 
                 c._count?.consultingSessions ?? 
@@ -551,7 +486,7 @@ export default function CoachingPage() {
           </div>
         )}
 
-        {!isLoading && filteredConsultants.length === 0 && (
+        {!isLoading && consultants.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 24px' }}>
             <Users size={40} color={subtext} style={{ marginBottom: 16 }} />
             <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>

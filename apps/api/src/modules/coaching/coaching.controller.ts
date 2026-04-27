@@ -84,6 +84,24 @@ export class CoachingController {
     };
   }
 
+  @Get('consultants')
+  @ApiOperation({ summary: 'Get available consultants with smart filtering' })
+  @ApiResponse({ status: 200, description: 'Consultants retrieved successfully' })
+  @ApiQuery({ name: 'filter', required: false, description: 'Filter by category: tech, data, security, design, marketing, business' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by name or specialty' })
+  @ApiQuery({ name: 'sort', required: false, description: 'Sort by: score, sessions, experience, price-low, price-high' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of results' })
+  async getConsultants(
+    @Query('filter') filter?: string,
+    @Query('search') search?: string,
+    @Query('sort') sort?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.coachingService.getConsultants({
+      filter, search, sort, limit: parseInt(limit || '50')
+    })
+  }
+
   @Get('coaches/:id/slots')
   @ApiOperation({ summary: 'Get available booking slots' })
   @ApiResponse({ status: 200, description: 'Slots retrieved successfully' })
@@ -132,6 +150,16 @@ export class CoachingController {
   async getConsultingSessions(@CurrentUser() user: any) {
     const sessions = await this.coachingService.getConsultingSessions(user.id, user.accountType);
     return { success: true, data: sessions };
+  }
+
+  @Post('consulting/sessions/book')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Book a consulting session' })
+  @ApiResponse({ status: 201, description: 'Session booked successfully' })
+  async bookConsultingSession(@CurrentUser() user: any, @Body() body: any) {
+    const session = await this.coachingService.bookConsultingSession(user.id, body);
+    return { success: true, message: 'Session booked successfully', data: session };
   }
 
   @Patch('consulting/:id/confirm')

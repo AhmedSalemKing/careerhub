@@ -115,6 +115,7 @@ model User {
   idRejectedReason String?
   isVerified        Boolean   @default(false)
   walletBalance     Float     @default(0)
+  earningsBalance  Float     @default(0)
   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -144,15 +145,15 @@ model User {
   coachProfile         Coach?
   assessmentSessions   AssessmentSession[]
   userCareerPath       UserCareerPath?
-  studentSessions      ConsultingSession[] @relation("StudentSessions")
+  userSessions         ConsultingSession[] @relation("UserSessions")
   consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
-  instructorCourses    Course[]            @relation("InstructorCourses")
   cart                 Cart?
   conversations        Conversation[]
   givenRatings         Rating[]            @relation("GivenRatings")
   receivedRatings      Rating[]            @relation("ConsultantRatings")
   activities           UserActivity[]
   walletTransactions   WalletTransaction[]
+  instructorCourses    Course[]            @relation("InstructorCourses")
 
   @@index([email])
   @@index([role])
@@ -971,30 +972,37 @@ model SiteSettings {
 }
 
 model ConsultingSession {
-  id            String    @id @default(cuid())
-  studentId     String
-  consultantId  String
-  student       User      @relation("StudentSessions", fields: [studentId], references: [id])
-  consultant    User      @relation("ConsultantSessions", fields: [consultantId], references: [id])
-  scheduledAt   DateTime
-  duration     Int       @default(60)
-  meetingMethod String    @default("ZOOM")
-  meetingLink  String?
-  topic        String?
-  notes        String?
-  status       String    @default("PENDING")
-  price        Float     @default(0)
-  paymentStatus String   @default("UNPAID")
-  paymentId    String?
-  cancelReason String?
-  completedAt  DateTime?
-  cancelledAt  DateTime?
-  proposedAt   DateTime?
-  proposedTime DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  userId           String    @map("studentId")
+  consultantId     String
+  user             User      @relation("UserSessions", fields: [userId], references: [id], map: "student_sessions_fk")
+  consultant       User      @relation("ConsultantSessions", fields: [consultantId], references: [id])
+  sessionName      String?
+  topic            String?
+  description      String?   @map("notes")
+  scheduledAt      DateTime
+  duration         Int       @default(60)
+  meetingType      String    @default("zoom") @map("meetingMethod")
+  meetingLink      String?
+  meetingLinkExpiresAt DateTime?
+  status           String    @default("PENDING")
+  price            Float     @default(0)
+  paymentStatus    String    @default("UNPAID")
+  paidAt           DateTime?
+  paymentId        String?
+  cancelReason     String?
+  completedBy      String?
+  completedAt      DateTime?
+  cancelledAt      DateTime?
+  rescheduledFrom  DateTime?
+  proposedAt       DateTime?
+  proposedBy       String?
+  consultantApproved Boolean @default(false)
+  userApproved     Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  @@index([studentId])
+  @@index([userId])
   @@index([consultantId])
   @@index([status])
   @@map("consulting_sessions")
