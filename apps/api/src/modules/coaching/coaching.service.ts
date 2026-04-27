@@ -158,12 +158,10 @@ export class CoachingService {
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
-      this.logger.log('[getConsultants] starting...');
       const consultants = await this.prisma.user.findMany({
         where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
         include: { profile: true },
       });
-      this.logger.log(`[getConsultants] found ${consultants.length} users`);
 
       const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
 
