@@ -146,10 +146,9 @@ export class ConsultingService {
     return { success: true, data: session }
   }
 
-  async getSessions(userId: string, accountType: string) {
-    const isConsultant = accountType === 'CONSULTANT'
-
+  async getSessions(userId: string) {
     try {
+      // Sessions this user booked (as client)
       const mySessions = await this.prisma.consultingSession.findMany({
         where: { userId },
         include: {
@@ -159,16 +158,17 @@ export class ConsultingService {
         orderBy: { scheduledAt: 'desc' },
       })
 
-      const clientSessions = isConsultant
-        ? await this.prisma.consultingSession.findMany({
-            where: { consultantId: userId },
-            include: {
-              user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-              consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
-            },
-            orderBy: { scheduledAt: 'desc' },
-          })
-        : []
+      // Sessions where this user is the consultant (clients booked with them)
+      const clientSessions = await this.prisma.consultingSession.findMany({
+        where: { consultantId: userId },
+        include: {
+          user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
+          consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
+        },
+        orderBy: { scheduledAt: 'desc' },
+      })
+
+      console.log(`[getSessions] userId=${userId} mySessions=${mySessions.length} clientSessions=${clientSessions.length}`)
 
       const now = new Date()
       const allSessions = [...mySessions, ...clientSessions]
@@ -182,10 +182,17 @@ export class ConsultingService {
         }
       }
 
-      return { success: true, data: { mySessions, clientSessions, isConsultant } }
+      return {
+        success: true,
+        data: {
+          mySessions,
+          clientSessions,
+          isConsultant: clientSessions.length > 0,
+        }
+      }
     } catch(e: any) {
-      console.error('[getSessions]', e.message)
-      return { success: true, data: { mySessions: [], clientSessions: [], isConsultant } }
+      console.error('[getSessions error]', e.message)
+      return { success: true, data: { mySessions: [], clientSessions: [], isConsultant: false } }
     }
   }
 
