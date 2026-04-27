@@ -162,11 +162,10 @@ export class CoachingService {
         where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
         include: {
           profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
-          _count: { select: { consultantSessions: true } }
         },
       });
 
-      let scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') }));
+      let scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
 
       if (query.filter && query.filter !== 'all') scored = scored.filter((c: any) => c._score > 0);
       if (query.search) scored = scored.filter((c: any) => c._score > 0);
@@ -182,19 +181,7 @@ export class CoachingService {
       return { success: true, data: scored.slice(0, query.limit || 50) };
     } catch(e: any) {
       this.logger.error('[getConsultants] error:', e.message);
-      try {
-        const consultants = await this.prisma.user.findMany({
-          where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
-          include: {
-            profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
-          },
-        });
-        const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
-        return { success: true, data: scored.slice(0, query.limit || 50) };
-      } catch(e2: any) {
-        this.logger.error('[getConsultants] fallback error:', e2.message);
-        return { success: true, data: [] };
-      }
+      return { success: true, data: [] };
     }
   }
 
