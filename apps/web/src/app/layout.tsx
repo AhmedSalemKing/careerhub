@@ -72,6 +72,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             html.dark { background-color: #0d0d0d; }
           `
         }} />
+        
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            function ping() {
+              fetch('https://deve-way.onrender.com/api/health', { 
+                method: 'GET',
+                signal: AbortSignal.timeout(5000)
+              }).catch(() => {});
+            }
+            ping();
+            setInterval(ping, 840000);
+          })();
+        ` }} />
       </head>
       
       {/* Body uses CSS variables only */}
