@@ -183,27 +183,8 @@ export class AuthService {
 
     this.logger.log(`[LOGIN] user found: ${user ? 'YES' : 'NO'}, id=${user?.id}, accountType=${user?.accountType}, isActive=${user?.isActive}, status=${user?.status}`);
 
-    // Check if user exists
-    if (!user) {
-      this.logger.warn(`[LOGIN] rejected: user not found`);
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // SECURITY: Check soft delete status
-    if (user.deletedAt !== null) {
-      this.logger.warn(`[LOGIN] rejected: user is deleted, deletedAt=${user.deletedAt}`);
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    // SECURITY: Check isActive status
-    if (user.isActive === false) {
-      this.logger.warn(`[LOGIN] rejected: isActive=${user.isActive}`);
-      throw new UnauthorizedException('Account is disabled');
-    }
-
-    // SECURITY: Check status field - explicitly check for DELETED
-    if (user.status === 'DELETED') {
-      this.logger.warn(`[LOGIN] rejected: status=DELETED`);
+    if (!user || user.isActive === false) {
+      this.logger.warn(`[LOGIN] rejected: user=${!!user}, isActive=${user?.isActive}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -605,15 +586,12 @@ export class AuthService {
 
     this.logger.log(`[ADMIN-LOGIN] attempt: ${email}`);
 
-    // Find admin user (EXCLUDE deleted users)
+    // Find admin user
     let user: any;
     try {
       user = await this.prisma.user.findUnique({
         where: { email },
-        select: {
-          id: true, email: true, password: true, role: true, isActive: true, deletedAt: true, status: true,
-          profile: { select: { firstName: true, lastName: true, avatar: true } }
-        },
+        include: { profile: true },
       });
     } catch (dbErr) {
       this.logger.error(`[ADMIN-LOGIN] DB query failed: ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`);
@@ -623,35 +601,8 @@ export class AuthService {
     this.logger.log(`[ADMIN-LOGIN] user found: ${user ? 'YES' : 'NO'}, role=${user?.role}, accountType=${user?.accountType}, isActive=${user?.isActive}`);
 
     const adminRoles = ['ADMIN', 'SUPER_ADMIN'];
-    
-    // Check if user exists
-    if (!user) {
-      this.logger.warn(`[ADMIN-LOGIN] rejected: user not found`);
-      throw new UnauthorizedException('Invalid credentials or insufficient permissions');
-    }
-
-    // SECURITY: Check soft delete status
-    if (user.deletedAt !== null) {
-      this.logger.warn(`[ADMIN-LOGIN] rejected: user is deleted`);
-      throw new UnauthorizedException('Invalid credentials or insufficient permissions');
-    }
-
-    // SECURITY: Check isActive status
-    if (!user.isActive) {
-      this.logger.warn(`[ADMIN-LOGIN] rejected: isActive=false`);
-      throw new UnauthorizedException('Account is disabled');
-    }
-
-    // SECURITY: Check status field
-    if (user.status === 'DELETED') {
-      this.logger.warn(`[ADMIN-LOGIN] rejected: status=DELETED`);
-      throw new UnauthorizedException('Invalid credentials or insufficient permissions');
-    }
-
-    // Check role
-    const isAdmin = adminRoles.includes(user.role) || adminRoles.includes(user.accountType);
-    if (!isAdmin) {
-      this.logger.warn(`[ADMIN-LOGIN] rejected: not an admin, role=${user.role}, accountType=${user.accountType}`);
+    if (!user || !user.isActive || (!adminRoles.includes(user.role) && !adminRoles.includes(user.accountType))) {
+      this.logger.warn(`[ADMIN-LOGIN] rejected: user=${!!user}, isActive=${user?.isActive}, role=${user?.role}, accountType=${user?.accountType}`);
       throw new UnauthorizedException('Invalid credentials or insufficient permissions');
     }
 

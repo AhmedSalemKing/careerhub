@@ -159,8 +159,6 @@ model User {
   @@index([isActive])
   @@index([accountType])
   @@index([status])
-  @@index([deletedAt])
-  @@index([isActive, deletedAt])
   @@map("users")
 }
 

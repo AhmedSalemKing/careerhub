@@ -128,28 +128,11 @@ export class AdminController {
 
   @Delete('users/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Soft delete user (Admin only) - sets deletedAt and isActive=false' })
+  @ApiOperation({ summary: 'Delete user (Admin only)' })
   @ApiResponse({ status: 204, description: 'User deleted successfully' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async deleteUserRecord(@Param('id') id: string) {
     await this.adminService.deleteUser(id);
-  }
-
-  @Post('users/:id/restore')
-  @ApiOperation({ summary: 'Restore deleted user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User restored successfully' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  async restoreUser(@Param('id') id: string) {
-    return this.adminService.restoreUser(id);
-  }
-
-  @Delete('users/:id/hard')
-  @ApiOperation({ summary: 'Hard delete user and all related data (SUPER_ADMIN only)' })
-  @ApiResponse({ status: 200, description: 'User permanently deleted' })
-  @ApiParam({ name: 'id', description: 'User ID' })
-  @ApiQuery({ name: 'confirm', required: true, description: 'Must be HARD_DELETE_CONFIRMED' })
-  async hardDeleteUser(@Param('id') id: string, @Query('confirm') confirm: string) {
-    return this.adminService.hardDeleteUser(id, confirm);
   }
 
   @Post('users/:id/suspend')

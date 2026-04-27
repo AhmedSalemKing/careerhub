@@ -2,10 +2,6 @@ import {
   Injectable,
   Logger,
   ConflictException,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
-  InternalServerErrorException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as path from 'path';
@@ -544,85 +540,8 @@ export class AdminService {
   }
 
   async deleteUser(id: string) {
-    // Check if user exists first
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Prevent admin from deleting another admin
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
-      throw new ForbiddenException('Cannot delete an admin user');
-    }
-
-    // Soft delete - set deletedAt and deactivate
-    return await this.prisma.user.update({
+    return await this.prisma.user.delete({
       where: { id },
-      data: {
-        deletedAt: new Date(),
-        isActive: false,
-        status: 'DELETED',
-      },
-    });
-  }
-
-  // Hard delete - only for SUPER_ADMIN with explicit flag
-  async hardDeleteUser(id: string, confirmKey: string) {
-    if (confirmKey !== 'HARD_DELETE_CONFIRMED') {
-      throw new BadRequestException('Invalid confirmation key');
-    }
-
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
-      throw new ForbiddenException('Cannot hard delete an admin user');
-    }
-
-    // Use transaction to delete all related records in correct order
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        // Delete in correct order respecting foreign keys
-        await tx.chatMessage.deleteMany({ where: { senderId: id } });
-        await tx.chatMessage.deleteMany({ where: { receiverId: id } });
-        
-        await tx.enrollment.deleteMany({ where: { userId: id } });
-        await tx.certificate.deleteMany({ where: { userId: id } });
-        await tx.payment.deleteMany({ where: { userId: id } });
-        await tx.consultingSession.deleteMany({ 
-          where: { OR: [{ userId: id }, { consultantId: id }] } 
-        });
-        await tx.notification.deleteMany({ where: { userId: id } });
-        await tx.userActivity.deleteMany({ where: { userId: id } });
-        await tx.walletTransaction.deleteMany({ where: { userId: id } });
-        await tx.lessonProgress.deleteMany({ where: { userId: id } });
-        
-        // Finally delete the user
-        await tx.user.delete({ where: { id } });
-      });
-      
-      return { success: true, message: 'User and all related data permanently deleted' };
-    } catch (error: any) {
-      this.logger.error('[hardDeleteUser] Error:', error.message);
-      throw new InternalServerErrorException('Failed to delete user: ' + error.message);
-    }
-  }
-
-  async restoreUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return await this.prisma.user.update({
-      where: { id },
-      data: {
-        deletedAt: null,
-        isActive: true,
-        status: 'ACTIVE',
-      },
     });
   }
 
