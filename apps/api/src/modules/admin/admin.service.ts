@@ -540,9 +540,37 @@ export class AdminService {
   }
 
   async deleteUser(id: string) {
-    return await this.prisma.user.delete({
-      where: { id },
-    });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.coachReview.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.quizAttempt.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.notification.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.enrollment.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.consultingSession.deleteMany({ where: { OR: [{ studentId: id }, { consultantId: id }] } }).catch(() => {})
+        await tx.coachingSession.deleteMany({ where: { OR: [{ userId: id }, { coachId: id }] } }).catch(() => {})
+        await tx.payment.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.certificate.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.lessonProgress.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.chatMessage.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }).catch(() => {})
+        await tx.adminLog.deleteMany({ where: { adminId: id } }).catch(() => {})
+        await tx.fileShare.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.deviceToken.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.uploadedFile.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.session.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.passwordResetToken.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.careerAssessment.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.analyticsEvent.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.cartItem.deleteMany({ where: { cart: { userId: id } } }).catch(() => {})
+        await tx.cart.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.userProfile.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.coach.deleteMany({ where: { userId: id } }).catch(() => {})
+        await tx.user.delete({ where: { id } })
+      })
+      return { success: true, message: 'User deleted successfully' }
+    } catch (e: any) {
+      console.error('[DeleteUser]', e.message)
+      throw new Error(e.message)
+    }
   }
 
   async suspendUser(id: string, reason?: string) {

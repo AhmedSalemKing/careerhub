@@ -127,12 +127,11 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete user (Admin only)' })
-  @ApiResponse({ status: 204, description: 'User deleted successfully' })
+  @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async deleteUserRecord(@Param('id') id: string) {
-    await this.adminService.deleteUser(id);
+    return this.adminService.deleteUser(id);
   }
 
   @Post('users/:id/suspend')
