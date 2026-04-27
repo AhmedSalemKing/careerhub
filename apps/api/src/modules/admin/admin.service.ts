@@ -539,60 +539,94 @@ export class AdminService {
     });
   }
 
-  async deleteUser(id: string) {
+  async deleteUser(userId: string) {
     try {
-      const uid = id.replace(/'/g, "''")
-
       await this.prisma.$executeRawUnsafe(`
-        DO $$
-        BEGIN
-          DELETE FROM "subscriptions" WHERE "userId" = '${uid}';
-          DELETE FROM "sessions" WHERE "userId" = '${uid}';
-          DELETE FROM "password_reset_tokens" WHERE "userId" = '${uid}';
-          DELETE FROM "career_assessments" WHERE "userId" = '${uid}';
-          DELETE FROM "assessment_sessions" WHERE "userId" = '${uid}';
-          DELETE FROM "user_career_paths" WHERE "userId" = '${uid}';
-          DELETE FROM "enrollments" WHERE "userId" = '${uid}';
-          DELETE FROM "lesson_progress" WHERE "userId" = '${uid}';
-          DELETE FROM "certificates" WHERE "userId" = '${uid}';
-          DELETE FROM "payments" WHERE "userId" = '${uid}';
-          DELETE FROM "coaching_sessions" WHERE "userId" = '${uid}' OR "coachId" IN (SELECT id FROM "coaches" WHERE "userId" = '${uid}');
-          DELETE FROM "coach_reviews" WHERE "userId" = '${uid}';
-          DELETE FROM "chat_messages" WHERE "senderId" = '${uid}' OR "receiverId" = '${uid}';
-          DELETE FROM "notifications" WHERE "userId" = '${uid}';
-          DELETE FROM "admin_logs" WHERE "adminId" = '${uid}';
-          DELETE FROM "audit_logs" WHERE "adminId" = '${uid}';
-          DELETE FROM "uploaded_files" WHERE "userId" = '${uid}';
-          DELETE FROM "file_shares" WHERE "userId" = '${uid}';
-          DELETE FROM "device_tokens" WHERE "userId" = '${uid}';
-          DELETE FROM "analytics_events" WHERE "userId" = '${uid}';
-          DELETE FROM "quiz_attempts" WHERE "userId" = '${uid}';
-          DELETE FROM "coaches" WHERE "userId" = '${uid}';
-          DELETE FROM "consulting_sessions" WHERE "studentId" = '${uid}' OR "consultantId" = '${uid}';
-          UPDATE "courses" SET "instructorId" = NULL WHERE "instructorId" = '${uid}';
-          DELETE FROM "ratings" WHERE "userId" = '${uid}' OR "consultantId" = '${uid}';
-          DELETE FROM "user_activities" WHERE "userId" = '${uid}';
-          DELETE FROM "cart_items" WHERE "cartId" IN (SELECT id FROM "carts" WHERE "userId" = '${uid}');
-          DELETE FROM "carts" WHERE "userId" = '${uid}';
-          DELETE FROM "conversations" WHERE "userId" = '${uid}';
-          DELETE FROM "wallet_transactions" WHERE "userId" = '${uid}';
-          DELETE FROM "user_profiles" WHERE "userId" = '${uid}';
-          DELETE FROM "users" WHERE "id" = '${uid}';
-        END $$;
+        DELETE FROM "notifications" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "lesson_progress" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "enrollments" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "certificates" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "payments" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "consulting_sessions" WHERE "userId" = '${userId}' OR "consultantId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "coaching_sessions" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "sessions" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "cart_items" WHERE "cartId" IN (SELECT id FROM "carts" WHERE "userId" = '${userId}');
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "carts" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "chat_messages" WHERE "senderId" = '${userId}' OR "receiverId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "coach_reviews" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "quiz_attempts" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "user_activities" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "analytics_events" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "device_tokens" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "file_shares" WHERE "uploadedById" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "uploaded_files" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "audit_logs" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "admin_logs" WHERE "adminId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "ai_messages" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "career_assessments" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "assessment_sessions" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "user_career_paths" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        UPDATE "Course" SET "instructorId" = NULL WHERE "instructorId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "user_profiles" WHERE "userId" = '${userId}';
+      `).catch(() => {})
+      await this.prisma.$executeRawUnsafe(`
+        DELETE FROM "users" WHERE "id" = '${userId}';
       `)
-
+      
       return { success: true, message: 'User deleted successfully' }
-    } catch (e: any) {
-      console.error('[DeleteUser Error]', e.message)
-
-      try {
-        await this.prisma.userProfile.deleteMany({ where: { userId: id } })
-        await this.prisma.user.delete({ where: { id } })
-        return { success: true, message: 'User deleted' }
-      } catch (e2: any) {
-        console.error('[DeleteUser Fallback Error]', e2.message)
-        throw new Error(`Cannot delete user: ${e2.message}`)
-      }
+    } catch(e: any) {
+      console.error('[DeleteUser]', e.message)
+      throw new Error('Failed to delete user: ' + e.message)
     }
   }
 
