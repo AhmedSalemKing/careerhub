@@ -144,7 +144,7 @@ export default function AdminCreateSessionPage() {
         status: 'SCHEDULED',
       }
 
-      await post('/admin/sessions/create', payload)
+      await post('/sessions', payload)
       setSuccess(true)
       setTimeout(() => {
         router.push(`/${locale}/admin/sessions`)

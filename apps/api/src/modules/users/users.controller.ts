@@ -117,32 +117,6 @@ export class UsersController {
     };
   }
 
-  @Get('consultant-profile')
-  @ApiOperation({ summary: 'Get consultant profile' })
-  @ApiResponse({ status: 200, description: 'Consultant profile retrieved successfully' })
-  async getConsultantProfile(@CurrentUser() user: User) {
-    const profile = await this.usersService.getConsultantProfile(user.id);
-    return {
-      success: true,
-      data: profile,
-    };
-  }
-
-  @Patch('consultant-profile')
-  @ApiOperation({ summary: 'Update consultant profile' })
-  @ApiResponse({ status: 200, description: 'Consultant profile updated successfully' })
-  async updateConsultantProfile(
-    @CurrentUser() user: User,
-    @Body() body: any,
-  ) {
-    const profile = await this.usersService.updateConsultantProfile(user.id, body);
-    return {
-      success: true,
-      message: 'Consultant profile updated successfully',
-      data: profile,
-    };
-  }
-
   @Get('dashboard')
   @ApiOperation({ summary: 'Get user dashboard data' })
   @ApiResponse({ status: 200, description: 'Dashboard data retrieved successfully' })

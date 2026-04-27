@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-// redeploy check - sessions/book endpoint exists
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';

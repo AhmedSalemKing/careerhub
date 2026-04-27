@@ -81,120 +81,6 @@ export class CoachingService {
     return data;
   }
 
-  private readonly SPECIALTY_KEYWORDS: Record<string, string[]> = {
-    tech: [
-      'برمجة', 'تقنية', 'software', 'tech', 'engineering', 'هندسة', 'developer', 'مطور',
-      'web', 'mobile', 'fullstack', 'frontend', 'backend', 'python', 'javascript', 'react',
-      'node', 'java', 'php', 'ruby', 'golang', 'rust', 'swift', 'kotlin', 'flutter',
-      'تطوير', 'كود', 'code', 'programming', 'بايثون', 'جافا', 'ويب', 'موبايل',
-      'api', 'database', 'قاعدة بيانات', 'devops', 'cloud', 'سحابة', 'aws', 'azure',
-      'google cloud', 'docker', 'kubernetes', 'linux', 'server', 'خادم', 'network', 'شبكات',
-    ],
-    data: [
-      'data', 'بيانات', 'ai', 'ذكاء اصطناعي', 'machine learning', 'تعلم آلي', 'deep learning',
-      'neural', 'nlp', 'computer vision', 'analytics', 'تحليل', 'statistics', 'احصاء',
-      'tensorflow', 'pytorch', 'pandas', 'numpy', 'tableau', 'power bi', 'excel',
-      'data science', 'علم البيانات', 'big data', 'بيانات ضخمة', 'etl', 'warehouse',
-    ],
-    security: [
-      'security', 'أمن', 'سيبراني', 'cyber', 'hacking', 'penetration', 'اختراق',
-      'ethical hacking', 'ctf', 'forensics', 'malware', 'encryption', 'تشفير',
-      'firewall', 'vpn', 'soc', 'incident response', 'vulnerability', 'ثغرات',
-    ],
-    design: [
-      'تصميم', 'design', 'ui', 'ux', 'figma', 'graphic', 'جرافيك', 'واجهة',
-      'user experience', 'interaction', 'visual', 'branding', 'هوية', 'logo',
-      'photoshop', 'illustrator', 'sketch', 'motion', 'animation', 'حركة',
-      'creative', 'إبداع', 'art', 'فن', 'illustration', 'typography', 'خطوط',
-    ],
-    marketing: [
-      'تسويق', 'marketing', 'digital', 'رقمي', 'seo', 'sem', 'google ads',
-      'social media', 'content', 'محتوى', 'email', 'affiliate', 'influencer',
-      'brand', 'علامة تجارية', 'copywriting', 'growth', 'analytics', 'conversion',
-      'pr', 'public relations', 'advertising', 'إعلان', 'campaign', 'حملة',
-    ],
-    business: [
-      'أعمال', 'business', 'management', 'إدارة', 'ريادة', 'entrepreneur', 'startup',
-      'مبيعات', 'sales', 'تجارة', 'finance', 'مالية', 'hr', 'موارد بشرية',
-      'project manager', 'product manager', 'scrum', 'agile', 'strategy', 'استراتيجية',
-      'consulting', 'استشارات', 'operations', 'supply chain', 'logistics', 'legal',
-      'accounting', 'محاسبة', 'investment', 'استثمار', 'banking', 'بنوك',
-    ],
-  };
-
-  private calculateConsultantScore(consultant: any, filterKey: string, searchQuery: string): number {
-    let score = 0;
-    const keywords = this.SPECIALTY_KEYWORDS[filterKey] || [];
-
-    const searchableText = [
-      consultant.profile?.speciality || '',
-      consultant.profile?.bio || '',
-      ...(consultant.profile?.consultingAreas || []),
-      ...(consultant.profile?.qualifications || []),
-      consultant.email || '',
-    ].join(' ').toLowerCase();
-
-    keywords.forEach(kw => {
-      if (searchableText.includes(kw.toLowerCase())) score += 10;
-    });
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      if (searchableText.includes(q)) score += 20;
-      if ((consultant.profile?.firstName + ' ' + consultant.profile?.lastName).toLowerCase().includes(q)) score += 30;
-    }
-
-    if (consultant.profile?.speciality) score += 5;
-    if (consultant.profile?.bio) score += 3;
-    if (consultant.profile?.qualifications?.length > 0) score += consultant.profile.qualifications.length * 2;
-    if (consultant.profile?.consultingAreas?.length > 0) score += consultant.profile.consultingAreas.length * 2;
-    if (consultant.profile?.linkedinUrl) score += 2;
-    if (consultant.isVerified) score += 15;
-
-    score += (consultant._count?.consultantSessions || 0) * 2;
-
-    return score;
-  }
-
-  async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
-    try {
-      const allUsers = await this.prisma.user.findMany({ include: { profile: true } });
-
-      const consultants = allUsers.filter((u: any) => 
-        u.role === 'COACH' || 
-        ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType)
-      );
-
-      const scored = consultants.map((c: any) => {
-        const { password, googleId, stripeCustomerId, ...rest } = c;
-        return { ...rest, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') };
-      });
-
-      let filtered = scored;
-      if (query.filter && query.filter !== 'all') filtered = filtered.filter((c: any) => c._score > 0);
-      if (query.search) {
-        const q = query.search.toLowerCase();
-        filtered = filtered.filter((c: any) => {
-          const combined = [c.profile?.firstName, c.profile?.lastName, c.profile?.speciality, c.profile?.bio].join(' ').toLowerCase();
-          return combined.includes(q);
-        });
-      }
-
-      switch(query.sort) {
-        case 'price-low': filtered.sort((a: any, b: any) => (parseFloat(a.profile?.sessionPrice || '0') - parseFloat(b.profile?.sessionPrice || '0'))); break;
-        case 'price-high': filtered.sort((a: any, b: any) => (parseFloat(b.profile?.sessionPrice || '0') - parseFloat(a.profile?.sessionPrice || '0'))); break;
-        case 'experience': filtered.sort((a: any, b: any) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0)); break;
-        default: filtered.sort((a: any, b: any) => b._score - a._score);
-      }
-
-      const result = filtered.slice(0, query.limit || 50);
-      return { success: true, data: result };
-    } catch(e: any) {
-      this.logger.error('[getConsultants] error:', e.message, e.stack);
-      return { success: true, data: [] };
-    }
-  }
-
   async getCoach(id: string, language: string = 'en') {
     const coach = await this.prisma.coach.findUnique({
       where: { id },
@@ -313,7 +199,7 @@ export class CoachingService {
       duration: (session as any).duration,
       price: (session as any).price,
       currency: (session as any).currency,
-      description: (session as any).notes,
+      notes: session.notes,
       meetingUrl: (session as any).meetingUrl,
       meetingId: (session as any).meetingId,
       coach: {
@@ -372,7 +258,7 @@ export class CoachingService {
       duration: (session as any).duration,
       price: (session as any).price,
       currency: (session as any).currency,
-      description: (session as any).notes,
+      notes: session.notes,
       meetingUrl: (session as any).meetingUrl,
       meetingId: (session as any).meetingId,
       coach: {
@@ -431,7 +317,7 @@ export class CoachingService {
     coachId: string,
     sessionId: string,
     completionData: {
-      description?: string;
+      notes?: string;
       followUpActions?: string[];
     }
   ) {
@@ -454,6 +340,7 @@ export class CoachingService {
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
+        notes: completionData.notes,
       },
     });
 
@@ -1004,206 +891,32 @@ export class CoachingService {
   }
 
     async getConsultingSessions(userId: string, accountType: string) {
-    const isConsultant = accountType === 'CONSULTANT' || accountType === 'INSTRUCTOR';
-
-    const sessions = await this.prisma.consultingSession.findMany({
-      where: isConsultant ? { consultantId: userId } : { userId },
-      include: {
-        user: {
-          select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } }
+    if (accountType === 'CONSULTANT') {
+      return this.prisma.consultingSession.findMany({
+        where: { consultantId: userId },
+        include: {
+          student: {
+            select: {
+              id: true,
+              profile: { select: { firstName: true, lastName: true, avatar: true } },
+            },
+          },
         },
+        orderBy: { scheduledAt: 'desc' },
+      });
+    }
+    return this.prisma.consultingSession.findMany({
+      where: { studentId: userId },
+      include: {
         consultant: {
-          select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } }
-        }
+          select: {
+            id: true,
+            profile: { select: { firstName: true, lastName: true, avatar: true } },
+          },
+        },
       },
       orderBy: { scheduledAt: 'desc' },
     });
-
-    return { success: true, data: sessions };
-  }
-
-  async bookConsultingSession(userId: string, data: {
-    consultantId: string;
-    sessionName: string;
-    topic: string;
-    description?: string;
-    scheduledAt: string;
-    meetingType: 'zoom' | 'meet';
-    duration?: number;
-  }) {
-    const scheduledAt = new Date(data.scheduledAt);
-    if (scheduledAt <= new Date()) throw new BadRequestException('Cannot book a session in the past');
-    if (!['zoom', 'meet'].includes(data.meetingType)) throw new BadRequestException('Invalid meeting type');
-
-    const consultant = await this.prisma.user.findUnique({ where: { id: data.consultantId }, include: { profile: true } });
-    if (!consultant) throw new NotFoundException('Consultant not found');
-
-    const session = await this.prisma.consultingSession.create({
-      data: {
-        userId,
-        consultantId: data.consultantId,
-        sessionName: data.sessionName,
-        topic: data.topic,
-        description: data.description || '',
-        scheduledAt,
-        meetingType: data.meetingType,
-        duration: data.duration || consultant.profile?.sessionDuration || 60,
-        status: 'PENDING',
-        paymentStatus: 'UNPAID',
-        consultantApproved: false,
-        userApproved: true,
-      },
-      include: {
-        user: { select: { profile: { select: { firstName: true, lastName: true } } } },
-        consultant: { select: { profile: { select: { firstName: true, lastName: true } } } },
-      }
-    });
-
-    try {
-      await this.prisma.notification.create({
-        data: { user: { connect: { id: data.consultantId } }, type: 'SESSION_BOOKED' as any, titleEn: 'New Session Booking Request', titleAr: 'طلب حجز جلسة جديد', contentEn: `${session.user?.profile?.firstName} ${session.user?.profile?.lastName} requests a session titled "${data.sessionName}"`, contentAr: `${session.user?.profile?.firstName} ${session.user?.profile?.lastName} طلب جلسة بعنوان "${data.sessionName}"`, isRead: false }
-      });
-    } catch(e) { this.logger.error('Notification error:', e); }
-
-    return { success: true, data: session };
-  }
-
-  async requestReschedule(sessionId: string, consultantId: string, data: { proposedDate: string; proposedTime: string; reason?: string }) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, consultantId },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-
-    const proposedAt = new Date(`${data.proposedDate}T${data.proposedTime}:00`);
-    if (proposedAt < new Date()) throw new BadRequestException('Cannot propose past time');
-
-    const existingNotes = session.description || '';
-    const rescheduleNote = `\n[RESCHEDULE_PROPOSED:${proposedAt.toISOString()}${data.reason ? ':' + data.reason : ''}]`;
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: {
-        status: 'RESCHEDULE_REQUESTED',
-        description: existingNotes + rescheduleNote,
-      },
-    });
-
-    await this.prisma.notification.create({
-      data: {
-        userId: session.userId,
-        type: 'SYSTEM_ANNOUNCEMENT' as any,
-        titleEn: 'Reschedule Request',
-        titleAr: 'طلب تغيير موعد',
-        contentEn: `New time proposed: ${proposedAt.toLocaleDateString()} - ${data.reason || 'No reason'}`,
-        contentAr: `تم اقتراح موعد جديد: ${proposedAt.toLocaleDateString('ar-SA')} - ${data.reason || 'بدون سبب'}`,
-        isRead: false,
-      },
-    }).catch(() => {});
-
-    return { success: true, data: updated };
-  }
-
-  async approveReschedule(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, userId },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-
-    const match = session.description?.match(/\[RESCHEDULE_PROPOSED:([^:\]]+)/);
-    if (!match) throw new BadRequestException('No reschedule proposal found');
-
-    const proposedAt = new Date(match[1]);
-    const cleanNotes = (session.description || '').replace(/\n?\[RESCHEDULE_PROPOSED:[^\]]+\]/g, '');
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: {
-        scheduledAt: proposedAt,
-        status: 'CONFIRMED',
-        description: cleanNotes,
-      },
-    });
-
-    await this.prisma.notification.create({
-      data: {
-        userId: session.consultantId,
-        type: 'SYSTEM_ANNOUNCEMENT' as any,
-        titleEn: 'Reschedule Approved',
-        titleAr: 'تمت الموافقة على تغيير الموعد',
-        contentEn: `Session rescheduled to ${proposedAt.toLocaleDateString()}`,
-        contentAr: `تم تغيير موعد الجلسة إلى ${proposedAt.toLocaleDateString('ar-SA')}`,
-        isRead: false,
-      },
-    }).catch(() => {});
-
-    return { success: true, data: updated };
-  }
-
-  async rejectReschedule(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, userId },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-
-    const cleanNotes = (session.description || '').replace(/\n?\[RESCHEDULE_PROPOSED:[^\]]+\]/g, '');
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: {
-        status: 'CONFIRMED',
-        description: cleanNotes,
-      },
-    });
-
-    await this.prisma.notification.create({
-      data: {
-        userId: session.consultantId,
-        type: 'SYSTEM_ANNOUNCEMENT' as any,
-        titleEn: 'Reschedule Rejected',
-        titleAr: 'رفض طلب تغيير الموعد',
-        contentEn: 'User rejected the reschedule request',
-        contentAr: 'رفض المستخدم طلب تغيير موعد الجلسة',
-        isRead: false,
-      },
-    }).catch(() => {});
-
-    return { success: true, data: updated };
-  }
-
-  async getMeetingLink(sessionId: string, userId: string, role: string) {
-    const where = role === 'CONSULTANT'
-      ? { id: sessionId, consultantId: userId }
-      : { id: sessionId, userId: userId };
-    return this.prisma.consultingSession.findFirst({ where });
-  }
-
-  async addMeetingLink(sessionId: string, consultantId: string, data: { meetingLink: string; meetingType: string }) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, consultantId },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: {
-        meetingLink: data.meetingLink,
-        meetingType: data.meetingType?.toUpperCase() || 'ZOOM',
-      },
-    });
-
-    await this.prisma.notification.create({
-      data: {
-        userId: session.userId,
-        type: 'SYSTEM_ANNOUNCEMENT' as any,
-        titleEn: 'Meeting Link Added',
-        titleAr: 'تمت إضافة رابط الاجتماع',
-        contentEn: `Meeting link: ${data.meetingLink}`,
-        contentAr: `رابط الاجتماع: ${data.meetingLink}`,
-        isRead: false,
-      },
-    }).catch(() => {});
-
-    return { success: true, data: updated };
   }
 
   async confirmConsultingSession(sessionId: string, consultantId: string) {
@@ -1219,40 +932,12 @@ export class CoachingService {
 
   async cancelConsultingSession(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, OR: [{ consultantId: userId }, { userId: userId }] },
+      where: { id: sessionId, OR: [{ consultantId: userId }, { studentId: userId }] },
     });
     if (!session) throw new NotFoundException('Session not found');
     return this.prisma.consultingSession.update({
       where: { id: sessionId },
       data: { status: 'CANCELLED' },
-    });
-  }
-
-  async completeConsultingSession(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, OR: [{ consultantId: userId }, { userId: userId }] },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-    return this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { status: 'COMPLETED' },
-    });
-  }
-
-  async payConsultingSession(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, userId: userId },
-    });
-    if (!session) throw new NotFoundException('Session not found');
-    if (session.paymentStatus === 'PAID') {
-      throw new BadRequestException('Already paid');
-    }
-    return this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { 
-        paymentStatus: 'PAID',
-        status: session.status === 'PENDING' ? 'CONFIRMED' : session.status,
-      },
     });
   }
 

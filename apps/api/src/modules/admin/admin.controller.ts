@@ -934,12 +934,12 @@ export class AdminController {
     @Body() body: any,
   ) {
     const sessionData: any = {};
-    if (body.userId) sessionData.userId = body.userId;
+    if (body.studentId) sessionData.studentId = body.studentId;
     if (body.consultantId) sessionData.consultantId = body.consultantId;
     if (body.topic) sessionData.topic = body.topic;
     if (body.scheduledAt) sessionData.scheduledAt = body.scheduledAt;
     if (body.price) sessionData.price = Number(body.price) || 0;
-    if (body.meetingType) sessionData.meetingType = body.meetingType;
+    if (body.meetingMethod) sessionData.meetingMethod = body.meetingMethod;
     if (body.duration) sessionData.duration = Number(body.duration) || 60;
 
     // Add image URL if provided

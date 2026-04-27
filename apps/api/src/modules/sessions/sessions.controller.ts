@@ -12,8 +12,8 @@ export class SessionsController {
   constructor(private readonly prisma: PrismaService) {}
 
   @Get('consultants')
-  async getConsultants(@Query('sort') sort?: string) {
-    console.log('[Sessions] Fetching consultants...', { sort })
+  async getConsultants() {
+    console.log('[Sessions] Fetching consultants...')
     const consultants = await this.prisma.user.findMany({
       where: {
         accountType: 'CONSULTANT',
@@ -24,7 +24,7 @@ export class SessionsController {
         email: true,
         isVerified: true,
         hourlyRate: true,
-        // meetingType was removed from User select
+        meetingMethod: true,
         bio: true,
         speciality: true,
         experience: true,
@@ -47,7 +47,7 @@ export class SessionsController {
       select: {
         id: true,
         hourlyRate: true,
-        // meetingType was removed from User select
+        meetingMethod: true,
         bio: true,
         speciality: true,
         experience: true,
@@ -67,12 +67,12 @@ export class SessionsController {
       consultantId: string
       scheduledAt: string
       duration?: number
-      meetingType: string
+      meetingMethod: string
       topic?: string
       notes?: string
     }
   ) {
-    const userId = req.user.sub
+    const studentId = req.user.sub
 
     const consultant = await this.prisma.user.findFirst({
       where: { id: body.consultantId, accountType: 'CONSULTANT' },
@@ -102,25 +102,25 @@ export class SessionsController {
 
     const session = await this.prisma.consultingSession.create({
       data: {
-        userId,
+        studentId,
         consultantId: body.consultantId,
         scheduledAt,
         duration,
-        meetingType: body.meetingType,
+        meetingMethod: body.meetingMethod,
         topic: body.topic,
-        // notes removed - use description
+        notes: body.notes,
         status: 'PENDING',
         paymentStatus: price > 0 ? 'UNPAID' : 'PAID',
         price,
       },
       include: {
         consultant: { include: { profile: true } },
-        user: { include: { profile: true } },
+        student: { include: { profile: true } },
       }
     })
 
     const student = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: studentId },
       include: { profile: true }
     })
     const studentName = `${student?.profile?.firstName || ''} ${student?.profile?.lastName || ''}`.trim()
@@ -147,7 +147,7 @@ export class SessionsController {
     console.log('[Sessions] getMySessions userId:', userId)
 
     const where: any = {
-      OR: [{ userId: userId }, { consultantId: userId }]
+      OR: [{ studentId: userId }, { consultantId: userId }]
     }
     if (status && status !== 'ALL') {
       where.status = status
@@ -156,7 +156,7 @@ export class SessionsController {
     const sessions = await this.prisma.consultingSession.findMany({
       where,
       include: {
-        user: {
+        student: {
           select: {
             id: true,
             email: true,
@@ -187,7 +187,7 @@ export class SessionsController {
     const sessions = await this.prisma.consultingSession.findMany({
       where: { consultantId: userId },
       include: {
-        user: { select: { profile: { select: { firstName: true, lastName: true } } } }
+        student: { select: { profile: { select: { firstName: true, lastName: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     }).catch(() => [])
@@ -209,7 +209,7 @@ export class SessionsController {
         available: total - refunded,
         sessions: completed.map((s: any) => ({
           id: s.id,
-          studentName: s.user?.profile ? `${s.user.profile.firstName} ${s.user.profile.lastName}` : 'طالب',
+          studentName: s.student?.profile ? `${s.student.profile.firstName} ${s.student.profile.lastName}` : 'طالب',
           amount: s.price,
           date: s.createdAt,
         }))
@@ -222,7 +222,7 @@ export class SessionsController {
     const session = await this.prisma.consultingSession.findFirst({
       where: { id, consultantId: req.user.sub },
       include: {
-        user: { include: { profile: true } },
+        student: { include: { profile: true } },
         consultant: { include: { profile: true } }
       }
     })
@@ -238,7 +238,7 @@ export class SessionsController {
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'Consultation Confirmed',
         titleAr: 'تم تأكيد استشارتك',
@@ -247,86 +247,6 @@ export class SessionsController {
         isRead: false,
       }
     }).catch(() => {})
-
-    return { success: true, data: updated }
-  }
-
-  @Patch(':id/meeting-link')
-  async addMeetingLink(
-    @Param('id') id: string,
-    @Request() req: any,
-    @Body() body: { meetingLink: string; meetingType?: string }
-  ) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id, consultantId: req.user.sub },
-      include: { user: { include: { profile: true } } }
-    })
-    if (!session) throw new NotFoundException('Session not found')
-
-    const isZoom = body.meetingLink?.includes('zoom.us')
-    const isMeet = body.meetingLink?.includes('meet.google.com')
-    if (!isZoom && !isMeet) throw new BadRequestException('Only Zoom or Google Meet links are allowed')
-
-    const meetingType = body.meetingType || (isZoom ? 'zoom' : 'meet')
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id },
-      data: {
-        meetingLink: body.meetingLink,
-        meetingType: meetingType.toUpperCase(),
-        status: 'CONFIRMED',
-      },
-      include: {
-        user: { include: { profile: true } },
-        consultant: { include: { profile: true } }
-      }
-    })
-
-    await this.prisma.notification.create({
-      data: {
-        userId: session.userId,
-        type: 'SYSTEM_ANNOUNCEMENT' as any,
-        titleEn: 'Meeting Link Added',
-        titleAr: 'رابط الجلسة متاح الآن',
-        contentEn: `Your session on ${session.scheduledAt.toLocaleDateString('ar-SA')} now has a meeting link.`,
-        contentAr: `تتوفر رابط الجلسة لجلستك في ${session.scheduledAt.toLocaleDateString('ar-SA')}`,
-        isRead: false,
-      }
-    }).catch(() => {})
-
-    return { success: true, data: updated }
-  }
-
-  @Patch(':id/status')
-  async updateSessionStatus(
-    @Param('id') id: string,
-    @Request() req: any,
-    @Body() body: { status: string; cancelReason?: string }
-  ) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: {
-        id,
-        OR: [{ userId: req.user.sub }, { consultantId: req.user.sub }]
-      }
-    })
-    if (!session) throw new NotFoundException('Session not found')
-
-    const allowedStatuses = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW', 'EXPIRED']
-    if (!allowedStatuses.includes(body.status)) {
-      throw new BadRequestException('Invalid status')
-    }
-
-    const updateData: any = { status: body.status }
-    if (body.status === 'COMPLETED') updateData.completedAt = new Date()
-    if (body.status === 'CANCELLED') {
-      updateData.cancelledAt = new Date()
-      if (body.cancelReason) updateData.cancelReason = body.cancelReason
-    }
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id },
-      data: updateData
-    })
 
     return { success: true, data: updated }
   }
@@ -348,7 +268,7 @@ export class SessionsController {
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'Consultation Request Declined',
         titleAr: 'تم رفض طلب الاستشارة',
@@ -365,7 +285,7 @@ export class SessionsController {
   async rescheduleSession(
     @Param('id') id: string,
     @Request() req: any,
-    @Body() body: { proposedAt: string; message?: string }
+    @Body() body: { proposedTime: string; message?: string }
   ) {
     const session = await this.prisma.consultingSession.findFirst({
       where: { id, consultantId: req.user.sub },
@@ -373,23 +293,24 @@ export class SessionsController {
     })
     if (!session) throw new NotFoundException('Session not found')
 
-    const proposedAt = new Date(body.proposedAt)
+    const proposedTime = new Date(body.proposedTime)
 
     await this.prisma.consultingSession.update({
       where: { id },
       data: {
         status: 'RESCHEDULED',
+        proposedTime,
         proposedAt: new Date(),
       }
     })
 
     const consultantName = `${session.consultant.profile?.firstName || ''} ${session.consultant.profile?.lastName || ''}`.trim()
-    const dateStr = proposedAt.toLocaleDateString('ar-SA')
-    const timeStr = proposedAt.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
+    const dateStr = proposedTime.toLocaleDateString('ar-SA')
+    const timeStr = proposedTime.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'New Time Proposed for Consultation',
         titleAr: 'اقتراح موعد جديد للاستشارة',
@@ -405,21 +326,21 @@ export class SessionsController {
   @Patch(':id/accept-reschedule')
   async acceptReschedule(@Param('id') id: string, @Request() req: any) {
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: req.user.sub, status: 'RESCHEDULED' },
-      include: { user: { include: { profile: true } } }
+      where: { id, studentId: req.user.sub, status: 'RESCHEDULED' },
+      include: { student: { include: { profile: true } } }
     })
-    if (!session || !session.proposedAt) throw new NotFoundException('Session not found')
+    if (!session || !session.proposedTime) throw new NotFoundException('Session not found')
 
     await this.prisma.consultingSession.update({
       where: { id },
       data: {
         status: 'CONFIRMED',
-        scheduledAt: session.proposedAt,
-        proposedAt: null,
+        scheduledAt: session.proposedTime,
+        proposedTime: null,
       }
     })
 
-    const studentName = `${session.user.profile?.firstName || ''} ${session.user.profile?.lastName || ''}`.trim()
+    const studentName = `${session.student.profile?.firstName || ''} ${session.student.profile?.lastName || ''}`.trim()
 
     await this.prisma.notification.create({
       data: {
@@ -441,10 +362,10 @@ export class SessionsController {
     const userId = req.user.sub
 
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: userId },
+      where: { id, studentId: userId },
       include: {
         consultant: { include: { profile: true } },
-        user: { include: { profile: true } },
+        student: { include: { profile: true } },
       }
     })
     if (!session) throw new NotFoundException('Session not found')
@@ -521,7 +442,7 @@ export class SessionsController {
     if (intent.status !== 'succeeded') throw new BadRequestException('Payment not completed')
 
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: req.user.sub },
+      where: { id, studentId: req.user.sub },
       include: { consultant: { include: { profile: true } } }
     })
     if (!session) throw new NotFoundException('Session not found')
@@ -586,7 +507,7 @@ export class SessionsController {
     const session = await this.prisma.consultingSession.findFirst({
       where: {
         id,
-        OR: [{ userId: req.user.sub }, { consultantId: req.user.sub }]
+        OR: [{ studentId: req.user.sub }, { consultantId: req.user.sub }]
       }
     })
     if (!session) throw new NotFoundException('Session not found')
@@ -596,9 +517,9 @@ export class SessionsController {
       data: { status: 'CANCELLED' }
     })
 
-    const notifyUserId = req.user.sub === session.userId
+    const notifyUserId = req.user.sub === session.studentId
       ? session.consultantId
-      : session.userId
+      : session.studentId
 
     await this.prisma.notification.create({
       data: {
@@ -621,7 +542,7 @@ export class SessionsController {
     
     const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId) throw new ForbiddenException('Not your session')
+    if (session.studentId !== userId) throw new ForbiddenException('Not your session')
     
     const user = await this.prisma.user.findUnique({ where: { id: userId } })
     const price = session.price || 0
@@ -667,7 +588,7 @@ export class SessionsController {
     if (!session) throw new NotFoundException('Session not found')
     
     const isAllowed = session.consultantId === req.user.id || 
-                      session.userId === req.user.id || 
+                      session.studentId === req.user.id || 
                       req.user.accountType === 'ADMIN'
     if (!isAllowed) throw new ForbiddenException()
     
@@ -694,18 +615,18 @@ export class SessionsController {
     if (!session) throw new NotFoundException('Session not found')
     
     const isAllowed = session.consultantId === req.user.id ||
-                      session.userId === req.user.id ||
+                      session.studentId === req.user.id ||
                       req.user.accountType === 'ADMIN'
     if (!isAllowed) throw new ForbiddenException()
     
     // Refund if was paid
-    if (session.paymentStatus === 'PAID' && (session.price || 0) > 0 && session.userId) {
+    if (session.paymentStatus === 'PAID' && (session.price || 0) > 0 && session.studentId) {
       await this.prisma.user.update({
-        where: { id: session.userId },
+        where: { id: session.studentId },
         data: { walletBalance: { increment: session.price } }
       })
       await this.prisma.walletTransaction.create({
-        data: { userId: session.userId, type: 'REFUND', amount: session.price, description: 'استرداد رسوم جلسة ملغاة' }
+        data: { userId: session.studentId, type: 'REFUND', amount: session.price, description: 'استرداد رسوم جلسة ملغاة' }
       }).catch(() => {})
       
       // Remove consultant earnings
@@ -718,7 +639,7 @@ export class SessionsController {
       
       // Notify student
       await this.prisma.notification.create({
-        data: { userId: session.userId, titleEn: 'تم الاسترداد', titleAr: 'تم الاسترداد', contentEn: `تم إرجاع ${session.price} ريال لمحفظتك`, contentAr: `تم إرجاع ${session.price} ريال لمحفظتك`, type: 'SUCCESS' as any, isRead: false }
+        data: { userId: session.studentId, titleEn: 'تم الاسترداد', titleAr: 'تم الاسترداد', contentEn: `تم إرجاع ${session.price} ريال لمحفظتك`, contentAr: `تم إرجاع ${session.price} ريال لمحفظتك`, type: 'SUCCESS' as any, isRead: false }
       }).catch(() => {})
     }
     

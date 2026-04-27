@@ -83,7 +83,7 @@ export class AdminService {
           thumbnail: courseData.thumbnail || null,
           previewVideo: courseData.previewVideo || null,
           ...(instructorId && { instructorId }),
-          ...(courseData.careerPathId ? { careerPathId: courseData.careerPathId } : {}),
+          ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
           ...(courseData.categoryId && { categoryId: courseData.categoryId }),
         },
       });
@@ -204,7 +204,7 @@ export class AdminService {
         level: courseData.level || 'BEGINNER',
         status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'PUBLISHED') as any,
         thumbnail: thumbnailUrl,
-        ...(courseData.careerPathId ? { careerPathId: courseData.careerPathId } : {}),
+        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
         ...(instructorId && { instructorId }),
         ...(courseData.categoryId && { categoryId: courseData.categoryId }),
       },
@@ -297,11 +297,11 @@ export class AdminService {
   // ── Create Session WITH Image ──
   async createSessionWithImage(data: any, image?: Express.Multer.File) {
     const sessionData: any = {
-      userId: data.userId,
+      studentId: data.studentId,
       consultantId: data.consultantId,
       scheduledAt: new Date(data.scheduledAt),
       topic: data.topic || '',
-      meetingType: data.meetingType || 'ONLINE',
+      meetingMethod: data.meetingMethod || 'ONLINE',
       price: Number(data.price) || 0,
       duration: data.duration || 60,
       status: 'CONFIRMED',
@@ -625,7 +625,7 @@ export class AdminService {
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
         // ✅ تم إزالة isPublished (غير موجود في Schema)
-        ...(courseData.careerPathId ? { careerPathId: courseData.careerPathId } : {}),
+        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
         ...(instructorId && { instructorId }),
         ...(courseData.categoryId && { categoryId: courseData.categoryId }),
       },
@@ -1014,7 +1014,7 @@ export class AdminService {
           speciality: true,
           linkedinUrl: true,
           hourlyRate: true,
-          // meetingType not on User
+          meetingMethod: true,
           createdAt: true,
           profile: {
             select: {
@@ -1260,7 +1260,7 @@ export class AdminService {
   async getAllSessions() {
     const sessions = await this.prisma.consultingSession.findMany({
       include: {
-        user: {
+        student: {
           select: {
             email: true,
             profile: { select: { firstName: true, lastName: true } },
@@ -1334,11 +1334,11 @@ export class AdminService {
   async createSession(data: any) {
     return this.prisma.consultingSession.create({
       data: {
-        userId: data.userId,
+        studentId: data.studentId,
         consultantId: data.consultantId,
         scheduledAt: new Date(data.scheduledAt),
         topic: data.topic || '',
-        meetingType: data.meetingType || 'ONLINE',
+        meetingMethod: data.meetingMethod || 'ONLINE',
         price: Number(data.price) || 0,
         status: 'CONFIRMED',
         paymentStatus: 'UNPAID',

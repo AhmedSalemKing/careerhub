@@ -45,27 +45,9 @@ export class UsersService {
       ];
     }
 
-    const includeProfile = filters.role === 'INSTRUCTOR' ? {
-      select: {
-        firstName: true, lastName: true, avatar: true, bio: true,
-        speciality: true, yearsExperience: true,
-        qualifications: true, consultingAreas: true,
-        linkedinUrl: true, sessionPrice: true, sessionDuration: true,
-      }
-    } : true;
-
     const users = await this.prisma.user.findMany({
       where,
-      include: { 
-        profile: includeProfile,
-        _count: {
-          select: {
-            enrollments: true,
-            certificates: true,
-            consultantSessions: true,
-          },
-        },
-      },
+      include: { profile: true },
       take: filters.limit || 100,
       orderBy: { createdAt: 'desc' },
     });
@@ -82,7 +64,7 @@ export class UsersService {
           select: {
             enrollments: true,
             certificates: true,
-            consultantSessions: true,
+            coachingSessions: true,
           },
         },
       },
@@ -132,67 +114,6 @@ export class UsersService {
     this.logger.log(`Profile updated for user: ${user.email}`);
 
     return updatedProfile;
-  }
-
-  async getConsultantProfile(userId: string) {
-    try {
-      const profile = await this.prisma.userProfile.findUnique({
-        where: { userId },
-        select: {
-          firstName: true, lastName: true, avatar: true, bio: true,
-          speciality: true, yearsExperience: true,
-          qualifications: true, consultingAreas: true,
-          linkedinUrl: true, sessionPrice: true, sessionDuration: true,
-        }
-      });
-      return profile;
-    } catch(e) {
-      return null;
-    }
-  }
-
-  async updateConsultantProfile(userId: string, data: {
-    speciality?: string
-    yearsExperience?: number
-    qualifications?: string[]
-    consultingAreas?: string[]
-    bio?: string
-    linkedinUrl?: string
-    sessionPrice?: number
-    sessionDuration?: number
-  }) {
-    try {
-      const profile = await this.prisma.userProfile.upsert({
-        where: { userId },
-        update: {
-          ...(data.speciality !== undefined && { speciality: data.speciality }),
-          ...(data.yearsExperience !== undefined && { yearsExperience: data.yearsExperience }),
-          ...(data.qualifications !== undefined && { qualifications: data.qualifications }),
-          ...(data.consultingAreas !== undefined && { consultingAreas: data.consultingAreas }),
-          ...(data.bio !== undefined && { bio: data.bio }),
-          ...(data.linkedinUrl !== undefined && { linkedinUrl: data.linkedinUrl }),
-          ...(data.sessionPrice !== undefined && { sessionPrice: data.sessionPrice }),
-          ...(data.sessionDuration !== undefined && { sessionDuration: data.sessionDuration }),
-        },
-        create: {
-          userId,
-          firstName: '',
-          lastName: '',
-          speciality: data.speciality || '',
-          yearsExperience: data.yearsExperience || 0,
-          qualifications: data.qualifications || [],
-          consultingAreas: data.consultingAreas || [],
-          bio: data.bio || '',
-          linkedinUrl: data.linkedinUrl || '',
-          sessionPrice: data.sessionPrice || 0,
-          sessionDuration: data.sessionDuration || 60,
-        }
-      });
-      return profile;
-    } catch(e: any) {
-      console.error('[UpdateConsultantProfile]', e.message);
-      throw e;
-    }
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {

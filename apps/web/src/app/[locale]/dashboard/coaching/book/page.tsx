@@ -10,9 +10,12 @@ import { DashboardShell } from '../../../../components/DashboardShell'
 import { Skeleton } from '../../../../components/ui/Skeleton'
 import { useToast } from '../../../../../lib/toast'
 import { CoachCard, type CoachCardCoach } from '../../../../components/CoachCard'
+import { BookingCalendar, type BookingSlot } from '../../../../components/BookingCalendar'
 import { Button } from '../../../../components/ui/Button'
 import { Input } from '../../../../components/ui/Input'
 import { Label } from '../../../../components/ui/Label'
+
+type SlotsResponse = { slots?: BookingSlot[] } | { data?: { slots?: BookingSlot[] } }
 
 export default function DashboardBookCoachingPage() {
   const locale = useLocale() as 'ar' | 'en'
@@ -24,44 +27,35 @@ export default function DashboardBookCoachingPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [coachId, setCoachId] = useState<string | null>(null)
   const [date, setDate] = useState<string>(() => new Date().toISOString().slice(0, 10))
-  const [selectedTime, setSelectedTime] = useState<string>('09:00')
+  const [slotId, setSlotId] = useState<string | null>(null)
   const [payment, setPayment] = useState<'paymob' | 'hyperpay' | null>(null)
   const [notes, setNotes] = useState<string>('')
   const [confirmation, setConfirmation] = useState<{ sessionId?: string; zoomJoinUrl?: string } | null>(null)
 
-  const today = new Date().toISOString().slice(0, 10)
-  const now = new Date()
-  const currentHour = now.getHours()
-  const availableTimeSlots = [
-    '09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'
-  ].filter(t => {
-    const slotHour = parseInt(t.split(':')[0])
-    if (date === today) {
-      return slotHour > currentHour + 1
-    }
-    return true
+  const coachesQ = useQuery({
+    queryKey: ['coaching-coaches', locale],
+    queryFn: async () => {
+      const raw = (await get<ApiEnvelope<{ coaches: CoachCardCoach[] }>>('/api/coaching/coaches', { params: { language: locale } }))
+        .data
+      const data = unwrapData(raw) as any
+      return (data?.coaches ?? data?.data?.coaches ?? []) as CoachCardCoach[]
+    },
   })
 
-  const coachesQ = useQuery({
-    queryKey: ['consultants', locale],
+  const slotsQ = useQuery({
+    queryKey: ['coach-slots', coachId, date],
+    enabled: step >= 2 && Boolean(coachId) && Boolean(date),
     queryFn: async () => {
-      const raw = (await get<ApiEnvelope<{ data: any[] }>>('/sessions/consultants')).data
+      const raw = (await get<ApiEnvelope<SlotsResponse>>(`/api/coaching/coaches/${encodeURIComponent(String(coachId))}/slots`, { params: { date } })).data
       const data = unwrapData(raw) as any
-      return (data?.data ?? []) as CoachCardCoach[]
+      return (data?.slots ?? data?.data?.slots ?? []) as BookingSlot[]
     },
   })
 
   const bookMutation = useMutation({
     mutationFn: async () => {
-      if (!coachId) throw new Error('missing coach')
-      const scheduledAt = `${date}T${selectedTime}:00`
-      const raw = (await post<ApiEnvelope<unknown>>('/sessions/book', {
-        consultantId: coachId,
-        scheduledAt,
-        meetingMethod: 'zoom',
-        notes,
-        topic: 'Career Consultation',
-      })).data
+      if (!coachId || !slotId) throw new Error('missing')
+      const raw = (await post<ApiEnvelope<unknown>>('/api/coaching/sessions/book', { coachId, slotId, sessionType: 'ONE_ON_ONE', notes })).data
       return unwrapData(raw) as any
     },
     onSuccess: (data) => {
@@ -160,29 +154,38 @@ export default function DashboardBookCoachingPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="md:col-span-1">
                 <Label htmlFor="date">{t('step2_title')}</Label>
-                <Input id="date" type="date" min={today} value={date} onChange={(e) => {
-                  const newDate = e.target.value
-                  if (newDate >= today) {
-                    setDate(newDate)
-                    if (new Date(newDate) > new Date()) {
-                      setSelectedTime('09:00')
-                    }
-                  }
-                }} className="mt-2" />
+                <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-2" />
                 <div className="mt-4 flex gap-2">
                   <Button variant="secondary" onClick={() => setStep(1)}>
                     {c('back')}
                   </Button>
                   <Button
                     onClick={() => setStep(3)}
-                    disabled={!date}
+                    disabled={!slotId}
                   >
                     {c('next')}
                   </Button>
                 </div>
               </div>
               <div className="md:col-span-2">
-                <div className="text-sm text-[color:var(--muted)]">{c('empty')}</div>
+                {slotsQ.isLoading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-14 rounded-2xl" />
+                    <Skeleton className="h-14 rounded-2xl" />
+                    <Skeleton className="h-14 rounded-2xl" />
+                  </div>
+                ) : slotsQ.isError ? (
+                  <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
+                ) : slotsQ.data?.length ? (
+                  <>
+                    <div className="text-sm font-extrabold text-foreground">{t('select_slot')}</div>
+                    <div className="mt-4">
+                      <BookingCalendar slots={slotsQ.data} selectedSlotId={slotId} onSelect={(id) => setSlotId(id)} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-[color:var(--muted)]">{c('empty')}</div>
+                )}
               </div>
             </div>
           </div>
@@ -225,7 +228,7 @@ export default function DashboardBookCoachingPage() {
               <Button variant="secondary" onClick={() => setStep(2)}>
                 {c('back')}
               </Button>
-              <Button onClick={() => bookMutation.mutate()} disabled={!coachId || !date || bookMutation.isPending}>
+              <Button onClick={() => bookMutation.mutate()} disabled={!payment || !coachId || !slotId || bookMutation.isPending}>
                 {bookMutation.isPending ? c('loading') : t('confirm_pay')}
               </Button>
             </div>
