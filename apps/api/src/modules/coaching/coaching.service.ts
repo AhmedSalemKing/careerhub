@@ -158,7 +158,7 @@ export class CoachingService {
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     const consultants = await this.prisma.user.findMany({
-      where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] }, isActive: true },
+      where: { role: { in: ['INSTRUCTOR' as any, 'CONSULTANT' as any] } },
       include: {
         profile: { select: { firstName: true, lastName: true, avatar: true, bio: true, speciality: true, yearsExperience: true, qualifications: true, consultingAreas: true, linkedinUrl: true, sessionPrice: true, sessionDuration: true } },
         _count: { select: { consultantSessions: { where: { status: 'COMPLETED' } } } }
