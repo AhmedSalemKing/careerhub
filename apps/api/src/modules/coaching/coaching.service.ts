@@ -162,7 +162,7 @@ export class CoachingService {
 
       const consultants = allUsers.filter((u: any) => u.role === 'COACH' || ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType));
 
-      const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || ''), _count: { consultantSessions: 0 } }));
+      const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') }));
 
       let filtered = scored;
       if (query.filter && query.filter !== 'all') filtered = filtered.filter((c: any) => c._score > 0);
@@ -181,7 +181,8 @@ export class CoachingService {
         default: filtered.sort((a: any, b: any) => b._score - a._score);
       }
 
-      return { success: true, data: filtered.slice(0, query.limit || 50) };
+      const result = filtered.slice(0, query.limit || 50);
+      return { success: true, data: result };
     } catch(e: any) {
       this.logger.error('[getConsultants] error:', e.message, e.stack);
       return { success: true, data: [] };
