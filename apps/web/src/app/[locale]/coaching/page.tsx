@@ -66,11 +66,8 @@ export default function CoachingPage() {
         const d = await res.json()
         if (d?.data?.length > 0) return d.data
       } catch(e) {}
-      const [r1, r2] = await Promise.all([
-        fetch(`${API}/users?role=INSTRUCTOR&limit=50`).then(r => r.json()).catch(() => ({})),
-        fetch(`${API}/users?role=CONSULTANT&limit=50`).then(r => r.json()).catch(() => ({})),
-      ])
-      const all = [...(r1?.data ?? r1?.users ?? []), ...(r2?.data ?? r2?.users ?? [])]
+      const r = await fetch(`${API}/consulting/consultants?limit=50`).then(r => r.json()).catch(() => ({}))
+      const all = [...(r?.data ?? [])]
       const seen = new Set()
       return all.filter((c: any) => { if (seen.has(c.id)) return false; seen.add(c.id); return true })
     },

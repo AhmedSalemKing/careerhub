@@ -20,7 +20,6 @@ export class ConsultingService {
         where: {
           OR: [
             { role: 'COACH' },
-            { accountType: 'INSTRUCTOR' },
             { accountType: 'CONSULTANT' },
           ]
         },
