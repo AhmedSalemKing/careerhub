@@ -541,35 +541,58 @@ export class AdminService {
 
   async deleteUser(id: string) {
     try {
-      await this.prisma.$transaction(async (tx) => {
-        await tx.coachReview.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.quizAttempt.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.notification.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.enrollment.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.consultingSession.deleteMany({ where: { OR: [{ studentId: id }, { consultantId: id }] } }).catch(() => {})
-        await tx.coachingSession.deleteMany({ where: { OR: [{ userId: id }, { coachId: id }] } }).catch(() => {})
-        await tx.payment.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.certificate.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.lessonProgress.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.chatMessage.deleteMany({ where: { OR: [{ senderId: id }, { receiverId: id }] } }).catch(() => {})
-        await tx.adminLog.deleteMany({ where: { adminId: id } }).catch(() => {})
-        await tx.fileShare.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.deviceToken.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.uploadedFile.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.session.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.passwordResetToken.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.careerAssessment.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.analyticsEvent.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.cartItem.deleteMany({ where: { cart: { userId: id } } }).catch(() => {})
-        await tx.cart.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.userProfile.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.coach.deleteMany({ where: { userId: id } }).catch(() => {})
-        await tx.user.delete({ where: { id } })
-      })
+      const uid = id.replace(/'/g, "''")
+
+      await this.prisma.$executeRawUnsafe(`
+        DO $$
+        BEGIN
+          DELETE FROM "subscriptions" WHERE "userId" = '${uid}';
+          DELETE FROM "sessions" WHERE "userId" = '${uid}';
+          DELETE FROM "password_reset_tokens" WHERE "userId" = '${uid}';
+          DELETE FROM "career_assessments" WHERE "userId" = '${uid}';
+          DELETE FROM "assessment_sessions" WHERE "userId" = '${uid}';
+          DELETE FROM "user_career_paths" WHERE "userId" = '${uid}';
+          DELETE FROM "enrollments" WHERE "userId" = '${uid}';
+          DELETE FROM "lesson_progress" WHERE "userId" = '${uid}';
+          DELETE FROM "certificates" WHERE "userId" = '${uid}';
+          DELETE FROM "payments" WHERE "userId" = '${uid}';
+          DELETE FROM "coaching_sessions" WHERE "userId" = '${uid}' OR "coachId" IN (SELECT id FROM "coaches" WHERE "userId" = '${uid}');
+          DELETE FROM "coach_reviews" WHERE "userId" = '${uid}';
+          DELETE FROM "chat_messages" WHERE "senderId" = '${uid}' OR "receiverId" = '${uid}';
+          DELETE FROM "notifications" WHERE "userId" = '${uid}';
+          DELETE FROM "admin_logs" WHERE "adminId" = '${uid}';
+          DELETE FROM "audit_logs" WHERE "adminId" = '${uid}';
+          DELETE FROM "uploaded_files" WHERE "userId" = '${uid}';
+          DELETE FROM "file_shares" WHERE "userId" = '${uid}';
+          DELETE FROM "device_tokens" WHERE "userId" = '${uid}';
+          DELETE FROM "analytics_events" WHERE "userId" = '${uid}';
+          DELETE FROM "quiz_attempts" WHERE "userId" = '${uid}';
+          DELETE FROM "coaches" WHERE "userId" = '${uid}';
+          DELETE FROM "consulting_sessions" WHERE "studentId" = '${uid}' OR "consultantId" = '${uid}';
+          UPDATE "courses" SET "instructorId" = NULL WHERE "instructorId" = '${uid}';
+          DELETE FROM "ratings" WHERE "userId" = '${uid}' OR "consultantId" = '${uid}';
+          DELETE FROM "user_activities" WHERE "userId" = '${uid}';
+          DELETE FROM "cart_items" WHERE "cartId" IN (SELECT id FROM "carts" WHERE "userId" = '${uid}');
+          DELETE FROM "carts" WHERE "userId" = '${uid}';
+          DELETE FROM "conversations" WHERE "userId" = '${uid}';
+          DELETE FROM "wallet_transactions" WHERE "userId" = '${uid}';
+          DELETE FROM "user_profiles" WHERE "userId" = '${uid}';
+          DELETE FROM "users" WHERE "id" = '${uid}';
+        END $$;
+      `)
+
       return { success: true, message: 'User deleted successfully' }
     } catch (e: any) {
-      console.error('[DeleteUser]', e.message)
-      throw new Error(e.message)
+      console.error('[DeleteUser Error]', e.message)
+
+      try {
+        await this.prisma.userProfile.deleteMany({ where: { userId: id } })
+        await this.prisma.user.delete({ where: { id } })
+        return { success: true, message: 'User deleted' }
+      } catch (e2: any) {
+        console.error('[DeleteUser Fallback Error]', e2.message)
+        throw new Error(`Cannot delete user: ${e2.message}`)
+      }
     }
   }
 
