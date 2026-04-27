@@ -162,7 +162,10 @@ export class CoachingService {
 
       const consultants = allUsers.filter((u: any) => u.role === 'COACH' || ['INSTRUCTOR', 'CONSULTANT', 'COACH'].includes(u.accountType));
 
-      const scored = consultants.map((c: any) => ({ ...c, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') }));
+      const scored = consultants.map((c: any) => {
+        const { password, googleId, stripeCustomerId, ...rest } = c;
+        return { ...rest, _score: this.calculateConsultantScore(c, query.filter || 'all', query.search || '') };
+      });
 
       let filtered = scored;
       if (query.filter && query.filter !== 'all') filtered = filtered.filter((c: any) => c._score > 0);
