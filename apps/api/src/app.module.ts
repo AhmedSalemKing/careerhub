@@ -28,6 +28,7 @@ import { EmailModule } from './modules/email/email.module';
 import { RatingsModule } from './modules/ratings/ratings.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { ConsultingModule } from './modules/consulting/consulting.module';
 
 @Module({
   imports: [
@@ -94,6 +95,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
     RatingsModule,
     VerificationModule,
     WalletModule,
+    ConsultingModule,
   ],
   controllers: [],
   providers: [],

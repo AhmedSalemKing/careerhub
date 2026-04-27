@@ -895,7 +895,7 @@ export class CoachingService {
       return this.prisma.consultingSession.findMany({
         where: { consultantId: userId },
         include: {
-          student: {
+          user: {
             select: {
               id: true,
               profile: { select: { firstName: true, lastName: true, avatar: true } },
@@ -906,7 +906,7 @@ export class CoachingService {
       });
     }
     return this.prisma.consultingSession.findMany({
-      where: { studentId: userId },
+      where: { userId: userId },
       include: {
         consultant: {
           select: {
@@ -932,7 +932,7 @@ export class CoachingService {
 
   async cancelConsultingSession(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, OR: [{ consultantId: userId }, { studentId: userId }] },
+      where: { id: sessionId, OR: [{ consultantId: userId }, { userId: userId }] },
     });
     if (!session) throw new NotFoundException('Session not found');
     return this.prisma.consultingSession.update({

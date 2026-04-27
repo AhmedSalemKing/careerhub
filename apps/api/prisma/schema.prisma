@@ -144,8 +144,9 @@ model User {
   coachProfile         Coach?
   assessmentSessions   AssessmentSession[]
   userCareerPath       UserCareerPath?
-  studentSessions      ConsultingSession[] @relation("StudentSessions")
+  userSessions         ConsultingSession[] @relation("UserSessions")
   consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
+  earningsBalance      Float               @default(0)
   instructorCourses    Course[]            @relation("InstructorCourses")
   cart                 Cart?
   conversations        Conversation[]
@@ -163,23 +164,29 @@ model User {
 }
 
 model UserProfile {
-  id          String    @id @default(cuid())
-  userId      String    @unique
-  firstName   String
-  lastName    String
-  phone       String?
-  dateOfBirth DateTime?
-  gender      Gender?
-  nationality String?
-  country     String?
-  city        String?
-  avatar      String?
-  bio         String?
-  linkedinUrl String?
-  timezone    String    @default("UTC")
-  language    String    @default("en")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  firstName       String
+  lastName        String
+  phone           String?
+  dateOfBirth     DateTime?
+  gender          Gender?
+  nationality     String?
+  country         String?
+  city            String?
+  avatar          String?
+  bio             String?
+  speciality      String?
+  yearsExperience Int?
+  qualifications  String[]  @default([])
+  consultingAreas String[]  @default([])
+  sessionPrice    Float?
+  sessionDuration Int       @default(60)
+  linkedinUrl     String?
+  timezone        String    @default("UTC")
+  language        String    @default("en")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -965,29 +972,35 @@ model SiteSettings {
 }
 
 model ConsultingSession {
-  id            String    @id @default(cuid())
-  studentId     String
-  consultantId  String
-  student       User      @relation("StudentSessions", fields: [studentId], references: [id])
-  consultant    User      @relation("ConsultantSessions", fields: [consultantId], references: [id])
-  scheduledAt   DateTime
-  duration      Int       @default(60)
-  meetingMethod String    @default("ZOOM")
-  meetingLink   String?
-  topic         String?
-  notes         String?
-  status        String    @default("PENDING")
-  price         Float     @default(0)
-  paymentStatus String    @default("UNPAID")
-  paymentId     String?
-  completedAt   DateTime?
-  cancelledAt   DateTime?
-  proposedAt    DateTime?
-  proposedTime  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  userId              String
+  consultantId        String
+  sessionName         String?
+  topic               String?
+  description         String?
+  scheduledAt         DateTime
+  duration            Int       @default(60)
+  status              String    @default("PENDING")
+  meetingType         String    @default("zoom")
+  meetingLink         String?
+  meetingLinkExpiresAt DateTime?
+  paymentStatus       String    @default("UNPAID")
+  paidAt              DateTime?
+  proposedAt          DateTime?
+  proposedBy          String?
+  consultantApproved  Boolean   @default(false)
+  userApproved        Boolean   @default(true)
+  completedBy         String?
+  completedAt         DateTime?
+  cancelReason        String?
+  rescheduledFrom     DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  @@index([studentId])
+  user       User @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+  consultant User @relation("ConsultantSessions", fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([consultantId])
   @@index([status])
   @@map("consulting_sessions")

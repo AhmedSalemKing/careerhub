@@ -1135,7 +1135,7 @@ export class AdminService {
         this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
         this.prisma.user.count({ where: { status: 'PENDING' } }),
         this.prisma.payment.findMany({ where: { status: 'SUCCESS' }, select: { amount: true, createdAt: true }, orderBy: { createdAt: 'desc' } }),
-        this.prisma.consultingSession.findMany({ where: { paymentStatus: 'PAID' }, select: { price: true, createdAt: true }, orderBy: { createdAt: 'desc' } }),
+        this.prisma.consultingSession.findMany({ where: { paymentStatus: 'PAID' }, select: { createdAt: true }, orderBy: { createdAt: 'desc' } }),
         this.prisma.user.findMany({
           where: { accountType: { notIn: ['ADMIN', 'SUPER_ADMIN'] } },
           orderBy: { createdAt: 'desc' },
@@ -1154,19 +1154,15 @@ export class AdminService {
       const totalCourses = val(results[1], 0);
       const pendingUsers = val(results[2], 0);
       const allPayments = val(results[3], [] as { amount: number; createdAt: Date }[]);
-      const allPaidSessions = val(results[4], [] as { price: number; createdAt: Date }[]);
+      const allPaidSessions = val(results[4], [] as { createdAt: Date }[]);
       const recentUsers = val(results[5], []);
 
       const toNum = (payments: { amount: number }[]) =>
         payments.map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
-      const toNumS = (sessions: { price: number }[]) =>
-        sessions.map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
 
-      const totalRevenue = toNum(allPayments) + toNumS(allPaidSessions);
-      const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth))
-        + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfMonth));
-      const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay))
-        + toNumS(allPaidSessions.filter(s => new Date(s.createdAt) >= startOfDay));
+      const totalRevenue = toNum(allPayments);
+      const monthlyRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfMonth));
+      const todayRevenue = toNum(allPayments.filter(p => new Date(p.createdAt) >= startOfDay));
 
       const monthlyChart: { month: string; revenue: number }[] = [];
       for (let i = 11; i >= 0; i--) {
@@ -1174,10 +1170,7 @@ export class AdminService {
         const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
         const rev = allPayments
           .filter(p => { const pd = new Date(p.createdAt); return pd >= d && pd < end; })
-          .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0)
-          + allPaidSessions
-          .filter(s => { const sd = new Date(s.createdAt); return sd >= d && sd < end; })
-          .map(s => Number(s.price) || 0).reduce((a, b) => a + b, 0);
+          .map(p => Number(p.amount) || 0).reduce((a, b) => a + b, 0);
         monthlyChart.push({
           month: d.toLocaleDateString('ar-SA', { month: 'short', year: '2-digit' }),
           revenue: rev,
@@ -1345,7 +1338,7 @@ export class AdminService {
   async getAllSessions() {
     const sessions = await this.prisma.consultingSession.findMany({
       include: {
-        student: {
+        user: {
           select: {
             email: true,
             profile: { select: { firstName: true, lastName: true } },
@@ -1419,12 +1412,11 @@ export class AdminService {
   async createSession(data: any) {
     return this.prisma.consultingSession.create({
       data: {
-        studentId: data.studentId,
+        userId: data.userId,
         consultantId: data.consultantId,
         scheduledAt: new Date(data.scheduledAt),
         topic: data.topic || '',
-        meetingMethod: data.meetingMethod || 'ONLINE',
-        price: Number(data.price) || 0,
+        meetingType: data.meetingType || 'zoom',
         status: 'CONFIRMED',
         paymentStatus: 'UNPAID',
       },
