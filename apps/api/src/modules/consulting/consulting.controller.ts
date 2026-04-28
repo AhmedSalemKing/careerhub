@@ -76,4 +76,20 @@ export class ConsultingController {
   async cancelSession(@Param('id') id: string, @Request() req: any, @Body() body: { reason?: string }) {
     return this.consultingService.cancelSession(id, req.user.id, body)
   }
+
+  @Post('sessions/:id/create-payment-intent')
+  @UseGuards(JwtAuthGuard)
+  async createPaymentIntent(@Param('id') id: string, @Request() req: any) {
+    return this.consultingService.createPaymentIntent(id, req.user.id)
+  }
+
+  @Post('sessions/:id/confirm-payment')
+  @UseGuards(JwtAuthGuard)
+  async confirmPayment(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { paymentIntentId: string }
+  ) {
+    return this.consultingService.confirmPayment(id, req.user.id, body.paymentIntentId)
+  }
 }

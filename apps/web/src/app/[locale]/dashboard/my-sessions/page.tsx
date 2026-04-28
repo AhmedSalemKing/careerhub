@@ -12,6 +12,7 @@ import {
   Copy, Check, CreditCard, DollarSign,
   AlertTriangle, User, Briefcase, Users
 } from 'lucide-react'
+import PaymentModal from '@/components/PaymentModal'
 import toast from 'react-hot-toast'
 
 const STATUS_CONFIG: Record<string, any> = {
@@ -46,6 +47,7 @@ export default function MySessionsPage() {
   const [newTime, setNewTime] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [copied, setCopied] = useState('')
+  const [paymentSession, setPaymentSession] = useState<any>(null)
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -301,7 +303,7 @@ export default function MySessionsPage() {
             )}
 
             {!isPaid && isUpcoming && !isRescheduleReq && (
-              <button onClick={() => { if (confirm(isAr ? 'تأكيد الدفع؟' : 'Confirm payment?')) payMutation.mutate(session.id) }} disabled={payMutation.isPending}
+              <button onClick={() => setPaymentSession(session)} disabled={payMutation.isPending}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: payMutation.isPending ? 0.7 : 1 }}>
                 <CreditCard size={12} />{isAr ? 'ادفع الآن' : 'Pay Now'}
               </button>
@@ -321,10 +323,34 @@ export default function MySessionsPage() {
               </button>
             )}
           </div>
-        </div>
       </div>
-    )
-  }
+      </div>
+        )}
+      </div>
+    </>
+  )}
+
+      {/* Payment Modal */}
+      {paymentSession && (
+        <PaymentModal
+          session={paymentSession}
+          isDark={isDark}
+          isAr={isAr}
+          onClose={() => setPaymentSession(null)}
+          onSuccess={() => {
+            setPaymentSession(null)
+            toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+            qc.invalidateQueries({ queryKey: ['my-sessions'] })
+          }}
+          cardBg={cardBg}
+          border={border}
+          text={text}
+          subtext={subtext}
+        />
+      )}
+    </>
+  )
+}
 
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
@@ -489,8 +515,28 @@ export default function MySessionsPage() {
               </button>
             </div>
           </div>
-        </>
+      </>
+        )}
+      </div>
+
+      {/* Payment Modal */}
+      {paymentSession && (
+        <PaymentModal
+          session={paymentSession}
+          isDark={isDark}
+          isAr={isAr}
+          onClose={() => setPaymentSession(null)}
+          onSuccess={() => {
+            setPaymentSession(null)
+            toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+            qc.invalidateQueries({ queryKey: ['my-sessions'] })
+          }}
+          cardBg={cardBg}
+          border={border}
+          text={text}
+          subtext={subtext}
+        />
       )}
-    </div>
+    </>
   )
 }

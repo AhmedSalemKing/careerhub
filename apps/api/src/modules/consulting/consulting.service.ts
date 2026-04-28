@@ -421,7 +421,186 @@ export class ConsultingService {
         }
       })
     } catch(e) {}
-
+    
     return { success: true, data: updated }
+  }
+
+  async createPaymentIntent(sessionId: string, userId: string) {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+    const session = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      include: { consultant: { include: { profile: true } } }
+    })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
+
+    const price = parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
+
+    // Free session - mark as paid directly
+    if (price === 0) {
+      await this.prisma.consultingSession.update({
+        where: { id: sessionId },
+        data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
+      })
+      await this.prisma.notification.create({
+        data: {
+          userId: session.consultantId,
+          titleEn: 'Free Session Confirmed',
+          titleAr: 'تم تأكيد الجلسة المجانية',
+          contentEn: `The free session "${session.sessionName || session.topic}" has been confirmed`,
+          contentAr: `تم تأكيد الجلسة المجانية "${session.sessionName || session.topic}"`,
+          type: 'PAYMENT_CONFIRMED', isRead: false,
+        }
+      }).catch(() => {})
+      return { success: true, free: true }
+    }
+
+    // Create Stripe PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(price * 100), // in cents/halalas
+      currency: 'sar',
+      metadata: { sessionId, userId, consultantId: session.consultantId },
+      description: `Consulting session - ${session.sessionName || session.topic}`,
+    })
+
+    return {
+      success: true,
+      free: false,
+      clientSecret: paymentIntent.client_secret,
+      amount: price,
+      currency: 'SAR',
+      session: {
+        id: session.id,
+        sessionName: session.sessionName,
+        topic: session.topic,
+        scheduledAt: session.scheduledAt,
+      }
+    }
+  }
+
+  async confirmPayment(sessionId: string, userId: string, paymentIntentId: string) {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    if (paymentIntent.status !== 'succeeded') {
+      throw new BadRequestException('Payment not completed')
+    }
+
+    // First get the session to calculate price
+    const existingSession = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      include: { consultant: { include: { profile: true } }
+    })
+    if (!existingSession) throw new NotFoundException('Session not found')
+    if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
+
+    const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+
+    // Create a Payment record to track the stripe payment
+    await this.prisma.payment.create({
+      data: {
+        userId: existingSession.studentId,
+        amount: price,
+        currency: 'SAR',
+        method: 'STRIPE_CARD',
+        status: 'COMPLETED',
+        stripeIntentId: paymentIntentId,
+        itemType: 'SESSION',
+        itemId: existingSession.id,
+        description: `Consulting session: ${existingSession.sessionName || existingSession.topic}`,
+      }
+    }).catch(() => {})
+
+    const session = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        paymentStatus: 'PAID',
+        paidAt: new Date(),
+        status: 'CONFIRMED',
+      },
+      include: { consultant: { include: { profile: true } }
+    })
+
+    // Add to consultant's earnings balance
+    if (price > 0) {
+      const consultantId = session.consultant?.id || existingSession.consultantId
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance",0) + ${price} WHERE "id" = '${consultantId}'`
+      ).catch(() => {})
+    }
+
+    // Notify consultant
+    const consultantId = session.consultant?.id || existingSession.consultantId
+    await this.prisma.notification.create({
+      data: {
+        userId: consultantId,
+        titleEn: 'Payment Received - Add Meeting Link',
+        titleAr: 'تم الدفع - أضف رابط الاجتماع',
+        contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}". Please add the meeting link.`,
+        contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}". الرجاء إضافة رابط الاجتماع.`,
+        type: 'PAYMENT_CONFIRMED', isRead: false,
+      }
+    }).catch(() => {})
+
+    return { success: true, data: session }
+  }
+}
+
+    // First get the session to calculate price
+    const existingSession = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      include: { consultant: { include: { profile: true } }
+    })
+    if (!existingSession) throw new NotFoundException('Session not found')
+    if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
+
+    const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+
+    // Create a Payment record to track the Stripe payment
+    await this.prisma.payment.create({
+      data: {
+        userId: existingSession.studentId,
+        amount: price,
+        currency: 'SAR',
+        method: 'STRIPE_CARD',
+        status: 'COMPLETED',
+        stripeIntentId: paymentIntentId,
+        itemType: 'SESSION',
+        itemId: existingSession.id,
+        description: `Consulting session: ${existingSession.sessionName || existingSession.topic}`,
+      }
+    }).catch(() => {})
+
+    const session = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        paymentStatus: 'PAID',
+        paidAt: new Date(),
+        status: 'CONFIRMED',
+      },
+      include: { consultant: { include: { profile: true } }
+    })
+
+    // Add to consultant's earnings balance
+    if (price > 0) {
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance",0) + ${price} WHERE "id" = '${session.consultant?.id || existingSession.consultantId}'`
+      ).catch(() => {})
+    }
+
+    // Notify consultant
+    await this.prisma.notification.create({
+      data: {
+        userId: session.consultant?.id || existingSession.consultantId,
+        titleEn: 'Payment Received - Add Meeting Link',
+        titleAr: 'تم الدفع - أضف رابط الاجتماع',
+        contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}". Please add the meeting link.`,
+        contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}". الرجاء إضافة رابط اجتماع.`,
+        type: 'PAYMENT_CONFIRMED', isRead: false,
+      }
+    }).catch(() => {})
+
+    return { success: true, data: session }
   }
 }
