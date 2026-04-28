@@ -110,7 +110,7 @@ export class ConsultingService {
 
     const session = await this.prisma.consultingSession.create({
       data: {
-        userId,
+        studentId: userId,
         consultantId: data.consultantId,
         sessionName: data.sessionName,
         topic: data.topic,
@@ -150,7 +150,7 @@ export class ConsultingService {
     try {
       // Sessions this user booked (as client)
       const mySessions = await this.prisma.consultingSession.findMany({
-        where: { userId },
+        where: { studentId: userId },
         include: {
           user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
           consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
@@ -205,7 +205,7 @@ export class ConsultingService {
       }
     })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
     return { success: true, data: session }
   }
 
@@ -225,14 +225,12 @@ export class ConsultingService {
     try {
       await this.prisma.notification.create({
         data: {
-          userId: session.userId,
-          titleEn: 'Reschedule Request',
-          titleAr: 'طلب تغيير موعد الجلسة',
+          userId: session.studentId,
+          type: 'SYSTEM_ANNOUNCEMENT',
           contentEn: `The consultant proposes a new time: ${proposedAt.toLocaleDateString('en')} ${proposedAt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
           contentAr: `المستشار يقترح موعداً جديداً: ${proposedAt.toLocaleDateString('ar')} ${proposedAt.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
-          type: 'SYSTEM_ANNOUNCEMENT',
           isRead: false,
-        }
+        } as any,
       })
     } catch(e) {}
 
@@ -242,7 +240,7 @@ export class ConsultingService {
   async approveReschedule(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
     if (!session.proposedAt) throw new BadRequestException('No proposal found')
 
     const updated = await this.prisma.consultingSession.update({
@@ -274,7 +272,7 @@ export class ConsultingService {
   async rejectReschedule(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
@@ -303,7 +301,7 @@ export class ConsultingService {
       include: { consultant: { include: { profile: true } } }
     })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
     if (session.paymentStatus === 'PAID') throw new BadRequestException('Already paid')
 
     const price = parseFloat((session.consultant?.profile?.sessionPrice as any)?.toString() || '0')
@@ -359,7 +357,7 @@ export class ConsultingService {
     try {
       await this.prisma.notification.create({
         data: {
-          userId: session.userId,
+          userId: session.studentId,
           titleEn: `Session Link Ready - ${isZoom ? 'Zoom' : 'Google Meet'}`,
           titleAr: 'رابط الجلسة جاهز',
           contentEn: `${isZoom ? 'Zoom' : 'Google Meet'} link added. Click to join.`,
@@ -375,14 +373,14 @@ export class ConsultingService {
   async completeSession(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
       data: { status: 'COMPLETED', completedBy: userId, completedAt: new Date() }
     })
 
-    const notifyId = session.userId === userId ? session.consultantId : session.userId
+    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
     try {
       await this.prisma.notification.create({
         data: {
@@ -402,7 +400,7 @@ export class ConsultingService {
   async cancelSession(sessionId: string, userId: string, data: { reason?: string }) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
     if (session.paymentStatus === 'PAID') throw new BadRequestException('Cannot cancel a paid session')
 
     const updated = await this.prisma.consultingSession.update({
@@ -410,7 +408,7 @@ export class ConsultingService {
       data: { status: 'CANCELLED', cancelReason: data.reason || '' }
     })
 
-    const notifyId = session.userId === userId ? session.consultantId : session.userId
+    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
     try {
       await this.prisma.notification.create({
         data: {

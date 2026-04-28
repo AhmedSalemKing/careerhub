@@ -102,7 +102,7 @@ export class SessionsController {
 
     const session = await this.prisma.consultingSession.create({
       data: {
-        userId,
+        studentId: userId,
         consultantId: body.consultantId,
         scheduledAt,
         duration,
@@ -146,7 +146,7 @@ export class SessionsController {
     console.log('[Sessions] getMySessions userId:', userId)
 
     const where: any = {
-      OR: [{ userId: userId }, { consultantId: userId }]
+      OR: [{ studentId: userId }, { consultantId: userId }]
     }
     if (status && status !== 'ALL') {
       where.status = status
@@ -237,7 +237,7 @@ export class SessionsController {
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'Consultation Confirmed',
         titleAr: 'تم تأكيد استشارتك',
@@ -267,7 +267,7 @@ export class SessionsController {
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'Consultation Request Declined',
         titleAr: 'تم رفض طلب الاستشارة',
@@ -308,7 +308,7 @@ export class SessionsController {
 
     await this.prisma.notification.create({
       data: {
-        userId: session.userId,
+        userId: session.studentId,
         type: 'SYSTEM_ANNOUNCEMENT' as any,
         titleEn: 'New Time Proposed for Consultation',
         titleAr: 'اقتراح موعد جديد للاستشارة',
@@ -324,7 +324,7 @@ export class SessionsController {
   @Patch(':id/accept-reschedule')
   async acceptReschedule(@Param('id') id: string, @Request() req: any) {
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: req.user.sub, status: 'RESCHEDULED' },
+      where: { id, studentId: req.user.sub, status: 'RESCHEDULED' },
       include: { user: { include: { profile: true } } }
     })
     if (!session || !session.proposedAt) throw new NotFoundException('Session not found')
@@ -360,7 +360,7 @@ export class SessionsController {
     const userId = req.user.sub
 
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: userId },
+      where: { id, studentId: userId },
       include: {
         consultant: { include: { profile: true } },
         user: { include: { profile: true } },
@@ -440,7 +440,7 @@ export class SessionsController {
     if (intent.status !== 'succeeded') throw new BadRequestException('Payment not completed')
 
     const session = await this.prisma.consultingSession.findFirst({
-      where: { id, userId: req.user.sub },
+      where: { id, studentId: req.user.sub },
       include: { consultant: { include: { profile: true } } }
     })
     if (!session) throw new NotFoundException('Session not found')
@@ -505,7 +505,7 @@ export class SessionsController {
     const session = await this.prisma.consultingSession.findFirst({
       where: {
         id,
-        OR: [{ userId: req.user.sub }, { consultantId: req.user.sub }]
+        OR: [{ studentId: req.user.sub }, { consultantId: req.user.sub }]
       }
     })
     if (!session) throw new NotFoundException('Session not found')
@@ -515,9 +515,9 @@ export class SessionsController {
       data: { status: 'CANCELLED' }
     })
 
-    const notifyUserId = req.user.sub === session.userId
+    const notifyUserId = req.user.sub === session.studentId
       ? session.consultantId
-      : session.userId
+      : session.studentId
 
     await this.prisma.notification.create({
       data: {
@@ -540,7 +540,7 @@ export class SessionsController {
     
     const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
     if (!session) throw new NotFoundException('Session not found')
-    if (session.userId !== userId) throw new ForbiddenException('Not your session')
+    if (session.studentId !== userId) throw new ForbiddenException('Not your session')
     
     const user = await this.prisma.user.findUnique({ where: { id: userId } })
     const price = (session as any).price || 0
@@ -586,7 +586,7 @@ export class SessionsController {
     if (!session) throw new NotFoundException('Session not found')
     
     const isAllowed = session.consultantId === req.user.id || 
-                      session.userId === req.user.id || 
+                      session.studentId === req.user.id || 
                       req.user.accountType === 'ADMIN'
     if (!isAllowed) throw new ForbiddenException()
     
@@ -613,18 +613,18 @@ export class SessionsController {
     if (!session) throw new NotFoundException('Session not found')
     
     const isAllowed = session.consultantId === req.user.id ||
-                      session.userId === req.user.id ||
+                      session.studentId === req.user.id ||
                       req.user.accountType === 'ADMIN'
     if (!isAllowed) throw new ForbiddenException()
     
     // Refund if was paid
-    if (session.paymentStatus === 'PAID' && ((session as any).price || 0) > 0 && session.userId) {
+    if (session.paymentStatus === 'PAID' && ((session as any).price || 0) > 0 && session.studentId) {
       await this.prisma.user.update({
-        where: { id: session.userId },
+        where: { id: session.studentId },
         data: { walletBalance: { increment: (session as any).price } }
       })
       await this.prisma.walletTransaction.create({
-        data: { userId: session.userId, type: 'REFUND', amount: (session as any).price, description: 'استرداد رسوم جلسة ملغاة' }
+        data: { userId: session.studentId, type: 'REFUND', amount: (session as any).price, description: 'استرداد رسوم جلسة ملغاة' }
       }).catch(() => {})
       
       // Remove consultant earnings
@@ -637,7 +637,7 @@ export class SessionsController {
       
       // Notify student
       await this.prisma.notification.create({
-        data: { userId: session.userId, titleEn: 'تم الاسترداد', titleAr: 'تم الاسترداد', contentEn: `تم إرجاع ${(session as any).price} ريال لمحفظتك`, contentAr: `تم إرجاع ${(session as any).price} ريال لمحفظتك`, type: 'SUCCESS' as any, isRead: false }
+        data: { userId: session.studentId, titleEn: 'تم الاسترداد', titleAr: 'تم الاسترداد', contentEn: `تم إرجاع ${(session as any).price} ريال لمحفظتك`, contentAr: `تم إرجاع ${(session as any).price} ريال لمحفظتك`, type: 'SUCCESS' as any, isRead: false }
       }).catch(() => {})
     }
     

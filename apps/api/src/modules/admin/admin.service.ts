@@ -557,7 +557,7 @@ export class AdminService {
         DELETE FROM "payments" WHERE "userId" = '${userId}';
       `).catch(() => {})
       await this.prisma.$executeRawUnsafe(`
-        DELETE FROM "consulting_sessions" WHERE "userId" = '${userId}' OR "consultantId" = '${userId}';
+        DELETE FROM "consulting_sessions" WHERE "studentId" = '${userId}' OR "consultantId" = '${userId}';
       `).catch(() => {})
       await this.prisma.$executeRawUnsafe(`
         DELETE FROM "coaching_sessions" WHERE "userId" = '${userId}';
@@ -1412,7 +1412,7 @@ export class AdminService {
   async createSession(data: any) {
     return this.prisma.consultingSession.create({
       data: {
-        userId: data.userId,
+        studentId: data.studentId,
         consultantId: data.consultantId,
         scheduledAt: new Date(data.scheduledAt),
         topic: data.topic || '',

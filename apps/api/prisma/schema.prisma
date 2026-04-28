@@ -973,7 +973,7 @@ model SiteSettings {
 
 model ConsultingSession {
   id                  String    @id @default(cuid())
-  userId              String
+  studentId           String
   consultantId        String
   sessionName         String?
   topic               String?
@@ -997,10 +997,10 @@ model ConsultingSession {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  user       User @relation("UserSessions", fields: [userId], references: [id], onDelete: Cascade)
+  user       User @relation("UserSessions", fields: [studentId], references: [id], onDelete: Cascade)
   consultant User @relation("ConsultantSessions", fields: [consultantId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
+  @@index([studentId])
   @@index([consultantId])
   @@index([status])
   @@map("consulting_sessions")
