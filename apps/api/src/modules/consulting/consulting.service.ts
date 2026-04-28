@@ -487,17 +487,15 @@ export class ConsultingService {
       throw new BadRequestException('Payment not completed')
     }
 
-    // First get the session to calculate price
     const existingSession = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
-      include: { consultant: { include: { profile: true } }
+      include: { consultant: { include: { profile: true } } }
     })
     if (!existingSession) throw new NotFoundException('Session not found')
     if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
 
     const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
 
-    // Create a Payment record to track the stripe payment
     await this.prisma.payment.create({
       data: {
         userId: existingSession.studentId,
@@ -519,19 +517,17 @@ export class ConsultingService {
         paidAt: new Date(),
         status: 'CONFIRMED',
       },
-      include: { consultant: { include: { profile: true } }
+      include: { consultant: { include: { profile: true } } }
     })
 
-    // Add to consultant's earnings balance
     if (price > 0) {
-      const consultantId = session.consultant?.id || existingSession.consultantId
+      const consultantId = (session as any).consultant?.id || existingSession.consultantId
       await this.prisma.$executeRawUnsafe(
         `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance",0) + ${price} WHERE "id" = '${consultantId}'`
       ).catch(() => {})
     }
 
-    // Notify consultant
-    const consultantId = session.consultant?.id || existingSession.consultantId
+    const consultantId = (session as any).consultant?.id || existingSession.consultantId
     await this.prisma.notification.create({
       data: {
         userId: consultantId,
@@ -539,64 +535,6 @@ export class ConsultingService {
         titleAr: 'تم الدفع - أضف رابط الاجتماع',
         contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}". Please add the meeting link.`,
         contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}". الرجاء إضافة رابط الاجتماع.`,
-        type: 'PAYMENT_CONFIRMED', isRead: false,
-      }
-    }).catch(() => {})
-
-    return { success: true, data: session }
-  }
-}
-
-    // First get the session to calculate price
-    const existingSession = await this.prisma.consultingSession.findUnique({
-      where: { id: sessionId },
-      include: { consultant: { include: { profile: true } }
-    })
-    if (!existingSession) throw new NotFoundException('Session not found')
-    if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
-
-    const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
-
-    // Create a Payment record to track the Stripe payment
-    await this.prisma.payment.create({
-      data: {
-        userId: existingSession.studentId,
-        amount: price,
-        currency: 'SAR',
-        method: 'STRIPE_CARD',
-        status: 'COMPLETED',
-        stripeIntentId: paymentIntentId,
-        itemType: 'SESSION',
-        itemId: existingSession.id,
-        description: `Consulting session: ${existingSession.sessionName || existingSession.topic}`,
-      }
-    }).catch(() => {})
-
-    const session = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: {
-        paymentStatus: 'PAID',
-        paidAt: new Date(),
-        status: 'CONFIRMED',
-      },
-      include: { consultant: { include: { profile: true } }
-    })
-
-    // Add to consultant's earnings balance
-    if (price > 0) {
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance",0) + ${price} WHERE "id" = '${session.consultant?.id || existingSession.consultantId}'`
-      ).catch(() => {})
-    }
-
-    // Notify consultant
-    await this.prisma.notification.create({
-      data: {
-        userId: session.consultant?.id || existingSession.consultantId,
-        titleEn: 'Payment Received - Add Meeting Link',
-        titleAr: 'تم الدفع - أضف رابط الاجتماع',
-        contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}". Please add the meeting link.`,
-        contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}". الرجاء إضافة رابط اجتماع.`,
         type: 'PAYMENT_CONFIRMED', isRead: false,
       }
     }).catch(() => {})

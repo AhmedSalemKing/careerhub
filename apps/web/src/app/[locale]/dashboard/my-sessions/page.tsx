@@ -10,7 +10,7 @@ import {
   Calendar, Clock, Video, CheckCircle2, XCircle,
   ExternalLink, Plus, RefreshCw, Link2, X,
   Copy, Check, CreditCard, DollarSign,
-  AlertTriangle, User, Briefcase, Users
+  AlertTriangle, User, Users
 } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
 import toast from 'react-hot-toast'
@@ -26,7 +26,7 @@ const STATUS_CONFIG: Record<string, any> = {
   RESCHEDULE_REQUESTED: { ar:'طلب تغيير موعد',  en:'Reschedule Pending', color:'#7c3aed', bg:'rgba(124,58,237,0.1)' },
 }
 
-  type ViewType = 'my' | 'client'
+type ViewType = 'my' | 'client'
 
 export default function MySessionsPage() {
   const { theme } = useTheme()
@@ -60,7 +60,6 @@ export default function MySessionsPage() {
     queryFn: async () => {
       const r = await get('/consulting/sessions')
       const data = r.data?.data
-      console.log('[my-sessions] API response:', { mySessions: data?.mySessions?.length, clientSessions: data?.clientSessions?.length })
       return {
         mySessions: data?.mySessions ?? [],
         clientSessions: data?.clientSessions ?? [],
@@ -72,7 +71,6 @@ export default function MySessionsPage() {
   const mySessions: any[] = sessionsData?.mySessions ?? []
   const clientSessions: any[] = sessionsData?.clientSessions ?? []
 
-  // Auto-switch to client view for CONSULTANTs if they have client sessions
   useEffect(() => {
     if (accountType === 'CONSULTANT' && clientSessions.length > 0 && viewType === 'my') {
       setViewType('client')
@@ -95,29 +93,29 @@ export default function MySessionsPage() {
 
   const payMutation = useMutation({
     mutationFn: (id: string) => post(`/consulting/sessions/${id}/pay`, {}),
-    onSuccess: () => { toast.success(isAr ? 'تم الدفع بنجاح' : 'Payment successful'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) },
+    onSuccess: () => { toast.success(isAr ? 'تمالدفع بنجاح' : 'Payment successful'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) },
     onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل الدفع' : 'Payment failed'))
   })
 
   const completeMutation = useMutation({
     mutationFn: (id: string) => patch(`/consulting/sessions/${id}/complete`, {}),
-    onSuccess: () => { toast.success(isAr ? 'تم تأكيد اكتمال الجلسة' : 'Session completed'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) },
+    onSuccess: () => { toast.success(isAr ? 'تم تاكيد اكتمال الجلسة' : 'Session completed'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) },
   })
 
   const cancelMutation = useMutation({
     mutationFn: (id: string) => patch(`/consulting/sessions/${id}/cancel`, {}),
-    onSuccess: () => { toast.success(isAr ? 'تم إلغاء الجلسة' : 'Session cancelled'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) }
+    onSuccess: () => { toast.success(isAr ? 'تم الغاءالجلسة' : 'Session cancelled'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) }
   })
 
   const requestRescheduleMutation = useMutation({
     mutationFn: ({ id, proposedAt, reason }: any) =>
       patch(`/consulting/sessions/${id}/request-reschedule`, { proposedAt, reason }),
     onSuccess: () => {
-      toast.success(isAr ? 'تم إرسال طلب تغيير الموعد' : 'Reschedule request sent')
+      toast.success(isAr ? 'تم ارسال طلب تغيير الموعد' : 'Reschedule request sent')
       setRescheduleModal(null)
       qc.invalidateQueries({ queryKey: ['my-sessions'] })
     },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
+    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطا' : 'Error'))
   })
 
   const approveRescheduleMutation = useMutation({
@@ -133,24 +131,24 @@ export default function MySessionsPage() {
   const addLinkMutation = useMutation({
     mutationFn: ({ id, link }: any) => {
       if (!link.includes('zoom.us') && !link.includes('meet.google.com'))
-        throw new Error(isAr ? 'يُقبل فقط روابط Zoom أو Google Meet' : 'Only Zoom or Google Meet allowed')
+        throw new Error(isAr ? 'يقب فقط روابط Zoom او Google Meet' : 'Only Zoom or Google Meet allowed')
       return patch(`/consulting/sessions/${id}/meeting-link`, { meetingLink: link })
     },
     onSuccess: () => {
-      toast.success(isAr ? 'تم إضافة رابط الاجتماع' : 'Meeting link added')
+      toast.success(isAr ? 'تم اضافة رابط الاجتماع' : 'Meeting link added')
       setLinkModal(null); setLinkValue('')
       qc.invalidateQueries({ queryKey: ['my-sessions'] })
     },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
+    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطا' : 'Error'))
   })
 
   const formatDate = (d: string) => {
     try { return new Date(d).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }) }
-    catch { return d }
+    catch (e) { return d }
   }
   const formatTime = (d: string) => {
     try { return new Date(d).toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }) }
-    catch { return '' }
+    catch (e) { return '' }
   }
   const isSoon = (d: string) => {
     const diff = new Date(d).getTime() - Date.now()
@@ -168,7 +166,6 @@ export default function MySessionsPage() {
     const isUpcoming = upcomingStatuses.includes(session.status)
     const isPaid = session.paymentStatus === 'PAID'
     const linkExpired = isLinkExpired(session)
-    // Show the other person based on view type
     const other = viewType === 'client' ? session.student : session.consultant
     const otherName = other ? `${other.profile?.firstName || ''} ${other.profile?.lastName || ''}`.trim() || '' : ''
     const roleLabel = viewType === 'client' ? (isAr ? 'العميل' : 'Client') : (isAr ? 'المستشار' : 'Consultant')
@@ -176,7 +173,7 @@ export default function MySessionsPage() {
     return (
       <div style={{
         background: cardBg, borderRadius: 18,
-        border: `1.5px solid ${soon ? 'rgba(81,32,200,0.5)' : isRescheduleReq ? 'rgba(124,58,237,0.4)' : border}`,
+        border: `1.5px solid ${soon ? 'rgba(81,32,200,0.5)' : (isRescheduleReq ? 'rgba(124,58,237,0.4)' : border)}`,
         overflow: 'hidden',
         boxShadow: soon ? '0 0 0 4px rgba(81,32,200,0.06)' : 'none',
         transition: 'all 0.2s',
@@ -323,34 +320,10 @@ export default function MySessionsPage() {
               </button>
             )}
           </div>
+        </div>
       </div>
-      </div>
-        )}
-      </div>
-    </>
-  )}
-
-      {/* Payment Modal */}
-      {paymentSession && (
-        <PaymentModal
-          session={paymentSession}
-          isDark={isDark}
-          isAr={isAr}
-          onClose={() => setPaymentSession(null)}
-          onSuccess={() => {
-            setPaymentSession(null)
-            toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
-            qc.invalidateQueries({ queryKey: ['my-sessions'] })
-          }}
-          cardBg={cardBg}
-          border={border}
-          text={text}
-          subtext={subtext}
-        />
-      )}
-    </>
-  )
-}
+    )
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
@@ -515,11 +488,9 @@ export default function MySessionsPage() {
               </button>
             </div>
           </div>
-      </>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Payment Modal */}
       {paymentSession && (
         <PaymentModal
           session={paymentSession}
@@ -528,7 +499,7 @@ export default function MySessionsPage() {
           onClose={() => setPaymentSession(null)}
           onSuccess={() => {
             setPaymentSession(null)
-            toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+            toast.success(isAr ? 'تمالدفع بنجاح!' : 'Payment successful!')
             qc.invalidateQueries({ queryKey: ['my-sessions'] })
           }}
           cardBg={cardBg}
@@ -537,6 +508,6 @@ export default function MySessionsPage() {
           subtext={subtext}
         />
       )}
-    </>
+    </div>
   )
 }
