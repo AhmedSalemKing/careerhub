@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, hydrate, logout } = useAuthStore()
+  const { user, hydrate, logout, setUser: setUserStore } = useAuthStore()
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -35,6 +35,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [])
 
   const accountType = user?.accountType || 'STUDENT'
+
+  // Debug: log accountType to verify
+  console.log('[LAYOUT] user accountType:', user?.accountType, '| resolved:', accountType)
 
   const dockItems = useMemo(() => {
     if (accountType === 'ADMIN') return [
@@ -94,6 +97,27 @@ return [
       staleTime: 2 * 60 * 1000,
     })
   }, [queryClient])
+
+  // Fetch fresh user data from /auth/me and update store if accountType changed
+  useEffect(() => {
+    if (!user) return
+    const fetchMe = async () => {
+      try {
+        const res = await get('/auth/me')
+        const freshUser = (res.data as any)?.data
+        if (freshUser && freshUser.accountType) {
+          // Update store if accountType is missing or changed
+          if (!user.accountType || freshUser.accountType !== user.accountType) {
+            console.log('[LAYOUT] Updating user from /auth/me:', { old: user.accountType, new: freshUser.accountType })
+            setUserStore({ ...user, ...freshUser })
+          }
+        }
+      } catch (err) {
+        console.error('[LAYOUT] Failed to fetch /auth/me:', err)
+      }
+    }
+    fetchMe()
+  }, [user, setUserStore])
 
   useEffect(() => {
     if (!mounted || !user) return
