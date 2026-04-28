@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 import {
   Calendar, Clock, Video, CheckCircle2, XCircle,
   ExternalLink, Plus, RefreshCw, Link2, X,
