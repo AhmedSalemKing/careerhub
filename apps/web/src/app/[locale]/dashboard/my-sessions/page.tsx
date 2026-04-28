@@ -24,7 +24,7 @@ const STATUS_CONFIG: Record<string, any> = {
   RESCHEDULE_REQUESTED: { ar:'طلب تغيير موعد',  en:'Reschedule Pending', color:'#7c3aed', bg:'rgba(124,58,237,0.1)' },
 }
 
-type ViewType = 'my'
+  type ViewType = 'my' | 'client'
 
 export default function MySessionsPage() {
   const { theme } = useTheme()
@@ -33,8 +33,11 @@ export default function MySessionsPage() {
   const isAr = locale === 'ar'
   const router = useRouter()
   const qc = useQueryClient()
+  const { user } = useAuthStore()
+  const accountType = user?.accountType || 'STUDENT'
 
   const [activeTab, setActiveTab] = useState<'upcoming'|'completed'|'cancelled'>('upcoming')
+  const [viewType, setViewType] = useState<ViewType>('my')
   const [rescheduleModal, setRescheduleModal] = useState<any>(null)
   const [linkModal, setLinkModal] = useState<any>(null)
   const [linkValue, setLinkValue] = useState('')
@@ -54,12 +57,26 @@ export default function MySessionsPage() {
     queryFn: async () => {
       const r = await get('/consulting/sessions')
       const data = r.data?.data
-      return data?.mySessions ?? []
+      console.log('[my-sessions] API response:', { mySessions: data?.mySessions?.length, clientSessions: data?.clientSessions?.length })
+      return {
+        mySessions: data?.mySessions ?? [],
+        clientSessions: data?.clientSessions ?? [],
+      }
     },
     refetchInterval: 30000,
   })
 
-  const sessions: any[] = sessionsData ?? []
+  const mySessions: any[] = sessionsData?.mySessions ?? []
+  const clientSessions: any[] = sessionsData?.clientSessions ?? []
+
+  // Auto-switch to client view for CONSULTANTs if they have client sessions
+  useEffect(() => {
+    if (accountType === 'CONSULTANT' && clientSessions.length > 0 && viewType === 'my') {
+      setViewType('client')
+    }
+  }, [accountType, clientSessions.length])
+
+  const sessions: any[] = viewType === 'client' ? clientSessions : mySessions
 
   const upcomingStatuses = ['PENDING','CONFIRMED','SCHEDULED','RESCHEDULE_REQUESTED']
   const completedStatuses = ['COMPLETED','NO_SHOW']
@@ -148,8 +165,10 @@ export default function MySessionsPage() {
     const isUpcoming = upcomingStatuses.includes(session.status)
     const isPaid = session.paymentStatus === 'PAID'
     const linkExpired = isLinkExpired(session)
-    const other = session.consultant
-    const otherName = `${other?.profile?.firstName || ''} ${other?.profile?.lastName || ''}`.trim() || ''
+    // Show the other person based on view type
+    const other = viewType === 'client' ? session.student : session.consultant
+    const otherName = other ? `${other.profile?.firstName || ''} ${other.profile?.lastName || ''}`.trim() || '' : ''
+    const roleLabel = viewType === 'client' ? (isAr ? 'العميل' : 'Client') : (isAr ? 'المستشار' : 'Consultant')
 
     return (
       <div style={{
@@ -207,7 +226,7 @@ export default function MySessionsPage() {
                 : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5120c8', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{otherName?.[0] || '?'}</div>}
               <div>
                 <div style={{ color: subtext, fontSize: 11, fontWeight: 600, marginBottom: 1 }}>
-                  {isAr ? 'المستشار' : 'Consultant'}
+                  {roleLabel}
                 </div>
                 <div style={{ color: text, fontSize: 15, fontWeight: 800 }}>{otherName}</div>
                 {other?.profile?.speciality && (
@@ -336,14 +355,23 @@ export default function MySessionsPage() {
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
             {[
-              { val: sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length, ar: 'جلساتي القادمة', en: 'My Upcoming', color: '#5120c8', bg: 'rgba(81,32,200,0.08)' },
-              { val: sessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
+              { val: mySessions.filter((s: any) => upcomingStatuses.includes(s.status)).length, ar: 'جلساتي القادمة', en: 'My Upcoming', color: '#5120c8', bg: 'rgba(81,32,200,0.08)' },
+              { val: mySessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : s.bg, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: s.color, fontSize: 18, fontWeight: 900 }}>{s.val}</span>
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
               </div>
             ))}
+            {accountType === 'CONSULTANT' && clientSessions.length > 0 && (
+              <div style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: viewType === 'client' ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setViewType(v => v === 'client' ? 'my' : 'client')}>
+                <Users size={16} color={viewType === 'client' ? '#5120c8' : subtext} />
+                <div>
+                  <div style={{ color: viewType === 'client' ? '#5120c8' : text, fontSize: 18, fontWeight: 900 }}>{clientSessions.filter((s: any) => upcomingStatuses.includes(s.status)).length}</div>
+                  <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'جلسات العملاء' : 'Client Sessions'}</div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', borderBottom: 'none', gap: 0 }}>
