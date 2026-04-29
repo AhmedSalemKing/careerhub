@@ -46,11 +46,7 @@ export class CoursesService {
     };
 
     if (type === 'recorded') {
-      where.OR = [
-        { type: 'recorded' },
-        { type: null },
-        { type: '' },
-      ]
+      where.NOT = { type: { in: ['live', 'offline'] } }
     } else if (type) {
       where.type = type
     }
@@ -67,30 +63,10 @@ export class CoursesService {
 
     if (search) {
       where.OR = [
-        {
-          titleEn: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          titleAr: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          descriptionEn: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
-        {
-          descriptionAr: {
-            contains: search,
-            mode: 'insensitive',
-          },
-        },
+        { titleEn: { contains: search, mode: 'insensitive' } },
+        { titleAr: { contains: search, mode: 'insensitive' } },
+        { descriptionEn: { contains: search, mode: 'insensitive' } },
+        { descriptionAr: { contains: search, mode: 'insensitive' } },
       ];
     }
 
