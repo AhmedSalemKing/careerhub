@@ -299,10 +299,33 @@ export default function MySessionsPage() {
               </a>
             )}
 
-            {!isPaid && isUpcoming && !isRescheduleReq && (
+            {!isPaid && isUpcoming && !isRescheduleReq && parseFloat(session.consultant?.profile?.sessionPrice || '0') > 0 && (
               <button onClick={() => setPaymentSession(session)} disabled={payMutation.isPending}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: payMutation.isPending ? 0.7 : 1 }}>
                 <CreditCard size={12} />{isAr ? 'ادفع الآن' : 'Pay Now'}
+              </button>
+            )}
+
+            {viewType === 'my' && !isPaid && isUpcoming && parseFloat(session.consultant?.profile?.sessionPrice || '0') === 0 && (
+              <button
+                onClick={async () => {
+                  try {
+                    await post(`/consulting/sessions/${session.id}/create-payment-intent`, {})
+                    toast.success(isAr ? 'تم تأكيد الجلسة المجانية!' : 'Free session confirmed!')
+                    qc.invalidateQueries({ queryKey: ['my-sessions'] })
+                  } catch(e) {
+                    toast.error(isAr ? 'حدث خطأ' : 'Error occurred')
+                  }
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '9px 16px', borderRadius: 10,
+                  background: 'rgba(22,163,74,0.1)', color: '#16a34a',
+                  border: '1px solid rgba(22,163,74,0.3)',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                }}>
+                <CheckCircle2 size={12} />
+                {isAr ? 'تأكيد الجلسة المجانية' : 'Confirm Free Session'}
               </button>
             )}
 
