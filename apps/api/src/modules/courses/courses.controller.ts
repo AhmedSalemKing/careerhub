@@ -43,6 +43,7 @@ export class CoursesController {
   @ApiQuery({ name: 'categoryId', required: false, description: 'Filter by category (includes subcategories)' })
   @ApiQuery({ name: 'level', required: false, description: 'Filter by level' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
+  @ApiQuery({ name: 'type', required: false, description: 'Filter by type: recorded, live, offline' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
 async getCourses(
     @Query('page') page?: number,
@@ -52,6 +53,7 @@ async getCourses(
     @Query('level') level?: string,
     @Query('search') search?: string,
     @Query('language') language?: string,
+    @Query('type') type?: string,
     @Request() req?: any,
   ) {
     const courses = await this.coursesService.getCourses({
@@ -62,6 +64,7 @@ async getCourses(
       level,
       search,
       language: language || 'en',
+      type,
     });
 
     if (req?.user?.id && search) {

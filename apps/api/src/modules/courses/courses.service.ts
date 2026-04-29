@@ -29,12 +29,13 @@ export class CoursesService {
     level?: string;
     search?: string;
     language: string;
+    type?: string;
   }) {
-    const { page, limit, careerPath, categoryId, level, search, language } = options;
+    const { page, limit, careerPath, categoryId, level, search, language, type } = options;
     const effectiveLimit = limit || 12;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
-    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}`;
+    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}:${type || ''}`;
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -43,6 +44,16 @@ export class CoursesService {
     const where: any = {
       status: 'PUBLISHED',
     };
+
+    if (type === 'recorded') {
+      where.OR = [
+        { type: 'recorded' },
+        { type: null },
+        { type: '' },
+      ]
+    } else if (type) {
+      where.type = type
+    }
 
     if (careerPath) {
       (where as any).careerPath = {
@@ -94,6 +105,8 @@ export class CoursesService {
       }
     }
 
+    this.logger.log(`[getCourses] type=${type}, where=${JSON.stringify(where)}`)
+
     const [courses, total] = await Promise.all([
       this.prisma.course.findMany({
         where,
@@ -101,14 +114,33 @@ export class CoursesService {
           id: true,
           titleEn: true,
           titleAr: true,
+          descriptionEn: true,
+          descriptionAr: true,
           thumbnail: true,
           price: true,
           level: true,
+          type: true,
+          liveStatus: true,
+          liveStartTime: true,
+          liveEndTime: true,
+          liveViewerCount: true,
+          locationName: true,
+          locationAddress: true,
+          locationLat: true,
+          locationLng: true,
+          offlinePaymentType: true,
+          maxAttendees: true,
           instructor: {
             select: {
               id: true,
               isVerified: true,
               profile: { select: { firstName: true, lastName: true, avatar: true } }
+            }
+          },
+          _count: {
+            select: {
+              enrollments: true,
+              sections: true,
             }
           },
         },
@@ -125,14 +157,27 @@ export class CoursesService {
     const transformedCourses = courses.map(course => ({
       id: course.id,
       title: language === 'ar' ? course.titleAr : course.titleEn,
+      description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
       price: course.price,
       level: course.level,
+      type: course.type,
+      liveStatus: course.liveStatus,
+      liveStartTime: course.liveStartTime,
+      liveEndTime: course.liveEndTime,
+      liveViewerCount: course.liveViewerCount,
+      locationName: course.locationName,
+      locationAddress: course.locationAddress,
+      locationLat: course.locationLat,
+      locationLng: course.locationLng,
+      offlinePaymentType: course.offlinePaymentType,
+      maxAttendees: course.maxAttendees,
       instructor: course.instructor ? {
         id: course.instructor.id,
         isVerified: course.instructor.isVerified,
         profile: course.instructor.profile,
       } : undefined,
+      _count: course._count,
     }));
 
     const data = {
@@ -1024,6 +1069,19 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         instructorId,
       };
 
+      if (dto.type) courseData.type = dto.type;
+      if (dto.liveStartTime) courseData.liveStartTime = new Date(dto.liveStartTime);
+      if (dto.liveEndTime) courseData.liveEndTime = new Date(dto.liveEndTime);
+      if (dto.liveStatus) courseData.liveStatus = dto.liveStatus;
+      if (dto.autoPublishRecording !== undefined) courseData.autoPublishRecording = dto.autoPublishRecording;
+      if (dto.autoDeleteAfterLive !== undefined) courseData.autoDeleteAfterLive = dto.autoDeleteAfterLive;
+      if (dto.locationName) courseData.locationName = dto.locationName;
+      if (dto.locationAddress) courseData.locationAddress = dto.locationAddress;
+      if (dto.locationLat !== undefined) courseData.locationLat = dto.locationLat;
+      if (dto.locationLng !== undefined) courseData.locationLng = dto.locationLng;
+      if (dto.offlinePaymentType) courseData.offlinePaymentType = dto.offlinePaymentType;
+      if (dto.maxAttendees) courseData.maxAttendees = parseInt(dto.maxAttendees);
+
       if (dto.careerPathId && dto.careerPathId !== '') {
         courseData.careerPathId = dto.careerPathId;
       }
@@ -1089,6 +1147,19 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.status && { status: dto.status as any }),
         ...(dto.thumbnail !== undefined && { thumbnail: dto.thumbnail }),
         ...(dto.previewVideo !== undefined && { previewVideo: dto.previewVideo }),
+        ...(dto.type !== undefined && { type: dto.type }),
+        ...(dto.liveStartTime && { liveStartTime: new Date(dto.liveStartTime) }),
+        ...(dto.liveEndTime && { liveEndTime: new Date(dto.liveEndTime) }),
+        ...(dto.liveStatus !== undefined && { liveStatus: dto.liveStatus }),
+        ...(dto.autoPublishRecording !== undefined && { autoPublishRecording: dto.autoPublishRecording }),
+        ...(dto.autoDeleteAfterLive !== undefined && { autoDeleteAfterLive: dto.autoDeleteAfterLive }),
+        ...(dto.locationName !== undefined && { locationName: dto.locationName }),
+        ...(dto.locationAddress !== undefined && { locationAddress: dto.locationAddress }),
+        ...(dto.locationLat !== undefined && { locationLat: dto.locationLat }),
+        ...(dto.locationLng !== undefined && { locationLng: dto.locationLng }),
+        ...(dto.offlinePaymentType !== undefined && { offlinePaymentType: dto.offlinePaymentType }),
+        ...(dto.maxAttendees !== undefined && { maxAttendees: dto.maxAttendees }),
+        ...(dto.recordingUrl !== undefined && { recordingUrl: dto.recordingUrl }),
       },
     });
     return { success: true, data: updated };

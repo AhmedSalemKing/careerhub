@@ -76,6 +76,8 @@ enum NotificationType {
   SESSION_BOOKED
   SESSION_CONFIRMED
   SESSION_CANCELLED
+  LIVE_STARTED
+  LIVE_ENDED
 }
 
 enum MessageType {
@@ -343,6 +345,25 @@ model Course {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
+  // Live streaming fields
+  type                String?   @default("recorded") // recorded | live | offline
+  streamKey           String?
+  streamUrl           String?
+  liveStartTime       DateTime?
+  liveEndTime         DateTime?
+  liveStatus          String?   @default("scheduled") // scheduled | live | ended
+  autoPublishRecording Boolean  @default(false)
+  autoDeleteAfterLive Boolean   @default(false)
+  locationName        String?
+  locationAddress     String?
+  locationLat         Float?
+  locationLng         Float?
+  offlinePaymentType  String?   @default("online") // online | on_site
+  maxAttendees        Int?
+  agoraChannelName    String?
+  liveViewerCount     Int       @default(0)
+  recordingUrl        String?
+
   // Relations
   careerPath   CareerPath?    @relation(fields: [careerPathId], references: [id])
   category     Category?      @relation(fields: [categoryId], references: [id])
@@ -440,7 +461,7 @@ model Lesson {
   description   String?
   descriptionAr String?
   content       Json? // Rich content
-  type          String   @default("VIDEO") // VIDEO | FILE | TEXT
+  type          String   @default("VIDEO") // VIDEO | FILE | TEXT | LIVE
   videoUrl      String?
   videoDuration Int? // in seconds
   fileUrl       String?
@@ -449,6 +470,15 @@ model Lesson {
   isFree        Boolean  @default(false)
   order         Int      @default(0)
   isPublished   Boolean  @default(false)
+  liveStartTime DateTime?
+  liveStatus    String?  @default("scheduled") // scheduled | live | ended
+  agoraChannelName String?
+  streamKey     String?
+  recordingUrl  String?
+  locationName  String?
+  locationAddress String?
+  locationLat   Float?
+  locationLng   Float?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

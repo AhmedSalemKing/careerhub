@@ -29,6 +29,7 @@ import { RatingsModule } from './modules/ratings/ratings.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ConsultingModule } from './modules/consulting/consulting.module';
+import { LiveModule } from './modules/live/live.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { ConsultingModule } from './modules/consulting/consulting.module';
     VerificationModule,
     WalletModule,
     ConsultingModule,
+    LiveModule,
   ],
   controllers: [],
   providers: [],
