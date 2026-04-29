@@ -45,29 +45,39 @@ export class CoursesService {
       status: 'PUBLISHED',
     };
 
+    const andConditions: any[] = [];
+
     if (type === 'recorded') {
-      where.NOT = { type: { in: ['live', 'offline'] } }
-    } else if (type) {
-      where.type = type
+      andConditions.push({
+        OR: [
+          { type: 'recorded' },
+          { type: null },
+          { type: '' },
+        ]
+      });
+    } else if (type === 'live') {
+      andConditions.push({ type: 'live' });
+    } else if (type === 'offline') {
+      andConditions.push({ type: 'offline' });
     }
 
     if (careerPath) {
-      (where as any).careerPath = {
-        slug: careerPath,
-      };
+      andConditions.push({ careerPath: { slug: careerPath } });
     }
 
     if (level) {
-      where.level = level.toUpperCase();
+      andConditions.push({ level: level.toUpperCase() });
     }
 
     if (search) {
-      where.OR = [
-        { titleEn: { contains: search, mode: 'insensitive' } },
-        { titleAr: { contains: search, mode: 'insensitive' } },
-        { descriptionEn: { contains: search, mode: 'insensitive' } },
-        { descriptionAr: { contains: search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { titleEn: { contains: search, mode: 'insensitive' } },
+          { titleAr: { contains: search, mode: 'insensitive' } },
+          { descriptionEn: { contains: search, mode: 'insensitive' } },
+          { descriptionAr: { contains: search, mode: 'insensitive' } },
+        ]
+      });
     }
 
     if (categoryId) {
@@ -77,15 +87,17 @@ export class CoursesService {
       });
       if (cat) {
         const ids = [cat.id, ...((cat as any).children?.map((c: any) => c.id) || [])];
-        where.categoryId = { in: ids };
+        andConditions.push({ categoryId: { in: ids } });
       }
     }
 
-    this.logger.log(`[getCourses] type=${type}, where=${JSON.stringify(where)}`)
+    const finalWhere: any = andConditions.length > 0 ? { AND: [{ status: 'PUBLISHED' }, ...andConditions] } : { status: 'PUBLISHED' };
+
+    this.logger.log(`[getCourses] type=${type}, where=${JSON.stringify(finalWhere)}`)
 
     const [courses, total] = await Promise.all([
       this.prisma.course.findMany({
-        where,
+        where: finalWhere,
         select: {
           id: true,
           titleEn: true,
