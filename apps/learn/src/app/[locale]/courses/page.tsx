@@ -13,13 +13,25 @@ import {
   DollarSign, Navigation
 } from 'lucide-react'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+const API_BASE = (() => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL
+  if (envUrl) {
+    const cleaned = envUrl.replace(/\/+$/, '')
+    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
+  }
+  return 'http://localhost:3001/api'
+})()
 
 const TABS = [
   { key: 'recorded', ar: 'كورسات مسجلة', en: 'Recorded Courses', icon: Video, color: '#5120c8' },
   { key: 'live', ar: 'بث مباشر', en: 'Live Sessions', icon: Radio, color: '#dc2626' },
   { key: 'offline', ar: 'مقرات فعلية', en: 'Physical Locations', icon: MapPin, color: '#16a34a' },
 ]
+
+function getTitle(c: any, locale: string) {
+  if (locale === 'ar') return c.titleAr || c.titleEn || c.title || 'Untitled'
+  return c.titleEn || c.titleAr || c.title || 'Untitled'
+}
 
 export default function CoursesPage() {
   const { theme } = useTheme()
@@ -230,7 +242,7 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
         <h3 style={{ color: text, fontSize: 14, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {course.title || course.titleEn || course.titleAr}
+          {getTitle(course, locale)}
         </h3>
 
         {course.instructor?.profile && (
@@ -324,7 +336,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
       })
       const data = await res.json()
       if (data?.clientSecret) {
-        sessionStorage.setItem('pending_enrollment', JSON.stringify({ courseId: course.id, clientSecret: data.clientSecret, amount: price, title: course.title || course.titleEn }))
+        sessionStorage.setItem('pending_enrollment', JSON.stringify({ courseId: course.id, clientSecret: data.clientSecret, amount: price, title: getTitle(course, locale) }))
         router.push(`/${locale}/checkout/${course.id}`)
       } else if (data?.success) {
         router.push(`/${locale}/live/${course.id}`)
@@ -381,7 +393,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
         {/* Info */}
         <div style={{ flex: 1, minWidth: 200 }}>
           <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: '0 0 4px' }}>
-            {course.title || course.titleEn || course.titleAr}
+            {getTitle(course, locale)}
           </h3>
           {course.instructor?.profile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
@@ -485,7 +497,7 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-          {course.title || course.titleEn || course.titleAr}
+          {getTitle(course, locale)}
         </h3>
 
         {/* Location */}

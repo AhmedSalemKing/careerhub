@@ -2,7 +2,10 @@ import axios from 'axios'
 
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL
-  if (envUrl) return `${envUrl}/api`
+  if (envUrl) {
+    const cleaned = envUrl.replace(/\/+$/, '')
+    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
+  }
   if (typeof window !== 'undefined') return '/api'
   return 'http://localhost:3001/api'
 }
