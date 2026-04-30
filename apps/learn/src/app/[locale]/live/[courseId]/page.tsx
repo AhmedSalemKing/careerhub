@@ -85,7 +85,7 @@ export default function LiveViewerPage() {
         client.on('user-joined', () => setViewerCount(v => v + 1))
         client.on('user-left', () => setViewerCount(v => Math.max(0, v - 1)))
 
-        client.on('user-published', async (user: any, mediaType: string) => {
+        client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
           await client.subscribe(user, mediaType)
           if (mediaType === 'video' && videoContainerRef.current) {
             user.videoTrack?.play(videoContainerRef.current)

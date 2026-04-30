@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -49,7 +49,11 @@ export default function GoLivePage() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [activeTab, setActiveTab] = useState<'questions'|'comments'>('questions')
 
+  const [pipPos, setPipPos] = useState({ x: 16, y: 16 })
+
   const localVideoRef = useRef<HTMLDivElement>(null)
+  const pipVideoRef = useRef<HTMLDivElement>(null)
+  const pipDragRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const screenTrackRef = useRef<any>(null)
@@ -79,32 +83,6 @@ export default function GoLivePage() {
   useEffect(() => {
     if (viewerCount > peakViewers) setPeakViewers(viewerCount)
   }, [viewerCount])
-
-  useEffect(() => {
-    if (!liveStarted) return
-    const names = ['Ahmed', 'Sara', 'Mohamed', 'Fatima', 'Omar', 'Layla']
-    const questionTexts = [
-      isAr ? 'كيف أطبق هذا في مشروع حقيقي؟' : 'How can I apply this in a real project?',
-      isAr ? 'هل يمكن شرح الجزء الأخير مرة أخرى؟' : 'Can you explain the last part again?',
-      isAr ? 'ما هي أفضل الأدوات لهذا؟' : 'What are the best tools for this?',
-      isAr ? 'هل هناك مصادر إضافية للتعلم؟' : 'Are there additional learning resources?',
-    ]
-    const interval = setInterval(() => {
-      if (Math.random() > 0.7) {
-        const newQ: Question = {
-          id: Date.now().toString(),
-          userId: Math.random().toString(),
-          userName: names[Math.floor(Math.random() * names.length)],
-          text: questionTexts[Math.floor(Math.random() * questionTexts.length)],
-          timestamp: new Date(),
-          approved: false,
-          answered: false,
-        }
-        setQuestions(prev => [newQ, ...prev].slice(0, 50))
-      }
-    }, 8000)
-    return () => clearInterval(interval)
-  }, [liveStarted])
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600)
@@ -136,7 +114,10 @@ export default function GoLivePage() {
 
       const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
       localTracksRef.current = [micTrack, camTrack]
+
       if (localVideoRef.current) camTrack.play(localVideoRef.current)
+
+      // micTrack is published but NOT played locally to prevent echo
       await client.publish([micTrack, camTrack])
 
       setLiveStarted(true)
@@ -162,28 +143,43 @@ export default function GoLivePage() {
     if (!clientRef.current) return
     try {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
+
       if (screenSharing) {
+        // Stop screen share — restore camera to main area
         if (screenTrackRef.current) {
-          await clientRef.current.unpublish(screenTrackRef.current)
           screenTrackRef.current.stop()
           screenTrackRef.current.close()
           screenTrackRef.current = null
-          const camTrack = localTracksRef.current[1]
-          if (camTrack && localVideoRef.current) camTrack.play(localVideoRef.current)
-          await clientRef.current.publish(camTrack)
         }
+        const camTrack = localTracksRef.current[1]
+        if (localVideoRef.current && camTrack) {
+          camTrack.play(localVideoRef.current)
+        }
+        await clientRef.current.unpublish([])
+        if (camTrack) await clientRef.current.publish(camTrack)
         setScreenSharing(false)
         alert(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
+        // Start screen share
         const screenTrack = await AgoraRTC.createScreenVideoTrack({
           encoderConfig: '1080p_1',
           optimizationMode: 'detail',
         }, 'disable')
-        screenTrackRef.current = screenTrack
+
+        const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack
+        screenTrackRef.current = track
+
         const camTrack = localTracksRef.current[1]
-        if (camTrack) await clientRef.current.unpublish(camTrack)
-        await clientRef.current.publish(screenTrack)
-        if (localVideoRef.current) (Array.isArray(screenTrack) ? screenTrack[0] : screenTrack).play(localVideoRef.current)
+        camTrack.stop()
+
+        if (localVideoRef.current) track.play(localVideoRef.current)
+
+        if (pipVideoRef.current && camTrack) {
+          camTrack.play(pipVideoRef.current)
+        }
+
+        await clientRef.current.unpublish(camTrack)
+        await clientRef.current.publish(track)
         setScreenSharing(true)
         alert(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
       }
@@ -296,6 +292,48 @@ export default function GoLivePage() {
                 <div style={{ position: 'absolute', top: 12, [isAr?'left':'right']: 12, display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, background: 'rgba(81,32,200,0.85)' }}>
                   <MonitorUp size={12} color="#fff" />
                   <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{isAr ? 'مشاركة شاشة' : 'Screen Share'}</span>
+                </div>
+              )}
+
+              {/* PiP Camera during screen share */}
+              {screenSharing && (
+                <div
+                  ref={pipDragRef}
+                  style={{
+                    position: 'absolute',
+                    bottom: 70,
+                    right: isAr ? 'auto' : 16,
+                    left: isAr ? 16 : 'auto',
+                    width: 160,
+                    height: 90,
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    cursor: 'grab',
+                    zIndex: 10,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                    background: '#000',
+                  }}
+                  onMouseDown={(e) => {
+                    const startX = e.clientX - pipPos.x
+                    const startY = e.clientY - pipPos.y
+                    const handleMouseMove = (me: MouseEvent) => {
+                      setPipPos({ x: me.clientX - startX, y: me.clientY - startY })
+                    }
+                    const handleMouseUp = () => {
+                      document.removeEventListener('mousemove', handleMouseMove)
+                      document.removeEventListener('mouseup', handleMouseUp)
+                    }
+                    document.addEventListener('mousemove', handleMouseMove)
+                    document.addEventListener('mouseup', handleMouseUp)
+                  }}
+                >
+                  <div ref={pipVideoRef} style={{ width: '100%', height: '100%' }} />
+                  <div style={{ position: 'absolute', bottom: 4, left: 0, right: 0, textAlign: 'center', pointerEvents: 'none' }}>
+                    <span style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 9, padding: '2px 6px', borderRadius: 4 }}>
+                      {isAr ? 'كاميرتك' : 'Your Camera'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
