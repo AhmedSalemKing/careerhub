@@ -4,23 +4,16 @@ import { useLocale } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../../lib/api'
-import { AuthGate } from '../../../../../components/AuthGate'
+import { AuthGate } from '@/app/components/AuthGate'
 import {
   Radio, Users, Copy, Check, Mic, MicOff,
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
-  UserCheck, UserX
+  UserCheck, UserX, Send, Wifi, WifiOff
 } from 'lucide-react'
-
-interface Question {
-  id: string
-  userId: string
-  userName: string
-  text: string
-  timestamp: Date
-  approved: boolean
-  answered: boolean
-}
+import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
+import { confirmToast } from '../../../../../../lib/confirm-toast'
+import toast from 'react-hot-toast'
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -41,19 +34,31 @@ export default function GoLivePage() {
   const [camOn, setCamOn] = useState(true)
   const [screenSharing, setScreenSharing] = useState(false)
   const [copied, setCopied] = useState(false)
-
-  const [viewerCount, setViewerCount] = useState(0)
   const [peakViewers, setPeakViewers] = useState(0)
   const [elapsed, setElapsed] = useState(0)
-
-  const [questions, setQuestions] = useState<Question[]>([])
   const [activeTab, setActiveTab] = useState<'questions'|'comments'>('questions')
-
+  const [newComment, setNewComment] = useState('')
   const [pipPos, setPipPos] = useState({ x: 16, y: 16 })
+
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => { const r = await get('/users/me'); return r.data?.data ?? r.data }
+  })
+  const instructorName = me?.profile?.firstName || (isAr ? 'المحاضر' : 'Instructor')
+
+  const {
+    connected,
+    viewerCount,
+    comments,
+    questions,
+    sendComment,
+    approveQuestion,
+    answerQuestion,
+    dismissQuestion,
+  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor')
 
   const localVideoRef = useRef<HTMLDivElement>(null)
   const pipVideoRef = useRef<HTMLDivElement>(null)
-  const pipDragRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const screenTrackRef = useRef<any>(null)
@@ -107,9 +112,6 @@ export default function GoLivePage() {
       await client.setClientRole('host')
       clientRef.current = client
 
-      client.on('user-joined', () => setViewerCount(v => v + 1))
-      client.on('user-left', () => setViewerCount(v => Math.max(0, v - 1)))
-
       await client.join(data.appId, data.channelName, data.token, 1)
 
       const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
@@ -117,13 +119,12 @@ export default function GoLivePage() {
 
       if (localVideoRef.current) camTrack.play(localVideoRef.current)
 
-      // micTrack is published but NOT played locally to prevent echo
       await client.publish([micTrack, camTrack])
 
       setLiveStarted(true)
-      alert(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
+      toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
-      alert(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
+      toast.error(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
     } finally {
       setStarting(false)
     }
@@ -145,7 +146,6 @@ export default function GoLivePage() {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
 
       if (screenSharing) {
-        // Stop screen share — restore camera to main area
         if (screenTrackRef.current) {
           screenTrackRef.current.stop()
           screenTrackRef.current.close()
@@ -158,9 +158,8 @@ export default function GoLivePage() {
         await clientRef.current.unpublish([])
         if (camTrack) await clientRef.current.publish(camTrack)
         setScreenSharing(false)
-        alert(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
+        toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
-        // Start screen share
         const screenTrack = await AgoraRTC.createScreenVideoTrack({
           encoderConfig: '1080p_1',
           optimizationMode: 'detail',
@@ -181,37 +180,36 @@ export default function GoLivePage() {
         await clientRef.current.unpublish(camTrack)
         await clientRef.current.publish(track)
         setScreenSharing(true)
-        alert(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
+        toast.success(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
       }
     } catch(e: any) {
-      alert(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+      toast.error(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
     }
   }
 
   const handleEndLive = async () => {
-    if (!confirm(isAr ? 'إنهاء البث المباشر؟' : 'End the live stream?')) return
-    setEnding(true)
-    try {
-      localTracksRef.current.forEach(t => { t.stop(); t.close() })
-      if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
-      if (clientRef.current) await clientRef.current.leave()
-      await post(`/live/end/${courseId}`, {})
-      alert(isAr ? 'تم إنهاء البث' : 'Stream ended')
-      router.push(`/${locale}/dashboard/my-courses`)
-    } catch(e: any) {
-      alert(e.message || 'Error')
-    } finally {
-      setEnding(false)
-    }
-  }
-
-  const approveQuestion = (id: string) => {
-    setQuestions(prev => prev.map(q => q.id === id ? { ...q, approved: true } : q))
-    alert(isAr ? 'تمت الموافقة على السؤال' : 'Question approved')
-  }
-
-  const dismissQuestion = (id: string) => {
-    setQuestions(prev => prev.filter(q => q.id !== id))
+    confirmToast({
+      title: isAr ? 'إنهاء البث' : 'End Stream',
+      message: isAr ? 'هل تريد إنهاء البث المباشر؟' : 'Are you sure you want to end the live stream?',
+      confirmLabel: isAr ? 'نعم، إنهاء' : 'Yes, End',
+      cancelLabel: isAr ? 'إلغاء' : 'Cancel',
+      confirmColor: '#dc2626',
+      onConfirm: async () => {
+        setEnding(true)
+        try {
+          localTracksRef.current.forEach(t => { t.stop(); t.close() })
+          if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
+          if (clientRef.current) await clientRef.current.leave()
+          await post(`/live/end/${courseId}`, {})
+          toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
+          router.push(`/${locale}/dashboard/my-courses`)
+        } catch(e: any) {
+          toast.error(e.message || 'Error')
+        } finally {
+          setEnding(false)
+        }
+      },
+    })
   }
 
   const pendingQuestions = questions.filter(q => !q.approved && !q.answered)
@@ -257,9 +255,20 @@ export default function GoLivePage() {
             </div>
           )}
 
-          <button onClick={() => router.push(`/${locale}/dashboard/my-courses`)} style={{ marginRight: isAr ? 'auto' : 0, marginLeft: isAr ? 0 : 'auto', width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
-            <X size={14} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: isAr ? 'auto' : 0, marginLeft: isAr ? 0 : 'auto' }}>
+            {connected ? (
+              <span style={{ color:'#16a34a', fontSize: 10, display:'flex', alignItems:'center', gap: 3 }}>
+                <Wifi size={11} />{isAr ? 'متصل' : 'Connected'}
+              </span>
+            ) : liveStarted ? (
+              <span style={{ color:'#f59e0b', fontSize: 10, display:'flex', alignItems:'center', gap: 3 }}>
+                <WifiOff size={11} />{isAr ? 'غير متصل' : 'Disconnected'}
+              </span>
+            ) : null}
+            <button onClick={() => router.push(`/${locale}/dashboard/my-courses`)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
+              <X size={14} />
+            </button>
+          </div>
         </div>
 
         {/* MAIN LAYOUT */}
@@ -295,10 +304,8 @@ export default function GoLivePage() {
                 </div>
               )}
 
-              {/* PiP Camera during screen share */}
               {screenSharing && (
                 <div
-                  ref={pipDragRef}
                   style={{
                     position: 'absolute',
                     bottom: 70,
@@ -385,7 +392,7 @@ export default function GoLivePage() {
                 <div style={{ color: subtext, fontSize: 10, fontWeight: 700, marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAr?'رابط الجلسة للمشاركة':'Share Link'}</div>
                 <div style={{ color: text, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{liveLink}</div>
               </div>
-              <button onClick={() => { navigator.clipboard.writeText(liveLink); setCopied(true); setTimeout(()=>setCopied(false),2000); alert(isAr?'تم نسخ الرابط':'Link copied!') }} style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: copied?'#16a34a':subtext, flexShrink: 0 }}>
+              <button onClick={() => { navigator.clipboard.writeText(liveLink); setCopied(true); setTimeout(()=>setCopied(false),2000); toast.success(isAr?'تم نسخ الرابط':'Link copied!') }} style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: copied?'#16a34a':subtext, flexShrink: 0 }}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </button>
             </div>
@@ -398,14 +405,14 @@ export default function GoLivePage() {
             <div style={{ display: 'flex', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
               {[
                 { key: 'questions', ar:'الأسئلة', en:'Questions', icon: Hand, badge: pendingQuestions.length },
-                { key: 'comments', ar:'التعليقات', en:'Comments', icon: MessageSquare, badge: 0 },
+                { key: 'comments', ar:'التعليقات', en:'Comments', icon: MessageSquare, badge: comments.length },
               ].map(tab => {
                 const active = activeTab === tab.key
                 return (
                   <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: active ? '#f1f5f9' : subtext, borderBottom: `2px solid ${active ? '#dc2626' : 'transparent'}`, fontSize: 12, fontWeight: 700, transition: 'all 0.15s' }}>
                     <tab.icon size={13} />
                     {isAr ? tab.ar : tab.en}
-                    {tab.badge > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 800 }}>{tab.badge}</span>}
+                    {tab.badge > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: tab.key === 'questions' ? '#d97706' : '#5120c8', color: '#fff', fontSize: 9, fontWeight: 800 }}>{tab.badge}</span>}
                   </button>
                 )
               })}
@@ -435,7 +442,7 @@ export default function GoLivePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                               <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800, flexShrink: 0 }}>{q.userName[0]}</div>
                               <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
-                              <span style={{ color: subtext, fontSize: 10, marginRight: isAr?0:'auto', marginLeft: isAr?'auto':0 }}>{q.timestamp.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                              <span style={{ color: subtext, fontSize: 10, marginRight: isAr?0:'auto', marginLeft: isAr?'auto':0 }}>{new Date(q.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
                             </div>
                             <p style={{ color: text, fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>{q.text}</p>
                             <div style={{ display: 'flex', gap: 6 }}>
@@ -463,7 +470,7 @@ export default function GoLivePage() {
                               <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
                             </div>
                             <p style={{ color: text, fontSize: 12, margin: 0, lineHeight: 1.5 }}>{q.text}</p>
-                            <button onClick={() => setQuestions(prev => prev.map(x => x.id === q.id ? { ...x, answered: true } : x))} style={{ marginTop: 8, width: '100%', padding: '5px', borderRadius: 7, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                            <button onClick={() => answerQuestion(q.id)} style={{ marginTop: 8, width: '100%', padding: '5px', borderRadius: 7, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
                               {isAr?'تم الإجابة':'Mark Answered'}
                             </button>
                           </div>
@@ -479,9 +486,33 @@ export default function GoLivePage() {
             {activeTab === 'comments' && (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-                    <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
-                    <p style={{ color: subtext, fontSize: 12 }}>{isAr?'ستظهر التعليقات هنا':'Comments will appear here'}</p>
+                  {comments.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                      <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
+                      <p style={{ color: subtext, fontSize: 12 }}>{isAr?'ستظهر التعليقات هنا':'Comments will appear here'}</p>
+                    </div>
+                  ) : comments.map((c, i) => (
+                    <div key={c.id || i} style={{ display: 'flex', gap: 8, animation: 'slideIn 0.2s ease' }}>
+                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                        {c.userName[0]}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
+                        <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ padding:'10px', borderTop:`1px solid ${border}`, flexShrink: 0 }}>
+                  <div style={{ display:'flex', gap:6 }}>
+                    <input value={newComment} onChange={e => setNewComment(e.target.value)}
+                      onKeyDown={e => e.key==='Enter' && newComment.trim() && (sendComment(newComment), setNewComment(''))}
+                      placeholder={isAr?'أضف تعليقاً...':'Add comment...'}
+                      style={{ flex:1, padding:'8px 12px', borderRadius:20, background:'rgba(255,255,255,0.06)', border:`1px solid ${border}`, color:text, fontSize:12, outline:'none' }} />
+                    <button onClick={() => { if(newComment.trim()) { sendComment(newComment); setNewComment('') } }}
+                      style={{ width:32, height:32, borderRadius:'50%', background: newComment.trim() ? '#5120c8' : 'rgba(255,255,255,0.06)', border:'none', cursor: newComment.trim() ? 'pointer' : 'not-allowed', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', flexShrink: 0 }}>
+                      <Send size={13} />
+                    </button>
                   </div>
                 </div>
               </div>

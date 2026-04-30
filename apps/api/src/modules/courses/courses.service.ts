@@ -1512,8 +1512,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     const enrollment = await this.prisma.enrollment.upsert({
       where: { userId_courseId: { userId, courseId } },
-      create: { userId, courseId, paymentStatus: 'PAID', status: 'ACTIVE' },
-      update: { paymentStatus: 'PAID', status: 'ACTIVE' },
+      create: { userId, courseId, status: 'ACTIVE' },
+      update: { status: 'ACTIVE' },
     })
 
     const course = await this.prisma.course.findUnique({

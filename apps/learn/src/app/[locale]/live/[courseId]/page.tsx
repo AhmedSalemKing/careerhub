@@ -4,16 +4,10 @@ import { useLocale } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Radio, Users, Volume2, VolumeX, Maximize2, Minimize2,
-  LogOut, Hand, MessageSquare, Send, X, Wifi
+  LogOut, Hand, MessageSquare, Send, X, Wifi, WifiOff
 } from 'lucide-react'
-
-interface Comment {
-  id: string
-  userName: string
-  text: string
-  timestamp: Date
-  isOwn?: boolean
-}
+import { useLiveSocket } from '../../../../hooks/useLiveSocket'
+import toast from 'react-hot-toast'
 
 export default function LiveViewerPage() {
   const locale = useLocale()
@@ -31,12 +25,11 @@ export default function LiveViewerPage() {
   const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [showPanel, setShowPanel] = useState(true)
-  const [viewerCount, setViewerCount] = useState(0)
-  const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [hasQuestion, setHasQuestion] = useState(false)
   const [questionText, setQuestionText] = useState('')
   const [showQuestionInput, setShowQuestionInput] = useState(false)
+  const [userName, setUserName] = useState(isAr ? 'مشاهد' : 'Viewer')
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
@@ -46,6 +39,19 @@ export default function LiveViewerPage() {
     ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
        localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
     : ''
+
+  useEffect(() => {
+    const stored = localStorage.getItem('userName') || localStorage.getItem('user_name') || ''
+    if (stored) setUserName(stored)
+  }, [])
+
+  const {
+    connected,
+    viewerCount: socketViewerCount,
+    comments: socketComments,
+    sendComment,
+    sendQuestion,
+  } = useLiveSocket(joined ? courseId : '', userName, 'viewer')
 
   useEffect(() => {
     const joinStream = async () => {
@@ -82,9 +88,6 @@ export default function LiveViewerPage() {
         client.setClientRole('audience')
         clientRef.current = client
 
-        client.on('user-joined', () => setViewerCount(v => v + 1))
-        client.on('user-left', () => setViewerCount(v => Math.max(0, v - 1)))
-
         client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
           await client.subscribe(user, mediaType)
           if (mediaType === 'video' && videoContainerRef.current) {
@@ -112,14 +115,6 @@ export default function LiveViewerPage() {
             body: JSON.stringify({ delta: 1 })
           }).catch(() => {})
         }
-
-        setTimeout(() => {
-          setComments([
-            { id: '1', userName: isAr ? 'أحمد' : 'Ahmed K.', text: isAr ? 'البث ممتاز!' : 'Great stream!', timestamp: new Date() },
-            { id: '2', userName: isAr ? 'سارة' : 'Sara M.', text: isAr ? 'شكراً على الشرح' : 'Thanks for the explanation', timestamp: new Date() },
-          ])
-        }, 2000)
-
       } catch(e: any) {
         console.error('Agora join error:', e)
         setError(e.message || (isAr ? 'فشل الاتصال بالبث المباشر' : 'Failed to join live stream'))
@@ -143,18 +138,11 @@ export default function LiveViewerPage() {
 
   useEffect(() => {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [comments])
+  }, [socketComments])
 
   const handleSendComment = () => {
     if (!newComment.trim()) return
-    const comment: Comment = {
-      id: Date.now().toString(),
-      userName: isAr ? 'أنت' : 'You',
-      text: newComment,
-      timestamp: new Date(),
-      isOwn: true,
-    }
-    setComments(prev => [...prev, comment])
+    sendComment(newComment)
     setNewComment('')
   }
 
@@ -162,7 +150,7 @@ export default function LiveViewerPage() {
     if (hasQuestion) {
       setHasQuestion(false)
       setShowQuestionInput(false)
-      alert(isAr ? 'تم إلغاء طلب السؤال' : 'Question request cancelled')
+      toast.success(isAr ? 'تم إلغاء طلب السؤال' : 'Question request cancelled')
     } else {
       setShowQuestionInput(true)
     }
@@ -170,9 +158,10 @@ export default function LiveViewerPage() {
 
   const handleSubmitQuestion = () => {
     if (!questionText.trim()) return
+    sendQuestion(questionText)
     setHasQuestion(true)
     setShowQuestionInput(false)
-    alert(isAr ? 'تم إرسال سؤالك - في انتظار موافقة المحاضر' : 'Question sent - awaiting instructor approval')
+    toast.success(isAr ? 'تم إرسال سؤالك للمحاضر' : 'Question sent to instructor')
     setQuestionText('')
   }
 
@@ -235,15 +224,24 @@ export default function LiveViewerPage() {
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', animation: 'livePulse 1.5s infinite' }} />
           <span style={{ color: '#dc2626', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
         </div>
-        {viewerCount > 0 && (
+        {socketViewerCount > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Users size={12} color="rgba(255,255,255,0.5)" />
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{viewerCount}</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{socketViewerCount}</span>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>
-          <Wifi size={12} color="#16a34a" />
-          <span style={{ color: '#16a34a', fontSize: 11 }}>{isAr ? 'متصل' : 'Connected'}</span>
+          {connected ? (
+            <>
+              <Wifi size={12} color="#16a34a" />
+              <span style={{ color: '#16a34a', fontSize: 11 }}>{isAr ? 'متصل' : 'Connected'}</span>
+            </>
+          ) : (
+            <>
+              <WifiOff size={12} color="#f59e0b" />
+              <span style={{ color: '#f59e0b', fontSize: 11 }}>{isAr ? 'جاري الاتصال...' : 'Connecting...'}</span>
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => setShowPanel(p => !p)} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -324,22 +322,23 @@ export default function LiveViewerPage() {
               <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '11px', background: 'none', border: 'none', cursor: 'pointer', color: '#f1f5f9', borderBottom: '2px solid #dc2626', fontSize: 12, fontWeight: 700 }}>
                 <MessageSquare size={13} />
                 {isAr ? 'التعليقات' : 'Comments'}
+                {socketComments.length > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#5120c8', color: '#fff', fontSize: 9, fontWeight: 800 }}>{socketComments.length}</span>}
               </button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {comments.length === 0 ? (
+              {socketComments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 16px' }}>
                   <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{isAr?'ستظهر التعليقات هنا':'Comments will appear here'}</p>
                 </div>
-              ) : comments.map(c => (
+              ) : socketComments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 8, animation: 'slideUp 0.2s ease' }}>
-                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: c.isOwn ? '#dc2626' : '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
                     {c.userName[0]}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <span style={{ color: c.isOwn ? '#dc2626' : '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
+                    <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
                     <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>
                   </div>
                 </div>
