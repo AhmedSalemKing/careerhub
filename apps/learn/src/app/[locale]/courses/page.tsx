@@ -310,7 +310,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
     // Check if already enrolled
     setJoining(true)
     try {
-      const enrollRes = await fetch(`https://deve-way.onrender.com/api/courses/${course.id}`, {
+      const enrollRes = await fetch(`${API}/courses/${course.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       }).then(r => r.json()).catch(() => null)
 
@@ -332,14 +332,14 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
 
       if (!isEnrolled && price === 0) {
         // FREE - enroll first
-        await fetch(`https://deve-way.onrender.com/api/courses/${course.id}/enroll`, {
+        await fetch(`${API}/courses/${course.id}/enroll`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
         }).catch(e => {})
       }
 
-      // Enrolled - get Agora token and join
-      const tokenRes = await fetch(`https://deve-way.onrender.com/api/live/token/${course.id}`, {
+      // Enrolled - get AGORA token and join
+      const tokenRes = await fetch(`${API}/live/token/${course.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const tokenData = await tokenRes.json()
@@ -353,7 +353,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
       } else if (course.liveStatus === 'scheduled') {
         alert(isAr ? 'تم التسجيل! سيتم إشعارك عند بدء البث' : 'Enrolled! You will be notified when live starts')
       } else {
-        alert(isAr ? 'البث غير متاح حاليا' : 'Stream not available')
+        alert(isAr ? 'البث غير متاح حالياً' : 'Stream not available')
       }
     } catch (e: any) {
       alert(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
