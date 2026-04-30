@@ -8,7 +8,8 @@ import {
   ArrowRight, ArrowLeft, GraduationCap, BarChart3, Star, Loader2,
   Sparkles, PlayCircle, Video, FileText, Award, Target, TrendingUp,
   CircleCheck, Shield, CreditCard, ShoppingCart, Tag, User,
-  Gift, ChevronLeft, BadgeCheck, AlertCircle, Smartphone, Image, File, Download
+  Gift, ChevronLeft, BadgeCheck, AlertCircle, Smartphone, Image, File, Download,
+  Radio, MapPin, Calendar, MapPinned
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -27,7 +28,6 @@ export default function CourseDetailPage({
   const [isEnrolled, setIsEnrolled] = useState(false)
   const [enrolling, setEnrolling] = useState(false)
 
-  // Theme detection
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
 
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function CourseDetailPage({
     return () => { window.removeEventListener('storage', handleStorageChange); clearInterval(interval) }
   }, [theme])
 
-  // Check if user is logged in
   const [hasUser, setHasUser] = useState(false)
   useEffect(() => {
     const token = localStorage.getItem('deveway_token')
@@ -57,7 +56,6 @@ export default function CourseDetailPage({
     setHasUser(!!token)
   }, [])
 
-  // Course data
   const { data: course, isLoading } = useQuery({
     queryKey: ['course', courseId],
     queryFn: async () => {
@@ -67,24 +65,20 @@ export default function CourseDetailPage({
     enabled: !!courseId,
   })
 
-  // Enrollment check
   const { data: enrollmentData, isLoading: enrollmentLoading, refetch: refetchEnrollment } = useQuery({
     queryKey: ['enrollment', courseId],
     queryFn: async () => {
       try {
         const res = await get(`/courses/${courseId}/enrollment`)
         const d = (res?.data as any)?.data ?? res?.data
-        console.log('[Enrollment] raw response:', res?.data, '→ parsed:', d)
         return d
       } catch (err) {
-        console.log('[Enrollment] error:', err)
         return null
       }
     },
     enabled: !!hasUser && !!courseId,
   })
 
-  // Update enrollment status
   useEffect(() => {
     if (enrollmentData !== undefined && enrollmentData !== null) {
       const enrolled = !!(
@@ -96,52 +90,62 @@ export default function CourseDetailPage({
         enrollmentData?.status === 'ACTIVE' ||
         enrollmentData?.status === 'active'
       )
-      console.log('[Enrollment] enrollmentData:', enrollmentData, '→ isEnrolled:', enrolled)
       setIsEnrolled(enrolled)
     }
   }, [enrollmentData])
 
-  const isFree = !course?.price || course?.price === 0
+  const courseType = course?.type || 'recorded'
+  const isLive = courseType === 'live'
+  const isOffline = courseType === 'offline'
+  const isRecorded = courseType === 'recorded' || (!isLive && !isOffline)
 
-  // Free enrollment handler
-  const handleFreeEnroll = async () => {
+  const price = parseFloat(course?.price || 0)
+  const isFree = price === 0
+
+  const handleEnroll = async () => {
     if (!hasUser) {
       const MAIN = process.env.NEXT_PUBLIC_MAIN_URL || ''
-      window.location.href = `${MAIN}/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`
+      router.push(`/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`)
       return
     }
-    setEnrolling(true)
-    try {
-      await post(`/courses/${courseId}/enroll`, {})
-      setIsEnrolled(true)
-      refetchEnrollment()
-    } catch {
-      // silently handle
-    } finally {
-      setEnrolling(false)
-    }
-  }
 
-  // Navigation function to learn page
-  const navigateToLearn = (lessonId?: string) => {
-    if (isEnrolled || isFree) {
-      const learnPath = `/${locale}/learn/${courseId}${lessonId ? `?lesson=${lessonId}` : ''}`
-      console.log('[Navigation] Going to:', learnPath)
-      
-      router.push(learnPath)
-      
-      setTimeout(() => {
-        if (window.location.pathname !== learnPath.split('?')[0]) {
-          window.location.href = learnPath
+    if (isFree) {
+      setEnrolling(true)
+      try {
+        await post(`/courses/${courseId}/enroll`, {})
+        setIsEnrolled(true)
+        refetchEnrollment()
+        if (isLive) {
+          router.push(`/${locale}/live/${courseId}`)
+        } else {
+          router.refresh()
         }
-      }, 300)
+      } catch(e) {
+        console.error('Enrollment error:', e)
+      } finally {
+        setEnrolling(false)
+      }
     } else {
-      const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
-      window.location.href = `${MAIN_URL}/${locale}/checkout/${courseId}`
+      const params = new URLSearchParams({
+        courseId: course.id,
+        amount: String(price),
+        title: course.titleAr || course.titleEn || '',
+        type: courseType,
+        returnUrl: `/${locale}/courses/${courseId}`,
+      })
+      router.push(`/${locale}/payment/enroll?${params}`)
     }
   }
 
-  // ✅ Helper function to determine lesson content type
+  const navigateToLearn = (lessonId?: string) => {
+    if (isEnrolled) {
+      const learnPath = `/${locale}/learn/${courseId}${lessonId ? `?lesson=${lessonId}` : ''}`
+      router.push(learnPath)
+    } else {
+      handleEnroll()
+    }
+  }
+
   const getLessonContentType = (lesson: any) => {
     if (lesson.videoUrl) return 'video'
     if (lesson.fileUrl) return 'file'
@@ -149,7 +153,6 @@ export default function CourseDetailPage({
     return 'none'
   }
 
-  // ✅ Helper function to get appropriate icon for lesson
   const getLessonIcon = (lesson: any) => {
     if (lesson.videoUrl) return Video
     if (lesson.fileUrl) return FileText
@@ -159,7 +162,6 @@ export default function CourseDetailPage({
 
   const isDark = theme === 'dark'
 
-  // Colors
   const bg = isDark ? 'rgb(0 0 0)' : '#ffffff'
   const cardBg = isDark ? 'rgb(25 27 32)' : '#f8f8fa'
   const textPrimary = isDark ? '#ffffff' : '#0d0d0d'
@@ -193,6 +195,14 @@ export default function CourseDetailPage({
   const totalLessons = sections.reduce((acc: number, s: any) => acc + (s.lessons?.length || 0), 0)
   const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
 
+  const typeBadge = isLive
+    ? { text: isAr ? 'بث مباشر' : 'Live', color: '#dc2626', bg: 'rgba(220,38,38,0.1)', border: 'rgba(220,38,38,0.3)', icon: Radio }
+    : isOffline
+      ? { text: isAr ? 'مقر فعلي' : 'Physical', color: '#16a34a', bg: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.3)', icon: MapPin }
+      : { text: isAr ? 'مسجل' : 'Recorded', color: purple, bg: `${purple}18`, border: `${purple}30`, icon: Video }
+
+  const TypeIcon = typeBadge.icon
+
   return (
     <div className="min-h-screen" style={{ background: bg }}>
 
@@ -201,17 +211,25 @@ export default function CourseDetailPage({
         <div className="max-w-6xl mx-auto px-6 py-10">
           <div className="grid gap-8 lg:grid-cols-5">
 
-            {/* Info - 3 cols */}
             <div className="lg:col-span-3 flex flex-col justify-center">
-              {course.category && (
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {course.category && (
+                  <span
+                    className="text-xs font-semibold inline-block w-fit rounded-full px-3 py-1"
+                    style={{ background: `${purple}18`, color: purple }}
+                  >
+                    <Tag className="inline h-3 w-3 ml-1" />
+                    {course.category.nameAr || course.category.nameEn}
+                  </span>
+                )}
                 <span
-                  className="text-xs font-semibold mb-3 inline-block w-fit rounded-full px-3 py-1"
-                  style={{ background: `${purple}18`, color: purple }}
+                  className="text-xs font-semibold inline-block w-fit rounded-full px-3 py-1"
+                  style={{ background: typeBadge.bg, color: typeBadge.color, border: `1px solid ${typeBadge.border}` }}
                 >
-                  <Tag className="inline h-3 w-3 ml-1" />
-                  {course.category.nameAr || course.category.nameEn}
+                  <TypeIcon className="inline h-3 w-3 ml-1" />
+                  {typeBadge.text}
                 </span>
-              )}
+              </div>
 
               <h1 className="text-3xl lg:text-4xl font-bold font-madinet mb-4 leading-tight" style={{ color: textPrimary }}>
                 {getCourseTitle(course, locale)}
@@ -221,24 +239,27 @@ export default function CourseDetailPage({
                 {course.descriptionAr || course.descriptionEn || course.description}
               </p>
 
-              {/* Stats row */}
               <div className="flex flex-wrap gap-5 text-sm mb-6" style={{ color: textSecondary }}>
                 <span className="flex items-center gap-1.5">
                   <Users className="h-4 w-4" style={{ color: purple }} />
                   {course._count?.enrollments || 0} {t('student')}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="h-4 w-4" style={{ color: purple }} />
-                  {totalLessons} {t('lesson')}
-                </span>
+                {isRecorded && (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <BookOpen className="h-4 w-4" style={{ color: purple }} />
+                      {totalLessons} {t('lesson')}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <BookOpen className="h-4 w-4" style={{ color: purple }} />
+                      {sections.length} {t('section')}
+                    </span>
+                  </>
+                )}
                 <span className="flex items-center gap-1.5">
                   <TrendingUp className="h-4 w-4" style={{ color: purple }} />
                   {course.level === 'BEGINNER' ? t('beginner') :
-                   course.level === 'INTERMEDIATE' ? t('intermediate') : t('advanced')}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <BookOpen className="h-4 w-4" style={{ color: purple }} />
-                  {sections.length} {t('section')}
+                    course.level === 'INTERMEDIATE' ? t('intermediate') : t('advanced')}
                 </span>
                 {course.duration && (
                   <span className="flex items-center gap-1.5">
@@ -248,7 +269,6 @@ export default function CourseDetailPage({
                 )}
               </div>
 
-              {/* Instructor mini */}
               <div className="flex items-center gap-3">
                 <div
                   className="h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm"
@@ -263,7 +283,6 @@ export default function CourseDetailPage({
               </div>
             </div>
 
-            {/* Preview - 2 cols */}
             <div className="lg:col-span-2">
               <div
                 className="rounded-2xl overflow-hidden aspect-video relative group cursor-pointer"
@@ -281,7 +300,7 @@ export default function CourseDetailPage({
                   <>
                     <img src={thumb} className="w-full h-full object-cover" alt={getCourseTitle(course, locale)} />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                      <div 
+                      <div
                         className="h-16 w-16 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
                         style={{ background: `${purple}cc`, boxShadow: `0 8px 32px ${purple}50` }}
                       >
@@ -294,13 +313,19 @@ export default function CourseDetailPage({
                     <Play className="h-16 w-16" style={{ color: `${purple}40` }} />
                   </div>
                 )}
-                
-                <div 
+
+                <div
                   className="absolute bottom-4 left-4 px-4 py-2 rounded-lg text-white text-sm font-bold flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{ background: purple }}
                 >
                   <PlayCircle className="h-4 w-4" />
-                  {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
+                  {isEnrolled
+                    ? (isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now')
+                    : isLive
+                      ? (isAr ? 'انضم للبث المباشر' : 'Join Live Stream')
+                      : isOffline
+                        ? (isAr ? 'احجز مقعدك' : 'Reserve Your Spot')
+                        : (isAr ? 'ابدأ التعلم' : 'Start Learning')}
                 </div>
               </div>
             </div>
@@ -312,16 +337,151 @@ export default function CourseDetailPage({
       <div className="max-w-6xl mx-auto px-6 py-10">
         <div className="grid gap-8 lg:grid-cols-3">
 
-          {/* Main Content - 2 cols */}
           <div className="lg:col-span-2 space-y-10">
 
-            {/* Curriculum - ✅ Enhanced to show all content types */}
-            <section>
-              <h2 className="text-xl font-bold font-madinet mb-5 flex items-center gap-2" style={{ color: textPrimary }}>
-                <BookOpen className="h-5 w-5" style={{ color: purple }} />
-                {t('content')}
-              </h2>
-              {sections.length > 0 ? (
+            {/* Live Info Section */}
+            {isLive && (
+              <section>
+                <h2 className="text-xl font-bold font-madinet mb-5 flex items-center gap-2" style={{ color: textPrimary }}>
+                  <Radio className="h-5 w-5" style={{ color: '#dc2626' }} />
+                  {isAr ? 'معلومات البث المباشر' : 'Live Session Info'}
+                </h2>
+                <div
+                  className="rounded-xl p-6 space-y-4"
+                  style={{ border: `1px solid rgba(220,38,38,0.2)`, background: 'rgba(220,38,38,0.05)' }}
+                >
+                  {course.liveStartTime && (
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5" style={{ color: '#dc2626' }} />
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: textPrimary }}>
+                          {isAr ? 'وقت البدء' : 'Start Time'}
+                        </p>
+                        <p className="text-base" style={{ color: textSecondary }}>
+                          {new Date(course.liveStartTime).toLocaleString(isAr ? 'ar-SA' : 'en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {course.liveEndTime && (
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5" style={{ color: '#dc2626' }} />
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: textPrimary }}>
+                          {isAr ? 'وقت الانتهاء' : 'End Time'}
+                        </p>
+                        <p className="text-base" style={{ color: textSecondary }}>
+                          {new Date(course.liveEndTime).toLocaleString(isAr ? 'ar-SA' : 'en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {course.liveStatus && (
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: course.liveStatus === 'LIVE' ? '#dc2626' : '#94a3b8' }} />
+                      <span className="text-sm font-medium" style={{ color: course.liveStatus === 'LIVE' ? '#dc2626' : textSecondary }}>
+                        {course.liveStatus === 'LIVE'
+                          ? (isAr ? 'مباشر الآن!' : 'Live Now!')
+                          : course.liveStatus === 'SCHEDULED'
+                            ? (isAr ? 'مجدول' : 'Scheduled')
+                            : (isAr ? 'انتهى' : 'Ended')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Offline Info Section */}
+            {isOffline && (
+              <section>
+                <h2 className="text-xl font-bold font-madinet mb-5 flex items-center gap-2" style={{ color: textPrimary }}>
+                  <MapPin className="h-5 w-5" style={{ color: '#16a34a' }} />
+                  {isAr ? 'معلومات المكان' : 'Location Info'}
+                </h2>
+                <div
+                  className="rounded-xl p-6 space-y-4"
+                  style={{ border: `1px solid rgba(22,163,74,0.2)`, background: 'rgba(22,163,74,0.05)' }}
+                >
+                  {course.locationName && (
+                    <div className="flex items-center gap-3">
+                      <MapPinned className="h-5 w-5" style={{ color: '#16a34a' }} />
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: textPrimary }}>
+                          {isAr ? 'اسم المكان' : 'Venue Name'}
+                        </p>
+                        <p className="text-base" style={{ color: textSecondary }}>{course.locationName}</p>
+                      </div>
+                    </div>
+                  )}
+                  {course.locationAddress && (
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5" style={{ color: '#16a34a' }} />
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: textPrimary }}>
+                          {isAr ? 'العنوان' : 'Address'}
+                        </p>
+                        <p className="text-base" style={{ color: textSecondary }}>{course.locationAddress}</p>
+                      </div>
+                    </div>
+                  )}
+                  {course.liveStartTime && (
+                    <div className="flex items-center gap-3">
+                      <Calendar className="h-5 w-5" style={{ color: '#16a34a' }} />
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: textPrimary }}>
+                          {isAr ? 'التاريخ والوقت' : 'Date & Time'}
+                        </p>
+                        <p className="text-base" style={{ color: textSecondary }}>
+                          {new Date(course.liveStartTime).toLocaleString(isAr ? 'ar-SA' : 'en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {course.locationLat && course.locationLng && (
+                    <a
+                      href={`https://www.google.com/maps?q=${course.locationLat},${course.locationLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
+                      style={{ background: '#16a34a', color: '#fff' }}
+                    >
+                      <MapPin className="h-4 w-4" />
+                      {isAr ? 'عرض على الخريطة' : 'View on Map'}
+                    </a>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Curriculum - only for recorded */}
+            {isRecorded && sections.length > 0 && (
+              <section>
+                <h2 className="text-xl font-bold font-madinet mb-5 flex items-center gap-2" style={{ color: textPrimary }}>
+                  <BookOpen className="h-5 w-5" style={{ color: purple }} />
+                  {t('content')}
+                </h2>
                 <div className="space-y-3">
                   {sections.map((section: any, sIdx: number) => (
                     <div
@@ -357,15 +517,14 @@ export default function CourseDetailPage({
                           />
                         </div>
                       </button>
-                      
-                      {/* ✅ Lessons list with enhanced content type display */}
+
                       {openSection === section.id && (
                         <div style={{ borderTop: `1px solid ${borderColor}` }}>
                           {section.lessons?.map((lesson: any, lIdx: number) => {
                             const canAccess = isEnrolled || lesson.isFree || isFree
                             const contentType = getLessonContentType(lesson)
                             const LessonIcon = getLessonIcon(lesson)
-                            
+
                             return (
                               <div
                                 key={lesson.id}
@@ -373,12 +532,12 @@ export default function CourseDetailPage({
                                   if (canAccess) {
                                     navigateToLearn(lesson.id)
                                   } else {
-                                    window.location.href = `${MAIN_URL}/${locale}/checkout/${courseId}`
+                                    handleEnroll()
                                   }
                                 }}
                                 className={`flex items-center justify-between p-3.5 px-4 transition-all ${
-                                  canAccess 
-                                    ? 'hover:bg-purple-5 dark:hover:bg-purple-900/10 cursor-pointer' 
+                                  canAccess
+                                    ? 'hover:bg-purple-5 dark:hover:bg-purple-900/10 cursor-pointer'
                                     : 'cursor-not-allowed opacity-60'
                                 }`}
                                 style={{
@@ -403,12 +562,11 @@ export default function CourseDetailPage({
                                 }}
                               >
                                 <div className="flex items-center gap-3">
-                                  {/* ✅ Dynamic icon based on content type */}
                                   <div
                                     className="h-7 w-7 rounded-full flex items-center justify-center text-xs shrink-0 transition-colors"
                                     style={{
-                                      background: canAccess 
-                                        ? contentType === 'video' 
+                                      background: canAccess
+                                        ? contentType === 'video'
                                           ? `${redColor}15`
                                           : contentType === 'file'
                                             ? `${blueColor}15`
@@ -416,8 +574,8 @@ export default function CourseDetailPage({
                                               ? `${purpleColor}15`
                                               : `${purple}15`
                                         : isDark ? '#1e293b' : '#e5e7eb',
-                                      color: canAccess 
-                                        ? contentType === 'video' 
+                                      color: canAccess
+                                        ? contentType === 'video'
                                           ? redColor
                                           : contentType === 'file'
                                             ? blueColor
@@ -433,13 +591,12 @@ export default function CourseDetailPage({
                                       <Lock className="h-3 w-3" />
                                     )}
                                   </div>
-                                  
+
                                   <div className="flex-1 min-w-0">
                                     <span className="text-sm font-medium block truncate" style={{ color: textPrimary }}>
                                       {lesson.title || lesson.titleAr || lesson.titleEn}
                                     </span>
-                                    
-                                    {/* ✅ Content type badges */}
+
                                     <div className="flex gap-1.5 mt-1">
                                       {lesson.videoUrl && (
                                         <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded" style={{ background: `${redColor}12`, color: redColor }}>
@@ -460,7 +617,7 @@ export default function CourseDetailPage({
                                         </span>
                                       )}
                                     </div>
-                                    
+
                                     {lesson.duration && (
                                       <span className="text-xs mt-0.5 block" style={{ color: textSecondary }}>
                                         <Clock className="inline h-3 w-3 ml-0.5" />
@@ -469,7 +626,7 @@ export default function CourseDetailPage({
                                     )}
                                   </div>
                                 </div>
-                                
+
                                 <div className="flex items-center gap-2 shrink-0">
                                   {lesson.isFree && (
                                     <span className="text-xs rounded-full px-2.5 py-0.5 font-medium flex items-center gap-1"
@@ -491,7 +648,11 @@ export default function CourseDetailPage({
                     </div>
                   ))}
                 </div>
-              ) : (
+              </section>
+            )}
+
+            {isRecorded && sections.length === 0 && (
+              <section>
                 <div
                   className="rounded-xl p-10 text-center"
                   style={{ border: `1px solid ${borderColor}`, background: cardBg }}
@@ -499,10 +660,9 @@ export default function CourseDetailPage({
                   <BookOpen className="mx-auto h-12 w-12 mb-3" style={{ color: `${purple}30` }} />
                   <p style={{ color: textSecondary }}>{t('no_content')}</p>
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
-            {/* Instructor */}
             {course.instructor && (
               <section>
                 <h2 className="text-xl font-bold font-madinet mb-5 flex items-center gap-2" style={{ color: textPrimary }}>
@@ -550,7 +710,6 @@ export default function CourseDetailPage({
                 boxShadow: isDark ? '0 4px 30px rgba(0,0,0,0.3)' : '0 4px 30px rgba(0,0,0,0.06)',
               }}
             >
-              {/* Price */}
               <div className="text-center pb-4" style={{ borderBottom: `1px solid ${borderColor}` }}>
                 {isFree ? (
                   <div>
@@ -572,22 +731,32 @@ export default function CourseDetailPage({
                 )}
               </div>
 
-              {/* Enrollment Button */}
               {isEnrolled ? (
                 <>
                   <button
                     onClick={() => navigateToLearn()}
                     className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, #16a34a, #15803d)',
-                      boxShadow: '0 4px 24px rgba(22,163,74,0.35)',
+                      background: isLive
+                        ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                        : isOffline
+                          ? 'linear-gradient(135deg, #16a34a, #15803d)'
+                          : 'linear-gradient(135deg, #16a34a, #15803d)',
+                      boxShadow: isLive
+                        ? '0 4px 24px rgba(220,38,38,0.35)'
+                        : '0 4px 24px rgba(22,163,74,0.35)',
                     }}
                   >
-                    <PlayCircle size={22} strokeWidth={2.5} />
-                    {isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
+                    {isLive ? (
+                      <><Radio size={22} strokeWidth={2.5} />{isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}</>
+                    ) : isOffline ? (
+                      <><MapPin size={22} strokeWidth={2.5} />{isAr ? 'عرض التفاصيل' : 'View Details'}</>
+                    ) : (
+                      <><PlayCircle size={22} strokeWidth={2.5} />{isAr ? 'ابدأ التعلم الآن' : 'Start Learning Now'}</>
+                    )}
                   </button>
-                  
-                  <div 
+
+                  <div
                     className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
                     style={{ background: greenBg, color: '#16a34a' }}
                   >
@@ -595,14 +764,22 @@ export default function CourseDetailPage({
                     <span>{isAr ? 'تم الاشتراك بنجاح' : 'Enrolled successfully'}</span>
                   </div>
                 </>
-              ) : course?.price === 0 || !course?.price ? (
+              ) : (
                 <button
-                  onClick={handleFreeEnroll}
+                  onClick={handleEnroll}
                   disabled={enrolling}
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                   style={{
-                    background: 'linear-gradient(135deg, #5120c8, #6c3ce0)',
-                    boxShadow: '0 4px 24px rgba(108, 60, 224, 0.35)',
+                    background: isLive
+                      ? 'linear-gradient(135deg, #dc2626, #b91c1c)'
+                      : isOffline
+                        ? 'linear-gradient(135deg, #16a34a, #15803d)'
+                        : 'linear-gradient(135deg, #5120c8, #6c3ce0)',
+                    boxShadow: isLive
+                      ? '0 4px 24px rgba(220,38,38,0.35)'
+                      : isOffline
+                        ? '0 4px 24px rgba(22,163,74,0.35)'
+                        : '0 4px 24px rgba(108, 60, 224, 0.35)',
                   }}
                 >
                   {enrolling ? (
@@ -610,29 +787,19 @@ export default function CourseDetailPage({
                       <Loader2 size={20} className="animate-spin" />
                       {isAr ? 'جاري الاشتراك...' : 'Enrolling...'}
                     </>
+                  ) : isLive ? (
+                    <><Radio size={20} />{isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}</>
+                  ) : isOffline ? (
+                    <><MapPin size={20} />{isAr ? 'احجز مقعدك' : 'Reserve Your Spot'}</>
+                  ) : isFree ? (
+                    <><Gift size={20} />{isAr ? 'اشترك مجاناً' : 'Enroll for Free'}</>
                   ) : (
-                    <>
-                      <Gift size={20} />
-                      {isAr ? 'اشترك مجاناً' : 'Enroll for Free'}
-                    </>
+                    <><ShoppingCart size={20} />{isAr ? 'اشترك الآن' : 'Enroll Now'} – {course?.price} {isAr ? 'ريال' : 'SAR'}</>
                   )}
                 </button>
-              ) : (
-                <a
-                  href={`${process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'}/${locale}/checkout/${courseId}`}
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95 no-underline"
-                  style={{
-                    background: 'linear-gradient(135deg, #5120c8, #6c3ce0)',
-                    boxShadow: '0 4px 24px rgba(108, 60, 224, 0.35)',
-                  }}
-                >
-                  <ShoppingCart size={20} />
-                  {isAr ? 'اشترك الآن' : 'Enroll Now'} – {course?.price} {isAr ? 'ريال' : 'SAR'}
-                </a>
               )}
 
-              {/* Guarantee badge */}
-              <div 
+              <div
                 className="flex items-center justify-center gap-2 py-2 text-xs"
                 style={{ color: textSecondary }}
               >
@@ -640,19 +807,32 @@ export default function CourseDetailPage({
                 <span>{isAr ? 'ضمان استرداد الأموال خلال 30 يوم' : '30-day money-back guarantee'}</span>
               </div>
 
-              {/* Course stats */}
               <div className="space-y-3 pt-4" style={{ borderTop: `1px solid ${borderColor}` }}>
+                {isRecorded && (
+                  <>
+                    {[
+                      { icon: BookOpen, label: t('total_lessons'), value: `${totalLessons} ${t('lesson')}` },
+                      { icon: GraduationCap, label: t('sections_label'), value: `${sections.length} ${t('section')}` },
+                    ].map(({ icon: Icon, label, value }, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm py-1">
+                        <span className="flex items-center gap-2" style={{ color: textSecondary }}>
+                          <Icon className="h-4 w-4" style={{ color: purple }} />
+                          {label}
+                        </span>
+                        <span className="font-medium" style={{ color: textPrimary }}>{value}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
                 {[
-                  { icon: BookOpen, label: t('total_lessons'), value: `${totalLessons} ${t('lesson')}` },
-                  { icon: GraduationCap, label: t('sections_label'), value: `${sections.length} ${t('section')}` },
                   {
                     icon: TrendingUp,
                     label: t('level'),
                     value: course.level === 'BEGINNER' ? t('beginner') :
-                           course.level === 'INTERMEDIATE' ? t('intermediate') : t('advanced'),
+                      course.level === 'INTERMEDIATE' ? t('intermediate') : t('advanced'),
                   },
                   { icon: Users, label: t('subscribers'), value: `${course._count?.enrollments || 0} ${t('student')}` },
-                  { icon: Clock, label: isAr ? 'المدة' : 'Duration', value: course.duration ? `${course.duration} ${isAr ? 'ساعة' : 'hours'}` : (isAr ? 'غير محددة' : 'Not specified') },
+                  ...(course.duration ? [{ icon: Clock, label: isAr ? 'المدة' : 'Duration', value: `${course.duration} ${isAr ? 'ساعة' : 'hours'}` }] : []),
                   { icon: Award, label: isAr ? 'الشهادة' : 'Certificate', value: isAr ? 'شهادة إتمام' : 'Completion Certificate' },
                 ].map(({ icon: Icon, label, value }, i) => (
                   <div key={i} className="flex items-center justify-between text-sm py-1">
@@ -665,13 +845,23 @@ export default function CourseDetailPage({
                 ))}
               </div>
 
-              {/* Features list */}
               <div className="space-y-2 pt-2" style={{ borderTop: `1px solid ${borderColor}` }}>
+                {isRecorded && (
+                  <>
+                    {[
+                      { icon: Video, text: isAr ? 'فيديوهات عالية الجودة' : 'High-quality videos' },
+                      { icon: FileText, text: isAr ? 'موارد قابلة للتحميل' : 'Downloadable resources' },
+                      { icon: Clock, text: isAr ? 'وصول مدى الحياة' : 'Lifetime access' },
+                    ].map(({ icon: Icon, text }, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs" style={{ color: textSecondary }}>
+                        <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: teal }} />
+                        <span>{text}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
                 {[
-                  { icon: Video, text: isAr ? 'فيديوهات عالية الجودة' : 'High-quality videos' },
-                  { icon: FileText, text: isAr ? 'موارد قابلة للتحميل' : 'Downloadable resources' },
                   { icon: Award, text: isAr ? 'شهادة إتمام معتمدة' : 'Verified completion certificate' },
-                  { icon: Clock, text: isAr ? 'وصول مدى الحياة' : 'Lifetime access' },
                   { icon: Smartphone, text: isAr ? 'متوافق مع جميع الأجهزة' : 'Works on all devices' },
                 ].map(({ icon: Icon, text }, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs" style={{ color: textSecondary }}>

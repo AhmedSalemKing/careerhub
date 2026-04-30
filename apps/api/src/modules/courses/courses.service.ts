@@ -1489,6 +1489,46 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     return 'Recommended based on your interests';
   }
+
+  async createCoursePaymentIntent(courseId: string, userId: string, amount: number) {
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } })
+    if (!course) throw new NotFoundException('Course not found')
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: 'sar',
+      metadata: { courseId, userId },
+    })
+
+    return { success: true, clientSecret: paymentIntent.client_secret }
+  }
+
+  async confirmCourseEnrollment(courseId: string, userId: string, paymentIntentId: string) {
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+    if (pi.status !== 'succeeded') throw new BadRequestException('Payment not completed')
+
+    const enrollment = await this.prisma.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId } },
+      create: { userId, courseId, paymentStatus: 'PAID', status: 'ACTIVE' },
+      update: { paymentStatus: 'PAID', status: 'ACTIVE' },
+    })
+
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { instructorId: true, price: true }
+    })
+    if (course?.price && parseFloat(course.price.toString()) > 0) {
+      const instructorShare = parseFloat(course.price.toString()) * 0.8
+      await this.prisma.$executeRawUnsafe(
+        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${instructorShare} WHERE "id" = '${course.instructorId}'`
+      ).catch(() => {})
+    }
+
+    return { success: true, data: enrollment }
+  }
 }
 
 

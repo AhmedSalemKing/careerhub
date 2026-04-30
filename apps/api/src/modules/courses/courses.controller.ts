@@ -12,6 +12,7 @@
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
@@ -576,6 +577,30 @@ async getCourses(
       success: true,
       data: { analytics },
     };
+  }
+
+  @Post(':id/payment-intent')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create payment intent for course enrollment' })
+  async createCoursePaymentIntent(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { amount: number },
+  ) {
+    return this.coursesService.createCoursePaymentIntent(id, req.user.id, body.amount);
+  }
+
+  @Post(':id/confirm-enrollment')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Confirm enrollment after successful payment' })
+  async confirmCourseEnrollment(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: { paymentIntentId: string },
+  ) {
+    return this.coursesService.confirmCourseEnrollment(id, req.user.id, body.paymentIntentId);
   }
 }
 
