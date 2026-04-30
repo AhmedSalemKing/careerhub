@@ -78,7 +78,7 @@ const LoginForm: React.FC = () => {
     try {
       console.log('📤 Sending login request:', { email: formData.email });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ const LoginForm: React.FC = () => {
 
       console.log('📤 Sending logout request');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/logout`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/logout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ const LoginForm: React.FC = () => {
     try {
       console.log('📤 Sending refresh token request');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/refresh`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ const LoginForm: React.FC = () => {
 
       console.log('📤 Sending get current user request');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

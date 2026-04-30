@@ -1,17 +1,23 @@
 import axios from 'axios'
 
-const getBaseURL = () => {
+const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+
+const getBaseURL = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL
-  if (envUrl) {
+  if (envUrl && envUrl.trim()) {
     const cleaned = envUrl.replace(/\/+$/, '')
     return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
   }
-  if (typeof window !== 'undefined') return '/api'
-  return 'http://localhost:3001/api'
+  if (typeof window !== 'undefined') {
+    return PRODUCTION_API_URL
+  }
+  return PRODUCTION_API_URL
 }
 
+const BASE_URL = getBaseURL()
+
 const api = axios.create({
-  baseURL: getBaseURL(),
+  baseURL: BASE_URL,
   withCredentials: true,
   timeout: 30000,
 })
@@ -36,12 +42,10 @@ api.interceptors.response.use(
     const status = error.response?.status
     const originalRequest = error.config as any
     if (status === 401 && originalRequest && !originalRequest._retry) {
-      // /auth/me is a background "try to load user" call — never redirect on failure
       if (originalRequest.url?.includes('/auth/me')) throw error
 
       originalRequest._retry = true
       try {
-        // Read refresh token from localStorage OR cookie (cross-port on localhost)
         const refreshToken = localStorage.getItem('deveway_refresh')
           || document.cookie.match(/deveway_refresh=([^;]+)/)?.[1]
         if (!refreshToken) throw error
@@ -60,7 +64,7 @@ api.interceptors.response.use(
         window.location.href = `/${locale}/login`
       }
     }
-    console.error('[API Error]', error.config?.url, error.response?.status)
+    console.error('[API Error]', error.config?.url, error.response?.status, 'baseURL:', error.config?.baseURL)
     throw error
   }
 )

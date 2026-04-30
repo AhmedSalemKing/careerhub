@@ -189,7 +189,7 @@ function LearnPageInner() {
   const isCourseComplete = allLessonsFlat.length > 0 && allLessonsFlat.every((l: any) => completedLessons.has(l.id))
   
   // ✅ FIXED: Safe URL construction - handles relative and absolute URLs
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_MAIN_URL || 'https://api.deveway.com'
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
   
   const getSafeUrl = (url: string | null | undefined): string => {
     if (!url) return ''

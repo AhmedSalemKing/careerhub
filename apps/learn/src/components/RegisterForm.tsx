@@ -140,7 +140,7 @@ const RegisterForm: React.FC = () => {
     try {
       console.log('📤 Sending registration request:', formData);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/auth/register`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

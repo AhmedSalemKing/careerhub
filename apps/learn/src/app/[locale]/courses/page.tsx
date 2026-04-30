@@ -13,13 +13,13 @@ import {
   DollarSign, Navigation
 } from 'lucide-react'
 
+const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+
 const API_BASE = (() => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL
-  if (envUrl) {
-    const cleaned = envUrl.replace(/\/+$/, '')
-    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
-  }
-  return 'http://localhost:3001/api'
+  const url = (envUrl && envUrl.trim()) ? envUrl : PRODUCTION_API_URL
+  const cleaned = url.replace(/\/+$/, '')
+  return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
 })()
 
 const TABS = [

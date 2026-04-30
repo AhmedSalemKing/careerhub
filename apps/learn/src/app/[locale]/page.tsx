@@ -13,8 +13,16 @@ import { CareerPathsSection } from '../components/CareerPathsSection'
 import { Button } from '../components/ui/button'
 import { get } from '../../lib/api'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
-const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
+const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+const API_BASE = (() => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL
+  const url = (envUrl && envUrl.trim()) ? envUrl : PRODUCTION_API_URL
+  return url.replace(/\/+$/, '')
+})()
+const MAIN_SITE_URL = (() => {
+  const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
+  return (envUrl && envUrl.trim()) ? envUrl : 'https://deveway-teal.vercel.app'
+})()
 
 function thumbUrl(path?: string | null): string | null {
   if (!path) return null

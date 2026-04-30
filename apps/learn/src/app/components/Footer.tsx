@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, ExternalLink } from 'lucide-react'
 
-const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
+const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'
 
 export function Footer() {
   const locale = useLocale()

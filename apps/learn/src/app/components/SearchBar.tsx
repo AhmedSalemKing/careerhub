@@ -19,7 +19,7 @@ export function SearchBar() {
   const containerRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
 
-  const API = process.env.NEXT_PUBLIC_API_URL || ''
+  const API = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
 
   // Close on outside click
   useEffect(() => {

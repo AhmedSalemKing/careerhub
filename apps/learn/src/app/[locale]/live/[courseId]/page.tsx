@@ -24,7 +24,7 @@ export default function LivePage() {
   const clientRef = useRef<any>(null)
   const remoteVideoRef = useRef<HTMLDivElement>(null)
 
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+  const API = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
 
   useEffect(() => {
     let cleanup: (() => void) | undefined
