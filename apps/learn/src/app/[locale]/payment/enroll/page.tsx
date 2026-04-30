@@ -34,29 +34,43 @@ function PaymentForm({ courseId, amount, title, courseType, returnUrl }: any) {
   const TypeIcon = typeConfig.icon
 
   const handleProceed = async () => {
+    if (!token) {
+      router.push(`/${locale}/auth/login`)
+      return
+    }
     setLoading(true)
+    setError('')
+
     try {
+      console.log('[Payment] Creating intent for course:', courseId, 'amount:', amount)
+
       const res = await fetch(`${API}/courses/${courseId}/payment-intent`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount })
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ amount: parseFloat(amount.toString()) })
       })
-      const data = await res.json()
 
-      if (data?.clientSecret) {
-        setClientSecret(data.clientSecret)
+      console.log('[Payment] Response status:', res.status)
+      const data = await res.json()
+      console.log('[Payment] Response data:', data)
+
+      if (!res.ok) {
+        throw new Error(data.message || `Server error: ${res.status}`)
+      }
+
+      if (data?.data?.clientSecret || data?.clientSecret) {
+        const secret = data?.data?.clientSecret || data?.clientSecret
+        setClientSecret(secret)
         setStep('pay')
-      } else if (data?.free || amount === 0) {
-        await fetch(`${API}/courses/${courseId}/enroll`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setStep('success')
       } else {
-        setError(data?.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
+        throw new Error('No client secret returned from server')
       }
     } catch(e: any) {
-      setError(e.message)
+      console.error('[Payment] Error:', e)
+      setError(e.message || (isAr ? 'فشل إنشاء جلسة الدفع. تحقق من الاتصال.' : 'Failed to create payment session. Check connection.'))
     } finally {
       setLoading(false)
     }

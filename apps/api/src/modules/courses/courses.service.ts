@@ -1491,18 +1491,35 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
   }
 
   async createCoursePaymentIntent(courseId: string, userId: string, amount: number) {
-    const course = await this.prisma.course.findUnique({ where: { id: courseId } })
-    if (!course) throw new NotFoundException('Course not found')
+    try {
+      const course = await this.prisma.course.findUnique({ where: { id: courseId } })
+      if (!course) throw new NotFoundException('Course not found')
 
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100),
-      currency: 'sar',
-      metadata: { courseId, userId },
-    })
+      const finalAmount = amount || parseFloat(course.price?.toString() || '0')
+      if (finalAmount <= 0) {
+        return { success: true, free: true }
+      }
 
-    return { success: true, clientSecret: paymentIntent.client_secret }
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(finalAmount * 100), // SAR in halalas
+        currency: 'sar',
+        metadata: { courseId, userId, courseTitle: course.titleEn || course.titleAr || '' },
+        description: `Course enrollment: ${course.titleEn || course.titleAr}`,
+      })
+
+      return {
+        success: true,
+        data: {
+          clientSecret: paymentIntent.client_secret,
+          amount: finalAmount,
+        }
+      }
+    } catch(e: any) {
+      this.logger.error('[createCoursePaymentIntent]', e.message)
+      throw new Error(e.message)
+    }
   }
 
   async confirmCourseEnrollment(courseId: string, userId: string, paymentIntentId: string) {

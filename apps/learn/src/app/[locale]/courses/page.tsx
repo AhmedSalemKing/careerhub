@@ -301,31 +301,45 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
 
   const handleJoinLive = async () => {
     if (!token) {
-      router.push(`/${locale}/login`)
+      router.push(`/${locale}/auth/login`)
       return
     }
 
+    const price = parseFloat(course.price || '0')
+
+    // Check if already enrolled
     setJoining(true)
     try {
-      if (!isPaid && price > 0) {
-        const enrollRes = await fetch(`${API}/courses/${course.id}/enroll`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      const enrollRes = await fetch(`https://deve-way.onrender.com/api/courses/${course.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(r => r.json()).catch(() => null)
+
+      const isEnrolled = enrollRes?.data?.isEnrolled || enrollRes?.isEnrolled || false
+
+      if (!isEnrolled && price > 0) {
+        // PAID and NOT enrolled - go to payment page
+        setJoining(false)
+        const params = new URLSearchParams({
+          courseId: course.id,
+          amount: String(price),
+          title: course.titleAr || course.titleEn || '',
+          type: 'live',
+          returnUrl: `/${locale}/courses`,
         })
-        if (!enrollRes.ok) {
-          const err = await enrollRes.json()
-          alert(err.message || (isAr ? 'فشل التسجيل' : 'Enrollment failed'))
-          return
-        }
-        const enrollData = await enrollRes.json()
-        if (enrollData?.clientSecret) {
-          sessionStorage.setItem('pending_enrollment', JSON.stringify({ courseId: course.id, clientSecret: enrollData.clientSecret, amount: price, title: getTitle(course, locale) }))
-          router.push(`/${locale}/checkout/${course.id}`)
-          return
-        }
+        router.push(`/${locale}/payment/enroll?${params}`)
+        return
       }
 
-      const tokenRes = await fetch(`${API}/live/token/${course.id}`, {
+      if (!isEnrolled && price === 0) {
+        // FREE - enroll first
+        await fetch(`https://deve-way.onrender.com/api/courses/${course.id}/enroll`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        }).catch(e => {})
+      }
+
+      // Enrolled - get Agora token and join
+      const tokenRes = await fetch(`https://deve-way.onrender.com/api/live/token/${course.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       const tokenData = await tokenRes.json()
@@ -335,13 +349,14 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
         sessionStorage.setItem('agora_channel', tokenData.data.channelName)
         sessionStorage.setItem('agora_uid', String(tokenData.data.uid))
         sessionStorage.setItem('agora_appid', tokenData.data.appId)
-        sessionStorage.setItem('agora_role', tokenData.data.role)
         router.push(`/${locale}/live/${course.id}`)
-      } else {
+      } else if (course.liveStatus === 'scheduled') {
         alert(isAr ? 'تم التسجيل! سيتم إشعارك عند بدء البث' : 'Enrolled! You will be notified when live starts')
+      } else {
+        alert(isAr ? 'البث غير متاح حاليا' : 'Stream not available')
       }
     } catch (e: any) {
-      alert(e.message || (isAr ? 'حدث خطأ' : 'Error'))
+      alert(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
     } finally {
       setJoining(false)
     }
