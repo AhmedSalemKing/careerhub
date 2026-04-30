@@ -1356,6 +1356,23 @@ input[type="button"] {
 }
 
 /* ══════════════════════════════════════
+   FIX BLUE TEXT ON BUTTONS
+   Force white text on buttons with blue (#3b82f6) text
+   ══════════════════════════════════════ */
+
+/* Fix blue text on buttons - force white */
+button[style*="color: rgb(59, 130, 246)"],
+button[style*="color:#3b82f6"],
+button[style*="color: #3b82f6"] {
+    color: #ffffff !important;
+}
+
+/* Blue buttons always white text */
+button:is([style*="3b82f6"]) {
+    color: #ffffff !important;
+}
+
+/* ══════════════════════════════════════
    END OF FILE
    DeveWay Dashboard Design System v4.0
    ══════════════════════════════════════ */
