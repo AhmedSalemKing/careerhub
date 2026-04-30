@@ -286,7 +286,6 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
 // ========================
 function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, text, subtext, token, API }: any) {
   const [joining, setJoining] = useState(false)
-  const [paying, setPaying] = useState(false)
   const price = parseFloat(course.price || 0)
   const isLive = course.liveStatus === 'live'
   const isScheduled = course.liveStatus === 'scheduled'
@@ -306,45 +305,45 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
       return
     }
 
-    if (isPaid || price === 0) {
-      setJoining(true)
-      try {
-        const res = await fetch(`${API}/live/token/${course.id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (data?.data?.token) {
-          sessionStorage.setItem('agora_token', data.data.token)
-          sessionStorage.setItem('agora_channel', data.data.channelName)
-          sessionStorage.setItem('agora_uid', String(data.data.uid))
-          sessionStorage.setItem('agora_appid', data.data.appId)
-          router.push(`/${locale}/live/${course.id}`)
-        }
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setJoining(false)
-      }
-      return
-    }
-
-    setPaying(true)
+    setJoining(true)
     try {
-      const res = await fetch(`${API}/courses/${course.id}/enroll`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-      })
-      const data = await res.json()
-      if (data?.clientSecret) {
-        sessionStorage.setItem('pending_enrollment', JSON.stringify({ courseId: course.id, clientSecret: data.clientSecret, amount: price, title: getTitle(course, locale) }))
-        router.push(`/${locale}/checkout/${course.id}`)
-      } else if (data?.success) {
-        router.push(`/${locale}/live/${course.id}`)
+      if (!isPaid && price > 0) {
+        const enrollRes = await fetch(`${API}/courses/${course.id}/enroll`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        })
+        if (!enrollRes.ok) {
+          const err = await enrollRes.json()
+          alert(err.message || (isAr ? 'فشل التسجيل' : 'Enrollment failed'))
+          return
+        }
+        const enrollData = await enrollRes.json()
+        if (enrollData?.clientSecret) {
+          sessionStorage.setItem('pending_enrollment', JSON.stringify({ courseId: course.id, clientSecret: enrollData.clientSecret, amount: price, title: getTitle(course, locale) }))
+          router.push(`/${locale}/checkout/${course.id}`)
+          return
+        }
       }
-    } catch (e) {
-      console.error(e)
+
+      const tokenRes = await fetch(`${API}/live/token/${course.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const tokenData = await tokenRes.json()
+
+      if (tokenData?.data?.token) {
+        sessionStorage.setItem('agora_token', tokenData.data.token)
+        sessionStorage.setItem('agora_channel', tokenData.data.channelName)
+        sessionStorage.setItem('agora_uid', String(tokenData.data.uid))
+        sessionStorage.setItem('agora_appid', tokenData.data.appId)
+        sessionStorage.setItem('agora_role', tokenData.data.role)
+        router.push(`/${locale}/live/${course.id}`)
+      } else {
+        alert(isAr ? 'تم التسجيل! سيتم إشعارك عند بدء البث' : 'Enrolled! You will be notified when live starts')
+      }
+    } catch (e: any) {
+      alert(e.message || (isAr ? 'حدث خطأ' : 'Error'))
     } finally {
-      setPaying(false)
+      setJoining(false)
     }
   }
 
@@ -426,15 +425,14 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
             </div>
 
             {isLive && (
-              <button onClick={handleJoinLive} disabled={joining || paying} style={{
+              <button onClick={handleJoinLive} disabled={joining} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '10px 20px', borderRadius: 11,
                 background: isPaid || price === 0 ? '#dc2626' : '#5120c8',
-                color: '#ffffff', border: 'none', cursor: (joining || paying) ? 'wait' : 'pointer',
-                fontSize: 13, fontWeight: 800, opacity: (joining || paying) ? 0.7 : 1,
+                color: '#ffffff', border: 'none', cursor: joining ? 'wait' : 'pointer',
+                fontSize: 13, fontWeight: 800, opacity: joining ? 0.7 : 1,
               }}>
                 {joining ? (isAr ? 'جاري الانضمام...' : 'Joining...') :
-                  paying ? (isAr ? 'جاري الدفع...' : 'Processing...') :
                   isPaid || price === 0
                     ? <><Radio size={14} />{isAr ? 'انضم الآن' : 'Join Live'}</>
                     : <><Lock size={13} />{isAr ? `ادفع ${price} ر.س وانضم` : `Pay ${price} SAR & Join`}</>}

@@ -171,12 +171,12 @@ export default function InstructorCoursesPage() {
                       </span>
                     </div>
 
-                    {/* Live Button */}
+                    {/* Go Live Button */}
                     {course.type === 'live' && course.status === 'PUBLISHED' && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          router.push(`/${locale}/live/${course.id}`)
+                          router.push(`/${locale}/dashboard/courses/${course.id}/go-live`)
                         }}
                         className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors shadow-lg"
                       >
