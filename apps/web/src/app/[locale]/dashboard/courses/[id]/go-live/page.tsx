@@ -1,15 +1,26 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../../lib/api'
 import { AuthGate } from '../../../../../components/AuthGate'
 import {
-  Radio, Users, Clock, Copy, Check, CheckCircle2,
-  Mic, MicOff, Video, VideoOff, X,
-  Play, Square
+  Radio, Users, Copy, Check, Mic, MicOff,
+  Video, VideoOff, X, CheckCircle2, Play, Square,
+  MonitorUp, Hand, MessageSquare, TrendingUp,
+  UserCheck, UserX
 } from 'lucide-react'
+
+interface Question {
+  id: string
+  userId: string
+  userName: string
+  text: string
+  timestamp: Date
+  approved: boolean
+  answered: boolean
+}
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -18,25 +29,31 @@ export default function GoLivePage() {
   const params = useParams()
   const courseId = params.id as string
 
+  const border = 'rgba(255,255,255,0.08)'
+  const cardBg = '#111111'
+  const text = '#f1f5f9'
+  const subtext = '#94a3b8'
+
   const [liveStarted, setLiveStarted] = useState(false)
   const [starting, setStarting] = useState(false)
   const [ending, setEnding] = useState(false)
-  const [agoraData, setAgoraData] = useState<any>(null)
-  const [viewerCount, setViewerCount] = useState(0)
-  const [elapsed, setElapsed] = useState(0)
+  const [micOn, setMicOn] = useState(true)
+  const [camOn, setCamOn] = useState(true)
+  const [screenSharing, setScreenSharing] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [micEnabled, setMicEnabled] = useState(true)
-  const [camEnabled, setCamEnabled] = useState(true)
+
+  const [viewerCount, setViewerCount] = useState(0)
+  const [peakViewers, setPeakViewers] = useState(0)
+  const [elapsed, setElapsed] = useState(0)
+
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [activeTab, setActiveTab] = useState<'questions'|'comments'>('questions')
+
   const localVideoRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
-  const localTrackRef = useRef<any[]>([])
+  const localTracksRef = useRef<any[]>([])
+  const screenTrackRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
-
-  const bg = '#0d0d0d'
-  const cardBg = '#111111'
-  const border = 'rgba(255,255,255,0.08)'
-  const text = '#f1f5f9'
-  const subtext = '#94a3b8'
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -47,6 +64,7 @@ export default function GoLivePage() {
   })
 
   const courseTitle = course?.titleAr || course?.titleEn || course?.title || ''
+  const liveLink = `https://devewayhub.vercel.app/${locale}/live/${courseId}`
 
   useEffect(() => {
     if (liveStarted) {
@@ -58,13 +76,43 @@ export default function GoLivePage() {
     return () => clearInterval(timerRef.current)
   }, [liveStarted])
 
-  const formatTime = (seconds: number) => {
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    const s = seconds % 60
+  useEffect(() => {
+    if (viewerCount > peakViewers) setPeakViewers(viewerCount)
+  }, [viewerCount])
+
+  useEffect(() => {
+    if (!liveStarted) return
+    const names = ['Ahmed', 'Sara', 'Mohamed', 'Fatima', 'Omar', 'Layla']
+    const questionTexts = [
+      isAr ? 'كيف أطبق هذا في مشروع حقيقي؟' : 'How can I apply this in a real project?',
+      isAr ? 'هل يمكن شرح الجزء الأخير مرة أخرى؟' : 'Can you explain the last part again?',
+      isAr ? 'ما هي أفضل الأدوات لهذا؟' : 'What are the best tools for this?',
+      isAr ? 'هل هناك مصادر إضافية للتعلم؟' : 'Are there additional learning resources?',
+    ]
+    const interval = setInterval(() => {
+      if (Math.random() > 0.7) {
+        const newQ: Question = {
+          id: Date.now().toString(),
+          userId: Math.random().toString(),
+          userName: names[Math.floor(Math.random() * names.length)],
+          text: questionTexts[Math.floor(Math.random() * questionTexts.length)],
+          timestamp: new Date(),
+          approved: false,
+          answered: false,
+        }
+        setQuestions(prev => [newQ, ...prev].slice(0, 50))
+      }
+    }, 8000)
+    return () => clearInterval(interval)
+  }, [liveStarted])
+
+  const formatTime = (s: number) => {
+    const h = Math.floor(s / 3600)
+    const m = Math.floor((s % 3600) / 60)
+    const sec = s % 60
     return h > 0
-      ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
-      : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+      ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+      : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
   }
 
   const handleStartLive = async () => {
@@ -72,10 +120,7 @@ export default function GoLivePage() {
     try {
       const res = await post(`/live/start/${courseId}`, {})
       const data = res.data?.data ?? res.data
-
-      if (!data?.token) throw new Error('No token received')
-
-      setAgoraData(data)
+      if (!data?.token) throw new Error('No stream token')
 
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       AgoraRTC.setLogLevel(4)
@@ -90,182 +135,332 @@ export default function GoLivePage() {
       await client.join(data.appId, data.channelName, data.token, 1)
 
       const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
-      localTrackRef.current = [micTrack, camTrack]
-
-      if (localVideoRef.current) {
-        camTrack.play(localVideoRef.current)
-      }
-
+      localTracksRef.current = [micTrack, camTrack]
+      if (localVideoRef.current) camTrack.play(localVideoRef.current)
       await client.publish([micTrack, camTrack])
+
       setLiveStarted(true)
-      alert(isAr ? 'بدأ البث المباشر!' : 'Live stream started!')
+      alert(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
-      console.error(e)
-      alert(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start live'))
+      alert(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
     } finally {
       setStarting(false)
     }
   }
 
+  const toggleMic = async () => {
+    const micTrack = localTracksRef.current[0]
+    if (micTrack) { await micTrack.setEnabled(!micOn); setMicOn(m => !m) }
+  }
+
+  const toggleCam = async () => {
+    const camTrack = localTracksRef.current[1]
+    if (camTrack) { await camTrack.setEnabled(!camOn); setCamOn(c => !c) }
+  }
+
+  const toggleScreenShare = async () => {
+    if (!clientRef.current) return
+    try {
+      const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
+      if (screenSharing) {
+        if (screenTrackRef.current) {
+          await clientRef.current.unpublish(screenTrackRef.current)
+          screenTrackRef.current.stop()
+          screenTrackRef.current.close()
+          screenTrackRef.current = null
+          const camTrack = localTracksRef.current[1]
+          if (camTrack && localVideoRef.current) camTrack.play(localVideoRef.current)
+          await clientRef.current.publish(camTrack)
+        }
+        setScreenSharing(false)
+        alert(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
+      } else {
+        const screenTrack = await AgoraRTC.createScreenVideoTrack({
+          encoderConfig: '1080p_1',
+          optimizationMode: 'detail',
+        }, 'disable')
+        screenTrackRef.current = screenTrack
+        const camTrack = localTracksRef.current[1]
+        if (camTrack) await clientRef.current.unpublish(camTrack)
+        await clientRef.current.publish(screenTrack)
+        if (localVideoRef.current) (Array.isArray(screenTrack) ? screenTrack[0] : screenTrack).play(localVideoRef.current)
+        setScreenSharing(true)
+        alert(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
+      }
+    } catch(e: any) {
+      alert(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+    }
+  }
+
   const handleEndLive = async () => {
-    if (!confirm(isAr ? 'هل تريد إنهاء البث المباشر؟' : 'End the live stream?')) return
+    if (!confirm(isAr ? 'إنهاء البث المباشر؟' : 'End the live stream?')) return
     setEnding(true)
     try {
-      localTrackRef.current.forEach((t: any) => { t.stop(); t.close() })
+      localTracksRef.current.forEach(t => { t.stop(); t.close() })
+      if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
-
       await post(`/live/end/${courseId}`, {})
-      alert(isAr ? 'تم إنهاء البث' : 'Live stream ended')
+      alert(isAr ? 'تم إنهاء البث' : 'Stream ended')
       router.push(`/${locale}/dashboard/my-courses`)
     } catch(e: any) {
-      alert(e.message || (isAr ? 'حدث خطأ' : 'Error'))
+      alert(e.message || 'Error')
     } finally {
       setEnding(false)
     }
   }
 
-  const toggleMic = async () => {
-    const micTrack = localTrackRef.current[0]
-    if (micTrack) {
-      micTrack.setEnabled(!micTrack.enabled)
-      setMicEnabled(micTrack.enabled)
-    }
+  const approveQuestion = (id: string) => {
+    setQuestions(prev => prev.map(q => q.id === id ? { ...q, approved: true } : q))
+    alert(isAr ? 'تمت الموافقة على السؤال' : 'Question approved')
   }
 
-  const toggleCam = async () => {
-    const camTrack = localTrackRef.current[1]
-    if (camTrack) {
-      camTrack.setEnabled(!camTrack.enabled)
-      setCamEnabled(camTrack.enabled)
-    }
+  const dismissQuestion = (id: string) => {
+    setQuestions(prev => prev.filter(q => q.id !== id))
   }
 
-  const liveLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/${locale}/courses`
-    : `/${locale}/courses`
+  const pendingQuestions = questions.filter(q => !q.approved && !q.answered)
+  const approvedQuestions = questions.filter(q => q.approved && !q.answered)
 
   return (
     <AuthGate>
-      <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', direction: isAr ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column' }}>
         <style>{`
-          @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+          @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
           @keyframes spin{to{transform:rotate(360deg)}}
+          @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
         `}</style>
 
-        {/* Header */}
-        <div style={{ padding: '16px 24px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 14, background: '#0a0a0a' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-            {liveStarted && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', display: 'block', animation: 'pulse 2s infinite' }} />}
-            <span style={{ color: liveStarted ? '#dc2626' : subtext, fontSize: 13, fontWeight: 800 }}>
-              {liveStarted ? (isAr ? 'البث جاري الآن' : 'LIVE') : (isAr ? 'استوديو البث' : 'Live Studio')}
+        {/* TOP BAR */}
+        <div style={{ padding: '12px 20px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 14, background: '#0d0d0d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {liveStarted && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#dc2626', animation: 'livePulse 1.5s infinite' }} />}
+            <span style={{ color: liveStarted ? '#dc2626' : subtext, fontSize: 12, fontWeight: 800, letterSpacing: '0.05em' }}>
+              {liveStarted ? (isAr ? 'على الهواء' : 'ON AIR') : (isAr ? 'استوديو البث' : 'LIVE STUDIO')}
             </span>
             {liveStarted && <span style={{ color: '#dc2626', fontSize: 13, fontFamily: 'monospace', fontWeight: 700 }}>{formatTime(elapsed)}</span>}
           </div>
 
           {liveStarted && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subtext, fontSize: 12 }}>
-              <Users size={13} />
-              {viewerCount} {isAr ? 'مشاهد' : 'viewers'}
+            <div style={{ display: 'flex', gap: 16, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <Users size={13} color="#94a3b8" />
+                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{viewerCount}</span>
+                <span style={{ color: subtext, fontSize: 11 }}>{isAr ? 'مباشر' : 'live'}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <TrendingUp size={13} color="#94a3b8" />
+                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{peakViewers}</span>
+                <span style={{ color: subtext, fontSize: 11 }}>{isAr ? 'ذروة' : 'peak'}</span>
+              </div>
+              {pendingQuestions.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 20, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                  <Hand size={12} color="#d97706" />
+                  <span style={{ color: '#d97706', fontSize: 12, fontWeight: 700 }}>{pendingQuestions.length}</span>
+                </div>
+              )}
             </div>
           )}
 
-          <button onClick={() => router.push(`/${locale}/dashboard/my-courses`)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
+          <button onClick={() => router.push(`/${locale}/dashboard/my-courses`)} style={{ marginRight: isAr ? 'auto' : 0, marginLeft: isAr ? 0 : 'auto', width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
             <X size={14} />
           </button>
         </div>
 
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 20 }}>
+        {/* MAIN LAYOUT */}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 0, overflow: 'hidden' }}>
 
-            {/* Video preview */}
-            <div>
-              <div ref={localVideoRef} style={{ width: '100%', aspectRatio: '16/9', background: '#000', borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {!liveStarted && (
-                  <div style={{ textAlign: 'center', padding: 24 }}>
-                    <Radio size={48} color="rgba(220,38,38,0.3)" style={{ marginBottom: 12 }} />
-                    <p style={{ color: subtext, fontSize: 14 }}>{isAr ? 'اضغط "بدء البث" لتفعيل الكاميرا' : 'Click "Start Live" to enable camera'}</p>
+          {/* LEFT: Video + Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: 16, overflow: 'auto' }}>
+
+            {/* Video */}
+            <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#000', border: `1px solid ${border}`, aspectRatio: '16/9' }}>
+              <div ref={localVideoRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
+
+              {!liveStarted && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Radio size={28} color="#dc2626" />
                   </div>
-                )}
-              </div>
+                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'الكاميرا غير مفعلة' : 'Camera not active'}</p>
+                </div>
+              )}
 
-              {/* Controls */}
               {liveStarted && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16 }}>
-                  <button
-                    onClick={toggleCam}
-                    style={{ width: 44, height: 44, borderRadius: '50%', background: camEnabled ? 'rgba(255,255,255,0.1)' : 'rgba(220,38,38,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    {camEnabled ? <Video size={18} /> : <VideoOff size={18} />}
-                  </button>
-                  <button
-                    onClick={toggleMic}
-                    style={{ width: 44, height: 44, borderRadius: '50%', background: micEnabled ? 'rgba(255,255,255,0.1)' : 'rgba(220,38,38,0.3)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}
-                  </button>
-                  <button onClick={handleEndLive} disabled={ending} style={{ height: 44, paddingInline: 20, borderRadius: 22, background: '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 13, fontWeight: 700 }}>
-                    <Square size={14} />{isAr ? 'إنهاء البث' : 'End Stream'}
-                  </button>
+                <div style={{ position: 'absolute', top: 12, [isAr?'right':'left']: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, background: 'rgba(220,38,38,0.9)', backdropFilter: 'blur(4px)' }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', animation: 'livePulse 1.5s infinite' }} />
+                  <span style={{ color: '#fff', fontSize: 11, fontWeight: 800 }}>LIVE</span>
+                </div>
+              )}
+
+              {screenSharing && (
+                <div style={{ position: 'absolute', top: 12, [isAr?'left':'right']: 12, display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, background: 'rgba(81,32,200,0.85)' }}>
+                  <MonitorUp size={12} color="#fff" />
+                  <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>{isAr ? 'مشاركة شاشة' : 'Screen Share'}</span>
                 </div>
               )}
             </div>
 
-            {/* Side panel */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-              {/* Course info */}
-              <div style={{ background: cardBg, borderRadius: 14, border: `1px solid ${border}`, padding: '16px' }}>
-                <h3 style={{ color: text, fontSize: 14, fontWeight: 800, margin: '0 0 6px' }}>{courseTitle}</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Radio size={12} color="#dc2626" />
-                  <span style={{ color: '#dc2626', fontSize: 12, fontWeight: 700 }}>{isAr ? 'بث مباشر' : 'Live Course'}</span>
-                </div>
-              </div>
-
-              {/* Start/End button */}
-              {!liveStarted ? (
-                <button onClick={handleStartLive} disabled={starting} style={{ width: '100%', padding: '16px', borderRadius: 14, background: '#dc2626', color: '#ffffff', border: 'none', cursor: starting ? 'wait' : 'pointer', fontSize: 15, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: starting ? 0.7 : 1 }}>
-                  {starting
-                    ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{isAr ? 'جاري التحضير...' : 'Preparing...'}</>
-                    : <><Play size={18} />{isAr ? 'بدء البث المباشر' : 'Start Live Stream'}</>}
-                </button>
-              ) : (
-                <button onClick={handleEndLive} disabled={ending} style={{ width: '100%', padding: '14px', borderRadius: 14, background: 'rgba(220,38,38,0.15)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.3)', cursor: ending ? 'wait' : 'pointer', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <Square size={15} />{isAr ? 'إنهاء البث' : 'End Stream'}
-                </button>
-              )}
-
-              {/* Share link */}
-              <div style={{ background: cardBg, borderRadius: 14, border: `1px solid ${border}`, padding: '14px' }}>
-                <div style={{ color: subtext, fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
-                  {isAr ? 'رابط الكورس للطلاب' : 'Course Link for Students'}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: subtext, fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {liveLink}
-                  </div>
-                  <button onClick={() => { navigator.clipboard.writeText(liveLink); setCopied(true); setTimeout(() => setCopied(false), 2000) }} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: copied ? '#16a34a' : subtext, flexShrink: 0 }}>
-                    {copied ? <Check size={13} /> : <Copy size={13} />}
+            {/* Controls */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px', background: cardBg, borderRadius: 14, border: `1px solid ${border}` }}>
+              {liveStarted ? (
+                <>
+                  <button onClick={toggleMic} title={micOn ? (isAr?'كتم':'Mute') : (isAr?'تفعيل':'Unmute')} style={{ width: 44, height: 44, borderRadius: '50%', background: micOn ? 'rgba(255,255,255,0.08)' : '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
+                    {micOn ? <Mic size={18} /> : <MicOff size={18} />}
                   </button>
+                  <button onClick={toggleCam} title={camOn ? (isAr?'إيقاف الكاميرا':'Stop Camera') : (isAr?'تشغيل الكاميرا':'Start Camera')} style={{ width: 44, height: 44, borderRadius: '50%', background: camOn ? 'rgba(255,255,255,0.08)' : '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
+                    {camOn ? <Video size={18} /> : <VideoOff size={18} />}
+                  </button>
+                  <button onClick={toggleScreenShare} title={isAr?'مشاركة الشاشة':'Screen Share'} style={{ width: 44, height: 44, borderRadius: '50%', background: screenSharing ? '#5120c8' : 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
+                    <MonitorUp size={18} />
+                  </button>
+                  <div style={{ width: 1, height: 32, background: border }} />
+                  <button onClick={handleEndLive} disabled={ending} style={{ height: 44, paddingInline: 20, borderRadius: 22, background: '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 13, fontWeight: 800, opacity: ending ? 0.7 : 1 }}>
+                    <Square size={15} />
+                    {isAr ? 'إنهاء البث' : 'End Stream'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                    {[
+                      { icon: micOn ? Mic : MicOff, label: isAr?'ميكروفون':'Mic', on: micOn, onClick: () => setMicOn(m => !m) },
+                      { icon: camOn ? Video : VideoOff, label: isAr?'كاميرا':'Camera', on: camOn, onClick: () => setCamOn(c => !c) },
+                    ].map((btn, i) => (
+                      <button key={i} onClick={btn.onClick} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: btn.on ? 'rgba(255,255,255,0.06)' : 'rgba(220,38,38,0.15)', border: `1px solid ${btn.on ? border : 'rgba(220,38,38,0.3)'}`, cursor: 'pointer', color: btn.on ? text : '#dc2626', fontSize: 12, fontWeight: 600 }}>
+                        <btn.icon size={14} />
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={handleStartLive} disabled={starting} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting?'wait':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting?0.7:1 }}>
+                    {starting
+                      ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{isAr?'جاري التحضير...':'Preparing...'}</>
+                      : <><Play size={18} />{isAr?'ابدأ البث المباشر':'Go Live'}</>}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Share link */}
+            <div style={{ padding: '14px 16px', background: cardBg, borderRadius: 12, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: subtext, fontSize: 10, fontWeight: 700, marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAr?'رابط الجلسة للمشاركة':'Share Link'}</div>
+                <div style={{ color: text, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{liveLink}</div>
+              </div>
+              <button onClick={() => { navigator.clipboard.writeText(liveLink); setCopied(true); setTimeout(()=>setCopied(false),2000); alert(isAr?'تم نسخ الرابط':'Link copied!') }} style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: copied?'#16a34a':subtext, flexShrink: 0 }}>
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
+
+          {/* RIGHT: Questions & Comments Panel */}
+          <div style={{ borderLeft: isAr?'none':'1px solid #1a1a1a', borderRight: isAr?'1px solid #1a1a1a':'none', display: 'flex', flexDirection: 'column', background: '#0d0d0d', overflow: 'hidden' }}>
+
+            {/* Panel tabs */}
+            <div style={{ display: 'flex', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
+              {[
+                { key: 'questions', ar:'الأسئلة', en:'Questions', icon: Hand, badge: pendingQuestions.length },
+                { key: 'comments', ar:'التعليقات', en:'Comments', icon: MessageSquare, badge: 0 },
+              ].map(tab => {
+                const active = activeTab === tab.key
+                return (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: active ? '#f1f5f9' : subtext, borderBottom: `2px solid ${active ? '#dc2626' : 'transparent'}`, fontSize: 12, fontWeight: 700, transition: 'all 0.15s' }}>
+                    <tab.icon size={13} />
+                    {isAr ? tab.ar : tab.en}
+                    {tab.badge > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#d97706', color: '#fff', fontSize: 9, fontWeight: 800 }}>{tab.badge}</span>}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Questions panel */}
+            {activeTab === 'questions' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+                {!liveStarted ? (
+                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                    <Hand size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
+                    <p style={{ color: subtext, fontSize: 12 }}>{isAr?'ستظهر الأسئلة هنا أثناء البث':'Questions will appear here during stream'}</p>
+                  </div>
+                ) : pendingQuestions.length === 0 && approvedQuestions.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                    <p style={{ color: subtext, fontSize: 12 }}>{isAr?'لا توجد أسئلة بعد':'No questions yet'}</p>
+                  </div>
+                ) : (
+                  <>
+                    {pendingQuestions.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ color: '#d97706', fontSize: 10, fontWeight: 800, marginBottom: 8, letterSpacing: '0.05em' }}>
+                          {isAr?'في انتظار الموافقة':'PENDING APPROVAL'} ({pendingQuestions.length})
+                        </div>
+                        {pendingQuestions.map(q => (
+                          <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', marginBottom: 8, animation: 'slideIn 0.3s ease' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                              <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800, flexShrink: 0 }}>{q.userName[0]}</div>
+                              <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
+                              <span style={{ color: subtext, fontSize: 10, marginRight: isAr?0:'auto', marginLeft: isAr?'auto':0 }}>{q.timestamp.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                            </div>
+                            <p style={{ color: text, fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>{q.text}</p>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <button onClick={() => approveQuestion(q.id)} style={{ flex: 1, padding: '6px', borderRadius: 7, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                <UserCheck size={11} />{isAr?'موافقة':'Approve'}
+                              </button>
+                              <button onClick={() => dismissQuestion(q.id)} style={{ width: 32, height: 32, borderRadius: 7, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <UserX size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {approvedQuestions.length > 0 && (
+                      <div>
+                        <div style={{ color: '#16a34a', fontSize: 10, fontWeight: 800, marginBottom: 8, letterSpacing: '0.05em' }}>
+                          {isAr?'موافق عليها - للإجابة':'APPROVED - TO ANSWER'} ({approvedQuestions.length})
+                        </div>
+                        {approvedQuestions.map(q => (
+                          <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(22,163,74,0.25)', background: 'rgba(22,163,74,0.06)', marginBottom: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                              <CheckCircle2 size={12} color="#16a34a" />
+                              <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
+                            </div>
+                            <p style={{ color: text, fontSize: 12, margin: 0, lineHeight: 1.5 }}>{q.text}</p>
+                            <button onClick={() => setQuestions(prev => prev.map(x => x.id === q.id ? { ...x, answered: true } : x))} style={{ marginTop: 8, width: '100%', padding: '5px', borderRadius: 7, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                              {isAr?'تم الإجابة':'Mark Answered'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Comments panel */}
+            {activeTab === 'comments' && (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                    <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
+                    <p style={{ color: subtext, fontSize: 12 }}>{isAr?'ستظهر التعليقات هنا':'Comments will appear here'}</p>
+                  </div>
                 </div>
               </div>
+            )}
 
-              {/* Instructions */}
-              {!liveStarted && (
-                <div style={{ background: 'rgba(220,38,38,0.06)', borderRadius: 14, border: '1px solid rgba(220,38,38,0.2)', padding: '14px' }}>
-                  <div style={{ color: '#dc2626', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-                    {isAr ? 'قبل البدء' : 'Before Going Live'}
-                  </div>
-                  {[
-                    isAr ? 'تأكد من اتصال الإنترنت' : 'Check internet connection',
-                    isAr ? 'اسمح بالوصول للكاميرا والميكروفون' : 'Allow camera & mic access',
-                    isAr ? 'سيتم إشعار الطلاب تلقائياً' : 'Students will be notified automatically',
-                  ].map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <CheckCircle2 size={12} color="#dc2626" />
-                      <span style={{ color: subtext, fontSize: 11 }}>{tip}</span>
-                    </div>
-                  ))}
+            {/* Stats bottom */}
+            <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, flexShrink: 0 }}>
+              {[
+                { label: isAr?'مشاهدون':'Live', val: viewerCount, color: '#dc2626' },
+                { label: isAr?'الذروة':'Peak', val: peakViewers, color: '#d97706' },
+                { label: isAr?'أسئلة':'Questions', val: questions.length, color: '#5120c8' },
+              ].map((s, i) => (
+                <div key={i} style={{ textAlign: 'center', padding: '8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: `1px solid ${border}` }}>
+                  <div style={{ color: s.color, fontSize: 16, fontWeight: 900 }}>{s.val}</div>
+                  <div style={{ color: subtext, fontSize: 9, marginTop: 1 }}>{s.label}</div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </div>
