@@ -51,32 +51,28 @@ export class PaymentsController {
 
   // Confirm payment and redirect (used as success_url from Stripe)
   @Get('confirm')
-  async confirmPayment(
-    @Query('session_id') sessionId: string,
-    @Query('courseId') courseId: string,
-    @Query('userId') userId: string,
-    @Query('courseType') courseType: string,
-    @Query('locale') locale: string,
-    @Res() res: any,
-  ) {
-    console.log('[Confirm] Received:', { sessionId, courseId, userId, courseType, locale })
+  async confirmPayment(@Query() q: any, @Res() res: any) {
+    const { session_id, courseId, userId, courseType, locale = 'ar' } = q
+    console.log('[CONFIRM] Params:', { session_id, courseId, userId, courseType })
 
     try {
-      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-      const session = await stripe.checkout.sessions.retrieve(sessionId)
-      console.log('[Confirm] Payment status:', session.payment_status)
+      if (session_id && courseId && userId) {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+        const session = await stripe.checkout.sessions.retrieve(session_id)
+        console.log('[CONFIRM] Stripe status:', session.payment_status)
 
-      if (session.payment_status === 'paid') {
-        await this.paymentsService.enrollUserInCourse(courseId, userId, courseType)
-        console.log('[Confirm] Enrollment saved for user:', userId, 'course:', courseId)
+        if (session.payment_status === 'paid') {
+          await this.paymentsService.enrollUserInCourse(courseId, userId, courseType || 'recorded')
+          console.log('[CONFIRM] Enrolled successfully!')
+        }
       }
     } catch(e: any) {
-      console.error('[Confirm] Error:', e.message)
+      console.error('[CONFIRM] Error:', e.message)
     }
 
-    const webBase = 'https://deveway-teal.vercel.app'
-    const redirectUrl = `${webBase}/${locale || 'ar'}/payment/success?type=course&courseId=${courseId}&courseType=${courseType}&locale=${locale || 'ar'}`
-    return res.redirect(redirectUrl)
+    const successUrl = `https://deveway-teal.vercel.app/${locale}/payment/success?type=course&courseId=${courseId}&courseType=${courseType || 'recorded'}&locale=${locale}`
+    console.log('[CONFIRM] Redirecting to:', successUrl)
+    return res.redirect(302, successUrl)
   }
 
   // Test enrollment endpoint (for debugging)

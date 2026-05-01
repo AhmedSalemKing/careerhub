@@ -178,6 +178,42 @@ export default function LiveViewerPage() {
           if (mediaType === 'audio') user.audioTrack?.stop()
         })
 
+        // Handle token expiration
+        client.on('token-privilege-will-expire', async () => {
+          console.log('[Agora] Token will expire, refreshing...')
+          const userToken = token
+          try {
+            const res = await fetch(`${API}/live/token/${courseId}`, {
+              headers: { Authorization: `Bearer ${userToken}` }
+            }).then(r => r.json()).catch(() => null)
+            if (res?.data?.token) {
+              await client.renewToken(res.data.token)
+              console.log('[Agora] Token refreshed successfully')
+            }
+          } catch (e: any) {
+            console.error('[Agora] Token refresh failed:', e.message)
+          }
+        })
+
+        // Handle Agora errors (e.g., dynamic key expired, gateway issues)
+        client.on('error', async (err: any) => {
+          console.error('[Agora] Client error:', err)
+          if (err?.message?.includes('CAN_NOT_GET_GATEWAY_SERVER') || err?.message?.includes('dynamic key expired')) {
+            const userToken = token
+            const res = await fetch(`${API}/live/token/${courseId}`, {
+              headers: { Authorization: `Bearer ${userToken}` }
+            }).then(r => r.json()).catch(() => null)
+            if (res?.data?.token) {
+              sessionStorage.setItem('agora_token', res.data.token)
+              await client.leave().catch(() => {})
+              await client.join(appId, channelName, res.data.token, uid)
+              console.log('[Agora] Rejoined with new token')
+            } else {
+              setError(isAr ? 'انتهت صلاحية الجلسة، يرجى إعادة الدخول' : 'Session expired, please rejoin')
+            }
+          }
+        })
+
         await client.join(appId, channelName, agoraToken, uid)
         setJoined(true)
         setLoading(false)

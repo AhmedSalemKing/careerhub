@@ -65,7 +65,7 @@ export class PaymentsService {
         courseType,
         locale,
       },
-      success_url: `${process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'}/${locale}/payment/success?session_id={CHECKOUT_SESSION_ID}&type=course&courseId=${courseId}&courseType=${courseType}&locale=${locale}`,
+      success_url: `https://deve-way.onrender.com/api/payments/confirm?session_id={CHECKOUT_SESSION_ID}&courseId=${courseId}&userId=${userId}&courseType=${courseType}&locale=${locale}`,
       cancel_url: `${baseLearnUrl}/${locale}/courses/${courseId}`,
       payment_intent_data: {
         metadata: {

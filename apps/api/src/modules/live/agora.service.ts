@@ -8,7 +8,7 @@ export class AgoraService {
 
   generateToken(channelName: string, uid: number, role: 'publisher' | 'subscriber' = 'subscriber'): string {
     const rtcRole = role === 'publisher' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER
-    const expirationTime = Math.floor(Date.now() / 1000) + 3600
+    const expirationTime = Math.floor(Date.now() / 1000) + 86400
 
     return RtcTokenBuilder.buildTokenWithUid(
       this.appId,
