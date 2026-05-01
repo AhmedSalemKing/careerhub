@@ -67,6 +67,7 @@ export default function CoursesPage() {
   const [activeTab, setActiveTab] = useState<'recorded' | 'live' | 'offline'>('recorded')
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
+  const [tokenReady, setTokenReady] = useState(false)
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -78,11 +79,13 @@ export default function CoursesPage() {
     const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
       localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
     setToken(t)
+    setTokenReady(true) // query can now fire
   }, [])
 
   const { data: courses = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['courses', activeTab, search, token],
+    queryKey: ['courses', activeTab, search, token ? 'auth' : 'anon'],
     queryFn: async () => {
+      console.log('[Courses] Fetching tab:', activeTab, 'token:', !!token)
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
 
@@ -104,7 +107,9 @@ export default function CoursesPage() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
         const data = await res.json()
-        return data?.data?.courses ?? data?.courses ?? data?.data ?? []
+        const result = data?.data?.courses ?? data?.courses ?? data?.data ?? []
+        console.log('[Courses] Got:', result.length, 'courses')
+        return result
       } catch(e: any) {
         clearTimeout(timeout)
         if (e.name === 'AbortError') {
@@ -114,6 +119,7 @@ export default function CoursesPage() {
         throw e
       }
     },
+    enabled: tokenReady, // wait until localStorage check is done
     staleTime: 5 * 60 * 1000, // 5 min cache
     retry: 1,
     retryDelay: 1000,
