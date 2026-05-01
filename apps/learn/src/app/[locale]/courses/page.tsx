@@ -396,6 +396,19 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
         </div>
       )}
 
+      {isEnrolled && (
+        <div style={{
+          position: 'absolute', top: 8, [isAr?'left':'right']: 8,
+          display: 'flex', alignItems: 'center', gap: 4,
+          padding: '3px 9px', borderRadius: 20,
+          background: 'rgba(22,163,74,0.9)', color: '#fff',
+          fontSize: 10, fontWeight: 700, zIndex: 10
+        }}>
+          <CheckCircle2 size={10} />
+          {isAr ? 'مسجل' : 'Enrolled'}
+        </div>
+      )}
+
       {isScheduled && liveDate && (
         <div style={{ padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
           <Clock size={13} color={subtext} />
