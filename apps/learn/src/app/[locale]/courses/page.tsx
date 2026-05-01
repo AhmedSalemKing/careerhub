@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
@@ -63,6 +63,8 @@ export default function CoursesPage() {
   const locale = useLocale() as 'ar' | 'en'
   const isAr = locale === 'ar'
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const enrolledCourseId = searchParams.get('enrolled')
 
   const [activeTab, setActiveTab] = useState<'recorded' | 'live' | 'offline'>('recorded')
   const [search, setSearch] = useState('')
@@ -84,19 +86,21 @@ export default function CoursesPage() {
     setTokenReady(true) // query can now fire
   }, [])
 
-  // Check if enrollment was updated (from payment success page)
+  // Force refetch when redirected from payment success with ?enrolled=courseId
   useEffect(() => {
-    const lastUpdate = localStorage.getItem('enrollment_updated')
-    if (lastUpdate && Date.now() - parseInt(lastUpdate) < 60000) {
-      // Recent enrollment, clear cache
+    if (enrolledCourseId) {
       queryClient.invalidateQueries({ queryKey: ['courses'] })
-      localStorage.removeItem('enrollment_updated')
-      console.log('[Courses] Enrollment cache invalidated after payment')
+      console.log('[Courses] Enrollment cache invalidated after payment for:', enrolledCourseId)
+      // Clean URL without page reload
+      const url = new URL(window.location.href)
+      url.searchParams.delete('enrolled')
+      url.searchParams.delete('t')
+      window.history.replaceState({}, '', url.toString())
     }
-  }, [])
+  }, [enrolledCourseId])
 
   const { data: courses = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['courses', activeTab, search, token ? 'auth' : 'anon'],
+    queryKey: ['courses', activeTab, search, token ? 'auth' : 'anon', enrolledCourseId || ''],
     queryFn: async () => {
       console.log('[Courses] Fetching tab:', activeTab, 'token:', !!token)
       const controller = new AbortController()
@@ -133,7 +137,7 @@ export default function CoursesPage() {
       }
     },
     enabled: tokenReady, // wait until localStorage check is done
-    staleTime: 30 * 1000, // 30 seconds instead of 5 min
+    staleTime: enrolledCourseId ? 0 : 30 * 1000, // 0 when coming from payment, 30s otherwise
     refetchOnWindowFocus: true, // refetch when user comes back to tab after payment
     retry: 1,
     retryDelay: 1000,

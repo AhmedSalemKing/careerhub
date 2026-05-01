@@ -34,9 +34,8 @@ export default function PaymentSuccessPage() {
     if (type === 'consulting') {
       return `/${locale}/dashboard/my-sessions`
     }
-    if (courseType === 'live') return `${learnBase}/${locale}/live/${courseId}`
-    if (courseType === 'offline') return `${learnBase}/${locale}/courses/${courseId}`
-    return `${learnBase}/${locale}/learn/${courseId}`
+    // Redirect to courses list with enrolled param so learn domain can bust its cache
+    return `${learnBase}/${locale}/courses?enrolled=${courseId}&t=${Date.now()}`
   }
 
   const getTypeConfig = () => {
@@ -51,9 +50,10 @@ export default function PaymentSuccessPage() {
   const redirectUrl = getRedirectUrl()
 
   useEffect(() => {
-    // Set flag so learn app knows to refetch courses
-    if (type !== 'consulting' && courseId) {
-      localStorage.setItem('enrollment_updated', Date.now().toString())
+    // Redirect with enrolled param for cross-domain cache invalidation
+    const redirectWithParam = (url: string) => {
+      const separator = url.includes('?') ? '&' : '?'
+      return `${url}${separator}enrolled=${courseId}&t=${Date.now()}`
     }
 
     const timer = setInterval(() => {
@@ -64,7 +64,8 @@ export default function PaymentSuccessPage() {
           if (type === 'consulting') {
             router.push(redirectUrl)
           } else {
-            window.location.href = redirectUrl
+            // Redirect to learn domain with enrolled param
+            window.location.href = redirectWithParam(redirectUrl)
           }
           return 0
         }
