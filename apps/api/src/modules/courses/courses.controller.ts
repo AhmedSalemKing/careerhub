@@ -46,7 +46,7 @@ export class CoursesController {
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'type', required: false, description: 'Filter by type: recorded, live, offline' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
-async getCourses(
+  async getCourses(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('careerPath') careerPath?: string,
@@ -57,6 +57,8 @@ async getCourses(
     @Query('type') type?: string,
     @Request() req?: any,
   ) {
+    const userId = req?.user?.id
+
     const courses = await this.coursesService.getCourses({
       page: page || 1,
       limit: limit || 12,
@@ -66,6 +68,7 @@ async getCourses(
       search,
       language: language || 'en',
       type,
+      userId,
     });
 
     if (req?.user?.id && search) {

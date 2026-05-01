@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../../lib/api'
+import toast from 'react-hot-toast'
 import {
   Video, Radio, MapPin, Search, X, Clock, Users,
   Calendar, Play, ChevronRight, Wifi, WifiOff,
@@ -80,20 +81,19 @@ export default function CoursesPage() {
   }, [])
 
   const { data: courses = [], isLoading, refetch } = useQuery({
-    queryKey: ['courses', activeTab, search],
+    queryKey: ['courses', activeTab, search, token],
     queryFn: async () => {
-      const params = new URLSearchParams({ type: activeTab, limit: '50' })
+      const params = new URLSearchParams({ limit: '50' })
+      if (activeTab === 'recorded') params.set('type', 'recorded')
+      else params.set('type', activeTab)
       if (search) params.set('search', search)
-      try {
-        const res = await api.get(`/courses?${params.toString()}`)
-        const data = res.data?.data ?? res.data
-        if (Array.isArray(data)) return data
-        if (Array.isArray(data?.courses)) return data.courses
-        if (Array.isArray(data?.items)) return data.items
-        return []
-      } catch {
-        return []
-      }
+
+      const headers: any = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+
+      const res = await fetch(`${API_BASE}/courses?${params}`, { headers })
+      const data = await res.json()
+      return data?.data?.courses ?? data?.courses ?? data?.data ?? []
     },
     staleTime: activeTab === 'live' ? 10000 : 30000,
     refetchInterval: activeTab === 'live' ? 15000 : undefined,
@@ -324,53 +324,55 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
 
   const handleJoinLive = async () => {
     if (!token) {
-      router.push(`/${locale}/auth/login`)
+      router.push(`/${locale}/auth/login?returnUrl=/${locale}/courses`)
       return
     }
 
     const price = parseFloat(course.price || '0')
 
-    // Check if already enrolled
+    // If already enrolled or free, go directly to live
+    if (isEnrolled || price === 0) {
+      setJoining(true)
+      try {
+        // For free courses, enroll first
+        if (!isEnrolled && price === 0) {
+          await fetch(`${API_BASE}/courses/${course.id}/enroll`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+          }).catch(() => {})
+        }
+
+        // Get Agora token and join
+        const tokenRes = await fetch(`${API_BASE}/live/token/${course.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const tokenData = await tokenRes.json()
+
+        if (tokenData?.data?.token) {
+          sessionStorage.setItem('agora_token', tokenData.data.token)
+          sessionStorage.setItem('agora_channel', tokenData.data.channelName)
+          sessionStorage.setItem('agora_uid', String(tokenData.data.uid))
+          sessionStorage.setItem('agora_appid', tokenData.data.appId)
+          router.push(`/${locale}/live/${course.id}`)
+        } else if (course.liveStatus === 'scheduled') {
+          toast.success(isAr ? 'سيتم إشعارك عند بدء البث' : 'You will be notified when stream starts')
+        } else {
+          toast.error(isAr ? 'البث غير متاح حالياً' : 'Stream not available')
+        }
+      } catch (e: any) {
+        toast.error(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
+      } finally {
+        setJoining(false)
+      }
+      return
+    }
+
+    // Need to pay - redirect to Stripe Checkout
     setJoining(true)
     try {
-      const enrollRes = await fetch(`${API}/courses/${course.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }).then(r => r.json()).catch(() => null)
-
-      const isEnrolled = enrollRes?.data?.isEnrolled || enrollRes?.isEnrolled || false
-
-      if (!isEnrolled && price > 0) {
-        await redirectToCheckout(course.id, locale, token)
-        return
-      }
-
-      if (!isEnrolled && price === 0) {
-        // FREE - enroll first
-        await fetch(`${API}/courses/${course.id}/enroll`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
-        }).catch(e => {})
-      }
-
-      // Enrolled - get AGORA token and join
-      const tokenRes = await fetch(`${API}/live/token/${course.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      const tokenData = await tokenRes.json()
-
-      if (tokenData?.data?.token) {
-        sessionStorage.setItem('agora_token', tokenData.data.token)
-        sessionStorage.setItem('agora_channel', tokenData.data.channelName)
-        sessionStorage.setItem('agora_uid', String(tokenData.data.uid))
-        sessionStorage.setItem('agora_appid', tokenData.data.appId)
-        router.push(`/${locale}/live/${course.id}`)
-      } else if (course.liveStatus === 'scheduled') {
-        alert(isAr ? 'تم التسجيل! سيتم إشعارك عند بدء البث' : 'Enrolled! You will be notified when live starts')
-      } else {
-        alert(isAr ? 'البث غير متاح حالياً' : 'Stream not available')
-      }
+      await redirectToCheckout(course.id, locale, token)
     } catch (e: any) {
-      alert(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
+      toast.error(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
     } finally {
       setJoining(false)
     }

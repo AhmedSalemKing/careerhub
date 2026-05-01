@@ -30,8 +30,9 @@ export class CoursesService {
     search?: string;
     language: string;
     type?: string;
+    userId?: string;
   }) {
-    const { page, limit, careerPath, categoryId, level, search, language, type } = options;
+    const { page, limit, careerPath, categoryId, level, search, language, type, userId } = options;
     const effectiveLimit = limit || 12;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
@@ -168,8 +169,31 @@ export class CoursesService {
       _count: course._count,
     }));
 
+    // If userId provided, check enrollment for each course
+    let coursesWithEnrollment = transformedCourses
+    if (userId) {
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: {
+          userId,
+          courseId: { in: courses.map(c => c.id) },
+          status: { in: ['ACTIVE', 'active'] }
+        },
+        select: { courseId: true }
+      })
+      const enrolledIds = new Set(enrollments.map(e => e.courseId))
+      coursesWithEnrollment = transformedCourses.map(c => ({
+        ...c,
+        isEnrolled: enrolledIds.has(c.id)
+      }))
+    } else {
+      coursesWithEnrollment = transformedCourses.map(c => ({
+        ...c,
+        isEnrolled: false
+      }))
+    }
+
     const data = {
-      courses: transformedCourses,
+      courses: coursesWithEnrollment,
       meta: {
         total,
         page: safePage,
