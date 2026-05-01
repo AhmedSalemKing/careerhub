@@ -31,10 +31,11 @@ export default function PaymentSuccessPage() {
   const learnBase = 'https://devewayhub.vercel.app'
 
   const getRedirectUrl = () => {
+    // Always redirect to courses page with enrolled param for cache invalidation
     if (type === 'consulting') {
       return `/${locale}/dashboard/my-sessions`
     }
-    // Redirect to courses list with enrolled param so learn domain can bust its cache
+    // Redirect to courses page where the enrolled param will trigger refetch
     return `${learnBase}/${locale}/courses?enrolled=${courseId}&t=${Date.now()}`
   }
 
@@ -50,12 +51,6 @@ export default function PaymentSuccessPage() {
   const redirectUrl = getRedirectUrl()
 
   useEffect(() => {
-    // Redirect with enrolled param for cross-domain cache invalidation
-    const redirectWithParam = (url: string) => {
-      const separator = url.includes('?') ? '&' : '?'
-      return `${url}${separator}enrolled=${courseId}&t=${Date.now()}`
-    }
-
     const timer = setInterval(() => {
       setCountdown(c => {
         if (c <= 1) {
@@ -64,8 +59,8 @@ export default function PaymentSuccessPage() {
           if (type === 'consulting') {
             router.push(redirectUrl)
           } else {
-            // Redirect to learn domain with enrolled param
-            window.location.href = redirectWithParam(redirectUrl)
+            // redirectUrl already includes enrolled param for cache invalidation
+            window.location.href = redirectUrl
           }
           return 0
         }
