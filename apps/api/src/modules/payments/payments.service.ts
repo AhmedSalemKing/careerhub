@@ -173,14 +173,13 @@ export class PaymentsService {
         data: {
           courseId,
           userId,
-          paymentStatus: 'PAID',
           status: 'ACTIVE',
         }
       })
     } else {
       await this.prisma.enrollment.update({
         where: { id: existing.id },
-        data: { paymentStatus: 'PAID', status: 'ACTIVE' }
+        data: { status: 'ACTIVE' }
       })
     }
 
@@ -201,8 +200,10 @@ export class PaymentsService {
       await this.prisma.notification.create({
         data: {
           userId,
-          title: 'تم الاشتراك بنجاح!',
-          message: `تم تأكيد اشتراكك في الكورس${courseType === 'live' ? ' - يمكنك الانضمام للبث' : ''}`,
+          titleAr: 'تم الاشتراك بنجاح!',
+          titleEn: 'Enrollment Confirmed!',
+          contentAr: `تم تأكيد اشتراكك في الكورس${courseType === 'live' ? ' - يمكنك الانضمام للبث' : ''}`,
+          contentEn: `Your enrollment has been confirmed${courseType === 'live' ? ' - you can join the live session' : ''}`,
           type: 'PAYMENT_CONFIRMED',
           isRead: false,
         }
@@ -237,8 +238,10 @@ export class PaymentsService {
       await this.prisma.notification.create({
         data: {
           userId: consultantId,
-          title: 'تم الدفع - أضف رابط الاجتماع',
-          message: `تم استلام دفعة ${amount} ر.س - الرجاء إضافة رابط الاجتماع`,
+          titleAr: 'تم الدفع - أضف رابط الاجتماع',
+          titleEn: 'Payment Received - Add Meeting Link',
+          contentAr: `تم استلام دفعة ${amount} ر.س - الرجاء إضافة رابط الاجتماع`,
+          contentEn: `Payment of ${amount} SAR received - please add meeting link`,
           type: 'SESSION_BOOKED',
           isRead: false,
         }
