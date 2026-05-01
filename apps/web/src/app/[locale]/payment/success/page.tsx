@@ -51,6 +51,11 @@ export default function PaymentSuccessPage() {
   const redirectUrl = getRedirectUrl()
 
   useEffect(() => {
+    // Set flag so learn app knows to refetch courses
+    if (type !== 'consulting' && courseId) {
+      localStorage.setItem('enrollment_updated', Date.now().toString())
+    }
+
     const timer = setInterval(() => {
       setCountdown(c => {
         if (c <= 1) {

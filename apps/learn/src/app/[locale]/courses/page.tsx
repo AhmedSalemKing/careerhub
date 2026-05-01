@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
 import {
@@ -75,11 +75,24 @@ export default function CoursesPage() {
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
+  const queryClient = useQueryClient()
+
   useEffect(() => {
     const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
       localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
     setToken(t)
     setTokenReady(true) // query can now fire
+  }, [])
+
+  // Check if enrollment was updated (from payment success page)
+  useEffect(() => {
+    const lastUpdate = localStorage.getItem('enrollment_updated')
+    if (lastUpdate && Date.now() - parseInt(lastUpdate) < 60000) {
+      // Recent enrollment, clear cache
+      queryClient.invalidateQueries({ queryKey: ['courses'] })
+      localStorage.removeItem('enrollment_updated')
+      console.log('[Courses] Enrollment cache invalidated after payment')
+    }
   }, [])
 
   const { data: courses = [], isLoading, error, refetch } = useQuery({
@@ -120,7 +133,8 @@ export default function CoursesPage() {
       }
     },
     enabled: tokenReady, // wait until localStorage check is done
-    staleTime: 5 * 60 * 1000, // 5 min cache
+    staleTime: 30 * 1000, // 30 seconds instead of 5 min
+    refetchOnWindowFocus: true, // refetch when user comes back to tab after payment
     retry: 1,
     retryDelay: 1000,
   })
@@ -279,7 +293,9 @@ export default function CoursesPage() {
 // ========================
 function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, border, text, subtext, token }: any) {
   const price = parseFloat(course.price || 0)
-  const isEnrolled = course.isEnrolled || false
+  const isEnrolled = course.isEnrolled === true
+
+  console.log('[RecordedCard]', course.id, 'isEnrolled:', course.isEnrolled)
 
   return (
     <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
@@ -351,7 +367,10 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
   const price = parseFloat(course.price || 0)
   const isLive = course.liveStatus === 'live'
   const isScheduled = course.liveStatus === 'scheduled'
-  const isEnrolled = course.isEnrolled || false
+  const isEnrolled = course.isEnrolled === true
+
+  console.log('[LiveCard]', course.id, 'isEnrolled:', course.isEnrolled)
+
   const isPaid = isEnrolled
 
   const liveDate = course.liveStartTime ? new Date(course.liveStartTime) : null
