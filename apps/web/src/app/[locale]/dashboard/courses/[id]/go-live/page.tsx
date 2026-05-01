@@ -14,6 +14,7 @@ import {
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import toast from 'react-hot-toast'
+import { io } from 'socket.io-client'
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -63,6 +64,7 @@ export default function GoLivePage() {
   const localTracksRef = useRef<any[]>([])
   const screenTrackRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
+  const socketRef = useRef<any>(null)
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -120,6 +122,16 @@ export default function GoLivePage() {
       if (localVideoRef.current) camTrack.play(localVideoRef.current)
 
       await client.publish([micTrack, camTrack])
+
+      // Connect socket as instructor
+      const { io } = await import('socket.io-client')
+      const socket = io('https://deve-way.onrender.com/live', {
+        transports: ['websocket', 'polling']
+      })
+      socketRef.current = socket
+      socket.on('connect', () => {
+        socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
+      })
 
       setLiveStarted(true)
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
@@ -197,9 +209,15 @@ export default function GoLivePage() {
       onConfirm: async () => {
         setEnding(true)
         try {
+          // Notify all viewers BEFORE stopping
+          socketRef.current?.emit('live-ended', { courseId })
+          // Wait a moment for socket to send
+          await new Promise(r => setTimeout(r, 500))
+
           localTracksRef.current.forEach(t => { t.stop(); t.close() })
           if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
           if (clientRef.current) await clientRef.current.leave()
+          if (socketRef.current) socketRef.current.disconnect()
           await post(`/live/end/${courseId}`, {})
           toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
           router.push(`/${locale}/dashboard/my-courses`)

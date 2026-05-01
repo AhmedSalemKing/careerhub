@@ -126,4 +126,18 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     this.server.to(data.courseId).emit('question-dismissed', { questionId: data.questionId })
   }
+
+  @SubscribeMessage('live-ended')
+  handleLiveEnded(
+    @MessageBody() data: { courseId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log(`[Gateway] Live ended for course: ${data.courseId}`)
+    // Broadcast to ALL in room including sender
+    this.server.to(data.courseId).emit('stream-ended', {
+      message: 'انتهى البث المباشر',
+      timestamp: new Date().toISOString(),
+    })
+    return { event: 'live-ended-broadcast', data: { courseId: data.courseId } }
+  }
 }
