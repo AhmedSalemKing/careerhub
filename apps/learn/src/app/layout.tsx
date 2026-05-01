@@ -14,6 +14,7 @@ import { ToastProvider } from '../lib/toast'
 import { QueryProvider } from '../lib/query'
 import { LoadingProvider } from './components/PageLoader'
 import { TokenSync } from './components/TokenSync'
+import KeepAlivePing from './components/KeepAlivePing'
 
 export const metadata: Metadata = {
   title: 'DeveWay | منصة التدريب',
@@ -76,6 +77,7 @@ export default async function RootLayout({
               <ToastProvider>
                 <LoadingProvider>
                   <Suspense><TokenSync /></Suspense>
+                  <KeepAlivePing />
                   <div className="flex min-h-screen flex-col">
                     <Navbar />
                     <main className="flex-1">{children}</main>

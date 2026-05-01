@@ -80,23 +80,43 @@ export default function CoursesPage() {
     setToken(t)
   }, [])
 
-  const { data: courses = [], isLoading, refetch } = useQuery({
+  const { data: courses = [], isLoading, error, refetch } = useQuery({
     queryKey: ['courses', activeTab, search, token],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: '50' })
-      if (activeTab === 'recorded') params.set('type', 'recorded')
-      else params.set('type', activeTab)
-      if (search) params.set('search', search)
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
 
-      const headers: any = { 'Content-Type': 'application/json' }
-      if (token) headers['Authorization'] = `Bearer ${token}`
+      try {
+        const params = new URLSearchParams({ limit: '50' })
+        if (activeTab === 'recorded') params.set('type', 'recorded')
+        else params.set('type', activeTab)
+        if (search) params.set('search', search)
 
-      const res = await fetch(`${API_BASE}/courses?${params}`, { headers })
-      const data = await res.json()
-      return data?.data?.courses ?? data?.courses ?? data?.data ?? []
+        const headers: Record<string, string> = {}
+        if (token) headers['Authorization'] = `Bearer ${token}`
+
+        const res = await fetch(`${API_BASE}/courses?${params}`, {
+          headers,
+          signal: controller.signal,
+        })
+        clearTimeout(timeout)
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+        const data = await res.json()
+        return data?.data?.courses ?? data?.courses ?? data?.data ?? []
+      } catch(e: any) {
+        clearTimeout(timeout)
+        if (e.name === 'AbortError') {
+          console.error('[Courses] Fetch timeout after 8s')
+          return []
+        }
+        throw e
+      }
     },
-    staleTime: 60000,
-    refetchInterval: false,
+    staleTime: 5 * 60 * 1000, // 5 min cache
+    retry: 1,
+    retryDelay: 1000,
   })
 
   const filtered = courses.filter((c: any) => {
@@ -188,6 +208,19 @@ export default function CoursesPage() {
         {isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: isDark ? '#1a1a1a' : '#f4f4f8' }} />)}
+          </div>
+        )}
+
+        {/* Error */}
+        {error && !isLoading && (
+          <div style={{ textAlign: 'center', padding: '40px 24px' }}>
+            <AlertCircle size={48} color="#dc2626" style={{ marginBottom: 16, opacity: 0.5 }} />
+            <p style={{ color: '#dc2626', fontSize: 14, marginBottom: 16 }}>
+              {isAr ? 'فشل تحميل الكورسات' : 'Failed to load courses'}
+            </p>
+            <button onClick={() => refetch()} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              {isAr ? 'إعادة المحاولة' : 'Try Again'}
+            </button>
           </div>
         )}
 
