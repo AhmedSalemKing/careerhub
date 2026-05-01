@@ -137,8 +137,9 @@ export default function CoursesPage() {
       }
     },
     enabled: tokenReady, // wait until localStorage check is done
-    staleTime: enrolledCourseId ? 0 : 30 * 1000, // 0 when coming from payment, 30s otherwise
-    refetchOnWindowFocus: true, // refetch when user comes back to tab after payment
+    staleTime: 0, // always fetch fresh so isEnrolled is up to date after payment
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     retry: 1,
     retryDelay: 1000,
   })
