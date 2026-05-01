@@ -181,83 +181,75 @@ export class PaymentsService {
   }
 
   async enrollUserInCourse(courseId: string, userId: string, courseType: string) {
-    console.log('[Enroll] Starting enrollment:', { courseId, userId, courseType })
-
+    console.log('[ENROLL] Starting:', { courseId, userId, courseType })
+    
+    if (!courseId || !userId) {
+      console.error('[ENROLL] Missing courseId or userId!')
+      return false
+    }
+    
     try {
-      // Check if enrollment exists
+      // Upsert enrollment
       const existing = await this.prisma.enrollment.findFirst({
         where: { courseId, userId }
       })
-
+      
       if (existing) {
-        console.log('[Enroll] Updating existing enrollment:', existing.id)
         await this.prisma.enrollment.update({
           where: { id: existing.id },
           data: { status: 'ACTIVE' }
         })
+        console.log('[ENROLL] Updated existing:', existing.id)
       } else {
-        console.log('[Enroll] Creating new enrollment')
-        await this.prisma.enrollment.create({
-          data: {
-            courseId,
-            userId,
-            status: 'ACTIVE',
-          }
+        const created = await this.prisma.enrollment.create({
+          data: { courseId, userId, status: 'ACTIVE' }
         })
+        console.log('[ENROLL] Created new:', created.id)
       }
-
-      // Add to instructor earnings and create Payment record
+      
+      // Get course price for earnings
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
         select: { instructorId: true, price: true }
       })
-
-      if (course?.price) {
+      
+      if (course?.instructorId && course?.price) {
         const price = parseFloat(course.price.toString())
         if (price > 0) {
-          // Create Payment record
-          await this.prisma.payment.create({
-             data: {
-               userId,
-               courseId,
-               amount: price,
-               currency: 'SAR',
-               method: 'STRIPE_CARD',
-               status: 'COMPLETED',
-               transactionId: `stripe_${Date.now()}`,
-             }
-           }).catch(e => console.error('[Payment Record]', e.message))
-
-          // Add instructor earnings (80% share)
-          const share = price * 0.8
+          const share = Math.round(price * 0.8 * 100) / 100
           await this.prisma.$executeRawUnsafe(
             `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
-          ).catch(() => {})
-          console.log('[Enroll] Added earnings:', share, 'to instructor:', course.instructorId)
+          )
+          console.log('[ENROLL] Instructor earnings updated:', share)
         }
       }
-
-      // Send notification
+      
+      // Create payment record
       try {
-        await this.prisma.notification.create({
-          data: {
-            userId,
-            titleAr: 'تم الاشتراك بنجاح!',
-            titleEn: 'Enrollment Confirmed!',
-            contentAr: `تم تأكيد اشتراكك في الكورس${courseType === 'live' ? ' - يمكنك الانضمام للبث' : ''}`,
-            contentEn: `Your enrollment has been confirmed${courseType === 'live' ? ' - you can join the live session' : ''}`,
-             type: 'COURSE_ENROLLMENT',
-            isRead: false,
-          }
+        const course2 = await this.prisma.course.findUnique({
+          where: { id: courseId },
+          select: { price: true }
         })
-      } catch(e) {
-        // Notification failed - not critical
+        const price = parseFloat(course2?.price?.toString() || '0')
+        if (price > 0) {
+          await this.prisma.payment.create({
+            data: {
+              userId,
+              courseId,
+              amount: price,
+              status: 'COMPLETED',
+            }
+          })
+          console.log('[ENROLL] Payment record created')
+        }
+      } catch(pe: any) {
+        console.error('[ENROLL] Payment record error (non-critical):', pe.message)
       }
-
-      console.log('[Enroll] Enrollment complete!')
+      
+      console.log('[ENROLL] Complete!')
       return true
     } catch(e: any) {
-      console.error('[Enroll] FAILED:', e.message)
+      console.error('[ENROLL] CRITICAL ERROR:', e.message)
       throw e
     }
   }

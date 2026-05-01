@@ -95,8 +95,8 @@ export default function CoursesPage() {
       const data = await res.json()
       return data?.data?.courses ?? data?.courses ?? data?.data ?? []
     },
-    staleTime: activeTab === 'live' ? 10000 : 30000,
-    refetchInterval: activeTab === 'live' ? 15000 : undefined,
+    staleTime: 60000,
+    refetchInterval: false,
   })
 
   const filtered = courses.filter((c: any) => {
