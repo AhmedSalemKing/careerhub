@@ -60,6 +60,7 @@ export class CoursesController {
     @Request() req?: any,
   ) {
     const userId = req?.user?.id
+    console.log('[Courses Controller] userId:', userId, 'auth:', !!req?.user)
 
     const courses = await this.coursesService.getCourses({
       page: page || 1,
