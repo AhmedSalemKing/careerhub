@@ -36,7 +36,7 @@ export class CoursesService {
     const effectiveLimit = limit || 12;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
-    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}:${type || ''}`;
+    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}`;
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -181,6 +181,7 @@ export class CoursesService {
         select: { courseId: true }
       })
       const enrolledIds = new Set(enrollments.map(e => e.courseId))
+      console.log('[Courses] userId:', userId, 'enrollments found:', enrollments.length, 'ids:', Array.from(enrolledIds))
       coursesWithEnrollment = transformedCourses.map(c => ({
         ...c,
         isEnrolled: enrolledIds.has(c.id)

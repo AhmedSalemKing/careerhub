@@ -19,6 +19,7 @@ import { CoursesService } from './courses.service';
 import { EnrollmentService } from './enrollment.service';
 import { RecommendationService } from './recommendation.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtGuard } from '../auth/guards/optional-jwt.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -36,6 +37,7 @@ export class CoursesController {
   ) { }
 
   @Get()
+  @UseGuards(OptionalJwtGuard)
   @ApiOperation({ summary: 'Get all courses' })
   @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
