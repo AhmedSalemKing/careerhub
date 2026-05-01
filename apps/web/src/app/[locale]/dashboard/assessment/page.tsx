@@ -345,7 +345,7 @@ export default function AssessmentPage() {
                 </div>
                 
                 <button
-                  onClick={() => window.open(`https://devewayhub.vercel.app/${locale}/courses?category=${TRACK_META[result.track]?.category || 'tech'}`, '_blank')}
+                  onClick={() => window.open(`https://deve-way.vercel.app/${locale}/courses?category=${TRACK_META[result.track]?.category || 'tech'}`, '_blank')}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '8px 14px', borderRadius: 10,

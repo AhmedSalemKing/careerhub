@@ -75,7 +75,7 @@ export default function GoLivePage() {
   })
 
   const courseTitle = course?.titleAr || course?.titleEn || course?.title || ''
-  const liveLink = `https://devewayhub.vercel.app/${locale}/live/${courseId}`
+  const liveLink = `https://deve-way.vercel.app/${locale}/live/${courseId}`
 
   useEffect(() => {
     if (liveStarted) {
