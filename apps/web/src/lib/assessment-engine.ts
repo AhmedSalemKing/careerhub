@@ -505,7 +505,7 @@ export function calculateResults(questions: Question[], answers: Record<string, 
         titleAr: meta?.titleAr || track,
         titleEn: meta?.titleEn || track,
         icon: meta?.icon || 'code',
-        learnUrl: `https://deve-way.vercel.app/${locale}/courses?category=${meta?.category || 'tech'}`,
+        learnUrl: `https://deveway-teal.vercel.app/${locale}/courses?category=${meta?.category || 'tech'}`,
       }
     })
     .sort((a, b) => b.score - a.score)

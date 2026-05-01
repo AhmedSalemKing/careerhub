@@ -28,7 +28,7 @@ export default function PaymentSuccessPage() {
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
-  const learnBase = 'https://deve-way.vercel.app'
+  const learnBase = 'https://deveway-teal.vercel.app'
 
   const getRedirectUrl = () => {
     // Always redirect to courses page with enrolled param for cache invalidation

@@ -369,7 +369,7 @@ export default function CareerPathPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
                     {courses.map((course: any) => (
                       <div key={course.id} style={{ borderRadius: 14, border: `1px solid ${border}`, background: cardBg, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
-                      onClick={() => window.open(`https://deve-way.vercel.app/${locale}/courses/${course.slug || course.id}`, '_blank')}>
+                      onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses/${course.slug || course.id}`, '_blank')}>
                         <div style={{ height: 120, background: isDark ? '#1a1a1a' : '#f8f8fa', overflow: 'hidden' }}>
                           {course.thumbnail ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={28} color={subtext} /></div>}
                         </div>
@@ -390,7 +390,7 @@ export default function CareerPathPage() {
                       {isAr ? 'لا توجد كورسات منشورة حالياً' : 'No published courses yet'}
                     </p>
                     <button
-                      onClick={() => window.open(`https://deve-way.vercel.app/${locale}/courses`, '_blank')}
+                      onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses`, '_blank')}
                       style={{
                         padding:'10px 22px', borderRadius:10,
                         background:'#5120c8', color:'#ffffff', border:'none', cursor:'pointer',
@@ -414,7 +414,7 @@ export default function CareerPathPage() {
                             <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{bundle.title}</div>
                             <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</div>
                           </div>
-                          <button onClick={() => window.open(`https://deve-way.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{isAr ? 'عرض' : 'View'}</button>
+                          <button onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{isAr ? 'عرض' : 'View'}</button>
                         </div>
                       ))}
                     </div>
@@ -431,7 +431,7 @@ export default function CareerPathPage() {
                       : catEntry?.category.toLowerCase().includes('marketing') ? 'marketing'
                       : catEntry?.category.toLowerCase().includes('business') ? 'business'
                       : 'tech'
-                    window.open(`https://deve-way.vercel.app/${locale}/courses?category=${category}`, '_blank')
+                    window.open(`https://deveway-teal.vercel.app/${locale}/courses?category=${category}`, '_blank')
                   }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
                     <BookOpen size={14} />
                     {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
