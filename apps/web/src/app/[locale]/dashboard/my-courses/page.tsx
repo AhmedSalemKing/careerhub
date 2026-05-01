@@ -262,8 +262,21 @@ export default function InstructorCoursesPage() {
 										</div>
 
 										{/* Go Live Button */}
-										{course.type === "live" &&
-											course.status === "PUBLISHED" && (
+										{course.type === "live" && (
+											course.liveStatus === 'ended' ? (
+												<div className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 bg-gray-500/10 border border-gray-500/20 text-gray-400 text-xs font-bold">
+													<Square size={12} />
+													{isAr ? "البث منتهي" : "Stream Ended"}
+												</div>
+											) : course.liveStatus === 'live' ? (
+												<a
+													href={`/${locale}/dashboard/courses/${course.id}/go-live`}
+													className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 bg-red-500/90 text-white text-xs font-bold hover:bg-red-600 transition-colors shadow-lg"
+													onClick={(e) => e.stopPropagation()}>
+													<Radio size={12} />
+													{isAr ? "إدارة البث" : "Manage Live"}
+												</a>
+											) : (
 												<button
 													onClick={(e) => {
 														e.stopPropagation();
@@ -272,10 +285,11 @@ export default function InstructorCoursesPage() {
 														);
 													}}
 													className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg px-3 py-1.5 bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-colors shadow-lg">
-													<Radio size={12} />
+													<Play size={12} />
 													{isAr ? "بدء البث" : "Go Live"}
 												</button>
-											)}
+											)
+										)}
 									</div>
 
 									{/* Content */}

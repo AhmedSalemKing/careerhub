@@ -31,6 +31,7 @@ export default function LiveViewerPage() {
   const [questionText, setQuestionText] = useState('')
   const [showQuestionInput, setShowQuestionInput] = useState(false)
   const [userName, setUserName] = useState(isAr ? 'مشاهد' : 'Viewer')
+  const [userAvatar, setUserAvatar] = useState('')
   const [streamEnded, setStreamEnded] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
 
@@ -48,6 +49,28 @@ export default function LiveViewerPage() {
   useEffect(() => {
     const stored = localStorage.getItem('userName') || localStorage.getItem('user_name') || ''
     if (stored) setUserName(stored)
+    const storedAvatar = localStorage.getItem('user_avatar') || ''
+    if (storedAvatar) setUserAvatar(storedAvatar)
+
+    // Fetch user profile for name and avatar
+    const t = typeof window !== 'undefined'
+      ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
+         localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
+      : ''
+    if (t) {
+      fetch('https://deve-way.onrender.com/api/users/me', {
+        headers: { Authorization: `Bearer ${t}` }
+      }).then(r => r.json()).then(data => {
+        const profile = data?.data?.profile || data?.profile
+        if (profile) {
+          const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || (isAr ? 'مشاهد' : 'Viewer')
+          setUserName(name)
+          setUserAvatar(profile.avatar || '')
+          localStorage.setItem('userName', name)
+          localStorage.setItem('user_avatar', profile.avatar || '')
+        }
+      }).catch(() => {})
+    }
   }, [])
 
   const {
@@ -58,7 +81,7 @@ export default function LiveViewerPage() {
     streamStarted: hookStreamStarted,
     sendComment,
     sendQuestion,
-  } = useLiveSocket(joined ? courseId : '', userName, 'viewer', '')
+  } = useLiveSocket(joined ? courseId : '', userName, 'viewer', userAvatar)
 
   // Sync hook state to local state
   useEffect(() => {
@@ -138,6 +161,14 @@ export default function LiveViewerPage() {
         headers: { Authorization: `Bearer ${userToken}` },
         signal: AbortSignal.timeout(8000)
       })
+
+      if (tokenRes.status === 403) {
+        // Live has ended
+        clearTimeout(loadingTimeoutRef.current)
+        setError('ended')
+        setLoading(false)
+        return
+      }
 
       if (!tokenRes.ok) {
         // Stream not started yet — show waiting overlay
@@ -497,9 +528,13 @@ export default function LiveViewerPage() {
                 </div>
               ) : socketComments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 8, animation: 'slideUp 0.2s ease' }}>
-                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
-                    {c.userName[0]}
-                  </div>
+                  {c.avatar ? (
+                    <img src={c.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: c.isOwn ? '#dc2626' : '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
+                      {(c.userName?.[0]?.toUpperCase() || '?')}
+                    </div>
+                  )}
                   <div style={{ flex: 1 }}>
                     <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
                     <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>

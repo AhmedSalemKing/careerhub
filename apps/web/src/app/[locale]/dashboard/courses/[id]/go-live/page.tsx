@@ -47,10 +47,11 @@ export default function GoLivePage() {
     queryFn: async () => { const r = await get('/users/me'); return r.data?.data ?? r.data }
   })
   const instructorName = me?.profile?.firstName || (isAr ? 'المحاضر' : 'Instructor')
+  const instructorAvatar = me?.profile?.avatar || ''
 
   const {
     connected,
-    viewerCount,
+    viewerCount: socketViewerCount,
     comments,
     questions,
     sendComment,
@@ -59,7 +60,7 @@ export default function GoLivePage() {
     dismissQuestion,
     broadcastLiveStarted,
     broadcastLiveEnded,
-  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor')
+  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
 
   const localVideoRef = useRef<HTMLDivElement>(null)
   const pipVideoRef = useRef<HTMLDivElement>(null)
@@ -159,49 +160,62 @@ export default function GoLivePage() {
   }
 
   const toggleScreenShare = async () => {
-    if (!clientRef.current) return
+    if (!clientRef.current || !liveStarted) return
     try {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
-
       if (screenSharing) {
+        // Stop screen share
         if (screenTrackRef.current) {
+          await clientRef.current.unpublish(screenTrackRef.current)
           screenTrackRef.current.stop()
           screenTrackRef.current.close()
           screenTrackRef.current = null
         }
+        // Republish camera
         const camTrack = localTracksRef.current[1]
-        if (localVideoRef.current && camTrack) {
+        if (camTrack && localVideoRef.current) {
           camTrack.play(localVideoRef.current)
+          await clientRef.current.publish(camTrack)
         }
-        await clientRef.current.unpublish([])
-        if (camTrack) await clientRef.current.publish(camTrack)
         setScreenSharing(false)
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
-        const screenTrack = await AgoraRTC.createScreenVideoTrack({
-          encoderConfig: '1080p_1',
-          optimizationMode: 'detail',
-        }, 'disable')
-
+        // Start screen share
+        let screenTrack: any
+        try {
+          screenTrack = await AgoraRTC.createScreenVideoTrack({
+            encoderConfig: '1080p_1',
+          }, 'disable')
+        } catch(e: any) {
+          if (e.message?.includes('Permission denied') || e.message?.includes('cancel')) {
+            toast.error(isAr ? 'تم إلغاء مشاركة الشاشة' : 'Screen sharing cancelled')
+          } else {
+            toast.error(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+          }
+          return
+        }
         const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack
         screenTrackRef.current = track
 
+        // Unpublish camera from remote (keep it playing locally)
         const camTrack = localTracksRef.current[1]
-        camTrack.stop()
+        if (camTrack) await clientRef.current.unpublish(camTrack)
 
+        // Publish screen
+        await clientRef.current.publish(track)
+
+        // Show screen in main area
         if (localVideoRef.current) track.play(localVideoRef.current)
 
-        if (pipVideoRef.current && camTrack) {
-          camTrack.play(pipVideoRef.current)
-        }
+        // Show camera in PiP
+        if (pipVideoRef.current && camTrack) camTrack.play(pipVideoRef.current)
 
-        await clientRef.current.unpublish(camTrack)
-        await clientRef.current.publish(track)
         setScreenSharing(true)
         toast.success(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
       }
     } catch(e: any) {
-      toast.error(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+      console.error('[ScreenShare]', e.message)
+      toast.error(isAr ? 'حدث خطأ' : 'Error')
     }
   }
 
@@ -279,7 +293,7 @@ export default function GoLivePage() {
             <div style={{ display: 'flex', gap: 16, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Users size={13} color="#94a3b8" />
-                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{viewerCount}</span>
+                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{socketViewerCount}</span>
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? 'مباشر' : 'live'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

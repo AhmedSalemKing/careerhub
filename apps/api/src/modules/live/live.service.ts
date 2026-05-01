@@ -13,6 +13,9 @@ export class LiveService {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } })
     if (!course) throw new NotFoundException('Course not found')
     if (course.type !== 'live') throw new BadRequestException('Not a live course')
+    if ((course as any).liveStatus === 'ended') {
+      throw new ForbiddenException('Live stream has ended')
+    }
 
     const isInstructor = course.instructorId === userId
     if (!isInstructor) {
