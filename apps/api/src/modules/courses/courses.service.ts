@@ -176,7 +176,7 @@ export class CoursesService {
         where: {
           userId,
           courseId: { in: courses.map(c => c.id) },
-          status: { in: ['ACTIVE', 'active'] }
+          status: 'ACTIVE'
         },
         select: { courseId: true }
       })
