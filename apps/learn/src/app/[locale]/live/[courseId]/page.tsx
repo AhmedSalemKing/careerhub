@@ -53,9 +53,44 @@ export default function LiveViewerPage() {
     connected,
     viewerCount: socketViewerCount,
     comments: socketComments,
+    streamEnded: hookStreamEnded,
+    streamStarted: hookStreamStarted,
     sendComment,
     sendQuestion,
-  } = useLiveSocket(joined ? courseId : '', userName, 'viewer')
+  } = useLiveSocket(joined ? courseId : '', userName, 'viewer', '')
+
+  // Sync hook state to local state
+  useEffect(() => {
+    if (hookStreamEnded) {
+      setStreamEnded(true)
+      clientRef.current?.leave().catch(() => {})
+    }
+  }, [hookStreamEnded])
+
+  useEffect(() => {
+    if (hookStreamStarted && !joined && !loading) {
+      // Auto-join Agora when instructor starts
+      console.log('[Learn] Stream started, auto-joining...')
+      setStreamEnded(false)
+      // Re-trigger the join effect by updating a dependency
+      if (!joined) {
+        // Force rejoin by resetting and letting the main effect run again
+        setJoined(false)
+        setTimeout(() => setJoined(true), 100)
+      }
+    }
+  }, [hookStreamStarted])
+
+  useEffect(() => {
+    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [socketComments])
+
+   // Use socket viewer count from hook instead of local state
+  useEffect(() => {
+    if (socketViewerCount > 0) {
+      setViewerCount(socketViewerCount)
+    }
+  }, [socketViewerCount])
 
   useEffect(() => {
     const joinStream = async () => {
@@ -89,7 +124,6 @@ export default function LiveViewerPage() {
         const price = parseFloat(course?.price || '0')
 
         if (!isEnrolled && price > 0) {
-          // Not enrolled and paid - redirect to payment
           try {
             const payRes = await fetch(`${API.replace('/api','')}/api/payments/checkout/course/${courseId}`, {
               method: 'POST',
@@ -108,15 +142,13 @@ export default function LiveViewerPage() {
         }
 
         if (!isEnrolled && price === 0) {
-          // Free - auto enroll
           await fetch(`${API.replace('/api','')}/api/courses/${courseId}/enroll`, {
             method: 'POST',
             headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }
           }).catch(() => {})
         }
-
       } catch(e) {
-        // Continue if can't check - will fail at Agora level
+        // Continue if can't check
       }
 
       try {
@@ -155,10 +187,8 @@ export default function LiveViewerPage() {
         client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
           await client.subscribe(user, mediaType)
           if (mediaType === 'video' && videoContainerRef.current) {
-            // Hide waiting overlay
             const overlay = document.getElementById('waiting-overlay')
             if (overlay) overlay.style.display = 'none'
-
             user.videoTrack?.play(videoContainerRef.current)
             setHasVideo(true)
           }
@@ -171,14 +201,12 @@ export default function LiveViewerPage() {
           if (mediaType === 'video') {
             user.videoTrack?.stop()
             setHasVideo(false)
-            // Show waiting overlay again
             const overlay = document.getElementById('waiting-overlay')
             if (overlay) overlay.style.display = 'flex'
           }
           if (mediaType === 'audio') user.audioTrack?.stop()
         })
 
-        // Handle token expiration
         client.on('token-privilege-will-expire', async () => {
           console.log('[Agora] Token will expire, refreshing...')
           const userToken = token
@@ -188,16 +216,11 @@ export default function LiveViewerPage() {
             }).then(r => r.json()).catch(() => null)
             if (res?.data?.token) {
               await client.renewToken(res.data.token)
-              console.log('[Agora] Token refreshed successfully')
             }
-          } catch (e: any) {
-            console.error('[Agora] Token refresh failed:', e.message)
-          }
+          } catch (e: any) {}
         })
 
-        // Handle Agora errors (e.g., dynamic key expired, gateway issues)
         client.on('error', async (err: any) => {
-          console.error('[Agora] Client error:', err)
           if (err?.message?.includes('CAN_NOT_GET_GATEWAY_SERVER') || err?.message?.includes('dynamic key expired')) {
             const userToken = token
             const res = await fetch(`${API}/live/token/${courseId}`, {
@@ -207,9 +230,6 @@ export default function LiveViewerPage() {
               sessionStorage.setItem('agora_token', res.data.token)
               await client.leave().catch(() => {})
               await client.join(appId, channelName, res.data.token, uid)
-              console.log('[Agora] Rejoined with new token')
-            } else {
-              setError(isAr ? 'انتهت صلاحية الجلسة، يرجى إعادة الدخول' : 'Session expired, please rejoin')
             }
           }
         })
@@ -217,30 +237,6 @@ export default function LiveViewerPage() {
         await client.join(appId, channelName, agoraToken, uid)
         setJoined(true)
         setLoading(false)
-
-        // Connect to live socket for real-time events
-        const socket = io('https://deve-way.onrender.com/live', {
-          transports: ['websocket', 'polling']
-        })
-        socketRef.current = socket
-
-        socket.on('connect', () => {
-          socket.emit('join-room', { courseId, userName, role: 'viewer' })
-        })
-
-        // CRITICAL: Handle live ended
-        socket.on('stream-ended', (data: any) => {
-          setStreamEnded(true)
-          clientRef.current?.leave().catch(() => {})
-        })
-
-        socket.on('viewer-count', ({ count }: { count: number }) => {
-          setViewerCount(count)
-        })
-
-        socket.on('new-comment', (comment: any) => {
-          // handled by useLiveSocket
-        })
 
         if (token) {
           fetch(`${API}/live/viewers/${courseId}`, {
@@ -256,13 +252,11 @@ export default function LiveViewerPage() {
       }
     }
 
-    joinStream()
+    if (joined) {
+      joinStream()
+    }
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.emit('leave-room', { courseId })
-        socketRef.current.disconnect()
-      }
       if (token) {
         fetch(`${API}/live/viewers/${courseId}`, {
           method: 'PATCH',
@@ -272,11 +266,7 @@ export default function LiveViewerPage() {
       }
       clientRef.current?.leave().catch(() => {})
     }
-  }, [courseId])
-
-  useEffect(() => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [socketComments])
+  }, [courseId, joined])
 
   const handleSendComment = () => {
     if (!newComment.trim()) return

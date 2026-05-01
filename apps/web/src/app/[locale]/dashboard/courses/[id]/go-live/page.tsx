@@ -40,6 +40,7 @@ export default function GoLivePage() {
   const [activeTab, setActiveTab] = useState<'questions'|'comments'>('questions')
   const [newComment, setNewComment] = useState('')
   const [pipPos, setPipPos] = useState({ x: 16, y: 16 })
+  const [showEndConfirm, setShowEndConfirm] = useState(false)
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -56,6 +57,8 @@ export default function GoLivePage() {
     approveQuestion,
     answerQuestion,
     dismissQuestion,
+    broadcastLiveStarted,
+    broadcastLiveEnded,
   } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor')
 
   const localVideoRef = useRef<HTMLDivElement>(null)
@@ -133,6 +136,9 @@ export default function GoLivePage() {
         socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
       })
 
+      // Broadcast to all viewers that live has started
+      broadcastLiveStarted(data.channelName, data.appId)
+
       setLiveStarted(true)
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
@@ -200,34 +206,25 @@ export default function GoLivePage() {
   }
 
   const handleEndLive = async () => {
-    confirmToast({
-      title: isAr ? 'إنهاء البث' : 'End Stream',
-      message: isAr ? 'هل تريد إنهاء البث المباشر؟' : 'Are you sure you want to end the live stream?',
-      confirmLabel: isAr ? 'نعم، إنهاء' : 'Yes, End',
-      cancelLabel: isAr ? 'إلغاء' : 'Cancel',
-      confirmColor: '#dc2626',
-      onConfirm: async () => {
-        setEnding(true)
-        try {
-          // Notify all viewers BEFORE stopping
-          socketRef.current?.emit('live-ended', { courseId })
-          // Wait a moment for socket to send
-          await new Promise(r => setTimeout(r, 500))
+    setEnding(true)
+    try {
+      // Notify all viewers BEFORE stopping
+      broadcastLiveEnded()
+      // Wait a moment for socket to send
+      await new Promise(r => setTimeout(r, 500))
 
-          localTracksRef.current.forEach(t => { t.stop(); t.close() })
-          if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
-          if (clientRef.current) await clientRef.current.leave()
-          if (socketRef.current) socketRef.current.disconnect()
-          await post(`/live/end/${courseId}`, {})
-          toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
-          router.push(`/${locale}/dashboard/my-courses`)
-        } catch(e: any) {
-          toast.error(e.message || 'Error')
-        } finally {
-          setEnding(false)
-        }
-      },
-    })
+      localTracksRef.current.forEach(t => { t.stop(); t.close() })
+      if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
+      if (clientRef.current) await clientRef.current.leave()
+      if (socketRef.current) socketRef.current.disconnect()
+      await post(`/live/end/${courseId}`, {})
+      toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
+      router.push(`/${locale}/dashboard/my-courses`)
+    } catch(e: any) {
+      toast.error(e.message || 'Error')
+    } finally {
+      setEnding(false)
+    }
   }
 
   const pendingQuestions = questions.filter(q => !q.approved && !q.answered)
@@ -235,6 +232,32 @@ export default function GoLivePage() {
 
   return (
     <AuthGate>
+      {/* End Stream Confirm Dialog */}
+      {showEndConfirm && (
+        <>
+          <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:200, backdropFilter:'blur(4px)' }} />
+          <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', background:'#111', borderRadius:20, border:'1px solid rgba(255,255,255,0.1)', padding:'28px', width:'min(380px,calc(100vw-32px))', zIndex:201, textAlign:'center' }}>
+            <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(220,38,38,0.15)', border:'1px solid rgba(220,38,38,0.3)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+              <Square size={24} color="#dc2626" />
+            </div>
+            <h3 style={{ color:'#f1f5f9', fontSize:18, fontWeight:900, margin:'0 0 8px' }}>
+              {isAr ? 'إنهاء البث المباشر؟' : 'End Live Stream?'}
+            </h3>
+            <p style={{ color:'#94a3b8', fontSize:13, margin:'0 0 24px', lineHeight:1.6 }}>
+              {isAr ? 'سيتم إنهاء البث وإشعار جميع المشاهدين تلقائياً' : 'Stream will end and all viewers will be notified automatically'}
+            </p>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setShowEndConfirm(false)} style={{ flex:1, padding:'12px', borderRadius:11, background:'rgba(255,255,255,0.06)', color:'#94a3b8', border:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontSize:13, fontWeight:600 }}>
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button onClick={async () => { setShowEndConfirm(false); await handleEndLive() }} style={{ flex:1, padding:'12px', borderRadius:11, background:'#dc2626', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
+                {isAr ? 'نعم، إنهاء البث' : 'Yes, End Stream'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       <div style={{ minHeight: '100vh', background: '#0a0a0a', direction: isAr ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column' }}>
         <style>{`
           @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -377,7 +400,7 @@ export default function GoLivePage() {
                     <MonitorUp size={18} />
                   </button>
                   <div style={{ width: 1, height: 32, background: border }} />
-                  <button onClick={handleEndLive} disabled={ending} style={{ height: 44, paddingInline: 20, borderRadius: 22, background: '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 13, fontWeight: 800, opacity: ending ? 0.7 : 1 }}>
+                  <button onClick={() => setShowEndConfirm(true)} disabled={ending} style={{ height: 44, paddingInline: 20, borderRadius: 22, background: '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 13, fontWeight: 800, opacity: ending ? 0.7 : 1 }}>
                     <Square size={15} />
                     {isAr ? 'إنهاء البث' : 'End Stream'}
                   </button>
