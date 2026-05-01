@@ -177,55 +177,89 @@ export class PaymentsService {
 
   async handleCourseEnrollment(metadata: Record<string, string>) {
     const { courseId, userId, courseType } = metadata
-    
-    // Check if already enrolled
-    const existing = await this.prisma.enrollment.findFirst({
-      where: { courseId, userId }
-    })
-    
-    if (!existing) {
-      await this.prisma.enrollment.create({
-        data: {
-          courseId,
-          userId,
-          status: 'ACTIVE',
-        }
-      })
-    } else {
-      await this.prisma.enrollment.update({
-        where: { id: existing.id },
-        data: { status: 'ACTIVE' }
-      })
-    }
+    return this.enrollUserInCourse(courseId, userId, courseType)
+  }
 
-    // Add to instructor earnings (80% share)
-    const course = await this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { instructorId: true, price: true }
-    })
-    if (course?.price && parseFloat(course.price.toString()) > 0) {
-      const share = parseFloat(course.price.toString()) * 0.8
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
-      ).catch(() => {})
-    }
+  async enrollUserInCourse(courseId: string, userId: string, courseType: string) {
+    console.log('[Enroll] Starting enrollment:', { courseId, userId, courseType })
 
-    // Notify user
     try {
-      await this.prisma.notification.create({
-        data: {
-          userId,
-          titleAr: 'تم الاشتراك بنجاح!',
-          titleEn: 'Enrollment Confirmed!',
-          contentAr: `تم تأكيد اشتراكك في الكورس${courseType === 'live' ? ' - يمكنك الانضمام للبث' : ''}`,
-          contentEn: `Your enrollment has been confirmed${courseType === 'live' ? ' - you can join the live session' : ''}`,
-          type: 'PAYMENT_CONFIRMED',
-          isRead: false,
-        }
+      // Check if enrollment exists
+      const existing = await this.prisma.enrollment.findFirst({
+        where: { courseId, userId }
       })
-    } catch(e) {}
 
-    console.log(`[Webhook] Course enrollment confirmed: ${courseId} for user ${userId}`)
+      if (existing) {
+        console.log('[Enroll] Updating existing enrollment:', existing.id)
+        await this.prisma.enrollment.update({
+          where: { id: existing.id },
+          data: { status: 'ACTIVE' }
+        })
+      } else {
+        console.log('[Enroll] Creating new enrollment')
+        await this.prisma.enrollment.create({
+          data: {
+            courseId,
+            userId,
+            status: 'ACTIVE',
+          }
+        })
+      }
+
+      // Add to instructor earnings and create Payment record
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { instructorId: true, price: true }
+      })
+
+      if (course?.price) {
+        const price = parseFloat(course.price.toString())
+        if (price > 0) {
+          // Create Payment record
+          await this.prisma.payment.create({
+             data: {
+               userId,
+               courseId,
+               amount: price,
+               currency: 'SAR',
+               method: 'STRIPE_CARD',
+               status: 'COMPLETED',
+               transactionId: `stripe_${Date.now()}`,
+             }
+           }).catch(e => console.error('[Payment Record]', e.message))
+
+          // Add instructor earnings (80% share)
+          const share = price * 0.8
+          await this.prisma.$executeRawUnsafe(
+            `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
+          ).catch(() => {})
+          console.log('[Enroll] Added earnings:', share, 'to instructor:', course.instructorId)
+        }
+      }
+
+      // Send notification
+      try {
+        await this.prisma.notification.create({
+          data: {
+            userId,
+            titleAr: 'تم الاشتراك بنجاح!',
+            titleEn: 'Enrollment Confirmed!',
+            contentAr: `تم تأكيد اشتراكك في الكورس${courseType === 'live' ? ' - يمكنك الانضمام للبث' : ''}`,
+            contentEn: `Your enrollment has been confirmed${courseType === 'live' ? ' - you can join the live session' : ''}`,
+             type: 'COURSE_ENROLLMENT',
+            isRead: false,
+          }
+        })
+      } catch(e) {
+        // Notification failed - not critical
+      }
+
+      console.log('[Enroll] Enrollment complete!')
+      return true
+    } catch(e: any) {
+      console.error('[Enroll] FAILED:', e.message)
+      throw e
+    }
   }
 
   private async handleConsultingPayment(metadata: Record<string, string>, amountTotal: number) {
