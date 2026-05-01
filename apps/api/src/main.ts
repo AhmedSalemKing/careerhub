@@ -42,7 +42,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000',
-      'https://deve-way.vercel.app',
+      'https://deveway-teal.vercel.app',
       /\.vercel\.app$/,
       /deve-way/,
     ],
