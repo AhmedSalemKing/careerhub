@@ -175,7 +175,7 @@ export class PaymentsService {
     return { received: true }
   }
 
-  private async handleCourseEnrollment(metadata: Record<string, string>) {
+  async handleCourseEnrollment(metadata: Record<string, string>) {
     const { courseId, userId, courseType } = metadata
     
     // Check if already enrolled
