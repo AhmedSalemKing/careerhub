@@ -33,6 +33,29 @@ function getTitle(c: any, locale: string) {
   return c.titleEn || c.titleAr || c.title || 'Untitled'
 }
 
+// Helper function to redirect to Stripe Checkout
+const redirectToCheckout = async (courseId: string, locale: string, token: string) => {
+  try {
+    const res = await fetch(`https://deve-way.onrender.com/api/payments/checkout/course/${courseId}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ locale })
+    })
+    const data = await res.json()
+    if (data?.data?.url) {
+      window.location.href = data.data.url // Stripe Checkout page
+    } else {
+      throw new Error(data.message || 'Failed to create checkout')
+    }
+  } catch(e: any) {
+    console.error('[Checkout]', e)
+    alert(e.message || (locale === 'ar' ? 'حدث خطأ في الدفع' : 'Payment error'))
+  }
+}
+
 export default function CoursesPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
@@ -317,16 +340,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
       const isEnrolled = enrollRes?.data?.isEnrolled || enrollRes?.isEnrolled || false
 
       if (!isEnrolled && price > 0) {
-        // PAID and NOT enrolled - go to payment page
-        setJoining(false)
-        const params = new URLSearchParams({
-          courseId: course.id,
-          amount: String(price),
-          title: course.titleAr || course.titleEn || '',
-          type: 'live',
-          returnUrl: `/${locale}/courses`,
-        })
-        router.push(`/${locale}/payment/enroll?${params}`)
+        await redirectToCheckout(course.id, locale, token)
         return
       }
 
@@ -484,12 +498,36 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
   const offlineDate = course.liveStartTime ? new Date(course.liveStartTime) : null
   const hasMap = course.locationLat && course.locationLng
 
+  const handleBookSeat = async () => {
+    if (!token) {
+      router.push(`/${locale}/auth/login`)
+      return
+    }
+
+    if (!isEnrolled && price > 0) {
+      await redirectToCheckout(course.id, locale, token)
+      return
+    }
+
+    if (!isEnrolled && price === 0) {
+      try {
+        await fetch(`${API_BASE}/courses/${course.id}/enroll`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+        })
+        router.push(`/${locale}/courses/${course.id}`)
+      } catch(e) {}
+    } else {
+      router.push(`/${locale}/courses/${course.id}`)
+    }
+  }
+
   return (
     <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(22,163,74,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = isDark ? '0 8px 28px rgba(0,0,0,0.4)' : '0 8px 28px rgba(0,0,0,0.08)' }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
-
+      
       {/* Map preview or thumbnail */}
       <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : (isDark ? '#1a1a1a' : '#f0fdf4'), position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
@@ -568,11 +606,13 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
                 ? (isAr ? 'دفع في المقر' : 'Pay on site')
                 : (isAr ? 'مجاني' : 'Free')}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 9, background: isEnrolled ? 'rgba(22,163,74,0.1)' : '#16a34a', color: isEnrolled ? '#16a34a' : '#fff', border: isEnrolled ? '1px solid rgba(22,163,74,0.3)' : 'none', fontSize: 12, fontWeight: 700 }}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleBookSeat(); }}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 9, background: isEnrolled ? 'rgba(22,163,74,0.1)' : '#16a34a', color: isEnrolled ? '#16a34a' : '#fff', border: isEnrolled ? '1px solid rgba(22,163,74,0.3)' : 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             {isEnrolled
               ? <><CheckCircle2 size={12} />{isAr ? 'محجوز' : 'Booked'}</>
               : <><MapPin size={12} />{isAr ? 'احجز مقعدك' : 'Book Seat'}</>}
-          </div>
+          </button>
         </div>
       </div>
     </div>

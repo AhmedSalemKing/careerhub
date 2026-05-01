@@ -15,7 +15,7 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
 
   // Body parser limits - IMPORTANT for file uploads
   app.use(express.json({ limit: '100mb' }));

@@ -91,11 +91,24 @@ export default function MySessionsPage() {
 
   const upcomingCount = sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length
 
-  const payMutation = useMutation({
-    mutationFn: (id: string) => post(`/consulting/sessions/${id}/pay`, {}),
-    onSuccess: () => { toast.success(isAr ? 'تمالدفع بنجاح' : 'Payment successful'); qc.invalidateQueries({ queryKey: ['my-sessions'] }) },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل الدفع' : 'Payment failed'))
-  })
+  const paySession = async (sessionId: string) => {
+    const token = localStorage.getItem('deveway_token') || sessionStorage.getItem('deveway_token') || ''
+    try {
+      const res = await fetch(`https://deve-way.onrender.com/api/payments/checkout/consulting/${sessionId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale })
+      })
+      const data = await res.json()
+      if (data?.data?.url) {
+        window.location.href = data.data.url
+      } else {
+        throw new Error(data.message || 'Failed')
+      }
+    } catch(e: any) {
+      toast.error(e.message || (isAr ? 'خطأ في الدفع' : 'Payment error'))
+    }
+  }
 
   const completeMutation = useMutation({
     mutationFn: (id: string) => patch(`/consulting/sessions/${id}/complete`, {}),
@@ -300,8 +313,8 @@ export default function MySessionsPage() {
             )}
 
             {!isPaid && isUpcoming && !isRescheduleReq && parseFloat(session.consultant?.profile?.sessionPrice || '0') > 0 && (
-              <button onClick={() => setPaymentSession(session)} disabled={payMutation.isPending}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: payMutation.isPending ? 0.7 : 1 }}>
+              <button onClick={() => paySession(session.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                 <CreditCard size={12} />{isAr ? 'ادفع الآن' : 'Pay Now'}
               </button>
             )}
