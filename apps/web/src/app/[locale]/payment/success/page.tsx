@@ -28,15 +28,15 @@ export default function PaymentSuccessPage() {
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
-  const learnBase = 'https://deveway-teal.vercel.app'
+  const learnBase = 'https://devewayhub.vercel.app'
 
   const getRedirectUrl = () => {
-    // Always redirect to courses page with enrolled param for cache invalidation
     if (type === 'consulting') {
       return `/${locale}/dashboard/my-sessions`
     }
-    // Redirect to courses page where the enrolled param will trigger refetch
-    return `${learnBase}/${locale}/courses?enrolled=${courseId}&t=${Date.now()}`
+    if (courseType === 'live') return `${learnBase}/${locale}/live/${courseId}`
+    if (courseType === 'offline') return `${learnBase}/${locale}/courses/${courseId}`
+    return `${learnBase}/${locale}/learn/${courseId}`
   }
 
   const getTypeConfig = () => {
@@ -51,6 +51,11 @@ export default function PaymentSuccessPage() {
   const redirectUrl = getRedirectUrl()
 
   useEffect(() => {
+    // Best-effort cross-domain hint — works if both domains share a parent
+    if (type !== 'consulting' && courseId) {
+      try { localStorage.setItem('enrollment_updated', Date.now().toString()) } catch(_) {}
+    }
+
     const timer = setInterval(() => {
       setCountdown(c => {
         if (c <= 1) {
