@@ -38,6 +38,7 @@ export default function LiveViewerPage() {
   const commentsEndRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const socketRef = useRef<any>(null)
+  const loadingTimeoutRef = useRef<any>(null)
 
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
@@ -67,17 +68,166 @@ export default function LiveViewerPage() {
     }
   }, [hookStreamEnded])
 
+  const joinStream = async () => {
+    if (clientRef.current) return // already joined
+    setLoading(true)
+    setError('')
+
+    // 15s timeout fallback - show page with waiting overlay instead of spinner forever
+    clearTimeout(loadingTimeoutRef.current)
+    loadingTimeoutRef.current = setTimeout(() => {
+      setLoading(false)
+      setJoined(true)
+    }, 15000)
+
+    const userToken = localStorage.getItem('token') || sessionStorage.getItem('token') ||
+      localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
+
+    if (!userToken) {
+      clearTimeout(loadingTimeoutRef.current)
+      router.push(`/${locale}/auth/login?returnUrl=/${locale}/live/${courseId}`)
+      return
+    }
+
+    try {
+      // Check course status and enrollment
+      const courseRes = await fetch(`${API}/courses/${courseId}`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+        signal: AbortSignal.timeout(8000)
+      })
+      if (!courseRes.ok) throw new Error('Course not found')
+      const courseData = await courseRes.json()
+      const course = courseData?.data || courseData
+
+      if (course?.liveStatus === 'ended' || course?.liveStatus === 'ENDED') {
+        clearTimeout(loadingTimeoutRef.current)
+        setError('ended')
+        setLoading(false)
+        return
+      }
+
+      const isEnrolled = course?.isEnrolled === true
+      const price = parseFloat(course?.price || '0')
+
+      if (!isEnrolled && price > 0) {
+        const payRes = await fetch(`${API}/payments/checkout/course/${courseId}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ locale })
+        }).then(r => r.json()).catch(() => null)
+
+        clearTimeout(loadingTimeoutRef.current)
+        if (payRes?.data?.url) {
+          window.location.href = payRes.data.url
+        } else {
+          setError(isAr ? 'يجب الاشتراك في الكورس أولاً' : 'Please enroll first')
+          setLoading(false)
+        }
+        return
+      }
+
+      if (!isEnrolled && price === 0) {
+        await fetch(`${API}/courses/${courseId}/enroll`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }
+        }).catch(() => {})
+      }
+
+      // Fetch fresh Agora token from API — never rely on sessionStorage
+      const tokenRes = await fetch(`${API}/live/token/${courseId}`, {
+        headers: { Authorization: `Bearer ${userToken}` },
+        signal: AbortSignal.timeout(8000)
+      })
+
+      if (!tokenRes.ok) {
+        // Stream not started yet — show waiting overlay
+        clearTimeout(loadingTimeoutRef.current)
+        setLoading(false)
+        setJoined(true)
+        return
+      }
+
+      const tokenData = await tokenRes.json()
+      const agoraToken = tokenData?.data?.token
+      const channelName = tokenData?.data?.channelName
+      const uid = tokenData?.data?.uid
+      const appId = tokenData?.data?.appId
+
+      if (!agoraToken || !appId || !channelName) {
+        // Token missing = stream not live yet
+        clearTimeout(loadingTimeoutRef.current)
+        setLoading(false)
+        setJoined(true)
+        return
+      }
+
+      const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
+      AgoraRTC.setLogLevel(4)
+
+      const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
+      client.setClientRole('audience')
+      clientRef.current = client
+
+      client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
+        await client.subscribe(user, mediaType)
+        if (mediaType === 'video' && videoContainerRef.current) {
+          user.videoTrack?.play(videoContainerRef.current)
+          setHasVideo(true)
+          const overlay = document.getElementById('waiting-overlay')
+          if (overlay) overlay.style.display = 'none'
+        }
+        if (mediaType === 'audio') user.audioTrack?.play()
+      })
+
+      client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
+        if (mediaType === 'video') {
+          user.videoTrack?.stop()
+          setHasVideo(false)
+          const overlay = document.getElementById('waiting-overlay')
+          if (overlay) overlay.style.display = 'flex'
+        }
+        if (mediaType === 'audio') user.audioTrack?.stop()
+      })
+
+      client.on('token-privilege-will-expire', async () => {
+        const res = await fetch(`${API}/live/token/${courseId}`, {
+          headers: { Authorization: `Bearer ${userToken}` }
+        }).then(r => r.json()).catch(() => null)
+        if (res?.data?.token) await client.renewToken(res.data.token)
+      })
+
+      await client.join(appId, channelName, agoraToken, uid)
+      clearTimeout(loadingTimeoutRef.current)
+      setJoined(true)
+      setLoading(false)
+
+      fetch(`${API}/live/viewers/${courseId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta: 1 })
+      }).catch(() => {})
+
+    } catch(e: any) {
+      clearTimeout(loadingTimeoutRef.current)
+      console.error('[Live] Join error:', e.message)
+      if (e.name === 'AbortError' || e.name === 'TimeoutError') {
+        setError(isAr ? 'انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت.' : 'Connection timeout. Check your internet.')
+      } else if (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key')) {
+        setError(isAr ? 'انتهت صلاحية الجلسة. أعد تحميل الصفحة.' : 'Session expired. Please reload.')
+      } else {
+        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect to stream'))
+      }
+      setLoading(false)
+    }
+  }
+
+  // Auto-join when instructor starts stream while viewer is on page
   useEffect(() => {
     if (hookStreamStarted && !joined && !loading) {
-      // Auto-join Agora when instructor starts
-      console.log('[Learn] Stream started, auto-joining...')
+      console.log('[Live] Instructor started stream, auto-joining...')
       setStreamEnded(false)
-      // Re-trigger the join effect by updating a dependency
-      if (!joined) {
-        // Force rejoin by resetting and letting the main effect run again
-        setJoined(false)
-        setTimeout(() => setJoined(true), 100)
-      }
+      clientRef.current = null // reset so joinStream doesn't bail
+      joinStream()
     }
   }, [hookStreamStarted])
 
@@ -85,178 +235,19 @@ export default function LiveViewerPage() {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [socketComments])
 
-   // Use socket viewer count from hook instead of local state
+  // Use socket viewer count from hook instead of local state
   useEffect(() => {
     if (socketViewerCount > 0) {
       setViewerCount(socketViewerCount)
     }
   }, [socketViewerCount])
 
+  // Join on mount
   useEffect(() => {
-    const joinStream = async () => {
-      setLoading(true)
-
-      // Step 1: Check if user is logged in
-      const userToken = token
-
-      if (!userToken) {
-        router.push(`/${locale}/auth/login?returnUrl=/${locale}/live/${courseId}`)
-        return
-      }
-
-      // Step 2: Check enrollment and course status
-      try {
-        const courseRes = await fetch(`${API.replace('/api','')}/api/courses/${courseId}`, {
-          headers: { Authorization: `Bearer ${userToken}` }
-        })
-        const courseData = await courseRes.json()
-        const course = courseData?.data || courseData
-
-        // Check if live has ended
-        if (course?.liveStatus === 'ended' || course?.liveStatus === 'ENDED') {
-          setError('ended')
-          setLoading(false)
-          return
-        }
-
-        // Check enrollment
-        const isEnrolled = course?.isEnrolled || false
-        const price = parseFloat(course?.price || '0')
-
-        if (!isEnrolled && price > 0) {
-          try {
-            const payRes = await fetch(`${API.replace('/api','')}/api/payments/checkout/course/${courseId}`, {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ locale })
-            })
-            const payData = await payRes.json()
-            if (payData?.data?.url) {
-              window.location.href = payData.data.url
-              return
-            }
-          } catch(e) {}
-          setError(isAr ? 'يجب الاشتراك في الكورس أولا' : 'Please enroll in this course first')
-          setLoading(false)
-          return
-        }
-
-        if (!isEnrolled && price === 0) {
-          await fetch(`${API.replace('/api','')}/api/courses/${courseId}/enroll`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }
-          }).catch(() => {})
-        }
-      } catch(e) {
-        // Continue if can't check
-      }
-
-      try {
-        const agoraToken = sessionStorage.getItem('agora_token')
-        const channelName = sessionStorage.getItem('agora_channel')
-        const uid = parseInt(sessionStorage.getItem('agora_uid') || '0')
-        const appId = sessionStorage.getItem('agora_appid')
-
-        if (!agoraToken || !channelName || !appId) {
-          if (userToken) {
-            const res = await fetch(`${API}/live/token/${courseId}`, {
-              headers: { Authorization: `Bearer ${userToken}` }
-            })
-            const data = await res.json()
-            if (data?.data?.token) {
-              sessionStorage.setItem('agora_token', data.data.token)
-              sessionStorage.setItem('agora_channel', data.data.channelName)
-              sessionStorage.setItem('agora_uid', String(data.data.uid))
-              sessionStorage.setItem('agora_appid', data.data.appId)
-              window.location.reload()
-              return
-            }
-          }
-          setError(isAr ? 'لم يتم العثور على بيانات الجلسة. تأكد من تسجيل الدخول والتسجيل في الكورس.' : 'Session credentials not found. Please login and enroll first.')
-          setLoading(false)
-          return
-        }
-
-        const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
-        AgoraRTC.setLogLevel(4)
-
-        const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
-        client.setClientRole('audience')
-        clientRef.current = client
-
-        client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
-          await client.subscribe(user, mediaType)
-          if (mediaType === 'video' && videoContainerRef.current) {
-            const overlay = document.getElementById('waiting-overlay')
-            if (overlay) overlay.style.display = 'none'
-            user.videoTrack?.play(videoContainerRef.current)
-            setHasVideo(true)
-          }
-          if (mediaType === 'audio') {
-            user.audioTrack?.play()
-          }
-        })
-
-        client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
-          if (mediaType === 'video') {
-            user.videoTrack?.stop()
-            setHasVideo(false)
-            const overlay = document.getElementById('waiting-overlay')
-            if (overlay) overlay.style.display = 'flex'
-          }
-          if (mediaType === 'audio') user.audioTrack?.stop()
-        })
-
-        client.on('token-privilege-will-expire', async () => {
-          console.log('[Agora] Token will expire, refreshing...')
-          const userToken = token
-          try {
-            const res = await fetch(`${API}/live/token/${courseId}`, {
-              headers: { Authorization: `Bearer ${userToken}` }
-            }).then(r => r.json()).catch(() => null)
-            if (res?.data?.token) {
-              await client.renewToken(res.data.token)
-            }
-          } catch (e: any) {}
-        })
-
-        client.on('error', async (err: any) => {
-          if (err?.message?.includes('CAN_NOT_GET_GATEWAY_SERVER') || err?.message?.includes('dynamic key expired')) {
-            const userToken = token
-            const res = await fetch(`${API}/live/token/${courseId}`, {
-              headers: { Authorization: `Bearer ${userToken}` }
-            }).then(r => r.json()).catch(() => null)
-            if (res?.data?.token) {
-              sessionStorage.setItem('agora_token', res.data.token)
-              await client.leave().catch(() => {})
-              await client.join(appId, channelName, res.data.token, uid)
-            }
-          }
-        })
-
-        await client.join(appId, channelName, agoraToken, uid)
-        setJoined(true)
-        setLoading(false)
-
-        if (token) {
-          fetch(`${API}/live/viewers/${courseId}`, {
-            method: 'PATCH',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ delta: 1 })
-          }).catch(() => {})
-        }
-      } catch(e: any) {
-        console.error('Agora join error:', e)
-        setError(e.message || (isAr ? 'فشل الاتصال بالبث المباشر' : 'Failed to join live stream'))
-        setLoading(false)
-      }
-    }
-
-    if (joined) {
-      joinStream()
-    }
+    joinStream()
 
     return () => {
+      clearTimeout(loadingTimeoutRef.current)
       if (token) {
         fetch(`${API}/live/viewers/${courseId}`, {
           method: 'PATCH',
@@ -266,7 +257,7 @@ export default function LiveViewerPage() {
       }
       clientRef.current?.leave().catch(() => {})
     }
-  }, [courseId, joined])
+  }, [courseId])
 
   const handleSendComment = () => {
     if (!newComment.trim()) return
