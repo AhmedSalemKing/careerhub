@@ -479,14 +479,22 @@ function LearnPageInner() {
 			console.error("Error marking complete:", e);
 		}
 		setMarkingComplete(false);
-		if (nextLesson) goToLesson(nextLesson);
+		if (nextLesson) {
+			goToLesson(nextLesson);
+		} else {
+			// Last lesson completed — auto-generate certificate
+			console.log('[Certificate] Last lesson complete, generating certificate...')
+			handleGetCertificate()
+		}
 	};
 
 	const handleGetCertificate = async () => {
 		try {
 			const token =
+				localStorage.getItem("token") ||
 				localStorage.getItem("deveway_token") ||
-				localStorage.getItem("careerhub_token");
+				localStorage.getItem("careerhub_token") ||
+				sessionStorage.getItem("token");
 			const apiUrl =
 				process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
 
