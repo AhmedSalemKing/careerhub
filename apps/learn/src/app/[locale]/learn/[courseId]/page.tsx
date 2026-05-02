@@ -77,10 +77,9 @@ import VideoProtection from "../../../../components/VideoProtection";
 				sessionStorage.getItem('token') ||
 				''
 			)
-		}
+	}
 
-		const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-		const isAr = locale === 'ar'
+	const isAr = locale === 'ar'
 
 	// Native video ref
 	const videoRef = useRef<HTMLVideoElement>(null);
@@ -297,25 +296,25 @@ import VideoProtection from "../../../../components/VideoProtection";
 	);
 
 	// ✅ FIXED: Safe URL construction - handles relative and absolute URLs
-	const API_BASE_URL =
+	const apiBase =
 		process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
 
 	const getSafeUrl = (url: string | null | undefined): string => {
 		if (!url) return "";
-
+		
 		// Local /uploads/ paths no longer exist on Render — treat as broken
 		if (url.startsWith("/uploads/")) return "";
-
+		
 		// If already absolute URL, return as-is
 		if (url.startsWith("http://") || url.startsWith("https://")) {
 			return url;
 		}
-
+		
 		// Remove leading slash if present to avoid double slashes
 		const cleanUrl = url.replace(/^\//, "");
-
+		
 		// Construct full URL with API base
-		return `${API_BASE_URL}/${cleanUrl}`;
+		return `${apiBase}/${cleanUrl}`;
 	};
 
 	// Detect lessons whose content was uploaded to the old Render filesystem (now gone)
