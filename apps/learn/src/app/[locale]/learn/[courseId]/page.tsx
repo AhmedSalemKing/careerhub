@@ -339,6 +339,10 @@ import VideoProtection from "../../../../components/VideoProtection";
 		totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
+	// Show certificate button if course is complete OR all lessons are done (defensive fallback)
+	const showCertButton = isCourseComplete ||
+		(allLessonsFlat.length > 0 && completedLessons.size >= allLessonsFlat.length);
+
 	// Merge localStorage progress on first load (before server data arrives)
 	useEffect(() => {
 		if (!courseId) return;
@@ -370,6 +374,13 @@ import VideoProtection from "../../../../components/VideoProtection";
 			}
 		});
 	}, [activeLessonId, sections]);
+
+	// Set isCourseComplete if course is already finished (from enrollment or localStorage)
+	useEffect(() => {
+		if (totalLessons > 0 && completedLessons.size >= totalLessons) {
+			setIsCourseComplete(true);
+		}
+	}, [completedLessons, totalLessons]);
 
 	// Update page title
 	useEffect(() => {
@@ -2088,7 +2099,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								</div>
 
 								{/* Course Completion Certificate CTA */}
-								{isCourseComplete && (
+								{showCertButton && (
 									<div
 										style={{ position: "sticky", bottom: 24, marginTop: 32 }}>
 										<button

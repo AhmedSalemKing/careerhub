@@ -1405,6 +1405,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     const isCourseComplete = progressPercent >= 100;
 
     this.logger.log(
+      `[Lesson] Returning progress: ${progressPercent}% | isCourseComplete: ${isCourseComplete} | completed: ${completedCount}/${totalCount}`
+    );
+
+    this.logger.log(
       `[Progress] userId=${userId} courseId=${courseId} ` +
       `completed=${completedCount}/${totalCount} (${progressPercent}%)`
     );
