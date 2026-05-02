@@ -1416,9 +1416,19 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     // Queue certificate generation when course is completed
     if (isCompleted) {
-      await this.certificateQueue.add('generate', { userId, courseId }).catch((err: Error) =>
-        this.logger.error('Failed to queue certificate generation', { userId, courseId, reason: err.message }),
-      );
+      this.logger.log(`[Courses] Course ${courseId} completed by user ${userId}, generating certificate...`)
+      
+      // Check if certificate already exists
+      const existing = await this.prisma.certificate.findFirst({ where: { userId, courseId } })
+      
+      if (!existing) {
+        // Queue certificate generation
+        await this.certificateQueue.add('generate', { userId, courseId }).catch((err: Error) =>
+          this.logger.error('Failed to queue certificate generation', { userId, courseId, reason: err.message }),
+        );
+      } else {
+        this.logger.log(`[Courses] Certificate already exists for user ${userId}, course ${courseId}`)
+      }
     }
 
     return {

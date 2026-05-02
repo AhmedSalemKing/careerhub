@@ -8,12 +8,14 @@ import { RecommendationService } from './recommendation.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { CertificatesModule } from '../certificates/certificates.module';
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
     NotificationsModule,
+    CertificatesModule,
     BullModule.registerQueue({ name: 'certificates' }),
   ],
   controllers: [CoursesController],
