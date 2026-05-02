@@ -148,6 +148,16 @@ export class CertificatesService {
     );
 
     return { success: true, data: certificate }
+  } catch (e: any) {
+    console.error('[Certificate] _doGenerate FAILED:', {
+      message: e.message,
+      code: e.code,
+      meta: e.meta,
+      userId,
+      courseId,
+    })
+    throw e
+  }
   } // end _doGenerate
 
   private resolveTemplatePath(): string {
