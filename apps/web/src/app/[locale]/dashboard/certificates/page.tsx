@@ -54,7 +54,8 @@ export default function CertificatesPage() {
     retry: 1,
   })
 
-  const certificates = Array.isArray(data) ? data : []
+  const raw = data?.data ?? data?.certificates ?? data ?? []
+  const certificates = Array.isArray(raw) ? raw : []
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('ar-SA', {
