@@ -54,8 +54,8 @@ export default function CertificatesPage() {
     retry: 1,
   })
 
-  const raw = data?.data ?? data?.certificates ?? data ?? []
-  const certificates = Array.isArray(raw) ? raw : []
+  // data is already the array from queryFn (which extracted json?.data)
+  const certificates = Array.isArray(data) ? data : []
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('ar-SA', {
