@@ -5,9 +5,8 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CertificatesService } from '../certificates/certificates.service';
 import { Course, CourseStatus, User } from '@prisma/client';
 
 @Injectable()
@@ -18,7 +17,7 @@ export class CoursesService {
 
   constructor(
     private prisma: PrismaService,
-    @InjectQueue('certificates') private certificateQueue: Queue,
+    private certificatesService: CertificatesService,
   ) { }
 
   async getCourses(options: {
@@ -1414,7 +1413,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     });
 
-    // Queue certificate generation when course is completed
+    // Generate certificate directly when course is completed (bypass Redis queue)
     if (isCompleted) {
       this.logger.log(`[Courses] Course ${courseId} completed by user ${userId}, generating certificate...`)
       
@@ -1422,10 +1421,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       const existing = await this.prisma.certificate.findFirst({ where: { userId, courseId } })
       
       if (!existing) {
-        // Queue certificate generation
-        await this.certificateQueue.add('generate', { userId, courseId }).catch((err: Error) =>
-          this.logger.error('Failed to queue certificate generation', { userId, courseId, reason: err.message }),
-        );
+        // Call CertificatesService directly (bypass queue for reliability)
+        this.certificatesService.generateCertificate(userId, courseId)
+          .then(() => this.logger.log(`[Courses] Certificate auto-generated for user=${userId} course=${courseId}`))
+          .catch((err: Error) => this.logger.error('[Courses] Certificate auto-generation failed', { userId, courseId, reason: err.message }))
       } else {
         this.logger.log(`[Courses] Certificate already exists for user ${userId}, course ${courseId}`)
       }
