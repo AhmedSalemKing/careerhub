@@ -5,18 +5,52 @@ import { useAuthStore } from '../../../../stores/authStore'
 import { Award, Download, Shield, BookOpen, Calendar, CheckCircle2 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 
 export default function CertificatesPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  useAuthStore()
+  const { user, hydrate } = useAuthStore()
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['my-certificates'],
+  useEffect(() => { hydrate() }, [hydrate])
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['my-certificates', user?.id],
     queryFn: async () => {
-      const res = await get<any>('/certificates/my')
-      return res.data?.data ?? []
+      // Get token from storage - check all possible keys
+      const token =
+        (typeof window !== 'undefined'
+          ? localStorage.getItem('deveway_token') ||
+            localStorage.getItem('careerhub_token') ||
+            localStorage.getItem('token') ||
+            sessionStorage.getItem('token') ||
+            ''
+          : '')
+
+      console.log('[Certificates] Fetching with token:', token ? 'exists' : 'missing')
+
+      const res = await fetch('https://deve-way.onrender.com/api/certificates/my', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!res.ok) {
+        console.error('[Certificates] API error:', res.status, res.statusText)
+        throw new Error(`API error: ${res.status}`)
+      }
+
+      const json = await res.json()
+      console.log('[Certificates] API response:', json)
+
+      // Handle response: { success: true, data: [...] } or { data: [...] } or [...]
+      const certs = json?.data ?? json?.certificates ?? json ?? []
+      console.log('[Certificates] Parsed certificates:', certs.length)
+      return certs
     },
+    enabled: !!user?.id,
+    retry: 1,
   })
 
   const certificates = Array.isArray(data) ? data : []
@@ -87,6 +121,23 @@ export default function CertificatesPage() {
               }}
             />
           ))}
+        </div>
+      ) : error ? (
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '40px 24px',
+            background: isDark ? '#161929' : '#ffffff',
+            borderRadius: '20px',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
+          }}
+        >
+          <p style={{ color: '#ef4444', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
+            حدث خطأ في تحميل الشهادات
+          </p>
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>
+            {error.message || 'يرجى المحاولة مرة أخرى لاحقاً'}
+          </p>
         </div>
       ) : certificates.length === 0 ? (
         <div
