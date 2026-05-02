@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
-import { createCanvas, loadImage } from '@napi-rs/canvas'
+import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas'
 import * as QRCode from 'qrcode'
 import { v4 as uuidv4 } from 'uuid'
+import * as fs from 'fs'
 import * as path from 'path'
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
-import sharp from 'sharp'
 import { sendNotification } from '../../common/utils/notify.util'
+
+const logger = new Logger('CertificatesService')
 
 @Injectable()
 export class CertificatesService {
@@ -20,44 +22,37 @@ export class CertificatesService {
   }
 
   async generateCertificate(userId: string, courseId: string, bypassEnrollment = false) {
+    // Guard: prevent duplicate certificates
+    const existing = await this.prisma.certificate.findFirst({
+      where: { userId, courseId },
+    })
+    if (existing) {
+      logger.log(`[Certificate] Already exists: ${existing.serialNumber}`)
+      return { success: true, data: existing }
+    }
+
     try {
-      console.log('[Certificate] generateCertificate called:', { userId, courseId, bypassEnrollment })
+      logger.log(`[Certificate] generateCertificate called: ${userId}, ${courseId}`)
       const result = await this._doGenerate(userId, courseId, bypassEnrollment)
-      console.log('[Certificate] Generation SUCCESS:', { certificateId: result?.data?.id, url: result?.data?.certificateUrl })
+      logger.log(`[Certificate] Generation SUCCESS: ${result?.data?.id}`)
       return result
     } catch (e: any) {
-      console.error('[Certificate] Full generation failed, attempting fallback:', {
-        message: e.message,
-        code: e.code,
-        meta: e.meta,
-        stack: e.stack?.split('\n').slice(0, 4).join(' | '),
+      logger.error('[Certificate] Full generation failed, attempting fallback:', {
+        message: e.message, code: e.code, meta: e.meta,
       })
 
-      // Don't fallback for auth/enrollment errors — those are real failures
       if (e instanceof ForbiddenException || e instanceof NotFoundException) throw e
 
-      // Race condition: check if certificate was created before the failure
-      const existing = await this.prisma.certificate.findUnique({
+      const existing2 = await this.prisma.certificate.findUnique({
         where: { userId_courseId: { userId, courseId } },
       }).catch(() => null)
-      if (existing) {
-        console.log('[Certificate] Certificate already exists (race):', existing.id)
-        return { success: true, data: existing }
-      }
+      if (existing2) return { success: true, data: existing2 }
 
-      // Fallback: save basic certificate record without image/QR
       const serialNumber = `DVW-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`
       const cert = await this.prisma.certificate.create({
-        data: {
-          userId,
-          courseId,
-          serialNumber,
-          certificateUrl: '',
-          qrCodeUrl: '',
-          issuedAt: new Date(),
-        },
+        data: { userId, courseId, serialNumber, certificateUrl: '', qrCodeUrl: '', issuedAt: new Date() },
       })
-      console.log('[Certificate] Fallback certificate created:', cert.id, cert.serialNumber)
+      logger.log(`[Certificate] Fallback certificate created: ${cert.id}`)
       return { success: true, data: cert }
     }
   }
@@ -102,20 +97,9 @@ export class CertificatesService {
     }
     console.log('[Certificate] Course found:', course.titleEn)
 
-    // 4. Check enrollment (admin can bypass)
-    if (!bypassEnrollment) {
-      console.log('[Certificate] Checking enrollment:', { userId, courseId })
-      const enrollment = await this.prisma.enrollment.findUnique({
-        where: { userId_courseId: { userId, courseId } },
-      })
-      if (!enrollment) {
-        console.error('[Certificate] Not enrolled:', { userId, courseId })
-        throw new ForbiddenException('Not enrolled in this course')
-      }
-      console.log('[Certificate] Enrollment found')
-    } else {
-      console.log('[Certificate] Enrollment check bypassed (admin)')
-    }
+    // 4. Enrollment check removed - any authenticated user who completed
+    //    the course can get a certificate (covers INSTRUCTOR, COACH, STUDENT)
+    console.log('[Certificate] Skipping enrollment check - open to all authenticated users')
 
     // 5. Generate unique serial number (our verifyCode)
     const serialNumber = `DVW-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`
@@ -204,28 +188,53 @@ export class CertificatesService {
     throw new Error('Certificate template not found in any expected location')
   }
 
-  /** Register professional fonts from @fontsource packages (once per process is fine) */
-  private registerFonts() {
-    const fs = require('fs') as typeof import('fs')
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { GlobalFonts } = require('@napi-rs/canvas')
-    const base = path.join(process.cwd(), 'node_modules', '@fontsource')
-    const fonts = [
-      { file: path.join(base, 'playfair-display', 'files', 'playfair-display-latin-400-normal.woff2'), family: 'Playfair Display' },
-      { file: path.join(base, 'playfair-display', 'files', 'playfair-display-latin-400-italic.woff2'), family: 'Playfair Display' },
-      { file: path.join(base, 'cormorant-garamond', 'files', 'cormorant-garamond-latin-400-normal.woff2'), family: 'Cormorant Garamond' },
-      { file: path.join(base, 'cormorant-garamond', 'files', 'cormorant-garamond-latin-400-italic.woff2'), family: 'Cormorant Garamond' },
-      { file: path.join(base, 'great-vibes', 'files', 'great-vibes-latin-400-normal.woff2'), family: 'Great Vibes' },
-    ]
-    for (const f of fonts) {
-      if (fs.existsSync(f.file)) {
-        try { GlobalFonts.registerFromPath(f.file, f.family) }
-        catch { /* non-fatal */ }
+  // ── Helper: Arabic detection ────────────────────────────────────────────
+  private isArabic(text: string): boolean {
+    return /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text)
+  }
+
+  // ── Helper: Resolve font based on language and weight ────────────────────
+  private resolveFont(
+    sizePx: number,
+    weight: 'normal' | 'bold' | 'italic' = 'bold',
+    arabic = false,
+  ): string {
+    if (arabic) {
+      return `${weight === 'italic' ? 'italic' : 'bold'} ${sizePx}px "CertificateArabic", Arial, sans-serif`
+    }
+    return `${weight} ${sizePx}px "Playfair Display", Georgia, "Times New Roman", serif`
+  }
+
+  // ── Helper: Draw text with alignment ─────────────────────────────────────
+  private drawText(
+    ctx: any,
+    text: string,
+    x: number,
+    y: number,
+    color = '#1a1a2e',
+    align: 'left' | 'center' | 'right' = 'center',
+  ): void {
+    ctx.fillStyle = color
+    ctx.textAlign = align
+    ctx.fillText(text, x, y)
+  }
+
+  // ── Helper: Word-wrap text to fit maxWidth ──────────────────────────────
+  private wrapText(ctx: any, text: string, maxWidth: number): string[] {
+    const words = text.split(' ')
+    const lines: string[] = []
+    let current = ''
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word
+      if (ctx.measureText(test).width > maxWidth && current) {
+        lines.push(current)
+        current = word
       } else {
-        console.warn('[Certificate] Font not found:', f.file)
+        current = test
       }
     }
-    console.log('[Certificate] Registered fonts:', GlobalFonts.families?.length ?? '?')
+    if (current) lines.push(current)
+    return lines
   }
 
   private async createCertificateImage(data: {
@@ -236,172 +245,188 @@ export class CertificatesService {
     instructorName: string
     instructorSignatureUrl: string | null
   }): Promise<Buffer> {
-    this.registerFonts()
+    // ── Font Registration ──────────────────────────────────────────────────
+    const fontsDir = path.join(__dirname, 'fonts')
+    const arabicFontPath = path.join(fontsDir, 'certificate.ttf')
+    let arabicFontRegistered = false
 
-    // Register Arabic font
-    const fs = require('fs') as typeof import('fs')
-    const { GlobalFonts } = require('@napi-rs/canvas')
-    const arabicFontPath = path.join(__dirname, 'fonts', 'certificate.ttf')
     if (fs.existsSync(arabicFontPath)) {
-      try { GlobalFonts.registerFromPath(arabicFontPath, 'CertificateArabic') }
-      catch { /* non-fatal */ }
-      console.log('[Certificate] Arabic font registered')
+      try {
+        GlobalFonts.registerFromPath(arabicFontPath, 'CertificateArabic')
+        arabicFontRegistered = true
+        logger.log(`[Certificate] Arabic font registered: ${arabicFontPath}`)
+      } catch (fontErr: any) {
+        logger.warn(`[Certificate] Arabic font registration failed: ${fontErr.message}`)
+      }
     } else {
-      console.warn('[Certificate] Arabic font not found:', arabicFontPath)
+      logger.warn(`[Certificate] Arabic font NOT found at: ${arabicFontPath}`)
     }
 
+    // ── Load Template ──────────────────────────────────────────────────────
     const templatePath = this.resolveTemplatePath()
     const template = await loadImage(templatePath).catch((e: any) => {
-      console.error('[Certificate] loadImage failed:', e.message, 'path:', templatePath)
+      logger.error(`[Certificate] loadImage failed: ${e.message} path: ${templatePath}`)
       throw e
     })
 
     const W = template.width
     const H = template.height
-    console.log(`[Certificate] Template loaded: ${W}x${H}`)
+    logger.log(`[Certificate] Template loaded: ${W}x${H}`)
 
     const canvas = createCanvas(W, H)
     const ctx = canvas.getContext('2d')
+    ctx.drawImage(template, 0, 0, W, H)
 
-    // Draw BLANK template (no placeholder text)
-    ctx.drawImage(template, 0, 0)
+    // ── A. "Certificate of Completion" ────────────────────────────────────
+    ctx.font = this.resolveFont(Math.floor(W * 0.040))
+    this.drawText(ctx, 'Certificate of Completion', W / 2, H * 0.255, '#1a1a2e')
 
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
+    // ── B. Decorative separator line ───────────────────────────────────────
+    const lineW = W * 0.25
+    ctx.strokeStyle = '#c9a96e'
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.moveTo(W / 2 - lineW / 2, H * 0.278)
+    ctx.lineTo(W / 2 + lineW / 2, H * 0.278)
+    ctx.stroke()
 
-    // ═══ STATIC TEXT ═══
+    // ── C. "This is to certify that" ──────────────────────────────────────
+    ctx.font = this.resolveFont(Math.floor(W * 0.016), 'italic')
+    this.drawText(ctx, 'This is to certify that', W / 2, H * 0.325, '#5a5a6e')
 
-    // "Certificate of Completion"
-    ctx.font = `bold ${Math.floor(W * 0.042)}px "Playfair Display", Georgia, serif`
-    ctx.fillStyle = '#1a1a2e'
-    ctx.fillText('Certificate of Completion', W / 2, H * 0.230)
+    // ── D. Student Name ────────────────────────────────────────────────────
+    const nameArabic = this.isArabic(data.studentName)
+    const nameFontSize = Math.floor(W * 0.034)
+    ctx.font = this.resolveFont(nameFontSize, 'bold', nameArabic)
+    if (nameArabic) ctx.direction = 'rtl'
+    this.drawText(ctx, data.studentName, W / 2, H * 0.390, '#1a1a2e')
+    ctx.direction = 'ltr'
 
-    // "This is to certify that"
-    ctx.font = `${Math.floor(W * 0.016)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillStyle = '#2c2c2c'
-    ctx.fillText('This is to certify that', W / 2, H * 0.305)
+    // ── E. Student name underline (signature-style) ──────────────────────
+    const nameW = Math.min(ctx.measureText(data.studentName).width + W * 0.04, W * 0.55)
+    ctx.strokeStyle = '#c9a96e'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(W / 2 - nameW / 2, H * 0.402)
+    ctx.lineTo(W / 2 + nameW / 2, H * 0.402)
+    ctx.stroke()
 
-    // "has successfully completed the course:"
-    ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillStyle = '#2c2c2c'
-    ctx.fillText('has successfully completed the course:', W / 2, H * 0.455)
+    // ── F. "has successfully completed the course:" ───────────────────────
+    ctx.font = this.resolveFont(Math.floor(W * 0.015), 'italic')
+    this.drawText(ctx, 'has successfully completed the course:', W / 2, H * 0.448, '#5a5a6e')
 
-    // Description text
-    ctx.font = `${Math.floor(W * 0.013)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillText('This certificate is awarded in recognition of their commitment and', W / 2, H * 0.650)
-    ctx.fillText('achievement in mastering the course material.', W / 2, H * 0.670)
+    // ── G. Course Title (with word wrap) ───────────────────────────────────
+    const courseArabic = this.isArabic(data.courseTitle)
+    const courseFontSize = Math.floor(W * 0.026)
+    ctx.font = this.resolveFont(courseFontSize, 'bold', courseArabic)
+    if (courseArabic) ctx.direction = 'rtl'
 
-    // "DeveWay Instructor" label
-    ctx.font = `${Math.floor(W * 0.012)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillText('DeveWay Instructor', W * 0.215, H * 0.855)
+    const maxCourseWidth = W * 0.72
+    const courseLines = this.wrapText(ctx, data.courseTitle, maxCourseWidth)
+    const courseLineH = courseFontSize * 1.45
+    const courseStartY = courseLines.length === 1
+      ? H * 0.508
+      : H * 0.495 - ((courseLines.length - 1) * courseLineH) / 2
 
-    // "DeveWay CEO" label
-    ctx.fillText('DeveWay CEO', W * 0.785, H * 0.855)
+    courseLines.forEach((line, i) => {
+      this.drawText(ctx, line, W / 2, courseStartY + i * courseLineH, '#2d2d5e')
+    })
+    ctx.direction = 'ltr'
 
-    // "www.deveway.com" - raised
-    ctx.font = `${Math.floor(W * 0.010)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillStyle = '#5a5a5a'
-    ctx.fillText('www.deveway.com', W / 2, H * 0.920)
+    // ── H. Issue Date ─────────────────────────────────────────────────────
+    const issueDate = new Date(data.issueDate || Date.now())
+    const dateFormatted = issueDate.toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    })
+    ctx.font = this.resolveFont(Math.floor(W * 0.0145), 'normal')
+    this.drawText(ctx, `Issued: ${dateFormatted}`, W / 2, H * 0.612, '#666680')
 
-    // ═══ DYNAMIC TEXT ═══
+    // ── I. Instructor Name ─────────────────────────────────────────────────
+    const instructorName = data.instructorName || 'DeveWay Team'
+    ctx.font = this.resolveFont(Math.floor(W * 0.017), 'bold')
+    this.drawText(ctx, instructorName, W / 2, H * 0.798, '#1a1a2e')
 
-    // Student Name
-    const nameLen = data.studentName.length
-    const nameFontSize = nameLen > 35 ? Math.floor(W * 0.030)
-      : nameLen > 25 ? Math.floor(W * 0.036)
-      : Math.floor(W * 0.042)
+    ctx.font = this.resolveFont(Math.floor(W * 0.013), 'normal')
+    this.drawText(ctx, 'Course Instructor', W / 2, H * 0.820, '#888899')
 
-    const nameHasArabic = /[\u0600-\u06FF]/.test(data.studentName)
-    if (nameHasArabic) {
-      ctx.font = `bold ${nameFontSize}px "CertificateArabic", Arial, sans-serif`
-      ctx.direction = 'rtl'
-    } else {
-      ctx.font = `italic bold ${nameFontSize}px "Playfair Display", Georgia, serif`
-      ctx.direction = 'ltr'
-    }
-    ctx.fillStyle = '#1a1a2e'
-    ctx.shadowColor = 'rgba(0,0,0,0.08)'
-    ctx.shadowBlur = 2
-    ctx.fillText(
-      data.studentName.length > 40 ? data.studentName.substring(0, 38) + '...' : data.studentName,
+    // ── J. Certificate ID (monospace for authenticity) ────────────────────
+    ctx.font = `${Math.floor(W * 0.011)}px "Courier New", "Lucida Console", monospace`
+    this.drawText(
+      ctx,
+      `Certificate ID: ${data.serialNumber}`,
       W / 2,
-      H * 0.360
+      H * 0.882,
+      '#9999aa',
     )
-    ctx.shadowBlur = 0
-    ctx.direction = 'ltr'
 
-    // Course Title
-    const courseFontSize = data.courseTitle.length > 35 ? Math.floor(W * 0.024) : Math.floor(W * 0.030)
-    const courseHasArabic = /[\u0600-\u06FF]/.test(data.courseTitle)
-    if (courseHasArabic) {
-      ctx.font = `bold ${courseFontSize}px "CertificateArabic", Arial, sans-serif`
-      ctx.direction = 'rtl'
-    } else {
-      ctx.font = `bold ${courseFontSize}px "Playfair Display", Georgia, serif`
-      ctx.direction = 'ltr'
-    }
-    ctx.fillStyle = '#1a1a2e'
+    // ── K. Website URL ─────────────────────────────────────────────────────
+    ctx.font = this.resolveFont(Math.floor(W * 0.011), 'normal')
+    this.drawText(ctx, 'www.deveway.com', W / 2, H * 0.912, '#bbbbcc')
 
-    const courseLines = this.splitText(ctx, data.courseTitle, W * 0.68)
-    if (courseLines.length === 1) {
-      ctx.fillText(courseLines[0], W / 2, H * 0.520)
-    } else {
-      ctx.fillText(courseLines[0], W / 2, H * 0.505)
-      ctx.fillText(courseLines[1] || '', W / 2, H * 0.540)
-    }
-    ctx.direction = 'ltr'
-
-    // Date
-    ctx.font = `${Math.floor(W * 0.015)}px "Cormorant Garamond", Georgia, serif`
-    ctx.fillStyle = '#2c2c2c'
-    ctx.fillText(`on ${data.issueDate}`, W / 2, H * 0.610)
-
-    // Instructor Name (left, under signature lines)
-    ctx.font = `italic ${Math.floor(W * 0.018)}px "Playfair Display", Georgia, serif`
-    ctx.fillStyle = '#1a1a2e'
-    ctx.fillText(data.instructorName, W * 0.215, H * 0.800)
-
-    // Certificate ID - raised
-    ctx.font = `${Math.floor(W * 0.009)}px "Courier New", monospace`
-    ctx.fillStyle = '#5a5a5a'
-    ctx.fillText(`Certificate ID: ${data.serialNumber}`, W / 2, H * 0.890)
-
-    // ── QR CODE ─────────────────────────────────────────────────────────────
-    const certBuffer = canvas.toBuffer('image/png')
-    console.log('[QR] Cert buffer size:', certBuffer.length)
-
+    // ── QR CODE BLOCK ──────────────────────────────────────────────────────
     try {
-      const verifyUrl = `${process.env.LEARN_URL || 'https://devewayhub.vercel.app'}/ar/certificate/${data.serialNumber}`
-      console.log('[QR] URL:', verifyUrl)
+      const learnUrl = process.env.LEARN_URL || 'https://devewayhub.vercel.app'
+      const serial = data.serialNumber
+      const verifyUrl = `${learnUrl}/ar/certificate/${serial}`
 
-      const qrSize = Math.floor(W * 0.095)
-      const qrX = Math.floor(W * 0.840)
-      const qrY = Math.floor(H * 0.695)
-      console.log('[QR] Position:', qrX, qrY, 'Size:', qrSize)
+      logger.log(`[Certificate] Generating QR for: ${verifyUrl}`)
 
-      const qrPng = await QRCode.toBuffer(verifyUrl, {
-        width: qrSize,
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: 300,
         margin: 2,
-        type: 'png',
-        color: { dark: '#000000', light: '#ffffff' },
+        errorCorrectionLevel: 'H',
+        color: { dark: '#1a1a2e', light: '#ffffff' },
       })
-      console.log('[QR] Buffer generated, size:', qrPng.length)
 
-      const finalBuffer = await sharp(certBuffer)
-        .composite([{
-          input: qrPng,
-          left: qrX,
-          top: qrY,
-          blend: 'over',
-        }])
-        .toBuffer()
+      const qrImg = await loadImage(qrDataUrl)
 
-      console.log('[QR] Composited successfully, final size:', finalBuffer.length)
-      return finalBuffer
-    } catch (e: any) {
-      console.error('[QR] Sharp composite failed:', e.message, e.stack?.split('\n')[1])
-      return certBuffer  // fallback without QR
+      const qrSize   = Math.floor(W * 0.092)
+      const qrX      = Math.floor(W * 0.842)
+      const qrY      = Math.floor(H * 0.698)
+      const padding  = 10
+      const labelH   = 22
+
+      // Outer card - white background with rounded corners
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      if (ctx.roundRect) {
+        ctx.roundRect(
+          qrX - padding,
+          qrY - padding,
+          qrSize + padding * 2,
+          qrSize + padding * 2 + labelH,
+          8,
+        )
+      } else {
+        ctx.rect(qrX - padding, qrY - padding, qrSize + padding * 2, qrSize + padding * 2 + labelH)
+      }
+      ctx.fill()
+
+      // Thin gold border
+      ctx.strokeStyle = '#c9a96e'
+      ctx.lineWidth = 1
+      ctx.stroke()
+
+      // QR image
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+
+      // "Scan to Verify" label
+      const labelFontSize = Math.floor(W * 0.0082)
+      ctx.font = `${labelFontSize}px Arial, sans-serif`
+      ctx.fillStyle = '#5a5a6e'
+      ctx.textAlign = 'center'
+      ctx.fillText('Scan to Verify', qrX + qrSize / 2, qrY + qrSize + labelH - 5)
+
+      logger.log(`[Certificate] QR rendered at x:${qrX} y:${qrY} size:${qrSize}`)
+    } catch (qrErr: any) {
+      logger.warn(`[Certificate] QR generation failed (non-fatal): ${qrErr.message}`)
+      ctx.font = `${Math.floor(W * 0.009)}px "Courier New", monospace`
+      ctx.fillStyle = '#cccccc'
+      ctx.textAlign = 'right'
+      ctx.fillText(data.serialNumber || '', W * 0.968, H * 0.810)
     }
+
+    return canvas.toBuffer('image/png')
   }
 
   /** Split text into lines that fit within maxWidth at the current ctx font. */

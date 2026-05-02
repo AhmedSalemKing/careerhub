@@ -1401,48 +1401,45 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       }),
     ]);
 
-    const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-    const isCompleted = progress === 100;
+    const progressPercent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+    const isCourseComplete = progressPercent >= 100;
+
+    this.logger.log(
+      `[Progress] userId=${userId} courseId=${courseId} ` +
+      `completed=${completedCount}/${totalCount} (${progressPercent}%)`
+    );
 
     // Update enrollment progress
     const updatedEnrollment = await this.prisma.enrollment.update({
       where: { userId_courseId: { userId, courseId } },
       data: {
-        progress,
-        ...(isCompleted ? { status: 'COMPLETED', completedAt: new Date() } : {}),
+        progress: progressPercent,
+        ...(isCourseComplete ? { status: 'COMPLETED', completedAt: new Date() } : {}),
       },
     });
 
-    // Generate certificate directly when course is completed (bypass Redis queue)
-    if (isCompleted) {
-      this.logger.log(`[Courses] Course ${courseId} completed by user ${userId}, generating certificate...`)
-      
-      // Check if certificate already exists
-      const existing = await this.prisma.certificate.findFirst({ where: { userId, courseId } })
-      
-      if (!existing) {
-        // Call CertificatesService directly (bypass queue for reliability)
-        this.certificatesService.generateCertificate(userId, courseId)
-          .then(() => this.logger.log(`[Courses] Certificate auto-generated for user=${userId} course=${courseId}`))
-          .catch((err: Error) => this.logger.error('[Courses] Certificate auto-generation failed', { userId, courseId, reason: err.message }))
-      } else {
-        this.logger.log(`[Courses] Certificate already exists for user ${userId}, course ${courseId}`)
-      }
+    // Auto Certificate Generation - fire-and-forget (non-blocking)
+    if (isCourseComplete) {
+      this.certificatesService
+        .generateCertificate(userId, courseId)
+        .then((cert) => {
+          if (cert) {
+            this.logger.log(`[Certificate] Auto-issued: ${cert.data?.serialNumber}`)
+          }
+        })
+        .catch((err: any) => {
+          this.logger.error(`[Certificate] Auto-generation failed: ${err.message}`)
+        })
     }
 
     return {
-      lessonProgress: {
+      success: true,
+      data: {
         lessonId,
-        status: lessonProgress.status,
-        completedAt: lessonProgress.completedAt,
-      },
-      enrollmentProgress: {
-        courseId,
-        progress,
-        status: updatedEnrollment.status,
         completedLessons: completedCount,
         totalLessons: totalCount,
-        ...(isCompleted ? { certificateQueued: true } : {}),
+        progress: progressPercent,
+        isCourseComplete,
       },
     };
   }

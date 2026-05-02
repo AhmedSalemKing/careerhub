@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { get, post } from "../../../../lib/api";
+import { toast, Toaster } from "react-hot-toast";
 import {
 	Lock,
 	Play,
@@ -56,14 +57,30 @@ import {
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
 
-function LearnPageInner() {
-	const params = useParams();
-	const courseId = params.courseId as string;
-	const locale = useLocale();
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const qc = useQueryClient();
-	const lessonParam = searchParams.get("lesson");
+	function LearnPageInner() {
+		const params = useParams();
+		const courseId = params.courseId as string;
+		const locale = useLocale();
+		const router = useRouter();
+		const searchParams = useSearchParams();
+		const qc = useQueryClient();
+		const lessonParam = searchParams.get("lesson");
+
+		// Token helper: try ALL known token storage keys
+		const getAuthToken = (): string => {
+			if (typeof window === 'undefined') return ''
+			return (
+				localStorage.getItem('deveway_token') ||
+				localStorage.getItem('careerhub_token') ||
+				localStorage.getItem('token') ||
+				sessionStorage.getItem('deveway_token') ||
+				sessionStorage.getItem('token') ||
+				''
+			)
+		}
+
+		const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+		const isAr = locale === 'ar'
 
 	// Native video ref
 	const videoRef = useRef<HTMLVideoElement>(null);
@@ -74,6 +91,8 @@ function LearnPageInner() {
 	const [authChecked, setAuthChecked] = useState(false);
 	const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 	const [markingComplete, setMarkingComplete] = useState(false);
+	const [isCourseComplete, setIsCourseComplete] = useState(false);
+	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
 	const [theme, setTheme] = useState<"light" | "dark">("light");
 
 	// Media states
@@ -277,10 +296,6 @@ function LearnPageInner() {
 		[completedLessons, isLessonUnlocked],
 	);
 
-	const isCourseComplete =
-		allLessonsFlat.length > 0 &&
-		allLessonsFlat.every((l: any) => completedLessons.has(l.id));
-
 	// ✅ FIXED: Safe URL construction - handles relative and absolute URLs
 	const API_BASE_URL =
 		process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
@@ -456,97 +471,153 @@ function LearnPageInner() {
 		});
 	};
 
-	const handleMarkComplete = async () => {
+	const handleMarkComplete = async (): Promise<void> => {
 		if (!activeLessonId || markingComplete) return;
+		const token = getAuthToken()
+		if (!token) {
+			toast.error(isAr ? 'يجب تسجيل الدخول اولا' : 'Authentication required')
+			router.push(`/${locale}/login`)
+			return
+		}
+
 		setMarkingComplete(true);
 		setLocalCompleted((prev) => {
 			const next = new Set([...prev, activeLessonId]);
-			// Persist to localStorage as backup
 			try {
 				const allIds = [...next, ...completedLessonIdsList];
-				localStorage.setItem(
-					`progress_${courseId}`,
-					JSON.stringify([...new Set(allIds)]),
-				);
+				localStorage.setItem(`progress_${courseId}`, JSON.stringify([...new Set(allIds)]));
 			} catch {}
 			return next;
 		});
+
 		try {
-			await post(`/courses/${courseId}/lessons/${activeLessonId}/complete`, {});
+			const res = await fetch(
+				`${apiBase}/courses/${courseId}/lessons/${activeLessonId}/complete`,
+				{
+					method: 'POST',
+					headers: {
+						Authorization: `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+				},
+			);
+
+			const payload = await res.json();
+			console.log('[Lesson] Mark complete response:', payload);
+
+			if (!res.ok) {
+				const msg = payload?.message || (isAr ? 'فشل تسجيل اتمام الدرس' : 'Failed to complete lesson');
+				toast.error(msg);
+				setMarkingComplete(false);
+				return;
+			}
+
+			const progress: number = payload?.data?.progress ?? 0;
+			const isCourseComplete: boolean = payload?.data?.isCourseComplete ?? progress >= 100;
+
+			// Update local completed lessons state
+			// (already done above via setLocalCompleted)
+
+			if (isCourseComplete) {
+				setIsCourseComplete(true);
+				toast.success(
+					isAr
+						? 'تهانينا! اكملت الكورس بنجاح. جاري اصدار شهادتك...'
+						: 'Course complete! Issuing your certificate...',
+				);
+
+				// Auto-trigger certificate (with 2s delay to allow backend to process)
+				setTimeout(async () => {
+					try {
+						const certRes = await fetch(`${apiBase}/certificates/generate/${courseId}`, {
+							method: 'POST',
+							headers: {
+								Authorization: `Bearer ${token}`,
+								'Content-Type': 'application/json',
+							},
+						});
+						const certPayload = await certRes.json();
+						console.log('[Certificate] Auto-generation result:', certPayload);
+
+						if (certPayload?.success || certPayload?.data?.id) {
+							toast.success(
+								isAr ? 'تم اصدار شهادتك بنجاح' : 'Certificate issued successfully',
+							);
+						}
+					} catch (certErr: any) {
+						console.warn('[Certificate] Auto-trigger failed (non-fatal):', certErr.message);
+					}
+				}, 2000);
+			} else {
+				toast.success(
+					isAr
+						? `تم اتمام الدرس (${progress}%)`
+						: `Lesson completed (${progress}%)`,
+				);
+			}
+
 			refetchEnrollment();
 			qc.invalidateQueries({ queryKey: ["learn-enrollment", courseId] });
-		} catch (e) {
-			console.error("Error marking complete:", e);
-		}
-		if (nextLesson) {
-			goToLesson(nextLesson);
-			setMarkingComplete(false);
-		} else {
-			// Last lesson completed — check progress and auto-generate certificate
-			console.log('[Certificate] Last lesson complete, checking progress...')
-			try {
-				const token = localStorage.getItem('token') || localStorage.getItem('deveway_token') ||
-					localStorage.getItem('careerhub_token') || sessionStorage.getItem('token') || ''
-				
-				// Check if course is now 100% complete
-				const progressRes = await fetch(`https://deve-way.onrender.com/api/courses/${courseId}/progress`, {
-					headers: { Authorization: `Bearer ${token}` }
-				}).then(r => r.json()).catch(() => null)
-				
-				const progress = progressRes?.data?.progress || progressRes?.progress || 0
-				console.log('[Course] Progress after completion:', progress)
-				
-				if (progress >= 100) {
-					console.log('[Certificate] Course complete! Generating certificate...')
-					await handleGetCertificate()
-				}
-			} catch(e) {
-				console.error('[Certificate] Auto-generation error:', e)
-			} finally {
-				setMarkingComplete(false);
+
+			if (nextLesson) {
+				goToLesson(nextLesson);
 			}
+		} catch (err: any) {
+			console.error('[Lesson] Completion error:', err.message);
+			toast.error(isAr ? 'حدث خطا غير متوقع' : 'Unexpected error occurred');
+		} finally {
+			setMarkingComplete(false);
 		}
 	};
 
-	const handleGetCertificate = async () => {
+	const handleGetCertificate = async (): Promise<void> => {
+		const token = getAuthToken()
+		if (!token) {
+			router.push(`/${locale}/login`)
+			return
+		}
+
+		setIsGeneratingCert(true)
+		const toastId = toast.loading(
+			isAr ? 'جاري اصدار الشهادة...' : 'Generating certificate...',
+		)
+
 		try {
-			const token =
-				localStorage.getItem("token") ||
-				localStorage.getItem("deveway_token") ||
-				localStorage.getItem("careerhub_token") ||
-				sessionStorage.getItem("token");
-			const apiUrl =
-				process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
+			console.log('[Certificate] Requesting generation for courseId:', courseId)
+			console.log('[Certificate] Token exists:', !!token, '| Token length:', token.length)
 
-			console.log('[Certificate] Generating for course:', courseId, 'Token exists:', !!token)
-
-			const res = await fetch(`${apiUrl}/certificates/generate/${courseId}`, {
-				method: "POST",
+			const res = await fetch(`${apiBase}/certificates/generate/${courseId}`, {
+				method: 'POST',
 				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
+					'Authorization': `Bearer ${token}`,
+					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({}),
-			});
-			const data = await res.json();
-			console.log('[Certificate] API response:', data)
-			const cert = data?.data;
+			})
 
-			if (cert?.serialNumber || cert?.verifyCode) {
-				const code = cert.serialNumber || cert.verifyCode;
-				router.push(`/${locale}/certificate/${code}`);
-			} else if (cert?.certificateUrl || cert?.pdfUrl) {
-				window.open(cert.certificateUrl || cert.pdfUrl, "_blank");
+			const payload = await res.json()
+			toast.dismiss(toastId)
+
+			if (res.ok && (payload?.success || payload?.data?.id || payload?.data?.serialNumber)) {
+				const serial = payload?.data?.serialNumber || payload?.data?.serial || ''
+				toast.success(
+					isAr ? 'تم اصدار الشهادة بنجاح' : 'Certificate issued successfully',
+				)
+				// Wait 1.5s then redirect to web app certificates page
+				setTimeout(() => {
+					const webUrl = process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'
+					window.location.href = `${webUrl}/${locale}/dashboard/certificates`
+				}, 1500)
 			} else {
-				const mainUrl =
-					process.env.NEXT_PUBLIC_MAIN_URL || "https://deveway-teal.vercel.app";
-				window.location.href = `${mainUrl}/${locale}/dashboard/certificates`;
+				const errMsg = payload?.message || payload?.error || 'Certificate generation failed'
+				console.error('[Certificate] Generation failed:', errMsg, '| Full response:', payload)
+				toast.error(isAr ? `فشل: ${errMsg}` : `Failed: ${errMsg}`)
 			}
-		} catch (e) {
-			console.error("[Certificate] Error:", e);
-			const mainUrl =
-				process.env.NEXT_PUBLIC_MAIN_URL || "https://deveway-teal.vercel.app";
-			window.location.href = `${mainUrl}/${locale}/dashboard/certificates`;
+		} catch (err: any) {
+			toast.dismiss(toastId)
+			console.error('[Certificate] Network error:', err.message)
+			toast.error(isAr ? 'خطأ في الاتصال بالخادم' : 'Network error please try again')
+		} finally {
+			setIsGeneratingCert(false)
 		}
 	};
 
@@ -2241,24 +2312,27 @@ function ShieldCheck({
 
 export default function LearnPage() {
 	return (
-		<Suspense
-			fallback={
-				<div
-					className="flex min-h-screen items-center justify-center"
-					style={{ background: "#fafbfc" }}>
-					<div className="text-center">
-						<div
-							className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center mb-6"
-							style={{ background: "#7c3aed15" }}>
-							<GraduationCap className="h-8 w-8" style={{ color: "#7c3aed" }} />
+		<>
+			<Toaster />
+			<Suspense
+				fallback={
+					<div
+						className="flex min-h-screen items-center justify-center"
+						style={{ background: "#fafbfc" }}>
+						<div className="text-center">
+							<div
+								className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center mb-6"
+								style={{ background: "#7c3aed15" }}>
+								<GraduationCap className="h-8 w-8" style={{ color: "#7c3aed" }} />
+							</div>
+							<p className="text-sm font-medium" style={{ color: "#4b5563" }}>
+								جاري تحميل صفحة التعلم...
+							</p>
 						</div>
-						<p className="text-sm font-medium" style={{ color: "#4b5563" }}>
-							جاري تحميل صفحة التعلم...
-						</p>
 					</div>
-				</div>
-			}>
-			<LearnPageInner />
-		</Suspense>
+				}>
+				<LearnPageInner />
+			</Suspense>
+		</>
 	);
 }

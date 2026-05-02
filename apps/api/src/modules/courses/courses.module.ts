@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Optional } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { CoursesController } from './courses.controller';
 import { CoursesService } from './courses.service';
@@ -10,13 +10,17 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CertificatesModule } from '../certificates/certificates.module';
 
+const bullImports = process.env.REDIS_URL
+  ? [BullModule.registerQueue({ name: 'certificates' })]
+  : [];
+
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
     NotificationsModule,
     CertificatesModule,
-    BullModule.registerQueue({ name: 'certificates' }),
+    ...bullImports,
   ],
   controllers: [CoursesController],
   providers: [CoursesService, EnrollmentService, ProgressService, RecommendationService],
