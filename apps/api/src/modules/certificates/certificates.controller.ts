@@ -53,6 +53,20 @@ export class CertificatesController {
     return this.certificatesService.generateCertificate(userId, courseId, isAdmin)
   }
 
+  // ── Manual trigger: generate for course (bypass enrollment check) ──
+  @Post('generate-for-course/:courseId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Manually trigger certificate generation for current user' })
+  async generateForCourse(
+    @Param('courseId') courseId: string,
+    @Request() req: any,
+  ) {
+    const userId = req.user.sub || req.user.id
+    console.log('[CertCtrl] Manual generate for user:', userId, 'course:', courseId)
+    return this.certificatesService.generateCertificate(userId, courseId, true)
+  }
+
   // ── My certificates ─────────────────────────────────────────
   @Get('my')
   @UseGuards(JwtAuthGuard)

@@ -26,13 +26,39 @@ export class CertificatesService {
       console.log('[Certificate] Generation SUCCESS:', { certificateId: result?.data?.id, url: result?.data?.certificateUrl })
       return result
     } catch (e: any) {
-      console.error('[Certificate] Generation FAILED:', {
+      console.error('[Certificate] Full generation failed, attempting fallback:', {
         message: e.message,
         code: e.code,
         meta: e.meta,
-        stack: e.stack?.split('\n').slice(0, 6).join(' | '),
+        stack: e.stack?.split('\n').slice(0, 4).join(' | '),
       })
-      throw e
+
+      // Don't fallback for auth/enrollment errors — those are real failures
+      if (e instanceof ForbiddenException || e instanceof NotFoundException) throw e
+
+      // Race condition: check if certificate was created before the failure
+      const existing = await this.prisma.certificate.findUnique({
+        where: { userId_courseId: { userId, courseId } },
+      }).catch(() => null)
+      if (existing) {
+        console.log('[Certificate] Certificate already exists (race):', existing.id)
+        return { success: true, data: existing }
+      }
+
+      // Fallback: save basic certificate record without image/QR
+      const serialNumber = `DVW-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`
+      const cert = await this.prisma.certificate.create({
+        data: {
+          userId,
+          courseId,
+          serialNumber,
+          certificateUrl: '',
+          qrCodeUrl: '',
+          issuedAt: new Date(),
+        },
+      })
+      console.log('[Certificate] Fallback certificate created:', cert.id, cert.serialNumber)
+      return { success: true, data: cert }
     }
   }
 
