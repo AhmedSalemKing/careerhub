@@ -26,6 +26,8 @@ api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('deveway_token')
       || localStorage.getItem('careerhub_token')
+      || localStorage.getItem('token')
+      || sessionStorage.getItem('token')
       || document.cookie.match(/deveway_token=([^;]+)/)?.[1]
     if (token) {
       config.headers = config.headers ?? {}
