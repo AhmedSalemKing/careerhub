@@ -482,10 +482,24 @@ function LearnPageInner() {
 			goToLesson(nextLesson);
 			setMarkingComplete(false);
 		} else {
-			// Last lesson completed — auto-generate certificate
-			console.log('[Certificate] Last lesson complete, generating certificate...')
+			// Last lesson completed — check progress and auto-generate certificate
+			console.log('[Certificate] Last lesson complete, checking progress...')
 			try {
-				await handleGetCertificate()
+				const token = localStorage.getItem('token') || localStorage.getItem('deveway_token') ||
+					localStorage.getItem('careerhub_token') || sessionStorage.getItem('token') || ''
+				
+				// Check if course is now 100% complete
+				const progressRes = await fetch(`https://deve-way.onrender.com/api/courses/${courseId}/progress`, {
+					headers: { Authorization: `Bearer ${token}` }
+				}).then(r => r.json()).catch(() => null)
+				
+				const progress = progressRes?.data?.progress || progressRes?.progress || 0
+				console.log('[Course] Progress after completion:', progress)
+				
+				if (progress >= 100) {
+					console.log('[Certificate] Course complete! Generating certificate...')
+					await handleGetCertificate()
+				}
 			} catch(e) {
 				console.error('[Certificate] Auto-generation error:', e)
 			} finally {
