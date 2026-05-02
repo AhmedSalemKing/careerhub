@@ -1,11 +1,10 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
-import { get } from '../../../../lib/api'
 import { useAuthStore } from '../../../../stores/authStore'
 import { Award, Download, Shield, BookOpen, Calendar, CheckCircle2 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 
 export default function CertificatesPage() {
   const { theme } = useTheme()
@@ -17,7 +16,6 @@ export default function CertificatesPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-certificates', user?.id],
     queryFn: async () => {
-      // Get token from storage - check all possible keys
       const token =
         (typeof window !== 'undefined'
           ? localStorage.getItem('deveway_token') ||
@@ -45,7 +43,6 @@ export default function CertificatesPage() {
       const json = await res.json()
       console.log('[Certificates] API response:', JSON.stringify(json).slice(0, 300))
 
-      // Handle response: { success: true, data: [...] } or { data: [...] } or [...]
       const certs = json?.data ?? json?.certificates ?? json ?? []
       console.log('[Certificates] Parsed certificates count:', certs.length)
       return certs
@@ -54,7 +51,6 @@ export default function CertificatesPage() {
     retry: 1,
   })
 
-  // data is already the array from queryFn (which extracted json?.data)
   const certificates = Array.isArray(data) ? data : []
 
   const formatDate = (date: string) =>
@@ -190,148 +186,152 @@ export default function CertificatesPage() {
             gap: '20px',
           }}
         >
-          {certificates.map((cert: any) => (
-            <div
-              key={cert.id}
-              style={{
-                background: isDark ? '#161929' : '#ffffff',
-                borderRadius: '20px',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-                overflow: 'hidden',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
-                ;(e.currentTarget as HTMLElement).style.boxShadow =
-                  '0 12px 40px rgba(81,32,200,0.15)'
-              }}
-              onMouseLeave={(e) => {
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-              }}
-            >
-              {/* Preview */}
+          {certificates.map((cert: any) => {
+            console.log('[Certs] Rendering cert:', cert.id, cert.serialNumber, cert.certificateUrl)
+            return (
               <div
+                key={cert.id}
                 style={{
-                  position: 'relative',
-                  height: '180px',
+                  background: isDark ? '#161929' : '#ffffff',
+                  borderRadius: '20px',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
                   overflow: 'hidden',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
+                  ;(e.currentTarget as HTMLElement).style.boxShadow =
+                    '0 12px 40px rgba(81,32,200,0.15)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
+                  ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
                 }}
               >
-                {cert.certificateUrl ? (
-                  <img
-                    src={cert.certificateUrl}
-                    alt="certificate"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
+                {/* Preview */}
+                <div
+                  style={{
+                    position: 'relative',
+                    height: '180px',
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  }}
+                >
+                  {cert.certificateUrl ? (
+                    <img
+                      src={cert.certificateUrl}
+                      alt="certificate"
+                      onError={(e: any) => { e.currentTarget.style.display = 'none' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '100%',
+                      }}
+                    >
+                      <Award size={60} color="rgba(255,255,255,0.5)" />
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      background: '#16a34a',
+                      color: '#fff',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      fontSize: '12px',
+                      fontWeight: '600',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <CheckCircle2 size={12} /> موثقة
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div style={{ padding: '20px' }}>
+                  <h3
+                    style={{
+                      fontSize: '16px',
+                      fontWeight: '700',
+                      color: isDark ? '#f1f5f9' : '#0d0d0d',
+                      margin: '0 0 8px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {cert.course?.titleAr || cert.course?.titleEn}
+                  </h3>
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
+                      gap: '6px',
+                      color: '#6b7280',
+                      fontSize: '13px',
+                      marginBottom: '16px',
                     }}
                   >
-                    <Award size={60} color="rgba(255,255,255,0.5)" />
+                    <Calendar size={14} />
+                    {formatDate(cert.issuedAt)}
                   </div>
-                )}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    background: '#16a34a',
-                    color: '#fff',
-                    padding: '4px 10px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: '600',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <CheckCircle2 size={12} /> موثقة
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <a
+                      href={cert.certificateUrl}
+                      download={`certificate-${cert.serialNumber}.png`}
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: '#5120c8',
+                        color: '#fff',
+                        borderRadius: '10px',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                      }}
+                    >
+                      <Download size={15} /> تحميل
+                    </a>
+                    <a
+                      href={`https://deveway-teal.vercel.app/ar/certificate/${cert.serialNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        padding: '10px',
+                        background: 'transparent',
+                        color: '#5120c8',
+                        borderRadius: '10px',
+                        textDecoration: 'none',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        border: '1px solid #5120c8',
+                      }}
+                    >
+                      <Shield size={15} /> تحقق
+                    </a>
+                  </div>
                 </div>
               </div>
-
-              {/* Info */}
-              <div style={{ padding: '20px' }}>
-                <h3
-                  style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    color: isDark ? '#f1f5f9' : '#0d0d0d',
-                    margin: '0 0 8px',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {cert.course?.titleAr || cert.course?.titleEn}
-                </h3>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    color: '#6b7280',
-                    fontSize: '13px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  <Calendar size={14} />
-                  {formatDate(cert.issuedAt)}
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <a
-                    href={cert.certificateUrl}
-                    download={`certificate-${cert.serialNumber}.png`}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      padding: '10px',
-                      background: '#5120c8',
-                      color: '#fff',
-                      borderRadius: '10px',
-                      textDecoration: 'none',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                    }}
-                  >
-                    <Download size={15} /> تحميل
-                  </a>
-                  <a
-                    href={`https://deveway-teal.vercel.app/ar/certificate/${cert.serialNumber}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      padding: '10px',
-                      background: 'transparent',
-                      color: '#5120c8',
-                      borderRadius: '10px',
-                      textDecoration: 'none',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      border: '1px solid #5120c8',
-                    }}
-                  >
-                    <Shield size={15} /> تحقق
-                  </a>
-                </div>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
