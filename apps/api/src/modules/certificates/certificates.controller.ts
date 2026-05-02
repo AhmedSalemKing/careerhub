@@ -60,7 +60,9 @@ export class CertificatesController {
   @ApiOperation({ summary: 'Get current user certificates' })
   async getMy(@Request() req: any) {
     const userId = req.user.sub || req.user.id
+    console.log('[Certificates] getMy called with userId:', userId, 'user:', { sub: req.user.sub, id: req.user.id, email: req.user.email })
     const certs = await this.certificatesService.getMyCertificates(userId)
+    console.log('[Certificates] Found certificates:', certs.length)
     return { success: true, data: certs }
   }
 
