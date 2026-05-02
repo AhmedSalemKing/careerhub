@@ -19,13 +19,36 @@ export class CertificatesController {
   constructor(private readonly certificatesService: CertificatesService) {}
 
   // ── Generate certificate for a course ──────────────────────
+  // Accepts courseId via URL param OR request body
   @Post('generate/:courseId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate certificate image for completed course' })
-  async generate(@Param('courseId') courseId: string, @Request() req: any) {
+  async generate(
+    @Param('courseId') pathCourseId: string,
+    @Body() body: any,
+    @Request() req: any,
+  ) {
+    const courseId = pathCourseId || body?.courseId
+    if (!courseId) {
+      console.error('[Certificate] No courseId provided in path or body')
+      throw new Error('courseId is required')
+    }
     const userId = req.user.sub || req.user.id
     const isAdmin = req.user.role === 'ADMIN' || req.user.accountType === 'ADMIN'
+    console.log('[Certificate] Generate request:', { userId, courseId, isAdmin, pathCourseId, bodyCourseId: body?.courseId })
+    return this.certificatesService.generateCertificate(userId, courseId, isAdmin)
+  }
+
+  // ── Test endpoint to debug certificate generation ─────────────
+  @Get('test/:courseId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Test certificate generation (Admin)' })
+  async testGenerate(@Param('courseId') courseId: string, @Request() req: any) {
+    const userId = req.user.sub || req.user.id
+    const isAdmin = true // always admin for test
+    console.log('[Certificate] Test generate:', { userId, courseId })
     return this.certificatesService.generateCertificate(userId, courseId, isAdmin)
   }
 

@@ -21,11 +21,15 @@ export class CertificatesService {
 
   async generateCertificate(userId: string, courseId: string, bypassEnrollment = false) {
     try {
-      return await this._doGenerate(userId, courseId, bypassEnrollment)
+      console.log('[Certificate] generateCertificate called:', { userId, courseId, bypassEnrollment })
+      const result = await this._doGenerate(userId, courseId, bypassEnrollment)
+      console.log('[Certificate] Generation SUCCESS:', { certificateId: result?.data?.id, url: result?.data?.certificateUrl })
+      return result
     } catch (e: any) {
-      console.error('[Certificate] Generation error:', {
+      console.error('[Certificate] Generation FAILED:', {
         message: e.message,
         code: e.code,
+        meta: e.meta,
         stack: e.stack?.split('\n').slice(0, 6).join(' | '),
       })
       throw e
@@ -33,20 +37,31 @@ export class CertificatesService {
   }
 
   private async _doGenerate(userId: string, courseId: string, bypassEnrollment: boolean) {
+    console.log('[Certificate] _doGenerate START:', { userId, courseId, bypassEnrollment })
+    try {
     // 1. Check existing certificate (unique by userId+courseId)
     const existing = await this.prisma.certificate.findUnique({
       where: { userId_courseId: { userId, courseId } },
     })
-    if (existing) return { success: true, data: existing }
+    if (existing) {
+      console.log('[Certificate] Existing certificate found:', existing.id)
+      return { success: true, data: existing }
+    }
 
     // 2. Get user data
+    console.log('[Certificate] Fetching user:', userId)
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true },
     })
-    if (!user) throw new NotFoundException('User not found')
+    if (!user) {
+      console.error('[Certificate] User not found:', userId)
+      throw new NotFoundException('User not found')
+    }
+    console.log('[Certificate] User found:', user.email)
 
     // 3. Get course data with instructor
+    console.log('[Certificate] Fetching course:', courseId)
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: {
@@ -55,14 +70,25 @@ export class CertificatesService {
         },
       },
     })
-    if (!course) throw new NotFoundException('Course not found')
+    if (!course) {
+      console.error('[Certificate] Course not found:', courseId)
+      throw new NotFoundException('Course not found')
+    }
+    console.log('[Certificate] Course found:', course.titleEn)
 
     // 4. Check enrollment (admin can bypass)
     if (!bypassEnrollment) {
+      console.log('[Certificate] Checking enrollment:', { userId, courseId })
       const enrollment = await this.prisma.enrollment.findUnique({
         where: { userId_courseId: { userId, courseId } },
       })
-      if (!enrollment) throw new ForbiddenException('Not enrolled in this course')
+      if (!enrollment) {
+        console.error('[Certificate] Not enrolled:', { userId, courseId })
+        throw new ForbiddenException('Not enrolled in this course')
+      }
+      console.log('[Certificate] Enrollment found')
+    } else {
+      console.log('[Certificate] Enrollment check bypassed (admin)')
     }
 
     // 5. Generate unique serial number (our verifyCode)
