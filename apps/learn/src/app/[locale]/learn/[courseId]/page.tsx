@@ -478,13 +478,19 @@ function LearnPageInner() {
 		} catch (e) {
 			console.error("Error marking complete:", e);
 		}
-		setMarkingComplete(false);
 		if (nextLesson) {
 			goToLesson(nextLesson);
+			setMarkingComplete(false);
 		} else {
 			// Last lesson completed — auto-generate certificate
 			console.log('[Certificate] Last lesson complete, generating certificate...')
-			handleGetCertificate()
+			try {
+				await handleGetCertificate()
+			} catch(e) {
+				console.error('[Certificate] Auto-generation error:', e)
+			} finally {
+				setMarkingComplete(false);
+			}
 		}
 	};
 
@@ -498,6 +504,8 @@ function LearnPageInner() {
 			const apiUrl =
 				process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
 
+			console.log('[Certificate] Generating for course:', courseId, 'Token exists:', !!token)
+
 			const res = await fetch(`${apiUrl}/certificates/generate/${courseId}`, {
 				method: "POST",
 				headers: {
@@ -507,6 +515,7 @@ function LearnPageInner() {
 				body: JSON.stringify({}),
 			});
 			const data = await res.json();
+			console.log('[Certificate] API response:', data)
 			const cert = data?.data;
 
 			if (cert?.serialNumber || cert?.verifyCode) {
