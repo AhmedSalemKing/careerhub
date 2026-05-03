@@ -327,6 +327,19 @@ export class CoursesController {
     };
   }
 
+  @Get(':id/progress')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get course progress percentage' })
+  @ApiResponse({ status: 200, description: 'Progress retrieved successfully' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  async getCourseProgress(
+    @CurrentUser() user: User,
+    @Param('id') courseId: string,
+  ) {
+    return this.coursesService.getCourseProgress(user.id, courseId);
+  }
+
   @Post(':courseId/lessons/:lessonId/complete')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

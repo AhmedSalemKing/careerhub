@@ -2099,33 +2099,38 @@ import VideoProtection from "../../../../components/VideoProtection";
 								</div>
 
 								{/* Course Completion Certificate CTA */}
-								{showCertButton && (
-									<div
-										style={{ position: "sticky", bottom: 24, marginTop: 32 }}>
-										<button
-											onClick={handleGetCertificate}
-											className="
-                        w-full flex items-center justify-center gap-4 px-8 py-5 rounded-2xl
-                        text-white font-bold text-lg cursor-pointer
-                        transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]
-                      "
-											style={{
-												background: "linear-gradient(135deg, #10b981, #059669)",
-												boxShadow: "0 10px 40px rgba(16,185,129,0.35)",
-											}}>
-											<Award size={26} className="animate-pulse" />
-											<div className="text-right">
-												<div className="text-base">
-													تهانينا! أكملت الكورس بنجاح
-												</div>
-												<div className="text-sm opacity-90 font-normal">
-													احصل على شهادتك الآن
-												</div>
-											</div>
-											<ChevronLeft size={20} />
-										</button>
-									</div>
-								)}
+							{showCertButton && (
+								<div style={{ textAlign: "center", marginTop: "1rem" }}>
+									<p
+										style={{
+											color: "#c9a96e",
+											marginBottom: "0.5rem",
+											fontSize: "0.9rem",
+										}}
+									>
+										{isAr ? "اكملت الكورس!" : "Course complete!"}
+									</p>
+									<button
+										onClick={() =>
+											router.push(`/${locale}/courses/${courseId}`)
+										}
+										style={{
+											padding: "0.6rem 1.25rem",
+											borderRadius: "8px",
+											border: "1px solid #c9a96e",
+											background: "transparent",
+											color: "#c9a96e",
+											cursor: "pointer",
+											fontSize: "0.9rem",
+											fontFamily: "inherit",
+										}}
+									>
+										{isAr
+											? "اذهب لصفحة الكورس للحصول على شهادتك"
+											: "Go to course page for certificate"}
+									</button>
+								</div>
+							)}
 							</div>
 						</>
 					) : (

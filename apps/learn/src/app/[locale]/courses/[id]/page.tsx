@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast, Toaster } from "react-hot-toast";
 
 export default function CourseDetailPage({
 	params,
@@ -140,6 +141,47 @@ export default function CourseDetailPage({
 		}
 	}, [enrollmentData]);
 
+	// Fetch progress and certificate status when enrolled
+	useEffect(() => {
+		if (!isEnrolled || !courseId) return;
+		const token = getAuthToken();
+		if (!token) return;
+
+		const fetchProgressAndCert = async () => {
+			try {
+				// Get enrollment which includes progress
+				const res = await fetch(
+					`${apiBase}/courses/${courseId}/enrollment`,
+					{ headers: { Authorization: `Bearer ${token}` } },
+				);
+				if (res.ok) {
+					const data = await res.json();
+					const d = data?.data ?? data;
+					const progress: number =
+						d?.progress ?? d?.enrollment?.progress ?? 0;
+					setCourseProgress(progress);
+				}
+
+				// Check if certificate already exists
+				const certRes = await fetch(`${apiBase}/certificates/my`, {
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (certRes.ok) {
+					const certData = await certRes.json();
+					const certs: any[] = Array.isArray(certData)
+						? certData
+						: (certData?.data ?? []);
+					const hasCert = certs.some((c: any) => c.courseId === courseId);
+					setCertAlreadyIssued(hasCert);
+				}
+			} catch (e) {
+				// Non-fatal: progress just won't show
+			}
+		};
+
+		fetchProgressAndCert();
+	}, [isEnrolled, courseId]);
+
 	const courseType = course?.type || "recorded";
 	const isLive = courseType === "live";
 	const isOffline = courseType === "offline";
@@ -191,6 +233,58 @@ export default function CourseDetailPage({
 			router.push(learnPath);
 		} else {
 			handleEnroll();
+		}
+	};
+
+	const handleGetCertificate = async (): Promise<void> => {
+		const token = getAuthToken();
+		if (!token) {
+			router.push(`/${locale}/login`);
+			return;
+		}
+
+		setIsGeneratingCert(true);
+		const toastId = toast.loading(
+			isAr ? "جاري اصدار الشهادة..." : "Generating certificate...",
+		);
+
+		try {
+			const res = await fetch(
+				`${apiBase}/certificates/generate/${courseId}`,
+				{
+					method: "POST",
+					headers: {
+						Authorization: `Bearer ${token}`,
+						"Content-Type": "application/json",
+					},
+				},
+			);
+			const payload = await res.json();
+			toast.dismiss(toastId);
+
+			if (res.ok && (payload?.success || payload?.data?.id)) {
+				setCertAlreadyIssued(true);
+				toast.success(
+					isAr ? "تم اصدار الشهادة بنجاح" : "Certificate issued",
+				);
+				setTimeout(() => {
+					const mainUrl =
+						process.env.NEXT_PUBLIC_MAIN_URL ||
+						"https://deveway-teal.vercel.app";
+					window.location.href = `${mainUrl}/${locale}/dashboard/certificates`;
+				}, 1500);
+			} else {
+				toast.error(
+					payload?.message || (isAr ? "حدث خطا" : "Error"),
+				);
+			}
+		} catch (e: any) {
+			toast.dismiss(toastId);
+			toast.error(
+				isAr ? "خطا في الاتصال" : "Connection error",
+			);
+		} finally {
+			setIsGeneratingCert(false);
 		}
 	};
 
@@ -251,6 +345,25 @@ export default function CourseDetailPage({
 		0,
 	);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
+
+	const [courseProgress, setCourseProgress] = useState<number>(0);
+	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
+	const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
+
+	const apiBase =
+		(process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api").replace(/\/api\/api/, "/api");
+
+	const getAuthToken = (): string => {
+		if (typeof window === "undefined") return "";
+		return (
+			localStorage.getItem("deveway_token") ||
+			localStorage.getItem("careerhub_token") ||
+			localStorage.getItem("token") ||
+			sessionStorage.getItem("deveway_token") ||
+			sessionStorage.getItem("token") ||
+			""
+		);
+	};
 
 	const typeBadge = isLive
 		? {
@@ -1258,13 +1371,169 @@ export default function CourseDetailPage({
 										/>
 										<span>{text}</span>
 									</div>
-								))}
-							</div>
+						))}
 						</div>
+
+						{/* Certificate Section - only when 100% complete */}
+						{courseProgress >= 100 && (
+							<div
+								style={{
+									marginTop: "1.5rem",
+									background:
+										"linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+									border: "1px solid #c9a96e",
+									borderRadius: "12px",
+									padding: "1.5rem",
+									textAlign: "center",
+								}}
+							>
+								<div
+									style={{
+										width: "56px",
+										height: "56px",
+										borderRadius: "50%",
+										background: "rgba(201,169,110,0.15)",
+										border: "2px solid #c9a96e",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										margin: "0 auto 1rem",
+										fontSize: "1.5rem",
+									}}
+								>
+									<svg
+										width="28"
+										height="28"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="#c9a96e"
+										strokeWidth="1.8"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									>
+										<circle cx="12" cy="8" r="6" />
+										<path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+									</svg>
+								</div>
+
+								<p
+									style={{
+										fontSize: "1.1rem",
+										fontWeight: 700,
+										color: "#f0e6cc",
+										marginBottom: "0.25rem",
+										fontFamily: "inherit",
+									}}
+								>
+									{isAr
+										? "تهانينا! اكملت الكورس"
+										: "Congratulations! Course Complete"}
+								</p>
+
+								<p
+									style={{
+										fontSize: "0.85rem",
+										color: "#9999aa",
+										marginBottom: "1.25rem",
+									}}
+								>
+									{isAr
+										? "احصل على شهادتك المعتمدة الآن"
+										: "Claim your verified certificate now"}
+								</p>
+
+								{certAlreadyIssued ? (
+									<button
+										onClick={() => {
+											const mainUrl =
+												process.env.NEXT_PUBLIC_MAIN_URL ||
+												"https://deveway-teal.vercel.app";
+											window.location.href = `${mainUrl}/${locale}/dashboard/certificates`;
+										}}
+										style={{
+											width: "100%",
+											padding: "0.75rem 1.5rem",
+											borderRadius: "8px",
+											border: "1px solid #c9a96e",
+											background: "transparent",
+											color: "#c9a96e",
+											fontSize: "0.95rem",
+											fontWeight: 600,
+											cursor: "pointer",
+											fontFamily: "inherit",
+										}}
+									>
+										{isAr ? "عرض الشهادة" : "View Certificate"}
+									</button>
+								) : (
+									<button
+										onClick={handleGetCertificate}
+										disabled={isGeneratingCert}
+										style={{
+											width: "100%",
+											padding: "0.75rem 1.5rem",
+											borderRadius: "8px",
+											border: "none",
+											background: isGeneratingCert
+												? "rgba(201,169,110,0.5)"
+												: "linear-gradient(135deg, #c9a96e, #b8935a)",
+											color: "#1a1a2e",
+											fontSize: "0.95rem",
+											fontWeight: 700,
+											cursor: isGeneratingCert ? "wait" : "pointer",
+											fontFamily: "inherit",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: "8px",
+										}}
+									>
+										{isGeneratingCert ? (
+											<>
+												<svg
+													width="16"
+													height="16"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2"
+													strokeLinecap="round"
+												>
+													<path d="M21 12a9 9 0 1 1-6.219-8.56" />
+												</svg>
+												{isAr ? "جاري الاصدار..." : "Generating..."}
+											</>
+										) : (
+											<>
+												<svg
+													width="16"
+													height="16"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2"
+													strokeLinecap="round"
+													strokeLinejoin="round"
+												>
+													<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+													<polyline points="14 2 14 8 20 8" />
+													<line x1="16" y1="13" x2="8" y2="13" />
+													<line x1="16" y1="17" x2="8" y2="17" />
+													<polyline points="10 9 9 9 8 9" />
+												</svg>
+												{isAr ? "احصل على شهادتك الآن" : "Get Your Certificate"}
+											</>
+										)}
+									</button>
+								)}
+							</div>
+						)}
+
 					</div>
-				</div>
-			</div>
 		</div>
+		</div>
+		<Toaster />
+	</div>
 	);
 }
 

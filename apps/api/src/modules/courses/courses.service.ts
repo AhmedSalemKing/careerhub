@@ -1581,6 +1581,34 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     return { success: true, data: enrollment }
   }
+
+  async getCourseProgress(userId: string, courseId: string) {
+    const totalLessons = await this.prisma.lesson.count({
+      where: { section: { courseId }, isPublished: true },
+    });
+
+    const completedLessons = await this.prisma.lessonProgress.count({
+      where: {
+        userId,
+        status: 'COMPLETED',
+        lesson: { section: { courseId } },
+      },
+    });
+
+    const progress = totalLessons > 0
+      ? Math.round((completedLessons / totalLessons) * 100)
+      : 0;
+
+    return {
+      success: true,
+      data: {
+        progress,
+        completedLessons,
+        totalLessons,
+        isCourseComplete: progress >= 100,
+      },
+    };
+  }
 }
 
 
