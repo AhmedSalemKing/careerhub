@@ -1618,7 +1618,12 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       'mobile': ['mobile', 'react native', 'flutter', 'android', 'ios', 'swift', 'kotlin'],
       'devops': ['devops', 'docker', 'kubernetes', 'ci/cd', 'linux', 'aws', 'cloud'],
       'data-science': ['data', 'python', 'machine learning', 'ai', 'analytics', 'pandas', 'numpy'],
-      'cybersecurity': ['security', 'hacking', 'kali', 'network', 'ethical', 'cyber'],
+      'cybersecurity': ['security', 'hacking', 'kali', 'network', 'ethical', 'cyber', 'cybersecurity'],
+      'ethical-hacking': ['hacking', 'ethical', 'security', 'cybersecurity', 'kali', 'linux'],
+      'hacking': ['hacking', 'ethical', 'security', 'cybersecurity', 'kali'],
+      'unity': ['unity', 'game', 'mobile', 'programming', 'csharp'],
+      'darkweb': ['darkweb', 'tor', 'security', 'network', 'privacy', 'cyber'],
+      'database': ['database', 'sql', 'data', 'backend', 'postgresql', 'mysql'],
       'ui-ux': ['design', 'figma', 'ux', 'ui', 'user experience', 'prototyping'],
       'blockchain': ['blockchain', 'web3', 'solidity', 'crypto', 'smart contract'],
       'cloud': ['cloud', 'aws', 'azure', 'gcp', 'serverless', 'infrastructure'],
@@ -1634,7 +1639,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         status: 'PUBLISHED',
         OR: [
           { careerPath: { slug: fieldSlug } },
-          { keywords: { hasSome: fieldKeywords } },
+          { keywords: { hasSome: fieldKeywords as any } },
           {
             OR: fieldKeywords.map(kw => [
               { titleEn: { contains: kw, mode: 'insensitive' as any } },
@@ -1765,5 +1770,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { success: true, data: unique };
   }
 }
+
+// ============================================
 
 

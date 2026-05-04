@@ -385,6 +385,7 @@ model Course {
   @@index([instructorId])
   @@index([categoryId])
   @@index([careerPathId, status])
+  @@map("Course")
 }
 
 model CourseBundle {
