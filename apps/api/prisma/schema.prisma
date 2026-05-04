@@ -244,6 +244,7 @@ model CareerPath {
   demandLevel   String // HIGH, MEDIUM, LOW
   icon          String?
   color         String?
+  keywords      String[] @default([])
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
@@ -338,7 +339,8 @@ model Course {
   duration      Int?
   level         String       @default("BEGINNER")
   tags          String[]     @default([])
-  careerPaths  String[]     @default([])
+  careerPaths   String[]     @default([])
+  keywords      String[]     @default([])
   status        CourseStatus @default(DRAFT)
   isFeatured    Boolean      @default(false)
   sortOrder     Int          @default(0)
@@ -374,8 +376,8 @@ model Course {
   certificates Certificate[]
   payments     Payment[]
   cartItems    CartItem[]
-  ratings      Rating[]
   bundles     BundleCourse[]
+  ratings      Rating[] @relation("CourseRatings")
 
   @@index([status])
   @@index([isFeatured])
@@ -1087,7 +1089,7 @@ model Rating {
   comment      String?
   createdAt    DateTime @default(now())
   user         User     @relation("GivenRatings", fields: [userId], references: [id])
-  course       Course?  @relation(fields: [courseId], references: [id])
+  course       Course?  @relation("CourseRatings", fields: [courseId], references: [id])
   consultant   User?    @relation("ConsultantRatings", fields: [consultantId], references: [id])
 
   @@unique([userId, courseId])

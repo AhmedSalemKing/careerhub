@@ -335,9 +335,9 @@ export class AiAssessmentService {
     const lastName = userProfile?.lastName ?? '';
     const country = userProfile?.country ?? 'Arab region';
 
-    const prompt = `You are a professional career advisor specializing in the Arab tech market (Saudi Arabia and Egypt).
-
-A user has completed a career assessment. Analyze their answers and provide a comprehensive, realistic career report.
+    const prompt = `You are a professional career advisor for DeveWay platform.
+Analyze the user's assessment answers and return ONLY valid JSON with NO markdown,
+NO explanation, NO preamble — just the raw JSON object.
 
 User Profile:
 - Name: ${firstName} ${lastName}
@@ -346,44 +346,30 @@ User Profile:
 Assessment Answers:
 ${formattedAnswers}
 
-Provide a detailed career report. Be specific, realistic, and actionable. Focus on Technology, Business, and Computer Science fields only.
-
-Return ONLY valid JSON in this exact structure:
+Return this exact JSON structure:
 {
-  "personalityType": "string (e.g. Analytical Builder, Creative Technologist)",
-  "personalityDescription": "2-3 sentences describing their professional personality",
-  "topSpecializations": [
+  "topFields": [
     {
-      "rank": 1,
-      "title": "Arabic title",
-      "titleEn": "English title (e.g. Data Analyst, Frontend Developer)",
-      "matchScore": 87,
-      "whyMatch": "2 sentences explaining why this fits them",
-      "requiredSkills": ["skill1", "skill2", "skill3", "skill4", "skill5"],
-      "currentSkills": ["skills they likely already have based on answers"],
-      "missingSkills": ["skills they need to develop"],
-      "learningPath": [
-        {"month": "Month 1-2", "focus": "what to learn", "resources": "specific course/tool"},
-        {"month": "Month 3-4", "focus": "what to learn", "resources": "specific course/tool"},
-        {"month": "Month 5-6", "focus": "what to learn", "resources": "specific course/tool"}
-      ],
-      "salaryRange": {
-        "egypt": "8,000 - 15,000 EGP",
-        "saudi": "8,000 - 15,000 SAR"
-      },
-      "timeToFirstJob": "4-6 months",
-      "jobTitles": ["Junior Data Analyst", "Business Intelligence Analyst"],
-      "demandLevel": "Very High"
-    },
-    { "rank": 2, "title": "...", "titleEn": "...", "matchScore": 82, "whyMatch": "...", "requiredSkills": [], "currentSkills": [], "missingSkills": [], "learningPath": [], "salaryRange": {"egypt": "...", "saudi": "..."}, "timeToFirstJob": "...", "jobTitles": [], "demandLevel": "..." },
-    { "rank": 3, "title": "...", "titleEn": "...", "matchScore": 75, "whyMatch": "...", "requiredSkills": [], "currentSkills": [], "missingSkills": [], "learningPath": [], "salaryRange": {"egypt": "...", "saudi": "..."}, "timeToFirstJob": "...", "jobTitles": [], "demandLevel": "..." }
+      "fieldSlug": "one of: backend|frontend|fullstack|mobile|devops|data-science|cybersecurity|ui-ux|blockchain|cloud",
+      "titleAr": "Arabic title of the field",
+      "titleEn": "English title",
+      "confidence": 0.85,
+      "reasoning": "2-3 sentences in Arabic explaining why this field suits the user",
+      "skills": ["skill1", "skill2", "skill3", "skill4"]
+    }
   ],
-  "personalityStrengths": ["strength1", "strength2", "strength3"],
-  "areasToImprove": ["area1", "area2"],
-  "personalAdvice": "Direct, personal advice in 2-3 sentences",
-  "urgentFirstStep": "One specific action they should take this week",
-  "disclaimer": "This is an AI recommendation. You can choose any path regardless of this analysis."
-}`;
+  "summary": "2-3 sentences in Arabic summarizing the user's profile",
+  "recommendedPaths": ["fieldSlug1", "fieldSlug2"]
+}
+
+Rules:
+- Return 3 to 5 fields in topFields, ordered by confidence descending
+- confidence must be between 0.5 and 0.99
+- reasoning must be in Arabic, 1-2 sentences, specific to answers given
+- skills must be specific technical skills (not generic words)
+- summary must be in Arabic
+- Return ONLY the JSON object, no other text
+`;
 
     let report: any;
     try {

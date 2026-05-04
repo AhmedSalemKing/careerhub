@@ -438,20 +438,30 @@ export class CoursesController {
     };
   }
 
-  @Post('recommendations')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get course recommendations' })
-  @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
-  async getRecommendations(@CurrentUser() user: User) {
-    const recommendations = await this.coursesService.getRecommendations(user.id);
-    return {
-      success: true,
-      data: { recommendations },
-    };
-  }
+   @Post('recommendations')
+   @UseGuards(JwtAuthGuard)
+   @ApiBearerAuth()
+   @ApiOperation({ summary: 'Get course recommendations based on career paths and fields' })
+   @ApiResponse({ status: 200, description: 'Recommendations retrieved successfully' })
+   async getRecommendedCourses(
+     @CurrentUser() user: User,
+     @Query('paths') paths?: string,
+     @Query('fields') fields?: string,
+   ) {
+     const pathIds = paths ? paths.split(',') : [];
+     const fieldSlugs = fields ? fields.split(',') : [];
+     return this.coursesService.getRecommendedCourses(user.id, pathIds, fieldSlugs);
+   }
 
-  @Get('search/suggestions')
+   @Get('by-field/:fieldSlug')
+   @ApiOperation({ summary: 'Get published courses by field slug' })
+   @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
+   @ApiParam({ name: 'fieldSlug', description: 'Field slug (backend, frontend, etc.)' })
+   async getCoursesByField(@Param('fieldSlug') fieldSlug: string) {
+     return this.coursesService.getCoursesByField(fieldSlug);
+   }
+
+   @Get('search/suggestions')
   @ApiOperation({ summary: 'Get search suggestions' })
   @ApiResponse({ status: 200, description: 'Suggestions retrieved successfully' })
   @ApiQuery({ name: 'q', required: true, description: 'Search query' })

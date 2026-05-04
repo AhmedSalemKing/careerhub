@@ -311,4 +311,13 @@ export class CareerController {
       data: { roadmap },
     };
   }
+
+  @Get('assessment/result')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get latest assessment result with top fields' })
+  @ApiResponse({ status: 200, description: 'Assessment result retrieved' })
+  async getAssessmentResult(@CurrentUser() user: User) {
+    return this.assessmentService.getLatestResult(user.id);
+  }
 }

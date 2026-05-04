@@ -1609,6 +1609,161 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     };
   }
+
+  private slugToKeywords(fieldSlug: string): string[] {
+    const fieldMap: Record<string, string[]> = {
+      'backend': ['backend', 'node', 'api', 'server', 'database', 'nest', 'express', 'python', 'java', 'c#'],
+      'frontend': ['frontend', 'react', 'vue', 'angular', 'css', 'html', 'javascript', 'ui', 'next.js'],
+      'fullstack': ['fullstack', 'full stack', 'mern', 'mean', 'web development', 'node', 'react'],
+      'mobile': ['mobile', 'react native', 'flutter', 'android', 'ios', 'swift', 'kotlin'],
+      'devops': ['devops', 'docker', 'kubernetes', 'ci/cd', 'linux', 'aws', 'cloud'],
+      'data-science': ['data', 'python', 'machine learning', 'ai', 'analytics', 'pandas', 'numpy'],
+      'cybersecurity': ['security', 'hacking', 'kali', 'network', 'ethical', 'cyber'],
+      'ui-ux': ['design', 'figma', 'ux', 'ui', 'user experience', 'prototyping'],
+      'blockchain': ['blockchain', 'web3', 'solidity', 'crypto', 'smart contract'],
+      'cloud': ['cloud', 'aws', 'azure', 'gcp', 'serverless', 'infrastructure'],
+    };
+    return fieldMap[fieldSlug] || [fieldSlug.replace(/-/g, ' ')];
+  }
+
+  async getCoursesByField(fieldSlug: string) {
+    const fieldKeywords = this.slugToKeywords(fieldSlug);
+
+    const courses = await this.prisma.course.findMany({
+      where: {
+        status: 'PUBLISHED',
+        OR: [
+          { careerPath: { slug: fieldSlug } },
+          { keywords: { hasSome: fieldKeywords } },
+          {
+            OR: fieldKeywords.map(kw => [
+              { titleEn: { contains: kw, mode: 'insensitive' as any } },
+              { titleAr: { contains: kw } },
+              { descriptionEn: { contains: kw, mode: 'insensitive' as any } },
+            ]).flat(),
+          },
+        ],
+      },
+      include: {
+        instructor: { include: { profile: true } },
+        careerPath: true,
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    });
+
+    const scored = courses.map(course => ({
+      ...course,
+      relevanceScore: this.scoreCourse(course, fieldSlug, fieldKeywords),
+    }));
+
+    scored.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+    return { success: true, data: scored };
+  }
+
+  private scoreCourse(
+    course: any,
+    fieldSlug: string,
+    fieldKeywords: string[],
+  ): number {
+    let score = 0;
+    if (course.careerPath?.slug === fieldSlug) score += 10;
+    if (course.careerPath?.nameEn?.toLowerCase().includes(fieldSlug)) score += 8;
+
+    const courseText = [
+      course.titleEn, course.titleAr,
+      course.descriptionEn, course.descriptionAr,
+      ...(course.keywords || []),
+    ].join(' ').toLowerCase();
+
+    fieldKeywords.forEach(kw => {
+      if (courseText.includes(kw.toLowerCase())) score += 3;
+    });
+
+    score += Math.min((course._count?.enrollments || 0) * 0.1, 2);
+
+    return score;
+  }
+
+  async getRecommendedCourses(
+    userId: string,
+    careerPathIds: string[],
+    fieldSlugs: string[],
+  ) {
+    const allKeywords: string[] = [];
+
+    if (careerPathIds.length > 0) {
+      const paths = await this.prisma.careerPath.findMany({
+        where: { id: { in: careerPathIds } },
+      }).catch(() => []);
+      (paths as any[]).forEach((p: any) => {
+        allKeywords.push(...(p.keywords || []));
+        allKeywords.push(p.slug || '');
+        allKeywords.push(p.nameEn?.toLowerCase() || '');
+      });
+    }
+
+    fieldSlugs.forEach(slug => {
+      allKeywords.push(...this.slugToKeywords(slug));
+    });
+
+    const uniqueKeywords = [...new Set(allKeywords.filter(Boolean))];
+
+    if (uniqueKeywords.length === 0) {
+      const fallback = await this.prisma.course.findMany({
+        where: { status: 'PUBLISHED' },
+        include: {
+          instructor: { include: { profile: true } },
+          _count: { select: { enrollments: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 6,
+      });
+      return { success: true, data: fallback };
+    }
+
+    const keywordConditions = uniqueKeywords.slice(0, 10).map(kw => ({
+      OR: [
+        { titleEn: { contains: kw, mode: 'insensitive' as any } },
+        { titleAr: { contains: kw } },
+        { descriptionEn: { contains: kw, mode: 'insensitive' as any } },
+        { keywords: { hasSome: [kw] } },
+      ],
+    }));
+
+    const courses = await this.prisma.course.findMany({
+      where: {
+        status: 'PUBLISHED',
+        OR: [
+          { careerPathId: { in: careerPathIds } },
+          ...keywordConditions,
+        ],
+      },
+      include: {
+        instructor: { include: { profile: true } },
+        careerPath: true,
+        _count: { select: { enrollments: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+    });
+
+    const seen = new Set<string>();
+    const unique = courses.filter(c => {
+      if (seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
+
+    unique.sort((a, b) =>
+      this.scoreCourse(b, fieldSlugs[0] || '', uniqueKeywords) -
+      this.scoreCourse(a, fieldSlugs[0] || '', uniqueKeywords)
+    );
+
+    return { success: true, data: unique };
+  }
 }
 
 

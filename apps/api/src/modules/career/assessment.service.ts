@@ -577,5 +577,95 @@ export class AssessmentService {
       return ['Fundamentals', 'Basic skills', 'Theory and concepts'];
     }
   }
+
+  async getLatestResult(userId: string) {
+    const assessment = await this.prisma.careerAssessment.findFirst({
+      where: { userId, status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      include: {
+        careerPath: true,
+      },
+    }).catch(() => null);
+
+    if (!assessment) {
+      return { success: false, data: null, message: 'No assessment found' };
+    }
+
+    // Parse stored results — may be JSON string or object
+    let result: any = assessment.results || assessment.score || {};
+    if (typeof result === 'string') {
+      try { result = JSON.parse(result); } catch { result = {}; }
+    }
+
+    // Build topFields from the assessment result
+    const topFields = this.buildTopFields(assessment, result);
+
+    return {
+      success: true,
+      data: {
+        assessmentId: assessment.id,
+        topFields,
+        summary: result.personalityDescription || result.summary || '',
+        recommendedPaths: topFields.map((f: any) => f.fieldSlug),
+      },
+    };
+  }
+
+  private buildTopFields(assessment: any, result: any): any[] {
+    // New format: AI returns topFields directly
+    if (result.topFields && Array.isArray(result.topFields)) {
+      return result.topFields.slice(0, 5).map((field: any, idx: number) => ({
+        fieldSlug: field.fieldSlug || this.guessFieldSlug(field.titleEn || field.title || ''),
+        title: field.titleAr || field.title || '',
+        titleEn: field.titleEn || field.title || '',
+        titleAr: field.titleAr || field.title || '',
+        confidence: field.confidence || Math.max(0.5, 0.85 - idx * 0.05),
+        reasoning: field.reasoning || '',
+        skills: field.skills || [],
+      }));
+    }
+
+    // Legacy format: topSpecializations
+    if (result.topSpecializations) {
+      return (result.topSpecializations as any[]).slice(0, 5).map((spec, idx) => ({
+        fieldSlug: this.guessFieldSlug(spec.titleEn || spec.title || ''),
+        title: spec.titleAr || spec.title || '',
+        titleEn: spec.titleEn || spec.title || '',
+        titleAr: spec.titleAr || spec.title || '',
+        confidence: spec.matchScore ? spec.matchScore / 100 : 0.75 - idx * 0.05,
+        reasoning: spec.whyMatch || '',
+        skills: spec.requiredSkills || [],
+      }));
+    }
+
+    // Fallback: build from score and career path
+    const careerPath = assessment.careerPath;
+    const score = assessment.score || 0;
+    return [
+      {
+        fieldSlug: careerPath?.slug || 'fullstack',
+        title: careerPath?.titleAr || 'تطوير الويب الشامل',
+        titleEn: careerPath?.titleEn || 'Full Stack Development',
+        titleAr: careerPath?.titleAr || 'تطوير الويب الشامل',
+        confidence: Math.min((score || 70) / 100, 0.95),
+        reasoning: `بناءً على إجاباتك، تميلك نحو ${careerPath?.titleAr || 'تطوير البرمجيات'}.`,
+        skills: careerPath?.skills?.slice(0, 5) || ['JavaScript', 'Problem Solving'],
+      },
+    ];
+  }
+
+  private guessFieldSlug(title: string): string {
+    const t = title.toLowerCase();
+    if (t.includes('front')) return 'frontend';
+    if (t.includes('back')) return 'backend';
+    if (t.includes('full') || t.includes('mern') || t.includes('mean')) return 'fullstack';
+    if (t.includes('mobile') || t.includes('flutter') || t.includes('react native')) return 'mobile';
+    if (t.includes('devops') || t.includes('cloud') || t.includes('aws')) return 'devops';
+    if (t.includes('data') || t.includes('ml') || t.includes('ai')) return 'data-science';
+    if (t.includes('security') || t.includes('cyber')) return 'cybersecurity';
+    if (t.includes('design') || t.includes('ux') || t.includes('ui')) return 'ui-ux';
+    if (t.includes('blockchain') || t.includes('web3')) return 'blockchain';
+    return 'fullstack';
+  }
 }
 
