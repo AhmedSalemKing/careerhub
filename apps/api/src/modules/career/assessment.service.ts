@@ -626,28 +626,8 @@ export class AssessmentService {
          summary: raw.personalityDescription || raw.summary || '',
          recommendedPaths: topFields.map((f: any) => f.fieldSlug),
        },
-     }
-   }
-
-    // Parse stored results — may be JSON string or object
-    let result: any = assessment.results || assessment.score || {};
-    if (typeof result === 'string') {
-      try { result = JSON.parse(result); } catch { result = {}; }
+      }
     }
-
-    // Build topFields from the assessment result
-    const topFields = this.buildTopFields(assessment, result);
-
-    return {
-      success: true,
-      data: {
-        assessmentId: assessment.id,
-        topFields,
-        summary: result.personalityDescription || result.summary || '',
-        recommendedPaths: topFields.map((f: any) => f.fieldSlug),
-      },
-    };
-  }
 
   private buildTopFields(assessment: any, result: any): any[] {
     // New format: AI returns topFields directly
