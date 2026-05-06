@@ -65,10 +65,9 @@ export default function CareerPathPage() {
   const router = useRouter()
 
   const getPathLabel = (path: CareerPath): string => {
-    // First try API-returned title, then slug mapping, then slug itself
+    // API returns title (already localized by backend)
     if (path.title) return path.title as string
-    if (path.nameAr && isAr) return path.nameAr
-    if (path.nameEn && !isAr) return path.nameEn
+    // Fallback: use slug-to-label mapping
     const mapping = slugToLabel[path.slug]
     if (mapping) return isAr ? mapping.ar : mapping.en
     return path.slug

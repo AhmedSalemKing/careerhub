@@ -1707,7 +1707,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         where: { id: { in: careerPathIds } },
       }).catch(() => []);
       (paths as any[]).forEach((p: any) => {
-        allKeywords.push(...(p.keywords || []));
+        if (p.keywords?.length > 0) allKeywords.push(...p.keywords);
         allKeywords.push(p.slug || '');
         allKeywords.push(p.titleEn?.toLowerCase() || '');
         allKeywords.push(p.titleAr?.toLowerCase() || '');
