@@ -1627,6 +1627,9 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       'ui-ux': ['design', 'figma', 'ux', 'ui', 'user experience', 'prototyping'],
       'blockchain': ['blockchain', 'web3', 'solidity', 'crypto', 'smart contract'],
       'cloud': ['cloud', 'aws', 'azure', 'gcp', 'serverless', 'infrastructure'],
+      'software-engineering': ['software', 'programming', 'backend', 'frontend', 'javascript', 'python', 'java'],
+      'digital-marketing': ['marketing', 'digital', 'seo', 'social media', 'content', 'ads'],
+      'business-analysis': ['business', 'analysis', 'requirements', 'project', 'sql', 'excel'],
     };
     return fieldMap[fieldSlug] || [fieldSlug.replace(/-/g, ' ')];
   }
@@ -1706,7 +1709,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       (paths as any[]).forEach((p: any) => {
         allKeywords.push(...(p.keywords || []));
         allKeywords.push(p.slug || '');
-        allKeywords.push(p.nameEn?.toLowerCase() || '');
+        allKeywords.push(p.titleEn?.toLowerCase() || '');
+        allKeywords.push(p.titleAr?.toLowerCase() || '');
       });
     }
 

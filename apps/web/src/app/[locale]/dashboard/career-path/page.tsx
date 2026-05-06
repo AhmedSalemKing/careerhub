@@ -8,8 +8,9 @@ import { ArrowLeft, Sparkles, ExternalLink, RefreshCw, CheckCircle2 } from 'luci
 interface CareerPath {
   id: string
   slug: string
-  nameEn: string
-  nameAr: string
+  title?: string  // API returns title (mapped from titleEn/titleAr based on locale)
+  nameEn?: string
+  nameAr?: string
   keywords?: string[]
 }
 
@@ -42,10 +43,36 @@ interface AssessmentResult {
   summary?: string
 }
 
+const slugToLabel: Record<string, { ar: string; en: string }> = {
+  'cybersecurity':      { ar: 'الأمن السيبراني', en: 'Cybersecurity' },
+  'software-engineering': { ar: 'هندسة البرمجيات', en: 'Software Engineering' },
+  'digital-marketing':   { ar: 'التسويق الرقمي', en: 'Digital Marketing' },
+  'data-science':       { ar: 'علم البيانات والذكاء الاصطناعي', en: 'Data Science & AI' },
+  'business-analysis':  { ar: 'تحليل الأعمال', en: 'Business Analysis' },
+  'backend':            { ar: 'تطوير الواجهة الخلفية', en: 'Backend Development' },
+  'frontend':           { ar: 'تطوير الواجهة الأمامية', en: 'Frontend Development' },
+  'fullstack':          { ar: 'تطوير الويب الشامل', en: 'Full Stack' },
+  'devops':             { ar: 'ديف أوبس والسحابة', en: 'DevOps & Cloud' },
+  'mobile':             { ar: 'تطوير التطبيقات', en: 'Mobile Development' },
+  'ui-ux':              { ar: 'تصميم تجربة المستخدم', en: 'UI/UX Design' },
+  'database':           { ar: 'هندسة قواعد البيانات', en: 'Database Engineering' },
+  'game-dev':           { ar: 'تطوير الألعاب', en: 'Game Development' },
+}
+
 export default function CareerPathPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+
+  const getPathLabel = (path: CareerPath): string => {
+    // First try API-returned title, then slug mapping, then slug itself
+    if (path.title) return path.title as string
+    if (path.nameAr && isAr) return path.nameAr
+    if (path.nameEn && !isAr) return path.nameEn
+    const mapping = slugToLabel[path.slug]
+    if (mapping) return isAr ? mapping.ar : mapping.en
+    return path.slug
+  }
 
   const [allPaths, setAllPaths] = useState<CareerPath[]>([])
   const [myPathIds, setMyPathIds] = useState<Set<string>>(new Set())
@@ -203,7 +230,7 @@ export default function CareerPathPage() {
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 )}
-                {isAr ? path.nameAr : path.nameEn}
+                {getPathLabel(path)}
               </button>
             )
           })}
@@ -296,7 +323,7 @@ export default function CareerPathPage() {
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     )}
-                    {isAr ? field.titleAr : field.titleEn}
+                    {isAr ? (field.titleAr || slugToLabel[field.fieldSlug]?.ar || field.fieldSlug) : (field.titleEn || slugToLabel[field.fieldSlug]?.en || field.fieldSlug)}
                     <span style={{ color: '#666680', fontSize: '0.73rem' }}>
                       {Math.round((field.confidence || 0) * 100)}%
                     </span>
