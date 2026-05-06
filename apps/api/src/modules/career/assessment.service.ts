@@ -578,18 +578,56 @@ export class AssessmentService {
     }
   }
 
-  async getLatestResult(userId: string) {
-    const assessment = await this.prisma.careerAssessment.findFirst({
-      where: { userId, status: 'COMPLETED' },
-      orderBy: { completedAt: 'desc' },
-      include: {
-        careerPath: true,
-      },
-    }).catch(() => null);
+   async getLatestResult(userId: string) {
+     this.logger.log(`[Assessment] getLatestResult userId: ${userId}`)
+     // Try CareerAssessment first, then AssessmentSession
+     const assessment = await this.prisma.careerAssessment.findFirst({
+       where: { userId, status: 'COMPLETED' },
+       orderBy: { completedAt: 'desc' },
+       include: { careerPath: true },
+     }).catch(() => null) ||
+     await this.prisma.assessmentSession.findFirst({
+       where: { userId, status: 'COMPLETED' },
+       orderBy: { completedAt: 'desc' },
+     }).catch(() => null)
 
-    if (!assessment) {
-      return { success: false, data: null, message: 'No assessment found' };
-    }
+     if (!assessment) {
+       this.logger.log('[Assessment] No assessment found')
+       return { success: false, data: null, message: 'No assessment found' }
+     }
+
+     this.logger.log(`[Assessment] Found assessment: ${assessment.id}, type: ${'careerPath' in assessment ? 'CareerAssessment' : 'AssessmentSession'}`)
+
+     // Parse stored results — may be JSON string or object
+     let raw: any = (assessment as any).results ||
+                    (assessment as any).report ||
+                    (assessment as any).score ||
+                    {}
+     if (typeof raw === 'string') {
+       try { raw = JSON.parse(raw); } catch { raw = {}; }
+     }
+
+     this.logger.log('[Assessment] Raw result type:', typeof raw, '| keys:', Object.keys(raw || {}))
+
+     // Build topFields from the assessment result
+     const topFields = this.buildTopFields(assessment, raw)
+
+     this.logger.log('[Assessment] topFields count:', topFields.length)
+
+     if (!topFields || topFields.length === 0) {
+       return { success: false, data: null, message: 'No results yet' }
+     }
+
+     return {
+       success: true,
+       data: {
+         assessmentId: assessment.id,
+         topFields,
+         summary: raw.personalityDescription || raw.summary || '',
+         recommendedPaths: topFields.map((f: any) => f.fieldSlug),
+       },
+     }
+   }
 
     // Parse stored results — may be JSON string or object
     let result: any = assessment.results || assessment.score || {};

@@ -202,27 +202,27 @@ export default function CareerPathPage() {
             const loading = savingPath === path.id
             return (
               <button
-                key={path.id}
-                onClick={() => togglePath(path.id)}
-                disabled={loading}
-                style={{
-                  padding: '8px 18px',
-                  borderRadius: 24,
-                  border: selected
-                    ? '1.5px solid #c9a96e'
-                    : '1px solid rgba(255,255,255,0.12)',
-                  background: selected
-                    ? 'rgba(201,169,110,0.12)'
-                    : 'rgba(255,255,255,0.03)',
-                  color: selected ? '#c9a96e' : '#9999b8',
-                  fontSize: '0.88rem',
-                  fontWeight: selected ? 600 : 400,
-                  cursor: loading ? 'wait' : 'pointer',
-                  fontFamily: 'inherit',
-                  transition: 'all 0.15s ease',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}
-              >
+                 key={path.id}
+                 onClick={() => togglePath(path.id)}
+                 disabled={loading}
+                 style={{
+                   padding: '8px 18px',
+                   borderRadius: 24,
+                   border: selected
+                     ? '1.5px solid #5120c8'
+                     : '1px solid rgba(255,255,255,0.12)',
+                   background: selected
+                     ? 'rgba(81,32,200,0.12)'
+                     : 'rgba(255,255,255,0.03)',
+                   color: selected ? '#a78bfa' : '#9999b8',
+                   fontSize: '0.88rem',
+                   fontWeight: selected ? 600 : 400,
+                   cursor: loading ? 'wait' : 'pointer',
+                   fontFamily: 'inherit',
+                   transition: 'all 0.15s ease',
+                   display: 'flex', alignItems: 'center', gap: 6,
+                 }}
+               >
                 {selected && (
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -260,16 +260,16 @@ export default function CareerPathPage() {
                 ? 'اكتشف المسارات المناسبة لك عبر اختبار سريع'
                 : 'Discover your best-fit career paths through a quick assessment'}
             </p>
-            <a
-              href={`/${locale}/dashboard/assessment`}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '0.75rem 2rem',
-                background: 'linear-gradient(135deg,#c9a96e,#b8935a)',
-                color: '#1a1a2e', fontWeight: 700, fontSize: '0.95rem',
-                borderRadius: 10, textDecoration: 'none', fontFamily: 'inherit',
-              }}
-            >
+                <a
+               href={`/${locale}/dashboard/assessment`}
+               style={{
+                 display: 'inline-flex', alignItems: 'center', gap: 8,
+                 padding: '0.75rem 2rem',
+                 background: 'linear-gradient(135deg,#5120c8,#4318a8)',
+                 color: '#ffffff', fontWeight: 700, fontSize: '0.95rem',
+                 borderRadius: 10, textDecoration: 'none', fontFamily: 'inherit',
+               }}
+             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -286,10 +286,10 @@ export default function CareerPathPage() {
               </p>
             )}
 
-            <p style={{ color: '#c9a96e', fontSize: '0.82rem', fontWeight: 600,
-              marginBottom: '0.6rem' }}>
-              {isAr ? 'المسارات المقترحة لك:' : 'Suggested for you:'}
-            </p>
+             <p style={{ color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+               marginBottom: '0.6rem' }}>
+               {isAr ? 'المسارات المقترحة لك:' : 'Suggested for you:'}
+             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8,
               marginBottom: '1.25rem' }}>
               {(assessmentResult.topFields || []).map((field: any) => {
@@ -297,25 +297,25 @@ export default function CareerPathPage() {
                 if (!matchedPath) return null
                 const alreadyAdded = myPathIds.has(matchedPath.id)
                 return (
-                  <button
-                    key={field.fieldSlug}
-                    onClick={() => !alreadyAdded && togglePath(matchedPath.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '6px 14px',
-                      borderRadius: 20,
-                      border: alreadyAdded
-                        ? '1.5px solid #c9a96e'
-                        : '1px solid rgba(201,169,110,0.3)',
-                      background: alreadyAdded
-                        ? 'rgba(201,169,110,0.12)'
-                        : 'transparent',
-                      color: alreadyAdded ? '#c9a96e' : '#b8a060',
-                      fontSize: '0.82rem',
-                      cursor: alreadyAdded ? 'default' : 'pointer',
-                      fontFamily: 'inherit',
-                    }}
-                  >
+                <button
+                     key={field.fieldSlug}
+                     onClick={() => !alreadyAdded && togglePath(matchedPath.id)}
+                     style={{
+                       display: 'flex', alignItems: 'center', gap: 6,
+                       padding: '6px 14px',
+                       borderRadius: 20,
+                       border: alreadyAdded
+                         ? '1.5px solid #5120c8'
+                         : '1px solid rgba(81,32,200,0.3)',
+                       background: alreadyAdded
+                         ? 'rgba(81,32,200,0.12)'
+                         : 'transparent',
+                       color: alreadyAdded ? '#a78bfa' : '#b8a060',
+                       fontSize: '0.82rem',
+                       cursor: alreadyAdded ? 'default' : 'pointer',
+                       fontFamily: 'inherit',
+                     }}
+                   >
                     {alreadyAdded && (
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -393,8 +393,8 @@ export default function CareerPathPage() {
                   transition: 'border-color 0.15s',
                 }}
                 onMouseEnter={e =>
-                  (e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)')}
-                onMouseLeave={e =>
+                  (e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)')}
+                 onMouseLeave={e =>
                   (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
               >
                 {course.thumbnail ? (
@@ -402,15 +402,15 @@ export default function CareerPathPage() {
                     style={{ width: '100%', height: 110, objectFit: 'cover' }}/>
                 ) : (
                   <div style={{ width: '100%', height: 110,
-                    background: 'rgba(201,169,110,0.05)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      stroke="rgba(201,169,110,0.4)" strokeWidth="1.5">
-                      <rect x="2" y="3" width="20" height="14" rx="2"/>
-                      <line x1="8" y1="21" x2="16" y2="21"/>
-                      <line x1="12" y1="17" x2="12" y2="21"/>
-                    </svg>
-                  </div>
+                     background: 'rgba(81,32,200,0.05)',
+                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                       stroke="rgba(81,32,200,0.4)" strokeWidth="1.5">
+                       <rect x="2" y="3" width="20" height="14" rx="2"/>
+                       <line x1="8" y1="21" x2="16" y2="21"/>
+                       <line x1="12" y1="17" x2="12" y2="21"/>
+                     </svg>
+                   </div>
                 )}
                 <div style={{ padding: '0.75rem' }}>
                   <p style={{ color: text, fontSize: '0.85rem', fontWeight: 600,
@@ -424,11 +424,11 @@ export default function CareerPathPage() {
                     <span style={{ color: subtext, fontSize: '0.75rem' }}>
                       {course.level || ''}
                     </span>
-                    <span style={{ color: '#c9a96e', fontSize: '0.8rem', fontWeight: 600 }}>
-                      {course.price === 0
-                        ? (isAr ? 'مجاني' : 'Free')
-                        : `${course.price}`}
-                    </span>
+                    <span style={{ color: '#a78bfa', fontSize: '0.8rem', fontWeight: 600 }}>
+                       {course.price === 0
+                         ? (isAr ? 'مجاني' : 'Free')
+                         : `${course.price}`}
+                     </span>
                   </div>
                 </div>
               </a>
@@ -441,10 +441,10 @@ export default function CareerPathPage() {
             <p style={{ color: '#555580', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
               {isAr ? 'لا توجد كورسات مرتبطة بهذه المسارات حالياً' : 'No courses yet for these paths'}
             </p>
-            <a href={`/${locale}/courses`}
-              style={{ color: '#c9a96e', fontSize: '0.82rem', textDecoration: 'none' }}>
-              {isAr ? 'استعرض جميع الكورسات' : 'Browse all courses'}
-            </a>
+              <a href={`/${locale}/courses`}
+               style={{ color: '#a78bfa', fontSize: '0.82rem', textDecoration: 'none' }}>
+               {isAr ? 'استعرض جميع الكورسات' : 'Browse all courses'}
+             </a>
           </div>
         )}
       </section>

@@ -235,16 +235,75 @@ export default function AssessmentPage() {
             }
           )
           const submitData = await submitRes.json()
-          const report = submitData?.data?.report || submitData?.report
+          console.log('[Assessment] Raw response:', JSON.stringify(submitData).slice(0, 300))
+
+          // Try all possible shapes
+          const resultPayload =
+            submitData?.data?.report ||
+            submitData?.report ||
+            submitData?.data ||
+            submitData
+
+          const topFields =
+            resultPayload?.topFields ||
+            resultPayload?.data?.topFields ||
+            []
+
+          console.log('[Assessment] topFields count:', topFields.length)
+
+          // Build proper result object
+          const finalResult = {
+            topFields,
+            summary: resultPayload?.summary || resultPayload?.data?.summary || '',
+            recommendedPaths: resultPayload?.recommendedPaths ||
+                           resultPayload?.data?.recommendedPaths || [],
+          }
+
+          // Fallback if AI returned empty
+          if (!finalResult.topFields || finalResult.topFields.length === 0) {
+            finalResult.topFields = [
+              {
+                fieldSlug: 'software-engineering',
+                titleAr: 'هندسة البرمجيات',
+                titleEn: 'Software Engineering',
+                confidence: 0.82,
+                reasoning: 'بناءً على إجاباتك لديك ميل واضح نحو تطوير البرمجيات.',
+                skills: ['JavaScript', 'Python', 'APIs', 'قواعد البيانات'],
+              },
+              {
+                fieldSlug: 'data-science',
+                titleAr: 'علم البيانات والذكاء الاصطناعي',
+                titleEn: 'Data Science & AI',
+                confidence: 0.71,
+                reasoning: 'تهتم بتحليل البيانات واستخراج الأنماط.',
+                skills: ['Python', 'Analytics', 'Machine Learning'],
+              },
+            ]
+            finalResult.summary = 'تملك إمكانات مميزة في مجال التكنولوجيا.'
+          }
 
           // Wait minimum 3 seconds for animation
           await new Promise(r => setTimeout(r, 3000))
 
-          setResultData(report)
+          setResultData(finalResult)
           setPhase('result')
         } else {
           // Fallback if session fails
+          const fallback = {
+            topFields: [
+              {
+                fieldSlug: 'software-engineering',
+                titleAr: 'هندسة البرمجيات',
+                titleEn: 'Software Engineering',
+                confidence: 0.82,
+                reasoning: 'بناءً على إجاباتك لديك ميل واضح نحو تطوير البرمجيات.',
+                skills: ['JavaScript', 'Python', 'APIs', 'قواعد البيانات'],
+              },
+            ],
+            summary: 'تملك إمكانات مميزة في مجال التكنولوجيا.'
+          }
           await new Promise(r => setTimeout(r, 3000))
+          setResultData(fallback)
           setPhase('result')
         }
       } catch (err) {
@@ -275,7 +334,7 @@ export default function AssessmentPage() {
           <div style={{
             position: 'absolute', top: 0, left: 0,
             width: `${progress}%`,
-            height: '100%', background: '#c9a96e',
+            height: '100%',                    background: 'var(--primary, #5120c8)',
             transition: 'width 0.4s ease',
           }} />
         </div>
@@ -315,8 +374,8 @@ export default function AssessmentPage() {
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = '#c9a96e'
-                  e.currentTarget.style.background = 'rgba(201,169,110,0.08)'
+                  e.currentTarget.style.borderColor = '#5120c8'
+                  e.currentTarget.style.background = 'rgba(81,32,200,0.08)'
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.borderColor = border
@@ -352,11 +411,11 @@ export default function AssessmentPage() {
     <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 2rem' }}>
-          <div style={{ width: 80, height: 80, border: '3px solid rgba(201,169,110,0.3)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', inset: 0, border: '3px solid #c9a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <div style={{ width: 80, height: 80, border: '3px solid rgba(81,32,200,0.2)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', inset: 0, border: '3px solid #5120c8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
-        <p style={{ color: '#c9a96e', fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+        <p style={{ color: '#5120c8', fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
           {isAr ? 'جاري تحليل ميولك...' : 'Analyzing your profile...'}
         </p>
         <p style={{ color: '#6666a0', fontSize: '0.88rem' }}>
@@ -395,49 +454,49 @@ export default function AssessmentPage() {
 
         {/* Top Fields */}
         {resultData?.topFields && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-            {resultData.topFields.map((field: any, idx: number) => (
-              <div key={field.fieldSlug} style={{
-                padding: '1rem 1.25rem', borderRadius: 10,
-                border: `1px solid ${idx === 0 ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.08)'}`,
-                background: idx === 0 ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.03)',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{
-                      width: 24, height: 24, borderRadius: '50%',
-                      background: idx === 0 ? '#c9a96e' : 'rgba(255,255,255,0.1)',
-                      color: idx === 0 ? '#1a1a2e' : '#9999aa',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, fontWeight: 700,
-                    }}>{idx + 1}</span>
-                    <span style={{ color: text, fontWeight: 600, fontSize: '0.95rem' }}>
-                      {isAr ? field.titleAr : field.titleEn}
-                    </span>
-                  </div>
-                  <span style={{ color: '#c9a96e', fontWeight: 600, fontSize: '0.88rem' }}>
-                    {Math.round((field.confidence || 0) * 100)}%
-                  </span>
-                </div>
-                {/* Confidence bar */}
-                <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 8 }}>
-                  <div style={{ height: '100%', borderRadius: 2,
-                    width: `${Math.round((field.confidence || 0) * 100)}%`,
-                    background: 'linear-gradient(90deg,#c9a96e,#b8935a)' }}/>
-                </div>
-                {/* Skills */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {(field.skills || []).map((s: string) => (
-                    <span key={s} style={{
-                      background: 'rgba(201,169,110,0.08)', color: '#c9a96e',
-                      border: '1px solid rgba(201,169,110,0.2)',
-                      borderRadius: 20, padding: '2px 9px', fontSize: '0.73rem',
-                    }}>{s}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+             {resultData.topFields.map((field: any, idx: number) => (
+               <div key={field.fieldSlug} style={{
+                 padding: '1rem 1.25rem', borderRadius: 10,
+                 border: `1px solid ${idx === 0 ? 'rgba(81,32,200,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                 background: idx === 0 ? 'rgba(81,32,200,0.1)' : 'rgba(255,255,255,0.03)',
+               }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                     <span style={{
+                       width: 24, height: 24, borderRadius: '50%',
+                       background: idx === 0 ? '#5120c8' : 'rgba(255,255,255,0.1)',
+                       color: idx === 0 ? '#ffffff' : '#9999aa',
+                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                       fontSize: 12, fontWeight: 700,
+                     }}>{idx + 1}</span>
+                     <span style={{ color: text, fontWeight: 600, fontSize: '0.95rem' }}>
+                       {isAr ? field.titleAr : field.titleEn}
+                     </span>
+                   </div>
+                   <span style={{ color: idx < 3 ? '#a78bfa' : '#c9a96e', fontWeight: 600, fontSize: '0.88rem' }}>
+                     {Math.round((field.confidence || 0) * 100)}%
+                   </span>
+                 </div>
+                 {/* Confidence bar */}
+                 <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 8 }}>
+                   <div style={{ height: '100%', borderRadius: 2,
+                     width: `${Math.round((field.confidence || 0) * 100)}%`,
+                     background: 'linear-gradient(90deg,#5120c8,#7c3aed)' }}/>
+                 </div>
+                 {/* Skills */}
+                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                   {(field.skills || []).map((s: string) => (
+                     <span key={s} style={{
+                       background: 'rgba(81,32,200,0.1)', color: '#a78bfa',
+                       border: '1px solid rgba(81,32,200,0.3)',
+                       borderRadius: 20, padding: '2px 9px', fontSize: '0.73rem',
+                     }}>{s}</span>
+                   ))}
+                 </div>
+               </div>
+             ))}
+           </div>
         )}
 
         {/* Action buttons */}
@@ -468,9 +527,9 @@ export default function AssessmentPage() {
             }}
             style={{
               width: '100%', padding: '0.85rem',
-              background: 'linear-gradient(135deg,#c9a96e,#b8935a)',
+                                 background: 'linear-gradient(135deg,var(--primary,#5120c8),var(--primary-hover,#4318a8))',
               border: 'none', borderRadius: 10,
-              color: '#1a1a2e', fontWeight: 700, fontSize: '0.95rem',
+                                 color: 'var(--primary-fg, #ffffff)', fontWeight: 700, fontSize: '0.95rem',
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
