@@ -145,7 +145,7 @@ model User {
   quizAttempts         QuizAttempt[]
   coachProfile         Coach?
   assessmentSessions   AssessmentSession[]
-  userCareerPath       UserCareerPath?
+  userCareerPaths      UserCareerPath[]
   userSessions         ConsultingSession[] @relation("UserSessions")
   consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
   earningsBalance      Float               @default(0)
@@ -253,6 +253,7 @@ model CareerPath {
   // Relations
   courses           Course[]
   careerAssessments CareerAssessment[]
+  userCareerPaths   UserCareerPath[]
 
   @@index([slug])
   @@index([isActive])
@@ -953,16 +954,16 @@ model Subscription {
 }
 
 model UserCareerPath {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  pathId       String
-  pathTitle    String
-  pathCategory String
-  aiRecommended Boolean @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id           String     @id @default(cuid())
+  userId       String
+  careerPathId String
+  source       String     @default("MANUAL")  // MANUAL | ASSESSMENT
+  createdAt    DateTime   @default(now())
 
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  careerPath CareerPath @relation(fields: [careerPathId], references: [id])
+
+  @@unique([userId, careerPathId])
   @@index([userId])
   @@map("user_career_paths")
 }

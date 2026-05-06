@@ -1,220 +1,312 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import {
-  Sparkles, BarChart3, BookOpen, CheckCircle2, ExternalLink,
-  RotateCcw, ArrowLeft, ArrowRight, RefreshCw
-} from 'lucide-react'
-import {
-  QUESTION_BANK, TRACK_META, selectAdaptiveQuestions,
-  calculateResults, type Question, type CareerScore
-} from '@/lib/assessment-engine'
+import { Sparkles, CheckCircle2, BookOpen, ExternalLink, RotateCcw, ArrowLeft } from 'lucide-react'
+import { get, post } from '@/lib/api'
 
-type Phase = 'intro' | 'questions' | 'analyzing' | 'results'
+type Phase = 'quiz' | 'analyzing' | 'result'
+
+const QUESTIONS = [
+  {
+    id: 1,
+    textAr: 'ما مدى راحتك في كتابة الكود أو منطق البرمجة؟',
+    textEn: 'How comfortable are you with writing code or programming logic?',
+    options: [
+      { textAr: 'لم أجرب قط، يبدو مخيفاً', textEn: 'Never tried it, seems intimidating', value: 'A' },
+      { textAr: 'جربت الأساسيات (HTML, سكريبت بسيط)', textEn: 'Tried basics (HTML, simple scripts)', value: 'B' },
+      { textAr: 'مرتاح مع لغة برمجة واحدة', textEn: 'Comfortable with one language', value: 'C' },
+      { textAr: 'متمكن من لغات متعددة', textEn: 'Proficient in multiple languages', value: 'D' },
+    ],
+  },
+  {
+    id: 2,
+    textAr: 'عندما ترى مجموعة بيانات أو أرقام، ما هي غريزتك الأولى؟',
+    textEn: 'When you see a dataset or numbers, what\'s your first instinct?',
+    options: [
+      { textAr: 'أتجنب العمل بالبيانات', textEn: 'I avoid working with data', value: 'A' },
+      { textAr: 'يمكنني عمل أساسيات Excel', textEn: 'I can do basic Excel work', value: 'B' },
+      { textAr: 'أستمتع بالبحث عن أنماط في البيانات', textEn: 'I enjoy finding patterns in data', value: 'C' },
+      { textAr: 'أفكر في النماذج الإحصائية والرؤى', textEn: 'I think about statistical models and insights', value: 'D' },
+    ],
+  },
+  {
+    id: 3,
+    textAr: 'كيف تتعامل مع نظام مكسور أو مشكلة تقنية؟',
+    textEn: 'How do you approach a broken system or technical problem?',
+    options: [
+      { textAr: 'أطلب من شخص آخر إصلاحه', textEn: 'I ask someone else to fix it', value: 'A' },
+      { textAr: 'أبحث في جوجل وأتبع الأدلة', textEn: 'I Google solutions and follow guides', value: 'B' },
+      { textAr: 'أقوم بتصحيح الأخطاء خطوة بخطوة', textEn: 'I systematically debug step by step', value: 'C' },
+      { textAr: 'أستمتع بالتحدي وأجد حلولاً إبداعية', textEn: 'I enjoy the challenge and find creative solutions', value: 'D' },
+    ],
+  },
+  {
+    id: 4,
+    textAr: 'ما الذي يبدو الأكثر متعة للعمل عليه؟',
+    textEn: 'Which of these sounds most interesting to work on?',
+    options: [
+      { textAr: 'بناء وتصميم مواقع/تطبيقات', textEn: 'Building and designing websites/apps', value: 'A' },
+      { textAr: 'تحليل البيانات للعثور على رؤى تجارية', textEn: 'Analyzing data to find business insights', value: 'B' },
+      { textAr: 'إدارة الخوادم والبنية السحابية', textEn: 'Managing servers and cloud infrastructure', value: 'C' },
+      { textAr: 'إنشاء نماذج ذكاء اصطناعي/تعلم آلي', textEn: 'Creating AI/ML models and algorithms', value: 'D' },
+    ],
+  },
+  {
+    id: 5,
+    textAr: 'ما هي خبرتك الحالية مع أدوات التكنولوجيا؟',
+    textEn: 'What is your current experience with technology tools?',
+    options: [
+      { textAr: 'أساسي (أوفيس، إيميل، وسائل تواصل)', textEn: 'Basic (Office, email, social media)', value: 'A' },
+      { textAr: 'متوسط (أدوات تصميم، برمجة أساسية)', textEn: 'Intermediate (Design tools, basic coding)', value: 'B' },
+      { textAr: 'متقدم (لغات برمجة متعددة)', textEn: 'Advanced (Multiple programming languages)', value: 'C' },
+      { textAr: 'خبير (مشاريع منشورة، خبرة مهنية)', textEn: 'Expert (Deployed projects, professional experience)', value: 'D' },
+    ],
+  },
+  {
+    id: 6,
+    textAr: 'كيف تشعر تجاه تعلم مهارات تقنية جديدة؟',
+    textEn: 'How do you feel about learning new technical skills?',
+    options: [
+      { textAr: 'صعب وأفضل العمل غير التقني', textEn: "It's difficult and I prefer non-technical work", value: 'A' },
+      { textAr: 'يمكنني التعلم إذا كان خطوة بخطوة', textEn: 'I can learn if guided step by step', value: 'B' },
+      { textAr: 'أستمتع بالتعلم وألتقط بسرعة', textEn: 'I enjoy learning and pick up quickly', value: 'C' },
+      { textAr: 'أبحث بنشاط عن المعرفة التقنية الجديدة', textEn: 'I actively seek new technical knowledge', value: 'D' },
+    ],
+  },
+  {
+    id: 7,
+    textAr: 'ما الذي يصف علاقتك بالتصميم الرقمي؟',
+    textEn: 'Which best describes your relationship with digital design?',
+    options: [
+      { textAr: 'ليس لدي اهتمام بالتصميم المرئي', textEn: 'I have no interest in visual design', value: 'A' },
+      { textAr: 'أقدر التصميم الجيد لكن لا أستطيع إنشاءه', textEn: "I appreciate good design but can't create it", value: 'B' },
+      { textAr: 'يمكنني إنشاء تصاميم أساسية باستخدام أدوات', textEn: 'I can create basic designs using tools', value: 'C' },
+      { textAr: 'لدي عين قوية لـ UX/UI والعلامات التجارية', textEn: 'I have a strong eye for UX/UI and branding', value: 'D' },
+    ],
+  },
+  {
+    id: 8,
+    textAr: 'في مشروع جماعي، ما هو الدور الذي تأخذه طبيعياً؟',
+    textEn: 'In a team project, what role do you naturally take?',
+    options: [
+      { textAr: 'المنفذ — أتبع المهام وأسلم العمل', textEn: 'The executor — I follow tasks and deliver', value: 'A' },
+      { textAr: 'المحلل — أبحث وأقدم رؤى', textEn: 'The analyst — I research and provide insights', value: 'B' },
+      { textAr: 'المنسق — أنظم وأصل بين الناس', textEn: 'The coordinator — I organize and connect people', value: 'C' },
+      { textAr: 'القائد — أحدد الاتجاه وأتخذ القرارات', textEn: 'The leader — I set direction and make decisions', value: 'D' },
+    ],
+  },
+  {
+    id: 9,
+    textAr: 'ما الذي يحفزك أكثر في مسيرتك المهنية؟',
+    textEn: 'What drives you most in your career?',
+    options: [
+      { textAr: 'الأمان المالي ودخل مستقر', textEn: 'Financial security and stable income', value: 'A' },
+      { textAr: 'التعبير الإبداعي والابتكار', textEn: 'Creative expression and innovation', value: 'B' },
+      { textAr: 'التأثير ومساعدة الآخرين', textEn: 'Impact and helping others', value: 'C' },
+      { textAr: 'بناء شيء ذو significado', textEn: 'Building something significant', value: 'D' },
+    ],
+  },
+  {
+    id: 10,
+    textAr: 'كيف تفضل العمل؟',
+    textEn: 'How do you prefer to work?',
+    options: [
+      { textAr: 'وحدك مع تركيز عميق على مهام معقدة', textEn: 'Alone with deep focus on complex tasks', value: 'A' },
+      { textAr: 'فريق صغير بمسؤوليات واضحة', textEn: 'Small team with clear responsibilities', value: 'B' },
+      { textAr: 'التعاون مع أشخاص متنوعين', textEn: 'Collaborating with diverse people', value: 'C' },
+      { textAr: 'القيادة وتفويض المهام للآخرين', textEn: 'Leading and delegating to others', value: 'D' },
+    ],
+  },
+  {
+    id: 11,
+    textAr: 'عند مواجهة قرار كبير، تميل إلى:',
+    textEn: 'When facing a big decision, you tend to:',
+    options: [
+      { textAr: 'جمع كل البيانات قبل القرار', textEn: 'Gather all data before deciding', value: 'A' },
+      { textAr: 'استشارة أشخاص تثق بهم للحصول على نصيحة', textEn: 'Consult trusted people for advice', value: 'B' },
+      { textAr: 'ثق في حدسك وتحرك بسرعة', textEn: 'Trust your gut and move fast', value: 'C' },
+      { textAr: 'إنشاء خطة منظمة وتقييم الخيارات', textEn: 'Create a structured plan and evaluate options', value: 'D' },
+    ],
+  },
+  {
+    id: 12,
+    textAr: 'ما هي أولويتك القصوى في وظيفتك القادمة؟',
+    textEn: 'What is your highest priority in your next job?',
+    options: [
+      { textAr: 'راتب عالي ونمو مالي', textEn: 'High salary and financial growth', value: 'A' },
+      { textAr: 'التعلم وتطوير المهارات', textEn: 'Learning and skill development', value: 'B' },
+      { textAr: 'توازن العمل والحياة ومرونة', textEn: 'Work-life balance and flexibility', value: 'C' },
+      { textAr: 'المسمى الوظيفي والقيادة والتقدم المهني', textEn: 'Title, leadership, and career progression', value: 'D' },
+    ],
+  },
+  {
+    id: 13,
+    textAr: 'ما هو القطاع الذي يثير حماسك أكثر؟',
+    textEn: 'What industry excites you most?',
+    options: [
+      { textAr: 'التكنولوجيا والبرمجيات', textEn: 'Technology and Software', value: 'A' },
+      { textAr: 'الأعمال والمالية والاستشارات', textEn: 'Business, Finance and Consulting', value: 'B' },
+      { textAr: 'الرعاية الصحية والتعليم', textEn: 'Healthcare and Education', value: 'C' },
+      { textAr: 'الصناعات الإبداعية (إعلام، تسويق، تصميم)', textEn: 'Creative industries (Media, Marketing, Design)', value: 'D' },
+    ],
+  },
+  {
+    id: 14,
+    textAr: 'كيف تصف أسلوب التواصل لديك؟',
+    textEn: 'How would you describe your communication style?',
+    options: [
+      { textAr: 'تحليلي — أقدم البيانات والمنطق', textEn: 'Analytical — I present data and logic', value: 'A' },
+      { textAr: 'راوي قصص — أستخدم السرد والأمثلة', textEn: 'Storyteller — I use narratives and examples', value: 'B' },
+      { textAr: 'مباشر — أصل للنقطة بسرعة', textEn: 'Direct — I get to the point quickly', value: 'C' },
+      { textAr: 'تعاطفي — أتواصل مع الناس عاطفياً', textEn: 'Empathetic — I connect with people emotionally', value: 'D' },
+    ],
+  },
+  {
+    id: 15,
+    textAr: 'أين ترى نفسك بعد 3 سنوات؟',
+    textEn: 'Where do you see yourself in 3 years?',
+    options: [
+      { textAr: 'خبير تقني أو متخصص في مجالي', textEn: 'Technical expert or specialist in my field', value: 'A' },
+      { textAr: 'قائد فريق أو مدير', textEn: 'Team lead or manager', value: 'B' },
+      { textAr: 'رائد أعمال أو مستقل', textEn: 'Entrepreneur or freelancer', value: 'C' },
+      { textAr: 'ما زلت أستكشف وأنمو', textEn: 'Still exploring and growing', value: 'D' },
+    ],
+  },
+]
 
 export default function AssessmentPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
-  
-  const [phase, setPhase] = useState<Phase>('intro')
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [currentIdx, setCurrentIdx] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
-  const [scores, setScores] = useState<Record<string, number>>({})
-  const [results, setResults] = useState<CareerScore[]>([])
-  const [ready, setReady] = useState(false)
 
-  useEffect(() => { setReady(true) }, [])
+  const [phase, setPhase] = useState<Phase>('quiz')
+  const [currentQ, setCurrentQ] = useState(0)
+  const [answers, setAnswers] = useState<Record<number, string>>({})
+  const [resultData, setResultData] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (phase !== 'questions') return
-    const handleKey = (e: KeyboardEvent) => {
-      const num = parseInt(e.key)
-      if (num >= 1 && num <= 4) {
-        const question = questions[currentIdx]
-        if (question && question.options[num - 1]) {
-          handleAnswer(num - 1)
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [phase, currentIdx, questions])
+  const apiBase = typeof window !== 'undefined'
+    ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api')
+    : 'http://localhost:3001/api'
 
-  const startAssessment = () => {
-    const initial = selectAdaptiveQuestions(QUESTION_BANK, {}, {})
-    setQuestions(initial)
-    setCurrentIdx(0)
-    setAnswers({})
-    setScores({})
-    setPhase('questions')
+  const getToken = () => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
   }
 
-  const handleAnswer = (optionIdx: number) => {
-    const question = questions[currentIdx]
-    const newAnswers = { ...answers, [question.id]: optionIdx }
-    
-    const option = question.options[optionIdx]
-    const newScores: Record<string, number> = { ...scores }
-    Object.entries(option.weights).forEach(([track, weight]) => {
-      newScores[track] = (newScores[track] || 0) + weight
-    })
-    
+  const handleAnswer = async (optionValue: string) => {
+    const newAnswers = { ...answers, [QUESTIONS[currentQ].id]: optionValue }
     setAnswers(newAnswers)
-    setScores(newScores)
-    
-    if (currentIdx < questions.length - 1) {
-      if (currentIdx === 5) {
-        const adaptive = selectAdaptiveQuestions(QUESTION_BANK, newAnswers, newScores)
-        const answeredIds = Object.keys(newAnswers)
-        const remaining = adaptive.filter(q => !answeredIds.includes(q.id))
-        const answeredQs = questions.filter(q => answeredIds.includes(q.id))
-        setQuestions([...answeredQs, ...remaining].slice(0, 15))
-      }
-      setTimeout(() => setCurrentIdx(i => i + 1), 150)
+
+    if (currentQ < QUESTIONS.length - 1) {
+      setTimeout(() => setCurrentQ(i => i + 1), 150)
     } else {
+      // Last question answered — submit to API
       setPhase('analyzing')
-      setTimeout(() => {
-        const res = calculateResults(questions, newAnswers, locale)
-        setResults(res)
-        localStorage.setItem('assessmentResults', JSON.stringify(res))
-        
-        const trackMapping: Record<string,string> = {
-          'frontend':'frontend-dev','backend':'backend-dev','fullstack':'fullstack-dev',
-          'mobile':'mobile-dev','devops':'devops','data-science':'data-scientist',
-          'ai-ml':'ai-engineer','cybersecurity':'cybersecurity','ui-ux':'ui-ux',
-          'graphic-design':'graphic-designer','digital-marketing':'digital-marketing',
-          'seo':'digital-marketing','content':'content-creator',
-          'product-manager':'product-manager','business-analyst':'business-analyst',
-          'project-manager':'project-manager','sales':'sales-manager',
-          'entrepreneur':'entrepreneur',
+      setLoading(true)
+
+      try {
+        const token = getToken()
+        const formattedAnswers = Object.entries(newAnswers).map(([qId, ans]) => ({
+          questionId: parseInt(qId),
+          answer: ans,
+        }))
+
+        // Start session and submit
+        const sessionRes = await fetch(`${apiBase}/career/assessment/session/start`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const sessionData = await sessionRes.json()
+        const sessionId = sessionData?.data?.sessionId
+
+        if (sessionId) {
+          const submitRes = await fetch(
+            `${apiBase}/career/assessment/session/${sessionId}/complete`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ answers: formattedAnswers }),
+            }
+          )
+          const submitData = await submitRes.json()
+          const report = submitData?.data?.report || submitData?.report
+
+          // Wait minimum 3 seconds for animation
+          await new Promise(r => setTimeout(r, 3000))
+
+          setResultData(report)
+          setPhase('result')
+        } else {
+          // Fallback if session fails
+          await new Promise(r => setTimeout(r, 3000))
+          setPhase('result')
         }
-        const pathIds = res.slice(0,3).map((r: any) => trackMapping[r.track] || r.track)
-        localStorage.setItem('selectedCareerPaths', JSON.stringify(pathIds))
-        router.push(`/${locale}/dashboard/career-path`)
-      }, 2500)
+      } catch (err) {
+        console.error('Assessment submit error:', err)
+        // Still show result phase after delay
+        await new Promise(r => setTimeout(r, 3000))
+        setPhase('result')
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
+  const bg = '#1a1a2e'
+  const cardBg = '#16213e'
+  const text = '#f0f0f8'
+  const subtext = '#9999b8'
+  const border = 'rgba(255,255,255,0.07)'
 
-  if (!ready) return (
-    <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 32, height: 32, border: '3px solid #5120c8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
+  // QUIZ PHASE
+  if (phase === 'quiz') {
+    const question = QUESTIONS[currentQ]
+    const progress = ((currentQ) / QUESTIONS.length) * 100
 
-  if (phase === 'intro') return (
-    <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, direction: isAr ? 'rtl' : 'ltr' }}>
-      <div style={{ maxWidth: 560, width: '100%', textAlign: 'center' }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: 18, margin: '0 auto 24px',
-          background: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)',
-          border: '1px solid rgba(81,32,200,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Sparkles size={26} color="#5120c8" />
-        </div>
-        <h1 style={{ color: text, fontSize: 'clamp(24px,4vw,36px)', fontWeight: 900, margin: '0 0 12px', letterSpacing: '-0.02em' }}>
-          {isAr ? 'اكتشف مسارك المهني' : 'Discover Your Career Path'}
-        </h1>
-        <p style={{ color: subtext, fontSize: 15, margin: '0 0 32px', lineHeight: 1.75 }}>
-          {isAr
-            ? '15 سؤال ذكي يحلل اهتماماتك ومهاراتك وشخصيتك النتيجة مخصصة لك بالكامل'
-            : '15 smart questions analyzing your interests, skills and personality completely personalized results'}
-        </p>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 32 }}>
-          {[
-            { icon: <Sparkles size={16} color="#5120c8" />, labelAr: 'أسئلة تكيفية', labelEn: 'Adaptive Questions' },
-            { icon: <BarChart3 size={16} color="#5120c8" />, labelAr: 'نتيجة دقيقة', labelEn: 'Accurate Results' },
-            { icon: <BookOpen size={16} color="#5120c8" />, labelAr: 'كورسات مخصصة', labelEn: 'Matched Courses' },
-          ].map((f, i) => (
-            <div key={i} style={{
-              padding: '14px 10px', borderRadius: 12,
-              border: `1px solid ${border}`,
-              background: cardBg,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            }}>
-              {f.icon}
-              <span style={{ color: subtext, fontSize: 12, fontWeight: 600, textAlign: 'center' }}>
-                {isAr ? f.labelAr : f.labelEn}
-              </span>
-            </div>
-          ))}
-        </div>
-        
-        <button onClick={startAssessment} style={{
-          width: '100%', padding: '15px', borderRadius: 14,
-          background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer',
-          fontSize: 16, fontWeight: 800, letterSpacing: '-0.01em',
-          boxShadow: '0 4px 20px rgba(81,32,200,0.3)',
-          transition: 'opacity 0.15s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-          {isAr ? 'ابدأ الاختبار الذكي' : 'Start Smart Assessment'}
-        </button>
-        <p style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#d1d5db', fontSize: 12, marginTop: 12 }}>
-          {isAr ? 'مجاني بالكامل يستغرق 3-5 دقائق' : 'Completely free takes 3-5 minutes'}
-        </p>
-      </div>
-    </div>
-  )
-
-  if (phase === 'questions') {
-    const question = questions[currentIdx]
-    const progress = ((currentIdx) / questions.length) * 100
-    
     return (
       <div style={{ minHeight: '100vh', background: bg, display: 'flex', flexDirection: 'column', direction: isAr ? 'rtl' : 'ltr' }}>
-        <div style={{ height: 3, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', position: 'relative' }}>
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', position: 'relative' }}>
           <div style={{
             position: 'absolute', top: 0, left: 0,
             width: `${progress}%`,
-            height: '100%', background: '#5120c8',
+            height: '100%', background: '#c9a96e',
             transition: 'width 0.4s ease',
           }} />
         </div>
-        
+
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
           <div style={{ maxWidth: 620, width: '100%' }}>
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
               <span style={{
                 padding: '4px 12px', borderRadius: 20,
-                background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
+                background: 'rgba(255,255,255,0.06)',
                 border: `1px solid ${border}`,
                 color: subtext, fontSize: 12, fontWeight: 600,
               }}>
-                {isAr ? question.phaseAr : question.phaseEn}
+                {isAr ? 'تقييم المسار المهني' : 'Career Assessment'}
               </span>
               <span style={{ color: subtext, fontSize: 13, fontWeight: 600 }}>
-                {currentIdx + 1} / {questions.length}
+                {currentQ + 1} / {QUESTIONS.length}
               </span>
             </div>
-            
+
             <h2 style={{
               color: text, fontSize: 'clamp(18px,3vw,24px)', fontWeight: 800,
               margin: '0 0 32px', lineHeight: 1.4, letterSpacing: '-0.02em',
             }}>
               {isAr ? question.textAr : question.textEn}
             </h2>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {question.options.map((option, idx) => (
-                <button key={idx} onClick={() => handleAnswer(idx)} style={{
+                <button key={option.value} onClick={() => handleAnswer(option.value)} style={{
                   padding: '16px 20px', borderRadius: 12, textAlign: 'right',
                   border: `1.5px solid ${border}`,
                   background: cardBg, color: text,
@@ -223,8 +315,8 @@ export default function AssessmentPage() {
                   display: 'flex', alignItems: 'center', gap: 14,
                 }}
                 onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = '#5120c8'
-                  e.currentTarget.style.background = isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.04)'
+                  e.currentTarget.style.borderColor = '#c9a96e'
+                  e.currentTarget.style.background = 'rgba(201,169,110,0.08)'
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.borderColor = border
@@ -232,7 +324,7 @@ export default function AssessmentPage() {
                 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                    background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
+                    background: 'rgba(255,255,255,0.06)',
                     border: `1px solid ${border}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 800, color: subtext,
@@ -245,9 +337,9 @@ export default function AssessmentPage() {
                 </button>
               ))}
             </div>
-            
-            <p style={{ color: isDark ? 'rgba(255,255,255,0.15)' : '#d1d5db', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
-              {isAr ? 'اضغط 1-4 للإجابة' : 'Press 1-4 to answer'}
+
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
+              {isAr ? 'اضغط أ-د للإجابة' : 'Press 1-4 to answer'}
             </p>
           </div>
         </div>
@@ -255,145 +347,151 @@ export default function AssessmentPage() {
     )
   }
 
+  // ANALYZING PHASE
   if (phase === 'analyzing') return (
     <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 24px' }}>
-          <div style={{ width: 64, height: 64, border: '3px solid rgba(81,32,200,0.2)', borderRadius: '50%' }} />
-          <div style={{ position: 'absolute', inset: 0, border: '3px solid #5120c8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 2rem' }}>
+          <div style={{ width: 80, height: 80, border: '3px solid rgba(201,169,110,0.3)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', inset: 0, border: '3px solid #c9a96e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
-        <h2 style={{ color: text, fontSize: 20, fontWeight: 800, margin: '0 0 8px' }}>
-          {isAr ? 'جاري تحليل إجاباتك...' : 'Analyzing your answers...'}
-        </h2>
-        <p style={{ color: subtext, fontSize: 14 }}>
-          {isAr ? 'نبني ملفك المهني الشخصي' : 'Building your personal career profile'}
+        <p style={{ color: '#c9a96e', fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+          {isAr ? 'جاري تحليل ميولك...' : 'Analyzing your profile...'}
+        </p>
+        <p style={{ color: '#6666a0', fontSize: '0.88rem' }}>
+          {isAr ? 'الذكاء الاصطناعي يدرس إجاباتك' : 'AI is processing your answers'}
         </p>
       </div>
     </div>
   )
 
-  if (phase === 'results') {
-    const top = results[0]
-    
-    return (
-      <div style={{ minHeight: '100vh', background: bg, padding: '40px 24px 80px', direction: isAr ? 'rtl' : 'ltr' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          
-          <div style={{ textAlign: 'center', marginBottom: 40 }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '5px 14px', borderRadius: 20,
-              background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)',
-              marginBottom: 16,
-            }}>
-              <CheckCircle2 size={13} color="#16a34a" />
-              <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 600 }}>
-                {isAr ? 'تم التحليل بنجاح' : 'Analysis Complete'}
-              </span>
-            </div>
-            <h1 style={{ color: text, fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-              {isAr ? `مسارك المثالي: ${top?.titleAr}` : `Your Ideal Path: ${top?.titleEn}`}
-            </h1>
-            <p style={{ color: subtext, fontSize: 14 }}>
-              {isAr ? 'إليك أفضل 5 مسارات مهنية تناسبك بناء على إجاباتك' : 'Here are the top 5 career paths matching your profile'}
-            </p>
+  // RESULT PHASE
+  if (phase === 'result') return (
+    <div style={{ minHeight: '100vh', background: bg, padding: '40px 24px 80px', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 14px', borderRadius: 20,
+            background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)',
+            marginBottom: 16,
+          }}>
+            <CheckCircle2 size={13} color="#16a34a" />
+            <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 600 }}>
+              {isAr ? 'تم التحليل بنجاح' : 'Analysis Complete'}
+            </span>
           </div>
-          
+          <h2 style={{ color: text, fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            {isAr ? 'اكتملت نتيجتك' : 'Your Analysis is Ready'}
+          </h2>
+          {resultData?.summary && (
+            <p style={{ color: subtext, fontSize: 14, maxWidth: 500, margin: '0 auto', lineHeight: 1.7 }}>
+              {resultData.summary}
+            </p>
+          )}
+        </div>
+
+        {/* Top Fields */}
+        {resultData?.topFields && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
-            {results.map((result, idx) => (
-              <div key={result.track} style={{
-                padding: '20px 24px', borderRadius: 16,
-                border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.4)' : border}`,
-                background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.03)') : cardBg,
-                display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+            {resultData.topFields.map((field: any, idx: number) => (
+              <div key={field.fieldSlug} style={{
+                padding: '1rem 1.25rem', borderRadius: 10,
+                border: `1px solid ${idx === 0 ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                background: idx === 0 ? 'rgba(201,169,110,0.08)' : 'rgba(255,255,255,0.03)',
               }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                  background: idx === 0 ? '#5120c8' : isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8',
-                  border: `1px solid ${idx === 0 ? 'transparent' : border}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: idx === 0 ? '#fff' : subtext, fontSize: 14, fontWeight: 800,
-                }}>
-                  {idx + 1}
-                </div>
-                
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-                    <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: 0 }}>
-                      {isAr ? result.titleAr : result.titleEn}
-                    </h3>
-                    {idx === 0 && (
-                      <span style={{ padding: '2px 8px', borderRadius: 6, background: '#5120c8', color: '#fff', fontSize: 11, fontWeight: 700 }}>
-                        {isAr ? 'الأنسب لك' : 'Best Match'}
-                      </span>
-                    )}
-                  </div>
-                  
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ flex: 1, height: 6, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${result.normalized}%`, height: '100%',
-                        background: idx === 0 ? '#5120c8' : '#94a3b8',
-                        borderRadius: 3, transition: 'width 1s ease',
-                      }} />
-                    </div>
-                    <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 13, fontWeight: 800, minWidth: 36 }}>
-                      {result.normalized}%
+                    <span style={{
+                      width: 24, height: 24, borderRadius: '50%',
+                      background: idx === 0 ? '#c9a96e' : 'rgba(255,255,255,0.1)',
+                      color: idx === 0 ? '#1a1a2e' : '#9999aa',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700,
+                    }}>{idx + 1}</span>
+                    <span style={{ color: text, fontWeight: 600, fontSize: '0.95rem' }}>
+                      {isAr ? field.titleAr : field.titleEn}
                     </span>
                   </div>
+                  <span style={{ color: '#c9a96e', fontWeight: 600, fontSize: '0.88rem' }}>
+                    {Math.round((field.confidence || 0) * 100)}%
+                  </span>
                 </div>
-                
-                <button
-                  onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses?category=${TRACK_META[result.track]?.category || 'tech'}`, '_blank')}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '8px 14px', borderRadius: 10,
-                    background: idx === 0 ? '#5120c8' : 'transparent',
-                    color: idx === 0 ? '#fff' : '#5120c8',
-                    border: `1px solid ${idx === 0 ? 'transparent' : 'rgba(81,32,200,0.3)'}`,
-                    cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                    flexShrink: 0, transition: 'opacity 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-                  <BookOpen size={13} />
-                  {isAr ? 'عرض الكورسات' : 'View Courses'}
-                  <ExternalLink size={11} />
-                </button>
+                {/* Confidence bar */}
+                <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 8 }}>
+                  <div style={{ height: '100%', borderRadius: 2,
+                    width: `${Math.round((field.confidence || 0) * 100)}%`,
+                    background: 'linear-gradient(90deg,#c9a96e,#b8935a)' }}/>
+                </div>
+                {/* Skills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {(field.skills || []).map((s: string) => (
+                    <span key={s} style={{
+                      background: 'rgba(201,169,110,0.08)', color: '#c9a96e',
+                      border: '1px solid rgba(201,169,110,0.2)',
+                      borderRadius: 20, padding: '2px 9px', fontSize: '0.73rem',
+                    }}>{s}</span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
-          
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => router.push(`/${locale}/dashboard/career-path`)}
-              style={{
-                flex: 1, minWidth: 200, padding: '14px', borderRadius: 12,
-                background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer',
-                fontSize: 14, fontWeight: 700, transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              {isAr ? 'استكشف مسارك التفصيلي' : 'Explore Your Detailed Path'}
-            </button>
-            <button
-              onClick={() => { setPhase('intro') }}
-              style={{
-                padding: '14px 20px', borderRadius: 12, cursor: 'pointer',
-                border: `1px solid ${border}`, background: 'transparent',
-                color: subtext, fontSize: 14, fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: 6,
-                transition: 'opacity 0.15s',
-              }}>
-              <RotateCcw size={15} />
-              {isAr ? 'أعد الاختبار' : 'Retake'}
-            </button>
-          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
+          <button
+            onClick={async () => {
+              const slugs = (resultData?.topFields || []).map((f: any) => f.fieldSlug)
+              try {
+                const pathsRes = await fetch(`${apiBase}/career/paths`)
+                const pathsData = await pathsRes.json()
+                const allPaths = pathsData?.data || []
+                const matchedIds = allPaths
+                  .filter((p: any) => slugs.includes(p.slug))
+                  .map((p: any) => p.id)
+                if (matchedIds.length > 0) {
+                  const token = getToken()
+                  await fetch(`${apiBase}/career/paths/save`, {
+                    method: 'POST',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pathIds: matchedIds, source: 'ASSESSMENT' }),
+                  })
+                }
+              } catch (e) { /* non-fatal */ }
+              router.push(`/${locale}/dashboard/career-path`)
+            }}
+            style={{
+              width: '100%', padding: '0.85rem',
+              background: 'linear-gradient(135deg,#c9a96e,#b8935a)',
+              border: 'none', borderRadius: 10,
+              color: '#1a1a2e', fontWeight: 700, fontSize: '0.95rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {isAr ? 'احفظ المسارات وانتقل لصفحتي المهنية' : 'Save Paths & Go to Career Hub'}
+          </button>
+          <button
+            onClick={() => { setPhase('quiz'); setCurrentQ(0); setAnswers({}); setResultData(null) }}
+            style={{
+              width: '100%', padding: '0.75rem',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+              color: '#9999aa', fontSize: '0.88rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {isAr ? 'إعادة الاختبار' : 'Retake Assessment'}
+          </button>
         </div>
       </div>
-    )
-  }
+    </div>
+  )
 
   return null
 }
