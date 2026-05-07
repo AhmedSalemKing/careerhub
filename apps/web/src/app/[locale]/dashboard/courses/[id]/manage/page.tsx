@@ -776,6 +776,49 @@ function AddLectureModal({
   )
 }
 
+// ─── Start Live Button ────────────────────────────────────────────────────────
+
+function StartLiveButton({ lessonId, isLive, onStarted }: { lessonId: string; isLive: boolean; onStarted: () => void }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleStart() {
+    setLoading(true)
+    try {
+      await post(`/live/lesson-start/${lessonId}`, {})
+      onStarted()
+    } catch (e) {
+      console.error('Start live error:', e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleStart}
+      disabled={loading || isLive}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '6px',
+        padding: '5px 14px', borderRadius: '20px',
+        border: isLive ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(81,32,200,0.4)',
+        background: isLive ? 'rgba(239,68,68,0.12)' : 'rgba(81,32,200,0.12)',
+        color: isLive ? '#f87171' : '#a78bfa',
+        fontSize: '0.78rem', fontWeight: 600, cursor: isLive ? 'default' : 'pointer',
+        fontFamily: 'inherit', opacity: loading ? 0.6 : 1,
+        whiteSpace: 'nowrap', shrink: 0,
+      }}
+    >
+      {loading ? (
+        <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
+      ) : (
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
+      )}
+      {isLive ? 'جارٍ البث' : 'بدء البث'}
+    </button>
+  )
+}
+
 // ─── Main Manage Page ─────────────────────────────────────────────────────────
 
 export default function ManageCoursePage() {
@@ -938,7 +981,7 @@ export default function ManageCoursePage() {
                                 background: lesson.liveStatus === 'LIVE' ? '#ef4444' : '#f87171',
                               }}/>
                               {lesson.liveStatus === 'LIVE' ? 'جار البث' :
-                               lesson.liveDate ? new Date(lesson.liveDate).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
+                               lesson.liveStartTime ? new Date(lesson.liveStartTime).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
                             </span>
                           )}
                           {lesson.videoUrl && (
@@ -1067,7 +1110,7 @@ export default function ManageCoursePage() {
                                   background: lesson.liveStatus === 'LIVE' ? '#ef4444' : '#f87171',
                                 }}/>
                                 {lesson.liveStatus === 'LIVE' ? 'جار البث الآن' :
-                                 lesson.liveDate ? new Date(lesson.liveDate).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
+                                 lesson.liveStartTime ? new Date(lesson.liveStartTime).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
                               </span>
                             )}
                             {lesson.videoUrl && (
@@ -1090,6 +1133,9 @@ export default function ManageCoursePage() {
                         
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
+                        )}
+                        {lesson.isLive && lesson.liveStatus !== 'ENDED' && (
+                          <StartLiveButton lessonId={lesson.id} isLive={lesson.liveStatus === 'LIVE'} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
                         )}
                       </div>
                     ))}
