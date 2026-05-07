@@ -50,6 +50,7 @@ export default function CareerPathPage() {
   }, [])
 
   const togglePath = (id: string) => {
+    console.log('[TogglePath] pathId:', id, '| currently selected:', selectedPaths.includes(id))
     setSelectedPaths(prev => {
       const next = prev.includes(id)
         ? prev.filter(p => p !== id)
@@ -57,6 +58,46 @@ export default function CareerPathPage() {
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
+  }
+
+  const getPathIdForResult = (field: any): string | null => {
+    const fieldTitle = field.title || field.titleAr || field.titleEn || ''
+    const fieldSlug = field.slug || field.track || ''
+    const allPaths = CAREER_PATHS.flatMap(c => c.paths)
+
+    const matched = allPaths.find((p: any) => {
+      const nameAr = p.titleAr || ''
+      const nameEn = p.title || ''
+      return (
+        nameAr.includes(fieldTitle) ||
+        fieldTitle.includes(nameAr) ||
+        nameEn.toLowerCase() === fieldTitle.toLowerCase() ||
+        p.id === fieldSlug ||
+        p.id === field.pathId
+      )
+    })
+
+    if (matched) return matched.id
+
+    const m: Record<string, string> = {
+      frontend: 'frontend-dev', backend: 'backend-dev',
+      fullstack: 'fullstack-dev', mobile: 'mobile-dev',
+      devops: 'devops', 'data-science': 'data-scientist',
+      'ai-ml': 'ai-engineer', cybersecurity: 'cybersecurity',
+      'ui-ux': 'ui-ux', 'graphic-design': 'graphic-designer',
+      'digital-marketing': 'digital-marketing', seo: 'digital-marketing',
+      content: 'content-creator', 'product-manager': 'product-manager',
+      'business-analyst': 'business-analyst',
+      'project-manager': 'project-manager', sales: 'sales-manager',
+      entrepreneur: 'entrepreneur',
+    }
+    return m[fieldSlug] || fieldSlug || null
+  }
+
+  const handleAddAssessmentPath = (field: any) => {
+    const pathId = getPathIdForResult(field)
+    console.log('[AddPath] field:', JSON.stringify(field), 'resolved pathId:', pathId)
+    if (pathId) togglePath(pathId)
   }
 
   const [courses, setCourses] = useState<any[]>([])
@@ -310,11 +351,8 @@ export default function CareerPathPage() {
                         </div>
                       </div>
                       <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
-                      <button onClick={() => {
-                        const m:Record<string,string> = {'frontend':'frontend-dev','backend':'backend-dev','fullstack':'fullstack-dev','mobile':'mobile-dev','devops':'devops','data-science':'data-scientist','ai-ml':'ai-engineer','cybersecurity':'cybersecurity','ui-ux':'ui-ux','graphic-design':'graphic-designer','digital-marketing':'digital-marketing','seo':'digital-marketing','content':'content-creator','product-manager':'product-manager','business-analyst':'business-analyst','project-manager':'project-manager','sales':'sales-manager','entrepreneur':'entrepreneur'}
-                        togglePath(m[result.track] || result.track)
-                      }} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: selectedPaths.includes(result.track) ? 'transparent' : '#5120c8', color: selectedPaths.includes(result.track) ? subtext : '#ffffff', border: `1px solid ${selectedPaths.includes(result.track) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {selectedPaths.includes(result.track) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
+                      <button onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: (getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? 'transparent' : '#5120c8', color: (getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? subtext : '#ffffff', border: `1px solid ${(getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {(getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
                       </button>
                     </div>
                   ))}
