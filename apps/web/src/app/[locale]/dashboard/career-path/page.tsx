@@ -63,7 +63,9 @@ const MAX_PATHS = 5
       .then(r => r.json())
       .then(data => {
         const arr = data?.data?.careerPaths ?? data?.data ?? data ?? []
-        setAllPaths(Array.isArray(arr) ? arr : [])
+        const paths = Array.isArray(arr) ? arr : []
+        console.log('[CareerPath] allPaths loaded:', paths.length, paths[0])
+        setAllPaths(paths)
       })
       .catch(() => {})
   }, [])
@@ -145,37 +147,45 @@ const MAX_PATHS = 5
   }
 
   const getPathIdForResult = (field: any): string | null => {
-    const fieldSlug = field.track || field.slug || field.fieldSlug || ''
-    const fieldTitleAr = field.titleAr || field.title || ''
-    const fieldTitleEn = field.titleEn || ''
-
     if (allPaths.length === 0) {
       console.warn('[GetPathId] allPaths not loaded yet')
       return null
     }
 
+    const fieldSlug = (field.track || field.slug || field.fieldSlug || '').toLowerCase()
+    const fieldTitleAr = (field.titleAr || field.title || '').trim()
+    const fieldTitleEn = (field.titleEn || '').toLowerCase().trim()
+
     const matched = allPaths.find((p: any) => {
       const pSlug = (p.slug || '').toLowerCase()
-      const pDescAr = (p.descriptionAr || '').toLowerCase()
-      const pDescEn = (p.descriptionEn || '').toLowerCase()
-      const fSlug = fieldSlug.toLowerCase()
-      const fAr = fieldTitleAr.toLowerCase()
-      const fEn = fieldTitleEn.toLowerCase()
 
-      return (
-        pSlug === fSlug ||
-        pSlug.includes(fSlug) ||
-        fSlug.includes(pSlug) ||
-        pDescAr.includes(fAr) ||
-        fAr.includes(pDescAr.split('.')[0]) ||
-        pDescEn.toLowerCase().includes(fEn) ||
-        fEn.includes(pDescEn.split('.')[0].toLowerCase())
-      )
+      // 1. Direct slug match
+      if (pSlug === fieldSlug) return true
+      // 2. Slug contains/is-contained
+      if (fieldSlug && (pSlug.includes(fieldSlug) || fieldSlug.includes(pSlug))) return true
+
+      // 3. jobTitlesAr array — primary match for Arabic assessment results
+      const jobTitlesAr: string[] = Array.isArray(p.jobTitlesAr) ? p.jobTitlesAr : []
+      if (fieldTitleAr && jobTitlesAr.some(t =>
+        t.includes(fieldTitleAr) || fieldTitleAr.includes(t)
+      )) return true
+
+      // 4. jobTitlesEn array
+      const jobTitlesEn: string[] = Array.isArray(p.jobTitlesEn) ? p.jobTitlesEn : []
+      if (fieldTitleEn && jobTitlesEn.some(t =>
+        t.toLowerCase().includes(fieldTitleEn) || fieldTitleEn.includes(t.toLowerCase())
+      )) return true
+
+      // 5. descriptionAr fallback
+      const pDescAr = (p.descriptionAr || '').toLowerCase()
+      if (fieldTitleAr && pDescAr.includes(fieldTitleAr.toLowerCase())) return true
+
+      return false
     })
 
-    console.log('[GetPathId] field slug:', fieldSlug,
-      '| titleAr:', fieldTitleAr,
-      '| matched:', matched?.id, matched?.slug)
+    console.log('[GetPathId] slug:', fieldSlug, '| titleAr:', fieldTitleAr,
+      '| allPaths:', allPaths.length,
+      '| matched:', matched?.id, matched?.slug, matched?.jobTitlesAr?.[0])
 
     return matched?.id ?? null
   }
@@ -423,6 +433,11 @@ const MAX_PATHS = 5
                 
                 <h3 style={{ color: text, fontSize: 15, fontWeight: 800, marginBottom: 16 }}>{isAr ? 'نتائج آخر اختبار' : 'Last Assessment Results'}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+                  {allPaths.length === 0 && (
+                    <p style={{ color: subtext, fontSize: 13, margin: '0 0 8px' }}>
+                      {isAr ? 'جاري تحميل المسارات...' : 'Loading paths...'}
+                    </p>
+                  )}
                   {assessmentResults.slice(0, 5).map((result, idx) => (
                     <div key={idx} style={{ padding: '16px 20px', borderRadius: 12, border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.3)' : border}`, background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)') : cardBg, display: 'flex', alignItems: 'center', gap: 14 }}>
                       <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 800 }}>{idx + 1}</div>
