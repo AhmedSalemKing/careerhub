@@ -953,7 +953,7 @@ export default function ManageCoursePage() {
                         className="flex items-center gap-2 rounded-xl bg-[color:var(--surface-2)] px-3 py-2 text-sm"
                       >
                         {/* ✅ Show appropriate icon based on content type */}
-                        {lesson.isLive ? (
+                        {(lesson.type === 'LIVE') ? (
                           <div className="h-3.5 w-3.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                         ) : lesson.videoUrl ? (
                           <Video className="h-3.5 w-3.5 text-red-400 shrink-0" />
@@ -968,7 +968,7 @@ export default function ManageCoursePage() {
                         
                         {/* Content type badges */}
                         <div className="flex gap-1">
-                          {lesson.isLive && (
+                          {(lesson.type === 'LIVE') && (
                             <span style={{
                               display: 'inline-flex', alignItems: 'center', gap: '4px',
                               padding: '2px 8px', borderRadius: '20px',
@@ -1067,7 +1067,7 @@ export default function ManageCoursePage() {
                       <div key={lesson.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[color:var(--surface-2)] transition-colors">
                         {/* ✅ Enhanced icon display */}
                         <div className="flex gap-1">
-                          {lesson.isLive && (
+                          {(lesson.type === 'LIVE') && (
                             <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
                               <div className="h-4 w-4 rounded-full bg-red-500 animate-pulse" />
                             </div>
@@ -1087,7 +1087,7 @@ export default function ManageCoursePage() {
                               <img src={lesson.imageUrl} alt="" className="h-full w-full object-cover" />
                             </div>
                           )}
-                          {!lesson.isLive && !lesson.videoUrl && !lesson.fileUrl && !lesson.imageUrl && (
+                          {!(lesson.type === 'LIVE') && !lesson.videoUrl && !lesson.fileUrl && !lesson.imageUrl && (
                             <div className="h-8 w-8 rounded-lg bg-[color:var(--surface-2)] flex items-center justify-center">
                               <File className="h-4 w-4 text-[color:var(--muted)]" />
                             </div>
@@ -1097,7 +1097,7 @@ export default function ManageCoursePage() {
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-foreground truncate">{lesson.title}</div>
                           <div className="flex gap-2 mt-1">
-                            {lesson.isLive && (
+                            {(lesson.type === 'LIVE') && (
                               <span style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                                 padding: '2px 10px', borderRadius: '20px',
@@ -1134,7 +1134,7 @@ export default function ManageCoursePage() {
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
                         )}
-                        {lesson.isLive && lesson.liveStatus !== 'ENDED' && (
+                        {(lesson.type === 'LIVE') && lesson.liveStatus !== 'ENDED' && (
                           <StartLiveButton lessonId={lesson.id} isLive={lesson.liveStatus === 'LIVE'} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
                         )}
                       </div>

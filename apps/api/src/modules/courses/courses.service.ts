@@ -1388,27 +1388,23 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
   async addLesson(sectionId: string, dto: any) {
     const count = await this.prisma.lesson.count({ where: { sectionId } });
     const lessonType = dto.lessonType || dto.type || 'VIDEO';
+    const isLive = lessonType === 'LIVE';
     const lesson = await this.prisma.lesson.create({
       data: {
         title: dto.title,
         description: dto.description,
         type: lessonType,
-        videoUrl: dto.videoUrl,
-        videoDuration: dto.duration,
-        fileUrl: dto.fileUrl,
-        fileName: dto.fileName,
-        fileSize: dto.fileSize,
-        imageUrl: dto.imageUrl,
-        contentType: dto.contentType,
+        videoUrl: !isLive ? dto.videoUrl : undefined,
+        videoDuration: !isLive ? dto.duration : undefined,
+        fileUrl: !isLive ? dto.fileUrl : undefined,
+        fileName: !isLive ? dto.fileName : undefined,
+        fileSize: !isLive ? dto.fileSize : undefined,
         isFree: dto.isFree || false,
         order: dto.order ?? count,
         sectionId,
-        isLive: lessonType === 'LIVE',
-        liveStartTime: dto.liveDate ? new Date(dto.liveDate) : null,
-        liveDuration: dto.liveDuration || null,
-        liveStatus: dto.liveDate ? 'SCHEDULED' : null,
-        saveRecording: dto.saveRecording ?? true,
-        autoPublish: dto.autoPublish ?? false,
+        liveStartTime: isLive && dto.liveDate ? new Date(dto.liveDate) : null,
+        liveStatus: isLive && dto.liveDate ? 'SCHEDULED' : null,
+        content: isLive ? { liveDuration: dto.liveDuration || 60, saveRecording: dto.saveRecording ?? true, autoPublish: dto.autoPublish ?? false } : undefined,
       },
     });
     return { success: true, data: lesson };
@@ -1418,7 +1414,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     const lessons = await this.prisma.lesson.findMany({
       where: {
         section: { courseId },
-        isLive: true,
+        type: 'LIVE',
       },
       include: { section: { select: { id: true, title: true } } },
       orderBy: { liveStartTime: 'asc' },
