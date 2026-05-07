@@ -19,6 +19,7 @@ import {
 	CheckCircle2,
 	AlertCircle,
 	MoreVertical,
+	Square,
 } from "lucide-react";
 import { get } from "../../../../lib/api";
 import { AuthGate } from "../../../components/AuthGate";
