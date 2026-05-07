@@ -51,7 +51,7 @@ export default function GoLivePage() {
 
   const {
     connected,
-    viewerCount: socketViewerCount,
+    viewerCount,
     comments,
     questions,
     sendComment,

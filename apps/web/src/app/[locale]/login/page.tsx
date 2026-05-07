@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -13,6 +14,7 @@ import { setToken, setRefreshToken, setUser } from '../../../lib/auth'
 
 export default function LoginPage() {
   const locale = useLocale() as 'ar' | 'en'
+  const router = useRouter()
   const t = useTranslations('auth')
   const c = useTranslations('common')
   const store = useAuthStore()

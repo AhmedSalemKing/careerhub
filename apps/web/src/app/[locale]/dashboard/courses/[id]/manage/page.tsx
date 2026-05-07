@@ -806,7 +806,7 @@ function StartLiveButton({ lessonId, isLive, onStarted }: { lessonId: string; is
         color: isLive ? '#f87171' : '#a78bfa',
         fontSize: '0.78rem', fontWeight: 600, cursor: isLive ? 'default' : 'pointer',
         fontFamily: 'inherit', opacity: loading ? 0.6 : 1,
-        whiteSpace: 'nowrap', shrink: 0,
+        whiteSpace: 'nowrap', flexShrink: 0,
       }}
     >
       {loading ? (

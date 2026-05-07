@@ -269,7 +269,7 @@ export default function CareersPage() {
                     <div style={{
                       width:44, height:44, borderRadius:12,
                       background:'rgba(81,32,200,0.1)',
-                      display:'flex', alignItems:'center', justifyContents:'center',
+                      display:'flex', alignItems:'center', justifyContent:'center',
                     }}>
                       <IconComp size={22} color="#5120c8" />
                     </div>
@@ -431,7 +431,7 @@ export default function CareersPage() {
             <div style={{
               width:56, height:56, borderRadius:16, margin:'0 auto 16px',
               background:'rgba(81,32,200,0.1)',
-              display:'flex', alignItems:'center', justifyContents:'center',
+              display:'flex', alignItems:'center', justifyContent:'center',
             }}>
               <Sparkles size={24} color="#5120c8" />
             </div>
