@@ -204,6 +204,22 @@ export class AssessmentService {
     };
   }
 
+  async getLatestResult(userId: string) {
+    const session = await this.prisma.assessmentSession.findFirst({
+      where: { userId, status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+    });
+
+    if (!session?.report) {
+      return { success: true, data: { hasResult: false, result: null } };
+    }
+
+    return {
+      success: true,
+      data: { hasResult: true, result: session.report },
+    };
+  }
+
   private async generateAssessmentQuestions(assessmentId: string, careerPathId: string) {
     const questionTemplates = await this.getQuestionTemplates(careerPathId);
     

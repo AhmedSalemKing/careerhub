@@ -180,8 +180,10 @@ async function bootstrap() {
   });
 
   // Start server
-  const port = process.env.PORT || configService.get('PORT') || 3001;
+  const port = process.env.PORT || configService.get('PORT') || 10000;
+  console.log(`[Bootstrap] Attempting to listen on 0.0.0.0:${port}`);
   await app.listen(port, '0.0.0.0');
+  console.log(`[Bootstrap] Server listening on 0.0.0.0:${port}`);
 
   logger.log(`🚀 DeveWay API is running on port ${port}`);
   logger.log(`🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`);

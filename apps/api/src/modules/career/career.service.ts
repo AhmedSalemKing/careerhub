@@ -20,26 +20,85 @@ export class CareerService {
     pathCategory: string;
     aiRecommended?: boolean;
   }) {
-    return this.prisma.userCareerPath.upsert({
+    const result = await this.prisma.userCareerPath.upsert({
       where: { userId },
-      create: {
-        userId,
-        pathId: data.pathId,
-        pathTitle: data.pathTitle,
-        pathCategory: data.pathCategory,
-        aiRecommended: data.aiRecommended ?? false,
-      },
-      update: {
-        pathId: data.pathId,
-        pathTitle: data.pathTitle,
-        pathCategory: data.pathCategory,
-        aiRecommended: data.aiRecommended ?? false,
-      },
-    });
+      create: { userId, ...data },
+      update: { ...data },
+    }).catch(() => null);
+    return result;
   }
 
   async getUserCareerPath(userId: string) {
-    return this.prisma.userCareerPath.findUnique({ where: { userId } });
+    return this.prisma.userCareerPath.findUnique({ where: { userId } }).catch(() => null);
+  }
+
+  async getUserCareerPaths(userId: string) {
+    const userPath = await this.prisma.userCareerPath.findUnique({
+      where: { userId },
+    }).catch(() => null)
+    const data: any[] = []
+    if (userPath) {
+      const careerPath = await this.prisma.careerPath.findUnique({
+        where: { id: userPath.pathId },
+        select: { id: true, slug: true, titleEn: true, titleAr: true, icon: true, color: true },
+      }).catch(() => null)
+      data.push({
+        id: userPath.id,
+        careerPathId: userPath.pathId,
+        pathId: userPath.pathId,
+        source: 'MANUAL',
+        careerPath: careerPath || { id: userPath.pathId, slug: userPath.pathId, titleEn: userPath.pathTitle, titleAr: userPath.pathTitle },
+      })
+    }
+    return { success: true, data }
+  }
+
+  async saveUserCareerPaths(
+    userId: string,
+    pathIds: string[],
+    source: string,
+  ) {
+    await this.prisma.userCareerPath.deleteMany({ where: { userId } })
+      .catch(() => {})
+
+    const created = await Promise.all(
+      pathIds.slice(0, 1).map(async pathId => {
+        const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
+        return this.prisma.userCareerPath.create({
+          data: {
+            userId,
+            pathId,
+            pathTitle: cp?.titleEn || pathId,
+            pathCategory: cp?.titleAr || '',
+            aiRecommended: source === 'ASSESSMENT',
+          },
+        }).catch(() => null)
+      })
+    )
+    return { success: true, data: created.filter(Boolean) }
+  }
+
+  async addUserCareerPath(userId: string, pathId: string, source: string) {
+    await this.prisma.userCareerPath.deleteMany({ where: { userId } }).catch(() => {})
+    const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
+    const result = await this.prisma.userCareerPath.create({
+      data: {
+        userId,
+        pathId,
+        pathTitle: cp?.titleEn || pathId,
+        pathCategory: cp?.titleAr || '',
+        aiRecommended: source === 'ASSESSMENT' || source === 'RECOMMENDED',
+      },
+    }).catch(() => null)
+    return { success: true, data: result }
+  }
+
+  async removeUserCareerPath(userId: string, pathId: string) {
+    const record = await this.prisma.userCareerPath.findUnique({ where: { userId } }).catch(() => null)
+    if (record && record.pathId === pathId) {
+      await this.prisma.userCareerPath.delete({ where: { userId } }).catch(() => {})
+    }
+    return { success: true }
   }
 
   async getCareerPaths(language: string = 'en') {
@@ -51,15 +110,20 @@ export class CareerService {
 
     const careerPaths = await this.prisma.careerPath.findMany({
       where: { isActive: true },
-      orderBy: { createdAt: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
       select: {
         id: true,
         slug: true,
         titleEn: true,
         titleAr: true,
+        descriptionEn: true,
+        descriptionAr: true,
         icon: true,
         color: true,
         demandLevel: true,
+        skills: true,
+        jobTitlesEn: true,
+        jobTitlesAr: true,
       },
     });
 
@@ -68,9 +132,16 @@ export class CareerService {
       id: path.id,
       slug: path.slug,
       title: language === 'ar' ? path.titleAr : path.titleEn,
-      demandLevel: path.demandLevel,
+      titleEn: path.titleEn,
+      titleAr: path.titleAr,
+      descriptionEn: path.descriptionEn,
+      descriptionAr: path.descriptionAr,
       icon: path.icon,
       color: path.color,
+      demandLevel: path.demandLevel,
+      skills: path.skills,
+      jobTitlesEn: path.jobTitlesEn,
+      jobTitlesAr: path.jobTitlesAr,
     }));
 
     this.cache.set(cacheKey, {
