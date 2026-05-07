@@ -230,83 +230,122 @@ export class CoursesService {
       ? fields.split(',').map(s => s.trim()).filter(Boolean)
       : [];
 
-    console.log('[Recommended] pathIds:', pathIds, '| fieldSlugs:', fieldSlugs);
+    const allPaths = await this.prisma.careerPath.findMany({
+      where: { id: { in: pathIds } },
+      select: { id: true, slug: true, titleEn: true, titleAr: true },
+    });
 
-    let courses: any[] = [];
-    let total = 0;
+    const resolvedKeywords: string[] = [];
+    for (const p of allPaths) {
+      resolvedKeywords.push(p.slug.toLowerCase());
+      resolvedKeywords.push(p.titleEn.toLowerCase());
+      resolvedKeywords.push(p.titleAr.toLowerCase());
+    }
+    const uniqueKeywords = [...new Set(resolvedKeywords)];
 
-    const baseSelect = {
-      id: true,
-      titleEn: true,
-      titleAr: true,
-      descriptionEn: true,
-      descriptionAr: true,
-      thumbnail: true,
-      price: true,
-      level: true,
-      type: true,
-      liveStatus: true,
-      liveStartTime: true,
-      liveEndTime: true,
-      liveViewerCount: true,
-      locationName: true,
-      locationAddress: true,
-      locationLat: true,
-      locationLng: true,
-      offlinePaymentType: true,
-      maxAttendees: true,
-      instructor: {
-        select: {
-          id: true,
-          isVerified: true,
-          profile: { select: { firstName: true, lastName: true, avatar: true } },
+    console.log('[Recommended] pathIds:', pathIds, '| fieldSlugs:', fieldSlugs, '| resolvedKeywords:', uniqueKeywords);
+
+    // Fetch all published courses with tags and careerPathId for scoring
+    const allPublished = await this.prisma.course.findMany({
+      where: { status: 'PUBLISHED' },
+      select: {
+        id: true,
+        titleEn: true,
+        titleAr: true,
+        descriptionEn: true,
+        descriptionAr: true,
+        thumbnail: true,
+        price: true,
+        level: true,
+        type: true,
+        liveStatus: true,
+        liveStartTime: true,
+        liveEndTime: true,
+        liveViewerCount: true,
+        locationName: true,
+        locationAddress: true,
+        locationLat: true,
+        locationLng: true,
+        offlinePaymentType: true,
+        maxAttendees: true,
+        tags: true,
+        careerPathId: true,
+        careerPaths: true,
+        instructor: {
+          select: {
+            id: true,
+            isVerified: true,
+            profile: { select: { firstName: true, lastName: true, avatar: true } },
+          },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            sections: true,
+          },
         },
       },
-      _count: {
-        select: {
-          enrollments: true,
-          sections: true,
-        },
-      },
-    };
+      orderBy: [
+        { isFeatured: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    });
 
-    if (pathIds.length > 0) {
-      const whereCareer: any = {
-        status: 'PUBLISHED',
-        careerPaths: { hasSome: pathIds },
-      };
+    const scoredCourses = allPublished.map(course => {
+      let score = 0;
+      const courseTags = (course.tags || []).map(t => t.toLowerCase());
+      const courseCareerPaths = (course.careerPaths || []).map(cp => cp.toLowerCase());
+      const courseText = [
+        (course.titleEn || '').toLowerCase(),
+        (course.titleAr || '').toLowerCase(),
+        (course.descriptionEn || '').toLowerCase(),
+        (course.descriptionAr || '').toLowerCase(),
+        ...courseTags,
+        ...courseCareerPaths,
+      ].join(' ');
 
-      [courses, total] = await Promise.all([
-        this.prisma.course.findMany({
-          where: whereCareer,
-          select: baseSelect,
-          orderBy: [
-            { isFeatured: 'desc' },
-            { createdAt: 'desc' },
-          ],
-          take: effectiveLimit,
-        }),
-        this.prisma.course.count({ where: whereCareer }),
-      ]);
-    }
+      // Score from resolved path keywords (slugs + titles)
+      for (const kw of uniqueKeywords) {
+        if (courseText.includes(kw)) score += 3;
+      }
 
-    if (!courses.length) {
-      const fallbackWhere: any = { status: 'PUBLISHED' };
-      [courses, total] = await Promise.all([
-        this.prisma.course.findMany({
-          where: fallbackWhere,
-          select: baseSelect,
-          orderBy: [
-            { isFeatured: 'desc' },
-            { createdAt: 'desc' },
-          ],
-          take: effectiveLimit,
-        }),
-        this.prisma.course.count({ where: fallbackWhere }),
-      ]);
-    }
+      // Direct careerPathId match (highest)
+      for (const pid of pathIds) {
+        if (course.careerPathId === pid) score += 10;
+      }
 
-    const transformedCourses = courses.map(course => ({
+      // careerPaths array slug match
+      for (const slug of [...fieldSlugs, ...allPaths.map(p => p.slug)]) {
+        const slugLower = slug.toLowerCase();
+        if (courseCareerPaths.some(cp => cp === slugLower || cp.includes(slugLower) || slugLower.includes(cp))) {
+          score += 8;
+        }
+      }
+
+      // Tag match against path slugs/titles directly
+      for (const tag of courseTags) {
+        for (const kw of uniqueKeywords) {
+          if (kw.includes(tag) || tag.includes(kw)) {
+            score += 5;
+            break;
+          }
+        }
+      }
+
+      return { ...course, _score: score };
+    });
+
+    // Sort by score descending
+    scoredCourses.sort((a, b) => b._score - a._score);
+
+    // Only return courses with score > 0; if none at all, return top 6 anyway
+    const relevant = scoredCourses.filter(c => c._score > 0);
+    const topCourses = relevant.length > 0
+      ? relevant.slice(0, effectiveLimit)
+      : allPublished.length > 0 ? scoredCourses.slice(0, Math.min(6, effectiveLimit)) : [];
+
+    // Transform to match expected output format
+    const transformedCourses = topCourses.map(course => ({
       id: course.id,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
@@ -332,6 +371,7 @@ export class CoursesService {
           }
         : undefined,
       _count: course._count,
+      _score: course._score,
     }));
 
     let coursesWithEnrollment = transformedCourses;
@@ -339,7 +379,7 @@ export class CoursesService {
       const enrollments = await this.prisma.enrollment.findMany({
         where: {
           userId,
-          courseId: { in: courses.map(c => c.id) },
+          courseId: { in: topCourses.map(c => c.id) },
           status: 'ACTIVE',
         },
         select: { courseId: true },
@@ -359,11 +399,11 @@ export class CoursesService {
     return {
       courses: coursesWithEnrollment,
       meta: {
-        total,
+        total: topCourses.length,
         page: 1,
         limit: effectiveLimit,
-        totalPages: Math.ceil(total / effectiveLimit),
-        hasNext: 1 < Math.ceil(total / effectiveLimit),
+        totalPages: 1,
+        hasNext: false,
         hasPrev: false,
       },
     };
