@@ -42,6 +42,10 @@ const [myPathIds, setMyPathIds] = useState<Set<string>>(() => {
 })
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 const [allPaths, setAllPaths] = useState<any[]>([])
+const [courses, setCourses] = useState<any[]>([])
+const [coursesLoading, setCoursesLoading] = useState(false)
+const [bundles, setBundles] = useState<any[]>([])
+const [_bundlesLoading, setBundlesLoading] = useState(false)
 const MAX_PATHS = 5
   
   const bg = isDark ? '#0d0d0d' : '#fafafa'
@@ -105,6 +109,49 @@ const MAX_PATHS = 5
         }
       })
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    setCoursesLoading(true)
+    const token = getToken()
+
+    const pathIds = Array.from(myPathIds)
+    const params = new URLSearchParams()
+    if (pathIds.length > 0) params.set('paths', pathIds.join(','))
+    params.set('limit', '12')
+
+    fetch(`${apiUrl}/courses/recommended?${params}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    })
+      .then(r => r.json())
+      .then(data => {
+        console.log('[Recommended courses]', data)
+        const arr = data?.data ?? data?.courses ?? data ?? []
+        setCourses(Array.isArray(arr) ? arr : [])
+      })
+      .catch(e => {
+        console.error('[Recommended error]', e)
+        setCourses([])
+      })
+      .finally(() => setCoursesLoading(false))
+  }, [myPathIds])
+
+  useEffect(() => {
+    setBundlesLoading(true)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    fetch(`${apiUrl}/courses/bundles`, {
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const arr = data?.data?.data ?? data?.data ?? data ?? []
+        setBundles(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => setBundles([]))
+      .finally(() => setBundlesLoading(false))
   }, [])
 
   const resolveSlugToDbId = (slugId: string): string | null => {
@@ -220,56 +267,6 @@ const MAX_PATHS = 5
     console.log('[AddPath] Adding pathId (UUID):', pathId)
     await togglePath(pathId)
   }
-
-  const [courses, setCourses] = useState<any[]>([])
-  const [coursesLoading, setCoursesLoading] = useState(false)
-  const [bundles, setBundles] = useState<any[]>([])
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_bundlesLoading, setBundlesLoading] = useState(false)
-
-  useEffect(() => {
-    setCoursesLoading(true)
-    const token = getToken()
-
-    const pathIds = Array.from(myPathIds)
-    const params = new URLSearchParams()
-    if (pathIds.length > 0) params.set('paths', pathIds.join(','))
-    params.set('limit', '12')
-
-    fetch(`${apiUrl}/courses/recommended?${params}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    })
-      .then(r => r.json())
-      .then(data => {
-        console.log('[Recommended courses]', data)
-        // Handle: { success, data: [...] } OR { courses: [...] } OR [...]
-        const arr = data?.data ?? data?.courses ?? data ?? []
-        setCourses(Array.isArray(arr) ? arr : [])
-      })
-      .catch(e => {
-        console.error('[Recommended error]', e)
-        setCourses([])
-      })
-      .finally(() => setCoursesLoading(false))
-  }, [myPathIds])
-
-  useEffect(() => {
-    setBundlesLoading(true)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-    fetch(`${apiUrl}/courses/bundles`, {
-      headers: { 'Content-Type': 'application/json' },
-    })
-      .then(r => r.json())
-      .then(data => {
-        const arr = data?.data?.data ?? data?.data ?? data ?? []
-        setBundles(Array.isArray(arr) ? arr : [])
-      })
-      .catch(() => setBundles([]))
-      .finally(() => setBundlesLoading(false))
-  }, [])
 
   const TABS = [
     { key: 'paths' as TabKey, labelAr: 'مساراتي المهنية', labelEn: 'My Career Paths', icon: <Target size={15} /> },
