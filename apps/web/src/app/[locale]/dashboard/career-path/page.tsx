@@ -66,18 +66,23 @@ export default function CareerPathPage() {
   const [_bundlesLoading, setBundlesLoading] = useState(false)
 
   useEffect(() => {
-    if (selectedPaths.length === 0) {
-      setCourses([])
-      return
-    }
-    
     setCoursesLoading(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-    const pathsParam = selectedPaths.join(',')
-    
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') || sessionStorage.getItem('token') || '' : ''
-    
-    fetch(`${apiUrl}/courses/recommended?paths=${pathsParam}&limit=12`, {
+
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+      : ''
+
+    const pathSlugs = selectedPaths
+      .map(id => CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === id)?.id)
+      .filter(Boolean) as string[]
+
+    const params = new URLSearchParams()
+    if (selectedPaths.length > 0) params.set('paths', selectedPaths.join(','))
+    if (pathSlugs.length > 0) params.set('fields', pathSlugs.join(','))
+    params.set('limit', '12')
+
+    fetch(`${apiUrl}/courses/recommended?${params}`, {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -86,7 +91,8 @@ export default function CareerPathPage() {
       .then(r => r.json())
       .then(data => {
         console.log('[Recommended courses]', data)
-        const arr = data?.data ?? data ?? []
+        // Handle: { success, data: [...] } OR { courses: [...] } OR [...]
+        const arr = data?.data ?? data?.courses ?? data ?? []
         setCourses(Array.isArray(arr) ? arr : [])
       })
       .catch(e => {
@@ -343,18 +349,15 @@ export default function CareerPathPage() {
 
         {activeTab === 'courses' && (
           <div>
-            {selectedPaths.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
-                <BookOpen size={40} color={subtext} style={{ marginBottom: 16 }} />
-                <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'اختر مسارا أولا' : 'Select a Path First'}</h3>
-                <p style={{ color: subtext, fontSize: 14, margin: '0 0 20px' }}>{isAr ? 'اختر مسارك المهني لنعرض لك الكورسات المناسبة' : 'Choose your career path to see matching courses'}</p>
-                <button onClick={() => setActiveTab('paths')} style={{ padding: '10px 22px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 700 }}>{isAr ? 'اختر مسارا' : 'Choose a Path'}</button>
-              </div>
-            ) : (
+            {true && (
               <div>
                 <div style={{ marginBottom: 20 }}>
-                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة لمساراتك' : 'Recommended Courses for Your Paths'}</h3>
-                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? `بناء على ${selectedPaths.length} مسار مختار` : `Based on ${selectedPaths.length} selected path${selectedPaths.length > 1 ? 's' : ''}`}</p>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
+                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
+                    {selectedPaths.length > 0
+                      ? (isAr ? `بناء على ${selectedPaths.length} مسار مختار` : `Based on ${selectedPaths.length} selected path${selectedPaths.length > 1 ? 's' : ''}`)
+                      : (isAr ? 'أحدث الكورسات المنشورة' : 'Latest published courses')}
+                  </p>
                 </div>
                 
                 {coursesLoading ? (

@@ -110,18 +110,24 @@ export class CoursesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get recommended courses by career paths' })
-  @ApiQuery({ name: 'paths', required: false, description: 'Comma-separated career path IDs' })
+  @ApiQuery({ name: 'paths', required: false, description: 'Comma-separated career path IDs or slugs' })
+  @ApiQuery({ name: 'fields', required: false, description: 'Comma-separated field/career slugs' })
   @ApiQuery({ name: 'limit', required: false, description: 'Number of courses to return' })
   async getRecommended(
     @Request() req: any,
     @Query('paths') paths: string,
+    @Query('fields') fields: string,
     @Query('limit') limit?: string,
   ) {
-    return this.coursesService.getCourses({
-      page: 1,
+    const userId = req?.user?.id;
+    const result = await this.coursesService.getRecommendedCourses({
+      paths,
+      fields,
       limit: parseInt(limit || '12'),
       language: 'en',
+      userId,
     });
+    return { success: true, data: result.courses };
   }
 
   @Get('recommended-public')
@@ -132,9 +138,8 @@ export class CoursesController {
     @Query('paths') paths: string,
     @Query('limit') limit?: string,
   ) {
-    // Simple: return all published courses
-    return this.coursesService.getCourses({
-      page: 1,
+    return this.coursesService.getRecommendedCourses({
+      paths,
       limit: parseInt(limit || '12'),
       language: 'en',
     });

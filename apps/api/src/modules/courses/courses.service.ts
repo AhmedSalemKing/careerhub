@@ -212,6 +212,163 @@ export class CoursesService {
     return data;
   }
 
+  async getRecommendedCourses(options: {
+    paths?: string;
+    fields?: string;
+    limit?: number;
+    language?: string;
+    userId?: string;
+  }) {
+    const { paths, fields, limit = 12, language = 'en', userId } = options;
+    const effectiveLimit = limit || 12;
+
+    const pathIds = paths
+      ? paths.split(',').map(p => p.trim()).filter(Boolean)
+      : [];
+
+    const fieldSlugs = fields
+      ? fields.split(',').map(s => s.trim()).filter(Boolean)
+      : [];
+
+    console.log('[Recommended] pathIds:', pathIds, '| fieldSlugs:', fieldSlugs);
+
+    let courses: any[] = [];
+    let total = 0;
+
+    const baseSelect = {
+      id: true,
+      titleEn: true,
+      titleAr: true,
+      descriptionEn: true,
+      descriptionAr: true,
+      thumbnail: true,
+      price: true,
+      level: true,
+      type: true,
+      liveStatus: true,
+      liveStartTime: true,
+      liveEndTime: true,
+      liveViewerCount: true,
+      locationName: true,
+      locationAddress: true,
+      locationLat: true,
+      locationLng: true,
+      offlinePaymentType: true,
+      maxAttendees: true,
+      instructor: {
+        select: {
+          id: true,
+          isVerified: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } },
+        },
+      },
+      _count: {
+        select: {
+          enrollments: true,
+          sections: true,
+        },
+      },
+    };
+
+    if (pathIds.length > 0) {
+      const whereCareer: any = {
+        status: 'PUBLISHED',
+        careerPaths: { hasSome: pathIds },
+      };
+
+      [courses, total] = await Promise.all([
+        this.prisma.course.findMany({
+          where: whereCareer,
+          select: baseSelect,
+          orderBy: [
+            { isFeatured: 'desc' },
+            { createdAt: 'desc' },
+          ],
+          take: effectiveLimit,
+        }),
+        this.prisma.course.count({ where: whereCareer }),
+      ]);
+    }
+
+    if (!courses.length) {
+      const fallbackWhere: any = { status: 'PUBLISHED' };
+      [courses, total] = await Promise.all([
+        this.prisma.course.findMany({
+          where: fallbackWhere,
+          select: baseSelect,
+          orderBy: [
+            { isFeatured: 'desc' },
+            { createdAt: 'desc' },
+          ],
+          take: effectiveLimit,
+        }),
+        this.prisma.course.count({ where: fallbackWhere }),
+      ]);
+    }
+
+    const transformedCourses = courses.map(course => ({
+      id: course.id,
+      title: language === 'ar' ? course.titleAr : course.titleEn,
+      description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
+      thumbnail: course.thumbnail,
+      price: course.price,
+      level: course.level,
+      type: course.type,
+      liveStatus: course.liveStatus,
+      liveStartTime: course.liveStartTime,
+      liveEndTime: course.liveEndTime,
+      liveViewerCount: course.liveViewerCount,
+      locationName: course.locationName,
+      locationAddress: course.locationAddress,
+      locationLat: course.locationLat,
+      locationLng: course.locationLng,
+      offlinePaymentType: course.offlinePaymentType,
+      maxAttendees: course.maxAttendees,
+      instructor: course.instructor
+        ? {
+            id: course.instructor.id,
+            isVerified: course.instructor.isVerified,
+            profile: course.instructor.profile,
+          }
+        : undefined,
+      _count: course._count,
+    }));
+
+    let coursesWithEnrollment = transformedCourses;
+    if (userId) {
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: {
+          userId,
+          courseId: { in: courses.map(c => c.id) },
+          status: 'ACTIVE',
+        },
+        select: { courseId: true },
+      });
+      const enrolledIds = new Set(enrollments.map(e => e.courseId));
+      coursesWithEnrollment = transformedCourses.map(c => ({
+        ...c,
+        isEnrolled: enrolledIds.has(c.id),
+      }));
+    } else {
+      coursesWithEnrollment = transformedCourses.map(c => ({
+        ...c,
+        isEnrolled: false,
+      }));
+    }
+
+    return {
+      courses: coursesWithEnrollment,
+      meta: {
+        total,
+        page: 1,
+        limit: effectiveLimit,
+        totalPages: Math.ceil(total / effectiveLimit),
+        hasNext: 1 < Math.ceil(total / effectiveLimit),
+        hasPrev: false,
+      },
+    };
+  }
+
   async getFeaturedCourses(limit: number, language: string = 'en') {
     const courses = await this.prisma.course.findMany({
       where: {
