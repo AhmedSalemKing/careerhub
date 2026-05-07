@@ -22,7 +22,7 @@ export class CareerService {
     aiRecommended?: boolean;
   }) {
     const result = await this.prisma.userCareerPath.upsert({
-      where: { userId },
+      where: { userId_pathId: { userId, pathId: data.pathId } },
       create: { userId, ...data },
       update: { ...data },
     }).catch(() => null);
@@ -30,7 +30,7 @@ export class CareerService {
   }
 
   async getUserCareerPath(userId: string) {
-    return this.prisma.userCareerPath.findUnique({ where: { userId } }).catch(() => null);
+    return this.prisma.userCareerPath.findFirst({ where: { userId } }).catch(() => null);
   }
 
   async getUserCareerPaths(userId: string) {
