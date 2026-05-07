@@ -132,6 +132,8 @@ export class CareerService {
         skills: true,
         jobTitlesEn: true,
         jobTitlesAr: true,
+        salaryRangeEn: true,
+        salaryRangeAr: true,
       },
     });
 
@@ -150,6 +152,8 @@ export class CareerService {
       skills: path.skills,
       jobTitlesEn: path.jobTitlesEn,
       jobTitlesAr: path.jobTitlesAr,
+      salaryRangeEn: path.salaryRangeEn,
+      salaryRangeAr: path.salaryRangeAr,
     }));
 
     this.cache.set(cacheKey, {
