@@ -14,52 +14,32 @@ export class CareerService {
 
   constructor(private prisma: PrismaService) { }
 
-  async getUserCareerPaths(userId: string) {
-    const userPaths = await this.prisma.userCareerPath.findMany({
+  async saveUserCareerPath(userId: string, data: {
+    pathId: string;
+    pathTitle: string;
+    pathCategory: string;
+    aiRecommended?: boolean;
+  }) {
+    return this.prisma.userCareerPath.upsert({
       where: { userId },
-      include: { careerPath: true },
-      orderBy: { createdAt: 'asc' },
-    }).catch(() => [])
-    return { success: true, data: userPaths }
+      create: {
+        userId,
+        pathId: data.pathId,
+        pathTitle: data.pathTitle,
+        pathCategory: data.pathCategory,
+        aiRecommended: data.aiRecommended ?? false,
+      },
+      update: {
+        pathId: data.pathId,
+        pathTitle: data.pathTitle,
+        pathCategory: data.pathCategory,
+        aiRecommended: data.aiRecommended ?? false,
+      },
+    });
   }
 
-  async saveUserCareerPaths(
-    userId: string,
-    pathIds: string[],
-    source: string,
-  ) {
-    // Delete all existing, then recreate
-    await this.prisma.userCareerPath.deleteMany({ where: { userId } })
-      .catch(() => {})
-
-    const created = await Promise.all(
-      pathIds.map(careerPathId =>
-        this.prisma.userCareerPath.create({
-          data: { userId, careerPathId, source },
-        }).catch(() => null)
-      )
-    )
-    return { success: true, data: created.filter(Boolean) }
-  }
-
-  async addUserCareerPath(userId: string, careerPathId: string, source: string) {
-    const result = await this.prisma.userCareerPath.upsert({
-      where: { userId_careerPathId: { userId, careerPathId } },
-      create: { userId, careerPathId, source },
-      update: { source },
-    }).catch(async () =>
-      this.prisma.userCareerPath.create({
-        data: { userId, careerPathId, source },
-      })
-    )
-    return { success: true, data: result }
-  }
-
-  async removeUserCareerPath(userId: string, careerPathId: string) {
-    await this.prisma.userCareerPath.delete({
-      where: { userId_careerPathId: { userId, careerPathId } },
-    }).catch(() => {})
-    return { success: true }
+  async getUserCareerPath(userId: string) {
+    return this.prisma.userCareerPath.findUnique({ where: { userId } });
   }
 
   async getCareerPaths(language: string = 'en') {

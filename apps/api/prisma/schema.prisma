@@ -145,7 +145,7 @@ model User {
   quizAttempts         QuizAttempt[]
   coachProfile         Coach?
   assessmentSessions   AssessmentSession[]
-  userCareerPaths      UserCareerPath[]
+  userCareerPath       UserCareerPath?
   userSessions         ConsultingSession[] @relation("UserSessions")
   consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
   earningsBalance      Float               @default(0)
@@ -244,7 +244,6 @@ model CareerPath {
   demandLevel   String // HIGH, MEDIUM, LOW
   icon          String?
   color         String?
-  keywords      String[] @default([])
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
@@ -253,7 +252,6 @@ model CareerPath {
   // Relations
   courses           Course[]
   careerAssessments CareerAssessment[]
-  userCareerPaths   UserCareerPath[]
 
   @@index([slug])
   @@index([isActive])
@@ -340,8 +338,7 @@ model Course {
   duration      Int?
   level         String       @default("BEGINNER")
   tags          String[]     @default([])
-  careerPaths   String[]     @default([])
-  keywords      String[]     @default([])
+  careerPaths  String[]     @default([])
   status        CourseStatus @default(DRAFT)
   isFeatured    Boolean      @default(false)
   sortOrder     Int          @default(0)
@@ -377,8 +374,8 @@ model Course {
   certificates Certificate[]
   payments     Payment[]
   cartItems    CartItem[]
+  ratings      Rating[]
   bundles     BundleCourse[]
-  ratings      Rating[] @relation("CourseRatings")
 
   @@index([status])
   @@index([isFeatured])
@@ -386,7 +383,6 @@ model Course {
   @@index([instructorId])
   @@index([categoryId])
   @@index([careerPathId, status])
-  @@map("Course")
 }
 
 model CourseBundle {
@@ -954,16 +950,16 @@ model Subscription {
 }
 
 model UserCareerPath {
-  id           String     @id @default(cuid())
-  userId       String
-  careerPathId String
-  source       String     @default("MANUAL")  // MANUAL | ASSESSMENT
-  createdAt    DateTime   @default(now())
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  pathId       String
+  pathTitle    String
+  pathCategory String
+  aiRecommended Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  careerPath CareerPath @relation(fields: [careerPathId], references: [id])
-
-  @@unique([userId, careerPathId])
   @@index([userId])
   @@map("user_career_paths")
 }
@@ -1091,7 +1087,7 @@ model Rating {
   comment      String?
   createdAt    DateTime @default(now())
   user         User     @relation("GivenRatings", fields: [userId], references: [id])
-  course       Course?  @relation("CourseRatings", fields: [courseId], references: [id])
+  course       Course?  @relation(fields: [courseId], references: [id])
   consultant   User?    @relation("ConsultantRatings", fields: [consultantId], references: [id])
 
   @@unique([userId, courseId])

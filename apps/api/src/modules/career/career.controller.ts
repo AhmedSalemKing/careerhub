@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Delete,
   Body,
   Param,
   Query,
@@ -27,58 +26,28 @@ export class CareerController {
     private readonly aiAssessmentService: AiAssessmentService,
   ) {}
 
-  @Get('paths/my')
+  @Post('my-path')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get user selected career paths' })
-  @ApiResponse({ status: 200, description: 'Career paths retrieved successfully' })
-  async getMyPaths(@CurrentUser() user: User) {
-    return this.careerService.getUserCareerPaths(user.id);
+  @ApiOperation({ summary: 'Save user selected career path' })
+  @ApiResponse({ status: 200, description: 'Career path saved successfully' })
+  async saveMyPath(
+    @CurrentUser() user: User,
+    @Body() body: { pathId: string; pathTitle: string; pathCategory: string; aiRecommended?: boolean },
+  ) {
+    const path = await this.careerService.saveUserCareerPath(user.id, body);
+    return { success: true, data: { path } };
   }
 
-  @Post('paths/save')
+  @Get('my-path')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Save user selected career paths (bulk replace)' })
-  @ApiResponse({ status: 200, description: 'Career paths saved successfully' })
-  async saveMyPaths(
-    @CurrentUser() user: User,
-    @Body() body: { pathIds: string[]; source?: string },
-  ) {
-    return this.careerService.saveUserCareerPaths(
-      user.id, body.pathIds, body.source || 'MANUAL',
-    );
-  }
-
-  @Post('paths/add/:pathId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Add a career path to user selections' })
-  @ApiResponse({ status: 200, description: 'Career path added successfully' })
-  @ApiParam({ name: 'pathId', description: 'Career path ID' })
-  async addPath(
-    @CurrentUser() user: User,
-    @Param('pathId') pathId: string,
-    @Query('source') source: string,
-  ) {
-    return this.careerService.addUserCareerPath(user.id, pathId, source || 'MANUAL');
-  }
-
-  @Delete('paths/remove/:pathId')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove a career path from user selections' })
-  @ApiResponse({ status: 200, description: 'Career path removed successfully' })
-  @ApiParam({ name: 'pathId', description: 'Career path ID' })
-  async removePath(
-    @CurrentUser() user: User,
-    @Param('pathId') pathId: string,
-  ) {
-    return this.careerService.removeUserCareerPath(user.id, pathId);
+  @ApiOperation({ summary: 'Get user selected career path' })
+  @ApiResponse({ status: 200, description: 'Career path retrieved successfully' })
+  async getMyPath(@CurrentUser() user: User) {
+    const path = await this.careerService.getUserCareerPath(user.id);
+    return { success: true, data: { path } };
   }
 
   @Get('paths')
@@ -89,7 +58,7 @@ export class CareerController {
     const careerPaths = await this.careerService.getCareerPaths(language);
     return {
       success: true,
-      data: careerPaths,
+      data: { careerPaths },
     };
   }
 
@@ -341,14 +310,5 @@ export class CareerController {
       success: true,
       data: { roadmap },
     };
-  }
-
-  @Get('assessment/result')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get latest assessment result with top fields' })
-  @ApiResponse({ status: 200, description: 'Assessment result retrieved' })
-  async getAssessmentResult(@CurrentUser() user: User) {
-    return this.assessmentService.getLatestResult(user.id);
   }
 }
