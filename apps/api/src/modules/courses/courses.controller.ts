@@ -497,6 +497,14 @@ export class CoursesController {
     return this.coursesService.addLesson(sectionId, body);
   }
 
+  @Get(':courseId/live-lessons')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get live lessons for a course' })
+  async getLiveLessons(@Param('courseId') courseId: string) {
+    return this.coursesService.getLiveLessons(courseId);
+  }
+
   // ─── Admin / Instructor shared CRUD ──────────────────────────
   @Post()
   @UseGuards(JwtAuthGuard)

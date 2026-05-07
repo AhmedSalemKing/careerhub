@@ -467,15 +467,21 @@ model Lesson {
   fileUrl       String?
   fileName      String?
   fileSize      Int?
+  imageUrl      String?
+  contentType   String?
   isFree        Boolean  @default(false)
+  isLive        Boolean  @default(false)
   order         Int      @default(0)
   isPublished   Boolean  @default(false)
   liveStartTime DateTime?
   liveStatus    String?  @default("scheduled") // scheduled | live | ended
   agoraChannelName String?
   streamKey     String?
-  recordingUrl  String?
-  locationName  String?
+  recordingUrl       String?
+  liveDuration       Int?
+  saveRecording      Boolean   @default(true)
+  autoPublish        Boolean   @default(false)
+  locationName       String?
   locationAddress String?
   locationLat   Float?
   locationLng   Float?

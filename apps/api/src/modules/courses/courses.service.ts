@@ -1387,22 +1387,43 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
   async addLesson(sectionId: string, dto: any) {
     const count = await this.prisma.lesson.count({ where: { sectionId } });
+    const lessonType = dto.lessonType || dto.type || 'VIDEO';
     const lesson = await this.prisma.lesson.create({
       data: {
         title: dto.title,
         description: dto.description,
-        type: dto.type || 'VIDEO',
+        type: lessonType,
         videoUrl: dto.videoUrl,
         videoDuration: dto.duration,
         fileUrl: dto.fileUrl,
         fileName: dto.fileName,
         fileSize: dto.fileSize,
+        imageUrl: dto.imageUrl,
+        contentType: dto.contentType,
         isFree: dto.isFree || false,
         order: dto.order ?? count,
         sectionId,
+        isLive: lessonType === 'LIVE',
+        liveStartTime: dto.liveDate ? new Date(dto.liveDate) : null,
+        liveDuration: dto.liveDuration || null,
+        liveStatus: dto.liveDate ? 'SCHEDULED' : null,
+        saveRecording: dto.saveRecording ?? true,
+        autoPublish: dto.autoPublish ?? false,
       },
     });
     return { success: true, data: lesson };
+  }
+
+  async getLiveLessons(courseId: string) {
+    const lessons = await this.prisma.lesson.findMany({
+      where: {
+        section: { courseId },
+        isLive: true,
+      },
+      include: { section: { select: { id: true, title: true } } },
+      orderBy: { liveStartTime: 'asc' },
+    });
+    return { success: true, data: lessons };
   }
 
   async completeCheck(userId: string, courseId: string) {
