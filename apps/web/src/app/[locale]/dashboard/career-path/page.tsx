@@ -30,8 +30,9 @@ export default function CareerPathPage() {
   const router = useRouter()
   
   const [activeTab, setActiveTab] = useState<TabKey>('paths')
-  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
-  const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
+const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
+const [allPaths, setAllPaths] = useState<any[]>([])
   
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -49,55 +50,101 @@ export default function CareerPathPage() {
     } catch(e) {}
   }, [])
 
-  const togglePath = (id: string) => {
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    fetch(`${apiUrl}/career/paths`)
+      .then(r => r.json())
+      .then(data => {
+        const arr = data?.data?.careerPaths ?? data?.data ?? data ?? []
+        setAllPaths(Array.isArray(arr) ? arr : [])
+      })
+      .catch(() => {})
+  }, [])
+
+  const togglePath = async (id: string) => {
     console.log('[TogglePath] pathId:', id, '| currently selected:', selectedPaths.includes(id))
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+      : ''
+
+    const isRemoving = selectedPaths.includes(id)
+
     setSelectedPaths(prev => {
-      const next = prev.includes(id)
+      const next = isRemoving
         ? prev.filter(p => p !== id)
         : [...prev, id]
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
+
+    if (isRemoving) {
+      console.log('[TogglePath] Calling API remove with UUID:', id)
+      const res = await fetch(`${apiUrl}/career/paths/remove/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      console.log('[TogglePath] API remove response:', res.status)
+    } else {
+      console.log('[TogglePath] Calling API add with UUID:', id)
+      const res = await fetch(`${apiUrl}/career/paths/add/${id}?source=ASSESSMENT`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      console.log('[TogglePath] API add response:', res.status)
+    }
   }
 
   const getPathIdForResult = (field: any): string | null => {
-    const fieldTitle = field.title || field.titleAr || field.titleEn || ''
-    const fieldSlug = field.slug || field.track || ''
-    const allPaths = CAREER_PATHS.flatMap(c => c.paths)
+    const fieldSlug = field.track || field.slug || field.fieldSlug || ''
+    const fieldTitleAr = field.titleAr || field.title || ''
+    const fieldTitleEn = field.titleEn || ''
+
+    if (allPaths.length === 0) {
+      console.warn('[GetPathId] allPaths not loaded yet')
+      return null
+    }
 
     const matched = allPaths.find((p: any) => {
-      const nameAr = p.titleAr || ''
-      const nameEn = p.title || ''
+      const pSlug = (p.slug || '').toLowerCase()
+      const pDescAr = (p.descriptionAr || '').toLowerCase()
+      const pDescEn = (p.descriptionEn || '').toLowerCase()
+      const fSlug = fieldSlug.toLowerCase()
+      const fAr = fieldTitleAr.toLowerCase()
+      const fEn = fieldTitleEn.toLowerCase()
+
       return (
-        nameAr.includes(fieldTitle) ||
-        fieldTitle.includes(nameAr) ||
-        nameEn.toLowerCase() === fieldTitle.toLowerCase() ||
-        p.id === fieldSlug ||
-        p.id === field.pathId
+        pSlug === fSlug ||
+        pSlug.includes(fSlug) ||
+        fSlug.includes(pSlug) ||
+        pDescAr.includes(fAr) ||
+        fAr.includes(pDescAr.split('.')[0]) ||
+        pDescEn.toLowerCase().includes(fEn) ||
+        fEn.includes(pDescEn.split('.')[0].toLowerCase())
       )
     })
 
-    if (matched) return matched.id
+    console.log('[GetPathId] field slug:', fieldSlug,
+      '| titleAr:', fieldTitleAr,
+      '| matched:', matched?.id, matched?.slug)
 
-    const m: Record<string, string> = {
-      frontend: 'frontend-dev', backend: 'backend-dev',
-      fullstack: 'fullstack-dev', mobile: 'mobile-dev',
-      devops: 'devops', 'data-science': 'data-scientist',
-      'ai-ml': 'ai-engineer', cybersecurity: 'cybersecurity',
-      'ui-ux': 'ui-ux', 'graphic-design': 'graphic-designer',
-      'digital-marketing': 'digital-marketing', seo: 'digital-marketing',
-      content: 'content-creator', 'product-manager': 'product-manager',
-      'business-analyst': 'business-analyst',
-      'project-manager': 'project-manager', sales: 'sales-manager',
-      entrepreneur: 'entrepreneur',
-    }
-    return m[fieldSlug] || fieldSlug || null
+    return matched?.id ?? null
   }
 
-  const handleAddAssessmentPath = (field: any) => {
+  const handleAddAssessmentPath = async (field: any) => {
     const pathId = getPathIdForResult(field)
-    console.log('[AddPath] field:', JSON.stringify(field), 'resolved pathId:', pathId)
-    if (pathId) togglePath(pathId)
+    if (!pathId) {
+      console.warn('[AddPath] No DB path found for field:', field.titleAr, field.track)
+      return
+    }
+    console.log('[AddPath] Adding pathId (UUID):', pathId)
+    await togglePath(pathId)
   }
 
   const [courses, setCourses] = useState<any[]>([])
