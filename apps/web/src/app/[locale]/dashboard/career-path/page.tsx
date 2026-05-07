@@ -3,19 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Sparkles, CheckCircle2, BookOpen, ArrowLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Sparkles, ExternalLink, RefreshCw, CheckCircle2 } from 'lucide-react'
 
 interface CareerPath {
   id: string
   slug: string
-  title?: string
-  titleEn?: string
-  titleAr?: string
-  descriptionEn?: string
-  descriptionAr?: string
-  icon?: string
-  color?: string
-  skills?: string[]
+  title?: string  // API returns title (mapped from titleEn/titleAr based on locale)
+  nameEn?: string
+  nameAr?: string
   keywords?: string[]
 }
 
@@ -48,26 +43,20 @@ interface AssessmentResult {
   summary?: string
 }
 
-const ICON_MAP: Record<string, string> = {
-  code: '💻', palette: '🎨', marketing: '📈', data: '📊',
-  shield: '🛡️', devops: '⚙️', product: '📦', business: '💼',
-  cloud: '☁️', megaphone: '📣', rocket: '🚀', brain: '🧠',
-}
-
 const slugToLabel: Record<string, { ar: string; en: string }> = {
-  'cybersecurity': { ar: 'الأمن السيبراني', en: 'Cybersecurity' },
+  'cybersecurity':      { ar: 'الأمن السيبراني', en: 'Cybersecurity' },
   'software-engineering': { ar: 'هندسة البرمجيات', en: 'Software Engineering' },
-  'digital-marketing': { ar: 'التسويق الرقمي', en: 'Digital Marketing' },
-  'data-science': { ar: 'علم البيانات والذكاء الاصطناعي', en: 'Data Science & AI' },
-  'business-analysis': { ar: 'تحليل الأعمال', en: 'Business Analysis' },
-  'backend': { ar: 'تطوير الواجهة الخلفية', en: 'Backend Development' },
-  'frontend': { ar: 'تطوير الواجهة الأمامية', en: 'Frontend Development' },
-  'fullstack': { ar: 'تطوير الويب الشامل', en: 'Full Stack' },
-  'devops': { ar: 'ديف أوبس والسحابة', en: 'DevOps & Cloud' },
-  'mobile': { ar: 'تطوير التطبيقات', en: 'Mobile Development' },
-  'ui-ux': { ar: 'تصميم تجربة المستخدم', en: 'UI/UX Design' },
-  'database': { ar: 'هندسة قواعد البيانات', en: 'Database Engineering' },
-  'game-dev': { ar: 'تطوير الألعاب', en: 'Game Development' },
+  'digital-marketing':   { ar: 'التسويق الرقمي', en: 'Digital Marketing' },
+  'data-science':       { ar: 'علم البيانات والذكاء الاصطناعي', en: 'Data Science & AI' },
+  'business-analysis':  { ar: 'تحليل الأعمال', en: 'Business Analysis' },
+  'backend':            { ar: 'تطوير الواجهة الخلفية', en: 'Backend Development' },
+  'frontend':           { ar: 'تطوير الواجهة الأمامية', en: 'Frontend Development' },
+  'fullstack':          { ar: 'تطوير الويب الشامل', en: 'Full Stack' },
+  'devops':             { ar: 'ديف أوبس والسحابة', en: 'DevOps & Cloud' },
+  'mobile':             { ar: 'تطوير التطبيقات', en: 'Mobile Development' },
+  'ui-ux':              { ar: 'تصميم تجربة المستخدم', en: 'UI/UX Design' },
+  'database':           { ar: 'هندسة قواعد البيانات', en: 'Database Engineering' },
+  'game-dev':           { ar: 'تطوير الألعاب', en: 'Game Development' },
 }
 
 export default function CareerPathPage() {
@@ -75,17 +64,13 @@ export default function CareerPathPage() {
   const isAr = locale === 'ar'
   const router = useRouter()
 
-  const getPathName = (path: CareerPath): string => {
-    if (path.title) return path.title
-    const slug = slugToLabel[path.slug]
-    if (slug) return isAr ? slug.ar : slug.en
+  const getPathLabel = (path: CareerPath): string => {
+    // API returns title (already localized by backend)
+    if (path.title) return path.title as string
+    // Fallback: use slug-to-label mapping
+    const mapping = slugToLabel[path.slug]
+    if (mapping) return isAr ? mapping.ar : mapping.en
     return path.slug
-  }
-
-  const getPathDescription = (path: CareerPath): string => {
-    const desc = isAr ? path.descriptionAr : path.descriptionEn
-    if (desc) return desc.split('.')[0]
-    return ''
   }
 
   const [allPaths, setAllPaths] = useState<CareerPath[]>([])
@@ -108,6 +93,7 @@ export default function CareerPathPage() {
     const init = async () => {
       const token = getToken()
       if (!token) return
+
       try {
         const [pathsRes, myPathsRes, resultRes] = await Promise.all([
           fetch(`${apiBase}/career/paths`),
@@ -118,19 +104,24 @@ export default function CareerPathPage() {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ])
+
         const [pathsData, myData, resultData] = await Promise.all([
           pathsRes.json(),
           myPathsRes.json(),
           resultRes.json(),
         ])
+
         setAllPaths(pathsData?.data || [])
+
         const myIds = new Set<string>(
           (myData?.data || []).map((p: any) => p.careerPathId || p.id)
         )
         setMyPathIds(myIds)
+
         if (resultData?.success && resultData?.data?.topFields?.length > 0) {
           setAssessmentResult(resultData.data)
         }
+
         if (myIds.size > 0) {
           fetchCoursesByPaths([...myIds])
         }
@@ -145,8 +136,10 @@ export default function CareerPathPage() {
     const token = getToken()
     if (!token) return
     setSavingPath(pathId)
+
     const newIds = new Set(myPathIds)
     const isRemoving = newIds.has(pathId)
+
     try {
       if (isRemoving) {
         newIds.delete(pathId)
@@ -161,6 +154,7 @@ export default function CareerPathPage() {
           headers: { Authorization: `Bearer ${token}` },
         }).catch(() => {})
       }
+
       setMyPathIds(newIds)
       fetchCoursesByPaths([...newIds])
     } finally {
@@ -179,140 +173,171 @@ export default function CareerPathPage() {
       )
       const data = await res.json()
       setRecommendedCourses(data?.data || [])
-    } catch {
+    } catch (e) {
       setRecommendedCourses([])
     } finally {
       setLoadingCourses(false)
     }
   }
 
-  return (
-    <div className="max-w-[900px] mx-auto p-6" dir={isAr ? 'rtl' : 'ltr'}>
+  const bg = '#1a1a2e'
+  const border = 'rgba(255,255,255,0.07)'
+  const text = '#f0f0f8'
+  const subtext = '#6666a0'
 
-      {/* SECTION 1: Career Paths */}
-      <section className="mb-10">
-        <h2 className="text-foreground font-bold text-lg mb-1">
+  return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '1.5rem', direction: isAr ? 'rtl' : 'ltr' }}>
+
+      {/* SECTION 1: My Career Paths */}
+      <section style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ color: text, fontWeight: 700, fontSize: '1.15rem', marginBottom: '0.4rem' }}>
           {isAr ? 'مساراتي المهنية' : 'My Career Paths'}
         </h2>
-        <p className="text-muted text-sm mb-5">
+        <p style={{ color: subtext, fontSize: '0.85rem', marginBottom: '1.25rem' }}>
           {isAr ? 'اختر المسارات التي تهتم بها' : 'Select paths you are interested in'}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
           {allPaths.map((path: any) => {
             const selected = myPathIds.has(path.id)
             const loading = savingPath === path.id
-            const iconEmoji = ICON_MAP[path.icon] || '📁'
-            const desc = getPathDescription(path)
-            const skillCount = path.skills?.length || path.keywords?.length || 0
             return (
               <button
-                key={path.id}
-                onClick={() => togglePath(path.id)}
-                disabled={loading}
-                className={`relative text-right rounded-xl p-4 border-2 transition-all duration-150 cursor-pointer font-body ${
-                  selected
-                    ? 'border-primary bg-primary-subtle'
-                    : 'border-border bg-surface hover:border-primary-border hover:bg-surface-2'
-                }`}
-              >
-                {loading && (
-                  <div className="absolute inset-0 rounded-xl bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
+                 key={path.id}
+                 onClick={() => togglePath(path.id)}
+                 disabled={loading}
+                 style={{
+                   padding: '8px 18px',
+                   borderRadius: 24,
+                   border: selected
+                     ? '1.5px solid #5120c8'
+                     : '1px solid rgba(255,255,255,0.12)',
+                   background: selected
+                     ? 'rgba(81,32,200,0.12)'
+                     : 'rgba(255,255,255,0.03)',
+                   color: selected ? '#a78bfa' : '#9999b8',
+                   fontSize: '0.88rem',
+                   fontWeight: selected ? 600 : 400,
+                   cursor: loading ? 'wait' : 'pointer',
+                   fontFamily: 'inherit',
+                   transition: 'all 0.15s ease',
+                   display: 'flex', alignItems: 'center', gap: 6,
+                 }}
+               >
+                {selected && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
                 )}
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xl">{iconEmoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-bold truncate ${selected ? 'text-primary' : 'text-foreground'}`}>
-                      {getPathName(path)}
-                    </div>
-                  </div>
-                  {selected && (
-                    <CheckCircle2 size={16} className="text-primary flex-shrink-0" />
-                  )}
-                </div>
-                {desc && (
-                  <p className="text-muted text-xs leading-relaxed mb-2 line-clamp-2">
-                    {desc}
-                  </p>
-                )}
-                {skillCount > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <BookOpen size={11} className="text-muted" />
-                    <span className="text-muted text-[0.7rem]">
-                      {skillCount} {isAr ? 'مهارة' : 'skills'}
-                    </span>
-                  </div>
-                )}
+                {getPathLabel(path)}
               </button>
             )
           })}
         </div>
         {myPathIds.size > 0 && (
-          <p className="text-muted text-xs mt-3">
+          <p style={{ color: '#555580', fontSize: '0.8rem', marginTop: '0.75rem' }}>
             {myPathIds.size} {isAr ? 'مسار محدد' : 'paths selected'}
           </p>
         )}
       </section>
 
       {/* SECTION 2: Assessment */}
-      <section className="mb-10 bg-surface border border-border rounded-xl p-6">
-        <h2 className="text-foreground font-bold text-lg mb-1">
+      <section style={{
+        marginBottom: '2.5rem',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: 16,
+        padding: '1.5rem',
+      }}>
+        <h2 style={{ color: text, fontWeight: 700, fontSize: '1.15rem', marginBottom: '0.4rem' }}>
           {isAr ? 'اختبار تحليل الميول' : 'Career Assessment'}
         </h2>
 
         {!assessmentResult ? (
-          <div className="text-center py-6">
-            <p className="text-muted text-sm mb-5">
+          <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+            <p style={{ color: subtext, fontSize: '0.88rem', marginBottom: '1.25rem' }}>
               {isAr
                 ? 'اكتشف المسارات المناسبة لك عبر اختبار سريع'
                 : 'Discover your best-fit career paths through a quick assessment'}
             </p>
-            <a
-              href={`/${locale}/dashboard/assessment`}
-              className="btn-primary inline-flex items-center gap-2 px-8 py-3 text-base"
-            >
-              <Sparkles size={16} />
+                <a
+               href={`/${locale}/dashboard/assessment`}
+               style={{
+                 display: 'inline-flex', alignItems: 'center', gap: 8,
+                 padding: '0.75rem 2rem',
+                 background: 'linear-gradient(135deg,#5120c8,#4318a8)',
+                 color: '#ffffff', fontWeight: 700, fontSize: '0.95rem',
+                 borderRadius: 10, textDecoration: 'none', fontFamily: 'inherit',
+               }}
+             >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
               {isAr ? 'ابدأ الاختبار الآن' : 'Start Assessment'}
             </a>
           </div>
         ) : (
           <div>
             {assessmentResult.summary && (
-              <p className="text-muted text-sm leading-relaxed mb-5">
+              <p style={{ color: '#9999b8', fontSize: '0.88rem',
+                lineHeight: 1.7, marginBottom: '1.25rem' }}>
                 {assessmentResult.summary}
               </p>
             )}
-            <p className="text-primary text-xs font-semibold mb-2">
-              {isAr ? 'المسارات المقترحة لك:' : 'Suggested for you:'}
-            </p>
-            <div className="flex flex-wrap gap-2 mb-5">
+
+             <p style={{ color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+               marginBottom: '0.6rem' }}>
+               {isAr ? 'المسارات المقترحة لك:' : 'Suggested for you:'}
+             </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8,
+              marginBottom: '1.25rem' }}>
               {(assessmentResult.topFields || []).map((field: any) => {
                 const matchedPath = allPaths.find(p => p.slug === field.fieldSlug)
                 if (!matchedPath) return null
                 const alreadyAdded = myPathIds.has(matchedPath.id)
                 return (
-                  <button
-                    key={field.fieldSlug}
-                    onClick={() => !alreadyAdded && togglePath(matchedPath.id)}
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer font-body border transition-all ${
-                      alreadyAdded
-                        ? 'bg-primary-subtle border-primary text-primary'
-                        : 'bg-transparent border-primary-border text-muted hover:bg-primary-subtle hover:text-primary'
-                    }`}
-                  >
-                    {alreadyAdded && <CheckCircle2 size={11} />}
+                <button
+                     key={field.fieldSlug}
+                     onClick={() => !alreadyAdded && togglePath(matchedPath.id)}
+                     style={{
+                       display: 'flex', alignItems: 'center', gap: 6,
+                       padding: '6px 14px',
+                       borderRadius: 20,
+                       border: alreadyAdded
+                         ? '1.5px solid #5120c8'
+                         : '1px solid rgba(81,32,200,0.3)',
+                       background: alreadyAdded
+                         ? 'rgba(81,32,200,0.12)'
+                         : 'transparent',
+                       color: alreadyAdded ? '#a78bfa' : '#b8a060',
+                       fontSize: '0.82rem',
+                       cursor: alreadyAdded ? 'default' : 'pointer',
+                       fontFamily: 'inherit',
+                     }}
+                   >
+                    {alreadyAdded && (
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
                     {isAr ? (field.titleAr || slugToLabel[field.fieldSlug]?.ar || field.fieldSlug) : (field.titleEn || slugToLabel[field.fieldSlug]?.en || field.fieldSlug)}
-                    <span className="text-muted text-[0.7rem]">
+                    <span style={{ color: '#666680', fontSize: '0.73rem' }}>
                       {Math.round((field.confidence || 0) * 100)}%
                     </span>
                   </button>
                 )
               })}
             </div>
+
             <a
               href={`/${locale}/dashboard/assessment`}
-              className="text-muted text-xs border-b border-border/50 no-underline hover:text-primary"
+              style={{
+                color: '#6666a0', fontSize: '0.82rem',
+                textDecoration: 'none',
+                borderBottom: '1px solid rgba(102,102,128,0.3)',
+              }}
             >
               {isAr ? 'إعادة الاختبار' : 'Retake assessment'}
             </a>
@@ -322,72 +347,104 @@ export default function CareerPathPage() {
 
       {/* SECTION 3: Recommended Courses */}
       <section>
-        <h2 className="text-foreground font-bold text-lg mb-1">
+        <h2 style={{ color: text, fontWeight: 700, fontSize: '1.15rem', marginBottom: '0.4rem' }}>
           {isAr ? 'الكورسات المرتبطة بمساراتك' : 'Courses for Your Paths'}
         </h2>
-        <p className="text-muted text-sm mb-5">
+        <p style={{ color: subtext, fontSize: '0.85rem', marginBottom: '1.25rem' }}>
           {isAr
             ? 'كورسات مختارة بناء على مساراتك المهنية المختارة'
             : 'Curated based on your selected career paths'}
         </p>
 
         {myPathIds.size === 0 ? (
-          <div className="text-center py-10 bg-surface border border-border rounded-xl">
-            <p className="text-muted text-sm">
+          <div style={{ textAlign: 'center', padding: '2.5rem',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+            <p style={{ color: '#555580', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
               {isAr
-                ? 'اختر مساراً من الأعلى'
-                : 'Select a career path above'}
+                ? 'اختر مسارا من الأعلى لعرض الكورسات المرتبطة'
+                : 'Select a career path above to see related courses'}
             </p>
           </div>
         ) : loadingCourses ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1,2,3].map(i => (
-              <div key={i} className="h-[160px] bg-surface-2 rounded-xl animate-pulse" />
+          <div style={{ display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
+            gap: 12 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ height: 160,
+                background: 'rgba(255,255,255,0.04)', borderRadius: 10,
+                animation: 'pulse 1.5s infinite' }}/>
             ))}
+            <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }`}</style>
           </div>
         ) : recommendedCourses.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div style={{ display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))',
+            gap: 12 }}>
             {recommendedCourses.map((course: any) => (
               <a
                 key={course.id}
                 href={`/${locale}/courses/${course.id}`}
-                className="block no-underline bg-surface border border-border rounded-xl overflow-hidden hover:border-primary-border transition-all duration-150"
+                style={{
+                  display: 'block', textDecoration: 'none',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: 10, overflow: 'hidden',
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e =>
+                  (e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)')}
+                 onMouseLeave={e =>
+                  (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
               >
                 {course.thumbnail ? (
                   <img src={course.thumbnail} alt=""
-                    className="w-full h-[110px] object-cover" />
+                    style={{ width: '100%', height: 110, objectFit: 'cover' }}/>
                 ) : (
-                  <div className="w-full h-[110px] bg-primary-subtle flex items-center justify-center">
-                    <BookOpen size={24} className="text-primary/40" />
-                  </div>
+                  <div style={{ width: '100%', height: 110,
+                     background: 'rgba(81,32,200,0.05)',
+                     display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                       stroke="rgba(81,32,200,0.4)" strokeWidth="1.5">
+                       <rect x="2" y="3" width="20" height="14" rx="2"/>
+                       <line x1="8" y1="21" x2="16" y2="21"/>
+                       <line x1="12" y1="17" x2="12" y2="21"/>
+                     </svg>
+                   </div>
                 )}
-                <div className="p-3">
-                  <p className="text-foreground text-sm font-semibold mb-1 line-clamp-2 leading-relaxed">
+                <div style={{ padding: '0.75rem' }}>
+                  <p style={{ color: text, fontSize: '0.85rem', fontWeight: 600,
+                    margin: '0 0 4px', display: '-webkit-box',
+                    WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden', lineHeight: 1.4 }}>
                     {isAr ? (course.titleAr || course.titleEn || course.title) : (course.titleEn || course.title)}
                   </p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted text-[0.7rem]">
+                  <div style={{ display: 'flex', justifyContent: 'space-between',
+                    alignItems: 'center' }}>
+                    <span style={{ color: subtext, fontSize: '0.75rem' }}>
                       {course.level || ''}
                     </span>
-                    <span className="text-primary text-xs font-semibold">
-                      {course.price === 0
-                        ? (isAr ? 'مجاني' : 'Free')
-                        : `${course.price}`}
-                    </span>
+                    <span style={{ color: '#a78bfa', fontSize: '0.8rem', fontWeight: 600 }}>
+                       {course.price === 0
+                         ? (isAr ? 'مجاني' : 'Free')
+                         : `${course.price}`}
+                     </span>
                   </div>
                 </div>
               </a>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 bg-surface border border-border rounded-xl">
-            <p className="text-muted text-sm mb-2">
+          <div style={{ textAlign: 'center', padding: '2rem',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12 }}>
+            <p style={{ color: '#555580', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
               {isAr ? 'لا توجد كورسات مرتبطة بهذه المسارات حالياً' : 'No courses yet for these paths'}
             </p>
-            <a href={`/${locale}/courses`}
-              className="text-primary text-xs no-underline hover:underline">
-              {isAr ? 'استعرض جميع الكورسات' : 'Browse all courses'}
-            </a>
+              <a href={`/${locale}/courses`}
+               style={{ color: '#a78bfa', fontSize: '0.82rem', textDecoration: 'none' }}>
+               {isAr ? 'استعرض جميع الكورسات' : 'Browse all courses'}
+             </a>
           </div>
         )}
       </section>

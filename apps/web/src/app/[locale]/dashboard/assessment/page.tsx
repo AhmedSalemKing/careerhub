@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { Sparkles, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { Sparkles, CheckCircle2, BookOpen, ExternalLink, RotateCcw, ArrowLeft } from 'lucide-react'
+import { get, post } from '@/lib/api'
 
 type Phase = 'quiz' | 'analyzing' | 'result'
 
@@ -175,25 +176,6 @@ const QUESTIONS = [
   },
 ]
 
-const getFallbackFields = () => [
-  {
-    fieldSlug: 'software-engineering',
-    titleAr: 'هندسة البرمجيات',
-    titleEn: 'Software Engineering',
-    confidence: 0.80,
-    reasoning: 'بناءً على إجاباتك، لديك ميل قوي نحو تطوير البرمجيات.',
-    skills: ['JavaScript', 'Python', 'APIs', 'قواعد البيانات'],
-  },
-  {
-    fieldSlug: 'data-science',
-    titleAr: 'علم البيانات',
-    titleEn: 'Data Science',
-    confidence: 0.68,
-    reasoning: 'تهتم بتحليل البيانات واستخراج الأنماط.',
-    skills: ['Python', 'Analytics', 'SQL'],
-  },
-]
-
 export default function AssessmentPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -221,11 +203,9 @@ export default function AssessmentPage() {
     if (currentQ < QUESTIONS.length - 1) {
       setTimeout(() => setCurrentQ(i => i + 1), 150)
     } else {
+      // Last question answered — submit to API
       setPhase('analyzing')
       setLoading(true)
-
-      const MIN_WAIT = 2500
-      const waitPromise = new Promise(r => setTimeout(r, MIN_WAIT))
 
       try {
         const token = getToken()
@@ -234,59 +214,114 @@ export default function AssessmentPage() {
           answer: ans,
         }))
 
-        const submitPromise = (async () => {
-          const sessionRes = await fetch(`${apiBase}/career/assessment/session/start`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          const sessionData = await sessionRes.json()
-          const sessionId = sessionData?.data?.sessionId
+        // Start session and submit
+        const sessionRes = await fetch(`${apiBase}/career/assessment/session/start`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const sessionData = await sessionRes.json()
+        const sessionId = sessionData?.data?.sessionId
 
-          if (sessionId) {
-            const submitRes = await fetch(
-              `${apiBase}/career/assessment/session/${sessionId}/complete`,
-              {
-                method: 'POST',
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ answers: formattedAnswers }),
-              }
-            )
-            const submitData = await submitRes.json()
-            const payload = submitData?.data?.report ?? submitData?.report ?? submitData?.data ?? submitData ?? {}
-            const topFields = payload?.topFields ?? payload?.data?.topFields ?? []
-            return {
-              topFields: topFields.length > 0 ? topFields : getFallbackFields(),
-              summary: payload?.summary ?? payload?.data?.summary ?? '',
-              recommendedPaths: payload?.recommendedPaths ?? [],
+        if (sessionId) {
+          const submitRes = await fetch(
+            `${apiBase}/career/assessment/session/${sessionId}/complete`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ answers: formattedAnswers }),
             }
+          )
+          const submitData = await submitRes.json()
+          console.log('[Assessment] Raw response:', JSON.stringify(submitData).slice(0, 300))
+
+          // Try all possible shapes
+          const resultPayload =
+            submitData?.data?.report ||
+            submitData?.report ||
+            submitData?.data ||
+            submitData
+
+          const topFields =
+            resultPayload?.topFields ||
+            resultPayload?.data?.topFields ||
+            []
+
+          console.log('[Assessment] topFields count:', topFields.length)
+
+          // Build proper result object
+          const finalResult = {
+            topFields,
+            summary: resultPayload?.summary || resultPayload?.data?.summary || '',
+            recommendedPaths: resultPayload?.recommendedPaths ||
+                           resultPayload?.data?.recommendedPaths || [],
           }
-          return { topFields: getFallbackFields(), summary: '', recommendedPaths: [] }
-        })()
 
-        const result = await Promise.race([
-          submitPromise.then(data => {
-            setResultData(data)
-            return data
-          }),
-          waitPromise.then(() => null),
-        ])
+          // Fallback if AI returned empty
+          if (!finalResult.topFields || finalResult.topFields.length === 0) {
+            finalResult.topFields = [
+              {
+                fieldSlug: 'software-engineering',
+                titleAr: 'هندسة البرمجيات',
+                titleEn: 'Software Engineering',
+                confidence: 0.82,
+                reasoning: 'بناءً على إجاباتك لديك ميل واضح نحو تطوير البرمجيات.',
+                skills: ['JavaScript', 'Python', 'APIs', 'قواعد البيانات'],
+              },
+              {
+                fieldSlug: 'data-science',
+                titleAr: 'علم البيانات والذكاء الاصطناعي',
+                titleEn: 'Data Science & AI',
+                confidence: 0.71,
+                reasoning: 'تهتم بتحليل البيانات واستخراج الأنماط.',
+                skills: ['Python', 'Analytics', 'Machine Learning'],
+              },
+            ]
+            finalResult.summary = 'تملك إمكانات مميزة في مجال التكنولوجيا.'
+          }
 
-        await waitPromise
-        if (!result) {
-          setResultData({ topFields: getFallbackFields(), summary: '', recommendedPaths: [] })
+          // Wait minimum 3 seconds for animation
+          await new Promise(r => setTimeout(r, 3000))
+
+          setResultData(finalResult)
+          setPhase('result')
+        } else {
+          // Fallback if session fails
+          const fallback = {
+            topFields: [
+              {
+                fieldSlug: 'software-engineering',
+                titleAr: 'هندسة البرمجيات',
+                titleEn: 'Software Engineering',
+                confidence: 0.82,
+                reasoning: 'بناءً على إجاباتك لديك ميل واضح نحو تطوير البرمجيات.',
+                skills: ['JavaScript', 'Python', 'APIs', 'قواعد البيانات'],
+              },
+            ],
+            summary: 'تملك إمكانات مميزة في مجال التكنولوجيا.'
+          }
+          await new Promise(r => setTimeout(r, 3000))
+          setResultData(fallback)
+          setPhase('result')
         }
-      } catch {
-        setResultData({ topFields: getFallbackFields(), summary: '', recommendedPaths: [] })
-        await waitPromise
+      } catch (err) {
+        console.error('Assessment submit error:', err)
+        // Still show result phase after delay
+        await new Promise(r => setTimeout(r, 3000))
+        setPhase('result')
       } finally {
         setLoading(false)
-        setPhase('result')
       }
     }
   }
+
+  const bg = '#1a1a2e'
+  const cardBg = '#16213e'
+  const text = '#f0f0f8'
+  const subtext = '#9999b8'
+  const border = 'rgba(255,255,255,0.07)'
 
   // QUIZ PHASE
   if (phase === 'quiz') {
@@ -294,42 +329,75 @@ export default function AssessmentPage() {
     const progress = ((currentQ) / QUESTIONS.length) * 100
 
     return (
-      <div className="min-h-screen bg-background flex flex-col" dir={isAr ? 'rtl' : 'ltr'}>
-        <div className="h-[3px] bg-border relative">
-          <div className="absolute top-0 left-0 h-full bg-primary transition-all duration-[400ms]"
-            style={{ width: `${progress}%` }} />
+      <div style={{ minHeight: '100vh', background: bg, display: 'flex', flexDirection: 'column', direction: isAr ? 'rtl' : 'ltr' }}>
+        <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', position: 'relative' }}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0,
+            width: `${progress}%`,
+            height: '100%',                    background: 'var(--primary, #5120c8)',
+            transition: 'width 0.4s ease',
+          }} />
         </div>
 
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-[620px] w-full">
-            <div className="flex justify-between items-center mb-8">
-              <span className="px-3 py-1 rounded-full bg-surface-2 border border-border text-muted text-xs font-semibold">
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div style={{ maxWidth: 620, width: '100%' }}>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+              <span style={{
+                padding: '4px 12px', borderRadius: 20,
+                background: 'rgba(255,255,255,0.06)',
+                border: `1px solid ${border}`,
+                color: subtext, fontSize: 12, fontWeight: 600,
+              }}>
                 {isAr ? 'تقييم المسار المهني' : 'Career Assessment'}
               </span>
-              <span className="text-muted text-sm font-semibold">
+              <span style={{ color: subtext, fontSize: 13, fontWeight: 600 }}>
                 {currentQ + 1} / {QUESTIONS.length}
               </span>
             </div>
 
-            <h2 className="text-foreground text-[clamp(18px,3vw,24px)] font-extrabold mb-8 leading-relaxed tracking-tight">
+            <h2 style={{
+              color: text, fontSize: 'clamp(18px,3vw,24px)', fontWeight: 800,
+              margin: '0 0 32px', lineHeight: 1.4, letterSpacing: '-0.02em',
+            }}>
               {isAr ? question.textAr : question.textEn}
             </h2>
 
-            <div className="flex flex-col gap-2.5">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {question.options.map((option, idx) => (
-                <button key={option.value} onClick={() => handleAnswer(option.value)}
-                  className="flex items-center gap-3.5 p-4 rounded-xl border border-border bg-surface text-foreground cursor-pointer text-sm font-semibold leading-relaxed transition-all duration-150 text-right hover:border-primary hover:bg-primary-subtle">
-                  <div className="w-7 h-7 rounded-lg flex-shrink-0 bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.06)] border border-border flex items-center justify-center text-xs font-extrabold text-muted">
+                <button key={option.value} onClick={() => handleAnswer(option.value)} style={{
+                  padding: '16px 20px', borderRadius: 12, textAlign: 'right',
+                  border: `1.5px solid ${border}`,
+                  background: cardBg, color: text,
+                  cursor: 'pointer', fontSize: 14, fontWeight: 600, lineHeight: 1.5,
+                  transition: 'all 0.15s ease',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = '#5120c8'
+                  e.currentTarget.style.background = 'rgba(81,32,200,0.08)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = border
+                  e.currentTarget.style.background = cardBg
+                }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: `1px solid ${border}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 800, color: subtext,
+                  }}>
                     {['أ','ب','ج','د'][idx] || (idx + 1)}
                   </div>
-                  <span className="flex-1 text-right">
+                  <span style={{ flex: 1, textAlign: isAr ? 'right' : 'left' }}>
                     {isAr ? option.textAr : option.textEn}
                   </span>
                 </button>
               ))}
             </div>
 
-            <p className="text-muted-foreground text-xs text-center mt-5">
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: 12, textAlign: 'center', marginTop: 20 }}>
               {isAr ? 'اضغط أ-د للإجابة' : 'Press 1-4 to answer'}
             </p>
           </div>
@@ -340,16 +408,17 @@ export default function AssessmentPage() {
 
   // ANALYZING PHASE
   if (phase === 'analyzing') return (
-    <div className="min-h-screen bg-background flex items-center justify-center" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="text-center">
-        <div className="relative w-20 h-20 mx-auto mb-8">
-          <div className="w-20 h-20 border-3 border-primary-border rounded-full" />
-          <div className="absolute inset-0 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+    <div style={{ minHeight: '100vh', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 2rem' }}>
+          <div style={{ width: 80, height: 80, border: '3px solid rgba(81,32,200,0.2)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', inset: 0, border: '3px solid #5120c8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
-        <p className="text-primary text-lg font-semibold mb-2">
+        <p style={{ color: '#5120c8', fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.5rem' }}>
           {isAr ? 'جاري تحليل ميولك...' : 'Analyzing your profile...'}
         </p>
-        <p className="text-muted text-sm">
+        <p style={{ color: '#6666a0', fontSize: '0.88rem' }}>
           {isAr ? 'الذكاء الاصطناعي يدرس إجاباتك' : 'AI is processing your answers'}
         </p>
       </div>
@@ -358,60 +427,80 @@ export default function AssessmentPage() {
 
   // RESULT PHASE
   if (phase === 'result') return (
-    <div className="min-h-screen bg-background py-10 px-6 pb-20" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="max-w-[700px] mx-auto">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-success-subtle border border-success mb-4">
-            <CheckCircle2 size={13} className="text-success" />
-            <span className="text-success text-xs font-semibold">
+    <div style={{ minHeight: '100vh', background: bg, padding: '40px 24px 80px', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ maxWidth: 700, margin: '0 auto' }}>
+
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 14px', borderRadius: 20,
+            background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)',
+            marginBottom: 16,
+          }}>
+            <CheckCircle2 size={13} color="#16a34a" />
+            <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 600 }}>
               {isAr ? 'تم التحليل بنجاح' : 'Analysis Complete'}
             </span>
           </div>
-          <h2 className="text-foreground text-[clamp(22px,4vw,32px)] font-extrabold mb-2 tracking-tight">
+          <h2 style={{ color: text, fontSize: 'clamp(22px,4vw,32px)', fontWeight: 900, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
             {isAr ? 'اكتملت نتيجتك' : 'Your Analysis is Ready'}
           </h2>
           {resultData?.summary && (
-            <p className="text-muted text-sm max-w-[500px] mx-auto leading-relaxed">
+            <p style={{ color: subtext, fontSize: 14, maxWidth: 500, margin: '0 auto', lineHeight: 1.7 }}>
               {resultData.summary}
             </p>
           )}
         </div>
 
+        {/* Top Fields */}
         {resultData?.topFields && (
-          <div className="flex flex-col gap-3 mb-8">
-            {resultData.topFields.map((field: any, idx: number) => (
-              <div key={field.fieldSlug}
-                className={`p-4 rounded-xl border ${idx === 0 ? 'bg-primary-subtle border-primary-border' : 'bg-surface border-border'}`}>
-                <div className="flex justify-between items-center mb-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${idx === 0 ? 'bg-primary text-primary-fg' : 'bg-surface-2 text-muted'}`}>
-                      {idx + 1}
-                    </span>
-                    <span className="text-foreground font-semibold text-[0.95rem]">
-                      {isAr ? field.titleAr : field.titleEn}
-                    </span>
-                  </div>
-                  <span className={`font-semibold text-sm ${idx < 3 ? 'text-primary' : 'text-muted'}`}>
-                    {Math.round((field.confidence || 0) * 100)}%
-                  </span>
-                </div>
-                <div className="h-1 bg-border rounded mb-2">
-                  <div className="h-full rounded bg-gradient-to-r from-primary to-[#7c3aed]"
-                    style={{ width: `${Math.round((field.confidence || 0) * 100)}%` }} />
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(field.skills || []).map((s: string) => (
-                    <span key={s} className="px-2.5 py-0.5 rounded-full bg-primary-subtle text-primary text-[0.73rem] border border-primary-border">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+             {resultData.topFields.map((field: any, idx: number) => (
+               <div key={field.fieldSlug} style={{
+                 padding: '1rem 1.25rem', borderRadius: 10,
+                 border: `1px solid ${idx === 0 ? 'rgba(81,32,200,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                 background: idx === 0 ? 'rgba(81,32,200,0.1)' : 'rgba(255,255,255,0.03)',
+               }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                     <span style={{
+                       width: 24, height: 24, borderRadius: '50%',
+                       background: idx === 0 ? '#5120c8' : 'rgba(255,255,255,0.1)',
+                       color: idx === 0 ? '#ffffff' : '#9999aa',
+                       display: 'flex', alignItems: 'center', justifyContent: 'center',
+                       fontSize: 12, fontWeight: 700,
+                     }}>{idx + 1}</span>
+                     <span style={{ color: text, fontWeight: 600, fontSize: '0.95rem' }}>
+                       {isAr ? field.titleAr : field.titleEn}
+                     </span>
+                   </div>
+                   <span style={{ color: idx < 3 ? '#a78bfa' : '#c9a96e', fontWeight: 600, fontSize: '0.88rem' }}>
+                     {Math.round((field.confidence || 0) * 100)}%
+                   </span>
+                 </div>
+                 {/* Confidence bar */}
+                 <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, marginBottom: 8 }}>
+                   <div style={{ height: '100%', borderRadius: 2,
+                     width: `${Math.round((field.confidence || 0) * 100)}%`,
+                     background: 'linear-gradient(90deg,#5120c8,#7c3aed)' }}/>
+                 </div>
+                 {/* Skills */}
+                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                   {(field.skills || []).map((s: string) => (
+                     <span key={s} style={{
+                       background: 'rgba(81,32,200,0.1)', color: '#a78bfa',
+                       border: '1px solid rgba(81,32,200,0.3)',
+                       borderRadius: 20, padding: '2px 9px', fontSize: '0.73rem',
+                     }}>{s}</span>
+                   ))}
+                 </div>
+               </div>
+             ))}
+           </div>
         )}
 
-        <div className="flex flex-col gap-2.5">
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10, flexDirection: 'column' }}>
           <button
             onClick={async () => {
               const slugs = (resultData?.topFields || []).map((f: any) => f.fieldSlug)
@@ -433,16 +522,28 @@ export default function AssessmentPage() {
                     body: JSON.stringify({ pathIds: matchedIds, source: 'ASSESSMENT' }),
                   })
                 }
-              } catch { /* non-fatal */ }
+              } catch (e) { /* non-fatal */ }
               router.push(`/${locale}/dashboard/career-path`)
             }}
-            className="btn-primary w-full justify-center text-base py-3.5"
+            style={{
+              width: '100%', padding: '0.85rem',
+                                 background: 'linear-gradient(135deg,var(--primary,#5120c8),var(--primary-hover,#4318a8))',
+              border: 'none', borderRadius: 10,
+                                 color: 'var(--primary-fg, #ffffff)', fontWeight: 700, fontSize: '0.95rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
           >
             {isAr ? 'احفظ المسارات وانتقل لصفحتي المهنية' : 'Save Paths & Go to Career Hub'}
           </button>
           <button
             onClick={() => { setPhase('quiz'); setCurrentQ(0); setAnswers({}); setResultData(null) }}
-            className="w-full py-3 bg-transparent border border-border rounded-xl text-muted text-sm cursor-pointer font-body"
+            style={{
+              width: '100%', padding: '0.75rem',
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+              color: '#9999aa', fontSize: '0.88rem',
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
           >
             {isAr ? 'إعادة الاختبار' : 'Retake Assessment'}
           </button>

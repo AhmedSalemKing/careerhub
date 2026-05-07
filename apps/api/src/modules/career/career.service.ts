@@ -71,21 +71,15 @@ export class CareerService {
 
     const careerPaths = await this.prisma.careerPath.findMany({
       where: { isActive: true },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      orderBy: { createdAt: 'asc' },
       select: {
         id: true,
         slug: true,
         titleEn: true,
         titleAr: true,
-        descriptionEn: true,
-        descriptionAr: true,
         icon: true,
         color: true,
         demandLevel: true,
-        keywords: true,
-        skills: true,
-        jobTitlesEn: true,
-        jobTitlesAr: true,
       },
     });
 
@@ -94,17 +88,9 @@ export class CareerService {
       id: path.id,
       slug: path.slug,
       title: language === 'ar' ? path.titleAr : path.titleEn,
-      titleEn: path.titleEn,
-      titleAr: path.titleAr,
-      descriptionEn: path.descriptionEn,
-      descriptionAr: path.descriptionAr,
+      demandLevel: path.demandLevel,
       icon: path.icon,
       color: path.color,
-      demandLevel: path.demandLevel,
-      keywords: path.keywords,
-      skills: path.skills,
-      jobTitlesEn: path.jobTitlesEn,
-      jobTitlesAr: path.jobTitlesAr,
     }));
 
     this.cache.set(cacheKey, {
