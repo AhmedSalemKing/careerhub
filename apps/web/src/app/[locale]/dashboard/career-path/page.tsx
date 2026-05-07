@@ -31,7 +31,15 @@ export default function CareerPathPage() {
   
   const [activeTab, setActiveTab] = useState<TabKey>('paths')
 const [selectedPaths, setSelectedPaths] = useState<string[]>([])
-const [myPathIds, setMyPathIds] = useState<Set<string>>(new Set())
+const PATHS_CACHE_KEY = 'deveway_my_path_ids'
+const [myPathIds, setMyPathIds] = useState<Set<string>>(() => {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const cached = localStorage.getItem(PATHS_CACHE_KEY)
+    if (cached) return new Set(JSON.parse(cached))
+  } catch {}
+  return new Set()
+})
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 const [allPaths, setAllPaths] = useState<any[]>([])
 const MAX_PATHS = 5
@@ -70,6 +78,15 @@ const MAX_PATHS = 5
       .catch(() => {})
   }, [])
 
+  // Persist myPathIds to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(Array.from(myPathIds)))
+    } catch {}
+  }, [myPathIds])
+
+  // Sync with server on mount — server is source of truth, cache is for instant display
   useEffect(() => {
     const token = getToken()
     if (!token) return
@@ -80,7 +97,11 @@ const MAX_PATHS = 5
       .then(data => {
         const paths = data?.data?.paths ?? data?.data ?? []
         if (Array.isArray(paths)) {
-          setMyPathIds(new Set(paths.map((p: any) => p.pathId || p.id).filter(Boolean)))
+          const serverIds = new Set<string>(
+            paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean)
+          )
+          setMyPathIds(serverIds)
+          localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(Array.from(serverIds)))
         }
       })
       .catch(() => {})
