@@ -318,6 +318,25 @@ export default function CourseDetailPage({
 	const blueColor = "#ffffff";
 	const purpleColor = "#a855f7";
 
+	const [courseProgress, setCourseProgress] = useState<number>(0);
+	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
+	const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
+
+	const apiBase =
+		(process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api").replace(/\/api\/api/, "/api");
+
+	const getAuthToken = (): string => {
+		if (typeof window === "undefined") return "";
+		return (
+			localStorage.getItem("deveway_token") ||
+			localStorage.getItem("careerhub_token") ||
+			localStorage.getItem("token") ||
+			sessionStorage.getItem("deveway_token") ||
+			sessionStorage.getItem("token") ||
+			""
+		);
+	};
+
 	if (isLoading) return <CourseSkeleton isDark={isDark} />;
 	if (!course)
 		return (
@@ -345,25 +364,6 @@ export default function CourseDetailPage({
 		0,
 	);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
-
-	const [courseProgress, setCourseProgress] = useState<number>(0);
-	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
-	const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
-
-	const apiBase =
-		(process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api").replace(/\/api\/api/, "/api");
-
-	const getAuthToken = (): string => {
-		if (typeof window === "undefined") return "";
-		return (
-			localStorage.getItem("deveway_token") ||
-			localStorage.getItem("careerhub_token") ||
-			localStorage.getItem("token") ||
-			sessionStorage.getItem("deveway_token") ||
-			sessionStorage.getItem("token") ||
-			""
-		);
-	};
 
 	const typeBadge = isLive
 		? {
