@@ -293,7 +293,7 @@ export default function GoLivePage() {
             <div style={{ display: 'flex', gap: 16, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <Users size={13} color="#94a3b8" />
-                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{socketViewerCount}</span>
+                <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{viewerCount}</span>
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? 'مباشر' : 'live'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

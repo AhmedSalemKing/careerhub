@@ -655,7 +655,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 		if (lesson.imageUrl && !VIDEO_EXTS.test(lesson.imageUrl)) return "image";
 
 		// fileUrl — check extension
-		if (lesson.fileUrl) {
+		if (typeof lesson.fileUrl === 'string') {
 			if (IMAGE_EXTS.test(lesson.fileUrl)) return "image";
 			if (PDF_EXT.test(lesson.fileUrl)) return "file";
 			if (lesson.fileUrl.includes("/image/upload/")) return "image";
@@ -663,7 +663,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 		}
 
 		// videoUrl — may actually be an image (Cloudinary image stored in videoUrl)
-		if (lesson.videoUrl) {
+		if (typeof lesson.videoUrl === 'string') {
 			const url = lesson.videoUrl.split("?")[0];
 			if (IMAGE_EXTS.test(url)) return "image";
 			if (PDF_EXT.test(url)) return "file";
@@ -677,7 +677,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 		}
 
 		// content field fallback
-		if (lesson.content && lesson.content.startsWith("http")) {
+		if (typeof lesson.content === 'string' && lesson.content.startsWith("http")) {
 			if (IMAGE_EXTS.test(lesson.content)) return "image";
 			if (lesson.content.includes("/image/upload/")) return "image";
 			if (VIDEO_EXTS.test(lesson.content)) return "video";
