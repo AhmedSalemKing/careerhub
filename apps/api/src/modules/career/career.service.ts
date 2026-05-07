@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -33,23 +34,27 @@ export class CareerService {
   }
 
   async getUserCareerPaths(userId: string) {
-    const userPath = await this.prisma.userCareerPath.findUnique({
+    const userPaths = await this.prisma.userCareerPath.findMany({
       where: { userId },
-    }).catch(() => null)
-    const data: any[] = []
-    if (userPath) {
-      const careerPath = await this.prisma.careerPath.findUnique({
-        where: { id: userPath.pathId },
-        select: { id: true, slug: true, titleEn: true, titleAr: true, icon: true, color: true },
-      }).catch(() => null)
-      data.push({
-        id: userPath.id,
-        careerPathId: userPath.pathId,
-        pathId: userPath.pathId,
-        source: 'MANUAL',
-        careerPath: careerPath || { id: userPath.pathId, slug: userPath.pathId, titleEn: userPath.pathTitle, titleAr: userPath.pathTitle },
-      })
-    }
+      orderBy: { createdAt: 'asc' },
+    }).catch(() => [])
+
+    const pathIds = userPaths.map(p => p.pathId)
+    const careerPaths = pathIds.length > 0
+      ? await this.prisma.careerPath.findMany({
+          where: { id: { in: pathIds } },
+          select: { id: true, slug: true, titleEn: true, titleAr: true, icon: true, color: true },
+        }).catch(() => [])
+      : []
+
+    const cpMap = new Map(careerPaths.map(cp => [cp.id, cp]))
+    const data = userPaths.map(up => ({
+      id: up.id,
+      careerPathId: up.pathId,
+      pathId: up.pathId,
+      source: up.aiRecommended ? 'ASSESSMENT' : 'MANUAL',
+      careerPath: cpMap.get(up.pathId) || { id: up.pathId, slug: up.pathId, titleEn: up.pathTitle, titleAr: up.pathTitle },
+    }))
     return { success: true, data }
   }
 
@@ -58,11 +63,10 @@ export class CareerService {
     pathIds: string[],
     source: string,
   ) {
-    await this.prisma.userCareerPath.deleteMany({ where: { userId } })
-      .catch(() => {})
+    await this.prisma.userCareerPath.deleteMany({ where: { userId } }).catch(() => {})
 
     const created = await Promise.all(
-      pathIds.slice(0, 1).map(async pathId => {
+      pathIds.slice(0, 5).map(async pathId => {
         const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
         return this.prisma.userCareerPath.create({
           data: {
@@ -79,25 +83,29 @@ export class CareerService {
   }
 
   async addUserCareerPath(userId: string, pathId: string, source: string) {
-    await this.prisma.userCareerPath.deleteMany({ where: { userId } }).catch(() => {})
+    const count = await this.prisma.userCareerPath.count({ where: { userId } }).catch(() => 0)
+    if (count >= 5) {
+      throw new BadRequestException('Maximum 5 career paths allowed')
+    }
     const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
-    const result = await this.prisma.userCareerPath.create({
-      data: {
+    const result = await this.prisma.userCareerPath.upsert({
+      where: { userId_pathId: { userId, pathId } },
+      create: {
         userId,
         pathId,
         pathTitle: cp?.titleEn || pathId,
         pathCategory: cp?.titleAr || '',
         aiRecommended: source === 'ASSESSMENT' || source === 'RECOMMENDED',
       },
+      update: {},
     }).catch(() => null)
     return { success: true, data: result }
   }
 
   async removeUserCareerPath(userId: string, pathId: string) {
-    const record = await this.prisma.userCareerPath.findUnique({ where: { userId } }).catch(() => null)
-    if (record && record.pathId === pathId) {
-      await this.prisma.userCareerPath.delete({ where: { userId } }).catch(() => {})
-    }
+    await this.prisma.userCareerPath.delete({
+      where: { userId_pathId: { userId, pathId } },
+    }).catch(() => {})
     return { success: true }
   }
 

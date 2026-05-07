@@ -145,7 +145,7 @@ model User {
   quizAttempts         QuizAttempt[]
   coachProfile         Coach?
   assessmentSessions   AssessmentSession[]
-  userCareerPath       UserCareerPath?
+  userCareerPaths      UserCareerPath[]
   userSessions         ConsultingSession[] @relation("UserSessions")
   consultantSessions   ConsultingSession[] @relation("ConsultantSessions")
   earningsBalance      Float               @default(0)
@@ -951,7 +951,7 @@ model Subscription {
 
 model UserCareerPath {
   id           String   @id @default(cuid())
-  userId       String   @unique
+  userId       String
   user         User     @relation(fields: [userId], references: [id])
   pathId       String
   pathTitle    String
@@ -960,6 +960,7 @@ model UserCareerPath {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  @@unique([userId, pathId])
   @@index([userId])
   @@map("user_career_paths")
 }
