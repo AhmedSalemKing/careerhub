@@ -83,6 +83,7 @@ export default function CreateCoursePage() {
     level: 'BEGINNER',
     status: 'DRAFT',
     categoryId: '',
+    careerPathId: '',
     thumbnail: '',
     previewVideo: '',
     sections: [{ title: '' }] as Section[],
@@ -108,6 +109,16 @@ export default function CreateCoursePage() {
       try {
         const res = await get('/courses/categories')
         return (res?.data as any)?.data ?? []
+      } catch { return [] }
+    },
+  })
+
+  const { data: careerPaths = [] } = useQuery({
+    queryKey: ['career-paths-list'],
+    queryFn: async () => {
+      try {
+        const res = await get('/career/paths')
+        return (res?.data as any)?.data?.careerPaths ?? (res?.data as any)?.data ?? []
       } catch { return [] }
     },
   })
@@ -187,6 +198,7 @@ export default function CreateCoursePage() {
         level: form.level,
         status: form.status,
         categoryId: form.categoryId || undefined,
+        careerPathId: form.careerPathId || undefined,
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         type: form.type,
@@ -405,6 +417,18 @@ export default function CreateCoursePage() {
                           <option key={sub.id} value={sub.id}>{sub.name}</option>
                         ))}
                       </optgroup>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {(careerPaths as any[]).length > 0 && (
+                <div>
+                  <label className={labelCls}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
+                  <select value={form.careerPathId} onChange={e => set('careerPathId', e.target.value)} className={inputCls}>
+                    <option value="">{isAr ? 'اختر مساراً (اختياري)' : 'Select a path (optional)'}</option>
+                    {(careerPaths as any[]).map((p: any) => (
+                      <option key={p.id} value={p.id}>{isAr ? p.titleAr : p.titleEn}</option>
                     ))}
                   </select>
                 </div>

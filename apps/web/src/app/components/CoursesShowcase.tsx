@@ -220,7 +220,7 @@ export function CoursesShowcase() {
 
         @font-face {
           font-family: 'PingARLT';
-          src: url('/fonts/PingARLT-Black.ttf') format('truetype');
+          src: url('/fonts/alfont_com_PingARLT-Black.ttf') format('truetype');
           font-weight: 900;
           font-style: normal;
           font-display: swap;
