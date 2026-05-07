@@ -392,6 +392,7 @@ export default function CourseDetailPage({
 	const TypeIcon = typeBadge.icon;
 
 	return (
+		<>
 		<div className="min-h-screen" style={{ background: bg }}>
 			{/* ── Hero Section ── */}
 			<div
@@ -1530,12 +1531,15 @@ export default function CourseDetailPage({
 						)}
 
 					</div>
+				</div>
+			</div>
 		</div>
 		</div>
 		<Toaster />
-	</div>
+		</>
 	);
 }
+
 
 function CourseSkeleton({ isDark }: { isDark: boolean }) {
 	const skBg = isDark ? "rgb(25 27 32)" : "#f1f5f9";
