@@ -31,14 +31,22 @@ export default function CareerPathPage() {
   
   const [activeTab, setActiveTab] = useState<TabKey>('paths')
 const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+const [myPathIds, setMyPathIds] = useState<Set<string>>(new Set())
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 const [allPaths, setAllPaths] = useState<any[]>([])
+const MAX_PATHS = 5
   
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
   const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+  const getToken = () =>
+    typeof window !== 'undefined'
+      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+      : ''
 
   useEffect(() => {
     try {
@@ -51,7 +59,6 @@ const [allPaths, setAllPaths] = useState<any[]>([])
   }, [])
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
     fetch(`${apiUrl}/career/paths`)
       .then(r => r.json())
       .then(data => {
@@ -61,43 +68,79 @@ const [allPaths, setAllPaths] = useState<any[]>([])
       .catch(() => {})
   }, [])
 
-  const togglePath = async (id: string) => {
-    console.log('[TogglePath] pathId:', id, '| currently selected:', selectedPaths.includes(id))
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-    const token = typeof window !== 'undefined'
-      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-      : ''
+  useEffect(() => {
+    const token = getToken()
+    if (!token) return
+    fetch(`${apiUrl}/career/paths/my`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        const paths = data?.data?.paths ?? data?.data ?? []
+        if (Array.isArray(paths)) {
+          setMyPathIds(new Set(paths.map((p: any) => p.pathId || p.id).filter(Boolean)))
+        }
+      })
+      .catch(() => {})
+  }, [])
 
-    const isRemoving = selectedPaths.includes(id)
+  const resolveSlugToDbId = (slugId: string): string | null => {
+    const matched = allPaths.find((p: any) => p.slug === slugId || p.id === slugId)
+    return matched?.id ?? null
+  }
+
+  const togglePath = async (pathId: string) => {
+    const isSelected = myPathIds.has(pathId)
+    const token = getToken()
+
+    if (!isSelected && myPathIds.size >= MAX_PATHS) {
+      alert(isAr ? 'الحد الأقصى 5 مسارات' : 'Maximum 5 paths allowed')
+      return
+    }
+
+    console.log('[TogglePath] pathId:', pathId, '| isSelected:', isSelected)
+
+    setMyPathIds(prev => {
+      const next = new Set(prev)
+      if (isSelected) next.delete(pathId); else next.add(pathId)
+      return next
+    })
 
     setSelectedPaths(prev => {
-      const next = isRemoving
-        ? prev.filter(p => p !== id)
-        : [...prev, id]
+      const next = isSelected ? prev.filter(p => p !== pathId) : [...prev, pathId]
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
 
-    if (isRemoving) {
-      console.log('[TogglePath] Calling API remove with UUID:', id)
-      const res = await fetch(`${apiUrl}/career/paths/remove/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+    try {
+      if (isSelected) {
+        console.log('[TogglePath] Calling API remove with UUID:', pathId)
+        const res = await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+        console.log('[TogglePath] API remove response:', res.status)
+      } else {
+        console.log('[TogglePath] Calling API add with UUID:', pathId)
+        const res = await fetch(`${apiUrl}/career/paths/add/${pathId}?source=MANUAL`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+        console.log('[TogglePath] API add response:', res.status)
+      }
+    } catch (e: any) {
+      console.error('[TogglePath] API error:', e.message)
+      setMyPathIds(prev => {
+        const next = new Set(prev)
+        if (isSelected) next.add(pathId); else next.delete(pathId)
+        return next
       })
-      console.log('[TogglePath] API remove response:', res.status)
-    } else {
-      console.log('[TogglePath] Calling API add with UUID:', id)
-      const res = await fetch(`${apiUrl}/career/paths/add/${id}?source=ASSESSMENT`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      })
-      console.log('[TogglePath] API add response:', res.status)
     }
   }
 
@@ -155,19 +198,11 @@ const [allPaths, setAllPaths] = useState<any[]>([])
 
   useEffect(() => {
     setCoursesLoading(true)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    const token = getToken()
 
-    const token = typeof window !== 'undefined'
-      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
-      : ''
-
-    const pathSlugs = selectedPaths
-      .map(id => CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === id)?.id)
-      .filter(Boolean) as string[]
-
+    const pathIds = Array.from(myPathIds)
     const params = new URLSearchParams()
-    if (selectedPaths.length > 0) params.set('paths', selectedPaths.join(','))
-    if (pathSlugs.length > 0) params.set('fields', pathSlugs.join(','))
+    if (pathIds.length > 0) params.set('paths', pathIds.join(','))
     params.set('limit', '12')
 
     fetch(`${apiUrl}/courses/recommended?${params}`, {
@@ -188,7 +223,7 @@ const [allPaths, setAllPaths] = useState<any[]>([])
         setCourses([])
       })
       .finally(() => setCoursesLoading(false))
-  }, [selectedPaths])
+  }, [myPathIds])
 
   useEffect(() => {
     setBundlesLoading(true)
@@ -243,9 +278,9 @@ const [allPaths, setAllPaths] = useState<any[]>([])
               }}>
                 {tab.icon}
                 {isAr ? tab.labelAr : tab.labelEn}
-                {tab.key === 'paths' && selectedPaths.length > 0 && (
+                {tab.key === 'paths' && myPathIds.size > 0 && (
                   <span style={{ padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 800, background: '#5120c8', color: '#ffffff' }}>
-                    {selectedPaths.length}
+                    {myPathIds.size}
                   </span>
                 )}
                 {tab.key === 'assessment' && assessmentResults.length > 0 && (
@@ -285,32 +320,29 @@ const [allPaths, setAllPaths] = useState<any[]>([])
               </div>
             )}
 
-            {selectedPaths.length > 0 && (
+            {myPathIds.size > 0 && (
               <div style={{ marginBottom: 28 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                   <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'مساراتي المختارة' : 'My Selected Paths'}</h3>
-                  <span style={{ color: subtext, fontSize: 12 }}>{selectedPaths.length} / 5 {isAr ? 'مسارات' : 'paths'}</span>
+                  <span style={{ color: subtext, fontSize: 12 }}>{myPathIds.size} / {MAX_PATHS} {isAr ? 'مسارات' : 'paths'}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {selectedPaths.map(id => {
-                    const path = CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === id)
-                    if (!path) return null
-                    const IconComp = ICON_MAP[path.icon] || Briefcase
-                    const category = CAREER_PATHS.find(c => c.paths.some(p => p.id === id))
+                  {allPaths.filter(p => myPathIds.has(p.id)).map(path => {
+                    const IconComp = ICON_MAP[(path as any).icon] || Briefcase
                     return (
-                      <div key={id} style={{ padding: '16px 20px', borderRadius: 14, border: '1.5px solid rgba(81,32,200,0.3)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)', display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div key={path.id} style={{ padding: '16px 20px', borderRadius: 14, border: '1.5px solid rgba(81,32,200,0.3)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)', display: 'flex', alignItems: 'center', gap: 14 }}>
                         <div style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <IconComp size={18} color="#5120c8" />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? path.titleAr : path.title}</div>
-                          <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>${path.salary} SAR{isAr ? '/شهرياً' : '/month'}</div>
+                          <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? path.titleAr : path.titleEn}</div>
+                          <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>{isAr ? 'مسار مهني' : 'Career path'}</div>
                         </div>
                         <button onClick={() => setActiveTab('courses')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                           <BookOpen size={12} />
                           {isAr ? 'كورسات' : 'Courses'}
                         </button>
-                        <button onClick={() => togglePath(id)} style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
+                        <button onClick={() => togglePath(path.id)} style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
                           <X size={14} />
                         </button>
                       </div>
@@ -322,26 +354,27 @@ const [allPaths, setAllPaths] = useState<any[]>([])
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'استكشف المسارات' : 'Explore Paths'}</h3>
-              {selectedPaths.length < 5 && (
+              {myPathIds.size < MAX_PATHS && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subtext, fontSize: 12 }}>
                   <Plus size={13} />
-                  {isAr ? `يمكنك إضافة ${5 - selectedPaths.length} مسارات أخرى` : `You can add ${5 - selectedPaths.length} more paths`}
+                  {isAr ? `يمكنك إضافة ${MAX_PATHS - myPathIds.size} مسارات أخرى` : `You can add ${MAX_PATHS - myPathIds.size} more paths`}
                 </div>
               )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-              {CAREER_PATHS.slice(0, 18).map(cat => cat.paths.slice(0, 3).map(path => {
+              {allPaths.slice(0, 30).map((path: any) => {
                 const IconComp = ICON_MAP[path.icon] || Briefcase
-                const isSelected = selectedPaths.includes(path.id)
+                const dbId = path.id
+                const isSelected = myPathIds.has(dbId)
                 return (
-                  <div key={path.id} style={{
+                  <div key={dbId} style={{
                     padding: '18px', borderRadius: 14,
                     border: `1.5px solid ${isSelected ? 'rgba(81,32,200,0.4)' : border}`,
                     background: isSelected ? (isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.03)') : cardBg,
                     cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative',
                   }}
-                  onClick={() => { if (!isSelected && selectedPaths.length >= 5) return; togglePath(path.id) }}>
+                  onClick={() => togglePath(dbId)}>
                     {isSelected && (
                       <div style={{ position: 'absolute', top: 12, left: isAr ? 12 : 'auto', right: isAr ? 'auto' : 12 }}>
                         <CheckCircle2 size={18} color="#5120c8" />
@@ -351,18 +384,20 @@ const [allPaths, setAllPaths] = useState<any[]>([])
                       <div style={{ width: 36, height: 36, borderRadius: 9, background: isSelected ? 'rgba(81,32,200,0.12)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <IconComp size={16} color={isSelected ? '#5120c8' : subtext} />
                       </div>
-                      <h4 style={{ color: text, fontSize: 13, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{isAr ? path.titleAr : path.title}</h4>
+                      <h4 style={{ color: text, fontSize: 13, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{isAr ? path.titleAr : path.titleEn}</h4>
                     </div>
                     <p style={{ color: subtext, fontSize: 12, margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{isAr ? path.descriptionAr : path.descriptionEn}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>${path.salary}+</span>
+                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+                        {isAr ? 'مسار مهني' : 'Career path'}
+                      </span>
                       <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: isSelected ? 'rgba(81,32,200,0.1)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), color: isSelected ? '#5120c8' : subtext, border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}` }}>
                         {isSelected ? (isAr ? 'تم الاختيار' : 'Selected') : (isAr ? 'اختر' : 'Select')}
                       </span>
                     </div>
                   </div>
                 )
-              })).flat()}
+              })}
             </div>
             
             <div style={{ textAlign: 'center', marginTop: 20 }}>
@@ -398,8 +433,8 @@ const [allPaths, setAllPaths] = useState<any[]>([])
                         </div>
                       </div>
                       <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
-                      <button onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: (getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? 'transparent' : '#5120c8', color: (getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? subtext : '#ffffff', border: `1px solid ${(getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {(getPathIdForResult(result) && selectedPaths.includes(getPathIdForResult(result)!)) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
+                      <button onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: (getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? 'transparent' : '#5120c8', color: (getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? subtext : '#ffffff', border: `1px solid ${(getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {(getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
                       </button>
                     </div>
                   ))}
@@ -439,8 +474,8 @@ const [allPaths, setAllPaths] = useState<any[]>([])
                 <div style={{ marginBottom: 20 }}>
                   <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
                   <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
-                    {selectedPaths.length > 0
-                      ? (isAr ? `بناء على ${selectedPaths.length} مسار مختار` : `Based on ${selectedPaths.length} selected path${selectedPaths.length > 1 ? 's' : ''}`)
+                    {myPathIds.size > 0
+                      ? (isAr ? `بناء على ${myPathIds.size} مسار مختار` : `Based on ${myPathIds.size} selected path${myPathIds.size > 1 ? 's' : ''}`)
                       : (isAr ? 'أحدث الكورسات المنشورة' : 'Latest published courses')}
                   </p>
                 </div>
@@ -511,15 +546,8 @@ const [allPaths, setAllPaths] = useState<any[]>([])
                 
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
                   <button onClick={() => {
-                    const firstPathId = selectedPaths[0]
-                    const firstPath = CAREER_PATHS.flatMap(c => c.paths).find(p => p.id === firstPathId)
-                    const catEntry = CAREER_PATHS.find(c => c.paths.some(p => p.id === firstPathId))
-                    const category = catEntry?.category.toLowerCase().includes('tech') ? 'tech' 
-                      : catEntry?.category.toLowerCase().includes('design') ? 'design'
-                      : catEntry?.category.toLowerCase().includes('marketing') ? 'marketing'
-                      : catEntry?.category.toLowerCase().includes('business') ? 'business'
-                      : 'tech'
-                    window.open(`https://deveway-teal.vercel.app/${locale}/courses?category=${category}`, '_blank')
+                    const firstPathId = Array.from(myPathIds)[0] || selectedPaths[0]
+                    window.open(`https://deveway-teal.vercel.app/${locale}/courses`, '_blank')
                   }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
                     <BookOpen size={14} />
                     {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
