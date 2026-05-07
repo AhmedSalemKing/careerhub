@@ -56,6 +56,174 @@ const LEVELS = [
 
 type Section = { title: string }
 
+interface SearchableSelectProps {
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  searchPlaceholder?: string
+  isRtl?: boolean
+}
+
+function SearchableSelect({
+  options, value, onChange, placeholder, searchPlaceholder, isRtl
+}: SearchableSelectProps) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  const selected = options.find(o => o.value === value)
+  const filtered = options.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  )
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+        setSearch('')
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: '100%' }}>
+      <button
+        type="button"
+        onClick={() => { setOpen(!open); setSearch('') }}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          background: 'transparent',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '8px',
+          color: selected ? 'var(--foreground)' : 'var(--muted-foreground, #888)',
+          fontSize: '0.9rem',
+          textAlign: isRtl ? 'right' : 'left' as const,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+          style={{ flexShrink: 0, opacity: 0.5,
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.15s' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 4px)',
+          left: 0, right: 0,
+          background: 'var(--card, #1a1a2e)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '8px',
+          zIndex: 999,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ position: 'relative' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+                style={{ position:'absolute', left:'10px', top:'50%',
+                  transform:'translateY(-50%)', opacity:0.4 }}>
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                autoFocus
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder={searchPlaceholder || 'بحث...'}
+                dir={isRtl ? 'rtl' : 'ltr'}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px 8px 32px',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '6px',
+                  color: 'var(--foreground)',
+                  fontSize: '0.85rem',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+          </div>
+
+          <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
+            <button
+              type="button"
+              onClick={() => { onChange(''); setOpen(false); setSearch('') }}
+              style={{
+                width: '100%', padding: '9px 14px',
+                background: 'transparent',
+                border: 'none', cursor: 'pointer',
+                color: 'var(--muted-foreground, #888)',
+                fontSize: '0.85rem',
+                textAlign: isRtl ? 'right' : 'left' as const,
+                fontFamily: 'inherit',
+              }}
+            >
+              {placeholder}
+            </button>
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: '12px 14px', color: '#666',
+                fontSize: '0.85rem', textAlign: 'center' }}>
+                {isRtl ? 'لا توجد نتائج' : 'No results'}
+              </div>
+            ) : (
+              filtered.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { onChange(opt.value); setOpen(false); setSearch('') }}
+                  style={{
+                    width: '100%', padding: '9px 14px',
+                    background: opt.value === value
+                      ? 'rgba(81,32,200,0.15)' : 'transparent',
+                    border: 'none', cursor: 'pointer',
+                    color: opt.value === value
+                      ? '#a78bfa' : 'var(--foreground)',
+                    fontSize: '0.875rem',
+                    textAlign: isRtl ? 'right' : 'left' as const,
+                    fontFamily: 'inherit',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span>{opt.label}</span>
+                  {opt.value === value && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="#a78bfa" strokeWidth="2.5" strokeLinecap="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function CreateCoursePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -409,28 +577,37 @@ export default function CreateCoursePage() {
               {(categories as any[]).length > 0 && (
                 <div>
                   <label className={labelCls}>{isAr ? 'الفئة' : 'Category'}</label>
-                  <select value={form.categoryId} onChange={e => set('categoryId', e.target.value)} className={inputCls}>
-                    <option value="">{isAr ? 'اختر فئة...' : 'Select category...'}</option>
-                    {(categories as any[]).filter((c: any) => !c.parentId).map((mainCat: any) => (
-                      <optgroup key={mainCat.id} label={mainCat.name}>
-                        {(mainCat.children || []).map((sub: any) => (
-                          <option key={sub.id} value={sub.id}>{sub.name}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={(categories as any[]).filter((c: any) => !c.parentId).flatMap((mainCat: any) =>
+                      (mainCat.children || []).map((sub: any) => ({
+                        value: sub.id,
+                        label: `${mainCat.name} › ${sub.name}`,
+                      }))
+                    )}
+                    value={form.categoryId}
+                    onChange={val => set('categoryId', val)}
+                    placeholder={isAr ? 'اختر فئة...' : 'Select category...'}
+                    searchPlaceholder={isAr ? 'ابحث عن فئة...' : 'Search category...'}
+                    isRtl={isAr}
+                  />
                 </div>
               )}
 
               {(careerPaths as any[]).length > 0 && (
                 <div>
                   <label className={labelCls}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
-                  <select value={form.careerPathId} onChange={e => set('careerPathId', e.target.value)} className={inputCls}>
-                    <option value="">{isAr ? 'اختر مساراً (اختياري)' : 'Select a path (optional)'}</option>
-                    {(careerPaths as any[]).map((p: any) => (
-                      <option key={p.id} value={p.id}>{isAr ? p.titleAr : p.titleEn}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={(careerPaths as any[]).map((p: any) => ({
+                      value: p.id,
+                      label: isAr ? (p.titleAr || p.descriptionAr?.split('.')[0] || p.slug)
+                                   : (p.titleEn || p.descriptionEn?.split('.')[0] || p.slug),
+                    }))}
+                    value={form.careerPathId}
+                    onChange={val => set('careerPathId', val)}
+                    placeholder={isAr ? 'اختر مساراً مهنياً (اختياري)' : 'Select career path (optional)'}
+                    searchPlaceholder={isAr ? 'ابحث عن مسار...' : 'Search path...'}
+                    isRtl={isAr}
+                  />
                 </div>
               )}
 
