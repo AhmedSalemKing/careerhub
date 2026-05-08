@@ -444,6 +444,20 @@ import VideoProtection from "../../../../components/VideoProtection";
 		return () => window.removeEventListener("keydown", handleKeys);
 	}, [activeLessonId]);
 
+	// Poll for live lesson status updates (student sees auto-update when instructor goes live)
+	useEffect(() => {
+		if (!activeLessonId || !courseId || !authChecked) return;
+		const active = allLessonsFlat.find((l: any) => l.id === activeLessonId);
+		const isLiveType = active?.type === 'LIVE' || active?.lessonType === 'LIVE' || active?.isLive;
+		if (!isLiveType || active?.liveStatus === 'LIVE') return;
+
+		const interval = setInterval(() => {
+			qc.invalidateQueries({ queryKey: ["learn-course", courseId] });
+		}, 8000);
+
+		return () => clearInterval(interval);
+	}, [activeLessonId, courseId, allLessonsFlat, authChecked, qc]);
+
 	// Double-tap to seek ±5s on mobile
 	const showSeekFeedback = (side: "forward" | "backward") => {
 		setSeekFeedback({ side, visible: true });
