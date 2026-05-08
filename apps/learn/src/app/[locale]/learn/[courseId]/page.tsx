@@ -330,6 +330,11 @@ import VideoProtection from "../../../../components/VideoProtection";
 		getSafeUrl(activeLesson?.imageUrl) || undefined;
 	const fileName: string = activeLesson?.fileName || "document.pdf";
 
+	const isCurrentLive =
+		activeLesson?.type === 'LIVE' ||
+		activeLesson?.lessonType === 'LIVE' ||
+		activeLesson?.isLive === true;
+
 	const isCurrentCompleted = activeLessonId
 		? completedLessons.has(activeLessonId)
 		: false;
@@ -687,6 +692,85 @@ import VideoProtection from "../../../../components/VideoProtection";
 		return "none";
 	};
 
+	const getLessonTypeBadge = (lesson: any) => {
+		const type = lesson?.type || lesson?.lessonType || 'VIDEO';
+		const isLiveLesson = type === 'LIVE' || lesson?.isLive === true;
+
+		if (isLiveLesson) {
+			const isActive = lesson?.liveStatus === 'LIVE';
+			const scheduled = lesson?.liveStartTime
+				? new Date(lesson.liveStartTime).toLocaleString(
+						isAr ? 'ar-SA' : 'en-US',
+						{ month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+					)
+				: null;
+
+			return (
+				<span
+					style={{
+						display: 'inline-flex', alignItems: 'center', gap: '4px',
+						padding: '2px 7px', borderRadius: '10px',
+						background: isActive ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
+						border: `1px solid ${isActive ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.2)'}`,
+						color: '#f87171', fontSize: '0.68rem', fontWeight: 600,
+						whiteSpace: 'nowrap',
+					}}>
+					<span
+						style={{
+							width: '5px', height: '5px', borderRadius: '50%',
+							background: '#ef4444',
+							animation: isActive ? 'pulse 1s infinite' : 'none',
+						}}
+					/>
+					{isActive
+						? (isAr ? 'مباشر الآن' : 'Live Now')
+						: scheduled || (isAr ? 'بث مباشر' : 'Live')}
+				</span>
+			);
+		}
+
+		const hasVideo = lesson?.videoUrl || type === 'VIDEO';
+		const hasPdf = lesson?.fileUrl || type === 'PDF';
+		const hasImage = lesson?.imageUrl || type === 'IMAGE';
+
+		if (hasPdf) {
+			return (
+				<span
+					style={{
+						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
+						background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.2)',
+						color: '#fbbf24', fontWeight: 600,
+					}}>
+					{isAr ? 'ملف' : 'PDF'}
+				</span>
+			);
+		}
+
+		if (hasImage) {
+			return (
+				<span
+					style={{
+						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
+						background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
+						color: '#4ade80', fontWeight: 600,
+					}}>
+					{isAr ? 'صورة' : 'Image'}
+				</span>
+			);
+		}
+
+		return (
+			<span
+				style={{
+					padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
+					background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+					color: '#9999aa', fontWeight: 500,
+				}}>
+				{isAr ? 'فيديو' : 'Video'}
+			</span>
+		);
+	};
+
 	// Content type detection
 	const mediaType = activeLesson ? getMediaType(activeLesson) : "none";
 	const hasVideo = mediaType === "video" && !!videoUrl;
@@ -1022,160 +1106,186 @@ import VideoProtection from "../../../../components/VideoProtection";
 						</p>
 					</div>
 
-					{/* Lessons List */}
+					{/* Lessons List - Grouped by sections */}
 					<div className="px-3 pb-4 space-y-1">
-						{allLessonsFlat.map((lesson: any, idx: number) => {
-							const status = getLessonStatus(lesson.id);
-							const isActive = activeLessonId === lesson.id;
-							const lessonMediaType = getMediaType(lesson);
-							const lessonType =
-								lessonMediaType === "video"
-									? "فيديو"
-									: lessonMediaType === "file"
-										? "ملف"
-										: lessonMediaType === "image"
-											? "صورة"
-											: "نص";
+						{sections.map((section: any, sectionIndex: number) => {
+							const sectionLessons = Array.isArray(section.lessons) ? section.lessons : [];
+							if (sectionLessons.length === 0) return null;
 
 							return (
-								<button
-									key={lesson.id}
-									onClick={() => {
-										if (status !== "locked") goToLesson(lesson);
-									}}
-									disabled={status === "locked"}
-									className={`
-                    group relative w-full text-right transition-all duration-200
-                    ${status === "locked" ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-[1.01]"}
-                  `}
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "14px",
-										padding: "14px 16px",
-										borderRadius: "14px",
-										border: "none",
-										background: isActive ? `${purple}10` : "transparent",
-										borderRight: isActive
-											? `3px solid ${purple}`
-											: "3px solid transparent",
-										marginBottom: "4px",
-									}}>
-									{/* Status Indicator */}
+								<div key={section.id || sectionIndex} style={{ marginBottom: sectionIndex < sections.length - 1 ? '12px' : '4px' }}>
+									{/* Section Header */}
 									<div
-										className="relative flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
 										style={{
-											width: "36px",
-											height: "36px",
-											borderRadius: "12px",
-											background:
-												status === "completed"
-													? green
-													: status === "available"
-														? purple
-														: borderColor,
-										}}>
-										{status === "completed" && (
-											<CheckCircle2 size={17} color="#fff" strokeWidth={2.5} />
-										)}
-										{status === "available" && (
-											<Play size={16} color="#fff" fill="#fff" />
-										)}
-										{status === "locked" && (
-											<Lock size={14} color={isDark ? "#6b7280" : "#9ca3af"} />
-										)}
-									</div>
-
-									{/* Lesson Content */}
-									<div className="flex-1 min-w-0">
-										<div className="flex items-center gap-2 mb-1">
-											<h3
-												className="text-[13px] font-semibold truncate leading-tight"
-												style={{
-													color: isActive
-														? purple
-														: status === "locked"
-															? textSecondary
-															: textPrimary,
-												}}>
-												{lesson.title || lesson.titleAr}
-											</h3>
-										</div>
-
-										<div
-											className="flex items-center gap-2 text-[11px]"
-											style={{ color: textSecondary }}>
+											padding: '8px 12px',
+											background: 'rgba(255,255,255,0.04)',
+											borderRadius: '8px',
+											marginBottom: '4px',
+											display: 'flex',
+											alignItems: 'center',
+											justifyContent: 'space-between',
+											cursor: 'pointer',
+											userSelect: 'none',
+										}}
+										onClick={() => toggleSection(section.id)}>
+										<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 											<span
-												className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
 												style={{
-													background:
-														lessonMediaType === "video"
-															? `${redColor}10`
-															: lessonMediaType === "file"
-																? `${blueColor}10`
-																: lessonMediaType === "image"
-																	? `${purpleColor}10`
-																	: `${borderColor}`,
-													color:
-														lessonMediaType === "video"
-															? redColor
-															: lessonMediaType === "file"
-																? blueColor
-																: lessonMediaType === "image"
-																	? purpleColor
-																	: textSecondary,
+													width: '22px', height: '22px', borderRadius: '50%',
+													background: openSections.has(section.id) ? 'rgba(81,32,200,0.2)' : 'rgba(255,255,255,0.06)',
+													color: openSections.has(section.id) ? '#a78bfa' : '#666680',
+													display: 'flex', alignItems: 'center', justifyContent: 'center',
+													fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
+													transition: 'all 0.2s ease',
 												}}>
-												{lessonType === "فيديو" && <Video size={10} />}
-												{lessonType === "ملف" && <FileText size={10} />}
-												{lessonType === "صورة" && <Image size={10} />}
-												{lessonType}
+												{sectionIndex + 1}
 											</span>
-
-											{lesson.duration && (
-												<span className="flex items-center gap-1">
-													<Clock size={10} />
-													{lesson.duration} د
-												</span>
-											)}
-
-											{lesson.isFree && (
-												<span
-													className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
-													style={{
-														background: `${teal}10`,
-														color: teal,
-													}}>
-													<Gift size={10} />
-													مجاني
-												</span>
-											)}
+											<span
+												style={{
+													fontSize: '0.82rem', fontWeight: 600,
+													color: textPrimary,
+												}}>
+												{section.title || section.titleAr || `Section ${sectionIndex + 1}`}
+											</span>
+										</div>
+										<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+											<span style={{ fontSize: '0.7rem', color: '#666680' }}>
+												{sectionLessons.length} {isAr ? 'دروس' : 'lessons'}
+											</span>
+											<ChevronDown
+												size={14}
+												style={{
+													color: '#666680',
+													transform: openSections.has(section.id) ? 'rotate(0deg)' : 'rotate(-90deg)',
+													transition: 'transform 0.2s ease',
+												}}
+											/>
 										</div>
 									</div>
 
-									{/* Lesson Number Badge */}
-									<div
-										className="flex items-center justify-center shrink-0 text-xs font-bold"
-										style={{
-											width: "26px",
-											height: "26px",
-											borderRadius: "8px",
-											background: isActive ? purple : `${borderColor}`,
-											color: isActive ? "#fff" : textSecondary,
-										}}>
-										{idx + 1}
-									</div>
+									{/* Section Lessons */}
+									{openSections.has(section.id) && sectionLessons.map((lesson: any, lessonIndex: number) => {
+										const globalIdx = allLessonsFlat.findIndex((l: any) => l.id === lesson.id);
+										const status = getLessonStatus(lesson.id);
+										const isActive = activeLessonId === lesson.id;
 
-									{/* Active indicator glow */}
-									{isActive && (
-										<div
-											className="absolute inset-0 rounded-[14px] pointer-events-none"
-											style={{
-												background: `linear-gradient(135deg, ${purple}05, transparent)`,
-												boxShadow: `inset 0 0 20px ${purple}08`,
-											}}
-										/>
-									)}
-								</button>
+										return (
+											<button
+												key={lesson.id}
+												onClick={() => {
+													if (status !== "locked") goToLesson(lesson);
+												}}
+												disabled={status === "locked"}
+												className={`
+													group relative w-full text-right transition-all duration-200
+													${status === "locked" ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-[1.01]"}
+												`}
+												style={{
+													display: "flex",
+													alignItems: "center",
+													gap: "12px",
+													padding: "10px 14px",
+													borderRadius: "12px",
+													border: "none",
+													background: isActive ? `${purple}10` : "transparent",
+													borderRight: isActive
+														? `3px solid ${purple}`
+														: "3px solid transparent",
+													marginBottom: "2px",
+												}}>
+												{/* Status Indicator */}
+												<div
+													className="relative flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
+													style={{
+														width: "30px",
+														height: "30px",
+														borderRadius: "10px",
+														background:
+															status === "completed"
+																? green
+																: status === "available"
+																	? purple
+																	: borderColor,
+													}}>
+													{status === "completed" && (
+														<CheckCircle2 size={14} color="#fff" strokeWidth={2.5} />
+													)}
+													{status === "available" && (
+														<Play size={13} color="#fff" fill="#fff" />
+													)}
+													{status === "locked" && (
+														<Lock size={12} color={isDark ? "#6b7280" : "#9ca3af"} />
+													)}
+												</div>
+
+												{/* Lesson Content */}
+												<div className="flex-1 min-w-0">
+													<div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+														<h3
+															className="text-[13px] font-semibold truncate leading-tight"
+															style={{
+																color: isActive
+																	? purple
+																	: status === "locked"
+																		? textSecondary
+																		: textPrimary,
+															}}>
+															{lesson.title || lesson.titleAr}
+														</h3>
+														{getLessonTypeBadge(lesson)}
+													</div>
+
+													<div
+														className="flex items-center gap-2 text-[11px]"
+														style={{ color: textSecondary }}>
+														{lesson.duration && (
+															<span className="flex items-center gap-1">
+																<Clock size={10} />
+																{lesson.duration} د
+															</span>
+														)}
+
+														{lesson.isFree && (
+															<span
+																className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
+																style={{
+																	background: `${teal}10`,
+																	color: teal,
+																}}>
+																<Gift size={10} />
+																مجاني
+															</span>
+														)}
+													</div>
+												</div>
+
+												{/* Lesson Number Badge */}
+												<div
+													className="flex items-center justify-center shrink-0 text-xs font-bold"
+													style={{
+														width: "22px",
+														height: "22px",
+														borderRadius: "7px",
+														background: isActive ? purple : `${borderColor}`,
+														color: isActive ? "#fff" : textSecondary,
+													}}>
+													{globalIdx + 1}
+												</div>
+
+												{/* Active indicator glow */}
+												{isActive && (
+													<div
+														className="absolute inset-0 rounded-[12px] pointer-events-none"
+														style={{
+															background: `linear-gradient(135deg, ${purple}05, transparent)`,
+															boxShadow: `inset 0 0 20px ${purple}08`,
+														}}
+													/>
+												)}
+											</button>
+										);
+									})}
+								</div>
 							);
 						})}
 					</div>
@@ -1611,6 +1721,80 @@ import VideoProtection from "../../../../components/VideoProtection";
 										</div>
 									)}
 
+								{/* Live Lesson UI */}
+								{isCurrentLive && (
+									<div
+										style={{
+											aspectRatio: '16/9',
+											background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1054 100%)',
+											borderRadius: '12px',
+											display: 'flex',
+											flexDirection: 'column',
+											alignItems: 'center',
+											justifyContent: 'center',
+											gap: '1rem',
+											border: '1px solid rgba(239,68,68,0.3)',
+											padding: '2rem',
+										}}>
+										<div
+											style={{
+												width: '64px', height: '64px', borderRadius: '50%',
+												background: 'rgba(239,68,68,0.15)',
+												border: '2px solid rgba(239,68,68,0.4)',
+												display: 'flex', alignItems: 'center', justifyContent: 'center',
+											}}>
+											<svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+												stroke="#f87171" strokeWidth="2" strokeLinecap="round">
+												<circle cx="12" cy="12" r="10"/>
+												<circle cx="12" cy="12" r="3" fill="#f87171"/>
+											</svg>
+										</div>
+
+										{activeLesson?.liveStatus === 'LIVE' ? (
+											<>
+												<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+													<span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }}/>
+													<span style={{ color: '#f87171', fontWeight: 700, fontSize: '1.1rem' }}>
+														{isAr ? 'البث جار الآن' : 'Live Now'}
+													</span>
+												</div>
+												<p style={{ color: '#9999aa', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
+													{isAr ? 'البث المباشر نشط. انضم الآن للمشاهدة مع زملائك.' : 'Live stream is active. Join now to watch with your classmates.'}
+												</p>
+												<a
+													href={activeLesson?.liveUrl || '#'}
+													style={{
+														padding: '10px 24px', borderRadius: '8px',
+														background: '#ef4444', color: '#fff',
+														fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem',
+													}}>
+													{isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}
+												</a>
+											</>
+										) : (
+											<>
+												<p style={{ color: '#c8c8d8', fontWeight: 600, fontSize: '1rem' }}>
+													{activeLesson?.title || (isAr ? 'بث مباشر' : 'Live Session')}
+												</p>
+												{activeLesson?.liveStartTime && (
+													<p style={{ color: '#9999aa', fontSize: '0.85rem' }}>
+														{isAr ? 'موعد البث: ' : 'Scheduled: '}
+														{new Date(activeLesson.liveStartTime).toLocaleString(
+															isAr ? 'ar-SA' : 'en-US',
+															{ weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+														)}
+													</p>
+												)}
+												<p style={{ color: '#666680', fontSize: '0.82rem', textAlign: 'center', maxWidth: '300px' }}>
+													{isAr
+														? 'سيتم إرسال إشعار عند بدء البث. تأكد من تفعيل الإشعارات.'
+														: 'You will be notified when the stream starts.'}
+												</p>
+											</>
+										)}
+									</div>
+								)}
+
 								{/* Broken Local URL State */}
 								{!hasVideo && !hasFile && !hasImage && hasLocalUrl && (
 									<div
@@ -1641,7 +1825,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								)}
 
 								{/* No Media State */}
-								{!hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
+								{!isCurrentLive && !hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
 									<div
 										className="h-[450px] flex items-center justify-center"
 										style={{ background: sidebarBg }}>
