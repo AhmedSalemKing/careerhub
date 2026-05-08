@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -778,14 +778,18 @@ function AddLectureModal({
 
 // ─── Start Live Button ────────────────────────────────────────────────────────
 
-function StartLiveButton({ lessonId, isLive, onStarted }: { lessonId: string; isLive: boolean; onStarted: () => void }) {
+function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: string; courseId: string; isLive: boolean; onStarted: () => void }) {
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const params = useParams()
+  const locale = (params?.locale as string) || 'ar'
 
   async function handleStart() {
     setLoading(true)
     try {
       await post(`/live/lesson-start/${lessonId}`, {})
       onStarted()
+      router.push(`/${locale}/dashboard/courses/${courseId}/go-live?lessonId=${lessonId}`)
     } catch (e) {
       console.error('Start live error:', e)
     } finally {
@@ -1135,7 +1139,7 @@ export default function ManageCoursePage() {
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
                         )}
                         {(lesson.type === 'LIVE') && lesson.liveStatus !== 'ENDED' && (
-                          <StartLiveButton lessonId={lesson.id} isLive={lesson.liveStatus === 'LIVE'} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
+                          <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={lesson.liveStatus === 'LIVE'} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
                         )}
                       </div>
                     ))}
