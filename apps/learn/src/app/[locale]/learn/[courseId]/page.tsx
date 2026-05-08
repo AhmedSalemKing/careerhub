@@ -1762,7 +1762,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													{isAr ? 'البث المباشر نشط. انضم الآن للمشاهدة مع زملائك.' : 'Live stream is active. Join now to watch with your classmates.'}
 												</p>
 												<a
-													href={activeLesson?.liveUrl || '#'}
+													href={`/${locale}/live/${courseId}?lessonId=${activeLesson?.id}`}
 													style={{
 														padding: '10px 24px', borderRadius: '8px',
 														background: '#ef4444', color: '#fff',

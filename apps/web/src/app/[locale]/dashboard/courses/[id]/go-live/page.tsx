@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useLocale } from 'next-intl'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../../lib/api'
 import { AuthGate } from '@/app/components/AuthGate'
@@ -22,6 +22,8 @@ export default function GoLivePage() {
   const router = useRouter()
   const params = useParams()
   const courseId = params.id as string
+  const searchParams = useSearchParams()
+  const lessonId = searchParams?.get('lessonId') || null
 
   const border = 'rgba(255,255,255,0.08)'
   const cardBg = '#111111'
@@ -331,6 +333,24 @@ export default function GoLivePage() {
 
           {/* LEFT: Video + Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: 16, overflow: 'auto' }}>
+
+            {/* Lesson banner */}
+            {lessonId && (
+              <div style={{
+                background: 'rgba(239,68,68,0.1)',
+                border: '1px solid rgba(239,68,68,0.3)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+                <span style={{ color: '#f87171', fontSize: '0.85rem', fontWeight: 600 }}>
+                  {isAr ? 'بث مباشر لمحاضرة مجدولة' : 'Live for scheduled lesson'}
+                </span>
+              </div>
+            )}
 
             {/* Video */}
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#000', border: `1px solid ${border}`, aspectRatio: '16/9' }}>

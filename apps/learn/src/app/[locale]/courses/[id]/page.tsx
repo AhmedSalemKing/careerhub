@@ -499,7 +499,7 @@ export default function CourseDetailPage({
 									background: isDark ? "#000" : "#e2e8f0",
 									boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
 								}}
-								onClick={() => navigateToLearn()}>
+								onClick={() => isLive ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}>
 								{previewVideo ? (
 									<video
 										src={previewVideo}
@@ -1131,7 +1131,7 @@ export default function CourseDetailPage({
 							{isEnrolled ? (
 								<>
 									<button
-										onClick={() => navigateToLearn()}
+										onClick={() => isLive ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}
 										className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95"
 										style={{
 											background: isLive
