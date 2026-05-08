@@ -46,7 +46,7 @@ export default function GoLivePage() {
 
   const { data: me } = useQuery({
     queryKey: ['me'],
-    queryFn: async () => { const r = await get('/users/me'); return r.data?.data ?? r.data }
+    queryFn: async () => { const r = await get('/auth/me'); return r.data?.data ?? r.data }
   })
   const instructorName = me?.profile?.firstName || (isAr ? 'المحاضر' : 'Instructor')
   const instructorAvatar = me?.profile?.avatar || ''
@@ -109,9 +109,37 @@ export default function GoLivePage() {
   const handleStartLive = async () => {
     setStarting(true)
     try {
-      const res = await post(`/live/start/${courseId}`, {})
-      const data = res.data?.data ?? res.data
-      if (!data?.token) throw new Error('No stream token')
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+      const token = localStorage.getItem('deveway_token') || localStorage.getItem('token') || ''
+      let data: any
+
+      if (lessonId) {
+        // Lesson-based live — call lesson-start first
+        const res = await fetch(`${apiBase}/live/lesson-start/${lessonId}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        })
+        data = await res.json()
+        if (!res.ok) throw new Error(data?.message || (isAr ? 'فشل بدء درس البث' : 'Lesson start failed'))
+        data = data?.data ?? data
+        if (!data?.token) {
+          // Fallback: the lesson-start response may not contain a token,
+          // so try the regular start endpoint with lessonId context
+          const res2 = await fetch(`${apiBase}/live/start/${courseId}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lessonId }),
+          })
+          const data2 = await res2.json()
+          if (!res2.ok) throw new Error(data2?.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
+          data = data2?.data ?? data2
+          if (!data?.token) throw new Error('No stream token')
+        }
+      } else {
+        const res = await post(`/live/start/${courseId}`, {})
+        data = res.data?.data ?? res.data
+        if (!data?.token) throw new Error('No stream token')
+      }
 
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       AgoraRTC.setLogLevel(4)
