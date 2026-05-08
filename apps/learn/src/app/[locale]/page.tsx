@@ -25,7 +25,7 @@ const MAIN_SITE_URL = (() => {
 })()
 
 function thumbUrl(path?: string | null): string | null {
-  if (!path) return null
+  if (!path || typeof path !== 'string') return null
   if (path.startsWith('http')) return path
   return path.startsWith('/') ? path : `/${path}`
 }

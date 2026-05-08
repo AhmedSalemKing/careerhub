@@ -300,7 +300,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 		process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
 
 	const getSafeUrl = (url: string | null | undefined): string => {
-		if (!url) return "";
+		if (!url || typeof url !== 'string') return "";
 		
 		// Local /uploads/ paths no longer exist on Render — treat as broken
 		if (url.startsWith("/uploads/")) return "";
@@ -319,8 +319,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 	// Detect lessons whose content was uploaded to the old Render filesystem (now gone)
 	const hasLocalUrl =
-		(!!activeLesson?.videoUrl && !activeLesson.videoUrl.startsWith("http")) ||
-		(!!activeLesson?.fileUrl && !activeLesson.fileUrl.startsWith("http"));
+		(typeof activeLesson?.videoUrl === 'string' && !activeLesson.videoUrl.startsWith("http")) ||
+		(typeof activeLesson?.fileUrl === 'string' && !activeLesson.fileUrl.startsWith("http"));
 
 	const videoUrl: string | undefined =
 		getSafeUrl(activeLesson?.videoUrl) || undefined;
