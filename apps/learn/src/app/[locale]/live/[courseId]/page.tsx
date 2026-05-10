@@ -35,6 +35,9 @@ export default function LiveViewerPage() {
   const [streamEnded, setStreamEnded] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
   const [lessonId, setLessonId] = useState<string | null>(null)
+  const [streamReady, setStreamReady] = useState(false)
+  const [tokenData, setTokenData] = useState<any>(null)
+  const [userToken, setUserToken] = useState('')
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
@@ -53,13 +56,12 @@ export default function LiveViewerPage() {
     const storedAvatar = localStorage.getItem('user_avatar') || ''
     if (storedAvatar) setUserAvatar(storedAvatar)
 
-    // Fetch user profile for name and avatar
     const t = typeof window !== 'undefined'
       ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
          localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
       : ''
     if (t) {
-      fetch('https://deve-way.onrender.com/api/users/me', {
+      fetch(`${API}/auth/me`, {
         headers: { Authorization: `Bearer ${t}` }
       }).then(r => r.json()).then(data => {
         const profile = data?.data?.profile || data?.profile
@@ -98,29 +100,18 @@ export default function LiveViewerPage() {
     }
   }, [hookStreamEnded])
 
-  const joinStream = async () => {
-    if (clientRef.current) return // already joined
+  // Check stream status: enrollment + token fetch (no Agora init)
+  const checkStreamStatus = async (userToken: string) => {
     setLoading(true)
     setError('')
 
-    // 15s timeout fallback - show page with waiting overlay instead of spinner forever
     clearTimeout(loadingTimeoutRef.current)
     loadingTimeoutRef.current = setTimeout(() => {
       setLoading(false)
       setJoined(true)
     }, 15000)
 
-    const userToken = localStorage.getItem('token') || sessionStorage.getItem('token') ||
-      localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
-
-    if (!userToken) {
-      clearTimeout(loadingTimeoutRef.current)
-      router.push(`/${locale}/auth/login?returnUrl=/${locale}/live/${courseId}`)
-      return
-    }
-
     try {
-      // Check course status and enrollment
       const courseRes = await fetch(`${API}/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${userToken}` },
         signal: AbortSignal.timeout(8000)
@@ -163,7 +154,6 @@ export default function LiveViewerPage() {
         }).catch(() => {})
       }
 
-      // Fetch fresh Agora token from API — use lesson-token when lessonId present
       const tokenEndpoint = lessonId
         ? `${API}/live/lesson-token/${lessonId}`
         : `${API}/live/token/${courseId}`
@@ -173,7 +163,6 @@ export default function LiveViewerPage() {
       })
 
       if (tokenRes.status === 403) {
-        // Live has ended
         clearTimeout(loadingTimeoutRef.current)
         setError('ended')
         setLoading(false)
@@ -181,33 +170,64 @@ export default function LiveViewerPage() {
       }
 
       if (!tokenRes.ok) {
-        // Stream not started yet — show waiting overlay
         clearTimeout(loadingTimeoutRef.current)
         setLoading(false)
         setJoined(true)
         return
       }
 
-      const tokenData = await tokenRes.json()
-      const agoraToken = tokenData?.data?.token
-      const channelName = tokenData?.data?.channelName
-      const uid = tokenData?.data?.uid
-      const appId = tokenData?.data?.appId
+      const data = await tokenRes.json()
+      const td = data?.data || data
 
-      if (!agoraToken || !appId || !channelName) {
-        // Token missing = stream not live yet
+      if (!td?.token || !td?.appId || !td?.channelName) {
         clearTimeout(loadingTimeoutRef.current)
         setLoading(false)
         setJoined(true)
         return
       }
 
+      clearTimeout(loadingTimeoutRef.current)
+      setTokenData(td)
+      setStreamReady(true)
+      setLoading(false)
+      setJoined(true)
+    } catch (e: any) {
+      clearTimeout(loadingTimeoutRef.current)
+      console.error('[Live] Check error:', e.message)
+      if (e.name === 'AbortError' || e.name === 'TimeoutError') {
+        setError(isAr ? 'انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت.' : 'Connection timeout. Check your internet.')
+      } else {
+        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect'))
+      }
+      setLoading(false)
+    }
+  }
+
+  // Handle user click to join: init Agora + start stream playback
+  const handleJoinStream = async () => {
+    if (!tokenData || clientRef.current) return
+
+    try {
+      const td = tokenData
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       AgoraRTC.setLogLevel(4)
 
       const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
-      client.setClientRole('audience')
+      await client.setClientRole('audience')
       clientRef.current = client
+
+      // Resume AudioContext after user gesture (browser autoplay policy)
+      try {
+        if (typeof window !== 'undefined') {
+          const ACtor = (window.AudioContext || (window as any).webkitAudioContext)
+          if (ACtor) {
+            const ctx = new ACtor()
+            await ctx.resume()
+          }
+        }
+      } catch (ae) {
+        console.warn('[Live] AudioContext resume:', ae)
+      }
 
       client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
         await client.subscribe(user, mediaType)
@@ -217,7 +237,9 @@ export default function LiveViewerPage() {
           const overlay = document.getElementById('waiting-overlay')
           if (overlay) overlay.style.display = 'none'
         }
-        if (mediaType === 'audio') user.audioTrack?.play()
+        if (mediaType === 'audio') {
+          try { await user.audioTrack?.play() } catch (ae) { console.warn('[Live] Audio play:', ae) }
+        }
       })
 
       client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
@@ -240,10 +262,7 @@ export default function LiveViewerPage() {
         if (res?.data?.token) await client.renewToken(res.data.token)
       })
 
-      await client.join(appId, channelName, agoraToken, uid)
-      clearTimeout(loadingTimeoutRef.current)
-      setJoined(true)
-      setLoading(false)
+      await client.join(td.appId, td.channelName, td.token, td.uid)
 
       fetch(`${API}/live/viewers/${courseId}`, {
         method: 'PATCH',
@@ -251,27 +270,25 @@ export default function LiveViewerPage() {
         body: JSON.stringify({ delta: 1 })
       }).catch(() => {})
 
-    } catch(e: any) {
-      clearTimeout(loadingTimeoutRef.current)
-      console.error('[Live] Join error:', e.message)
+    } catch (e: any) {
+      console.error('[Live] Join failed:', e.message)
       if (e.name === 'AbortError' || e.name === 'TimeoutError') {
         setError(isAr ? 'انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت.' : 'Connection timeout. Check your internet.')
       } else if (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key')) {
         setError(isAr ? 'انتهت صلاحية الجلسة. أعد تحميل الصفحة.' : 'Session expired. Please reload.')
       } else {
-        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect to stream'))
+        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect'))
       }
-      setLoading(false)
     }
   }
 
-  // Auto-join when instructor starts stream while viewer is on page
+  // When socket detects stream started, re-check status and mark ready
   useEffect(() => {
-    if (hookStreamStarted && !joined && !loading) {
-      console.log('[Live] Instructor started stream, auto-joining...')
+    if (hookStreamStarted && !streamReady) {
+      console.log('[Live] Instructor started stream, checking status...')
       setStreamEnded(false)
-      clientRef.current = null // reset so joinStream doesn't bail
-      joinStream()
+      setTokenData(null)
+      checkStreamStatus(userToken)
     }
   }, [hookStreamStarted])
 
@@ -279,18 +296,26 @@ export default function LiveViewerPage() {
     commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [socketComments])
 
-  // Use socket viewer count from hook instead of local state
   useEffect(() => {
     if (socketViewerCount > 0) {
       setViewerCount(socketViewerCount)
     }
   }, [socketViewerCount])
 
-  // Join on mount (wait for lessonId to be resolved from URL)
+  // On mount: check stream status (does NOT init Agora — only on user click)
   useEffect(() => {
     if (lessonId === null) return
 
-    joinStream()
+    const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
+      localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
+
+    if (!t) {
+      router.push(`/${locale}/auth/login?returnUrl=/${locale}/live/${courseId}`)
+      return
+    }
+
+    setUserToken(t)
+    checkStreamStatus(t)
 
     return () => {
       clearTimeout(loadingTimeoutRef.current)
@@ -403,6 +428,7 @@ export default function LiveViewerPage() {
       <style>{`
         @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
         @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
       `}</style>
 
       {/* TOP BAR */}
@@ -454,9 +480,26 @@ export default function LiveViewerPage() {
                <div style={{ width: 72, height: 72, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  <Radio size={28} color="rgba(220,38,38,0.4)" />
                </div>
-               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
-                 {isAr ? 'في انتظار المحاضر...' : 'Waiting for instructor...'}
-               </p>
+               {streamReady ? (
+                 <>
+                   <p style={{ color: '#f87171', fontSize: 14, fontWeight: 700 }}>
+                     {isAr ? 'البث المباشر نشط الآن' : 'Live stream is active'}
+                   </p>
+                   <button onClick={handleJoinStream} style={{
+                     padding: '12px 32px', borderRadius: 10, background: '#dc2626',
+                     color: '#fff', border: 'none', cursor: 'pointer', fontSize: 15,
+                     fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
+                     animation: 'pulse 1.5s infinite',
+                   }}>
+                     <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
+                     {isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}
+                   </button>
+                 </>
+               ) : (
+                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+                   {isAr ? 'في انتظار المحاضر...' : 'Waiting for instructor...'}
+                 </p>
+               )}
              </div>
            )}
 
