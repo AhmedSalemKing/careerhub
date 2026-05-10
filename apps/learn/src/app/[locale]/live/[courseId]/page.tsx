@@ -34,6 +34,7 @@ export default function LiveViewerPage() {
   const [userAvatar, setUserAvatar] = useState('')
   const [streamEnded, setStreamEnded] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
+  const [lessonId, setLessonId] = useState<string | null>(null)
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
@@ -73,6 +74,12 @@ export default function LiveViewerPage() {
     }
   }, [])
 
+  // Parse lessonId from URL search params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setLessonId(params.get('lessonId'))
+  }, [])
+
   const {
     connected,
     viewerCount: socketViewerCount,
@@ -81,7 +88,7 @@ export default function LiveViewerPage() {
     streamStarted: hookStreamStarted,
     sendComment,
     sendQuestion,
-  } = useLiveSocket(joined ? courseId : '', userName, 'viewer', userAvatar)
+  } = useLiveSocket(courseId, userName, 'viewer', userAvatar)
 
   // Sync hook state to local state
   useEffect(() => {
@@ -156,8 +163,11 @@ export default function LiveViewerPage() {
         }).catch(() => {})
       }
 
-      // Fetch fresh Agora token from API — never rely on sessionStorage
-      const tokenRes = await fetch(`${API}/live/token/${courseId}`, {
+      // Fetch fresh Agora token from API — use lesson-token when lessonId present
+      const tokenEndpoint = lessonId
+        ? `${API}/live/lesson-token/${lessonId}`
+        : `${API}/live/token/${courseId}`
+      const tokenRes = await fetch(tokenEndpoint, {
         headers: { Authorization: `Bearer ${userToken}` },
         signal: AbortSignal.timeout(8000)
       })
@@ -221,7 +231,10 @@ export default function LiveViewerPage() {
       })
 
       client.on('token-privilege-will-expire', async () => {
-        const res = await fetch(`${API}/live/token/${courseId}`, {
+        const renewEndpoint = lessonId
+          ? `${API}/live/lesson-token/${lessonId}`
+          : `${API}/live/token/${courseId}`
+        const res = await fetch(renewEndpoint, {
           headers: { Authorization: `Bearer ${userToken}` }
         }).then(r => r.json()).catch(() => null)
         if (res?.data?.token) await client.renewToken(res.data.token)
@@ -273,8 +286,10 @@ export default function LiveViewerPage() {
     }
   }, [socketViewerCount])
 
-  // Join on mount
+  // Join on mount (wait for lessonId to be resolved from URL)
   useEffect(() => {
+    if (lessonId === null) return
+
     joinStream()
 
     return () => {
@@ -288,7 +303,7 @@ export default function LiveViewerPage() {
       }
       clientRef.current?.leave().catch(() => {})
     }
-  }, [courseId])
+  }, [courseId, lessonId])
 
   const handleSendComment = () => {
     if (!newComment.trim()) return

@@ -5,6 +5,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../../lib/api'
 import { AuthGate } from '@/app/components/AuthGate'
+import { LEARN_URL } from '../../../../../../lib/constants'
 import {
   Radio, Users, Copy, Check, Mic, MicOff,
   Video, VideoOff, X, CheckCircle2, Play, Square,
@@ -81,7 +82,7 @@ export default function GoLivePage() {
   })
 
   const courseTitle = course?.titleAr || course?.titleEn || course?.title || ''
-  const liveLink = `https://deveway-teal.vercel.app/${locale}/live/${courseId}`
+  const liveLink = `${LEARN_URL}/${locale}/live/${courseId}`
 
   useEffect(() => {
     if (liveStarted) {
