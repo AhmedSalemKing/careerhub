@@ -475,6 +475,16 @@ import VideoProtection from "../../../../components/VideoProtection";
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
+				socket.on('liveStarted', (data: any) => {
+					console.log('[LearnSocket] Live started (camelCase):', data)
+					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+				})
+
+				socket.on('lesson-live', (data: any) => {
+					console.log('[LearnSocket] Lesson live:', data)
+					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+				})
+
 				socket.on('stream-ended', (data: any) => {
 					console.log('[LearnSocket] Stream ended:', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
@@ -1790,78 +1800,114 @@ import VideoProtection from "../../../../components/VideoProtection";
 									)}
 
 								{/* Live Lesson UI */}
-								{isCurrentLive && (
-									<div
-										style={{
-											aspectRatio: '16/9',
-											background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1054 100%)',
-											borderRadius: '12px',
-											display: 'flex',
-											flexDirection: 'column',
-											alignItems: 'center',
-											justifyContent: 'center',
-											gap: '1rem',
-											border: '1px solid rgba(239,68,68,0.3)',
-											padding: '2rem',
-										}}>
+								{isCurrentLive && (() => {
+									const isLive = activeLesson?.liveStatus === 'LIVE'
+									const liveUrl = `/${locale}/live/${courseId}?lessonId=${activeLesson?.id}`
+									return (
 										<div
 											style={{
-												width: '64px', height: '64px', borderRadius: '50%',
-												background: 'rgba(239,68,68,0.15)',
-												border: '2px solid rgba(239,68,68,0.4)',
+												aspectRatio: '16/9',
+												background: isLive
+													? 'linear-gradient(135deg, #1a0505 0%, #3d0a0a 100%)'
+													: 'linear-gradient(135deg, #0d0a1a 0%, #1a1040 100%)',
+												borderRadius: '12px',
+												display: 'flex',
+												flexDirection: 'column',
+												alignItems: 'center',
+												justifyContent: 'center',
+												gap: '1.5rem',
+												border: isLive
+													? '2px solid rgba(239,68,68,0.5)'
+													: '1px solid rgba(81,32,200,0.3)',
+												padding: '2rem',
+												position: 'relative',
+												overflow: 'hidden',
+											}}>
+
+											{/* LIVE badge */}
+											{isLive && (
+												<div style={{
+													position: 'absolute', top: '16px', right: '16px',
+													display: 'flex', alignItems: 'center', gap: '6px',
+													background: '#ef4444', padding: '4px 12px',
+													borderRadius: '20px', color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+												}}>
+													<span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }}/>
+													LIVE
+												</div>
+											)}
+
+											{/* Icon */}
+											<div style={{
+												width: '80px', height: '80px', borderRadius: '50%',
+												background: isLive ? 'rgba(239,68,68,0.15)' : 'rgba(81,32,200,0.15)',
+												border: isLive ? '2px solid rgba(239,68,68,0.4)' : '2px solid rgba(81,32,200,0.3)',
 												display: 'flex', alignItems: 'center', justifyContent: 'center',
 											}}>
-											<svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-												stroke="#f87171" strokeWidth="2" strokeLinecap="round">
-												<circle cx="12" cy="12" r="10"/>
-												<circle cx="12" cy="12" r="3" fill="#f87171"/>
-											</svg>
-										</div>
+												<svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+													stroke={isLive ? '#f87171' : '#a78bfa'} strokeWidth="2">
+													<circle cx="12" cy="12" r="10"/>
+													<circle cx="12" cy="12" r="4" fill={isLive ? '#f87171' : '#a78bfa'}/>
+												</svg>
+											</div>
 
-										{activeLesson?.liveStatus === 'LIVE' ? (
-											<>
-												<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-													<span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', animation: 'pulse 1s infinite' }}/>
-													<span style={{ color: '#f87171', fontWeight: 700, fontSize: '1.1rem' }}>
-														{isAr ? 'البث جار الآن' : 'Live Now'}
-													</span>
-												</div>
-												<p style={{ color: '#9999aa', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
-													{isAr ? 'البث المباشر نشط. انضم الآن للمشاهدة مع زملائك.' : 'Live stream is active. Join now to watch with your classmates.'}
-												</p>
-												<a
-													href={`/${locale}/live/${courseId}?lessonId=${activeLesson?.id}`}
-													style={{
-														padding: '10px 24px', borderRadius: '8px',
-														background: '#ef4444', color: '#fff',
-														fontWeight: 700, textDecoration: 'none', fontSize: '0.9rem',
-													}}>
-													{isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}
-												</a>
-											</>
-										) : (
-											<>
-												<p style={{ color: '#c8c8d8', fontWeight: 600, fontSize: '1rem' }}>
-													{activeLesson?.title || (isAr ? 'بث مباشر' : 'Live Session')}
-												</p>
-												{activeLesson?.liveStartTime && (
-													<p style={{ color: '#9999aa', fontSize: '0.85rem' }}>
-														{isAr ? 'موعد البث: ' : 'Scheduled: '}
-														{new Date(activeLesson.liveStartTime).toLocaleString(
-															isAr ? 'ar-SA' : 'en-US',
-															{ weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
-														)}
+											{/* Title */}
+											<p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', padding: '0 2rem' }}>
+												{activeLesson?.title || (isAr ? 'بث مباشر' : 'Live Session')}
+											</p>
+
+											{isLive ? (
+												<>
+													<p style={{ color: '#fca5a5', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
+														{isAr ? 'البث جارٍ الآن — انضم قبل انتهاء الجلسة' : 'Stream is live — join before it ends'}
 													</p>
-												)}
-												<p style={{ color: '#666680', fontSize: '0.82rem', textAlign: 'center', maxWidth: '300px' }}>
-													{isAr
-														? 'سيتم إرسال إشعار عند بدء البث. تأكد من تفعيل الإشعارات.'
-														: 'You will be notified when the stream starts.'}
-												</p>
-											</>
-										)}
-									</div>
-								)}
+													<a
+														href={liveUrl}
+														style={{
+															display: 'inline-flex', alignItems: 'center', gap: '10px',
+															padding: '14px 32px', borderRadius: '10px',
+															background: '#ef4444', color: '#fff',
+															fontWeight: 700, fontSize: '1rem',
+															textDecoration: 'none',
+															boxShadow: '0 0 20px rgba(239,68,68,0.5)',
+														}}>
+															<span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }}/>
+															{isAr ? 'انضم للبث المباشر الآن' : 'Join Live Stream Now'}
+													</a>
+												</>
+											) : (
+												<>
+													{activeLesson?.liveStartTime && (
+														<p style={{ color: '#c4b5fd', fontSize: '0.9rem' }}>
+															{isAr ? 'موعد البث: ' : 'Scheduled: '}
+															{new Date(activeLesson.liveStartTime).toLocaleString(
+																isAr ? 'ar-SA' : 'en-US',
+																{ weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+															)}
+														</p>
+													)}
+													<a
+														href={liveUrl}
+														style={{
+															display: 'inline-flex', alignItems: 'center', gap: '8px',
+															padding: '12px 28px', borderRadius: '10px',
+															background: 'rgba(81,32,200,0.3)',
+															border: '1px solid rgba(81,32,200,0.5)',
+															color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem',
+															textDecoration: 'none',
+														}}>
+															{isAr ? 'ادخل غرفة الانتظار' : 'Enter Waiting Room'}
+													</a>
+													<p style={{ color: '#6666aa', fontSize: '0.78rem', textAlign: 'center', maxWidth: '280px' }}>
+														{isAr
+															? 'سيتم إرسال إشعار فور بدء البث'
+															: 'You will be notified when stream starts'}
+													</p>
+												</>
+											)}
+										</div>
+									)
+								})()}
 
 								{/* Broken Local URL State */}
 								{!hasVideo && !hasFile && !hasImage && hasLocalUrl && (
