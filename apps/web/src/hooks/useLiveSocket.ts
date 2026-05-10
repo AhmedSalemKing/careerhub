@@ -112,9 +112,9 @@ export function useLiveSocket(
     socketRef.current?.emit('dismiss-question', { courseId, questionId })
   }, [courseId])
 
-  const broadcastLiveStarted = useCallback((channelName: string, appId: string) => {
-    socketRef.current?.emit('live-started', { courseId, channelName, appId })
-    console.log('[Socket] Broadcasted live-started')
+  const broadcastLiveStarted = useCallback((channelName: string, appId: string, lessonId?: string) => {
+    socketRef.current?.emit('live-started', { courseId, channelName, appId, lessonId })
+    console.log('[Socket] Broadcasted live-started', lessonId ? `lesson:${lessonId}` : '')
   }, [courseId])
 
   const broadcastLiveEnded = useCallback(() => {

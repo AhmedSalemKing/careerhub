@@ -168,7 +168,7 @@ export default function GoLivePage() {
       })
 
       // Broadcast to all viewers that live has started
-      broadcastLiveStarted(data.channelName, data.appId)
+      broadcastLiveStarted(data.channelName, data.appId, lessonId || undefined)
 
       setLiveStarted(true)
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')

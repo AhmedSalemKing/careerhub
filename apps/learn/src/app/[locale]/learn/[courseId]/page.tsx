@@ -444,7 +444,61 @@ import VideoProtection from "../../../../components/VideoProtection";
 		return () => window.removeEventListener("keydown", handleKeys);
 	}, [activeLessonId]);
 
-	// Poll for live lesson status updates (student sees auto-update when instructor goes live)
+	// Real-time socket connection for live lesson events
+	useEffect(() => {
+		if (!courseId || !authChecked) return;
+
+		let socket: any = null
+
+		const connectSocket = async () => {
+			try {
+				const { io } = await import('socket.io-client')
+				socket = io('https://deve-way.onrender.com/live', {
+					transports: ['websocket', 'polling'],
+					reconnection: true,
+					reconnectionAttempts: 5,
+					reconnectionDelay: 1000,
+				})
+
+				socket.on('connect', () => {
+					console.log('[LearnSocket] Connected, joining room:', courseId)
+					socket.emit('join-room', { courseId, userName: '', role: 'viewer' })
+				})
+
+				socket.on('stream-started', (data: any) => {
+					console.log('[LearnSocket] Stream started:', data)
+					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+				})
+
+				socket.on('live-started', (data: any) => {
+					console.log('[LearnSocket] Live started (direct):', data)
+					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+				})
+
+				socket.on('stream-ended', (data: any) => {
+					console.log('[LearnSocket] Stream ended:', data)
+					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+				})
+
+				socket.on('disconnect', () => {
+					console.log('[LearnSocket] Disconnected')
+				})
+			} catch (e) {
+				console.warn('[LearnSocket] Socket error:', e)
+			}
+		}
+
+		connectSocket()
+
+		return () => {
+			if (socket) {
+				socket.emit('leave-room', { courseId })
+				socket.disconnect()
+			}
+		}
+	}, [courseId, authChecked, qc])
+
+	// Polling fallback for live lesson status updates
 	useEffect(() => {
 		if (!activeLessonId || !courseId || !authChecked) return;
 		const active = allLessonsFlat.find((l: any) => l.id === activeLessonId);
