@@ -119,8 +119,8 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem={true}
+      defaultTheme="dark"
+      enableSystem={false}
       disableTransitionOnChange
     >
       <ThemeTransitionHandler>

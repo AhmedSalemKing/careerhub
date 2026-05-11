@@ -3,6 +3,34 @@
    Clean • Modern • Accessible
    ═════════════════════════════════════════════════════════════════ */
 
+/* ── Prevent blue flash on hydration ── */
+html, body {
+  background-color: #0a0a0f;
+  color: #ffffff;
+}
+
+/* Override any blue focus rings */
+*:focus-visible {
+  outline-color: #5120c8 !important;
+}
+
+/* Chrome autofill */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0px 1000px #111827 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  border-color: #5120c8 !important;
+  caret-color: #5120c8 !important;
+}
+
+/* Selection */
+::selection {
+  background: rgba(81, 32, 200, 0.3);
+  color: #ffffff;
+}
+
 /* ── Font Imports ── */
 @import "@fontsource/plus-jakarta-sans/400.css";
 @import "@fontsource/plus-jakarta-sans/500.css";
