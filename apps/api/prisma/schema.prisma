@@ -467,6 +467,7 @@ model Lesson {
   fileUrl       String?
   fileName      String?
   fileSize      Int?
+  imageUrl      String?
   isFree        Boolean  @default(false)
   order         Int      @default(0)
   isPublished   Boolean  @default(false)
