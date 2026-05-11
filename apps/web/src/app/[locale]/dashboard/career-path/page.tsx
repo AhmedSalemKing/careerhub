@@ -11,6 +11,7 @@ import {
   BarChart, Users, Award
 } from 'lucide-react'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
+import ConfirmModal from '@/components/ConfirmModal'
 
 type TabKey = 'paths' | 'assessment' | 'courses'
 
@@ -47,6 +48,11 @@ const [coursesLoading, setCoursesLoading] = useState(false)
 const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
 const MAX_PATHS = 5
+
+const [confirmModal, setConfirmModal] = useState<{
+  isOpen: boolean; title: string; message: string;
+  onConfirm: () => void; destructive?: boolean;
+}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
   
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -164,7 +170,12 @@ const MAX_PATHS = 5
     const token = getToken()
 
     if (!isSelected && myPathIds.size >= MAX_PATHS) {
-      alert(isAr ? 'الحد الأقصى 5 مسارات' : 'Maximum 5 paths allowed')
+      setConfirmModal({
+        isOpen: true, title: isAr ? 'تنبيه' : 'Notice',
+        message: isAr ? 'لا يمكنك اختيار أكثر من 5 مسارات.' : 'Maximum 5 paths allowed.',
+        destructive: false,
+        onConfirm: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+      })
       return
     }
 
@@ -591,6 +602,16 @@ const MAX_PATHS = 5
             )}
           </div>
         )}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={isAr ? 'حسناً' : 'OK'}
+          cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+          confirmDestructive={confirmModal.destructive}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        />
       </div>
     </div>
   )

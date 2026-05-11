@@ -13,7 +13,13 @@ import {
   AlertTriangle, User, Users
 } from 'lucide-react'
 import PaymentModal from '@/components/PaymentModal'
+import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
+
+const [confirmModal, setConfirmModal] = useState<{
+  isOpen: boolean; title: string; message: string;
+  onConfirm: () => void; destructive?: boolean;
+}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
@@ -343,14 +349,36 @@ export default function MySessionsPage() {
             )}
 
             {isPaid && isUpcoming && session.status !== 'COMPLETED' && session.meetingLink && !isRescheduleReq && (
-              <button onClick={() => { if (confirm(isAr ? 'هل اكتملت الجلسة؟' : 'Mark as completed?')) completeMutation.mutate(session.id) }} disabled={completeMutation.isPending}
+              <button onClick={() => {
+                setConfirmModal({
+                  isOpen: true,
+                  title: isAr ? 'اكتمال الجلسة' : 'Complete Session',
+                  message: isAr ? 'هل أنت متأكد من تأكيد اكتمال الجلسة؟' : 'Are you sure you want to mark this session as completed?',
+                  destructive: false,
+                  onConfirm: () => {
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                    completeMutation.mutate(session.id)
+                  },
+                })
+              }} disabled={completeMutation.isPending}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: completeMutation.isPending ? 0.7 : 1 }}>
                 <CheckCircle2 size={12} />{isAr ? 'أكمل الجلسة' : 'Mark Complete'}
               </button>
             )}
 
             {isUpcoming && !isPaid && !isRescheduleReq && (
-              <button onClick={() => { if (confirm(isAr ? 'إلغاء الجلسة؟' : 'Cancel session?')) cancelMutation.mutate(session.id) }}
+              <button onClick={() => {
+                setConfirmModal({
+                  isOpen: true,
+                  title: isAr ? 'إلغاء الجلسة' : 'Cancel Session',
+                  message: isAr ? 'هل أنت متأكد من إلغاء هذه الجلسة؟' : 'Are you sure you want to cancel this session?',
+                  destructive: true,
+                  onConfirm: () => {
+                    setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                    cancelMutation.mutate(session.id)
+                  },
+                })
+              }}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.04)', color: '#dc2626', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
                 <XCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
               </button>
@@ -544,6 +572,18 @@ export default function MySessionsPage() {
           subtext={subtext}
         />
       )}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={confirmModal.destructive
+          ? (isAr ? 'تأكيد' : 'Confirm')
+          : (isAr ? 'تأكيد' : 'Confirm')}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+        confirmDestructive={confirmModal.destructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

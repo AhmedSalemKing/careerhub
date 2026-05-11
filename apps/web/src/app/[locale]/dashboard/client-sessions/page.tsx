@@ -10,6 +10,12 @@ import {
   DollarSign, AlertTriangle, Users, User
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ConfirmModal from '@/components/ConfirmModal'
+
+const [confirmModal, setConfirmModal] = useState<{
+  isOpen: boolean; title: string; message: string;
+  onConfirm: () => void; destructive?: boolean;
+}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
@@ -303,7 +309,18 @@ export default function ClientSessionsPage() {
                       )}
 
                       {isPaid && session.meetingLink && !linkExpired && isUpcoming && (
-                        <button onClick={() => { if (confirm(isAr ? 'تأكيد اكتمال الجلسة؟' : 'Confirm session completion?')) completeMutation.mutate(session.id) }} disabled={completeMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        <button onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: isAr ? 'اكتمال الجلسة' : 'Complete Session',
+                            message: isAr ? 'هل أنت متأكد من تأكيد اكتمال الجلسة؟' : 'Confirm session completion?',
+                            destructive: false,
+                            onConfirm: () => {
+                              setConfirmModal(prev => ({ ...prev, isOpen: false }))
+                              completeMutation.mutate(session.id)
+                            },
+                          })
+                        }} disabled={completeMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                           <CheckCircle2 size={12} />{isAr ? 'أكمل الجلسة' : 'Mark Complete'}
                         </button>
                       )}
@@ -394,6 +411,16 @@ export default function ClientSessionsPage() {
           </div>
         </>
       )}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={isAr ? 'تأكيد' : 'Confirm'}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+        confirmDestructive={confirmModal.destructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

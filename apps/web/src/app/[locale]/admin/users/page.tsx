@@ -7,6 +7,12 @@ import { notify } from '../../../../lib/notify'
 import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, Eye, X, Shield } from 'lucide-react'
 import { getMediaUrl } from '../../../../lib/media'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
+import ConfirmModal from '@/components/ConfirmModal'
+
+const [confirmModal, setConfirmModal] = useState<{
+  isOpen: boolean; title: string; message: string;
+  onConfirm: () => void; destructive?: boolean;
+}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
 type AdminUser = {
   id: string
@@ -114,11 +120,19 @@ export default function AdminUsersPage() {
   }
 
   async function remove(userId: string) {
-    if (!confirm(isAr ? 'حذف هذا المستخدم؟ لا يمكن التراجع.' : 'Delete this user? Cannot be undone.')) return
-    setProcessing(userId)
-    try { await api.delete(`/admin/users/${userId}`); fetchUsers() }
-    catch (e) { console.error(e) }
-    finally { setProcessing(null) }
+    setConfirmModal({
+      isOpen: true,
+      title: isAr ? 'حذف المستخدم' : 'Delete User',
+      message: isAr ? 'هل أنت متأكد من حذف هذا المستخدم؟ لا يمكن التراجع عن هذا الإجراء.' : 'Delete this user? This action cannot be undone.',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        setProcessing(userId)
+        try { await api.delete(`/admin/users/${userId}`); fetchUsers() }
+        catch (e) { console.error(e) }
+        finally { setProcessing(null) }
+      },
+    })
   }
 
   async function handleCreateUser() {
@@ -469,6 +483,16 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmLabel={isAr ? 'تأكيد الحذف' : 'Delete'}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+        confirmDestructive={confirmModal.destructive}
+        onConfirm={confirmModal.onConfirm}
+        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   )
 }

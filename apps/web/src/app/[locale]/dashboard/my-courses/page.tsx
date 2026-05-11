@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
 	BookOpen,
 	Play,
@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { get } from "../../../../lib/api";
 import { AuthGate } from "../../../components/AuthGate";
+import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
 
@@ -66,6 +67,11 @@ export default function InstructorCoursesPage() {
 
 	const isAr = locale === "ar";
 
+	const [confirmModal, setConfirmModal] = useState<{
+		isOpen: boolean; title: string; message: string;
+		onConfirm: () => void; destructive?: boolean;
+	}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
+
 	const totalStudents = courses.reduce((sum: number, c: any) =>
 		sum + (c.enrollments || c._count?.enrollments || 0), 0);
 	const totalRevenue = courses.reduce((sum: number, c: any) => {
@@ -75,9 +81,16 @@ export default function InstructorCoursesPage() {
 	const publishedCount = courses.filter((c: any) => c.status === 'PUBLISHED').length;
 
 	const handleDelete = (courseId: string) => {
-		if (confirm(isAr ? "هل أنت متأكد من حذف الكورس؟" : "Are you sure you want to delete this course?")) {
-			// TODO: Implement delete
-		}
+		setConfirmModal({
+			isOpen: true,
+			title: isAr ? 'حذف الكورس' : 'Delete Course',
+			message: isAr ? 'هل أنت متأكد من حذف هذا الكورس؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this course? This action cannot be undone.',
+			destructive: true,
+			onConfirm: () => {
+				setConfirmModal(prev => ({ ...prev, isOpen: false }))
+				// TODO: Implement delete
+			},
+		})
 	};
 
 	return (
@@ -392,6 +405,16 @@ export default function InstructorCoursesPage() {
 					</div>
 				)}
 			</div>
+			<ConfirmModal
+				isOpen={confirmModal.isOpen}
+				title={confirmModal.title}
+				message={confirmModal.message}
+				confirmLabel={isAr ? 'تأكيد الحذف' : 'Delete'}
+				cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+				confirmDestructive={confirmModal.destructive}
+				onConfirm={confirmModal.onConfirm}
+				onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+			/>
 		</AuthGate>
 	);
 }
