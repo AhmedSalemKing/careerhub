@@ -857,6 +857,10 @@ import VideoProtection from "../../../../components/VideoProtection";
 		mediaType === "image" &&
 		!!(
 			getSafeUrl(activeLesson?.imageUrl) || getSafeUrl(activeLesson?.videoUrl)
+		) ||
+		!!(
+			!hasVideo && !hasFile &&
+			getSafeUrl(activeLesson?.imageUrl)
 		);
 	const effectiveImageUrl =
 		mediaType === "image"

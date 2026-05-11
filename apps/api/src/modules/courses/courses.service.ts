@@ -1398,6 +1398,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         videoDuration: !isLive ? dto.duration : undefined,
         fileUrl: !isLive ? dto.fileUrl : undefined,
         fileName: !isLive ? dto.fileName : undefined,
+        imageUrl: !isLive ? dto.imageUrl : undefined,
         fileSize: !isLive ? dto.fileSize : undefined,
         isFree: dto.isFree || false,
         order: dto.order ?? count,

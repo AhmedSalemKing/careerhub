@@ -222,26 +222,35 @@ function AddLectureModal({
     setSaving(true)
     setError('')
     try {
+      // Determine lesson type based on what was uploaded
+      const getEffectiveLessonType = () => {
+        if (lessonType === 'LIVE') return 'LIVE'
+        if (form.videoUrl) return 'VIDEO'
+        if (form.imageUrl) return 'IMAGE'
+        if (form.fileUrl) return 'PDF'
+        return 'VIDEO'
+      }
+      
       const payload: any = {
         title: form.title,
         description: form.description || undefined,
         isFree: form.isFree,
         contentType: form.contentType,
-        lessonType,
+        lessonType: getEffectiveLessonType(),
       }
       
-      if (lessonType === 'VIDEO') {
+      if (lessonType === 'LIVE') {
+        payload.liveDate = liveDate
+        payload.liveDuration = liveDuration
+        payload.saveRecording = saveRecording
+        payload.autoPublish = autoPublish
+      } else {
         if (form.videoUrl) payload.videoUrl = form.videoUrl
         if (form.fileUrl) {
           payload.fileUrl = form.fileUrl
           payload.fileName = form.fileName
         }
         if (form.imageUrl) payload.imageUrl = form.imageUrl
-      } else {
-        payload.liveDate = liveDate
-        payload.liveDuration = liveDuration
-        payload.saveRecording = saveRecording
-        payload.autoPublish = autoPublish
       }
       
       console.log('Saving lesson with payload:', payload)
