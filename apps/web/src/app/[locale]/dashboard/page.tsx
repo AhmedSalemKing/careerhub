@@ -242,7 +242,7 @@ function StudentOverview() {
               label={t('enrolled_courses')} 
               value={stats?.enrolledCourses ?? 0} 
               icon={<BookOpen className="h-5 w-5" />}
-              color="from-blue-500 to-indigo-600"
+              color="from-[#5120c8] to-indigo-600"
               delay={0}
             />
             <Stat 
@@ -360,7 +360,7 @@ function ConsultantOverview() {
 
   const consultantStats = [
     { label: 'طلبات جديدة', value: pending.length, icon: Clock, color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10' },
-    { label: 'جلسات مؤكدة', value: confirmed.length, icon: CheckCircle, color: 'from-blue-500 to-indigo-600', bgColor: 'bg-blue-500/10' },
+    { label: 'جلسات مؤكدة', value: confirmed.length, icon: CheckCircle, color: 'from-[#5120c8] to-indigo-600', bgColor: 'bg-[#5120c8]/10' },
     { label: 'جلسات مكتملة', value: completed.length, icon: Target, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/10' },
     { label: 'الإيرادات', value: `${totalRevenue} ريال`, icon: DollarSign, color: 'from-purple-500 to-violet-600', bgColor: 'bg-purple-500/10' },
   ]

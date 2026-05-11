@@ -75,8 +75,8 @@ export default function AdminSessionsPage() {
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
       PENDING:     { label: isAr ? 'معلقة' : 'Pending',      dot: 'bg-amber-500',   bg: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.08)', text: isDark ? '#fbbf24' : '#b45309', border: isDark ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.2)' },
-      CONFIRMED:   { label: isAr ? 'مؤكدة' : 'Confirmed',    dot: 'bg-blue-500',    bg: isDark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.08)', text: isDark ? '#60a5fa' : '#2563eb', border: isDark ? 'rgba(59,130,246,0.3)' : 'rgba(59,130,246,0.2)' },
-      SCHEDULED:   { label: isAr ? 'مجدولة' : 'Scheduled',    dot: 'bg-blue-500',    bg: isDark ? 'rgba(59,130,246,0.12)' : 'rgba(59,130,246,0.08)', text: isDark ? '#60a5fa' : '#2563eb', border: isDark ? 'rgba(59,130,246,0.3)' : 'rgba(59,130,246,0.2)' },
+      CONFIRMED:   { label: isAr ? 'مؤكدة' : 'Confirmed',    dot: 'bg-[#5120c8]',    bg: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)', text: '#ffffff', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
+      SCHEDULED:   { label: isAr ? 'مجدولة' : 'Scheduled',    dot: 'bg-[#5120c8]',    bg: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)', text: '#ffffff', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
       COMPLETED:   { label: isAr ? 'مكتملة' : 'Completed',    dot: 'bg-emerald-500', bg: isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)', text: isDark ? '#34d399' : '#059669', border: isDark ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.2)' },
       CANCELLED:   { label: isAr ? 'ملغية' : 'Cancelled',     dot: 'bg-red-500',     bg: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)',   text: isDark ? '#f87171' : '#dc2626', border: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)' },
       REJECTED:    { label: isAr ? 'مرفوضة' : 'Rejected',     dot: 'bg-gray-500',    bg: isDark ? 'rgba(107,114,128,0.12)' : 'rgba(107,114,128,0.08)', text: isDark ? '#9ca3af' : '#6b7280', border: isDark ? 'rgba(107,114,128,0.3)' : 'rgba(107,114,128,0.2)' },
@@ -252,8 +252,8 @@ export default function AdminSessionsPage() {
                           <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                             style={{
-                              background: isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.08)',
-                              color: isDark ? '#60a5fa' : '#2563eb',
+                              background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
+                              color: '#ffffff',
                             }}
                           >
                             {studentName[0]}
@@ -288,8 +288,8 @@ export default function AdminSessionsPage() {
                         <span
                           className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium"
                           style={{
-                            background: isDark ? 'rgba(59,130,246,0.1)' : 'rgba(59,130,246,0.06)',
-                            color: isDark ? '#60a5fa' : '#2563eb',
+                            background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)',
+                            color: '#ffffff',
                           }}
                         >
                           <MethodIcon size={12} />

@@ -43,7 +43,7 @@ function getStatusConfig(status: string) {
 		case "DRAFT":
 			return { label: "Draft", ar: "مسودة", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", icon: AlertCircle };
 		case "PENDING_REVIEW":
-			return { label: "Pending", ar: "قيد المراجعة", color: "#ffffff", bg: "rgba(59,130,246,0.1)", icon: Clock };
+			return { label: "Pending", ar: "قيد المراجعة", color: "#ffffff", bg: "rgba(81,32,200,0.1)", icon: Clock };
 		default:
 			return { label: status, ar: status, color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: AlertCircle };
 	}

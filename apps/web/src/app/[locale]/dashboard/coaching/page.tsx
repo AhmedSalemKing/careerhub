@@ -32,7 +32,7 @@ export default function DashboardCoachingPage() {
   const statusColor: Record<string, string> = {
     PENDING: 'bg-amber-500/20 text-amber-400',
     CONFIRMED: 'bg-green-500/20 text-green-400',
-    RESCHEDULED: 'bg-blue-500/20 text-blue-400',
+    RESCHEDULED: 'bg-[#5120c8]/20 text-white',
     COMPLETED: 'bg-gray-500/20 text-gray-400',
     CANCELLED: 'bg-red-500/20 text-red-400',
     REJECTED: 'bg-red-500/20 text-red-400',

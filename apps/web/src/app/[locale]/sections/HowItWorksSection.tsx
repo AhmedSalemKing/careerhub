@@ -7,7 +7,7 @@ import { DynamicText } from '../../components/ui/DynamicText'
 import { howData } from '../../../data/how'
 
 const stepColors = [
-  { gradient: 'from-blue-500 to-cyan-400', shadow: 'shadow-blue-500/30', ring: 'ring-blue-500/20', accent: 'bg-blue-500' },
+  { gradient: 'from-[#5120c8] to-cyan-400', shadow: 'shadow-[#5120c8]/30', ring: 'ring-[#5120c8]/20', accent: 'bg-[#5120c8]' },
   { gradient: 'from-purple-500 to-pink-400', shadow: 'shadow-purple-500/30', ring: 'ring-purple-500/20', accent: 'bg-purple-500' },
   { gradient: 'from-orange-500 to-yellow-400', shadow: 'shadow-orange-500/30', ring: 'ring-orange-500/20', accent: 'bg-orange-500' },
   { gradient: 'from-green-500 to-teal-400', shadow: 'shadow-green-500/30', ring: 'ring-green-500/20', accent: 'bg-green-500' },
@@ -62,7 +62,7 @@ export function HowItWorksSection() {
         <div className="relative">
           {/* الخط المركزي */}
           <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 -translate-x-1/2">
-            <div className="h-full bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 rounded-full" />
+            <div className="h-full bg-gradient-to-b from-[#5120c8] via-purple-500 to-pink-500 rounded-full" />
           </div>
 
           {/* العناصر */}

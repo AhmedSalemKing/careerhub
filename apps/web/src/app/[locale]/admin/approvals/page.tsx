@@ -216,7 +216,7 @@ export default function ApprovalsPage() {
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                           u.accountType === 'INSTRUCTOR'
-                            ? 'bg-blue-500/20 text-blue-400'
+                            ? 'bg-[#5120c8]/20 text-white'
                             : 'bg-purple-500/20 text-purple-400'
                         }`}>
                           {u.accountType === 'INSTRUCTOR' ? (isAr ? 'محاضر' : 'Instructor') : (isAr ? 'مستشار' : 'Consultant')}
@@ -312,7 +312,7 @@ export default function ApprovalsPage() {
                         href={u.linkedinUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-xs text-blue-400 hover:bg-[color:var(--surface-2)] transition"
+                        className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-xs text-white hover:bg-[color:var(--surface-2)] transition"
                       >
                         LinkedIn
                       </a>

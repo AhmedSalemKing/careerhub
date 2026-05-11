@@ -62,7 +62,7 @@ export default function SiteSettingsPage() {
   return (
     <div className="max-w-xl space-y-6">
       <div className="flex items-center gap-3">
-        <Palette size={20} className="text-blue-400" />
+        <Palette size={20} className="text-white" />
         <h1 className="text-xl font-bold text-white">Site Settings</h1>
       </div>
 
@@ -98,7 +98,7 @@ export default function SiteSettingsPage() {
               value={settings.logoUrl ?? ''}
               onChange={(e) => setSettings({ ...settings, logoUrl: e.target.value })}
               placeholder="https://example.com/logo.png"
-              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-600"
             />
           </div>
 
@@ -122,7 +122,7 @@ export default function SiteSettingsPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white font-semibold rounded-lg transition-colors text-sm"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5120c8] hover:bg-[#3d1a99] disabled:bg-[#2d1370] text-white font-semibold rounded-lg transition-colors text-sm"
           >
             <Save size={15} />
             {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Settings'}

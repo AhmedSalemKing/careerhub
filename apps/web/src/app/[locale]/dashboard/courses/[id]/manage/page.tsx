@@ -460,13 +460,13 @@ function AddLectureModal({
                   </label>
                   
                   {form.fileUrl ? (
-                    <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3 flex items-center justify-between">
+                    <div className="rounded-xl border border-[#5120c8]/30 bg-[#5120c8]/5 p-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                          <FileText className="h-4 w-4 text-blue-500" />
+                        <div className="h-8 w-8 rounded-lg bg-[#5120c8]/10 flex items-center justify-center">
+                          <FileText className="h-4 w-4 text-white" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-blue-400 truncate max-w-[200px]">{form.fileName}</p>
+                          <p className="text-sm font-medium text-white truncate max-w-[200px]">{form.fileName}</p>
                           <p className="text-xs text-[color:var(--muted)]">ملف مرفوع ✓</p>
                         </div>
                       </div>
@@ -482,8 +482,8 @@ function AddLectureModal({
                       onClick={() => !uploading && fileInputRef.current?.click()}
                       className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
                         uploading && uploadType === 'file'
-                          ? 'border-blue-500/50 bg-blue-500/5'
-                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-blue-500/50 hover:bg-blue-500/5'
+                          ? 'border-[#5120c8]/50 bg-[#5120c8]/5'
+                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-[#5120c8]/50 hover:bg-[#5120c8]/5'
                       }`}
                     >
                       {uploading && uploadType === 'file' ? (
@@ -494,7 +494,7 @@ function AddLectureModal({
                           </div>
                           <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
                             <div
-                              className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                              className="h-full rounded-full bg-[#5120c8] transition-all duration-300"
                               style={{ width: `${progress}%` }}
                             />
                           </div>
@@ -503,7 +503,7 @@ function AddLectureModal({
                         <>
                           <FileText className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
                           <p className="text-xs text-[color:var(--muted)] text-center">PDF, Word, PowerPoint, Excel — حد أقصى 100MB</p>
-                          <span className="text-xs text-blue-500 font-medium">اضغط لرفع الملف</span>
+                          <span className="text-xs text-white font-medium">اضغط لرفع الملف</span>
                         </>
                       )}
                     </div>
@@ -604,7 +604,7 @@ function AddLectureModal({
                       </span>
                     )}
                     {form.fileUrl && (
-                      <span className="text-xs px-2 py-1 rounded-full bg-blue-500/10 text-blue-400 flex items-center gap-1">
+                      <span className="text-xs px-2 py-1 rounded-full bg-[#5120c8]/10 text-white flex items-center gap-1">
                         <FileText className="h-3 w-3" /> ملف
                       </span>
                     )}
@@ -971,7 +971,7 @@ export default function ManageCoursePage() {
                         ) : lesson.videoUrl ? (
                           <Video className="h-3.5 w-3.5 text-red-400 shrink-0" />
                         ) : lesson.fileUrl ? (
-                          <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                          <FileText className="h-3.5 w-3.5 text-white shrink-0" />
                         ) : lesson.imageUrl ? (
                           <Image className="h-3.5 w-3.5 text-purple-400 shrink-0" />
                         ) : (
@@ -1001,7 +1001,7 @@ export default function ManageCoursePage() {
                             <span className="text-xs rounded-full bg-red-500/10 text-red-400 px-1.5 py-0.5">فيديو</span>
                           )}
                           {lesson.fileUrl && (
-                            <span className="text-xs rounded-full bg-blue-500/10 text-blue-400 px-1.5 py-0.5">ملف</span>
+                            <span className="text-xs rounded-full bg-[#5120c8]/10 text-white px-1.5 py-0.5">ملف</span>
                           )}
                           {lesson.imageUrl && (
                             <span className="text-xs rounded-full bg-purple-500/10 text-purple-400 px-1.5 py-0.5">صورة</span>
@@ -1091,8 +1091,8 @@ export default function ManageCoursePage() {
                             </div>
                           )}
                           {lesson.fileUrl && (
-                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                              <FileText className="h-4 w-4 text-blue-400" />
+                            <div className="h-8 w-8 rounded-lg bg-[#5120c8]/10 flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-white" />
                             </div>
                           )}
                           {lesson.imageUrl && (
@@ -1132,7 +1132,7 @@ export default function ManageCoursePage() {
                               </span>
                             )}
                             {lesson.fileUrl && (
-                              <span className="text-xs text-blue-400 flex items-center gap-1">
+                              <span className="text-xs text-white flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" /> {lesson.fileName || 'ملف'}
                               </span>
                             )}
