@@ -20,7 +20,8 @@ export function CartIcon() {
         const d = (res?.data as any)?.data ?? (res?.data as any)
         const items = d?.items ?? d
         return Array.isArray(items) ? items.length : 0
-      } catch {
+      } catch (e) {
+        console.warn('[Cart] API unavailable, skipping cart fetch', e);
         return 0
       }
     },

@@ -363,6 +363,9 @@ export default function CourseDetailPage({
 		(acc: number, s: any) => acc + (s.lessons?.length || 0),
 		0,
 	);
+	const completedLessons = Math.round((courseProgress / 100) * totalLessons);
+	const isCourseComplete = totalLessons > 0 && completedLessons >= totalLessons;
+	const progressPercent = Math.min(courseProgress, 100);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
 	const typeBadge = isLive
@@ -1176,6 +1179,144 @@ export default function CourseDetailPage({
 										<span>
 											{isAr ? "تم الاشتراك بنجاح" : "Enrolled successfully"}
 										</span>
+									</div>
+
+									{/* Progress Tracker & Certificate Button */}
+									<div
+										style={{
+											marginTop: "0.5rem",
+											padding: "1.25rem",
+											background: isCourseComplete
+												? "linear-gradient(135deg, rgba(81,32,200,0.2) 0%, rgba(124,58,237,0.15) 100%)"
+												: "rgba(255,255,255,0.03)",
+											border: `1px solid ${isCourseComplete ? "rgba(81,32,200,0.4)" : "rgba(255,255,255,0.08)"}`,
+											borderRadius: "14px",
+											transition: "all 0.3s",
+										}}>
+										{/* Progress bar */}
+										<div style={{ marginBottom: "1rem" }}>
+											<div
+												style={{
+													display: "flex",
+													justifyContent: "space-between",
+													marginBottom: "6px",
+												}}>
+												<span
+													style={{
+														fontSize: "0.8rem",
+														color: textSecondary,
+													}}>
+													{isAr ? "تقدم الكورس" : "Course Progress"}
+												</span>
+												<span
+													style={{
+														fontSize: "0.8rem",
+														fontWeight: 700,
+														color: isCourseComplete
+															? "#a78bfa"
+															: textPrimary,
+													}}>
+													{progressPercent}%
+												</span>
+											</div>
+											<div
+												style={{
+													height: "6px",
+													background: "rgba(255,255,255,0.08)",
+													borderRadius: "99px",
+													overflow: "hidden",
+												}}>
+												<div
+													style={{
+														height: "100%",
+														borderRadius: "99px",
+														width: `${progressPercent}%`,
+														background: isCourseComplete
+															? "linear-gradient(90deg,#5120c8,#7c3aed)"
+															: "#5120c8",
+														transition: "width 0.5s ease",
+													}}
+												/>
+											</div>
+											<p
+												style={{
+													fontSize: "0.75rem",
+													color: textSecondary,
+													margin: "6px 0 0",
+												}}>
+												{completedLessons} / {totalLessons}{" "}
+												{isAr ? "درس مكتمل" : "lessons completed"}
+											</p>
+										</div>
+
+										{/* Certificate Button */}
+										<button
+											disabled={!isCourseComplete}
+											onClick={
+												isCourseComplete
+													? handleGetCertificate
+													: undefined
+											}
+											style={{
+												width: "100%",
+												padding: "12px",
+												borderRadius: "10px",
+												border: "none",
+												cursor: isCourseComplete
+													? "pointer"
+													: "not-allowed",
+												background: isCourseComplete
+													? "linear-gradient(135deg, #5120c8, #7c3aed)"
+													: "rgba(255,255,255,0.05)",
+												color: isCourseComplete
+													? "#fff"
+													: "#555",
+												fontWeight: 700,
+												fontSize: "0.9rem",
+												fontFamily: "inherit",
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												gap: "10px",
+												transition: "all 0.2s",
+												boxShadow: isCourseComplete
+													? "0 4px 15px rgba(81,32,200,0.4)"
+													: "none",
+												opacity: isCourseComplete ? 1 : 0.6,
+											}}>
+											<svg
+												width="18"
+												height="18"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												strokeLinecap="round">
+												<circle cx="12" cy="8" r="6" />
+												<path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+											</svg>
+											{isCourseComplete
+												? isAr
+													? "احصل على شهادتك"
+													: "Get Your Certificate"
+												: isAr
+													? "أكمل الكورس للحصول على الشهادة"
+													: "Complete course to get certificate"}
+										</button>
+
+										{!isCourseComplete && (
+											<p
+												style={{
+													textAlign: "center",
+													fontSize: "0.75rem",
+													color: textSecondary,
+													margin: "8px 0 0",
+												}}>
+												{isAr
+													? `تبقى ${totalLessons - completedLessons} درس للإكمال`
+													: `${totalLessons - completedLessons} lessons remaining`}
+											</p>
+										)}
 									</div>
 								</>
 							) : (
