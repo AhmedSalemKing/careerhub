@@ -141,28 +141,21 @@ export default function CourseDetailPage({
 		}
 	}, [enrollmentData]);
 
-	// Fetch progress and certificate status when enrolled
+	// Derive course progress from enrollment react-query data
+	useEffect(() => {
+		if (enrollmentData?.enrollment?.progress !== undefined) {
+			setCourseProgress(enrollmentData.enrollment.progress);
+		}
+	}, [enrollmentData]);
+
+	// Check certificate status when enrolled
 	useEffect(() => {
 		if (!isEnrolled || !courseId) return;
 		const token = getAuthToken();
 		if (!token) return;
 
-		const fetchProgressAndCert = async () => {
+		const fetchCertStatus = async () => {
 			try {
-				// Get enrollment which includes progress
-				const res = await fetch(
-					`${apiBase}/courses/${courseId}/enrollment`,
-					{ headers: { Authorization: `Bearer ${token}` } },
-				);
-				if (res.ok) {
-					const data = await res.json();
-					const d = data?.data ?? data;
-					const progress: number =
-						d?.progress ?? d?.enrollment?.progress ?? 0;
-					setCourseProgress(progress);
-				}
-
-				// Check if certificate already exists
 				const certRes = await fetch(`${apiBase}/certificates/my`, {
 					headers: { Authorization: `Bearer ${token}` },
 				});
@@ -174,13 +167,18 @@ export default function CourseDetailPage({
 					const hasCert = certs.some((c: any) => c.courseId === courseId);
 					setCertAlreadyIssued(hasCert);
 				}
-			} catch (e) {
-				// Non-fatal: progress just won't show
-			}
+			} catch (e) {}
 		};
 
-		fetchProgressAndCert();
+		fetchCertStatus();
 	}, [isEnrolled, courseId]);
+
+	// Refetch enrollment when window regains focus
+	useEffect(() => {
+		const onFocus = () => refetchEnrollment();
+		window.addEventListener("focus", onFocus);
+		return () => window.removeEventListener("focus", onFocus);
+	}, [refetchEnrollment]);
 
 	const courseType = course?.type || "recorded";
 	const isLive = courseType === "live";
@@ -363,7 +361,9 @@ export default function CourseDetailPage({
 		(acc: number, s: any) => acc + (s.lessons?.length || 0),
 		0,
 	);
-	const completedLessons = Math.round((courseProgress / 100) * totalLessons);
+	const completedLessonIds = enrollmentData?.enrollment?.completedLessonIds ?? [];
+	const completedFromIds = completedLessonIds.length;
+	const completedLessons = completedFromIds || Math.round((courseProgress / 100) * totalLessons);
 	const isCourseComplete = totalLessons > 0 && completedLessons >= totalLessons;
 	const progressPercent = Math.min(courseProgress, 100);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";

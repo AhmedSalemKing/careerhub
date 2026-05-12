@@ -2168,47 +2168,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 										</div>
 									</div>
 
-									{/* Complete Button / Status Badge */}
-									{isCurrentCompleted ? (
-										<div
-											className="flex items-center gap-3 px-6 py-3.5 rounded-2xl text-sm font-bold shrink-0"
-											style={{
-												background: `${green}10`,
-												color: green,
-												border: `1.5px solid ${green}25`,
-												boxShadow: `0 4px 20px ${green}15`,
-											}}>
-											<Award className="h-5 w-5" />
-											<span>مكتمل</span>
-											<CheckCircle2 className="h-5 w-5" />
-										</div>
-									) : (
-										<button
-											onClick={handleMarkComplete}
-											disabled={markingComplete}
-											className="
-                        group flex items-center gap-3 px-7 py-3.5 rounded-2xl text-sm font-bold text-white 
-                        shrink-0 transition-all duration-300 
-                        hover:scale-105 active:scale-95 
-                        disabled:opacity-60 disabled:hover:scale-100
-                      "
-											style={{
-												background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
-												boxShadow: `0 6px 24px ${purple}40`,
-											}}>
-											{markingComplete ? (
-												<>
-													<Loader2 className="h-5 w-5 animate-spin" />
-													<span>جاري...</span>
-												</>
-											) : (
-												<>
-													<CheckCheck className="h-5 w-5 group-hover:scale-110 transition-transform" />
-													<span>تمييز كمكتمل</span>
-												</>
-											)}
-										</button>
-									)}
 								</div>
 
 								{/* Description Card */}
@@ -2275,62 +2234,133 @@ import VideoProtection from "../../../../components/VideoProtection";
 									</div>
 								)}
 
-								{/* Navigation Buttons */}
-								<div
-									className="flex gap-4 mt-8 pt-8"
-									style={{ borderTop: `1px solid ${borderColor}` }}>
-									{nextLesson && (isEnrolled || nextLesson.isFree) && (
+								{/* Mark Complete & Navigation */}
+								{isEnrolled && (
+									<div
+										style={{
+											marginTop: "1.5rem",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "space-between",
+											flexWrap: "wrap",
+											gap: "1rem",
+										}}>
 										<button
-											onClick={goToNextLesson}
-											className="
-                        group flex-1 sm:flex-none flex items-center justify-center gap-3 px-7 py-4 
-                        rounded-2xl text-sm font-bold text-white transition-all duration-300 
-                        hover:scale-105 active:scale-95
-                      "
+											onClick={handleMarkComplete}
+											disabled={isCurrentCompleted || markingComplete}
 											style={{
-												background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
-												boxShadow: `0 6px 24px ${purple}35`,
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "8px",
+												padding: "10px 20px",
+												borderRadius: "10px",
+												background: isCurrentCompleted
+													? "rgba(34,197,94,0.15)"
+													: "rgba(81,32,200,0.15)",
+												border: isCurrentCompleted
+													? "1px solid rgba(34,197,94,0.3)"
+													: "1px solid rgba(81,32,200,0.3)",
+												color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
+												fontWeight: 600,
+												fontSize: "0.875rem",
+												cursor: isCurrentCompleted ? "default" : "pointer",
+												fontFamily: "inherit",
 											}}>
-											<SkipForward className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-											<div className="text-right">
-												<div className="text-xs opacity-80 font-normal">
-													التالي →
-												</div>
-												<div className="text-sm font-bold">
-													{nextLesson.title || nextLesson.titleAr}
-												</div>
-											</div>
-											<ArrowLeft className="h-5 w-5" />
+											{isCurrentCompleted ? (
+												<>
+													<svg
+														width="16"
+														height="16"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														strokeWidth="2.5"
+														strokeLinecap="round">
+														<polyline points="20 6 9 17 4 12" />
+													</svg>
+													{isAr ? "مكتمل" : "Completed"}
+												</>
+											) : (
+												<>
+													<svg
+														width="16"
+														height="16"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														strokeWidth="2"
+														strokeLinecap="round">
+														<circle cx="12" cy="12" r="10" />
+														<polyline points="12 8 12 12 14 14" />
+													</svg>
+													{isAr ? "تمييز كمكتمل" : "Mark as Complete"}
+												</>
+											)}
 										</button>
-									)}
 
-									{prevLesson && (
-										<button
-											onClick={goToPrevLesson}
-											className="
-                        group flex-1 sm:flex-none flex items-center justify-center gap-3 px-7 py-4 
-                        rounded-2xl text-sm font-bold transition-all duration-300 
-                        hover:scale-105 active:scale-95
-                      "
-											style={{
-												background: cardBg,
-												color: textPrimary,
-												border: `1.5px solid ${borderColor}`,
-												boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-											}}>
-											<ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-											<div className="text-right">
-												<div className="text-xs opacity-60 font-normal">
-													← السابق
-												</div>
-												<div className="text-sm">
-													{prevLesson.title || prevLesson.titleAr}
-												</div>
-											</div>
-											<SkipBack className="h-5 w-5" />
-										</button>
-									)}
-								</div>
+										<div style={{ display: "flex", gap: "8px" }}>
+											{prevLesson && (
+												<button
+													onClick={() => goToLesson(prevLesson)}
+													style={{
+														padding: "10px 16px",
+														borderRadius: "10px",
+														background: "rgba(255,255,255,0.05)",
+														border: "1px solid rgba(255,255,255,0.1)",
+														color: textPrimary,
+														cursor: "pointer",
+														fontFamily: "inherit",
+														fontSize: "0.85rem",
+														display: "flex",
+														alignItems: "center",
+														gap: "6px",
+													}}>
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														strokeWidth="2"
+														strokeLinecap="round">
+														<polyline points="15 18 9 12 15 6" />
+													</svg>
+													{isAr ? "السابق" : "Prev"}
+												</button>
+											)}
+											{nextLesson && (
+												<button
+													onClick={() => goToLesson(nextLesson)}
+													style={{
+														padding: "10px 16px",
+														borderRadius: "10px",
+														background: "#5120c8",
+														border: "none",
+														color: "#fff",
+														cursor: "pointer",
+														fontFamily: "inherit",
+														fontSize: "0.85rem",
+														fontWeight: 600,
+														display: "flex",
+														alignItems: "center",
+														gap: "6px",
+													}}>
+													{isAr ? "التالي" : "Next"}
+													<svg
+														width="14"
+														height="14"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														strokeWidth="2"
+														strokeLinecap="round">
+														<polyline points="9 18 15 12 9 6" />
+													</svg>
+												</button>
+											)}
+										</div>
+									</div>
+								)}
 
 								{/* Interaction Buttons */}
 								<div
