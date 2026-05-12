@@ -31,6 +31,12 @@ input:-webkit-autofill:active {
   color: #ffffff;
 }
 
+/* Skeleton/pulse override */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 /* ── Font Imports ── */
 @import "@fontsource/plus-jakarta-sans/400.css";
 @import "@fontsource/plus-jakarta-sans/500.css";
@@ -93,6 +99,7 @@ input:-webkit-autofill:active {
 	--primary: #5120c8;
 	--primary-hover: #4318a8;
 	--primary-fg: #ffffff;
+	--primary-foreground: #ffffff;
 	--primary-subtle: rgba(81, 32, 200, 0.06);
 	--primary-light: rgba(81, 32, 200, 0.06);
 	--primary-muted: rgba(81, 32, 200, 0.1);
@@ -200,6 +207,7 @@ input:-webkit-autofill:active {
 	--primary: #5120c8;
 	--primary-hover: #4318a8;
 	--primary-fg: #ffffff;
+	--primary-foreground: #ffffff;
 	--primary-subtle: rgba(81, 32, 200, 0.1);
 	--primary-light: rgba(81, 32, 200, 0.12);
 	--primary-muted: rgba(81, 32, 200, 0.16);
