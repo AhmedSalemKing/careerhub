@@ -330,6 +330,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 		getSafeUrl(activeLesson?.imageUrl) || undefined;
 	const fileName: string = activeLesson?.fileName || "document.pdf";
 
+	const buildDownloadUrl = (url: string | undefined, name: string): string => {
+		if (!url) return "#";
+		if (url.includes("cloudinary.com") && url.includes("/upload/")) {
+			return url.replace("/upload/", "/upload/fl_attachment/");
+		}
+		return url;
+	};
+
 	const isCurrentLive =
 		activeLesson?.type === 'LIVE' ||
 		activeLesson?.lessonType === 'LIVE' ||
@@ -1714,7 +1722,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 												<div className="flex items-center gap-3">
 													<a
-														href={fileUrl}
+														href={buildDownloadUrl(fileUrl, fileName)}
 														download={fileName}
 														target="_blank"
 														rel="noopener noreferrer"
@@ -2239,7 +2247,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 										</h3>
 										<div className="flex flex-wrap gap-3">
 											<a
-												href={fileUrl}
+												href={buildDownloadUrl(fileUrl, fileName)}
 												download={fileName}
 												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
 												style={{

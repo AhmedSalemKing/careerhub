@@ -50,19 +50,9 @@ export class CloudinaryService {
               return reject(new Error('No result from Cloudinary'));
             }
             
-            let url = result.secure_url.startsWith('http')
+            const url = result.secure_url.startsWith('http')
               ? result.secure_url
               : `https:${result.secure_url}`;
-
-            // Inject fl_attachment so browsers download with the original filename
-            // instead of the random Cloudinary public_id segment.
-            if (file.originalname && url.includes('/upload/')) {
-              const safeName = file.originalname
-                .replace(/[^a-zA-Z0-9\u0600-\u06FF._-]/g, '_')
-                .replace(/_+/g, '_')
-                .slice(0, 100);
-              url = url.replace('/upload/', `/upload/fl_attachment:${safeName}/`);
-            }
 
             this.logger.log(`Upload successful: ${url}`);
             resolve({ url, publicId: result.public_id });
