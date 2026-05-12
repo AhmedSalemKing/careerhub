@@ -12,7 +12,8 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   Query,
- Req,
+  Req,
+  Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
@@ -20,6 +21,7 @@ import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -64,6 +66,14 @@ export class UsersController {
       success: true,
       data: users,
     };
+  }
+
+  @Public()
+  @Get('profile/:userId')
+  @ApiOperation({ summary: 'Get public user profile' })
+  @ApiResponse({ status: 200, description: 'Public profile retrieved successfully' })
+  async getPublicProfile(@Param('userId') userId: string) {
+    return this.usersService.getPublicProfile(userId);
   }
 
   @Get('profile')

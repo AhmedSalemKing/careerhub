@@ -513,10 +513,17 @@ export function CourseCard({
           {/* Instructor with Verified Badge */}
           {typeof course.instructor === 'object' && course.instructor?.profile && (
             <span className="cc-meta-item">
-              <span>
-                {course.instructor.profile.firstName} {course.instructor.profile.lastName}
-              </span>
-              {course.instructor.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
+              <a
+                href={`/${locale}/profile/${course.instructor.id || ''}`}
+                onClick={(e) => e.stopPropagation()}
+                style={{ textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:'4px' }}
+                title={isAr ? 'عرض الملف الشخصي' : 'View Profile'}
+              >
+                <span>
+                  {course.instructor.profile.firstName} {course.instructor.profile.lastName}
+                </span>
+                {course.instructor.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
+              </a>
             </span>
           )}
         </div>

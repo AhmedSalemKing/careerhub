@@ -19,6 +19,7 @@ interface Course {
   level?: string
   thumbnail?: string
   instructor?: {
+    id?: string
     profile?: { firstName: string; lastName: string }
   }
   _count?: { enrollments: number }
@@ -530,7 +531,18 @@ export function CoursesShowcase() {
                   <div className="cs-body">
                     <h3 className="cs-card-title">{name}</h3>
 
-                    {instructor && (
+                    {instructor && course.instructor?.id && (
+                      <a
+                        href={`/${locale}/profile/${course.instructor.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration:'none' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="cs-instructor">{instructor}</p>
+                      </a>
+                    )}
+                    {instructor && !course.instructor?.id && (
                       <p className="cs-instructor">{instructor}</p>
                     )}
 

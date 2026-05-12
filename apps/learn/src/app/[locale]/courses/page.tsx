@@ -329,12 +329,16 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
         </h3>
 
         {course.instructor?.profile && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <a
+            href={`/${locale}/profile/${course.instructor?.id || ''}`}
+            onClick={e => e.stopPropagation()}
+            style={{ textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:6 }}
+          >
             {course.instructor.profile.avatar
               ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
               : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>{course.instructor.profile.firstName?.[0]}</div>}
             <span style={{ color: subtext, fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
-          </div>
+          </a>
         )}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -502,12 +506,16 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
             {getTitle(course, locale)}
           </h3>
           {course.instructor?.profile && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <a
+              href={`/${locale}/profile/${course.instructor?.id || ''}`}
+              onClick={e => e.stopPropagation()}
+              style={{ textDecoration:'none', color:'inherit', display:'flex', alignItems:'center', gap:6, marginBottom:8 }}
+            >
               {course.instructor.profile.avatar
                 ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
                 : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800 }}>{course.instructor.profile.firstName?.[0]}</div>}
               <span style={{ color: subtext, fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
-            </div>
+            </a>
           )}
           {liveDate && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>

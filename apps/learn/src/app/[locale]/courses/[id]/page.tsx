@@ -480,11 +480,15 @@ export default function CourseDetailPage({
 									<User className="h-5 w-5" />
 								</div>
 								<div>
-									<p
-										className="font-semibold text-sm"
-										style={{ color: textPrimary }}>
-										{instructorName}
-									</p>
+									<a
+										href={`/${locale}/profile/${course.instructor?.id || ''}`}
+										style={{ textDecoration:'none', color:'inherit' }}>
+										<p
+											className="font-semibold text-sm"
+											style={{ color: textPrimary }}>
+											{instructorName}
+										</p>
+									</a>
 									<p className="text-xs" style={{ color: textSecondary }}>
 										{t("instructor")}
 									</p>
@@ -1051,7 +1055,11 @@ export default function CourseDetailPage({
 										<h3
 											className="font-bold text-lg mb-1 flex items-center gap-2"
 											style={{ color: textPrimary }}>
-											{instructorName}
+											<a
+												href={`/${locale}/profile/${course.instructor?.id || ''}`}
+												style={{ textDecoration:'none', color:'inherit' }}>
+												{instructorName}
+											</a>
 											<BadgeCheck className="h-5 w-5" style={{ color: teal }} />
 										</h3>
 										{course.instructor.profile?.bio && (

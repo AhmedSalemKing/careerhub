@@ -31,6 +31,70 @@ export class UsersService {
     });
   }
 
+  async getPublicProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId, isActive: true },
+      select: {
+        id: true,
+        accountType: true,
+        createdAt: true,
+        isVerified: true,
+        profile: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            bio: true,
+            speciality: true,
+            country: true,
+            linkedinUrl: true,
+          },
+        },
+        instructorCourses: {
+          where: { status: 'PUBLISHED' },
+          select: {
+            id: true,
+            titleAr: true,
+            titleEn: true,
+            thumbnail: true,
+            price: true,
+            type: true,
+            _count: { select: { enrollments: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+        },
+        _count: {
+          select: { instructorCourses: true },
+        },
+      },
+    });
+
+    if (!user) throw new NotFoundException('User not found');
+
+    const courses = user.instructorCourses;
+    const totalStudents = courses.reduce(
+      (sum, c) => sum + (c._count?.enrollments || 0), 0
+    );
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        accountType: user.accountType,
+        joinedAt: user.createdAt,
+        isVerified: user.isVerified,
+        profile: user.profile,
+        stats: {
+          totalCourses: user._count.instructorCourses,
+          publishedCourses: courses.length,
+          totalStudents,
+        },
+        courses,
+      },
+    };
+  }
+
   async getUsers(filters: { role?: 'STUDENT' | 'INSTRUCTOR' | 'ADMIN'; limit?: number; search?: string }) {
     const where: Prisma.UserWhereInput = {};
 
