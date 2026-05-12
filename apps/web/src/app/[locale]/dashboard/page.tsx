@@ -22,8 +22,8 @@ import { useAuthStore } from '../../../stores/authStore'
 
 function InstructorOverview() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const { user } = useAuthStore()
-  const firstName = user?.profile?.firstName || 'المحاضر'
 
   const { data: stats } = useQuery({
     queryKey: ['instructor-stats'],
@@ -43,138 +43,327 @@ function InstructorOverview() {
     },
   })
 
-  const statCards = [
-    { label: 'إجمالي الكورسات', value: stats?.totalCourses ?? 0, icon: BookOpen, color: 'from-purple-500 to-violet-600' },
-    { label: 'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon: Users, color: 'from-teal-500 to-emerald-600' },
-    { label: 'الإيرادات', value: `${stats?.revenue ?? 0} ريال`, icon: DollarSign, color: 'from-amber-500 to-orange-600' },
-  ]
-
   return (
-    <div className="p-6 lg:p-8 space-y-8" dir="rtl">
-      
-      {/* Welcome Banner — Enhanced */}
-      <div className="card-welcome animate-fade-up">
-        <div className="welcome-glow" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shadow-lg">
-              <BookOpen className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight leading-tight flex items-center gap-2">
-                مرحباً بك يا {firstName}
-                {user?.isVerified && <VerifiedBadge size="sm" showTooltip={false} />}
-              </h1>
-              <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المحاضر — أدر كورساتك وطلابك بكل سهولة</p>
-            </div>
+    <div style={{ padding: '1.5rem', maxWidth: '1200px' }}>
+      <style>{`
+        .dashboard-two-col { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; }
+        @media (max-width: 768px) { .dashboard-two-col { grid-template-columns: 1fr; } }
+      `}</style>
+
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(81,32,200,0.18) 0%, rgba(81,32,200,0.05) 100%)',
+        border: '1px solid rgba(81,32,200,0.25)',
+        borderRadius: '16px',
+        padding: '1.75rem 2rem',
+        marginBottom: '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%',
+            border: '2px solid rgba(81,32,200,0.5)',
+            overflow: 'hidden', flexShrink: 0,
+            background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+          }}>
+            {user?.profile?.avatar
+              ? <img src={user.profile.avatar} alt=""
+                  style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+              : (user?.profile?.firstName?.[0] || 'م')
+            }
           </div>
-          
-          <Link href={`/${locale}/dashboard/create-course`} className="btn-create-inline">
-            <PlusCircle className="h-5 w-5" />
-            بدء كورس جديد
-          </Link>
+          <div>
+            <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
+              {isAr ? 'لوحة التحكم' : 'Dashboard'}
+            </p>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:800, margin:'0 0 3px' }}>
+              {isAr ? `مرحباً، ${user?.profile?.firstName || 'المحاضر'}` : `Welcome, ${user?.profile?.firstName || 'Instructor'}`}
+            </h1>
+            <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
+              {isAr ? 'إليك ملخص نشاطك' : "Here's your activity overview"}
+            </p>
+          </div>
         </div>
+        <a href={`/${locale}/dashboard/create-course`} style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          padding: '11px 22px', borderRadius: '10px',
+          background: '#5120c8', color: '#fff',
+          fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+          boxShadow: '0 4px 15px rgba(81,32,200,0.3)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          {isAr ? 'إنشاء كورس جديد' : 'New Course'}
+        </a>
       </div>
 
-      {/* Stats Grid — Modern Cards */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {statCards.map((stat, i) => (
-          <div 
-            key={i} 
-            className={`card-stat animate-fade-up stagger-${i + 1}`}
-          >
-            <div className={`stat-icon-wrapper bg-gradient-to-br ${stat.color}`}>
-              <stat.icon className="h-6 w-6 text-white" />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '1rem',
+        marginBottom: '1.5rem',
+      }}>
+        {[
+          {
+            labelAr: 'الكورسات', labelEn: 'Courses',
+            value: stats?.totalCourses ?? courses?.length ?? 0,
+            color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
+            href: `/${locale}/dashboard/my-courses`,
+            icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+            ),
+          },
+          {
+            labelAr: 'الطلاب', labelEn: 'Students',
+            value: stats?.totalStudents ?? 0,
+            color: '#34d399', bg: 'rgba(52,211,153,0.12)',
+            href: `/${locale}/dashboard/my-courses`,
+            icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            ),
+          },
+          {
+            labelAr: 'الإيرادات', labelEn: 'Revenue',
+            value: `${stats?.revenue ?? 0} ر.س`,
+            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
+            href: `/${locale}/dashboard/revenue`,
+            icon: (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            ),
+          },
+        ].map((stat, i) => (
+          <a key={i} href={stat.href} style={{ textDecoration: 'none' }}>
+            <div style={{
+              padding: '1.25rem',
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: '14px',
+              display: 'flex', alignItems: 'flex-start', gap: '1rem',
+              cursor: 'pointer', transition: 'border-color 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '12px',
+                background: stat.bg, flexShrink: 0, color: stat.color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {stat.icon}
+              </div>
+              <div>
+                <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
+                  color: 'var(--foreground)' }}>
+                  {stat.value}
+                </p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                  {isAr ? stat.labelAr : stat.labelEn}
+                </p>
+              </div>
             </div>
-            <p className="stat-value">{stat.value}</p>
-            <p className="stat-label">{stat.label}</p>
-          </div>
+          </a>
         ))}
       </div>
 
-      {/* Recent Courses — Enhanced */}
-      {courses.length > 0 && (
-        <div className="animate-fade-up stagger-4">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              كورساتي الأخيرة
+      <div className="dashboard-two-col" style={{ marginBottom: '1.5rem' }}>
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: '14px',
+          padding: '1.25rem',
+        }}>
+          <div style={{ display:'flex', alignItems:'center',
+            justifyContent:'space-between', marginBottom:'1rem' }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:700, margin:0 }}>
+              {isAr ? 'آخر الكورسات' : 'Recent Courses'}
             </h2>
-            <Link 
-              href={`/${locale}/dashboard/my-courses`} 
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover transition-colors group"
-            >
-              عرض الكل 
-              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            </Link>
+            <a href={`/${locale}/dashboard/my-courses`}
+              style={{ fontSize:'0.8rem', color:'#a78bfa', textDecoration:'none' }}>
+              {isAr ? 'عرض الكل' : 'View all'}
+            </a>
           </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2">
-            {courses.map((course: any, idx: number) => (
-              <div 
-                key={course.id} 
-                className={`course-card-mini animate-fade-up`}
-                style={{ animationDelay: `${idx * 0.1}s`, opacity: 0 }}
+          {courses.slice(0,4).map((course: any) => (
+            <a key={course.id}
+              href={`/${locale}/dashboard/courses/${course.id}/manage`}
+              style={{ textDecoration:'none' }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:'12px',
+                padding:'10px 0',
+                borderBottom:'1px solid rgba(255,255,255,0.05)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
+              onMouseLeave={e => e.currentTarget.style.opacity='1'}
               >
-                <div className="course-thumb-mini">
-                  {course.thumbnail ? (
-                    <img 
-                      src={getMediaUrl(course.thumbnail) ?? ''}
-                      className="h-full w-full object-cover" 
-                      alt={course.titleEn} 
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-surface-2 to-surface-3">
-                      <BookOpen className="h-7 w-7 opacity-30 text-muted" />
-                    </div>
-                  )}
+                <div style={{
+                  width:'44px', height:'44px', borderRadius:'8px',
+                  background:'#1a1a2e', flexShrink:0, overflow:'hidden',
+                }}>
+                  {course.thumbnail
+                    ? <img src={course.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    : <div style={{ width:'100%', height:'100%',
+                        background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
+                        display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                          stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+                          <rect x="2" y="3" width="20" height="14" rx="2"/>
+                          <path d="M8 21h8M12 17v4"/>
+                        </svg>
+                      </div>
+                  }
                 </div>
-                
-                <div className="flex-1 min-w-0 relative z-10">
-                  <h3 className="font-semibold text-[15px] text-foreground truncate mb-1">
-                    {course.titleEn}
-                  </h3>
-                  <p className="text-xs text-muted font-medium">
-                    {course._count?.enrollments ?? 0} مستخدم مسجل
+                <div style={{ flex:1, minWidth:0 }}>
+                  <p style={{ fontWeight:600, fontSize:'0.875rem', margin:'0 0 3px',
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                    color:'var(--foreground)' }}>
+                    {isAr ? course.titleAr : course.titleEn}
                   </p>
-<span className={`inline-block text-[11px] font-bold px-3 py-1 rounded-full mt-2 ${
-                      course.status === 'PUBLISHED' 
-                        ? 'bg-emerald-500/12 text-emerald-600 ring-1 ring-emerald-500/20' 
-                        : 'bg-amber-500/12 text-amber-600 ring-1 ring-amber-500/20'
-                    }`}>
-                    {course.status === 'PUBLISHED' ? <><CheckCircle2 className="h-3 w-3 inline ml-1" />منشور</> : <><Clock className="h-3 w-3 inline ml-1" />مسودة</>}
-                  </span>
+                  <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
+                    {course._count?.enrollments ?? 0}
+                    {isAr ? ' طالب' : ' students'}
+                    {course.price === 0 ? (isAr ? ' مجاني' : ' Free') : ` ${course.price} ر.س`}
+                  </p>
                 </div>
-                
-                <Link 
-                  href={`/${locale}/dashboard/courses/${course.id}/manage`} 
-                  className="shrink-0 relative z-10 text-xs font-bold px-4 py-2.5 rounded-xl bg-surface-2 text-foreground hover:bg-primary hover:text-white transition-all duration-200 border border-border hover:border-primary"
-                >
-                  إدارة
-                </Link>
+                <div style={{
+                  padding:'3px 10px', borderRadius:'20px', fontSize:'0.7rem',
+                  fontWeight:600, flexShrink:0,
+                  background: course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)',
+                  border: `1px solid ${course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)'}`,
+                  color: course.status === 'PUBLISHED' ? '#4ade80' : '#fbbf24',
+                }}>
+                  {course.status === 'PUBLISHED' ? (isAr ? 'منشور' : 'Live') : (isAr ? 'مسودة' : 'Draft')}
+                </div>
               </div>
-            ))}
-          </div>
+            </a>
+          ))}
+          {courses.length === 0 && (
+            <div style={{ textAlign:'center', padding:'2rem', color:'var(--muted-foreground)' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 8px', display:'block', opacity:0.3 }}>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <p style={{ margin:0, fontSize:'0.85rem' }}>
+                {isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}
+              </p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Empty State — Professional */}
-      {courses.length === 0 && (
-        <div className="rounded-2xl p-16 text-center border-2 border-dashed border-border-strong bg-surface/50 animate-fade-in">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 flex items-center justify-center">
-            <BookOpen className="h-10 w-10 text-primary opacity-50" />
-          </div>
-          <h3 className="text-lg font-bold text-foreground mb-2">لا توجد كورسات بعد</h3>
-          <p className="text-sm text-muted mb-6 max-w-xs mx-auto">ابدأ رحلتك في إنشاء المحتوى التعليمي وأنشئ كورسك الأول الآن</p>
-          <Link 
-            href={`/${locale}/dashboard/create-course`} 
-            className="btn-create-inline"
-          >
-            <PlusCircle className="h-5 w-5" />
-            أنشئ كورسك الأول
-          </Link>
+        <div style={{
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: '14px',
+          padding: '1.25rem',
+        }}>
+          <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
+            {isAr ? 'إجراءات سريعة' : 'Quick Actions'}
+          </h2>
+          {[
+            {
+              labelAr: 'إنشاء كورس جديد', labelEn: 'Create New Course',
+              href: `/${locale}/dashboard/create-course`,
+              color: '#5120c8', bg: 'rgba(81,32,200,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>,
+            },
+            {
+              labelAr: 'كورساتي', labelEn: 'My Courses',
+              href: `/${locale}/dashboard/my-courses`,
+              color: '#a78bfa', bg: 'rgba(167,139,250,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>,
+            },
+            {
+              labelAr: 'الإيرادات', labelEn: 'Revenue',
+              href: `/${locale}/dashboard/revenue`,
+              color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>,
+            },
+            {
+              labelAr: 'الإحصائيات', labelEn: 'Analytics',
+              href: `/${locale}/dashboard/analytics`,
+              color: '#34d399', bg: 'rgba(52,211,153,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>,
+            },
+            {
+              labelAr: 'الإعدادات', labelEn: 'Settings',
+              href: `/${locale}/dashboard/settings`,
+              color: '#9999aa', bg: 'rgba(153,153,170,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>,
+            },
+          ].map((action, i) => (
+            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block' }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:'12px',
+                padding:'10px 12px', borderRadius:'10px', marginBottom:'6px',
+                background: 'transparent', cursor:'pointer',
+                transition:'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background=action.bg}
+              onMouseLeave={e => e.currentTarget.style.background='transparent'}
+              >
+                <div style={{
+                  width:'36px', height:'36px', borderRadius:'9px',
+                  background: action.bg, flexShrink:0, color: action.color,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {action.icon}
+                </div>
+                <span style={{ fontSize:'0.875rem', fontWeight:500, color:'var(--foreground)' }}>
+                  {isAr ? action.labelAr : action.labelEn}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  style={{ marginRight:'auto', opacity:0.3,
+                    transform: isAr ? 'rotate(180deg)' : 'none' }}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+            </a>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }
