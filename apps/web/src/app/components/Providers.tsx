@@ -12,6 +12,17 @@ import { ThemeProvider, useTheme } from 'next-themes'
 export const SITE_NAME = 'DeveWay'
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
+const BRAND_PURPLE = '#5120c8'
+// Tailwind/shadcn default blues that leak from DB when no brand color was saved
+const DEFAULT_BLUES = new Set([
+  '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd',
+  '#2563EB', '#3B82F6', '#1D4ED8',
+])
+
+function normalisePrimary(color: string): string {
+  return DEFAULT_BLUES.has(color.trim()) ? BRAND_PURPLE : color.trim()
+}
+
 function hexToRgb(hex: string): string {
   const h = hex.replace('#', '')
   const r = parseInt(h.slice(0, 2), 16)
@@ -34,12 +45,13 @@ export function applySiteSettings(s: {
   const root = document.documentElement
   const isDarkMode = root.classList.contains('dark')
   
-  // Primary Color - always apply
+  // Primary Color - always apply, but never let DB blue override brand purple
   if (s.primaryColor) {
-    root.style.setProperty('--primary', s.primaryColor)
-    root.style.setProperty('--primary-hover', s.primaryColor)
+    const primary = normalisePrimary(s.primaryColor)
+    root.style.setProperty('--primary', primary)
+    root.style.setProperty('--primary-hover', primary)
     try {
-      root.style.setProperty('--primary-rgb', hexToRgb(s.primaryColor))
+      root.style.setProperty('--primary-rgb', hexToRgb(primary))
     } catch {}
   }
   
