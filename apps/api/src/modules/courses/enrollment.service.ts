@@ -85,7 +85,7 @@ export class EnrollmentService {
         select: { lessonId: true },
       }),
       this.prisma.lesson.count({
-        where: { isPublished: true, section: { courseId } },
+        where: { section: { courseId } },
       }),
     ]);
 

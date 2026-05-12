@@ -141,10 +141,11 @@ export default function CourseDetailPage({
 		}
 	}, [enrollmentData]);
 
-	// Derive course progress from enrollment react-query data
+	// Sync completed lesson IDs from enrollment data into local state
 	useEffect(() => {
-		if (enrollmentData?.enrollment?.progress !== undefined) {
-			setCourseProgress(enrollmentData.enrollment.progress);
+		if (enrollmentData?.enrollment?.completedLessonIds) {
+			setCompletedLessonIds(enrollmentData.enrollment.completedLessonIds);
+			setCourseProgress(enrollmentData.enrollment.progress ?? 0);
 		}
 	}, [enrollmentData]);
 
@@ -317,6 +318,7 @@ export default function CourseDetailPage({
 	const purpleColor = "#a855f7";
 
 	const [courseProgress, setCourseProgress] = useState<number>(0);
+	const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
 	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
 	const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
 
@@ -361,11 +363,12 @@ export default function CourseDetailPage({
 		(acc: number, s: any) => acc + (s.lessons?.length || 0),
 		0,
 	);
-	const completedLessonIds = enrollmentData?.enrollment?.completedLessonIds ?? [];
-	const completedFromIds = completedLessonIds.length;
-	const completedLessons = completedFromIds || Math.round((courseProgress / 100) * totalLessons);
-	const isCourseComplete = totalLessons > 0 && completedLessons >= totalLessons;
-	const progressPercent = Math.min(courseProgress, 100);
+	const completedCount = completedLessonIds.length;
+	const completedLessons = completedCount || Math.round((courseProgress / 100) * totalLessons);
+	const isCourseComplete = totalLessons > 0 && completedCount >= totalLessons;
+	const progressPercent = totalLessons > 0
+		? Math.min(100, Math.round((completedCount / totalLessons) * 100))
+		: 0;
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
 	const typeBadge = isLive
