@@ -14,7 +14,7 @@ export function LocaleShell({ children }: { children: React.ReactNode }) {
   // 🚫 لو صفحة admin → لا تظهر Navbar/Footer
   if (isAdmin) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-background text-foreground">
         {children}
       </div>
     )
@@ -22,7 +22,7 @@ export function LocaleShell({ children }: { children: React.ReactNode }) {
 
   // ✅ صفحات عادية → اظهر Layout كامل
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--bg)]">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Sticky Navbar */}
       <Navbar />
       

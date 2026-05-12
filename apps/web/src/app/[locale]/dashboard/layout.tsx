@@ -168,7 +168,7 @@ return [
   }
 
   return (
-    <div className="min-h-screen dashboard-root" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen dashboard-root bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       
       {/* MOBILE DRAWER */}
       {isMobile && (
