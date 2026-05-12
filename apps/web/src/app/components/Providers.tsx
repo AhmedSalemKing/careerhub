@@ -50,6 +50,8 @@ export function applySiteSettings(s: {
     const primary = normalisePrimary(s.primaryColor)
     root.style.setProperty('--primary', primary)
     root.style.setProperty('--primary-hover', primary)
+    root.style.setProperty('--primary-foreground', '#ffffff')
+    root.style.setProperty('--primary-fg', '#ffffff')
     try {
       root.style.setProperty('--primary-rgb', hexToRgb(primary))
     } catch {}

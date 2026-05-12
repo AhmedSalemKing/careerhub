@@ -763,8 +763,16 @@ a {
 	transition: color 150ms ease !important;
 }
 
-a:hover {
+/* Only colour plain links purple on hover — not elements with a background class */
+a:not([class*="bg-"]):not([class*="btn-"]):hover {
 	color: var(--primary);
+}
+
+/* Enforce white text on solid primary-coloured elements regardless of hover/specificity */
+.bg-primary,
+a[class*="bg-primary"],
+button[class*="bg-primary"] {
+	color: #ffffff !important;
 }
 
 /* ══════════════════════════════════════
