@@ -578,10 +578,11 @@ export class CoursesService {
               },
               sections: {
                 include: {
-                  lessons: {
-                    select: { id: true },
+                  _count: {
+                    select: { lessons: true },
                   },
                 },
+                orderBy: { order: 'asc' },
               },
             },
           },
@@ -595,7 +596,7 @@ export class CoursesService {
 
     const transformedEnrollments = await Promise.all(enrollments.map(async enrollment => {
       const totalLessons = (enrollment as any).course.sections.reduce(
-        (sum: number, s: any) => sum + s.lessons.length, 0
+        (sum: number, s: any) => sum + (s._count?.lessons ?? 0), 0
       )
       const completedCount = await this.prisma.lessonProgress.count({
         where: {
@@ -613,7 +614,9 @@ export class CoursesService {
         completedAt: enrollment.completedAt,
         completedLessons: completedCount,
         totalLessons,
-        lessonIds: enrollment.course.sections.flatMap((s: any) => s.lessons.map((l: any) => l.id)),
+        lessonIds: (enrollment as any).course.modules.flatMap((m: any) =>
+          Array.from({ length: m._count?.lessons ?? 0 }, (_, i) => `${m.id}-${i}`)
+        ),
         course: {
           id: enrollment.course.id,
           slug: enrollment.course.slug,
@@ -637,7 +640,8 @@ export class CoursesService {
           sections: enrollment.course.sections.map((s: any) => ({
             id: s.id,
             title: s.title,
-            lessons: s.lessons.map((l: any) => ({ id: l.id })),
+            lessons: [],
+            _count: { lessons: s._count?.lessons ?? 0 },
           })),
           _count: {
             lessons: totalLessons,
