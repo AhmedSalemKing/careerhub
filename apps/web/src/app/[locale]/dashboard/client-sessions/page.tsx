@@ -12,11 +12,6 @@ import {
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
 
-const [confirmModal, setConfirmModal] = useState<{
-  isOpen: boolean; title: string; message: string;
-  onConfirm: () => void; destructive?: boolean;
-}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
-
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
   CONFIRMED:            { ar:'مؤكدة',           en:'Confirmed',          color:'#5120c8', bg:'rgba(81,32,200,0.1)'  },
@@ -35,6 +30,10 @@ export default function ClientSessionsPage() {
   const qc = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<'upcoming'|'completed'|'cancelled'>('upcoming')
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean; title: string; message: string;
+    onConfirm: () => void; destructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
   const [linkModal, setLinkModal] = useState<any>(null)
   const [linkValue, setLinkValue] = useState('')
   const [rescheduleModal, setRescheduleModal] = useState<any>(null)
