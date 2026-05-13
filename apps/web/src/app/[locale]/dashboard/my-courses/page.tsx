@@ -60,8 +60,13 @@ export default function InstructorCoursesPage() {
 		queryKey: ["instructor-courses"],
 		queryFn: async () => {
 			const res = await get("/courses/my-courses");
-			const d = (res?.data as any)?.data ?? (res?.data as any);
-			return Array.isArray(d) ? d : [];
+			const raw = (res?.data as any)?.data ?? (res?.data as any);
+			const list =
+				Array.isArray(raw) ? raw :
+				Array.isArray(raw?.data) ? raw.data :
+				Array.isArray(raw?.courses) ? raw.courses :
+				[];
+			return list;
 		},
 	});
 
@@ -73,11 +78,9 @@ export default function InstructorCoursesPage() {
 	}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
 	const totalStudents = courses.reduce((sum: number, c: any) =>
-		sum + (c.enrollments || c._count?.enrollments || 0), 0);
-	const totalRevenue = courses.reduce((sum: number, c: any) => {
-		const e = c.enrollments || c._count?.enrollments || 0;
-		return sum + e * (c.price || 0);
-	}, 0);
+		sum + (c._count?.enrollments || c.enrollmentsCount || c.enrollments || 0), 0);
+	const totalRevenue = courses.reduce((sum: number, c: any) =>
+		sum + (c.earnings || c.revenue || 0), 0);
 	const publishedCount = courses.filter((c: any) => c.status === 'PUBLISHED').length;
 
 	const handleDelete = (courseId: string) => {
@@ -199,25 +202,45 @@ export default function InstructorCoursesPage() {
 
 				{/* EMPTY STATE */}
 				{!isLoading && courses.length === 0 && (
-					<div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-[color:var(--border)] p-16 text-center">
-						<BookOpen className="h-12 w-12 opacity-20 mb-4" />
-						<h2 className="text-lg font-bold font-madinet text-foreground mb-2">
-							{isAr ? "لا توجد كورسات بعد" : "No courses yet"}
-						</h2>
-						<p className="text-sm text-[color:var(--muted)] mb-6">
-							{isAr ? "ابدأ بإنشاء كورسك الأول" : "Start by creating your first course"}
+					<div style={{
+						textAlign:'center', padding:'5rem 2rem',
+						background:'rgba(255,255,255,0.02)',
+						border:'1px dashed rgba(255,255,255,0.08)',
+						borderRadius:'16px',
+					}}>
+						<div style={{
+							width:'72px', height:'72px', borderRadius:'18px',
+							background:'rgba(81,32,200,0.1)',
+							border:'1px solid rgba(81,32,200,0.2)',
+							display:'flex', alignItems:'center', justifyContent:'center',
+							margin:'0 auto 1.25rem',
+						}}>
+							<svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+								stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+								<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+								<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+							</svg>
+						</div>
+						<h3 style={{ fontSize:'1.1rem', fontWeight:700, margin:'0 0 8px' }}>
+							{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}
+						</h3>
+						<p style={{ color:'var(--muted-foreground)', fontSize:'0.875rem',
+							margin:'0 0 1.5rem', maxWidth:'300px', marginInline:'auto' }}>
+							{isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge'}
 						</p>
-						<Link
-							href={`/${locale}/dashboard/create-course`}
-							style={{
-								display: "inline-flex", alignItems: "center", gap: 8,
-								padding: "12px 28px", borderRadius: 12,
-								background: "linear-gradient(135deg, #5120c8, #7c3aed)",
-								color: "#fff", textDecoration: "none", fontWeight: 700,
-								fontSize: 15, boxShadow: "0 4px 20px rgba(81,32,200,0.3)",
-							}}>
-							{isAr ? "إنشاء كورس" : "Create Course"}
-						</Link>
+						<a href={`/${locale}/dashboard/create-course`} style={{
+							padding:'10px 24px', borderRadius:'10px',
+							background:'#5120c8', color:'#fff',
+							textDecoration:'none', fontWeight:600, fontSize:'0.875rem',
+							display:'inline-flex', alignItems:'center', gap:'8px',
+						}}>
+							<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+								<line x1="12" y1="5" x2="12" y2="19"/>
+								<line x1="5" y1="12" x2="19" y2="12"/>
+							</svg>
+							{isAr ? 'إنشاء كورس جديد' : 'Create Course'}
+						</a>
 					</div>
 				)}
 
@@ -233,8 +256,8 @@ export default function InstructorCoursesPage() {
 							const typeConfig = getTypeConfig(course);
 							const statusConfig = getStatusConfig(course.status);
 							const TypeIcon = typeConfig.icon;
-							const enrollments = course.enrollments || course._count?.enrollments || 0;
-							const revenue = enrollments * (course.price || 0);
+							const enrollments = course._count?.enrollments || course.enrollmentsCount || course.enrollments || 0;
+							const earnings = course.earnings || course.revenue || 0;
 
 							return (
 								<div key={course.id} style={{
@@ -368,7 +391,7 @@ export default function InstructorCoursesPage() {
 											</span>
 											<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
 												fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}>
-												{revenue.toLocaleString()} ر.س
+												{earnings.toLocaleString()} ر.س
 											</span>
 										</div>
 

@@ -60,7 +60,7 @@ export default function CertificatesPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#0d0d0d',
+      background: 'var(--background)',
       padding: '32px 24px 120px',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
@@ -70,7 +70,7 @@ export default function CertificatesPage() {
         marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
       }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 4px', color: '#f1f5f9' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--foreground)' }}>
             {isAr ? 'شهاداتي' : 'My Certificates'}
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.88rem', margin: 0 }}>
@@ -106,21 +106,21 @@ export default function CertificatesPage() {
         }}>
           {[1,2,3].map(i => (
             <div key={i} style={{
-              background: '#0d0d0d',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
               borderRadius: '16px', overflow: 'hidden',
             }}>
               <div style={{ height:'120px', background:'rgba(81,32,200,0.06)',
                 animation:'pulse 1.5s infinite' }}/>
               <div style={{ padding:'1.25rem' }}>
                 <div style={{ height:'16px', borderRadius:'8px', marginBottom:'8px',
-                  background:'rgba(255,255,255,0.06)', width:'70%',
+                  background:'var(--skeleton)', width:'70%',
                   animation:'pulse 1.5s infinite' }}/>
                 <div style={{ height:'12px', borderRadius:'6px', marginBottom:'1rem',
-                  background:'rgba(255,255,255,0.04)', width:'40%',
+                  background:'var(--skeleton)', width:'40%',
                   animation:'pulse 1.5s infinite' }}/>
                 <div style={{ height:'36px', borderRadius:'9px',
-                  background:'rgba(255,255,255,0.04)',
+                  background:'var(--skeleton)',
                   animation:'pulse 1.5s infinite' }}/>
               </div>
             </div>
@@ -131,8 +131,8 @@ export default function CertificatesPage() {
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '5rem 2rem', textAlign: 'center',
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px dashed rgba(255,255,255,0.08)',
+          background: 'var(--card-bg)',
+          border: '1px dashed var(--border)',
           borderRadius: '16px',
         }}>
           <div style={{
@@ -149,7 +149,7 @@ export default function CertificatesPage() {
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: '#f1f5f9' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
             {isAr ? 'حدث خطأ في تحميل الشهادات' : 'Error loading certificates'}
           </h3>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', margin: 0 }}>
@@ -161,8 +161,8 @@ export default function CertificatesPage() {
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '5rem 2rem', textAlign: 'center',
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px dashed rgba(255,255,255,0.08)',
+          background: 'var(--card-bg)',
+          border: '1px dashed var(--border)',
           borderRadius: '16px',
         }}>
           <div style={{
@@ -178,7 +178,7 @@ export default function CertificatesPage() {
               <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
             </svg>
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: '#f1f5f9' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
             {isAr ? 'لا توجد شهادات بعد' : 'No certificates yet'}
           </h3>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
@@ -205,8 +205,8 @@ export default function CertificatesPage() {
         }}>
           {certificates.map((cert: any) => (
             <div key={cert.id} style={{
-              background: '#0d0d0d',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
               borderRadius: '16px',
               overflow: 'hidden',
               transition: 'border-color 0.2s, box-shadow 0.2s',
@@ -217,7 +217,7 @@ export default function CertificatesPage() {
               e.currentTarget.style.boxShadow = '0 4px 20px rgba(81,32,200,0.15)'
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+              e.currentTarget.style.borderColor = 'var(--border)'
               e.currentTarget.style.boxShadow = 'none'
             }}
             >
@@ -264,7 +264,7 @@ export default function CertificatesPage() {
                   display: '-webkit-box', WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
                   lineHeight: 1.4,
-                  color: '#f1f5f9',
+                  color: 'var(--foreground)',
                 }}>
                   {isAr
                     ? (cert.course?.titleAr || cert.course?.title)
@@ -291,19 +291,19 @@ export default function CertificatesPage() {
                 {/* Verification ID */}
                 {(cert.verificationCode || cert.serialNumber) && (
                   <div style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--border)',
                     borderRadius: '8px',
                     padding: '8px 12px',
                     marginBottom: '1rem',
                     display: 'flex', alignItems: 'center', gap: '8px',
                   }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                      stroke="#666680" strokeWidth="2">
+                      stroke="var(--muted-foreground)" strokeWidth="2">
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
-                    <span style={{ fontSize: '0.72rem', color: '#888',
+                    <span style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)',
                       fontFamily: 'monospace', letterSpacing: '0.05em' }}>
                       {cert.verificationCode || cert.serialNumber}
                     </span>
@@ -337,8 +337,8 @@ export default function CertificatesPage() {
                     <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
                       style={{
                         padding: '9px 14px', borderRadius: '9px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border)',
                         color: 'var(--muted-foreground)',
                         textDecoration: 'none',
                         display: 'flex', alignItems: 'center', gap: '6px',
