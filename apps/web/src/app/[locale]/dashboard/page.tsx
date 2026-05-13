@@ -397,7 +397,8 @@ function StudentOverview() {
     queryKey: ['student-enrollments'],
     queryFn: async () => {
       const res = await get('/courses/my-courses')
-      const d = (res?.data as any)?.data ?? (res?.data as any) ?? []
+      const raw = res?.data
+      const d = (raw as any)?.data?.enrollments ?? (raw as any)?.data ?? raw ?? []
       return Array.isArray(d) ? d : []
     },
     enabled: !!user,
@@ -540,8 +541,10 @@ function StudentOverview() {
           },
           {
             labelAr:'كورسات مكتملة', labelEn:'Completed',
-            value: enrollments.filter((e:any) => e.progress >= 100).length
-              || studentStats?.completedCourses || 0,
+            value: enrollments.filter((e: any) => {
+              const p = e.progress ?? e.enrollment?.progress ?? 0
+              return p >= 100
+            }).length || studentStats?.completedCourses || 0,
             color:'#34d399', bg:'rgba(52,211,153,0.12)',
             href: `/${locale}/dashboard/my-courses`,
             icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -627,11 +630,15 @@ function StudentOverview() {
 
           {enrollments.length > 0 ? (
             enrollments.slice(0, 4).map((enrollment: any) => {
-              const course = enrollment.course
-              const progress = enrollment.progress || 0
+              const course = enrollment.course || enrollment
+              const progress = enrollment.progress ?? enrollment.enrollment?.progress ?? 0
+              const courseId = course?.id || enrollment.courseId
+              const title = isAr
+                ? (course?.titleAr || course?.title)
+                : (course?.titleEn || course?.title)
               return (
-                <a key={enrollment.id}
-                  href={`/${locale}/learn/${course?.id}`}
+                <a key={enrollment.id || courseId}
+                  href={`/${locale}/learn/${courseId}`}
                   style={{ textDecoration:'none', display:'block' }}>
                   <div style={{
                     display:'flex', alignItems:'center', gap:'12px',
@@ -668,7 +675,7 @@ function StudentOverview() {
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         color:'var(--foreground)',
                       }}>
-                        {isAr ? course?.titleAr : course?.titleEn}
+                        {title}
                       </p>
                       {/* Progress bar */}
                       <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
