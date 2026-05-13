@@ -2,13 +2,6 @@
 
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
-import { 
-  BookOpen, Play, ArrowRight, CheckCircle, RefreshCw, 
-  AlertTriangle, Loader2, Search, Filter, LayoutGrid,
-  Clock, Users, Star, TrendingUp, ChevronLeft, Award,
-  XCircle, Edit3
-} from 'lucide-react'
-import { Button } from '../../components/ui/button'
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../lib/api'
@@ -492,18 +485,13 @@ export default function MyCoursesPage() {
   // STUDENT VIEW (Default) - ENHANCED
   // ══════════════════════════════════════
   
+  const isAr = locale === 'ar'
+
   // Safe array conversion with proper typing
   const enrollments: Enrollment[] = Array.isArray(enrolledData) ? enrolledData : []
   
   // Defensive filtering with safe array
   const safeEnrollments = enrollments.filter((e): e is Enrollment => !!e && typeof e === 'object')
-  
-  const filteredEnrollments = safeEnrollments.filter((e) => {
-    const prog = e.progress || 0
-    if (filter === 'in-progress') return prog > 0 && prog < 100
-    if (filter === 'completed') return prog >= 100
-    return true
-  })
 
   // ══════════════════════════════════════
   // ERROR STATE
@@ -569,264 +557,335 @@ export default function MyCoursesPage() {
   }
 
   // ════════════════════════════════════════
-  // SUCCESS STATE - Show Courses
+  // SUCCESS STATE - Professional Redesign
   // ══════════════════════════════════════
-  
+
+  const activeCount = safeEnrollments.filter(e => (e.progress || 0) > 0 && (e.progress || 0) < 100).length
+  const completedCount = safeEnrollments.filter(e => (e.progress || 0) >= 100).length
+
+  const filteredEnrollments2 = safeEnrollments.filter((e) => {
+    const prog = e.progress || 0
+    if (filter === 'in-progress') return prog > 0 && prog < 100
+    if (filter === 'completed') return prog >= 100
+    return true
+  })
+
+  const tabs = [
+    { key: 'all' as const, label: isAr ? 'الكل' : 'All', count: safeEnrollments.length },
+    { key: 'in-progress' as const, label: isAr ? 'قيد التعلم' : 'In Progress', count: activeCount },
+    { key: 'completed' as const, label: isAr ? 'مكتملة' : 'Completed', count: completedCount },
+  ]
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--background)' }}>
-      {/* Header with Stats */}
-      <div className="border-b" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--background)',
+      padding: '32px 24px 120px',
+      direction: isAr ? 'rtl' : 'ltr',
+    }}>
+      {/* PAGE HEADER */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: '1.75rem', flexWrap: 'wrap', gap: '1rem',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--foreground)' }}>
+            {isAr ? 'كورساتي' : 'My Courses'}
+          </h1>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', margin: 0 }}>
+            {isAr
+              ? `${enrollments.length} كورس  ${activeCount} نشط  ${completedCount} مكتمل`
+              : `${enrollments.length} courses  ${activeCount} active  ${completedCount} completed`}
+          </p>
+        </div>
+        <a href={`/${locale}/courses`} style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          padding: '10px 20px', borderRadius: '10px',
+          background: '#5120c8', color: '#fff',
+          textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
+          boxShadow: '0 4px 12px rgba(81,32,200,0.3)',
+        }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
+        </a>
+      </div>
+
+      {/* STATS BAR */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
+        gap: '1rem', marginBottom: '1.5rem',
+      }}>
+        {[
+          { labelAr: 'إجمالي الكورسات', labelEn: 'Total Courses', value: enrollments.length,
+            color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg> },
+          { labelAr: 'قيد التعلم', labelEn: 'In Progress', value: activeCount,
+            color: '#34d399', bg: 'rgba(52,211,153,0.12)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg> },
+          { labelAr: 'مكتملة', labelEn: 'Completed', value: completedCount,
+            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
+            icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg> },
+        ].map((stat, i) => (
+          <div key={i} style={{
+            padding: '1rem 1.25rem',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            borderRadius: '12px',
+            display: 'flex', alignItems: 'center', gap: '12px',
+          }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '10px',
+              background: stat.bg, color: stat.color, flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {stat.icon}
+            </div>
             <div>
-              <h1 className="text-3xl font-bold font-madinet" style={{ color: 'var(--text-primary)' }}>
-                {locale === 'ar' ? 'كورساتي' : 'My Courses'}
-              </h1>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-                {enrollments.length} {locale === 'ar' ? 'كورس' : 'courses'} · {filteredEnrollments.length} {locale === 'ar' ? 'معروض' : 'shown'}
+              <p style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 2px', color: 'var(--foreground)' }}>
+                {stat.value}
+              </p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                {isAr ? stat.labelAr : stat.labelEn}
               </p>
             </div>
-            
-            {/* Quick Stats */}
-            <div className="flex gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: 'var(--surface-hover)' }}>
-                <TrendingUp className="h-4 w-4" style={{ color: 'var(--primary)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                  {safeEnrollments.filter(e => (e.progress || 0) > 0).length} {locale === 'ar' ? 'نشط' : 'Active'}
-                </span>
-              </div>
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl" style={{ background: 'rgba(34,197,94,0.1)' }}>
-                <CheckCircle className="h-4 w-4" style={{ color: '#22c55e' }} />
-                <span className="text-sm font-medium" style={{ color: '#22c55e' }}>
-                  {safeEnrollments.filter(e => (e.progress || 0) >= 100).length} {locale === 'ar' ? 'مكتمل' : 'Completed'}
-                </span>
-              </div>
-            </div>
           </div>
-        </div>
+        ))}
       </div>
 
-      {/* Content */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        
-        {/* Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <Filter className="h-5 w-5" style={{ color: 'var(--text-muted)' }} />
-          
-          {[
-            { key: 'all' as const, label: locale === 'ar' ? 'الكل' : 'All', count: safeEnrollments.length },
-            { key: 'in-progress' as const, label: locale === 'ar' ? 'قيد التعلم' : 'In Progress', count: safeEnrollments.filter(e => (e.progress || 0) > 0 && (e.progress || 0) < 100).length },
-            { key: 'completed' as const, label: locale === 'ar' ? 'مكتملة' : 'Completed', count: safeEnrollments.filter(e => (e.progress || 0) >= 100).length },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
-              className="px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all"
-              style={{
-                background: filter === tab.key ? 'var(--primary)' : 'transparent',
-                color: filter === tab.key ? 'white' : 'var(--text-secondary)',
-                border: filter === tab.key ? 'none' : '1px solid var(--border)',
-              }}
-            >
-              {tab.label}
-              <span className="mr-1 opacity-60">({tab.count})</span>
-            </button>
-          ))}
-        </div>
+      {/* FILTER TABS */}
+      <div style={{
+        display: 'flex', gap: '6px', marginBottom: '1.5rem',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderRadius: '10px', padding: '4px',
+        width: 'fit-content',
+      }}>
+        {tabs.map(tab => (
+          <button key={tab.key}
+            onClick={() => setFilter(tab.key)}
+            style={{
+              padding: '7px 16px', borderRadius: '8px', border: 'none',
+              background: filter === tab.key ? '#5120c8' : 'transparent',
+              color: filter === tab.key ? '#fff' : 'var(--muted-foreground)',
+              fontWeight: filter === tab.key ? 600 : 400,
+              fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'inherit',
+              transition: 'all 0.15s',
+            }}>
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
 
-        {/* Course Grid */}
-        {filteredEnrollments.length === 0 ? (
-          <div className="text-center py-12">
-            <Search className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-            <p className="text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
-              {locale === 'ar' ? 'لا توجد كورسات في هذه الفئة' : 'No courses in this category'}
-            </p>
-            <button 
-              onClick={() => setFilter('all')}
-              className="mt-4 text-sm underline" style={{ color: 'var(--primary)' }}
-            >
-              {locale === 'ar' ? 'عرض كل الكورسات' : 'Show all courses'}
-            </button>
+      {/* COURSE GRID */}
+      {filteredEnrollments2.length === 0 ? (
+        <div style={{
+          textAlign: 'center', padding: '4rem 2rem',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px dashed rgba(255,255,255,0.08)',
+          borderRadius: '16px',
+        }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '16px',
+            background: 'rgba(81,32,200,0.1)',
+            border: '1px solid rgba(81,32,200,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1rem',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+              stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
           </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredEnrollments.map((enrollment: Enrollment) => {
-              const course: Course = (enrollment.course || {}) as Course
-              const progress: number = enrollment.progress || 0
-              const courseId: string = course.id || enrollment.courseId || ''
-              
-              // ✅ FIXED: Safe thumbnail URL handling with proper typing
-              let thumbSrc: string = ''
-              try {
-                const rawThumb: string | null | undefined = course.thumbnail
-                if (rawThumb) {
-                  const mediaUrl = getMediaUrl(rawThumb)
-                  thumbSrc = mediaUrl || ''
-                }
-              } catch (e) {
-                console.warn('Error getting thumbnail:', e)
-                thumbSrc = ''
-              }
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
+            {isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet'}
+          </h3>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
+            margin: '0 0 1.25rem' }}>
+            {isAr ? 'ابدأ رحلتك التعليمية اليوم' : 'Start your learning journey today'}
+          </p>
+          <a href={`/${locale}/courses`} style={{
+            padding: '10px 24px', borderRadius: '10px',
+            background: '#5120c8', color: '#fff',
+            textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
+          }}>
+            {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
+          </a>
+        </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {filteredEnrollments2.map((enrollment: any) => {
+            const course = enrollment.course
+            const totalLessons = enrollment.totalLessons || course?.stats?.lessonsCount || course?._count?.lessons || 0
+            const completedLessons = enrollment.completedLessons || Math.round(((enrollment.progress || 0) / 100) * totalLessons) || 0
+            const progress = enrollment.progress || 0
+            const isComplete = progress >= 100
+            const title = isAr ? (course?.titleAr || course?.title) : (course?.titleEn || course?.title)
+            const learnUrl = `/${locale}/learn/${course?.id}`
+            const thumbSrc = course?.thumbnail ? getMediaUrl(course.thumbnail) : ''
 
-              // Determine status
-              const isCompleted: boolean = progress >= 100
-              const isActive: boolean = progress > 0 && progress < 100
-              const isNew: boolean = progress === 0
+            return (
+              <div key={enrollment.id}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                  borderRadius: '16px', overflow: 'hidden',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(81,32,200,0.12)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }}>
 
-              // Safe lessons count
-              const lessonsCount: number = course._count?.lessons ?? 0
-              const completedLessonsCount: number = enrollment.completedLessons ?? 0
-              const totalLessonsCount: number = enrollment.totalLessons ?? lessonsCount
-
-              return (
-                <div
-                  key={enrollment.id || courseId}
-                  className="group rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
-                  style={{ 
-                    border: '1px solid var(--border)', 
-                    background: 'var(--surface)',
-                  }}
-                >
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video overflow-hidden">
-                    {thumbSrc ? (
-                      <img 
-                        src={thumbSrc}
-                        alt={getCourseTitle(course, locale)}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(59,130,246,0.15) 100%)' }}>
-                        <BookOpen className="h-16 w-16" style={{ color: 'rgba(99,102,241,0.3)' }} />
-                      </div>
-                    )}
-                    
-                    {/* Status Badge */}
-                    <div className={`absolute top-3 right-3 z-10 rounded-full px-3 py-1.5 text-xs font-bold shadow-lg backdrop-blur-sm ${
-                      isCompleted 
-                        ? 'bg-green-500 text-white' 
-                        : isActive 
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-black/50 text-white'
-                    }`}>
-                      {isCompleted ? (
-                        <><CheckCircle className="inline h-3.5 w-3.5 mr-1" /> مكتمل</>
-                      ) : isActive ? (
-                        <><Play className="inline h-3.5 w-3.5 mr-1" /> {Math.round(progress)}%</>
-                      ) : (
-                        <><Clock className="inline h-3.5 w-3.5 mr-1" /> جديد</>
-                      )}
+                {/* Thumbnail */}
+                <div style={{ height: '140px', position: 'relative', overflow: 'hidden' }}>
+                  {thumbSrc ? (
+                    <img src={thumbSrc} alt={title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{
+                      width: '100%', height: '100%',
+                      background: 'linear-gradient(135deg,#1a0a2e,#2d1054)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+                        stroke="rgba(255,255,255,0.15)" strokeWidth="1.5">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      </svg>
                     </div>
-
-                    {/* Progress Bar Overlay */}
-                    {isActive && !isCompleted && (
-                      <div className="absolute bottom-0 left-0 right-0 p-2" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)' }}>
-                        <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.2)' }}>
-                          <div 
-                            className="h-full rounded-full bg-blue-500 transition-all"
-                            style={{ width: `${Math.min(progress, 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-5">
-                    {/* Title */}
-                    <h3 className="font-bold text-lg mb-3 line-clamp-2 group-hover:text-primary transition-colors" style={{ color: 'var(--text-primary)' }}>
-                      {getCourseTitle(course, locale)}
-                    </h3>
-
-                    {/* Meta Info */}
-                    <div className="flex items-center gap-3 text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-                      {course.level && (
-                        <span className="flex items-center gap-1 px-2 py-1 rounded-md" style={{ background: 'var(--surface-hover)' }}>
-                          <TrendingUp className="h-3.5 w-3.5" />
-                          {course.level === 'BEGINNER' ? (locale === 'ar' ? 'مبتدئ' : 'Beginner') : 
-                           course.level === 'INTERMEDIATE' ? (locale === 'ar' ? 'متوسط' : 'Intermediate') : 
-                           (locale === 'ar' ? 'متقدم' : 'Advanced')}
-                        </span>
-                      )}
-                      
-                      {lessonsCount > 0 && (
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="h-3.5 w-3.5" />
-                          {lessonsCount} {locale === 'ar' ? 'درس' : 'lessons'}
-                        </span>
-                      )}
-                      
-                      {enrollment.enrolledAt && (
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5" />
-                          {formatDate(enrollment.enrolledAt)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Progress Section */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
-                        <span className="font-medium">{Math.round(progress)}% {locale === 'ar' ? 'مكتمل' : 'complete'}</span>
-                        <span>{completedLessonsCount}/{totalLessonsCount} {locale === 'ar' ? 'درس' : 'lessons'}</span>
-                      </div>
-                      <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--surface-2)' }}>
-                        <div
-                          className="h-full rounded-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${Math.min(progress, 100)}%`,
-                            background: isCompleted 
-                              ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-                              : 'linear-gradient(90deg, var(--primary), #6366f1)',
-                            boxShadow: progress > 0 ? '0 0 10px rgba(99,102,241,0.3)' : 'none'
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    <a
-                      href={`/learn/${locale}/learn/${courseId}`}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl py-3.5 font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      style={{ 
-                        background: isCompleted 
-                          ? 'linear-gradient(135deg, #22c55e, #16a34a)'
-                          : 'linear-gradient(135deg, var(--primary), #6366f1)',
-                        boxShadow: '0 4px 14px rgba(99,102,241,0.25)'
-                      }}
-                    >
-                      {isNew && (<Play className="h-4 w-4" />)}
-                      {isActive && (<Play className="h-4 w-4" />)}
-                      {isCompleted && (<CheckCircle className="h-4 w-4" />)}
-                      {isNew 
-                        ? (locale === 'ar' ? 'ابدأ التعلم' : 'Start Learning')
-                        : isActive 
-                          ? (locale === 'ar' ? 'متابعة' : 'Continue')
-                          : (locale === 'ar' ? 'مراجعة' : 'Review')
-                      }
-                      <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
-                    </a>
+                  )}
+                  <div style={{
+                    position: 'absolute', top: '10px', right: '10px',
+                    padding: '3px 10px', borderRadius: '20px', fontSize: '0.7rem',
+                    fontWeight: 600,
+                    background: isComplete ? 'rgba(34,197,94,0.2)' : 'rgba(81,32,200,0.2)',
+                    border: `1px solid ${isComplete ? 'rgba(34,197,94,0.4)' : 'rgba(81,32,200,0.4)'}`,
+                    color: isComplete ? '#4ade80' : '#a78bfa',
+                  }}>
+                    {isComplete
+                      ? (isAr ? 'مكتمل' : 'Completed')
+                      : (isAr ? 'قيد التعلم' : 'In Progress')}
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
 
-        {/* Footer CTA */}
-        <div className="mt-12 pt-8 border-t text-center" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            {locale === 'ar' ? 'هل تريد تعلم المزيد؟' : 'Want to learn more?'}
-          </p>
-          <Button asChild variant="outline" size="lg">
-            <Link href={`/${locale}/courses`} className="gap-2">
-              {locale === 'ar' ? 'استكشف كورسات جديدة' : 'Discover New Courses'}
-              <ArrowRight className="h-5 w-5 rtl:rotate-180" />
-            </Link>
-          </Button>
+                <div style={{ padding: '1rem 1.25rem' }}>
+                  <h3 style={{
+                    fontSize: '0.9rem', fontWeight: 700, margin: '0 0 10px',
+                    overflow: 'hidden', textOverflow: 'ellipsis',
+                    display: '-webkit-box', WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical', lineHeight: 1.4,
+                    color: 'var(--foreground)',
+                  }}>
+                    {title}
+                  </h3>
+
+                  {/* Progress bar */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between',
+                      marginBottom: '5px',
+                    }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                        {completedLessons}/{totalLessons} {isAr ? 'درس' : 'lessons'}
+                      </span>
+                      <span style={{
+                        fontSize: '0.75rem', fontWeight: 700,
+                        color: isComplete ? '#4ade80' : '#a78bfa',
+                      }}>
+                        {Math.round(progress)}%
+                      </span>
+                    </div>
+                    <div style={{
+                      height: '5px', background: 'rgba(255,255,255,0.06)',
+                      borderRadius: '99px', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        height: '100%', borderRadius: '99px',
+                        width: `${Math.round(progress)}%`,
+                        background: isComplete
+                          ? 'linear-gradient(90deg,#4ade80,#22c55e)'
+                          : 'linear-gradient(90deg,#5120c8,#7c3aed)',
+                        transition: 'width 0.5s ease',
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* Enrolled date */}
+                  {enrollment.enrolledAt && (
+                    <p style={{ fontSize: '0.72rem', color: '#666680', margin: '0 0 10px',
+                      display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      {new Date(enrollment.enrolledAt).toLocaleDateString(
+                        isAr ? 'ar-SA' : 'en-US',
+                        { year: 'numeric', month: 'short', day: 'numeric' }
+                      )}
+                    </p>
+                  )}
+
+                  {/* CTA button */}
+                  <a href={learnUrl} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '8px', padding: '9px', borderRadius: '9px',
+                    background: isComplete ? 'rgba(34,197,94,0.12)' : '#5120c8',
+                    border: isComplete ? '1px solid rgba(34,197,94,0.3)' : 'none',
+                    color: isComplete ? '#4ade80' : '#fff',
+                    textDecoration: 'none', fontWeight: 600, fontSize: '0.82rem',
+                    transition: 'opacity 0.15s',
+                  }}>
+                    {isComplete ? (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        {isAr ? 'مراجعة الكورس' : 'Review Course'}
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        {isAr ? (progress > 0 ? 'استكمال التعلم' : 'ابدأ التعلم') : (progress > 0 ? 'Continue' : 'Start Learning')}
+                      </>
+                    )}
+                  </a>
+                </div>
+              </div>
+            )
+          })}
         </div>
-      </div>
+      )}
     </div>
   )
 }

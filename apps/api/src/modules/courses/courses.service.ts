@@ -576,6 +576,13 @@ export class CoursesService {
                   },
                 },
               },
+              sections: {
+                include: {
+                  lessons: {
+                    select: { id: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -586,31 +593,57 @@ export class CoursesService {
       this.prisma.enrollment.count({ where }),
     ]);
 
-    const transformedEnrollments = enrollments.map(enrollment => ({
-      id: enrollment.id,
-      progress: enrollment.progress,
-      status: enrollment.status,
-      enrolledAt: enrollment.enrolledAt,
-      completedAt: enrollment.completedAt,
-      course: {
-        id: enrollment.course.id,
-        slug: enrollment.course.slug,
-        title: enrollment.course.titleEn,
-        description: enrollment.course.descriptionEn,
-        thumbnail: enrollment.course.thumbnail,
-        duration: (enrollment as any).course.duration,
-        level: enrollment.course.level,
-        careerPath: {
-          id: (enrollment as any).course.careerPath.id,
-          slug: (enrollment as any).course.careerPath.slug,
-          title: (enrollment as any).course.careerPath.titleEn,
-          color: (enrollment as any).course.careerPath.color,
+    const transformedEnrollments = await Promise.all(enrollments.map(async enrollment => {
+      const totalLessons = (enrollment as any).course.sections.reduce(
+        (sum: number, s: any) => sum + s.lessons.length, 0
+      )
+      const completedCount = await this.prisma.lessonProgress.count({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          lesson: { section: { courseId: enrollment.courseId } },
         },
-        stats: {
-          modulesCount: (enrollment as any).course.modules.length,
-          lessonsCount: (enrollment as any).course.modules.reduce((sum, module) => sum + (module as any)._count.lessons, 0),
+      })
+
+      return {
+        id: enrollment.id,
+        progress: enrollment.progress,
+        status: enrollment.status,
+        enrolledAt: enrollment.enrolledAt,
+        completedAt: enrollment.completedAt,
+        completedLessons: completedCount,
+        totalLessons,
+        lessonIds: enrollment.course.sections.flatMap((s: any) => s.lessons.map((l: any) => l.id)),
+        course: {
+          id: enrollment.course.id,
+          slug: enrollment.course.slug,
+          title: enrollment.course.titleEn,
+          titleEn: enrollment.course.titleEn,
+          titleAr: enrollment.course.titleAr,
+          description: enrollment.course.descriptionEn,
+          thumbnail: enrollment.course.thumbnail,
+          duration: (enrollment as any).course.duration,
+          level: enrollment.course.level,
+          careerPath: (enrollment as any).course.careerPath ? {
+            id: (enrollment as any).course.careerPath.id,
+            slug: (enrollment as any).course.careerPath.slug,
+            title: (enrollment as any).course.careerPath.titleEn,
+            color: (enrollment as any).course.careerPath.color,
+          } : null,
+          stats: {
+            modulesCount: (enrollment as any).course.modules.length,
+            lessonsCount: totalLessons,
+          },
+          sections: enrollment.course.sections.map((s: any) => ({
+            id: s.id,
+            title: s.title,
+            lessons: s.lessons.map((l: any) => ({ id: l.id })),
+          })),
+          _count: {
+            lessons: totalLessons,
+          },
         },
-      },
+      }
     }));
 
     return {
