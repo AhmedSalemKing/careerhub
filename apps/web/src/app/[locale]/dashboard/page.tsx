@@ -4,8 +4,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft, ChevronLeft, Shield, CheckCircle2, XCircle, AlertTriangle, Hand } from 'lucide-react'
-import { get, patch } from '../../../lib/api'
+import { BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand } from 'lucide-react'
+import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
 import { AuthGate } from '../../components/AuthGate'
@@ -863,14 +863,13 @@ function Stat({
 }
 
 /* ════════════════════════════════════════════════════════
-   CONSULTANT OVERVIEW — PROFESSIONAL
+   CONSULTANT OVERVIEW — PROFESSIONAL REDESIGN
    ════════════════════════════════════════════════════════ */
 
 function ConsultantOverview() {
   const locale = useLocale()
+  const isAr = locale === 'ar'
   const { user } = useAuthStore()
-  const qc = useQueryClient()
-  const firstName = user?.profile?.firstName || 'المستشار'
 
   const { data: sessions = [] } = useQuery({
     queryKey: ['consultant-sessions'],
@@ -883,163 +882,338 @@ function ConsultantOverview() {
     },
   })
 
-  const pending = (sessions as any[]).filter((s) => s.status === 'PENDING')
-  const confirmed = (sessions as any[]).filter((s) => s.status === 'CONFIRMED')
-  const completed = (sessions as any[]).filter((s) => s.status === 'COMPLETED')
+  const pending = (sessions as any[]).filter((s: any) => s.status === 'PENDING')
+  const confirmed = (sessions as any[]).filter((s: any) => s.status === 'CONFIRMED')
+  const completed = (sessions as any[]).filter((s: any) => s.status === 'COMPLETED')
   const totalRevenue = completed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
 
-  const confirmSession = async (id: string) => {
-    await patch(`/coaching/consulting/${id}/confirm`, {})
-    qc.invalidateQueries({ queryKey: ['consultant-sessions'] })
-  }
-  
-  const cancelSession = async (id: string) => {
-    await patch(`/coaching/consulting/${id}/cancel`, {})
-    qc.invalidateQueries({ queryKey: ['consultant-sessions'] })
-  }
-
-  const consultantStats = [
-    { label: 'طلبات جديدة', value: pending.length, icon: Clock, color: 'from-amber-500 to-orange-600', bgColor: 'bg-amber-500/10' },
-    { label: 'جلسات مؤكدة', value: confirmed.length, icon: CheckCircle, color: 'from-[#5120c8] to-indigo-600', bgColor: 'bg-[#5120c8]/10' },
-    { label: 'جلسات مكتملة', value: completed.length, icon: Target, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500/10' },
-    { label: 'الإيرادات', value: `${totalRevenue} ريال`, icon: DollarSign, color: 'from-purple-500 to-violet-600', bgColor: 'bg-purple-500/10' },
-  ]
-
   return (
-    <div className="p-6 lg:p-8 space-y-8" dir="rtl">
-      
-      {/* Welcome Header */}
-      <div className="rounded-2xl p-8 border border-border bg-surface shadow-sm animate-fade-up relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary/5 to-transparent rounded-full blur-3xl" />
-        <div className="relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center shadow-lg">
-              <Calendar className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-[clamp(24px,3.5vw,34px)] font-bold text-foreground tracking-tight flex items-center gap-2">
-                مرحباً يا {firstName}
-                {user?.isVerified && <VerifiedBadge size="sm" showTooltip={false} />}
-              </h1>
-              <p className="text-sm text-muted mt-1 font-medium">لوحة تحكم المستشار — تابع جلساتك واستشاراتك</p>
-            </div>
+    <div style={{ padding: '1.5rem 2rem 2.5rem' }}>
+
+      {/* Welcome Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(52,211,153,0.15) 0%, rgba(52,211,153,0.04) 100%)',
+        border: '1px solid rgba(52,211,153,0.2)',
+        borderRadius: '16px',
+        padding: '1.75rem 2rem',
+        marginBottom: '1.5rem',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '1rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%',
+            border: '2px solid rgba(52,211,153,0.5)',
+            overflow: 'hidden', flexShrink: 0,
+            background: 'linear-gradient(135deg,#059669,#34d399)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+          }}>
+            {user?.profile?.avatar
+              ? <img src={user.profile.avatar} alt=""
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+              : (user?.profile?.firstName?.[0] || 'م')
+            }
+          </div>
+          <div>
+            <p style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 500, margin: '0 0 3px' }}>
+              {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
+            </p>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 3px' }}>
+              {isAr
+                ? `مرحبا ${user?.profile?.firstName || 'المستشار'}`
+                : `Welcome, ${user?.profile?.firstName || 'Coach'}`}
+            </h1>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.82rem', margin: 0 }}>
+              {isAr ? 'تابع جلساتك واستشاراتك اليوم' : 'Track your sessions and consultations'}
+            </p>
           </div>
         </div>
+        <a href={`/${locale}/dashboard/my-sessions`} style={{
+          display: 'inline-flex', alignItems: 'center', gap: '8px',
+          padding: '11px 22px', borderRadius: '10px',
+          background: '#059669', color: '#fff',
+          fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+          boxShadow: '0 4px 15px rgba(5,150,105,0.3)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          {isAr ? 'إدارة الجلسات' : 'Manage Sessions'}
+        </a>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {consultantStats.map((s, i) => (
-          <div 
-            key={i} 
-            className={`rounded-2xl p-5 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${i + 1}`}
-          >
-            <div className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${s.color} shadow-md`}>
-              <s.icon className="h-5 w-5 text-white" />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '1rem', marginBottom: '1.5rem',
+      }}>
+        {[
+          {
+            labelAr: 'طلبات جديدة', labelEn: 'New Requests',
+            value: pending.length,
+            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
+            href: `/${locale}/dashboard/client-sessions`,
+          },
+          {
+            labelAr: 'جلسات مؤكدة', labelEn: 'Confirmed',
+            value: confirmed.length,
+            color: '#34d399', bg: 'rgba(52,211,153,0.12)',
+            href: `/${locale}/dashboard/my-sessions`,
+          },
+          {
+            labelAr: 'جلسات مكتملة', labelEn: 'Completed',
+            value: completed.length,
+            color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
+            href: `/${locale}/dashboard/my-sessions`,
+          },
+          {
+            labelAr: 'الإيرادات', labelEn: 'Revenue',
+            value: `${totalRevenue} ${isAr ? 'ر.س' : 'SAR'}`,
+            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
+            href: `/${locale}/dashboard/revenue`,
+          },
+        ].map((stat, i) => (
+          <a key={i} href={stat.href} style={{ textDecoration: 'none' }}>
+            <div style={{
+              padding: '1.25rem',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
+              borderRadius: '14px',
+              display: 'flex', alignItems: 'flex-start', gap: '1rem',
+              transition: 'border-color 0.2s', cursor: 'pointer',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(52,211,153,0.3)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            >
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '12px',
+                background: stat.bg, color: stat.color, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {stat.labelAr === 'طلبات جديدة' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                    <line x1="6" y1="1" x2="6" y2="4"/>
+                    <line x1="10" y1="1" x2="10" y2="4"/>
+                    <line x1="14" y1="1" x2="14" y2="4"/>
+                  </svg>
+                ) : stat.labelAr === 'جلسات مؤكدة' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                    <polyline points="9 16 11 18 15 14"/>
+                  </svg>
+                ) : stat.labelAr === 'جلسات مكتملة' ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
+                  color: 'var(--foreground)' }}>
+                  {stat.value}
+                </p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                  {isAr ? stat.labelAr : stat.labelEn}
+                </p>
+              </div>
             </div>
-            <p className="text-2xl font-bold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>{s.value}</p>
-            <p className="text-xs text-muted mt-1 font-medium">{s.label}</p>
-          </div>
+          </a>
         ))}
       </div>
 
-      {/* Pending Sessions */}
-      {pending.length > 0 && (
-        <div className="animate-fade-up stagger-4">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-            <h2 className="text-lg font-bold text-foreground">طلبات تحتاج موافقة ({pending.length})</h2>
+      {/* Two column: upcoming sessions + quick actions */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 280px',
+        gap: '1.25rem',
+      }}>
+        {/* Upcoming Sessions */}
+        <div style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: '14px', padding: '1.25rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
+              {isAr ? 'الجلسات القادمة' : 'Upcoming Sessions'}
+            </h2>
+            <a href={`/${locale}/dashboard/my-sessions`}
+              style={{ fontSize: '0.8rem', color: '#34d399', textDecoration: 'none' }}>
+              {isAr ? 'عرض الكل' : 'View all'}
+            </a>
           </div>
-          
-          <div className="space-y-4">
-            {pending.map((s: any) => (
-              <div key={s.id} className="rounded-2xl p-6 border border-amber-500/25 bg-gradient-to-r from-amber-500/[0.04] to-transparent hover:from-amber-500/[0.08] transition-all duration-300">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Clock className="h-4 w-4 text-amber-500" />
-                      <p className="font-semibold text-foreground">{s.topic || 'جلسة استشارية'}</p>
-                    </div>
-                    <p className="text-sm text-muted">
-                      {s.scheduledAt ? new Date(s.scheduledAt).toLocaleDateString('ar-SA', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      }) : '—'} 
-                      <span className="mx-2">•</span> 
-                      <span className="font-medium text-foreground">{s.meetingMethod}</span>
-                    </p>
-                    <p className="font-bold text-amber-600 text-lg mt-2" style={{ fontFamily: 'PingARLT, sans-serif' }}>
-                      {s.price} ريال
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-3 shrink-0">
-                    <button 
-                      onClick={() => confirmSession(s.id)} 
-                      className="px-5 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold hover:bg-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                    >
-                      <CheckCircle2 className="h-4 w-4 inline ml-1" />قبول
-                    </button>
-                    <button 
-                      onClick={() => cancelSession(s.id)} 
-                      className="px-5 py-2.5 rounded-xl bg-red-500/10 text-red-500 text-sm font-bold border border-red-500/20 hover:bg-red-500/20 transition-all duration-200"
-                    >
-                      <XCircle className="h-4 w-4 inline ml-1" />رفض
-                    </button>
-                  </div>
+
+          {confirmed.length > 0 ? (
+            confirmed.slice(0, 4).map((session: any, i: number) => (
+              <div key={session.id || i} style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '10px 0',
+                borderBottom: '1px solid var(--border)',
+              }}>
+                <div style={{
+                  width: '38px', height: '38px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg,#059669,#34d399)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: '0.85rem', fontWeight: 700, flexShrink: 0,
+                }}>
+                  {session.user?.profile?.firstName?.[0] || ''}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: '0 0 3px',
+                    color: 'var(--foreground)', overflow: 'hidden',
+                    textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {session.user?.profile?.firstName || (isAr ? 'طالب' : 'Student')}
+                  </p>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                    {session.scheduledAt
+                      ? new Date(session.scheduledAt).toLocaleDateString(
+                          isAr ? 'ar-SA' : 'en-US',
+                          { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+                        )
+                      : (isAr ? 'تاريخ غير محدد' : 'Date TBD')}
+                  </p>
+                </div>
+                <div style={{
+                  padding: '3px 8px', borderRadius: '20px', fontSize: '0.68rem',
+                  fontWeight: 600, flexShrink: 0,
+                  background: 'rgba(52,211,153,0.1)',
+                  border: '1px solid rgba(52,211,153,0.3)',
+                  color: '#34d399',
+                }}>
+                  {isAr ? 'مؤكد' : 'Confirmed'}
                 </div>
               </div>
-            ))}
-          </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2rem',
+              color: 'var(--muted-foreground)' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.5"
+                style={{ margin: '0 auto 8px', display: 'block', opacity: 0.3 }}>
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <p style={{ margin: '0', fontSize: '0.875rem' }}>
+                {isAr ? 'لا توجد جلسات قادمة' : 'No upcoming sessions'}
+              </p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Confirmed Sessions */}
-      {confirmed.length > 0 && (
-        <div className="animate-fade-up stagger-5">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <h2 className="text-lg font-bold text-foreground">الجلسات القادمة ({confirmed.length})</h2>
-          </div>
-          
-          <div className="space-y-3">
-            {confirmed.slice(0, 5).map((s: any) => (
-              <div key={s.id} className="rounded-2xl p-5 border border-border bg-surface hover:shadow-md hover:border-emerald-500/30 transition-all duration-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-foreground mb-1">{s.topic || 'جلسة استشارية'}</p>
-                    <p className="text-sm text-muted">
-                      {s.scheduledAt ? new Date(s.scheduledAt).toLocaleDateString('ar-SA') : '—'}
-                    </p>
-                  </div>
-                  
-                  <div className="text-left">
-                    <span className="inline-block px-4 py-1.5 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20">
-                      {s.meetingMethod}
-                    </span>
-                    <p className="font-bold text-amber-600 text-base mt-2" style={{ fontFamily: 'PingARLT, sans-serif' }}>
-                      {s.price} ريال
-                    </p>
-                  </div>
+        {/* Quick Actions */}
+        <div style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: '14px', padding: '1.25rem',
+        }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1rem' }}>
+            {isAr ? 'روابط سريعة' : 'Quick Links'}
+          </h2>
+          {[
+            {
+              labelAr: 'جلساتي', labelEn: 'My Sessions',
+              href: `/${locale}/dashboard/my-sessions`,
+              color: '#34d399', bg: 'rgba(52,211,153,0.1)',
+            },
+            {
+              labelAr: 'طلبات العملاء', labelEn: 'Client Requests',
+              href: `/${locale}/dashboard/client-sessions`,
+              color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',
+            },
+            {
+              labelAr: 'الإيرادات', labelEn: 'Revenue',
+              href: `/${locale}/dashboard/revenue`,
+              color: '#a78bfa', bg: 'rgba(81,32,200,0.1)',
+            },
+            {
+              labelAr: 'الإعدادات', labelEn: 'Settings',
+              href: `/${locale}/dashboard/settings`,
+              color: '#9999aa', bg: 'rgba(153,153,170,0.1)',
+            },
+          ].map((action, i) => (
+            <a key={i} href={action.href} style={{ textDecoration: 'none', display: 'block' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '9px 10px', borderRadius: '10px', marginBottom: '4px',
+                background: 'transparent', cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = action.bg}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <div style={{
+                  width: '34px', height: '34px', borderRadius: '9px',
+                  background: action.bg, color: action.color, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {action.labelAr === 'جلساتي' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  ) : action.labelAr === 'طلبات العملاء' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  ) : action.labelAr === 'الإيرادات' ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <line x1="12" y1="1" x2="12" y2="23"/>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                  )}
                 </div>
+                <span style={{ fontSize: '0.875rem', fontWeight: 500,
+                  color: 'var(--foreground)', flex: 1 }}>
+                  {isAr ? action.labelAr : action.labelEn}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  style={{ opacity: 0.3, transform: isAr ? 'rotate(180deg)' : 'none' }}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
               </div>
-            ))}
-          </div>
+            </a>
+          ))}
         </div>
-      )}
-
-      {/* Empty State */}
-      {sessions.length === 0 && (
-        <div className="rounded-2xl p-16 text-center border-2 border-dashed border-border-strong bg-surface/50 animate-fade-in">
-          <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-primary/10 to-violet-600/10 flex items-center justify-center">
-            <Calendar className="h-10 w-10 text-primary opacity-50" />
-          </div>
-          <h3 className="text-lg font-bold text-foreground mb-2">لا توجد جلسات بعد</h3>
-          <p className="text-sm text-muted">سيظهر هنا الجلسات الاستشارية عندما يتم حجزها</p>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
