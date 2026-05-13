@@ -1244,6 +1244,9 @@ function CourseSettingsTab({
   })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [certLoading, setCertLoading] = useState(false)
+  const [expectedLessons, setExpectedLessons] = useState(course?.expectedLessons ?? 0)
+  const [certificateEnabled, setCertificateEnabled] = useState(course?.certificateEnabled ?? true)
 
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
@@ -1265,6 +1268,28 @@ function CourseSettingsTab({
       setSaving(false)
     }
   }
+
+  const handleMarkCompleted = async () => {
+    setCertLoading(true)
+    try {
+      await patch(`/courses/${courseId}/mark-completed`, { expectedLessons, certificateEnabled })
+      onRefresh()
+    } finally {
+      setCertLoading(false)
+    }
+  }
+
+  const handleReopenCourse = async () => {
+    setCertLoading(true)
+    try {
+      await patch(`/courses/${courseId}/course-settings`, { isCompleted: false })
+      onRefresh()
+    } finally {
+      setCertLoading(false)
+    }
+  }
+
+  const isAr = true
 
   const LEVELS = [
     { value: 'BEGINNER', label: 'مبتدئ' },
@@ -1356,6 +1381,131 @@ function CourseSettingsTab({
         {saving && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
         {saved ? '✓ تم الحفظ' : 'حفظ التغييرات'}
       </button>
+
+      {/* ── Certificate Settings ──────────────────────────── */}
+      <div style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: `1px solid ${course?.isCompleted ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.08)'}`,
+        borderRadius: '14px',
+        padding: '1.5rem',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'1rem' }}>
+          <div style={{
+            width:'36px', height:'36px', borderRadius:'9px',
+            background: course?.isCompleted ? 'rgba(34,197,94,0.12)' : 'rgba(251,191,36,0.12)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+              stroke={course?.isCompleted ? '#4ade80' : '#fbbf24'} strokeWidth="2">
+              <circle cx="12" cy="8" r="6"/>
+              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+          </div>
+          <div>
+            <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:'var(--foreground)' }}>
+              إعدادات الشهادة
+            </h3>
+            <p style={{ margin:0, fontSize:'0.78rem', color:'var(--muted-foreground)' }}>
+              {course?.isCompleted
+                ? 'الكورس مكتمل ✓ الشهادات متاحة للطلاب'
+                : 'الكورس قيد التطوير ✕ الشهادات معطلة'}
+            </p>
+          </div>
+        </div>
+
+        {!course?.isCompleted && (
+          <div style={{ marginBottom:'1rem' }}>
+            <label style={{ fontSize:'0.82rem', color:'var(--muted-foreground)',
+              display:'block', marginBottom:'6px' }}>
+              العدد المتوقع للدروس النهائي
+            </label>
+            <input
+              type="number"
+              value={expectedLessons}
+              onChange={e => setExpectedLessons(Number(e.target.value))}
+              placeholder="مثال: 24"
+              style={{
+                width:'120px', padding:'8px 12px', borderRadius:'8px',
+                background:'rgba(255,255,255,0.05)',
+                border:'1px solid rgba(255,255,255,0.1)',
+                color:'var(--foreground)', fontFamily:'inherit', fontSize:'0.875rem',
+              }}
+            />
+            <p style={{ fontSize:'0.75rem', color:'#666680', margin:'4px 0 0' }}>
+              يظهر للطلاب لإعلامهم بالمحتوى القادم
+            </p>
+          </div>
+        )}
+
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
+          padding:'10px 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginBottom:'1rem' }}>
+          <div>
+            <p style={{ margin:0, fontSize:'0.875rem', fontWeight:600, color:'var(--foreground)' }}>
+              تفعيل الشهادات
+            </p>
+            <p style={{ margin:0, fontSize:'0.75rem', color:'var(--muted-foreground)' }}>
+              تتوفر فقط عند إعلان اكتمال الكورس
+            </p>
+          </div>
+          <div
+            onClick={() => setCertificateEnabled(!certificateEnabled)}
+            style={{
+              width:'44px', height:'24px', borderRadius:'12px', cursor:'pointer',
+              background: certificateEnabled ? '#5120c8' : 'rgba(255,255,255,0.1)',
+              position:'relative', transition:'background 0.2s', flexShrink:0,
+            }}>
+            <div style={{
+              position:'absolute', top:'3px',
+              left: certificateEnabled ? '23px' : '3px',
+              width:'18px', height:'18px', borderRadius:'50%',
+              background:'#fff', transition:'left 0.2s',
+            }}/>
+          </div>
+        </div>
+
+        {course?.isCompleted ? (
+          <button onClick={handleReopenCourse} disabled={certLoading}
+            style={{
+              width:'100%', padding:'10px', borderRadius:'10px',
+              background:'rgba(234,179,8,0.1)',
+              border:'1px solid rgba(234,179,8,0.25)',
+              color:'#fbbf24', cursor:'pointer', fontFamily:'inherit',
+              fontSize:'0.875rem', fontWeight:600,
+              display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+            }}>
+            {certLoading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+              </svg>
+            )}
+            إعادة فتح الكورس للتعديل
+          </button>
+        ) : (
+          <button onClick={handleMarkCompleted} disabled={certLoading}
+            style={{
+              width:'100%', padding:'10px', borderRadius:'10px',
+              background:'linear-gradient(135deg, #5120c8, #7c3aed)',
+              border:'none', color:'#fff', cursor:'pointer',
+              fontFamily:'inherit', fontSize:'0.875rem', fontWeight:700,
+              display:'flex', alignItems:'center', justifyContent:'center', gap:'8px',
+              boxShadow:'0 4px 12px rgba(81,32,200,0.3)',
+            }}>
+            {certLoading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            )}
+            إعلان اكتمال الكورس وتفعيل الشهادات
+          </button>
+        )}
+      </div>
     </div>
   )
 }

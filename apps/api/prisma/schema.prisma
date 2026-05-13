@@ -340,10 +340,14 @@ model Course {
   tags          String[]     @default([])
   careerPaths  String[]     @default([])
   status        CourseStatus @default(DRAFT)
-  isFeatured    Boolean      @default(false)
-  sortOrder     Int          @default(0)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  isFeatured          Boolean      @default(false)
+  sortOrder           Int          @default(0)
+  expectedLessons     Int          @default(0)
+  certificateEnabled  Boolean      @default(true)
+  isCompleted         Boolean      @default(false)
+  completedAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
   // Live streaming fields
   type                String?   @default("recorded") // recorded | live | offline

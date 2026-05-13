@@ -366,12 +366,14 @@ export default function CourseDetailPage({
 	const totalLessons = allLessonsFlat.length;
 	const completedCount = completedLessonIds.length;
 	const completedLessons = completedCount || Math.round((courseProgress / 100) * totalLessons);
-	const isCourseComplete = totalLessons > 0 && completedCount >= totalLessons;
+	const isContentComplete = totalLessons > 0 && completedCount >= totalLessons;
+	const isCourseComplete = isContentComplete && course?.isCompleted === true && course?.certificateEnabled !== false;
+	const awaitingCourseCompletion = isContentComplete && !course?.isCompleted;
 	const progressPercent = totalLessons > 0
 		? Math.min(100, Math.round((completedCount / totalLessons) * 100))
 		: 0;
 
-	console.log('[Certificate] total:', totalLessons, '| completed:', completedCount, '| isCourseComplete:', isCourseComplete);
+	console.log('[Certificate] total:', totalLessons, '| completed:', completedCount, '| isContentComplete:', isContentComplete, '| course.isCompleted:', course?.isCompleted, '| isCourseComplete:', isCourseComplete);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
 	const typeBadge = isLive
@@ -1256,72 +1258,169 @@ export default function CourseDetailPage({
 										</div>
 
 										{/* Certificate Button */}
-										<button
-											disabled={!isCourseComplete}
-											onClick={
-												isCourseComplete
-													? handleGetCertificate
-													: undefined
-											}
-											style={{
-												width: "100%",
-												padding: "12px",
-												borderRadius: "10px",
-												border: "none",
-												cursor: isCourseComplete
-													? "pointer"
-													: "not-allowed",
-												background: isCourseComplete
-													? "linear-gradient(135deg, #5120c8, #7c3aed)"
-													: "rgba(255,255,255,0.05)",
-												color: isCourseComplete
-													? "#fff"
-													: "#555",
-												fontWeight: 700,
-												fontSize: "0.9rem",
-												fontFamily: "inherit",
-												display: "flex",
-												alignItems: "center",
-												justifyContent: "center",
-												gap: "10px",
-												transition: "all 0.2s",
-												boxShadow: isCourseComplete
-													? "0 4px 15px rgba(81,32,200,0.4)"
-													: "none",
-												opacity: isCourseComplete ? 1 : 0.6,
-											}}>
-											<svg
-												width="18"
-												height="18"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												strokeWidth="2"
-												strokeLinecap="round">
-												<circle cx="12" cy="8" r="6" />
-												<path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
-											</svg>
-											{isCourseComplete
-												? isAr
-													? "احصل على شهادتك"
-													: "Get Your Certificate"
-												: isAr
-													? "أكمل الكورس للحصول على الشهادة"
-													: "Complete course to get certificate"}
-										</button>
-
-										{!isCourseComplete && (
-											<p
+										{isCourseComplete ? (
+											<button
+												onClick={handleGetCertificate}
 												style={{
-													textAlign: "center",
-													fontSize: "0.75rem",
-													color: textSecondary,
-													margin: "8px 0 0",
+													width: "100%",
+													padding: "12px",
+													borderRadius: "10px",
+													border: "none",
+													cursor: "pointer",
+													background:
+														"linear-gradient(135deg, #5120c8, #7c3aed)",
+													color: "#fff",
+													fontWeight: 700,
+													fontSize: "0.9rem",
+													fontFamily: "inherit",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													gap: "10px",
+													boxShadow:
+														"0 4px 15px rgba(81,32,200,0.4)",
 												}}>
+												<svg
+													width="18"
+													height="18"
+													viewBox="0 0 24 24"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="2"
+													strokeLinecap="round">
+													<circle cx="12" cy="8" r="6" />
+													<path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+												</svg>
 												{isAr
-													? `تبقى ${totalLessons - completedLessons} درس للإكمال`
-													: `${totalLessons - completedLessons} lessons remaining`}
-											</p>
+													? "احصل على شهادتك"
+													: "Get Your Certificate"}
+											</button>
+										) : awaitingCourseCompletion ? (
+											<div
+												style={{
+													padding: "1rem",
+													borderRadius: "10px",
+													background:
+														"rgba(251,191,36,0.08)",
+													border:
+														"1px solid rgba(251,191,36,0.2)",
+													textAlign: "center",
+												}}>
+												<div
+													style={{
+														display: "flex",
+														alignItems: "center",
+														justifyContent:
+															"center",
+														gap: "8px",
+														marginBottom: "6px",
+													}}>
+													<svg
+														width="16"
+														height="16"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="#fbbf24"
+														strokeWidth="2"
+														strokeLinecap="round">
+														<circle
+															cx="12"
+															cy="12"
+															r="10"
+														/>
+														<polyline points="12 6 12 12 16 14" />
+													</svg>
+													<span
+														style={{
+															color: "#fbbf24",
+															fontWeight: 700,
+															fontSize:
+																"0.875rem",
+														}}>
+														{isAr
+															? "أكملت جميع الدروس المتاحة"
+															: "All available lessons completed"}
+													</span>
+												</div>
+												<p
+													style={{
+														color: textSecondary,
+														fontSize: "0.78rem",
+														margin: 0,
+														lineHeight: 1.6,
+													}}>
+													{isAr
+														? "هذا الكورس لا يزال قيد التطوير. ستتوفر الشهادة عند إعلان المحاضر اكتمال الكورس."
+														: "This course is still being developed. The certificate will be available when the instructor marks the course as complete."}
+												</p>
+												{(course?.expectedLessons ?? 0) > totalLessons && (
+													<p
+														style={{
+															color: "#fbbf24",
+															fontSize:
+																"0.75rem",
+															margin: "6px 0 0",
+															fontWeight: 600,
+														}}>
+														{isAr
+															? `${(course?.expectedLessons ?? 0) - totalLessons} درس قادم قريبا`
+															: `${(course?.expectedLessons ?? 0) - totalLessons} more lessons coming soon`}
+													</p>
+												)}
+											</div>
+										) : (
+											<>
+												<button
+													disabled
+													style={{
+														width: "100%",
+														padding: "12px",
+														borderRadius: "10px",
+														border: "none",
+														cursor: "not-allowed",
+														background:
+															"rgba(255,255,255,0.05)",
+														color: "#555",
+														fontWeight: 700,
+														fontSize: "0.9rem",
+														fontFamily:
+															"inherit",
+														display: "flex",
+														alignItems:
+															"center",
+														justifyContent:
+															"center",
+														gap: "10px",
+														opacity: 0.6,
+													}}>
+													<svg
+														width="18"
+														height="18"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														strokeWidth="2"
+														strokeLinecap="round">
+														<circle cx="12" cy="8" r="6" />
+														<path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+													</svg>
+													{isAr
+														? "أكمل الكورس للحصول على الشهادة"
+														: "Complete course to get certificate"}
+												</button>
+												<p
+													style={{
+														textAlign:
+															"center",
+														fontSize: "0.75rem",
+														color: textSecondary,
+														margin: "8px 0 0",
+													}}>
+													{isAr
+														? `تبقى ${totalLessons - completedLessons} درس للإكمال`
+														: `${totalLessons - completedLessons} lessons remaining`}
+												</p>
+											</>
 										)}
 									</div>
 								</>

@@ -1884,6 +1884,54 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     };
   }
+
+  async markCourseCompleted(
+    courseId: string,
+    instructorId: string,
+    body: { expectedLessons?: number; certificateEnabled?: boolean }
+  ) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, instructorId },
+    })
+    if (!course) throw new NotFoundException('Course not found')
+
+    const totalLessons = await this.prisma.lesson.count({
+      where: { section: { courseId } },
+    })
+
+    return this.prisma.course.update({
+      where: { id: courseId },
+      data: {
+        isCompleted: true,
+        completedAt: new Date(),
+        certificateEnabled: body.certificateEnabled ?? true,
+        expectedLessons: body.expectedLessons ?? totalLessons,
+      },
+    })
+  }
+
+  async updateCourseSettings(
+    courseId: string,
+    instructorId: string,
+    body: { expectedLessons?: number; certificateEnabled?: boolean; isCompleted?: boolean }
+  ) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, instructorId },
+    })
+    if (!course) throw new NotFoundException('Course not found')
+
+    return this.prisma.course.update({
+      where: { id: courseId },
+      data: {
+        ...(body.expectedLessons !== undefined && { expectedLessons: body.expectedLessons }),
+        ...(body.certificateEnabled !== undefined && { certificateEnabled: body.certificateEnabled }),
+        ...(body.isCompleted !== undefined && {
+          isCompleted: body.isCompleted,
+          completedAt: body.isCompleted ? new Date() : null,
+        }),
+      },
+    })
+  }
 }
 
 

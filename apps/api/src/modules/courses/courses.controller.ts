@@ -443,6 +443,30 @@ export class CoursesController {
     };
   }
 
+  @Patch(':id/mark-completed')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mark course as completed and enable certificates' })
+  async markCourseCompleted(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() body: { expectedLessons?: number; certificateEnabled?: boolean }
+  ) {
+    return this.coursesService.markCourseCompleted(id, user.id, body)
+  }
+
+  @Patch(':id/course-settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update course certificate settings' })
+  async updateCourseSettings(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+    @Body() body: { expectedLessons?: number; certificateEnabled?: boolean; isCompleted?: boolean }
+  ) {
+    return this.coursesService.updateCourseSettings(id, user.id, body)
+  }
+
   @Post('recommendations')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
