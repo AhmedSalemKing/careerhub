@@ -7,6 +7,8 @@ import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../lib/api'
 import { getUser } from '../../../lib/auth'
 import { getMediaUrl } from '../../../lib/media'
+import { BookOpen, ArrowRight, Search, Star, Users, Award, CheckCircle, Clock, XCircle, LayoutGrid } from 'lucide-react'
+import { Button } from '../../components/ui/button'
 
 // ══════════════════════════════════════
 // TYPES
@@ -125,7 +127,12 @@ function ErrorMessage({
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.1)' }}>
-        <AlertTriangle className="h-10 w-10" style={{ color: '#ef4444' }} />
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
+          stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
       </div>
       
       <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>{message}</h2>
@@ -141,9 +148,15 @@ function ErrorMessage({
         style={{ background: 'var(--primary)', color: 'white', boxShadow: '0 4px 14px rgba(99,102,241,0.25)' }}
       >
         {retrying ? (
-          <><Loader2 className="h-4 w-4 animate-spin" /> جاري المحاولة...</>
+          <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+          </svg> جاري المحاولة...</>
         ) : (
-          <><RefreshCw className="h-4 w-4" /> إعادة المحاولة</>
+          <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg> إعادة المحاولة</>
         )}
       </button>
 
