@@ -65,12 +65,20 @@ export default async function RootLayout({
         <style dangerouslySetInnerHTML={{
           __html: `
             html, body { min-height: 100vh; }
-            html { background-color: #ffffff; }
-            html.dark { background-color: #0d0d0d; }
+            html, body { background-color: #ffffff; }
+            html.dark, html.dark body { background-color: #0d0d0d; }
           `
         }} />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            try {
+              var t = document.documentElement.classList.contains('dark') ? '#0d0d0d' : '#ffffff';
+              document.body.style.backgroundColor = t;
+            } catch(e){}
+          `,
+        }} />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
