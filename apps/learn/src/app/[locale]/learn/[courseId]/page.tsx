@@ -91,7 +91,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 	const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 	const [markingComplete, setMarkingComplete] = useState(false);
 	const [isCourseComplete, setIsCourseComplete] = useState(false);
-	const [isGeneratingCert, setIsGeneratingCert] = useState(false);
 	const [theme, setTheme] = useState<"light" | "dark">("light");
 
 	// Media states
@@ -351,10 +350,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 	const progress =
 		totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
-
-	// Show certificate button if course is complete OR all lessons are done (defensive fallback)
-	const showCertButton = isCourseComplete ||
-		(allLessonsFlat.length > 0 && completedLessons.size >= allLessonsFlat.length);
 
 	// Merge localStorage progress on first load (before server data arrives)
 	useEffect(() => {
@@ -668,57 +663,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 			toast.error(isAr ? 'حدث خطا غير متوقع' : 'Unexpected error occurred');
 		} finally {
 			setMarkingComplete(false);
-		}
-	};
-
-	const handleGetCertificate = async (): Promise<void> => {
-		const token = getAuthToken()
-		if (!token) {
-			router.push(`/${locale}/login`)
-			return
-		}
-
-		setIsGeneratingCert(true)
-		const toastId = toast.loading(
-			isAr ? 'جاري اصدار الشهادة...' : 'Generating certificate...',
-		)
-
-		try {
-			console.log('[Certificate] Requesting generation for courseId:', courseId)
-			console.log('[Certificate] Token exists:', !!token, '| Token length:', token.length)
-
-			const res = await fetch(`${apiBase}/certificates/generate/${courseId}`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json',
-				},
-			})
-
-			const payload = await res.json()
-			toast.dismiss(toastId)
-
-			if (res.ok && (payload?.success || payload?.data?.id || payload?.data?.serialNumber)) {
-				const serial = payload?.data?.serialNumber || payload?.data?.serial || ''
-				toast.success(
-					isAr ? 'تم اصدار الشهادة بنجاح' : 'Certificate issued successfully',
-				)
-				// Wait 1.5s then redirect to web app certificates page
-				setTimeout(() => {
-					const webUrl = process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'
-					window.location.href = `${webUrl}/${locale}/dashboard/certificates`
-				}, 1500)
-			} else {
-				const errMsg = payload?.message || payload?.error || 'Certificate generation failed'
-				console.error('[Certificate] Generation failed:', errMsg, '| Full response:', payload)
-				toast.error(isAr ? `فشل: ${errMsg}` : `Failed: ${errMsg}`)
-			}
-		} catch (err: any) {
-			toast.dismiss(toastId)
-			console.error('[Certificate] Network error:', err.message)
-			toast.error(isAr ? 'خطأ في الاتصال بالخادم' : 'Network error please try again')
-		} finally {
-			setIsGeneratingCert(false)
 		}
 	};
 
@@ -2439,39 +2383,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 									</button>
 								</div>
 
-								{/* Course Completion Certificate CTA */}
-							{showCertButton && (
-								<div style={{ textAlign: "center", marginTop: "1rem" }}>
-									<p
-										style={{
-											color: "#c9a96e",
-											marginBottom: "0.5rem",
-											fontSize: "0.9rem",
-										}}
-									>
-										{isAr ? "اكملت الكورس!" : "Course complete!"}
-									</p>
-									<button
-										onClick={() =>
-											router.push(`/${locale}/courses/${courseId}`)
-										}
-										style={{
-											padding: "0.6rem 1.25rem",
-											borderRadius: "8px",
-											border: "1px solid #c9a96e",
-											background: "transparent",
-											color: "#c9a96e",
-											cursor: "pointer",
-											fontSize: "0.9rem",
-											fontFamily: "inherit",
-										}}
-									>
-										{isAr
-											? "اذهب لصفحة الكورس للحصول على شهادتك"
-											: "Go to course page for certificate"}
-									</button>
-								</div>
-							)}
 							</div>
 						</>
 					) : (

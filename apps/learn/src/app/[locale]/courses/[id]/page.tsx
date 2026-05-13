@@ -124,6 +124,9 @@ export default function CourseDetailPage({
 			}
 		},
 		enabled: !!hasUser && !!courseId,
+		retry: 1,
+		retryDelay: 2000,
+		staleTime: 30000,
 	});
 
 	useEffect(() => {
@@ -359,16 +362,16 @@ export default function CourseDetailPage({
 		? `${course.instructor.profile.firstName} ${course.instructor.profile.lastName}`
 		: t("instructor");
 	const sections = course.sections ?? course.modules ?? [];
-	const totalLessons = sections.reduce(
-		(acc: number, s: any) => acc + (s.lessons?.length || 0),
-		0,
-	);
+	const allLessonsFlat = sections.flatMap((section: any) => section.lessons || []);
+	const totalLessons = allLessonsFlat.length;
 	const completedCount = completedLessonIds.length;
 	const completedLessons = completedCount || Math.round((courseProgress / 100) * totalLessons);
 	const isCourseComplete = totalLessons > 0 && completedCount >= totalLessons;
 	const progressPercent = totalLessons > 0
 		? Math.min(100, Math.round((completedCount / totalLessons) * 100))
 		: 0;
+
+	console.log('[Certificate] total:', totalLessons, '| completed:', completedCount, '| isCourseComplete:', isCourseComplete);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
 	const typeBadge = isLive
@@ -1527,8 +1530,8 @@ export default function CourseDetailPage({
 						))}
 						</div>
 
-						{/* Certificate Section - only when 100% complete */}
-						{courseProgress >= 100 && (
+						{/* Certificate Section - only when ALL lessons complete */}
+						{isCourseComplete && (
 							<div
 								style={{
 									marginTop: "1.5rem",

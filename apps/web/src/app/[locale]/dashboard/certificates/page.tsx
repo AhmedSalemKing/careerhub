@@ -1,14 +1,12 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../../../stores/authStore'
-import { Award, Download, Shield, BookOpen, Calendar, CheckCircle2 } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import Link from 'next/link'
+import { useLocale } from 'next-intl'
 import { useEffect } from 'react'
 
 export default function CertificatesPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
+  const locale = useLocale()
+  const isAr = locale === 'ar'
   const { user, hydrate } = useAuthStore()
 
   useEffect(() => { hydrate() }, [hydrate])
@@ -53,285 +51,307 @@ export default function CertificatesPage() {
 
   const certificates = Array.isArray(data) ? data : []
 
-  const formatDate = (date: string) =>
-    new Date(date).toLocaleDateString('ar-SA', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })
-
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: isDark ? '#0f1221' : '#fafafa',
-        padding: '32px 24px 120px',
-        direction: 'rtl',
-      }}
-    >
-      {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <div
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: '12px',
-              background: 'rgba(81,32,200,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Award size={24} color="#5120c8" />
-          </div>
-          <h1
-            style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: isDark ? '#f1f5f9' : '#0d0d0d',
-              margin: 0,
-            }}
-          >
-            شهاداتي
+    <div style={{
+      minHeight: '100vh',
+      background: '#0d0d0d',
+      padding: '32px 24px 120px',
+      direction: isAr ? 'rtl' : 'ltr',
+    }}>
+      {/* PAGE HEADER */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 4px', color: '#f1f5f9' }}>
+            {isAr ? 'شهاداتي' : 'My Certificates'}
           </h1>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.88rem', margin: 0 }}>
+            {isAr
+              ? `${certificates.length} شهادة مكتسبة`
+              : `${certificates.length} certificates earned`}
+          </p>
         </div>
-        <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>
-          {certificates.length} شهادة مكتسبة
-        </p>
+        <a href={`/${locale}/dashboard/my-courses`}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '9px 18px', borderRadius: '10px',
+            background: 'rgba(81,32,200,0.12)',
+            border: '1px solid rgba(81,32,200,0.25)',
+            color: '#a78bfa', textDecoration: 'none',
+            fontSize: '0.875rem', fontWeight: 600,
+          }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          {isAr ? 'كورساتي' : 'My Courses'}
+        </a>
       </div>
 
       {isLoading ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-            gap: '20px',
-          }}
-        >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              style={{
-                height: '280px',
-                borderRadius: '16px',
-                background: isDark ? '#161929' : '#f0f0f0',
-              }}
-            />
+        /* LOADING STATE */
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {[1,2,3].map(i => (
+            <div key={i} style={{
+              background: '#0d0d0d',
+              border: '1px solid rgba(255,255,255,0.06)',
+              borderRadius: '16px', overflow: 'hidden',
+            }}>
+              <div style={{ height:'120px', background:'rgba(81,32,200,0.06)',
+                animation:'pulse 1.5s infinite' }}/>
+              <div style={{ padding:'1.25rem' }}>
+                <div style={{ height:'16px', borderRadius:'8px', marginBottom:'8px',
+                  background:'rgba(255,255,255,0.06)', width:'70%',
+                  animation:'pulse 1.5s infinite' }}/>
+                <div style={{ height:'12px', borderRadius:'6px', marginBottom:'1rem',
+                  background:'rgba(255,255,255,0.04)', width:'40%',
+                  animation:'pulse 1.5s infinite' }}/>
+                <div style={{ height:'36px', borderRadius:'9px',
+                  background:'rgba(255,255,255,0.04)',
+                  animation:'pulse 1.5s infinite' }}/>
+              </div>
+            </div>
           ))}
         </div>
       ) : error ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '40px 24px',
-            background: isDark ? '#161929' : '#ffffff',
-            borderRadius: '20px',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-          }}
-        >
-          <p style={{ color: '#ef4444', fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>
-            حدث خطأ في تحميل الشهادات
-          </p>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>
-            {error.message || 'يرجى المحاولة مرة أخرى لاحقاً'}
+        /* ERROR STATE */
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '5rem 2rem', textAlign: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px dashed rgba(255,255,255,0.08)',
+          borderRadius: '16px',
+        }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '18px',
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '1.25rem',
+          }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+              stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: '#f1f5f9' }}>
+            {isAr ? 'حدث خطأ في تحميل الشهادات' : 'Error loading certificates'}
+          </h3>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', margin: 0 }}>
+            {isAr ? 'يرجى المحاولة مرة أخرى لاحقاً' : 'Please try again later'}
           </p>
         </div>
       ) : certificates.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '80px 24px',
-            background: isDark ? '#161929' : '#ffffff',
-            borderRadius: '20px',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-          }}
-        >
-          <Award size={64} color="#d1d5db" style={{ margin: '0 auto 16px' }} />
-          <h3
-            style={{
-              color: isDark ? '#94a3b8' : '#6b7280',
-              fontSize: '20px',
-              fontWeight: '600',
-              marginBottom: '8px',
-            }}
-          >
-            لا توجد شهادات بعد
+        /* EMPTY STATE */
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '5rem 2rem', textAlign: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px dashed rgba(255,255,255,0.08)',
+          borderRadius: '16px',
+        }}>
+          <div style={{
+            width: '72px', height: '72px', borderRadius: '18px',
+            background: 'rgba(81,32,200,0.1)',
+            border: '1px solid rgba(81,32,200,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: '1.25rem',
+          }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+              stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="12" cy="8" r="6"/>
+              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+          </div>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: '#f1f5f9' }}>
+            {isAr ? 'لا توجد شهادات بعد' : 'No certificates yet'}
           </h3>
-          <p style={{ color: '#9ca3af', marginBottom: '24px' }}>
-            أكمل كورسًا للحصول على شهادتك الأولى
+          <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
+            maxWidth: '320px', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+            {isAr
+              ? 'أكمل أي كورس للحصول على شهادتك الأولى'
+              : 'Complete any course to earn your first certificate'}
           </p>
-          <Link
-            href={`https://deveway-teal.vercel.app/ar/courses`}
+          <a href={`/${locale}/courses`}
             style={{
-              padding: '12px 28px',
-              background: '#5120c8',
-              color: '#fff',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              fontWeight: '600',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-            }}
-          >
-            <BookOpen size={18} /> استكشف الكورسات
-          </Link>
+              padding: '10px 24px', borderRadius: '10px',
+              background: '#5120c8', color: '#fff',
+              textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
+            }}>
+            {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
+          </a>
         </div>
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-            gap: '20px',
-          }}
-        >
-          {certificates.map((cert: any) => {
-            console.log('[Certs] Rendering cert:', cert.id, cert.serialNumber, cert.certificateUrl)
-            return (
-              <div
-                key={cert.id}
-                style={{
-                  background: isDark ? '#161929' : '#ffffff',
-                  borderRadius: '20px',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-                  overflow: 'hidden',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-4px)'
-                  ;(e.currentTarget as HTMLElement).style.boxShadow =
-                    '0 12px 40px rgba(81,32,200,0.15)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                  ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-                }}
-              >
-                {/* Preview */}
-                <div
-                  style={{
-                    position: 'relative',
-                    height: '180px',
-                    overflow: 'hidden',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  }}
-                >
-                  {cert.certificateUrl ? (
-                    <img
-                      src={cert.certificateUrl}
-                      alt="certificate"
-                      onError={(e: any) => { e.currentTarget.style.display = 'none' }}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        height: '100%',
-                      }}
-                    >
-                      <Award size={60} color="rgba(255,255,255,0.5)" />
-                    </div>
-                  )}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: '#16a34a',
-                      color: '#fff',
-                      padding: '4px 10px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                    }}
-                  >
-                    <CheckCircle2 size={12} /> موثقة
+        /* CERTIFICATES GRID */
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '1.25rem',
+        }}>
+          {certificates.map((cert: any) => (
+            <div key={cert.id} style={{
+              background: '#0d0d0d',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              transition: 'border-color 0.2s, box-shadow 0.2s',
+              position: 'relative',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)'
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(81,32,200,0.15)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+            >
+              {/* Certificate preview banner */}
+              <div style={{
+                height: '120px',
+                background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1054 50%, #1a0a2e 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{
+                  position: 'absolute', inset: 0, opacity: 0.15,
+                  backgroundImage: 'repeating-linear-gradient(45deg, #5120c8 0, #5120c8 1px, transparent 0, transparent 50%)',
+                  backgroundSize: '20px 20px',
+                }}/>
+                <div style={{
+                  position: 'relative', zIndex: 1, textAlign: 'center',
+                }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '50%',
+                    background: 'rgba(251,191,36,0.15)',
+                    border: '2px solid rgba(251,191,36,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    margin: '0 auto 8px',
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                      stroke="#fbbf24" strokeWidth="1.5" strokeLinecap="round">
+                      <circle cx="12" cy="8" r="6"/>
+                      <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+                    </svg>
                   </div>
-                </div>
-
-                {/* Info */}
-                <div style={{ padding: '20px' }}>
-                  <h3
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: '700',
-                      color: isDark ? '#f1f5f9' : '#0d0d0d',
-                      margin: '0 0 8px',
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {cert.course?.titleAr || cert.course?.titleEn}
-                  </h3>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      color: '#6b7280',
-                      fontSize: '13px',
-                      marginBottom: '16px',
-                    }}
-                  >
-                    <Calendar size={14} />
-                    {formatDate(cert.issuedAt)}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <a
-                      href={cert.certificateUrl}
-                      download={`certificate-${cert.serialNumber}.png`}
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        padding: '10px',
-                        background: '#5120c8',
-                        color: '#fff',
-                        borderRadius: '10px',
-                        textDecoration: 'none',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                      }}
-                    >
-                      <Download size={15} /> تحميل
-                    </a>
-                    <a
-                      href={`https://deveway-teal.vercel.app/ar/certificate/${cert.serialNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        padding: '10px',
-                        background: 'transparent',
-                        color: '#5120c8',
-                        borderRadius: '10px',
-                        textDecoration: 'none',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        border: '1px solid #5120c8',
-                      }}
-                    >
-                      <Shield size={15} /> تحقق
-                    </a>
-                  </div>
+                  <p style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700,
+                    letterSpacing: '0.1em', margin: 0 }}>
+                    {isAr ? 'شهادة إتمام' : 'CERTIFICATE OF COMPLETION'}
+                  </p>
                 </div>
               </div>
-            )
-          })}
+
+              {/* Card content */}
+              <div style={{ padding: '1.25rem' }}>
+                <h3 style={{
+                  fontSize: '0.95rem', fontWeight: 700, margin: '0 0 6px',
+                  overflow: 'hidden', textOverflow: 'ellipsis',
+                  display: '-webkit-box', WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  lineHeight: 1.4,
+                  color: '#f1f5f9',
+                }}>
+                  {isAr
+                    ? (cert.course?.titleAr || cert.course?.title)
+                    : (cert.course?.titleEn || cert.course?.title)}
+                </h3>
+
+                <p style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)',
+                  margin: '0 0 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {(cert.createdAt || cert.issuedAt)
+                    ? new Date(cert.createdAt || cert.issuedAt).toLocaleDateString(
+                        isAr ? 'ar-SA' : 'en-US',
+                        { year: 'numeric', month: 'long', day: 'numeric' }
+                      )
+                    : ''}
+                </p>
+
+                {/* Verification ID */}
+                {(cert.verificationCode || cert.serialNumber) && (
+                  <div style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    marginBottom: '1rem',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="#666680" strokeWidth="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <span style={{ fontSize: '0.72rem', color: '#888',
+                      fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                      {cert.verificationCode || cert.serialNumber}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {cert.certificateUrl && (
+                    <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        flex: 1, padding: '9px', borderRadius: '9px',
+                        background: '#5120c8', color: '#fff',
+                        textDecoration: 'none', textAlign: 'center',
+                        fontSize: '0.82rem', fontWeight: 600,
+                        display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', gap: '6px',
+                      }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      {isAr ? 'تحميل' : 'Download'}
+                    </a>
+                  )}
+                  {(cert.verificationCode || cert.serialNumber) && (
+                    <button
+                      onClick={() => {
+                        const code = cert.verificationCode || cert.serialNumber
+                        const url = `${window.location.origin}/${locale}/verify/${code}`
+                        navigator.clipboard?.writeText(url)
+                      }}
+                      style={{
+                        padding: '9px 14px', borderRadius: '9px',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#888', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        fontSize: '0.82rem', fontFamily: 'inherit',
+                      }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                      </svg>
+                      {isAr ? 'نسخ رابط التحقق' : 'Copy link'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
