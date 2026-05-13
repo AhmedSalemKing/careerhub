@@ -26,7 +26,7 @@ export default function VerifyCertificatePage() {
 
   const q = useQuery({
     queryKey: ['verify', serial],
-    queryFn: async () => (await get<VerifyResponse>(`/api/certificates/${encodeURIComponent(serial)}/verify`)).data,
+    queryFn: async () => (await get<VerifyResponse>(`/certificates/${encodeURIComponent(serial)}/verify`)).data,
   })
 
   const cert = q.data?.certificate
