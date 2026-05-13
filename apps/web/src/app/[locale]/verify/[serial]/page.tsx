@@ -2,11 +2,11 @@
 
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { useToast } from '../../../../lib/toast'
 import { Skeleton } from '../../../components/ui/Skeleton'
-import { CheckCircle2, XCircle, ShieldCheck, Calendar, User, BookOpen, Award, ExternalLink } from 'lucide-react'
+import { CheckCircle2, XCircle, ShieldCheck, Calendar, User, BookOpen, Award, ExternalLink, AlertTriangle } from 'lucide-react'
 
 type VerifyCertificate = {
   serialNumber: string
@@ -30,7 +30,8 @@ export default function VerifyCertificatePage() {
   const { serial } = useParams<{ serial: string }>()
   const t = useTranslations('verify')
   const c = useTranslations('common')
-  const { toast } = useToast()
+  const locale = useLocale()
+  const isAr = locale === 'ar'
 
   const q = useQuery({
     queryKey: ['verify', serial],
@@ -40,6 +41,8 @@ export default function VerifyCertificatePage() {
 
   const cert = q.data?.certificate
   const isValid = Boolean(q.data?.valid)
+  const errorStatus = (q.error as any)?.response?.status
+  const isNotFound = errorStatus === 404
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[var(--bg)] to-[var(--surface)]" dir="auto">
@@ -59,42 +62,61 @@ export default function VerifyCertificatePage() {
               </div>
             </div>
           </div>
-        ) : q.isError ? (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-10 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-500/10">
-              <XCircle className="h-10 w-10 text-rose-500" />
+        ) : q.isError && !isNotFound ? (
+          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-10 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-amber-500/10">
+              <AlertTriangle className="h-10 w-10 text-amber-500" />
             </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">الشهادة غير صحيحة أو منتهية</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              لم نتمكن من التحقق من هذه الشهادة. قد يكون رمز التحقق غير صحيح أو أن الشهادة قد انتهت صلاحيتها.
-            </p>
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              رمز التحقق: <span className="font-mono font-semibold text-foreground">{serial}</span>
+            <h2 className="mt-5 text-xl font-bold text-foreground">
+              {isAr ? 'تعذر الاتصال بالخادم' : 'Server Unavailable'}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)] leading-relaxed">
+              {isAr
+                ? 'الشهادة موجودة لكن تعذر التحقق منها الآن. يرجى المحاولة لاحقاً.'
+                : 'The certificate exists but verification is temporarily unavailable. Please try again later.'}
             </p>
             <button
               type="button"
               onClick={() => q.refetch()}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-6 py-2.5 text-sm font-bold text-amber-600 dark:text-amber-400 transition hover:bg-amber-500/20"
             >
-              إعادة المحاولة
+              {isAr ? 'إعادة المحاولة' : 'Retry'}
             </button>
+          </div>
+        ) : q.isError || (!isValid && !q.isLoading) ? (
+          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-10 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-500/10">
+              <XCircle className="h-10 w-10 text-rose-500" />
+            </div>
+            <h2 className="mt-5 text-xl font-bold text-foreground">
+              {isAr ? 'الشهادة غير صحيحة أو منتهية' : 'Invalid or Expired Certificate'}
+            </h2>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {isAr
+                ? 'لم نتمكن من التحقق من هذه الشهادة. قد يكون رمز التحقق غير صحيح أو أن الشهادة قد انتهت صلاحيتها.'
+                : 'Could not verify this certificate. The verification code may be incorrect or the certificate has expired.'}
+            </p>
+            <p className="mt-1 text-xs text-[var(--muted)]">
+              {isAr ? 'رمز التحقق' : 'Code'}: <span className="font-mono font-semibold text-foreground">{serial}</span>
+            </p>
           </div>
         ) : isValid && cert ? (
           <div className="space-y-6">
-            {/* Green verified banner */}
             <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-6 py-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20">
                 <ShieldCheck className="h-6 w-6 text-emerald-500" />
               </div>
               <div>
-                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">هذه الشهادة صحيحة</p>
-                <p className="text-xs text-[var(--muted)]">تم التحقق من صحة الشهادة بنجاح</p>
+                <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                  {isAr ? 'هذه الشهادة صحيحة' : 'This Certificate is Valid'}
+                </p>
+                <p className="text-xs text-[var(--muted)]">
+                  {isAr ? 'تم التحقق من صحة الشهادة بنجاح' : 'Certificate verified successfully'}
+                </p>
               </div>
             </div>
 
-            {/* Certificate card */}
             <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-              {/* Certificate image preview */}
               {cert.certificateUrl && (
                 <div className="relative bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-4">
                   <img
@@ -108,14 +130,12 @@ export default function VerifyCertificatePage() {
                     rel="noopener noreferrer"
                     className="absolute bottom-7 right-7 flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-white/20"
                   >
-                    عرض بالحجم الكامل <ExternalLink className="h-3 w-3" />
+                    {isAr ? 'عرض بالحجم الكامل' : 'Full Size'} <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
               )}
 
-              {/* Certificate details */}
               <div className="p-6 sm:p-8">
-                {/* Student info */}
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--border)]">
                     {cert.studentAvatar ? (
@@ -126,36 +146,33 @@ export default function VerifyCertificatePage() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-foreground">{cert.userName}</p>
-                    <p className="text-xs text-[var(--muted)]">صاحب الشهادة</p>
+                    <p className="text-xs text-[var(--muted)]">{isAr ? 'صاحب الشهادة' : 'Certificate Holder'}</p>
                   </div>
                 </div>
 
                 <div className="mt-6 space-y-4">
-                  {/* Course title */}
                   <div className="flex items-start gap-3">
                     <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--muted)]">الدورة التدريبية</p>
+                      <p className="text-xs font-semibold text-[var(--muted)]">{isAr ? 'الدورة التدريبية' : 'Course'}</p>
                       <p className="text-sm font-bold text-foreground">{cert.courseTitleAr || cert.courseTitle}</p>
                     </div>
                   </div>
 
-                  {/* Instructor */}
                   <div className="flex items-start gap-3">
                     <Award className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--muted)]">المدرب</p>
+                      <p className="text-xs font-semibold text-[var(--muted)]">{isAr ? 'المدرب' : 'Instructor'}</p>
                       <p className="text-sm font-bold text-foreground">{cert.instructorName}</p>
                     </div>
                   </div>
 
-                  {/* Issue date */}
                   <div className="flex items-start gap-3">
                     <Calendar className="mt-0.5 h-5 w-5 shrink-0 text-sky-500" />
                     <div>
-                      <p className="text-xs font-semibold text-[var(--muted)]">تاريخ الإصدار</p>
+                      <p className="text-xs font-semibold text-[var(--muted)]">{isAr ? 'تاريخ الإصدار' : 'Issue Date'}</p>
                       <p className="text-sm font-bold text-foreground">
-                        {new Date(cert.issuedAt).toLocaleDateString('ar-EG', {
+                        {new Date(cert.issuedAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',
@@ -165,10 +182,9 @@ export default function VerifyCertificatePage() {
                   </div>
                 </div>
 
-                {/* Verification code badge */}
                 <div className="mt-6 rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg)] px-4 py-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold text-[var(--muted)]">رمز التحقق</p>
+                    <p className="text-xs font-semibold text-[var(--muted)]">{isAr ? 'رمز التحقق' : 'Verification Code'}</p>
                     <div className="flex items-center gap-2" dir="ltr">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       <span className="font-mono text-sm font-bold tracking-wider text-foreground">
@@ -178,10 +194,9 @@ export default function VerifyCertificatePage() {
                   </div>
                 </div>
 
-                {/* Course thumbnail */}
                 {cert.courseThumbnail && (
                   <div className="mt-6">
-                    <p className="mb-2 text-xs font-semibold text-[var(--muted)]">صورة الدورة</p>
+                    <p className="mb-2 text-xs font-semibold text-[var(--muted)]">{isAr ? 'صورة الدورة' : 'Course Image'}</p>
                     <img
                       src={cert.courseThumbnail}
                       alt={cert.courseTitle}
@@ -192,17 +207,7 @@ export default function VerifyCertificatePage() {
               </div>
             </div>
           </div>
-        ) : (
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-10 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-rose-500/10">
-              <XCircle className="h-10 w-10 text-rose-500" />
-            </div>
-            <h2 className="mt-5 text-xl font-bold text-foreground">الشهادة غير صحيحة أو منتهية</h2>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              لم نتمكن من التحقق من هذه الشهادة. قد يكون رمز التحقق غير صحيح أو أن الشهادة قد انتهت صلاحيتها.
-            </p>
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   )
