@@ -5,20 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get, post, del } from '../../../../lib/api'
 import {
-  Send,
   Plus,
-  Trash2,
-  User,
-  Loader2,
-  Sparkles,
   MessageSquare,
-  Target,
-  X,
-  Menu,
-  GraduationCap,
-  BrainCircuit,
-  Check,
-  Clock,
 } from 'lucide-react'
 import { notify } from '../../../../lib/notify'
 
@@ -93,120 +81,7 @@ function MessageContent({ content }: { content: string }) {
   return <div className="space-y-0.5">{elements}</div>
 }
 
-// ════════════════════════════════════
-// TYPING INDICATOR
-// ══════════════════════════════════
 
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1 px-4 py-3">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="h-1.5 w-1.5 rounded-full"
-          style={{
-            background: 'var(--muted)',
-            animation: `typingBounce 1.4s ease-in-out ${i * 0.16}s infinite`
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// ════════════════════════════════════
-// MESSAGE BUBBLE
-// ══════════════════════════════════
-
-function MessageBubble({ msg }: { msg: Message }) {
-  const [copied, setCopied] = useState(false)
-  const isUser = msg.role === 'user'
-
-  const handleCopy = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(msg.content)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
-
-  let timeStr = ''
-  try {
-    timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-SA', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch (e) {
-    timeStr = '--:--'
-  }
-
-  return (
-    <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} group`}>
-      
-      {/* Avatar */}
-      <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105`}
-        style={
-          isUser 
-            ? { background: 'var(--primary)' } 
-            : { background: 'var(--surface-2)', border: `1px solid var(--border)` }
-        }
-      >
-        {isUser ? (
-          <User className="h-4 w-4 text-white" />
-        ) : (
-          <BrainCircuit className="h-4 w-4" style={{ color: 'var(--primary)' }} />
-        )}
-      </div>
-
-      {/* Content Wrapper */}
-      <div className="relative max-w-[75%] min-w-[100px]">
-        
-        {/* Bubble */}
-        <div
-          className={`rounded-2xl px-4 py-2.5 ${
-            isUser ? 'rounded-tr-md' : 'rounded-tl-md'
-          }`}
-          style={
-            isUser
-              ? { background: 'var(--primary)', color: '#ffffff' }
-              : { background: 'var(--surface)', border: `1px solid var(--border)`, color: 'var(--foreground)' }
-          }
-        >
-          {isUser ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-          ) : (
-            <MessageContent content={msg.content} />
-          )}
-        </div>
-
-        {/* Meta Row */}
-        <div 
-          className={`flex items-center gap-2 mt-1.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100 ${
-            isUser ? 'justify-end' : 'justify-start'
-          }`}
-        >
-          <span className="text-[11px]" style={{ color: 'var(--muted-foreground)' }}>
-            {timeStr}
-          </span>
-          
-          {!isUser && (
-            <button
-              onClick={handleCopy}
-              className="p-1 rounded-md transition-colors duration-150"
-              style={{ color: 'var(--muted)' }}
-              onMouseEnter={(e) => { if(e.currentTarget) e.currentTarget.style.color = 'var(--primary)' }}
-              onMouseLeave={(e) => { if(e.currentTarget) e.currentTarget.style.color = 'var(--muted)' }}
-              title="نسخ الرسالة"
-            >
-              {copied ? <Check className="h-3 w-3" /> : <MessageSquare className="h-3 w-3" />}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // ════════════════════════════════════
 // MAIN COMPONENT
@@ -225,7 +100,7 @@ export default function AiChatPage() {
   const [streamingContent, setStreamingContent] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  void locale
+  const isAr = locale === 'ar'
 
   // ── Queries ────────────────────
   const { data: conversations = [] } = useQuery<Conversation[]>({
@@ -460,6 +335,15 @@ export default function AiChatPage() {
     e.target.style.height = `${newHeight}px`
   }
 
+  const handleSuggestion = (text: string) => {
+    setInput(text)
+  }
+
+  const clearChat = () => {
+    setActiveConvId(null)
+    setMessages([])
+  }
+
   // ── Computed values ──────────────
   const isEmpty = messages.length === 0 && !isStreaming
   const hasInput = input.trim().length > 0
@@ -680,532 +564,319 @@ export default function AiChatPage() {
         />
       )}
 
-      {/* ═══ MAIN CHAT AREA ═══ */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-0">
-
-        {/* ── HEADER ── */}
-        <header 
-          className="
-            flex 
-            items-center 
-            justify-between 
-            px-4 
-            lg:px-6 
-            py-3 
-            shrink-0 
-            relative 
-            z-10 
-          "
-          style={{ 
+      {/* ═══ MAIN CHAT AREA (REDESIGNED) ═══ */}
+      <main className="flex-1 flex flex-col min-w-0">
+        <div style={{
+          display: 'flex', flexDirection: 'column',
+          height: '100%',
+          maxWidth: '900px', margin: '0 auto',
+          padding: '0 1rem',
+        }}>
+          {/* ── HEADER ── */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '1.25rem 0',
             borderBottom: '1px solid var(--border)',
-            backgroundColor: 'var(--surface)',
-          }}
-        >
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="
-              md:hidden 
-              p-2 
-              -ml-2 
-              rounded-lg 
-              hover:opacity-80 
-              transition-colors 
-              duration-150 
-            "
-            style={{ color: 'var(--muted)'}}
-            aria-label="فتح القائمة الجانبية"
-          >
-            <Menu className="h-5 w-5" strokeWidth={2}/>
-          </button>
-
-          {/* Logo & Status */}
-          <div className="flex items-center gap-3">
-            {/* Logo Icon */}
-            <div 
-              className="
-                flex 
-                items-center 
-                justify-center 
-                h-9 
-                w-9 
-                rounded-xl 
-                shadow-lg 
-                transition-transform 
-                duration-200 
-                hover:scale-105 
-              "
+          }}>
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="md:hidden"
               style={{
-                backgroundColor: 'var(--primary)',
-                boxShadow: '0 4px 14px rgba(81, 32, 200, 0.3)',
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--muted-foreground)', padding: '4px',
+                display: 'flex', alignItems: 'center',
               }}
+              aria-label={isAr ? 'فتح القائمة' : 'Open menu'}
             >
-              <Sparkles className="h-5 w-5 text-white" strokeWidth={2.5}/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
+            {/* AI Avatar */}
+            <div style={{
+              width: '44px', height: '44px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(81,32,200,0.4)',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
+              </svg>
             </div>
-
-            {/* Title & Status */}
             <div>
-              <h1 
-                className="
-                  text-base 
-                  font-bold 
-                  tracking-tight 
-                  leading-none 
-                "
-                style={{ 
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  color: 'var(--foreground)',
-                }}
-              >
-                DeveWay AI
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 2px' }}>
+                {isAr ? 'المساعد الذكي' : 'AI Assistant'}
               </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{
+                  width: '7px', height: '7px', borderRadius: '50%',
+                  background: '#4ade80',
+                  boxShadow: '0 0 6px rgba(74,222,128,0.6)',
+                }}/>
+                <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 500 }}>
+                  {isAr ? 'متاح الآن' : 'Online'}
+                </span>
+              </div>
             </div>
-
-            {/* ✅ FIX #2: Added proper border to Online Status Badge */}
-            <div 
-              className="
-                hidden 
-                sm:flex 
-                items-center 
-                gap-1.5 
-                rounded-full 
-                px-3 
-                py-1 
-                text-xs 
-                font-semibold 
-              "
+            {/* New Chat button */}
+            <button onClick={clearChat}
               style={{
-                backgroundColor: 'rgba(52, 199, 89, 0.08)',
-                border: '1px solid rgba(52, 199, 89, 0.15)', // ✅ Added border property
-              }}
-            >
-              <span 
-                className="
-                  h-1.5 
-                  w-1.5 
-                  rounded-full 
-                  animate-pulse 
-                " 
-                style={{ backgroundColor: '#34D399' }}
-              />
-              <span 
-                style={{ 
-                  color: '#34D399',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                }} 
-              >
-                متصل
-              </span>
-            </div>
+                marginRight: 'auto', marginLeft: isAr ? '0' : 'auto',
+                padding: '6px 14px', borderRadius: '8px',
+                background: 'var(--card-bg)',
+                border: '1px solid var(--border)',
+                color: 'var(--muted-foreground)', fontSize: '0.78rem',
+                cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', gap: '5px',
+              }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+              </svg>
+              {isAr ? 'محادثة جديدة' : 'New Chat'}
+            </button>
           </div>
-        </header>
 
-        {/* ── MESSAGES AREA ── */}
-        <section 
-          className="
-            flex-1 
-            overflow-y-auto 
-            px-4 
-            py-6 
-            min-h-0 
-          "
-        >
-          {isEmpty ? (
-            /* ── WELCOME SCREEN ── */
-            <div 
-              className="
-                flex 
-                flex-col 
-                items-center 
-                justify-center 
-                h-full 
-                px-4 
-                py-16 
-                text-center 
-              "
-            >
-              {/* Hero Icon */}
-              <div 
-                className="
-                  mb-6 
-                  flex 
-                  h-20 
-                  w-20 
-                  items-center 
-                  justify-center 
-                  rounded-2xl 
-                  mx-auto 
-                "
-                style={{
-                  backgroundColor: 'var(--primary-subtle)',
-                  border: '1px solid var(--primary-border)',
-                  boxShadow: '0 0 40px rgba(81, 32, 200, 0.10)',
-                }}
-              >
-                <BrainCircuit 
-                  className="
-                    h-10 
-                    w-10 
-                  " 
-                  style={{ color: 'var(--primary)' }} 
-                  strokeWidth={2.5} 
-                />
-              </div>
-
-              {/* Welcome Text */}
-              <h2 
-                className="
-                  mb-2 
-                  text-2xl 
-                  font-black 
-                  tracking-tight 
-                  leading-snug 
-                "
-                style={{ 
-                  fontFamily: "'PingARLT', 'Cairo', sans-serif",
-                  color: 'var(--foreground)',
-                }}
-              >
-                مرحباً! 👋
-              </h2>
-              
-              <p 
-                className="
-                  max-w-md 
-                  mx-auto 
-                  mb-8 
-                  text-sm 
-                  leading-relaxed 
-                "
-                style={{ 
-                  color: 'var(--muted)', 
-                }}
-              >
-                أنا مساعدك الذكي الشخصي. اسألني عن أي شيء.
-              </p>
-
-              {/* Quick Suggestions */}
-              <div 
-                className="
-                  flex 
-                  flex-wrap 
-                  justify-center 
-                  gap-2 
-                  max-w-lg 
-                  mx-auto 
-                  mb-8 
-                "
-              >
-                {['تعلم البرمجة', 'خطة تعلم', 'مسار مهني'].map((suggestion, index) => (
-                  <button
-                    key={index}
-                    onClick={() => sendMessage(suggestion)}
-                    className="
-                      px-4 
-                      py-2 
-                      rounded-full 
-                      text-xs 
-                      font-medium 
-                      transition-all 
-                      duration-200 
-                      hover:scale-105 
-                      active:scale-95 
-                      border 
-                      shadow-none 
-                    "
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--muted)',
-                      fontFamily: "'DM Sans', sans-serif",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--primary-border)'
-                      e.currentTarget.style.color = 'var(--primary)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border)'
-                      e.currentTarget.style.color = 'var(--muted)'
-                    }}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* ── MESSAGES LIST ── */
-            <div 
-              className="
-                max-w-3xl 
-                mx-auto 
-                space-y-4 
-                px-4 
-                pb-32 
-              "
-            >
-              {messages.map((msg) => (
-                <MessageBubble key={msg.id} msg={msg} />
-              ))}
-
-              {/* Streaming Indicator */}
-              {isStreaming && (
-                <div className="flex gap-3">
-                  {/* AI Avatar */}
-                  <div 
-                    className="
-                      flex 
-                      h-8 
-                      w-8 
-                      shrink-0 
-                      items-center 
-                      justify-center 
-                      rounded-xl 
-                    "
-                    style={{
-                      backgroundColor: 'var(--surface-2)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    <BrainCircuit 
-                      className="h-4 w-4" 
-                      style={{ color: 'var(--primary)' }} 
-                      strokeWidth={2}
-                    />
-                  </div>
-
-                  {/* Typing or Streaming Bubble */}
-                  <div 
-                    className="
-                      max-w-[70%] 
-                      rounded-2xl 
-                      rounded-tl-md 
-                      px-4 
-                      py-3 
-                      border 
-                      shadow-sm 
-                    "
-                    style={{
-                      backgroundColor: 'var(--surface)',
-                      borderColor: 'var(--border)',
-                    }}
-                  >
-                    {streamingContent ? (
-                      <>
-                        <MessageContent content={streamingContent} />
-                        
-                        {/* Cursor blink effect */}
-                        <span 
-                          className="
-                            inline-block 
-                            h-4 
-                            w-0.5 
-                            align-middle 
-                            rounded-full 
-                            ml-1 
-                            animate-pulse 
-                          " 
-                          style={{
-                            backgroundColor: 'var(--primary)',
-                            animationDuration: '800ms',
-                            animationIterationCount: 'infinite',
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <TypingIndicator />
-                    )}
-                  </div>
+          {/* ── MESSAGES AREA ── */}
+          <div style={{
+            flex: 1, overflowY: 'auto', padding: '1.5rem 0',
+            display: 'flex', flexDirection: 'column', gap: '1.25rem',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(81,32,200,0.3) transparent',
+          }}>
+            {isEmpty ? (
+              /* ── WELCOME STATE ── */
+              <div style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                padding: '3rem 1rem', textAlign: 'center',
+              }}>
+                <div style={{
+                  width: '72px', height: '72px', borderRadius: '20px',
+                  background: 'linear-gradient(135deg, rgba(81,32,200,0.2), rgba(124,58,237,0.15))',
+                  border: '1px solid rgba(81,32,200,0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '1.25rem',
+                  boxShadow: '0 8px 24px rgba(81,32,200,0.2)',
+                }}>
+                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none"
+                    stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
+                  </svg>
                 </div>
-              )}
+                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px' }}>
+                  {isAr ? 'مرحبا! كيف يمكنني مساعدتك' : 'Hello! How can I help you?'}
+                </h2>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
+                  maxWidth: '400px', lineHeight: 1.7, margin: '0 0 2rem' }}>
+                  {isAr
+                    ? 'اسألني عن أي موضوع تعليمي، مفهوم برمجي، أو احصل على مساعدة في دراستك'
+                    : 'Ask me about any educational topic, programming concept, or get help with your studies'}
+                </p>
+                <div style={{
+                  display: 'flex', flexWrap: 'wrap', gap: '8px',
+                  justifyContent: 'center', maxWidth: '500px',
+                }}>
+                  {[
+                    isAr ? 'اشرح لي مفهوم OOP' : 'Explain OOP concepts',
+                    isAr ? 'ما الفرق بين REST و GraphQL' : 'REST vs GraphQL?',
+                    isAr ? 'كيف أبدأ تعلم البرمجة' : 'How to start coding?',
+                    isAr ? 'اقترح لي مسار تعلم Web Dev' : 'Web Dev learning path',
+                  ].map((suggestion, i) => (
+                    <button key={i}
+                      onClick={() => handleSuggestion(suggestion)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '20px',
+                        background: 'rgba(81,32,200,0.1)',
+                        border: '1px solid rgba(81,32,200,0.25)',
+                        color: '#a78bfa', fontSize: '0.8rem',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(81,32,200,0.2)'
+                        e.currentTarget.style.borderColor = 'rgba(81,32,200,0.5)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(81,32,200,0.1)'
+                        e.currentTarget.style.borderColor = 'rgba(81,32,200,0.25)'
+                      }}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* ── MESSAGES LIST ── */
+              <>
+                {messages.map((msg: any) => (
+                  <div key={msg.id} style={{
+                    display: 'flex',
+                    flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                    gap: '10px', alignItems: 'flex-start',
+                  }}>
+                    {msg.role === 'assistant' && (
+                      <div style={{
+                        width: '32px', height: '32px', borderRadius: '9px',
+                        background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                      }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke="#fff" strokeWidth="2" strokeLinecap="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <circle cx="9" cy="12" r="1" fill="#fff"/>
+                          <circle cx="15" cy="12" r="1" fill="#fff"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div style={{
+                      maxWidth: '75%',
+                      padding: '12px 16px',
+                      borderRadius: msg.role === 'user'
+                        ? '16px 4px 16px 16px'
+                        : '4px 16px 16px 16px',
+                      background: msg.role === 'user'
+                        ? '#5120c8'
+                        : 'var(--card-bg)',
+                      border: msg.role === 'user'
+                        ? 'none'
+                        : '1px solid var(--border)',
+                      color: msg.role === 'user' ? '#fff' : 'var(--foreground)',
+                      fontSize: '0.9rem', lineHeight: 1.7,
+                      boxShadow: msg.role === 'user'
+                        ? '0 4px 12px rgba(81,32,200,0.3)' : 'none',
+                    }}>
+                      {msg.role === 'user' ? (
+                        msg.content
+                      ) : (
+                        <MessageContent content={msg.content} />
+                      )}
+                    </div>
+                  </div>
+                ))}
 
-              {/* Scroll anchor */}
-              <div ref={messagesEndRef} />
+                {isStreaming && (
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '32px', height: '32px', borderRadius: '9px',
+                      background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="#fff" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                    </div>
+                    <div style={{
+                      padding: '14px 18px', borderRadius: '4px 16px 16px 16px',
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--border)',
+                    }}>
+                      {streamingContent ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <MessageContent content={streamingContent} />
+                          <span style={{
+                            display: 'inline-block', width: '4px', height: '16px',
+                            background: '#5120c8', borderRadius: '2px',
+                            animation: 'cursorBlink 800ms infinite',
+                          }}/>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                          {[0,1,2].map(j => (
+                            <div key={j} style={{
+                              width: '7px', height: '7px', borderRadius: '50%',
+                              background: '#a78bfa',
+                              animation: 'bounce 1.2s infinite',
+                              animationDelay: `${j * 0.2}s`,
+                            }}/>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </>
+            )}
+          </div>
+
+          {/* ── INPUT AREA ── */}
+          <div style={{
+            padding: '1rem 0 1.5rem',
+            borderTop: '1px solid var(--border)',
+          }}>
+            <div style={{
+              display: 'flex', gap: '10px', alignItems: 'flex-end',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
+              borderRadius: '14px', padding: '10px 14px',
+              transition: 'border-color 0.2s',
+            }}>
+              <textarea
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={isAr ? 'اكتب رسالتك هنا... (Enter للإرسال)' : 'Type your message... (Enter to send)'}
+                disabled={isStreaming}
+                rows={1}
+                style={{
+                  flex: 1, background: 'transparent', border: 'none',
+                  color: 'var(--foreground)', fontSize: '0.9rem',
+                  resize: 'none', outline: 'none', fontFamily: 'inherit',
+                  lineHeight: 1.6, maxHeight: '120px', overflowY: 'auto',
+                }}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!hasInput || isStreaming}
+                style={{
+                  width: '38px', height: '38px', borderRadius: '10px',
+                  background: hasInput && !isStreaming ? '#5120c8' : 'var(--card-bg)',
+                  border: `1px solid ${hasInput && !isStreaming ? '#5120c8' : 'var(--border)'}`,
+                  color: hasInput && !isStreaming ? '#fff' : 'var(--muted-foreground)',
+                  cursor: hasInput && !isStreaming ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, transition: 'all 0.15s',
+                }}
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                  style={{ transform: isAr ? 'rotate(180deg)' : 'none' }}>
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
             </div>
-          )}
-        </section>
-{/* ── INPUT AREA ── */}
-<footer 
-  className="
-    shrink-0 
-    px-4 
-    pb-4 
-    pt-3 
-    sticky 
-    bottom-0 
-    z-10 
-  "
-  style={{
-    background: 'linear-gradient(to top, var(--surface) 80%, transparent)',
-  }}
->
-  {/* Quick Action Chips */}
-  {!isEmpty && (
-    <div 
-      className="
-        flex 
-        justify-center 
-        gap-2 
-        mb-3 
-        overflow-x-auto 
-        pb-1
-      "
-    >
-      {['تلخيص', 'شرح', 'مثال', 'خطة'].map((action, index) => (
-        <button
-          key={index}
-          onClick={() => sendMessage(action)}
-          className="
-            shrink-0 
-            px-3.5 
-            py-1.5 
-            rounded-full 
-            text-xs 
-            font-medium 
-            transition-all 
-            duration-200 
-            hover:scale-105 
-            active:scale-95 
-            border
-          "
-          style={{
-            backgroundColor: 'transparent',
-            borderColor: 'var(--border)',
-            color: 'var(--muted-foreground)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--primary-subtle)'
-            e.currentTarget.style.borderColor = 'var(--primary)'
-            e.currentTarget.style.color = 'var(--primary)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent'
-            e.currentTarget.style.borderColor = 'var(--border)'
-            e.currentTarget.style.color = 'var(--muted-foreground)'
-          }}
-        >
-          {action}
-        </button>
-      ))}
-    </div>
-  )}
+            <p style={{ textAlign:'center', fontSize:'0.72rem',
+              color:'var(--muted-foreground)', margin:'8px 0 0' }}>
+              {isAr
+                ? 'المساعد الذكي يعمل بتقنية Claude AI - قد تكون الإجابات غير دقيقة أحيانا'
+                : 'Powered by Claude AI - responses may occasionally be inaccurate'}
+            </p>
+          </div>
+        </div>
 
-  {/* ═══ PROFESSIONAL INPUT BAR ═══ */}
-  <div 
-    className="
-      relative 
-      flex 
-      items-center 
-      gap-2 
-      rounded-2xl
-      transition-all 
-      duration-300 
-      group
-    "
-    style={{
-      background: 'var(--background)',
-      border: `2px solid ${hasInput ? 'var(--primary)' : 'var(--border)'}`,
-      boxShadow: hasInput 
-        ? '0 0 0 4px rgba(99, 102, 241, 0.1), 0 8px 32px rgba(81, 32, 200, 0.15)'
-        : '0 2px 12px rgba(0, 0, 0, 0.08)',
-      transform: hasInput ? 'translateY(-2px)' : 'translateY(0)',
-    }}
-  >
-    {/* ✨ Decorative gradient border effect on focus */}
-    {hasInput && (
-      <div 
-        className="absolute -inset-[2px] rounded-2xl -z-10 opacity-50 blur-sm"
-        style={{
-          background: 'linear-gradient(135deg, var(--primary), #8b5cf6, var(--primary))',
-        }}
-      />
-    )}
-
-    {/* Textarea - takes full available space */}
-    <textarea
-      ref={textareaRef}
-      value={input}
-      onChange={handleInputChange}
-      onKeyDown={handleKeyDown}
-      placeholder="اكتب رسالتك هنا..."
-      disabled={isStreaming}
-      rows={1}
-      className="
-        flex-1 
-        resize-none 
-        bg-transparent 
-        outline-none 
-        disabled:opacity-50 
-        text-sm 
-        leading-relaxed
-        max-h-[120px] 
-        py-3 
-        pl-3 
-        pr-2
-        placeholder:text-muted-400
-      "
-      style={{
-        color: 'var(--foreground)',
-        fontFamily: "'DM Sans', sans-serif",
-        caretColor: 'var(--primary)',
-      }}
-    />
-
-    {/* Send Button - Integrated inside the bar */}
-    <button
-      onClick={() => sendMessage(input)}
-      disabled={!hasInput || isStreaming}
-      className="
-        flex 
-        items-center 
-        justify-center
-        h-9 
-        w-9 
-        shrink-0 
-        rounded-xl 
-        transition-all 
-        duration-200 
-        m-1.5
-        active:scale-90
-      "
-      style={{
-        background: hasInput 
-          ? 'linear-gradient(135deg, var(--primary), #7c3aed)'
-          : 'var(--surface-2)',
-        color: hasInput ? '#ffffff' : 'var(--muted)',
-        cursor: hasInput ? 'pointer' : 'not-allowed',
-        boxShadow: hasInput 
-          ? '0 4px 14px rgba(99, 102, 241, 0.4)'
-          : 'none',
-        opacity: hasInput ? 1 : 0.5,
-      }}
-    >
-      {isStreaming ? (
-        <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
-      ) : (
-        <Send className="h-4 w-4" strokeWidth={2.5} />
-      )}
-    </button>
-  </div>
-
-  {/* Disclaimer */}
-  <p 
-    className="
-      text-center 
-      text-[11px] 
-      pt-2.5 
-      select-none
-      tracking-wide
-    "
-    style={{ 
-      color: 'var(--muted-foreground)',
-      opacity: 0.7,
-    }}
-  >
-    DeveWay AI • Llama 3.3 ⚡
-  </p>
-</footer>
+        <style>{`
+          @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0) }
+            30% { transform: translateY(-6px) }
+          }
+          @keyframes cursorBlink {
+            0%, 100% { opacity: 1 }
+            50% { opacity: 0 }
+          }
+        `}</style>
       </main>
     </div>
   )
