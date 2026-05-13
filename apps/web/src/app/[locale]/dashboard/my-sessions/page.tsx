@@ -16,11 +16,6 @@ import PaymentModal from '@/components/PaymentModal'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 
-const [confirmModal, setConfirmModal] = useState<{
-  isOpen: boolean; title: string; message: string;
-  onConfirm: () => void; destructive?: boolean;
-}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
-
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
   CONFIRMED:            { ar:'مؤكدة',           en:'Confirmed',          color:'#5120c8', bg:'rgba(81,32,200,0.1)'  },
@@ -44,6 +39,10 @@ export default function MySessionsPage() {
   const { user } = useAuthStore()
   const accountType = user?.accountType || 'STUDENT'
 
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean; title: string; message: string;
+    onConfirm: () => void; destructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
   const [activeTab, setActiveTab] = useState<'upcoming'|'completed'|'cancelled'>('upcoming')
   const [viewType, setViewType] = useState<ViewType>('my')
   const [rescheduleModal, setRescheduleModal] = useState<any>(null)
