@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Radio, Users, Volume2, VolumeX, Maximize2, Minimize2,
@@ -13,6 +13,7 @@ import { io } from 'socket.io-client'
 export default function LiveViewerPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const tl = useTranslations('learn')
   const router = useRouter()
   const params = useParams()
   const courseId = params.courseId as string
@@ -30,7 +31,7 @@ export default function LiveViewerPage() {
   const [hasQuestion, setHasQuestion] = useState(false)
   const [questionText, setQuestionText] = useState('')
   const [showQuestionInput, setShowQuestionInput] = useState(false)
-  const [userName, setUserName] = useState(isAr ? 'مشاهد' : 'Viewer')
+  const [userName, setUserName] = useState(tl('viewer'))
   const [userAvatar, setUserAvatar] = useState('')
   const [streamEnded, setStreamEnded] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
@@ -66,7 +67,7 @@ export default function LiveViewerPage() {
       }).then(r => r.json()).then(data => {
         const profile = data?.data?.profile || data?.profile
         if (profile) {
-          const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || (isAr ? 'مشاهد' : 'Viewer')
+          const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
           setUserName(name)
           setUserAvatar(profile.avatar || '')
           localStorage.setItem('userName', name)
@@ -141,7 +142,7 @@ export default function LiveViewerPage() {
         if (payRes?.data?.url) {
           window.location.href = payRes.data.url
         } else {
-          setError(isAr ? 'يجب الاشتراك في الكورس أولاً' : 'Please enroll first')
+          setError(tl('enrollFirst'))
           setLoading(false)
         }
         return
@@ -195,9 +196,9 @@ export default function LiveViewerPage() {
       clearTimeout(loadingTimeoutRef.current)
       console.error('[Live] Check error:', e.message)
       if (e.name === 'AbortError' || e.name === 'TimeoutError') {
-        setError(isAr ? 'انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت.' : 'Connection timeout. Check your internet.')
+        setError(tl('connectionTimeout'))
       } else {
-        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect'))
+        setError(e.message || tl('failedToConnect'))
       }
       setLoading(false)
     }
@@ -273,11 +274,11 @@ export default function LiveViewerPage() {
     } catch (e: any) {
       console.error('[Live] Join failed:', e.message)
       if (e.name === 'AbortError' || e.name === 'TimeoutError') {
-        setError(isAr ? 'انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت.' : 'Connection timeout. Check your internet.')
+        setError(tl('connectionTimeout'))
       } else if (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key')) {
-        setError(isAr ? 'انتهت صلاحية الجلسة. أعد تحميل الصفحة.' : 'Session expired. Please reload.')
+        setError(tl('sessionExpired'))
       } else {
-        setError(e.message || (isAr ? 'فشل الاتصال بالبث' : 'Failed to connect'))
+        setError(e.message || tl('failedToConnect'))
       }
     }
   }
@@ -340,7 +341,7 @@ export default function LiveViewerPage() {
     if (hasQuestion) {
       setHasQuestion(false)
       setShowQuestionInput(false)
-      toast.success(isAr ? 'تم إلغاء طلب السؤال' : 'Question request cancelled')
+      toast.success(tl('questionCancelled'))
     } else {
       setShowQuestionInput(true)
     }
@@ -351,7 +352,7 @@ export default function LiveViewerPage() {
     sendQuestion(questionText)
     setHasQuestion(true)
     setShowQuestionInput(false)
-    toast.success(isAr ? 'تم إرسال سؤالك للمحاضر' : 'Question sent to instructor')
+    toast.success(tl('questionSent'))
     setQuestionText('')
   }
 
@@ -381,7 +382,7 @@ export default function LiveViewerPage() {
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />
-      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>{isAr ? 'جاري الاتصال بالبث...' : 'Connecting to stream...'}</div>
+      <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>{tl('connectingToStream')}</div>
     </div>
   )
 
@@ -391,17 +392,17 @@ export default function LiveViewerPage() {
         <Square size={32} color="#6b7280" />
       </div>
       <h2 style={{ color:'#f1f5f9', fontSize:20, fontWeight:900, margin:0 }}>
-        {isAr ? 'انتهى البث المباشر' : 'Live Stream Has Ended'}
+        {tl('streamEndedTitle')}
       </h2>
       <p style={{ color:'#94a3b8', fontSize:14, textAlign:'center', maxWidth:320, lineHeight:1.7 }}>
-        {isAr ? 'انتهى هذا البث المباشر. تحقق من الكورس لاحقا للتسجيل.' : 'This live stream has ended. Check the course later for the recording.'}
+        {tl('streamEndedDesc')}
       </p>
       <div style={{ display:'flex', gap:10 }}>
         <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding:'11px 22px', borderRadius:11, background:'#5120c8', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
-          {isAr ? 'عرض الكورس' : 'View Course'}
+          {tl('viewCourse')}
         </button>
         <button onClick={() => router.push(`/${locale}/courses`)} style={{ padding:'11px 22px', borderRadius:11, background:'rgba(255,255,255,0.06)', color:'#94a3b8', border:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontSize:13, fontWeight:600 }}>
-          {isAr ? 'تصفح الكورسات' : 'Browse Courses'}
+          {tl('browseCourses')}
         </button>
       </div>
     </div>
@@ -410,14 +411,14 @@ export default function LiveViewerPage() {
   if (error) return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24, direction: isAr?'rtl':'ltr' }}>
       <Radio size={56} color="rgba(220,38,38,0.3)" />
-      <h3 style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 800, margin: 0, textAlign: 'center' }}>{isAr?'تعذر الاتصال بالبث':'Could Not Join Stream'}</h3>
+      <h3 style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 800, margin: 0, textAlign: 'center' }}>{tl('couldNotJoin')}</h3>
       <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', maxWidth: 360, lineHeight: 1.6 }}>{error}</p>
       <div style={{ display: 'flex', gap: 10 }}>
         <button onClick={() => router.push(`/${locale}/courses`)} style={{ padding: '11px 22px', borderRadius: 11, background: 'rgba(255,255,255,0.08)', color: '#f1f5f9', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-          {isAr ? 'العودة للكورسات' : 'Back to Courses'}
+          {tl('backToCourses')}
         </button>
         <button onClick={() => window.location.reload()} style={{ padding: '11px 22px', borderRadius: 11, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-          {isAr ? 'إعادة المحاولة' : 'Try Again'}
+          {tl('tryAgain')}
         </button>
       </div>
     </div>
@@ -447,23 +448,23 @@ export default function LiveViewerPage() {
           {connected ? (
             <>
               <Wifi size={12} color="#16a34a" />
-              <span style={{ color: '#16a34a', fontSize: 11 }}>{isAr ? 'متصل' : 'Connected'}</span>
+              <span style={{ color: '#16a34a', fontSize: 11 }}>{tl('connected')}</span>
             </>
           ) : (
             <>
               <WifiOff size={12} color="#f59e0b" />
-              <span style={{ color: '#f59e0b', fontSize: 11 }}>{isAr ? 'جاري الاتصال...' : 'Connecting...'}</span>
+              <span style={{ color: '#f59e0b', fontSize: 11 }}>{tl('connecting')}</span>
             </>
           )}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => setShowPanel(p => !p)} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
             <MessageSquare size={12} />
-            {showPanel ? (isAr?'إخفاء':'Hide') : (isAr?'إظهار':'Show')}
+            {showPanel ? tl('hide') : tl('show')}
           </button>
           <button onClick={handleLeave} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', color: '#dc2626', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 5 }}>
             <LogOut size={12} />
-            {isAr ? 'مغادرة' : 'Leave'}
+            {tl('leave')}
           </button>
         </div>
       </div>
@@ -480,26 +481,26 @@ export default function LiveViewerPage() {
                <div style={{ width: 72, height: 72, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                  <Radio size={28} color="rgba(220,38,38,0.4)" />
                </div>
-               {streamReady ? (
-                 <>
-                   <p style={{ color: '#f87171', fontSize: 14, fontWeight: 700 }}>
-                     {isAr ? 'البث المباشر نشط الآن' : 'Live stream is active'}
-                   </p>
-                   <button onClick={handleJoinStream} style={{
-                     padding: '12px 32px', borderRadius: 10, background: '#dc2626',
-                     color: '#fff', border: 'none', cursor: 'pointer', fontSize: 15,
-                     fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                     animation: 'pulse 1.5s infinite',
-                   }}>
-                     <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
-                     {isAr ? 'انضم للبث المباشر' : 'Join Live Stream'}
-                   </button>
-                 </>
-               ) : (
-                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
-                   {isAr ? 'في انتظار المحاضر...' : 'Waiting for instructor...'}
-                 </p>
-               )}
+                {streamReady ? (
+                  <>
+                    <p style={{ color: '#f87171', fontSize: 14, fontWeight: 700 }}>
+                      {tl('liveStreamActive')}
+                    </p>
+                    <button onClick={handleJoinStream} style={{
+                      padding: '12px 32px', borderRadius: 10, background: '#dc2626',
+                      color: '#fff', border: 'none', cursor: 'pointer', fontSize: 15,
+                      fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
+                      animation: 'pulse 1.5s infinite',
+                    }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
+                      {tl('joinLiveStream')}
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+                    {tl('waitingForInstructor')}
+                  </p>
+                )}
              </div>
            )}
 
@@ -513,15 +514,15 @@ export default function LiveViewerPage() {
                <div style={{ width:72, height:72, borderRadius:'50%', background:'rgba(107,114,128,0.15)', border:'1px solid rgba(107,114,128,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                  <Square size={28} color="#6b7280" />
                </div>
-               <h2 style={{ color:'#f1f5f9', fontSize:20, fontWeight:900, margin:0 }}>
-                 {isAr ? 'تم إنهاء البث المباشر' : 'Live Stream Ended'}
-               </h2>
-               <p style={{ color:'#94a3b8', fontSize:14, margin:0 }}>
-                 {isAr ? 'شكرا لمشاركتك' : 'Thank you for watching'}
-               </p>
-               <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding:'11px 24px', borderRadius:11, background:'#5120c8', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
-                 {isAr ? 'عرض الكورس' : 'View Course'}
-               </button>
+                <h2 style={{ color:'#f1f5f9', fontSize:20, fontWeight:900, margin:0 }}>
+                  {tl('liveEnded')}
+                </h2>
+                <p style={{ color:'#94a3b8', fontSize:14, margin:0 }}>
+                  {tl('thanksForWatching')}
+                </p>
+                <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding:'11px 24px', borderRadius:11, background:'#5120c8', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
+                  {tl('viewCourse')}
+                </button>
              </div>
            )}
 
@@ -533,7 +534,7 @@ export default function LiveViewerPage() {
 
             <button onClick={handleRaiseHand} style={{ height: 36, paddingInline: 14, borderRadius: 18, background: hasQuestion ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', border: `1px solid ${hasQuestion ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: hasQuestion ? '#d97706' : '#fff', fontSize: 12, fontWeight: 700 }}>
               <Hand size={14} />
-              {hasQuestion ? (isAr?'إلغاء السؤال':'Cancel') : (isAr?'لدي سؤال':'Raise Hand')}
+              {hasQuestion ? tl('cancelQuestion') : tl('raiseHand')}
             </button>
 
             <div style={{ flex: 1 }} />
@@ -548,14 +549,14 @@ export default function LiveViewerPage() {
             <div style={{ position: 'absolute', bottom: 70, left: 20, right: 20, animation: 'slideUp 0.2s ease' }}>
               <div style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', borderRadius: 14, border: '1px solid rgba(245,158,11,0.3)', padding: '14px' }}>
                 <div style={{ color: '#d97706', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-                  {isAr ? 'اكتب سؤالك' : 'Type your question'}
+                  {tl('typeYourQuestion')}
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <input type="text" placeholder={isAr?'سؤالك هنا...':'Your question...'} value={questionText} onChange={e => setQuestionText(e.target.value)}
+                  <input type="text" placeholder={tl('yourQuestionHere')} value={questionText} onChange={e => setQuestionText(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSubmitQuestion()}
                     style={{ flex: 1, padding: '8px 12px', borderRadius: 9, border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(255,255,255,0.05)', color: '#f1f5f9', fontSize: 12, outline: 'none' }} />
                   <button onClick={handleSubmitQuestion} disabled={!questionText.trim()} style={{ padding: '8px 14px', borderRadius: 9, background: '#d97706', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Send size={12} />{isAr?'إرسال':'Send'}
+                    <Send size={12} />{tl('send')}
                   </button>
                   <button onClick={() => setShowQuestionInput(false)} style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
                     <X size={13} />
@@ -573,7 +574,7 @@ export default function LiveViewerPage() {
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
               <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '11px', background: 'none', border: 'none', cursor: 'pointer', color: '#f1f5f9', borderBottom: '2px solid #dc2626', fontSize: 12, fontWeight: 700 }}>
                 <MessageSquare size={13} />
-                {isAr ? 'التعليقات' : 'Comments'}
+                {tl('comments')}
                 {socketComments.length > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: '#5120c8', color: '#fff', fontSize: 9, fontWeight: 800 }}>{socketComments.length}</span>}
               </button>
             </div>
@@ -582,7 +583,7 @@ export default function LiveViewerPage() {
               {socketComments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 16px' }}>
                   <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{isAr?'ستظهر التعليقات هنا':'Comments will appear here'}</p>
+                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>{tl('noComments')}</p>
                 </div>
               ) : socketComments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 8, animation: 'slideUp 0.2s ease' }}>
@@ -605,7 +606,7 @@ export default function LiveViewerPage() {
             <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
                 <input type="text"
-                  placeholder={isAr ? 'أضف تعليقاً...' : 'Add a comment...'}
+                  placeholder={tl('addComment')}
                   value={newComment}
                   onChange={e => setNewComment(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSendComment()}

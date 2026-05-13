@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../lib/api'
@@ -498,6 +498,7 @@ export default function MyCoursesPage() {
   // STUDENT VIEW (Default) - ENHANCED
   // ══════════════════════════════════════
   
+  const t = useTranslations('learn')
   const isAr = locale === 'ar'
 
   // Safe array conversion with proper typing
@@ -586,7 +587,7 @@ export default function MyCoursesPage() {
   const tabs = [
     { key: 'all' as const, label: isAr ? 'الكل' : 'All', count: safeEnrollments.length },
     { key: 'in-progress' as const, label: isAr ? 'قيد التعلم' : 'In Progress', count: activeCount },
-    { key: 'completed' as const, label: isAr ? 'مكتملة' : 'Completed', count: completedCount },
+    { key: 'completed' as const, label: isAr ? t('completed_plural') : 'Completed', count: completedCount },
   ]
 
   return (
@@ -607,7 +608,7 @@ export default function MyCoursesPage() {
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', margin: 0 }}>
             {isAr
-              ? `${enrollments.length} كورس  ${activeCount} نشط  ${completedCount} مكتمل`
+              ? `${enrollments.length} ${t('course')}  ${activeCount} ${t('active')}  ${completedCount} ${t('completed')}`
               : `${enrollments.length} courses  ${activeCount} active  ${completedCount} completed`}
           </p>
         </div>
@@ -730,7 +731,7 @@ export default function MyCoursesPage() {
           </h3>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
             margin: '0 0 1.25rem' }}>
-            {isAr ? 'ابدأ رحلتك التعليمية اليوم' : 'Start your learning journey today'}
+            {isAr ? t('startJourney') : 'Start your learning journey today'}
           </p>
           <a href={`/${locale}/courses`} style={{
             padding: '10px 24px', borderRadius: '10px',
@@ -800,7 +801,7 @@ export default function MyCoursesPage() {
                     color: isComplete ? '#4ade80' : '#a78bfa',
                   }}>
                     {isComplete
-                      ? (isAr ? 'مكتمل' : 'Completed')
+                      ? (isAr ? t('completed') : 'Completed')
                       : (isAr ? 'قيد التعلم' : 'In Progress')}
                   </div>
                 </div>

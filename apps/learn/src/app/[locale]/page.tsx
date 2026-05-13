@@ -87,6 +87,7 @@ function useAuth() {
 
 export default function HomePage() {
   const t = useTranslations()
+  const tl = useTranslations('learn')
   const locale = useLocale() as 'ar' | 'en'
   const router = useRouter()
   const [showStickyCta, setShowStickyCta] = useState(false)
@@ -254,7 +255,7 @@ export default function HomePage() {
                 >
                   {locale === 'ar' ? 'تعلم مهارة' : 'Learn a Skill'}
                   <span className="block mt-3" style={{ color: '#A78BFA' }}>
-                    {locale === 'ar' ? 'غيّر مستقبلك' : 'Change Your Future'}
+                    {locale === 'ar' ? tl('changeFuture') : 'Change Your Future'}
                   </span>
                 </h1>
 
@@ -419,7 +420,7 @@ export default function HomePage() {
 
           {featuredCourses.length === 0 && (
             <div className="text-center py-12" style={{ color: 'var(--muted)' }}>
-              {locale === 'ar' ? 'جاري تحميل الكورسات...' : 'Loading courses...'}
+              {locale === 'ar' ? tl('loadingCourses') : 'Loading courses...'}
             </div>
           )}
 
@@ -482,7 +483,7 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'rgba(248,248,250,0.07)', border: '1px solid rgba(248,248,250,0.12)', color: 'rgba(248,248,250,0.8)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
           <h2 className="text-3xl sm:text-4xl font-bold font-madinet">{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
-          <p className="mt-4 text-lg" style={{ color: 'rgba(248,248,250,0.65)' }}>{locale === 'ar' ? 'انضم لآلاف المتعلمين وابدأ في تطوير مهاراتك اليوم' : 'Join thousands of learners and start today'}</p>
+          <p className="mt-4 text-lg" style={{ color: 'rgba(248,248,250,0.65)' }}>{locale === 'ar' ? tl('joinLearners') : 'Join thousands of learners and start today'}</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             {/* ===== CTA START FREE BUTTON ===== */}
             <a

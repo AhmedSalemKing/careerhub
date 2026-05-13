@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../../lib/api'
@@ -23,9 +23,9 @@ const API_BASE = (() => {
 })()
 
 const TABS = [
-  { key: 'recorded', ar: 'كورسات مسجلة', en: 'Recorded Courses', icon: Video, color: '#5120c8' },
-  { key: 'live', ar: 'بث مباشر', en: 'Live Sessions', icon: Radio, color: '#dc2626' },
-  { key: 'offline', ar: 'مقرات فعلية', en: 'Physical Locations', icon: MapPin, color: '#16a34a' },
+  { key: 'recorded', labelKey: 'recordedTab', icon: Video, color: '#5120c8' },
+  { key: 'live', labelKey: 'liveTab', icon: Radio, color: '#dc2626' },
+  { key: 'offline', labelKey: 'offlineTab', icon: MapPin, color: '#16a34a' },
 ]
 
 function getTitle(c: any, locale: string) {
@@ -59,6 +59,7 @@ const redirectToCheckout = async (courseId: string, locale: string, token: strin
 export default function CoursesPage() {
   const locale = useLocale() as 'ar' | 'en'
   const isAr = locale === 'ar'
+  const tl = useTranslations('learn')
   const router = useRouter()
   const searchParams = useSearchParams()
   const enrolledCourseId = searchParams.get('enrolled')
@@ -159,16 +160,16 @@ export default function CoursesPage() {
       <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', padding: '48px 24px 0' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 32 }}>
           <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(24px,4vw,40px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
-            {isAr ? 'اكتشف كورساتك' : 'Discover Your Courses'}
+            {tl('discoverCourses')}
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: 14, margin: '0 0 24px', lineHeight: 1.7 }}>
-            {isAr ? 'كورسات مسجلة، بث مباشر، ومقرات تدريبية فعلية  كل ما تحتاجه في مكان واحد' : 'Recorded, live, and in-person  everything you need in one place'}
+            {tl('heroDescription')}
           </p>
 
           {/* Search */}
           <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto' }}>
             <Search size={15} color='var(--muted-foreground)' style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
-            <input type="text" placeholder={isAr ? 'ابحث عن كورس...' : 'Search courses...'} value={search} onChange={e => setSearch(e.target.value)}
+            <input type="text" placeholder={tl('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
               style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : 'var(--border)'}`, background: 'var(--background)', color: 'var(--foreground)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
             {search && (
               <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)' }}>
@@ -189,7 +190,7 @@ export default function CoursesPage() {
                   <span style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 12, width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} className="live-dot" />
                 )}
                 <Icon size={15} />
-                {isAr ? tab.ar : tab.en}
+                {tl(tab.labelKey)}
               </button>
             )
           })}
@@ -204,18 +205,18 @@ export default function CoursesPage() {
           <activeTabConfig.icon size={18} color={activeTabConfig.color} />
           <div>
             <span style={{ color: activeTabConfig.color, fontSize: 13, fontWeight: 700 }}>
-              {activeTab === 'recorded' && (isAr ? 'فيديوهات مسجلة يمكنك مشاهدتها في أي وقت' : 'Recorded videos you can watch anytime')}
-              {activeTab === 'live' && (isAr ? 'جلسات مباشرة  انضم الآن أو شاهد القادمة' : 'Live sessions  join now or see upcoming')}
-              {activeTab === 'offline' && (isAr ? 'كورسات في مقرات تدريبية فعلية  احجز مقعدك' : 'In-person training  book your seat')}
+              {activeTab === 'recorded' && tl('recordedTabDesc')}
+              {activeTab === 'live' && tl('liveTabDesc')}
+              {activeTab === 'offline' && tl('offlineTabDesc')}
             </span>
             <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0 }}>
-              ({filtered.length} {isAr ? 'كورس' : 'courses'})
+              ({filtered.length} {tl('courseCount')})
             </span>
           </div>
           {activeTab === 'live' && (
             <span style={{ marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 20, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 11, fontWeight: 700 }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} />
-              {isAr ? 'تحديث تلقائي كل 15 ثانية' : 'Auto-refresh every 15s'}
+              {tl('autoRefresh')}
             </span>
           )}
         </div>
@@ -232,10 +233,10 @@ export default function CoursesPage() {
           <div style={{ textAlign: 'center', padding: '40px 24px' }}>
             <AlertCircle size={48} color="#dc2626" style={{ marginBottom: 16, opacity: 0.5 }} />
             <p style={{ color: '#dc2626', fontSize: 14, marginBottom: 16 }}>
-              {isAr ? 'فشل تحميل الكورسات' : 'Failed to load courses'}
+              {tl('failedLoadCourses')}
             </p>
             <button onClick={() => refetch()} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-              {isAr ? 'إعادة المحاولة' : 'Try Again'}
+              {tl('tryAgain')}
             </button>
           </div>
         )}
@@ -245,10 +246,10 @@ export default function CoursesPage() {
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
             <activeTabConfig.icon size={48} color='var(--muted-foreground)' style={{ marginBottom: 16, opacity: 0.4 }} />
             <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
-              {isAr ? 'لا توجد كورسات' : 'No courses found'}
+              {tl('noCoursesFound')}
             </h3>
             <p style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>
-              {search ? (isAr ? 'جرب كلمة بحث أخرى' : 'Try a different search') : (isAr ? 'لا توجد كورسات في هذا القسم بعد' : 'No courses in this section yet')}
+              {search ? tl('tryDifferentSearch') : tl('noCoursesSection')}
             </p>
           </div>
         )}
@@ -257,7 +258,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} />
+              <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
           </div>
         )}
@@ -266,7 +267,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'live' && filtered.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <LiveCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} API={API_BASE} />
+              <LiveCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} API={API_BASE} tl={tl} />
             ))}
           </div>
         )}
@@ -275,7 +276,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} />
+              <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
           </div>
         )}
@@ -287,7 +288,7 @@ export default function CoursesPage() {
 // ========================
 // RECORDED CARD
 // ========================
-function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
+function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const price = parseFloat(course.price || 0)
   const isEnrolled = course.isEnrolled === true
 
@@ -303,12 +304,12 @@ function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
       <div style={{ height: 160, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', flexShrink: 0 }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
           <Video size={10} />
-          {isAr ? 'مسجل' : 'Recorded'}
+          {tl('recordedBadge')}
         </div>
         {isEnrolled && (
           <div style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 10, display: 'flex', alignItems: 'center', gap: 3, padding: '4px 8px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
             <CheckCircle2 size={10} />
-            {isAr ? 'مسجل' : 'Enrolled'}
+            {tl('enrolledBadge')}
           </div>
         )}
         {!course.thumbnail && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={32} color="rgba(255,255,255,0.3)" /></div>}
@@ -335,12 +336,12 @@ function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {course._count?.lessons !== undefined && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
-              <BookOpen size={11} />{course._count.lessons} {isAr ? 'درس' : 'lessons'}
+              <BookOpen size={11} />{course._count.lessons} {tl('lesson')}
             </span>
           )}
           {course._count?.enrollments !== undefined && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
-              <Users size={11} />{course._count.enrollments} {isAr ? 'طالب' : 'students'}
+              <Users size={11} />{course._count.enrollments} {tl('students')}
             </span>
           )}
         </div>
@@ -350,7 +351,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
             {price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
-            {isEnrolled ? (isAr ? 'متابعة' : 'Continue') : (isAr ? 'عرض' : 'View')}
+            {isEnrolled ? tl('continueBtn') : tl('viewBtn')}
             <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
           </div>
         </div>
@@ -362,7 +363,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
 // ========================
 // LIVE CARD
 // ========================
-function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
+function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
   const [joining, setJoining] = useState(false)
   const price = parseFloat(course.price || 0)
   const isLive = course.liveStatus === 'live'
@@ -413,12 +414,12 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
           sessionStorage.setItem('agora_appid', tokenData.data.appId)
           router.push(`/${locale}/live/${course.id}`)
         } else if (course.liveStatus === 'scheduled') {
-          toast.success(isAr ? 'سيتم إشعارك عند بدء البث' : 'You will be notified when stream starts')
+          toast.success(tl('notifiedWhenStreamStarts'))
         } else {
-          toast.error(isAr ? 'البث غير متاح حالياً' : 'Stream not available')
+          toast.error(tl('streamNotAvailable'))
         }
       } catch (e: any) {
-        toast.error(e.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
+        toast.error(e.message || tl('errorOccurred'))
       } finally {
         setJoining(false)
       }
@@ -444,11 +445,11 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
         <div style={{ padding: '10px 20px', background: 'rgba(220,38,38,0.1)', borderBottom: '1px solid rgba(220,38,38,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', display: 'block' }} className="live-dot" />
           <span style={{ color: '#dc2626', fontSize: 12, fontWeight: 800 }}>
-            {isAr ? 'البث مباشر الآن' : 'LIVE NOW'}
+            {tl('liveNowBadge')}
           </span>
           {course.liveViewerCount > 0 && (
             <span style={{ marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0, display: 'flex', alignItems: 'center', gap: 4, color: '#dc2626', fontSize: 11 }}>
-              <Users size={11} />{course.liveViewerCount} {isAr ? 'مشاهد' : 'watching'}
+              <Users size={11} />{course.liveViewerCount} {tl('watching')}
             </span>
           )}
         </div>
@@ -463,7 +464,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
           fontSize: 10, fontWeight: 700, zIndex: 10
         }}>
           <CheckCircle2 size={10} />
-          {isAr ? 'مسجل' : 'Enrolled'}
+          {tl('enrolledBadge')}
         </div>
       )}
 
@@ -472,8 +473,8 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
           <Clock size={13} color='var(--muted-foreground)' />
           <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 600 }}>
             {isUpcoming
-              ? (isAr ? `يبدأ خلال ${hoursUntil > 0 ? hoursUntil + ' ساعة و' : ''}${minutesUntil} دقيقة` : `Starts in ${hoursUntil > 0 ? hoursUntil + 'h ' : ''}${minutesUntil}m`)
-              : (isAr ? 'مجدول' : 'Scheduled')}
+              ? tl('startsIn', { hours: hoursUntil, minutes: minutesUntil })
+              : tl('scheduledLabel')}
           </span>
         </div>
       )}
@@ -527,7 +528,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
           {/* Price + CTA */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ color: isLive ? '#dc2626' : '#5120c8', fontSize: 18, fontWeight: 900 }}>
-              {price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}
+            {price > 0 ? `${price} ${tl('sar')}` : tl('free')}
             </div>
 
             {isLive && (
@@ -538,10 +539,10 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
                 color: '#ffffff', border: 'none', cursor: joining ? 'wait' : 'pointer',
                 fontSize: 13, fontWeight: 800, opacity: joining ? 0.7 : 1,
               }}>
-                {joining ? (isAr ? 'جاري الانضمام...' : 'Joining...') :
-                  isPaid || price === 0
-                    ? <><Radio size={14} />{isAr ? 'انضم الآن' : 'Join Live'}</>
-                    : <><Lock size={13} />{isAr ? `ادفع ${price} ر.س وانضم` : `Pay ${price} SAR & Join`}</>}
+          {joining ? tl('joining') :
+          isPaid || price === 0
+            ? <><Radio size={14} />{tl('joinNow')}</>
+            : <><Lock size={13} />{tl('payAndJoin', { price })}</>}
               </button>
             )}
 
@@ -555,8 +556,8 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
                 }
               }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 11, background: price > 0 && !isPaid ? '#5120c8' : 'rgba(220,38,38,0.1)', color: price > 0 && !isPaid ? '#ffffff' : '#dc2626', border: price > 0 && !isPaid ? 'none' : '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                 {price > 0 && !isPaid
-                  ? <><Lock size={12} />{isAr ? 'سجل وانتظر البث' : 'Enroll & Wait'}</>
-                  : <><Calendar size={12} />{isAr ? 'أضف للتقويم' : 'Add to Calendar'}</>}
+                  ? <><Lock size={12} />{tl('enrollAndWait')}</>
+                  : <><Calendar size={12} />{tl('addToCalendar')}</>}
               </button>
             )}
           </div>
@@ -569,7 +570,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
 // ========================
 // OFFLINE CARD
 // ========================
-function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
+function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const price = parseFloat(course.price || 0)
   const isEnrolled = course.isEnrolled || false
   const offlineDate = course.liveStartTime ? new Date(course.liveStartTime) : null
@@ -609,11 +610,11 @@ function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
       <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
           <MapPin size={10} />
-          {isAr ? 'مقر فعلي' : 'Physical'}
+          {tl('physicalBadge')}
         </div>
         {course.offlinePaymentType === 'on_site' && (
           <div style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 10, padding: '4px 8px', borderRadius: 20, background: 'rgba(245,158,11,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
-            {isAr ? 'دفع في المقر' : 'Pay on site'}
+            {tl('payOnSite')}
           </div>
         )}
         {!course.thumbnail && (
@@ -656,7 +657,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Users size={12} color='var(--muted-foreground)' />
             <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
-              {isAr ? `الحد الأقصى: ${course.maxAttendees} شخص` : `Max: ${course.maxAttendees} attendees`}
+              {tl('maxAttendees', { count: course.maxAttendees })}
             </span>
           </div>
         )}
@@ -670,7 +671,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
             onClick={e => e.stopPropagation()}
             style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#16a34a', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
             <Navigation size={12} />
-            {isAr ? 'عرض على خريطة Google' : 'View on Google Maps'}
+            {tl('viewOnGoogleMaps')}
           </a>
         )}
 
@@ -678,17 +679,17 @@ function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
           <div style={{ color: '#16a34a', fontSize: 16, fontWeight: 900 }}>
             {price > 0
-              ? `${price} ${isAr ? 'ر.س' : 'SAR'}`
+              ? `${price} ${tl('sar')}`
               : course.offlinePaymentType === 'on_site'
-                ? (isAr ? 'دفع في المقر' : 'Pay on site')
-                : (isAr ? 'مجاني' : 'Free')}
+                ? tl('payOnSite')
+                : tl('free')}
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); handleBookSeat(); }}
             style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 9, background: isEnrolled ? 'rgba(22,163,74,0.1)' : '#16a34a', color: isEnrolled ? '#16a34a' : '#fff', border: isEnrolled ? '1px solid rgba(22,163,74,0.3)' : 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             {isEnrolled
-              ? <><CheckCircle2 size={12} />{isAr ? 'محجوز' : 'Booked'}</>
-              : <><MapPin size={12} />{isAr ? 'احجز مقعدك' : 'Book Seat'}</>}
+              ? <><CheckCircle2 size={12} />{tl('booked')}</>
+              : <><MapPin size={12} />{tl('bookSeat')}</>}
           </button>
         </div>
       </div>

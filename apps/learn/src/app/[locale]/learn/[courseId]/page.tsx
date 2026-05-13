@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { get, post } from "../../../../lib/api";
 import { toast, Toaster } from "react-hot-toast";
 import {
@@ -79,6 +79,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 			)
 	}
 
+	const t = useTranslations('learn')
 	const isAr = locale === 'ar'
 
 	// Native video ref
@@ -753,8 +754,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 						}}
 					/>
 					{isActive
-						? (isAr ? 'مباشر الآن' : 'Live Now')
-						: scheduled || (isAr ? 'بث مباشر' : 'Live')}
+						? (isAr ? t('liveNowLabel') : 'Live Now')
+						: scheduled || (isAr ? t('liveLabel') : 'Live')}
 				</span>
 			);
 		}
@@ -853,12 +854,12 @@ import VideoProtection from "../../../../components/VideoProtection";
 					<h3
 						className="text-lg font-semibold mb-2"
 						style={{ color: textPrimary }}>
-						جاري تحميل المحتوى...
+						{t('loading')}
 					</h3>
 					<p
 						className="text-sm max-w-xs mx-auto"
 						style={{ color: textSecondary }}>
-						نُعدّ تجربة تعليمية مميزة لك
+						{t('preparingExp')}
 					</p>
 					<div className="flex justify-center gap-2 mt-6">
 						{[0, 1, 2].map((i) => (
@@ -962,7 +963,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 							className="hidden sm:flex items-center gap-2 text-sm font-medium shrink-0 transition-all duration-200 hover:opacity-70 group px-3 py-2 rounded-xl hover:bg-black/5"
 							style={{ color: textSecondary }}>
 							<ArrowRight className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-							<span>العودة للكورس</span>
+							<span>{t('backToCourse')}</span>
 						</a>
 
 						{/* Course Info & Progress */}
@@ -1001,7 +1002,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											{progress}%
 										</span>
 										<span className="text-xs" style={{ color: textSecondary }}>
-											مكتمل
+											{t('completed')}
 										</span>
 									</div>
 
@@ -1108,7 +1109,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								<span
 									className="text-sm font-bold tracking-wide"
 									style={{ color: textPrimary }}>
-									محتوى الكورس
+									{t('courseContent')}
 								</span>
 							</div>
 							<div
@@ -1135,8 +1136,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 						</div>
 
 						<p className="text-xs font-medium" style={{ color: textSecondary }}>
-							<span style={{ color: purple }}>{completedCount}</span> من{" "}
-							<span>{totalLessons}</span> درس مكتمل
+							<span style={{ color: purple }}>{completedCount}</span> {t('of')}{" "}
+							<span>{totalLessons}</span> {t('lessonComplete')}
 						</p>
 					</div>
 
@@ -1810,13 +1811,13 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 											{/* Title */}
 											<p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', padding: '0 2rem' }}>
-												{activeLesson?.title || (isAr ? 'بث مباشر' : 'Live Session')}
+												{activeLesson?.title || (isAr ? t('liveLabel') : 'Live Session')}
 											</p>
 
 											{isLive ? (
 												<>
 													<p style={{ color: '#fca5a5', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
-														{isAr ? 'البث جارٍ الآن — انضم قبل انتهاء الجلسة' : 'Stream is live — join before it ends'}
+														{isAr ? t('liveNow') : 'Stream is live — join before it ends'}
 													</p>
 													<a
 														href={liveUrl}
@@ -2222,7 +2223,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														strokeLinecap="round">
 														<polyline points="20 6 9 17 4 12" />
 													</svg>
-													{isAr ? "مكتمل" : "Completed"}
+													{isAr ? t('completed') : "Completed"}
 												</>
 											) : (
 												<>
@@ -2237,7 +2238,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														<circle cx="12" cy="12" r="10" />
 														<polyline points="12 8 12 12 14 14" />
 													</svg>
-													{isAr ? "تمييز كمكتمل" : "Mark as Complete"}
+													{isAr ? t('markComplete') : "Mark as Complete"}
 												</>
 											)}
 										</button>
@@ -2269,7 +2270,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														strokeLinecap="round">
 														<polyline points="15 18 9 12 15 6" />
 													</svg>
-													{isAr ? "السابق" : "Prev"}
+													{isAr ? t('previous') : "Prev"}
 												</button>
 											)}
 											{nextLesson && (
@@ -2289,7 +2290,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														alignItems: "center",
 														gap: "6px",
 													}}>
-													{isAr ? "التالي" : "Next"}
+													{isAr ? t('next') : "Next"}
 													<svg
 														width="14"
 														height="14"
@@ -2331,7 +2332,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
 										<ThumbsUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
-										<span>مفيد</span>
+										<span>{t('helpful')}</span>
 									</button>
 
 									<button
@@ -2355,7 +2356,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
 										<MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
-										<span>اسأل سؤال</span>
+										<span>{t('askQuestion')}</span>
 									</button>
 
 									<button
@@ -2379,7 +2380,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
 										<Share2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-										<span>مشاركة</span>
+										<span>{t('share')}</span>
 									</button>
 								</div>
 
@@ -2578,6 +2579,7 @@ function ShieldCheck({
 }
 
 export default function LearnPage() {
+	const t = useTranslations('learn')
 	return (
 		<>
 			<Toaster />
@@ -2593,7 +2595,7 @@ export default function LearnPage() {
 								<GraduationCap className="h-8 w-8" style={{ color: "#7c3aed" }} />
 							</div>
 							<p className="text-sm font-medium" style={{ color: "#4b5563" }}>
-								جاري تحميل صفحة التعلم...
+								{t('loadingLearn')}
 							</p>
 						</div>
 					</div>

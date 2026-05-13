@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
@@ -32,6 +32,7 @@ function BookingModal({
   onClose: () => void
   onSuccess: () => void
 }) {
+  const tc = useTranslations('coaches')
   const [step, setStep] = useState<'details' | 'schedule' | 'confirm'>('details')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -56,12 +57,12 @@ function BookingModal({
       return (res?.data as any)?.data
     },
     onSuccess: () => {
-      notify.success('تم إرسال طلب الاستشارة بنجاح!')
+      notify.success(tc('bookingSuccess'))
       onSuccess()
       onClose()
     },
     onError: (err: any) => {
-      notify.error(err?.response?.data?.message || 'حدث خطأ في الحجز')
+      notify.error(err?.response?.data?.message || tc('bookingError'))
     }
   })
 
@@ -188,13 +189,13 @@ function BookingModal({
               <h4 className="font-bold text-foreground text-lg">ملخص الحجز</h4>
               <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] divide-y divide-[color:var(--border)]">
                 {[
-                  { label: 'المستشار', value: name },
-                  { label: 'الموضوع', value: topic },
-                  { label: 'التاريخ', value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
-                  { label: 'الوقت', value: selectedTime },
-                  { label: 'طريقة الاجتماع', value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : 'هاتف' },
-                  { label: 'المدة', value: '60 دقيقة' },
-                  { label: 'السعر', value: `${consultant.hourlyRate || 0} ريال` },
+                  { label: tc('consultant'), value: name },
+                  { label: tc('topic'), value: topic },
+                  { label: tc('date'), value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
+                  { label: tc('time'), value: selectedTime },
+                  { label: tc('meetingMethod'), value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : tc('phone') },
+                  { label: tc('duration'), value: tc('sessionDuration') },
+                  { label: tc('price'), value: `${consultant.hourlyRate || 0} ${tc('sar')}` },
                 ].map(item => (
                   <div key={item.label} className="flex justify-between px-4 py-3 text-sm">
                     <span className="text-[color:var(--muted)]">{item.label}</span>
@@ -239,6 +240,7 @@ function ConsultantModal({
   onClose: () => void
   onBook: () => void
 }) {
+  const tc = useTranslations('coaches')
   const name = `${consultant.profile.firstName} ${consultant.profile.lastName}`
   const avatar = getMediaUrl(consultant.profile.avatar)
   const sessions = consultant._count.consultantSessions
@@ -267,30 +269,30 @@ function ConsultantModal({
           <p className="text-primary text-sm font-medium mt-0.5">{consultant.speciality}</p>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-[color:var(--muted)]">
             {consultant.experience && (
-              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{consultant.experience} سنة خبرة</span>
+              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{consultant.experience} {tc('yearsExp')}</span>
             )}
-            <span className="flex items-center gap-1"><Award className="h-4 w-4" />{sessions} جلسة مكتملة</span>
+            <span className="flex items-center gap-1"><Award className="h-4 w-4" />{sessions} {tc('sessionsCompleted')}</span>
             {consultant.profile.country && (
               <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{consultant.profile.country}</span>
             )}
           </div>
           {consultant.bio && (
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-foreground mb-1">نبذة مهنية</h4>
+              <h4 className="text-sm font-semibold text-foreground mb-1">{tc('professionalBio')}</h4>
               <p className="text-sm text-[color:var(--muted)] leading-relaxed">{consultant.bio}</p>
             </div>
           )}
           <div className="mt-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 flex justify-between items-center">
             <div>
-              <p className="text-xs text-[color:var(--muted)]">سعر الجلسة (60 دقيقة)</p>
+              <p className="text-xs text-[color:var(--muted)]">{tc('sessionPrice')}</p>
               <p className="text-2xl font-bold text-primary mt-0.5">
-                {consultant.hourlyRate || 'مجاني'} {consultant.hourlyRate ? 'ريال' : ''}
+                {consultant.hourlyRate || tc('free')} {consultant.hourlyRate ? tc('sar') : ''}
               </p>
             </div>
           </div>
           <button onClick={() => { onClose(); onBook() }}
             className="mt-4 w-full rounded-2xl bg-primary py-3.5 font-bold text-white hover:bg-primary/90 transition shadow-lg shadow-primary/20">
-            احجز جلسة الآن
+            {tc('book_now')}
           </button>
         </div>
       </div>
@@ -300,6 +302,7 @@ function ConsultantModal({
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const tc = useTranslations('coaches')
   const router = useRouter()
   const [selectedConsultant, setSelectedConsultant] = useState<Consultant | null>(null)
   const [bookingConsultant, setBookingConsultant] = useState<Consultant | null>(null)
@@ -376,9 +379,9 @@ export default function CoachingPage() {
                   <p className="text-primary text-sm mt-0.5 font-medium">{consultant.speciality || 'مستشار مهني'}</p>
                   <div className="mt-3 flex items-center gap-3 text-xs text-[color:var(--muted)]">
                     {consultant.experience && (
-                      <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} سنة</span>
+                      <span className="flex items-center gap-1"><Briefcase className="h-3.5 w-3.5" />{consultant.experience} {tc('years')}</span>
                     )}
-                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />60 دقيقة</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{tc('sessionDuration')}</span>
                   </div>
                   {consultant.bio && (
                     <p className="mt-3 text-xs text-[color:var(--muted)] line-clamp-2 leading-relaxed">{consultant.bio}</p>

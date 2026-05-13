@@ -479,7 +479,7 @@ export default function CourseDetailPage({
 								{course.duration && (
 									<span className="flex items-center gap-1.5">
 										<Clock className="h-4 w-4" style={{ color: purple }} />
-										{course.duration} {isAr ? "ساعة" : "hours"}
+										{course.duration} {isAr ? t('hours') : "hours"}
 									</span>
 								)}
 							</div>
@@ -984,7 +984,7 @@ export default function CourseDetailPage({
 																				style={{ color: textSecondary }}>
 																				<Clock className="inline h-3 w-3 ml-0.5" />
 																				{lesson.duration}{" "}
-																				{isAr ? "دقيقة" : "min"}
+																				{isAr ? t('minutes') : "min"}
 																			</span>
 																		)}
 																	</div>
@@ -1253,7 +1253,7 @@ export default function CourseDetailPage({
 													margin: "6px 0 0",
 												}}>
 												{completedLessons} / {totalLessons}{" "}
-												{isAr ? "درس مكتمل" : "lessons completed"}
+												{isAr ? t('lessonsCompleted') : "lessons completed"}
 											</p>
 										</div>
 
@@ -1477,7 +1477,7 @@ export default function CourseDetailPage({
 								<Shield className="h-4 w-4" style={{ color: teal }} />
 								<span>
 									{isAr
-										? "ضمان استرداد الأموال خلال 30 يوم"
+										? t('moneyBack')
 										: "30-day money-back guarantee"}
 								</span>
 							</div>
@@ -1538,7 +1538,7 @@ export default function CourseDetailPage({
 												{
 													icon: Clock,
 													label: isAr ? "المدة" : "Duration",
-													value: `${course.duration} ${isAr ? "ساعة" : "hours"}`,
+													value: `${course.duration} ${isAr ? t('hours') : "hours"}`,
 												},
 											]
 										: []),

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, ArrowRight, Video, Radio, MapPin } from 'lucide-react'
 
@@ -9,6 +9,7 @@ const API = 'https://deve-way.onrender.com/api'
 export default function EnrollPaymentPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const t = useTranslations('learn')
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -25,11 +26,17 @@ export default function EnrollPaymentPage() {
        localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
     : ''
 
+  const typeLabels: Record<string, string> = {
+    recorded: t('recordedBadge') + ' Course',
+    live: t('liveTab'),
+    offline: t('physicalBadge') + ' Course',
+  }
+  const typeLabel = typeLabels[courseType] || t('course')
   const typeConfig = {
-    recorded: { icon: Video, color: '#5120c8', ar: 'كورس مسجل', en: 'Recorded Course' },
-    live: { icon: Radio, color: '#dc2626', ar: 'بث مباشر', en: 'Live Session' },
-    offline: { icon: MapPin, color: '#16a34a', ar: 'مقر فعلي', en: 'Physical Course' },
-  }[courseType] || { icon: Video, color: '#5120c8', ar: 'كورس', en: 'Course' }
+    recorded: { icon: Video, color: '#5120c8' },
+    live: { icon: Radio, color: '#dc2626' },
+    offline: { icon: MapPin, color: '#16a34a' },
+  }[courseType] || { icon: Video, color: '#5120c8' }
 
   const TypeIcon = typeConfig.icon
 
@@ -53,10 +60,10 @@ export default function EnrollPaymentPage() {
       if (data?.data?.url) {
         window.location.href = data.data.url
       } else {
-        setError(data?.message || (isAr ? 'حدث خطأ' : 'Error occurred'))
+        setError(data?.message || t('errorOccurred'))
       }
     } catch(e: any) {
-      setError(e.message || (isAr ? 'فشل الاتصال' : 'Connection failed'))
+      setError(e.message || t('failedToConnect'))
     } finally {
       setLoading(false)
     }
@@ -70,10 +77,10 @@ export default function EnrollPaymentPage() {
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: `${typeConfig.color}15`, border: `1px solid ${typeConfig.color}30`, marginBottom: 12 }}>
             <TypeIcon size={13} color={typeConfig.color} />
-            <span style={{ color: typeConfig.color, fontSize: 11, fontWeight: 700 }}>{isAr ? typeConfig.ar : typeConfig.en}</span>
+            <span style={{ color: typeConfig.color, fontSize: 11, fontWeight: 700 }}>{typeLabel}</span>
           </div>
           <h1 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 900, margin: '0 0 4px' }}>
-            {isAr ? 'تأكيد الاشتراك' : 'Confirm Enrollment'}
+            {t('confirmEnrollment')}
           </h1>
           <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>{title}</p>
         </div>
@@ -81,22 +88,22 @@ export default function EnrollPaymentPage() {
         <div style={{ background: '#111', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden' }}>
           <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ color: '#94a3b8', fontSize: 13 }}>{isAr ? 'سعر الكورس' : 'Course Price'}</span>
-              <span style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>{amount} {isAr ? 'ر.س' : 'SAR'}</span>
+              <span style={{ color: '#94a3b8', fontSize: 13 }}>{t('coursePrice')}</span>
+              <span style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>{amount} {t('sar')}</span>
             </div>
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 8 }} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>{isAr ? 'الإجمالي' : 'Total'}</span>
-              <span style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{amount} {isAr ? 'ر.س' : 'SAR'}</span>
+              <span style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>{t('totalLabel')}</span>
+              <span style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{amount} {t('sar')}</span>
             </div>
           </div>
 
           <div style={{ padding: '20px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
               {[
-                isAr ? 'دفع آمن ومشفر بواسطة Stripe' : 'Secure payment via Stripe',
-                isAr ? 'ضمان استرداد الأموال خلال 30 يوم' : '30-day money-back guarantee',
-                isAr ? 'وصول فوري بعد الدفع' : 'Instant access after payment',
+                t('securePaymentLabel'),
+                t('moneyBack'),
+                t('instantAccessLabel'),
               ].map((f, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CheckCircle2 size={14} color="#16a34a" />
@@ -118,11 +125,11 @@ export default function EnrollPaymentPage() {
               {loading ? (
                 <>
                   <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
-                  {isAr ? 'جاري التحضير...' : 'Preparing...'}
+                  {t('preparingLabel')}
                 </>
               ) : (
                 <>
-                  {isAr ? 'المتابعة للدفع' : 'Proceed to Payment'}
+                  {t('proceedToPayment')}
                   <ArrowRight size={15} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
                 </>
               )}
