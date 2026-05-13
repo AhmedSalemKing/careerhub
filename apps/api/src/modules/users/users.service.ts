@@ -122,7 +122,12 @@ export class UsersService {
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: {
+      select: {
+        id: true, email: true, role: true, isActive: true, accountType: true,
+        status: true, createdAt: true, updatedAt: true, isVerified: true,
+        cvUrl: true, bio: true, experience: true, speciality: true,
+        linkedinUrl: true, hourlyRate: true, meetingMethod: true,
+        stripeCustomerId: true, approvedAt: true,
         profile: true,
         _count: {
           select: {
@@ -138,8 +143,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    const { password, ...sanitizedUser } = user;
-    return sanitizedUser;
+    return user;
   }
 
   async updateProfile(userId: string, updateProfileDto: UpdateProfileDto) {
@@ -189,8 +193,9 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    // Upload to S3
-    const fileName = `avatars/${userId}/${Date.now()}-${file.originalname}`;
+    // Upload to S3 with sanitized filename (prevent path traversal)
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = `avatars/${userId}/${Date.now()}-${safeName}`;
     const uploadResult = await this.s3.upload({
       Bucket: this.configService.get('AWS_S3_BUCKET'),
       Key: fileName,

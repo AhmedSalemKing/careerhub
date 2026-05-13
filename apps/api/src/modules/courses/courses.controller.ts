@@ -517,8 +517,12 @@ export class CoursesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add lesson to section' })
-  async addLesson(@Param('sectionId') sectionId: string, @Body() body: any) {
-    return this.coursesService.addLesson(sectionId, body);
+  async addLesson(
+    @Param('sectionId') sectionId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    return this.coursesService.addLesson(sectionId, req.user.id, body);
   }
 
   @Get(':courseId/live-lessons')

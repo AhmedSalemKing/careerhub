@@ -1413,7 +1413,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
   async addSection(courseId: string, instructorId: string, title: string) {
     const course = await this.prisma.course.findFirst({ where: { id: courseId, instructorId } });
-    if (!course) throw new NotFoundException('Course not found');
+    if (!course) throw new NotFoundException('Course not found or not yours');
 
     const count = await this.prisma.section.count({ where: { courseId } });
     const section = await this.prisma.section.create({
@@ -1422,7 +1422,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { success: true, data: section };
   }
 
-  async addLesson(sectionId: string, dto: any) {
+  async addLesson(sectionId: string, userId: string, dto: any) {
+    // Verify section belongs to a course owned by the user
+    const section = await this.prisma.section.findUnique({
+      where: { id: sectionId },
+      include: { course: { select: { instructorId: true } } },
+    });
+    if (!section) throw new NotFoundException('Section not found');
+    if (section.course.instructorId !== userId) {
+      throw new ForbiddenException('You do not own this course');
+    }
+
     const count = await this.prisma.lesson.count({ where: { sectionId } });
     const lessonType = dto.lessonType || dto.type || 'VIDEO';
     const isLive = lessonType === 'LIVE';

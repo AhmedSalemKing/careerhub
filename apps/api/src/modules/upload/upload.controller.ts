@@ -70,7 +70,21 @@ export class UploadController {
   @Post('single')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowedMime = [
+        'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'video/mp4', 'video/webm',
+      ];
+      if (allowedMime.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('File type not allowed'), false);
+    },
+  }))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload single file' })
   @ApiResponse({ status: 201, description: 'File uploaded successfully' })
@@ -90,9 +104,23 @@ export class UploadController {
   @Post('multiple')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @UseInterceptors(FilesInterceptor('files', 10))
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const allowedMime = [
+        'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'video/mp4', 'video/webm',
+      ];
+      if (allowedMime.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('File type not allowed'), false);
+    },
+  }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload multiple files' })
+  @ApiOperation({ summary: 'Upload multiple files (max 10)' })
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
   async uploadMultipleFiles(
     @CurrentUser() user: User,
@@ -113,8 +141,9 @@ export class UploadController {
     storage: memoryStorage(),
     limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-      if (file.mimetype.startsWith('image/')) cb(null, true);
-      else cb(new BadRequestException('Only image files are allowed'), false);
+      const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (allowedImageTypes.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('Only JPEG, PNG, WebP, and GIF images are allowed'), false);
     },
   }))
   @ApiConsumes('multipart/form-data')
@@ -177,8 +206,9 @@ export class UploadController {
     storage: memoryStorage(),
     limits: { fileSize: 500 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
-      if (file.mimetype.startsWith('video/')) cb(null, true);
-      else cb(new BadRequestException('Only video files are allowed'), false);
+      const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+      if (allowedVideoTypes.includes(file.mimetype)) cb(null, true);
+      else cb(new BadRequestException('Only MP4, WebM, and MOV videos are allowed'), false);
     },
   }))
   @ApiConsumes('multipart/form-data')
@@ -251,7 +281,12 @@ export class UploadController {
     @Res() res: Response,
     @Query('download') download?: string,
   ) {
-    const filePath = join(process.cwd(), 'uploads', 'cvs', filename);
+    // Prevent path traversal — strip any directory components
+    const safeFilename = filename.replace(/[/\\]/g, '').replace(/\.\./g, '');
+    if (!safeFilename) {
+      throw new BadRequestException('Invalid filename');
+    }
+    const filePath = join(process.cwd(), 'uploads', 'cvs', safeFilename);
     try {
       await access(filePath);
     } catch {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
+import DOMPurify from 'isomorphic-dompurify'
 import { get, post, del } from '../../../../lib/api'
 import {
   Plus,
@@ -53,7 +54,7 @@ function MessageContent({ content }: { content: string }) {
       elements.push(
         <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
           <span className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--primary)' }} />
-          <span dangerouslySetInnerHTML={{ __html: line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }} />
         </li>
       )
     } else if (/^\d+\. /.test(line)) {
@@ -61,16 +62,16 @@ function MessageContent({ content }: { content: string }) {
       elements.push(
         <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}>{num}</span>
-          <span dangerouslySetInnerHTML={{ __html: line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }} />
         </li>
       )
     } else if (line.trim()) {
       elements.push(
         <p key={i} className="text-sm leading-relaxed mb-1" dangerouslySetInnerHTML={{
-          __html: line
+          __html: DOMPurify.sanitize(line
             .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--foreground);font-weight:600">$1</strong>')
             .replace(/`(.*?)`/g, '<code style="background:var(--code-bg);color:var(--primary);padding:2px 6px;border-radius:6px;font-size:13px;font-family:monospace">$1</code>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>'))
         }} />
       )
     } else if (i > 0) {

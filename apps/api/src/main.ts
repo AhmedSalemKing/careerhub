@@ -26,29 +26,38 @@ async function bootstrap() {
   app.useStaticAssets(uploadsPath, { prefix: '/uploads' });
   const configService = app.get(ConfigService);
 
-  // Security middleware
+  // Security middleware - Helmet with enterprise-grade configuration
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://lh3.googleusercontent.com"],
         scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.agora.io", "wss://", "https://deve-way.onrender.com"],
       },
     },
+    crossOriginEmbedderPolicy: false,
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    noSniff: true,
+    xssFilter: true,
+    frameguard: { action: 'deny' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   }));
 
-  // CORS configuration
+  // CORS - Strict whitelist (no regex patterns that could be exploited)
   app.enableCors({
     origin: [
-      'http://localhost:3000',
       'https://deveway-teal.vercel.app',
-      /\.vercel\.app$/,
-      /deve-way/,
+      'https://devewayhub.vercel.app',
+      'https://www.deveways.com',
+      'http://localhost:3000',
+      'http://localhost:3001',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],
   });
 
   // Compression

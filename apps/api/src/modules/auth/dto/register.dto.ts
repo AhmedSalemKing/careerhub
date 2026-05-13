@@ -29,12 +29,14 @@ export class RegisterDto {
   password: string;
 
   @ApiProperty({ description: 'User first name', example: 'John' })
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MinLength(2)
   @MaxLength(50)
   firstName: string;
 
   @ApiProperty({ description: 'User last name', example: 'Doe' })
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MinLength(2)
   @MaxLength(50)
@@ -42,17 +44,20 @@ export class RegisterDto {
 
   @ApiPropertyOptional({ description: 'User phone number', example: '+201234567890' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   phone?: string;
 
   @ApiPropertyOptional({ description: 'User country', example: 'Egypt' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MaxLength(50)
   country?: string;
 
   @ApiPropertyOptional({ description: 'User city', example: 'Cairo' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MaxLength(50)
   city?: string;
@@ -73,11 +78,13 @@ export class RegisterDto {
 
   @ApiPropertyOptional({ description: 'CV URL for instructors/consultants' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   cvUrl?: string;
 
   @ApiPropertyOptional({ description: 'Professional bio' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MaxLength(1000)
   bio?: string;
@@ -92,12 +99,14 @@ export class RegisterDto {
 
   @ApiPropertyOptional({ description: 'Area of speciality' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   @MaxLength(100)
   speciality?: string;
 
   @ApiPropertyOptional({ description: 'LinkedIn profile URL' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   linkedinUrl?: string;
 
@@ -115,6 +124,7 @@ export class RegisterDto {
 
   @ApiPropertyOptional({ description: 'Profile avatar URL' })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString()
   avatar?: string;
 }

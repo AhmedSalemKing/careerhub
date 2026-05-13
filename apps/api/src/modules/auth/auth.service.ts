@@ -315,7 +315,7 @@ export class AuthService {
 
     // Generate raw token and bcrypt hash
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const tokenHash = await bcrypt.hash(rawToken, 12);
     const expiresAt = new Date(Date.now() + 3_600_000); // 1 hour
 
     // Delete any existing reset tokens for this user

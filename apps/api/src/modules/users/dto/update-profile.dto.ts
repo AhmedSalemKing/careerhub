@@ -9,6 +9,7 @@ import {
   Matches,
   IsUrl,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Gender } from '@prisma/client';
 
@@ -20,6 +21,7 @@ export class UpdateProfileDto {
     maxLength: 50,
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'First name must be a string' })
   @MinLength(2, { message: 'First name must be at least 2 characters long' })
   @MaxLength(50, { message: 'First name cannot exceed 50 characters' })
@@ -35,6 +37,7 @@ export class UpdateProfileDto {
     maxLength: 50,
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Last name must be a string' })
   @MinLength(2, { message: 'Last name must be at least 2 characters long' })
   @MaxLength(50, { message: 'Last name cannot exceed 50 characters' })
@@ -48,6 +51,7 @@ export class UpdateProfileDto {
     example: '+201234567890',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Phone number must be a string' })
   @Matches(/^\+?[1-9]\d{1,14}$/, {
     message: 'Please provide a valid phone number with country code',
@@ -76,6 +80,7 @@ export class UpdateProfileDto {
     example: 'Egyptian',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Nationality must be a string' })
   @MaxLength(50, { message: 'Nationality cannot exceed 50 characters' })
   nationality?: string;
@@ -85,6 +90,7 @@ export class UpdateProfileDto {
     example: 'Egypt',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Country must be a string' })
   @MaxLength(50, { message: 'Country cannot exceed 50 characters' })
   country?: string;
@@ -94,6 +100,7 @@ export class UpdateProfileDto {
     example: 'Cairo',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'City must be a string' })
   @MaxLength(50, { message: 'City cannot exceed 50 characters' })
   city?: string;
@@ -104,6 +111,7 @@ export class UpdateProfileDto {
     maxLength: 500,
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Bio must be a string' })
   @MaxLength(500, { message: 'Bio cannot exceed 500 characters' })
   bio?: string;
@@ -113,6 +121,7 @@ export class UpdateProfileDto {
     example: 'https://linkedin.com/in/johndoe',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/<[^>]*>/g, '').trim() : value)
   @IsUrl({}, { message: 'Please provide a valid LinkedIn URL' })
   linkedinUrl?: string;
 
@@ -131,6 +140,7 @@ export class UpdateProfileDto {
     example: 'Africa/Cairo',
   })
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.replace(/[^>]*>/g, '').trim() : value)
   @IsString({ message: 'Timezone must be a string' })
   @MaxLength(50, { message: 'Timezone cannot exceed 50 characters' })
   timezone?: string;

@@ -2,8 +2,9 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TrackActivityMiddleware } from './middleware/track-activity.middleware';
 import { HttpLoggerMiddleware } from './middleware/http-logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import * as Joi from 'joi';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -54,18 +55,23 @@ import { LiveModule } from './modules/live/live.module';
       }),
       validationOptions: { abortEarly: false },
     }),
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        throttlers: [
-          {
-            ttl: configService.get('RATE_LIMIT_WINDOW_MS') || 900000,
-            limit: configService.get('RATE_LIMIT_MAX_REQUESTS') || 100,
-          },
-        ],
-      }),
-      inject: [ConfigService],
-    }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 1000,
+        limit: 10,
+      },
+      {
+        name: 'medium',
+        ttl: 60000,
+        limit: 100,
+      },
+      {
+        name: 'long',
+        ttl: 900000,
+        limit: 500,
+      },
+    ]),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -100,7 +106,12 @@ import { LiveModule } from './modules/live/live.module';
     LiveModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
