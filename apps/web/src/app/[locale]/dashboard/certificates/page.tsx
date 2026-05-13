@@ -51,6 +51,12 @@ export default function CertificatesPage() {
 
   const certificates = Array.isArray(data) ? data : []
 
+  const getDownloadUrl = (url: string, filename: string) => {
+    if (!url || !url.includes('/upload/')) return url
+    const safeName = encodeURIComponent(filename).replace(/%20/g, '_')
+    return url.replace('/upload/', `/upload/fl_attachment:${safeName}/`)
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -307,7 +313,12 @@ export default function CertificatesPage() {
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {cert.certificateUrl && (
-                    <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
+                    <a
+                      href={getDownloadUrl(
+                        cert.certificateUrl,
+                        `${isAr ? (cert.course?.titleAr || cert.course?.title) : (cert.course?.titleEn || cert.course?.title) || 'certificate'}-${cert.verificationCode || cert.serialNumber}`
+                      )}
+                      download
                       style={{
                         flex: 1, padding: '9px', borderRadius: '9px',
                         background: '#5120c8', color: '#fff',
@@ -322,31 +333,27 @@ export default function CertificatesPage() {
                         <polyline points="7 10 12 15 17 10"/>
                         <line x1="12" y1="15" x2="12" y2="3"/>
                       </svg>
-                      {isAr ? 'تحميل' : 'Download'}
+                      {isAr ? 'تحميل الشهادة' : 'Download Certificate'}
                     </a>
                   )}
-                  {(cert.verificationCode || cert.serialNumber) && (
-                    <button
-                      onClick={() => {
-                        const code = cert.verificationCode || cert.serialNumber
-                        const url = `${window.location.origin}/${locale}/verify/${code}`
-                        navigator.clipboard?.writeText(url)
-                      }}
+                  {cert.certificateUrl && (
+                    <a href={cert.certificateUrl} target="_blank" rel="noopener noreferrer"
                       style={{
                         padding: '9px 14px', borderRadius: '9px',
                         background: 'rgba(255,255,255,0.05)',
                         border: '1px solid rgba(255,255,255,0.1)',
-                        color: '#888', cursor: 'pointer',
+                        color: 'var(--muted-foreground)',
+                        textDecoration: 'none',
                         display: 'flex', alignItems: 'center', gap: '6px',
-                        fontSize: '0.82rem', fontFamily: 'inherit',
+                        fontSize: '0.82rem', fontWeight: 500,
                       }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
                       </svg>
-                      {isAr ? 'نسخ رابط التحقق' : 'Copy link'}
-                    </button>
+                      {isAr ? 'عرض' : 'View'}
+                    </a>
                   )}
                 </div>
               </div>
