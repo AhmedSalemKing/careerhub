@@ -330,6 +330,9 @@ export default function AiChatPage() {
   }, [conversations, loadConversation, createConv])
 
   // ── Composition handlers ─────────
+  const handleCompositionStart = () => { isComposingRef.current = true }
+  const handleCompositionEnd = () => { isComposingRef.current = false }
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) {
       e.preventDefault()
