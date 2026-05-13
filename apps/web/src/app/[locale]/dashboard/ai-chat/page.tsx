@@ -92,6 +92,8 @@ export default function AiChatPage() {
   const qc = useQueryClient()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const isComposingRef = useRef(false)
+  const isInitialMount = useRef(true)
 
   const [activeConvId, setActiveConvId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -315,9 +317,21 @@ export default function AiChatPage() {
     }
   }, [messages, streamingContent])
 
-  // ── Keyboard handler ─────────────
+  // ── Auto-load / create conversation on mount ──
+  useEffect(() => {
+    if (!isInitialMount.current || !Array.isArray(conversations)) return
+    isInitialMount.current = false
+
+    if (conversations.length > 0 && conversations[0]?.id) {
+      loadConversation(conversations[0].id)
+    } else {
+      createConv.mutate()
+    }
+  }, [conversations, loadConversation, createConv])
+
+  // ── Composition handlers ─────────
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposingRef.current) {
       e.preventDefault()
       sendMessage(input)
     }
@@ -827,6 +841,8 @@ export default function AiChatPage() {
                 value={input}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
+                onCompositionStart={handleCompositionStart}
+                onCompositionEnd={handleCompositionEnd}
                 placeholder={isAr ? 'اكتب رسالتك هنا... (Enter للإرسال)' : 'Type your message... (Enter to send)'}
                 disabled={isStreaming}
                 rows={1}
