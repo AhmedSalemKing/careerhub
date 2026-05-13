@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import { BookOpen, Users, DollarSign, PlusCircle, Calendar, Clock, CheckCircle, Target, ArrowLeft, ChevronLeft, Shield, CheckCircle2, XCircle, AlertTriangle, Hand } from 'lucide-react'
@@ -379,106 +379,450 @@ type DashboardData = {
 
 function StudentOverview() {
   const locale = useLocale() as 'ar' | 'en'
-  const t = useTranslations('dashboard')
-  const c = useTranslations('common')
+  const isAr = locale === 'ar'
+  const { user } = useAuthStore()
   const { toast } = useToast()
 
-  const q = useQuery({
+  const { data: statsData, isLoading, isError, refetch } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => {
       const res = await get('/users/dashboard')
       const data = (res?.data as any)?.data ?? (res?.data as any)
       return unwrapData(data)
     },
+    retry: 1, staleTime: 30000,
   })
 
-  const stats = q.data?.stats
-  const courses = q.data?.recommendedCourses ?? []
+  const { data: enrollmentData } = useQuery({
+    queryKey: ['student-enrollments'],
+    queryFn: async () => {
+      const res = await get('/courses/my-courses')
+      const d = (res?.data as any)?.data ?? (res?.data as any) ?? []
+      return Array.isArray(d) ? d : []
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 30000,
+  })
 
-  return (
-    <DashboardShell title={t('overview')} subtitle={t('assessment_prompt')}>
-      {q.isLoading ? (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-36 rounded-2xl" />
+  const { data: certData } = useQuery({
+    queryKey: ['student-certificates'],
+    queryFn: async () => {
+      const res = await get('/certificates/my')
+      const d = (res?.data as any)?.data ?? (res?.data as any) ?? []
+      return Array.isArray(d) ? d : []
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 30000,
+  })
+
+  const enrollments = enrollmentData ?? []
+  const certificates = certData ?? []
+  const studentStats = statsData?.stats
+
+  if (isLoading) {
+    return (
+      <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'البيانات قيد التحميل...' : 'Loading your data...'}>
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
           ))}
         </div>
-      ) : q.isError ? (
-        <div className="rounded-2xl p-8 border border-border bg-surface shadow-sm text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
-            <AlertTriangle className="h-8 w-8 text-red-500" />
-          </div>
-          <p className="text-sm text-muted mb-5 font-medium">{c('empty')}</p>
-          <button 
-            type="button"
-            className="px-6 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-hover transition-all duration-200 shadow-md hover:shadow-lg"
-            onClick={() => { 
-              toast({ 
-                title: c('loading'), 
-                description: 'جاري إعادة تحميل البيانات...' 
-              }) 
-              q.refetch() 
-            }}
-          >
-            {c('retry')}
+      </DashboardShell>
+    )
+  }
+
+  if (isError) {
+    return (
+      <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'حدث خطأ' : 'Something went wrong'}>
+        <div style={{ textAlign:'center', padding:'3rem 2rem',
+          border:'1px solid var(--border)', borderRadius:'16px',
+          background:'var(--surface)' }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
+            stroke="#ef4444" strokeWidth="2" strokeLinecap="round"
+            style={{ margin:'0 auto 1rem', display:'block', opacity:0.5 }}>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <p style={{ fontSize:'0.9rem', color:'var(--muted-foreground)', marginBottom:'1rem' }}>
+            {isAr ? 'فشل تحميل البيانات' : 'Failed to load data'}
+          </p>
+          <button onClick={() => refetch()} style={{
+            padding:'10px 22px', borderRadius:'10px',
+            background:'#5120c8', color:'#fff',
+            border:'none', fontSize:'0.875rem', fontWeight:600, cursor:'pointer',
+          }}>
+            {isAr ? 'إعادة المحاولة' : 'Retry'}
           </button>
         </div>
-      ) : (
-        <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3 mb-8">
-            <Stat 
-              label={t('enrolled_courses')} 
-              value={stats?.enrolledCourses ?? 0} 
-              icon={<BookOpen className="h-5 w-5" />}
-              color="from-[#5120c8] to-indigo-600"
-              delay={0}
-            />
-            <Stat 
-              label={t('completed_courses')} 
-              value={stats?.completedCourses ?? 0} 
-              icon={<CheckCircle className="h-5 w-5" />}
-              color="from-emerald-500 to-green-600"
-              delay={1}
-            />
-            <Stat 
-              label={t('certificates_earned')} 
-              value={stats?.certificatesEarned ?? 0} 
-              icon={<Target className="h-5 w-5" />}
-              color="from-amber-500 to-orange-600"
-              delay={2}
-            />
+      </DashboardShell>
+    )
+  }
+
+  return (
+    <div style={{ padding: '1.5rem', maxWidth: '1200px' }}>
+      <style>{`
+        .student-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .student-two-col { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; }
+        @media (max-width: 768px) { .student-two-col { grid-template-columns: 1fr; } .student-stats { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .student-stats { grid-template-columns: 1fr; } }
+      `}</style>
+
+      {/* Welcome Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(81,32,200,0.15) 0%, rgba(81,32,200,0.05) 100%)',
+        border: '1px solid rgba(81,32,200,0.2)',
+        borderRadius: '16px',
+        padding: '1.75rem 2rem',
+        marginBottom: '1.5rem',
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: '1rem',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+          <div style={{
+            width:'56px', height:'56px', borderRadius:'50%',
+            border:'2px solid rgba(81,32,200,0.5)',
+            overflow:'hidden', flexShrink:0,
+            background:'linear-gradient(135deg,#5120c8,#7c3aed)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+            fontSize:'1.4rem', fontWeight:700, color:'#fff',
+          }}>
+            {user?.profile?.avatar
+              ? <img src={user.profile.avatar} alt=""
+                  style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+              : (user?.profile?.firstName?.[0] || 'ط')
+            }
+          </div>
+          <div>
+            <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
+              {isAr ? 'مرحبا بك' : 'Welcome back,'}
+            </p>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:800, margin:'0 0 3px' }}>
+              {isAr
+                ? (user?.profile?.firstName || 'الطالب')
+                : (user?.profile?.firstName || 'Student')}
+            </h1>
+            <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
+              {isAr ? 'واصل رحلتك التعليمية' : 'Continue your learning journey'}
+            </p>
+          </div>
+        </div>
+        <a href={`/${locale}/courses`} style={{
+          display:'inline-flex', alignItems:'center', gap:'8px',
+          padding:'11px 22px', borderRadius:'10px',
+          background:'#5120c8', color:'#fff',
+          fontWeight:600, fontSize:'0.9rem', textDecoration:'none',
+          boxShadow:'0 4px 15px rgba(81,32,200,0.3)',
+        }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
+        </a>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="student-stats">
+        {[
+          {
+            labelAr:'كورسات مسجلة', labelEn:'Enrolled Courses',
+            value: enrollments.length || studentStats?.enrolledCourses || 0,
+            color:'#a78bfa', bg:'rgba(81,32,200,0.12)',
+            href: `/${locale}/dashboard/my-courses`,
+            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>,
+          },
+          {
+            labelAr:'كورسات مكتملة', labelEn:'Completed',
+            value: enrollments.filter((e:any) => e.progress >= 100).length
+              || studentStats?.completedCourses || 0,
+            color:'#34d399', bg:'rgba(52,211,153,0.12)',
+            href: `/${locale}/dashboard/my-courses`,
+            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>,
+          },
+          {
+            labelAr:'شهادات محققة', labelEn:'Certificates',
+            value: certificates.length || studentStats?.certificatesEarned || 0,
+            color:'#fbbf24', bg:'rgba(251,191,36,0.12)',
+            href: `/${locale}/dashboard/certificates`,
+            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="8" r="6"/>
+              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>,
+          },
+          {
+            labelAr:'ساعات التعلم', labelEn:'Hours Learned',
+            value: studentStats?.hoursLearned || 0,
+            color:'#f87171', bg:'rgba(248,113,113,0.12)',
+            href: `/${locale}/dashboard/my-courses`,
+            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>,
+          },
+        ].map((stat: any, i: number) => (
+          <a key={i} href={stat.href} style={{ textDecoration:'none' }}>
+            <div style={{
+              padding:'1.25rem',
+              background:'rgba(255,255,255,0.03)',
+              border:'1px solid rgba(255,255,255,0.07)',
+              borderRadius:'14px',
+              display:'flex', alignItems:'flex-start', gap:'1rem',
+              transition:'border-color 0.2s',
+              cursor:'pointer',
+            }}
+            onMouseEnter={(e: any) => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
+            onMouseLeave={(e: any) => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
+            >
+              <div style={{
+                width:'44px', height:'44px', borderRadius:'12px',
+                background:stat.bg, color:stat.color, flexShrink:0,
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}>
+                {stat.icon}
+              </div>
+              <div>
+                <p style={{ fontSize:'1.6rem', fontWeight:800, margin:'0 0 2px',
+                  color:'var(--foreground)' }}>
+                  {stat.value}
+                </p>
+                <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
+                  {isAr ? stat.labelAr : stat.labelEn}
+                </p>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {/* Two column layout */}
+      <div className="student-two-col">
+        {/* My Courses - recent enrollments */}
+        <div style={{
+          background:'rgba(255,255,255,0.02)',
+          border:'1px solid rgba(255,255,255,0.07)',
+          borderRadius:'14px', padding:'1.25rem',
+        }}>
+          <div style={{ display:'flex', alignItems:'center',
+            justifyContent:'space-between', marginBottom:'1rem' }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:700, margin:0 }}>
+              {isAr ? 'كورساتي' : 'My Courses'}
+            </h2>
+            <a href={`/${locale}/dashboard/my-courses`}
+              style={{ fontSize:'0.8rem', color:'#a78bfa', textDecoration:'none' }}>
+              {isAr ? 'عرض الكل' : 'View all'}
+            </a>
           </div>
 
-          {/* Recommended Courses */}
-          <div className="rounded-2xl p-6 lg:p-8 border border-border bg-surface shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-base font-bold text-foreground">{t('courses')}</h3>
-            </div>
-            
-            {courses.length ? (
-              <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {courses.slice(0, 6).map((course: CourseCardCourse, idx: number) => (
-                  <div key={course.id} style={{ animationDelay: `${idx * 0.1}s` }} className="animate-fade-up" >
-                    <CourseCard course={course} locale={locale} />
+          {enrollments.length > 0 ? (
+            enrollments.slice(0, 4).map((enrollment: any) => {
+              const course = enrollment.course
+              const progress = enrollment.progress || 0
+              return (
+                <a key={enrollment.id}
+                  href={`/${locale}/learn/${course?.id}`}
+                  style={{ textDecoration:'none', display:'block' }}>
+                  <div style={{
+                    display:'flex', alignItems:'center', gap:'12px',
+                    padding:'10px 0',
+                    borderBottom:'1px solid rgba(255,255,255,0.05)',
+                    transition:'opacity 0.15s',
+                  }}
+                  onMouseEnter={(e: any) => e.currentTarget.style.opacity='0.8'}
+                  onMouseLeave={(e: any) => e.currentTarget.style.opacity='1'}
+                  >
+                    {/* Thumbnail */}
+                    <div style={{
+                      width:'44px', height:'44px', borderRadius:'8px',
+                      background:'#1a1a2e', flexShrink:0, overflow:'hidden',
+                    }}>
+                      {course?.thumbnail
+                        ? <img src={course.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                        : <div style={{ width:'100%', height:'100%',
+                            background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
+                            display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                              stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+                              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            </svg>
+                          </div>
+                      }
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{
+                        fontWeight:600, fontSize:'0.875rem', margin:'0 0 4px',
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
+                        color:'var(--foreground)',
+                      }}>
+                        {isAr ? course?.titleAr : course?.titleEn}
+                      </p>
+                      {/* Progress bar */}
+                      <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                        <div style={{
+                          flex:1, height:'4px', background:'rgba(255,255,255,0.06)',
+                          borderRadius:'99px', overflow:'hidden',
+                        }}>
+                          <div style={{
+                            height:'100%', borderRadius:'99px',
+                            width:`${Math.round(progress)}%`,
+                            background: progress >= 100
+                              ? 'linear-gradient(90deg,#4ade80,#22c55e)'
+                              : '#5120c8',
+                          }}/>
+                        </div>
+                        <span style={{ fontSize:'0.7rem', color:'var(--muted-foreground)',
+                          flexShrink:0 }}>
+                          {Math.round(progress)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status badge */}
+                    <div style={{
+                      padding:'3px 8px', borderRadius:'20px', fontSize:'0.68rem',
+                      fontWeight:600, flexShrink:0,
+                      background: progress >= 100
+                        ? 'rgba(34,197,94,0.1)' : 'rgba(81,32,200,0.12)',
+                      border: progress >= 100
+                        ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(81,32,200,0.25)',
+                      color: progress >= 100 ? '#4ade80' : '#a78bfa',
+                    }}>
+                      {progress >= 100
+                        ? (isAr ? 'مكتمل' : 'Done')
+                        : (isAr ? 'جار' : 'Active')}
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-2 flex items-center justify-center">
-                  <BookOpen className="h-8 w-8 text-muted opacity-40" />
+                </a>
+              )
+            })
+          ) : (
+            <div style={{ textAlign:'center', padding:'2rem',
+              color:'var(--muted-foreground)' }}>
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="1.5"
+                style={{ margin:'0 auto 8px', display:'block', opacity:0.3 }}>
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <p style={{ margin:'0 0 1rem', fontSize:'0.875rem' }}>
+                {isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet'}
+              </p>
+              <a href={`/${locale}/courses`} style={{
+                padding:'8px 20px', borderRadius:'8px',
+                background:'#5120c8', color:'#fff',
+                textDecoration:'none', fontSize:'0.82rem', fontWeight:600,
+              }}>
+                {isAr ? 'ابدأ التعلم' : 'Start Learning'}
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div style={{
+          background:'rgba(255,255,255,0.02)',
+          border:'1px solid rgba(255,255,255,0.07)',
+          borderRadius:'14px', padding:'1.25rem',
+        }}>
+          <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
+            {isAr ? 'روابط سريعة' : 'Quick Links'}
+          </h2>
+          {[
+            {
+              labelAr:'كورساتي', labelEn:'My Courses',
+              href:`/${locale}/dashboard/my-courses`,
+              color:'#a78bfa', bg:'rgba(167,139,250,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>,
+            },
+            {
+              labelAr:'شهاداتي', labelEn:'Certificates',
+              href:`/${locale}/dashboard/certificates`,
+              color:'#fbbf24', bg:'rgba(251,191,36,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="12" cy="8" r="6"/>
+                <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+              </svg>,
+            },
+            {
+              labelAr:'المسار المهني', labelEn:'Career Path',
+              href:`/${locale}/dashboard/career-path`,
+              color:'#34d399', bg:'rgba(52,211,153,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>,
+            },
+            {
+              labelAr:'استعرض الكورسات', labelEn:'Browse Courses',
+              href:`/${locale}/courses`,
+              color:'#5120c8', bg:'rgba(81,32,200,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>,
+            },
+            {
+              labelAr:'احجز استشارة', labelEn:'Book Consultation',
+              href:`/${locale}/coaching`,
+              color:'#f87171', bg:'rgba(248,113,113,0.1)',
+              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>,
+            },
+          ].map((action: any, i: number) => (
+            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block' }}>
+              <div style={{
+                display:'flex', alignItems:'center', gap:'12px',
+                padding:'9px 10px', borderRadius:'10px', marginBottom:'4px',
+                background:'transparent', cursor:'pointer',
+                transition:'background 0.15s',
+              }}
+              onMouseEnter={(e: any) => e.currentTarget.style.background=action.bg}
+              onMouseLeave={(e: any) => e.currentTarget.style.background='transparent'}
+              >
+                <div style={{
+                  width:'34px', height:'34px', borderRadius:'9px',
+                  background:action.bg, color:action.color, flexShrink:0,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                }}>
+                  {action.icon}
                 </div>
-                <p className="text-sm text-muted font-medium">{c('empty')}</p>
+                <span style={{ fontSize:'0.875rem', fontWeight:500,
+                  color:'var(--foreground)', flex:1 }}>
+                  {isAr ? action.labelAr : action.labelEn}
+                </span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2"
+                  style={{ opacity:0.3, transform: isAr ? 'rotate(180deg)' : 'none' }}>
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
               </div>
-            )}
-          </div>
-        </>
-      )}
-    </DashboardShell>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 

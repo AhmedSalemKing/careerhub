@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -58,8 +57,6 @@ const redirectToCheckout = async (courseId: string, locale: string, token: strin
 }
 
 export default function CoursesPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale() as 'ar' | 'en'
   const isAr = locale === 'ar'
   const router = useRouter()
@@ -70,12 +67,6 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
-
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
 
   const queryClient = useQueryClient()
 
@@ -155,7 +146,7 @@ export default function CoursesPage() {
   const activeTabConfig = TABS.find(t => t.key === activeTab)!
 
   return (
-    <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', direction: isAr ? 'rtl' : 'ltr' }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
         @keyframes liveGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.4)} 50%{box-shadow:0 0 0 8px rgba(220,38,38,0)} }
@@ -165,22 +156,22 @@ export default function CoursesPage() {
       `}</style>
 
       {/* Hero */}
-      <div style={{ borderBottom: `1px solid ${border}`, background: cardBg, padding: '48px 24px 0' }}>
+      <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', padding: '48px 24px 0' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ color: text, fontSize: 'clamp(24px,4vw,40px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(24px,4vw,40px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
             {isAr ? 'اكتشف كورساتك' : 'Discover Your Courses'}
           </h1>
-          <p style={{ color: subtext, fontSize: 14, margin: '0 0 24px', lineHeight: 1.7 }}>
+          <p style={{ color: 'var(--muted-foreground)', fontSize: 14, margin: '0 0 24px', lineHeight: 1.7 }}>
             {isAr ? 'كورسات مسجلة، بث مباشر، ومقرات تدريبية فعلية  كل ما تحتاجه في مكان واحد' : 'Recorded, live, and in-person  everything you need in one place'}
           </p>
 
           {/* Search */}
           <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto' }}>
-            <Search size={15} color={subtext} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
+            <Search size={15} color='var(--muted-foreground)' style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
             <input type="text" placeholder={isAr ? 'ابحث عن كورس...' : 'Search courses...'} value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : 'var(--border)'}`, background: 'var(--background)', color: 'var(--foreground)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
             {search && (
-              <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'none', border: 'none', cursor: 'pointer', color: subtext }}>
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)' }}>
                 <X size={14} />
               </button>
             )}
@@ -193,7 +184,7 @@ export default function CoursesPage() {
             const Icon = tab.icon
             const active = activeTab === tab.key
             return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '14px 24px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: active ? tab.color : subtext, borderBottom: `2.5px solid ${active ? tab.color : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', position: 'relative' }}>
+              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '14px 24px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: active ? tab.color : 'var(--muted-foreground)', borderBottom: `2.5px solid ${active ? tab.color : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', position: 'relative' }}>
                 {tab.key === 'live' && (
                   <span style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 12, width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} className="live-dot" />
                 )}
@@ -217,7 +208,7 @@ export default function CoursesPage() {
               {activeTab === 'live' && (isAr ? 'جلسات مباشرة  انضم الآن أو شاهد القادمة' : 'Live sessions  join now or see upcoming')}
               {activeTab === 'offline' && (isAr ? 'كورسات في مقرات تدريبية فعلية  احجز مقعدك' : 'In-person training  book your seat')}
             </span>
-            <span style={{ color: subtext, fontSize: 12, marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0 }}>
+            <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0 }}>
               ({filtered.length} {isAr ? 'كورس' : 'courses'})
             </span>
           </div>
@@ -232,7 +223,7 @@ export default function CoursesPage() {
         {/* Loading */}
         {isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
-            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: isDark ? '#1a1a1a' : '#f4f4f8' }} />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface-2)' }} />)}
           </div>
         )}
 
@@ -252,11 +243,11 @@ export default function CoursesPage() {
         {/* Empty */}
         {!isLoading && filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <activeTabConfig.icon size={48} color={subtext} style={{ marginBottom: 16, opacity: 0.4 }} />
-            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
+            <activeTabConfig.icon size={48} color='var(--muted-foreground)' style={{ marginBottom: 16, opacity: 0.4 }} />
+            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
               {isAr ? 'لا توجد كورسات' : 'No courses found'}
             </h3>
-            <p style={{ color: subtext, fontSize: 13 }}>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>
               {search ? (isAr ? 'جرب كلمة بحث أخرى' : 'Try a different search') : (isAr ? 'لا توجد كورسات في هذا القسم بعد' : 'No courses in this section yet')}
             </p>
           </div>
@@ -266,7 +257,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <RecordedCard key={course.id} course={course} idx={idx} isDark={isDark} isAr={isAr} locale={locale} router={router} cardBg={cardBg} border={border} text={text} subtext={subtext} token={token} />
+              <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} />
             ))}
           </div>
         )}
@@ -275,7 +266,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'live' && filtered.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <LiveCard key={course.id} course={course} idx={idx} isDark={isDark} isAr={isAr} locale={locale} router={router} cardBg={cardBg} border={border} text={text} subtext={subtext} token={token} API={API_BASE} />
+              <LiveCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} API={API_BASE} />
             ))}
           </div>
         )}
@@ -284,7 +275,7 @@ export default function CoursesPage() {
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
             {filtered.map((course: any, idx: number) => (
-              <OfflineCard key={course.id} course={course} idx={idx} isDark={isDark} isAr={isAr} locale={locale} router={router} cardBg={cardBg} border={border} text={text} subtext={subtext} token={token} />
+              <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} />
             ))}
           </div>
         )}
@@ -296,20 +287,20 @@ export default function CoursesPage() {
 // ========================
 // RECORDED CARD
 // ========================
-function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, border, text, subtext, token }: any) {
+function RecordedCard({ course, idx, isAr, locale, router, token }: any) {
   const price = parseFloat(course.price || 0)
   const isEnrolled = course.isEnrolled === true
 
   console.log('[RecordedCard]', course.id, 'isEnrolled:', course.isEnrolled)
 
   return (
-    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
+    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = isDark ? '0 8px 28px rgba(0,0,0,0.4)' : '0 8px 28px rgba(0,0,0,0.08)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
 
       {/* Thumbnail */}
-      <div style={{ height: 160, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : (isDark ? '#1a1a1a' : '#f4f4f8'), position: 'relative', flexShrink: 0 }}>
+      <div style={{ height: 160, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', flexShrink: 0 }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
           <Video size={10} />
           {isAr ? 'مسجل' : 'Recorded'}
@@ -324,7 +315,7 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
       </div>
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h3 style={{ color: text, fontSize: 14, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 14, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {getTitle(course, locale)}
         </h3>
 
@@ -337,18 +328,18 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
             {course.instructor.profile.avatar
               ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
               : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>{course.instructor.profile.firstName?.[0]}</div>}
-            <span style={{ color: subtext, fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
+            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
           </a>
         )}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {course._count?.lessons !== undefined && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: subtext, fontSize: 11 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
               <BookOpen size={11} />{course._count.lessons} {isAr ? 'درس' : 'lessons'}
             </span>
           )}
           {course._count?.enrollments !== undefined && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: subtext, fontSize: 11 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
               <Users size={11} />{course._count.enrollments} {isAr ? 'طالب' : 'students'}
             </span>
           )}
@@ -371,7 +362,7 @@ function RecordedCard({ course, idx, isDark, isAr, locale, router, cardBg, borde
 // ========================
 // LIVE CARD
 // ========================
-function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, text, subtext, token, API }: any) {
+function LiveCard({ course, idx, isAr, locale, router, token, API }: any) {
   const [joining, setJoining] = useState(false)
   const price = parseFloat(course.price || 0)
   const isLive = course.liveStatus === 'live'
@@ -446,7 +437,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
   }
 
   return (
-    <div className="course-card" style={{ animationDelay: `${idx * 0.06}s`, background: cardBg, borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : border}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
+    <div className="course-card" style={{ animationDelay: `${idx * 0.06}s`, background: 'var(--surface)', borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : 'var(--border)'}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
 
       {/* Live/Scheduled Banner */}
       {isLive && (
@@ -477,9 +468,9 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
       )}
 
       {isScheduled && liveDate && (
-        <div style={{ padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Clock size={13} color={subtext} />
-          <span style={{ color: subtext, fontSize: 12, fontWeight: 600 }}>
+        <div style={{ padding: '8px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Clock size={13} color='var(--muted-foreground)' />
+          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 600 }}>
             {isUpcoming
               ? (isAr ? `يبدأ خلال ${hoursUntil > 0 ? hoursUntil + ' ساعة و' : ''}${minutesUntil} دقيقة` : `Starts in ${hoursUntil > 0 ? hoursUntil + 'h ' : ''}${minutesUntil}m`)
               : (isAr ? 'مجدول' : 'Scheduled')}
@@ -502,7 +493,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 200 }}>
-          <h3 style={{ color: text, fontSize: 16, fontWeight: 800, margin: '0 0 4px' }}>
+          <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 800, margin: '0 0 4px' }}>
             {getTitle(course, locale)}
           </h3>
           {course.instructor?.profile && (
@@ -514,13 +505,13 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
               {course.instructor.profile.avatar
                 ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
                 : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800 }}>{course.instructor.profile.firstName?.[0]}</div>}
-              <span style={{ color: subtext, fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
+              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
             </a>
           )}
           {liveDate && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <Calendar size={12} color={subtext} />
-              <span style={{ color: subtext, fontSize: 12 }}>
+              <Calendar size={12} color='var(--muted-foreground)' />
+              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
                 {liveDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'long', day: 'numeric' })}
                 {'  '}
                 {liveDate.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -528,7 +519,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
             </div>
           )}
           {course.description && (
-            <p style={{ color: subtext, fontSize: 12, lineHeight: 1.6, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ color: 'var(--muted-foreground)', fontSize: 12, lineHeight: 1.6, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {course.description || course.descriptionEn || course.descriptionAr}
             </p>
           )}
@@ -578,7 +569,7 @@ function LiveCard({ course, idx, isDark, isAr, locale, router, cardBg, border, t
 // ========================
 // OFFLINE CARD
 // ========================
-function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border, text, subtext, token }: any) {
+function OfflineCard({ course, idx, isAr, locale, router, token }: any) {
   const price = parseFloat(course.price || 0)
   const isEnrolled = course.isEnrolled || false
   const offlineDate = course.liveStartTime ? new Date(course.liveStartTime) : null
@@ -609,13 +600,13 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
   }
 
   return (
-    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' }}
+    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(22,163,74,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = isDark ? '0 8px 28px rgba(0,0,0,0.4)' : '0 8px 28px rgba(0,0,0,0.08)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(22,163,74,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
       
       {/* Map preview or thumbnail */}
-      <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : (isDark ? '#1a1a1a' : '#f0fdf4'), position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
           <MapPin size={10} />
           {isAr ? 'مقر فعلي' : 'Physical'}
@@ -633,7 +624,7 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
       </div>
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {getTitle(course, locale)}
         </h3>
 
@@ -642,8 +633,8 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
             <MapPin size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
-              <div style={{ color: text, fontSize: 13, fontWeight: 700 }}>{course.locationName}</div>
-              {course.locationAddress && <div style={{ color: subtext, fontSize: 11 }}>{course.locationAddress}</div>}
+              <div style={{ color: 'var(--foreground)', fontSize: 13, fontWeight: 700 }}>{course.locationName}</div>
+              {course.locationAddress && <div style={{ color: 'var(--muted-foreground)', fontSize: 11 }}>{course.locationAddress}</div>}
             </div>
           </div>
         )}
@@ -651,8 +642,8 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
         {/* Date */}
         {offlineDate && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calendar size={12} color={subtext} />
-            <span style={{ color: subtext, fontSize: 12 }}>
+            <Calendar size={12} color='var(--muted-foreground)' />
+            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
               {offlineDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
               {'  '}
               {offlineDate.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -663,8 +654,8 @@ function OfflineCard({ course, idx, isDark, isAr, locale, router, cardBg, border
         {/* Max attendees */}
         {course.maxAttendees && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Users size={12} color={subtext} />
-            <span style={{ color: subtext, fontSize: 12 }}>
+            <Users size={12} color='var(--muted-foreground)' />
+            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
               {isAr ? `الحد الأقصى: ${course.maxAttendees} شخص` : `Max: ${course.maxAttendees} attendees`}
             </span>
           </div>
