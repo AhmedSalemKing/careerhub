@@ -17,6 +17,14 @@ import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import { formatDate, formatTimeOnly } from '@/lib/time'
 
+const formatTimeSlot = (time: string, isAr: boolean): string => {
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+  return isAr ? formatted.replace('AM', 'ص').replace('PM', 'م') : formatted
+}
+
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
   CONFIRMED:            { ar:'مؤكدة',           en:'Confirmed',          color:'#5120c8', bg:'rgba(81,32,200,0.1)'  },
@@ -496,7 +504,7 @@ export default function MySessionsPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
                   {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
                     .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
-                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{t}</button>)}
+                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, isAr)}</button>)}
                 </div>
               </div>
               <div>

@@ -327,6 +327,17 @@ export default function CoachingPage() {
   )
 }
 
+function formatTimeSlot(time: string, locale: string): string {
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+  if (locale === 'ar') {
+    return formatted.replace('AM', 'ص').replace('PM', 'م')
+  }
+  return formatted
+}
+
 function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, cardBg, border, text, subtext }: any) {
   const [step, setStep] = useState<1|2|3>(1)
   const [loading, setLoading] = useState(false)
@@ -414,7 +425,7 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
                     </p>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{t}</button>)}
+                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, locale)}</button>)}
                     </div>
                   )}
                 </div>

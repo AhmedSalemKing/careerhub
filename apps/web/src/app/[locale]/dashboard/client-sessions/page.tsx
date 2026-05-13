@@ -380,11 +380,22 @@ export default function ClientSessionsPage() {
               </div>
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'الوقت الجديد' : 'New Time'} *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                  {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
-                    .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
-                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{t}</button>)}
-                </div>
+                {(() => {
+                const fmt = (time: string) => {
+                  const [h, m] = time.split(':').map(Number)
+                  const period = h >= 12 ? 'PM' : 'AM'
+                  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+                  const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+                  return isAr ? formatted.replace('AM', 'ص').replace('PM', 'م') : formatted
+                }
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+                    {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
+                      .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
+                      .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{fmt(t)}</button>)}
+                  </div>
+                )
+              })()}
               </div>
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>
