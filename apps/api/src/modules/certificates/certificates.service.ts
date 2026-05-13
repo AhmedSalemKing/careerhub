@@ -470,14 +470,35 @@ export class CertificatesService {
 
   // ─── Public API methods ──────────────────────────────────────
 
-  async verifyCertificate(serialNumber: string) {
+  async verifyCertificate(code: string) {
     const cert = await this.prisma.certificate.findFirst({
-      where: { serialNumber },
+      where: {
+        OR: [
+          { serialNumber: code },
+          { id: code },
+        ],
+      },
       include: {
-        user: { include: { profile: true } },
+        user: {
+          select: {
+            email: true,
+            profile: {
+              select: { firstName: true, lastName: true, avatar: true },
+            },
+          },
+        },
         course: {
-          include: {
-            instructor: { include: { profile: true } },
+          select: {
+            titleAr: true,
+            titleEn: true,
+            thumbnail: true,
+            instructor: {
+              select: {
+                profile: {
+                  select: { firstName: true, lastName: true },
+                },
+              },
+            },
           },
         },
       },
@@ -494,12 +515,18 @@ export class CertificatesService {
 
     return {
       valid: true,
-      studentName,
-      courseTitle: cert.course.titleAr || cert.course.titleEn,
-      instructorName,
-      issueDate: cert.issuedAt,
-      verifyCode: cert.serialNumber,
-      certificateUrl: cert.certificateUrl,
+      certificate: {
+        serialNumber: cert.serialNumber,
+        issuedAt: cert.issuedAt,
+        courseTitle: cert.course.titleAr || cert.course.titleEn,
+        courseTitleAr: cert.course.titleAr,
+        courseTitleEn: cert.course.titleEn,
+        userName: studentName,
+        studentAvatar: cert.user.profile?.avatar,
+        courseThumbnail: cert.course.thumbnail,
+        instructorName,
+        certificateUrl: cert.certificateUrl,
+      },
     }
   }
 

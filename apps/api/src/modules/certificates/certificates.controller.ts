@@ -91,10 +91,18 @@ export class CertificatesController {
     return { success: true, data: certs }
   }
 
-  // ── Verify by serial number (new path) ─────────────────────
+  // ── Verify by serial number (/:code/verify path) ──────────
+  @Get(':code/verify')
+  @ApiOperation({ summary: 'Verify certificate by code (serial or ID)' })
+  async verifyByCode(@Param('code') code: string) {
+    const result = await this.certificatesService.verifyCertificate(code)
+    return { success: true, data: result }
+  }
+
+  // ── Legacy verify path (keep for backward compat) ──────────
   @Get('verify/:verifyCode')
-  @ApiOperation({ summary: 'Verify certificate by serial number' })
-  async verifyByCode(@Param('verifyCode') verifyCode: string) {
+  @ApiOperation({ summary: 'Verify certificate by serial number (legacy)' })
+  async verifyByCodeLegacy(@Param('verifyCode') verifyCode: string) {
     const result = await this.certificatesService.verifyCertificate(verifyCode)
     return { success: true, data: result }
   }
