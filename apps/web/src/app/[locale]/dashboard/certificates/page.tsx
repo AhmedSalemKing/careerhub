@@ -51,9 +51,9 @@ export default function CertificatesPage() {
 
   const certificates = Array.isArray(data) ? data : []
 
-  const getDownloadUrl = (url: string, filename: string) => {
+  const getDownloadUrl = (url: string, verificationCode: string) => {
     if (!url || !url.includes('/upload/')) return url
-    const safeName = encodeURIComponent(filename).replace(/%20/g, '_')
+    const safeName = `DeveWay-Certificate-${verificationCode}`
     return url.replace('/upload/', `/upload/fl_attachment:${safeName}/`)
   }
 
@@ -314,10 +314,7 @@ export default function CertificatesPage() {
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {cert.certificateUrl && (
                     <a
-                      href={getDownloadUrl(
-                        cert.certificateUrl,
-                        `${isAr ? (cert.course?.titleAr || cert.course?.title) : (cert.course?.titleEn || cert.course?.title) || 'certificate'}-${cert.verificationCode || cert.serialNumber}`
-                      )}
+                      href={getDownloadUrl(cert.certificateUrl, cert.verificationCode || cert.id)}
                       download
                       style={{
                         flex: 1, padding: '9px', borderRadius: '9px',
