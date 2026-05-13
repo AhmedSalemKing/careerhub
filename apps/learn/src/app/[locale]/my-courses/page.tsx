@@ -9,6 +9,7 @@ import { getUser } from '../../../lib/auth'
 import { getMediaUrl } from '../../../lib/media'
 import { BookOpen, ArrowRight, Search, Star, Users, Award, CheckCircle, Clock, XCircle, LayoutGrid } from 'lucide-react'
 import { Button } from '../../components/ui/button'
+import { formatDate } from '../../../lib/time'
 
 // ══════════════════════════════════════
 // TYPES
@@ -62,14 +63,7 @@ function getCourseTitle(course: Course | null | undefined, locale: string): stri
   return course.title || 'بدون عنوان'
 }
 
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
-  } catch {
-    return dateString
-  }
-}
+
 
 // ════════════════════════════════════════
 // LOADING SKELETON
@@ -397,7 +391,7 @@ export default function MyCoursesPage() {
                       {s.status === 'CONFIRMED' ? <><CheckCircle className="h-3 w-3 inline mr-1" />مؤكد</> : s.status === 'PENDING' ? <><Clock className="h-3 w-3 inline mr-1" />معلقة</> : <><XCircle className="h-3 w-3 inline mr-1" />ملغية</>}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {s.scheduledAt ? formatDate(s.scheduledAt) : ''}
+                      {s.scheduledAt ? formatDate(s.scheduledAt, locale) : ''}
                     </span>
                   </div>
                   <p className="font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>
@@ -859,10 +853,7 @@ export default function MyCoursesPage() {
                         <line x1="8" y1="2" x2="8" y2="6" />
                         <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
-                      {new Date(enrollment.enrolledAt).toLocaleDateString(
-                        isAr ? 'ar-SA' : 'en-US',
-                        { year: 'numeric', month: 'short', day: 'numeric' }
-                      )}
+                      {formatDate(new Date(enrollment.enrolledAt), locale)}
                     </p>
                   )}
 

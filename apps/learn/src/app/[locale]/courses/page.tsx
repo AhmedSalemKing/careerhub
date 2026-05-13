@@ -12,6 +12,7 @@ import {
   Star, BookOpen, Lock, CheckCircle2, AlertCircle,
   DollarSign, Navigation
 } from 'lucide-react'
+import { formatDate, formatTimeOnly } from '../../../lib/time'
 
 const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
 
@@ -513,9 +514,9 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <Calendar size={12} color='var(--muted-foreground)' />
               <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
-                {liveDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'long', day: 'numeric' })}
+                {formatDate(liveDate, locale)}
                 {'  '}
-                {liveDate.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                {formatTimeOnly(liveDate)}
               </span>
             </div>
           )}
@@ -645,9 +646,9 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={12} color='var(--muted-foreground)' />
             <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
-              {offlineDate.toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' })}
+              {formatDate(offlineDate, locale)}
               {'  '}
-              {offlineDate.toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+              {formatTimeOnly(offlineDate)}
             </span>
           </div>
         )}

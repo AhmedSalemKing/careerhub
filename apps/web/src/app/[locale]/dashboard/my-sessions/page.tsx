@@ -15,6 +15,7 @@ import {
 import PaymentModal from '@/components/PaymentModal'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
+import { formatDate, formatTimeOnly } from '@/lib/time'
 
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
@@ -160,14 +161,6 @@ export default function MySessionsPage() {
     onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطا' : 'Error'))
   })
 
-  const formatDate = (d: string) => {
-    try { return new Date(d).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'short', year: 'numeric', month: 'long', day: 'numeric' }) }
-    catch (e) { return d }
-  }
-  const formatTime = (d: string) => {
-    try { return new Date(d).toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' }) }
-    catch (e) { return '' }
-  }
   const isSoon = (d: string) => {
     const diff = new Date(d).getTime() - Date.now()
     return diff > 0 && diff < 3600000
@@ -212,7 +205,7 @@ export default function MySessionsPage() {
               {isAr ? 'المستشار اقترح موعداً جديداً  هل توافق؟' : 'Consultant proposed a new time  do you approve?'}
               {session.proposedAt && (
                 <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: '#5120c8', fontWeight: 800 }}>
-                  {' '}{formatDate(session.proposedAt)} {formatTime(session.proposedAt)}
+                  {' '}{formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}
                 </span>
               )}
             </span>
@@ -279,11 +272,11 @@ export default function MySessionsPage() {
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', border: `1px solid ${border}`, marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <Calendar size={12} color={subtext} />
-              <span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt)}</span>
+              <span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt, locale)}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <Clock size={12} color={subtext} />
-              <span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatTime(session.scheduledAt)}</span>
+              <span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatTimeOnly(session.scheduledAt)}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <Video size={12} color={subtext} />

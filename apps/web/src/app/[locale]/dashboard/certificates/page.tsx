@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../../../stores/authStore'
 import { useLocale } from 'next-intl'
 import { useEffect } from 'react'
+import { formatCertDate } from '../../../../lib/time'
 
 export default function CertificatesPage() {
   const locale = useLocale()
@@ -281,10 +282,7 @@ export default function CertificatesPage() {
                     <line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
                   {(cert.createdAt || cert.issuedAt)
-                    ? new Date(cert.createdAt || cert.issuedAt).toLocaleDateString(
-                        isAr ? 'ar-SA' : 'en-US',
-                        { year: 'numeric', month: 'long', day: 'numeric' }
-                      )
+                    ? formatCertDate(cert.createdAt || cert.issuedAt, locale)
                     : ''}
                 </p>
 

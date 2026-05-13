@@ -1,9 +1,11 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useLocale } from 'next-intl'
 import { Bell, CheckCircle, XCircle, AlertTriangle, Info, Award, CreditCard, User, Clock } from 'lucide-react'
 import { get, patch } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
+import { formatRelative } from '../../lib/time'
 
 type Notification = {
   id: string
@@ -14,17 +16,6 @@ type Notification = {
   contentAr: string
   isRead: boolean
   createdAt: string
-}
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'الآن'
-  if (mins < 60) return `منذ ${mins} دقيقة`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `منذ ${hrs} ساعة`
-  const days = Math.floor(hrs / 24)
-  return `منذ ${days} يوم`
 }
 
 function getIcon(type: string) {
@@ -80,6 +71,8 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null)
   const qc = useQueryClient()
   const token = useAuthStore((s) => s.token)
+
+  const locale = useLocale()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -178,7 +171,7 @@ export function NotificationBell() {
                           {n.contentAr || n.contentEn}
                         </p>
                         <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60 mr-6">
-                          {timeAgo(n.createdAt)}
+                          {formatRelative(n.createdAt, locale)}
                         </p>
                       </div>
                       {!n.isRead && (

@@ -8,6 +8,7 @@ import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
+import { RealTimeClock } from '../../../components/RealTimeClock'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
@@ -240,6 +241,7 @@ return [
 
       {/* Bottom Dock */}
       <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
+      <RealTimeClock locale={locale} />
     </div>
   )
 }

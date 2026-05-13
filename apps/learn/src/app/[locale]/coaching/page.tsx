@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { get, post } from '../../../lib/api'
 import { getMediaUrl } from '../../../lib/media'
+import { formatDate } from '../../../lib/time'
 import { notify } from '../../../lib/notify'
 import {
   Clock, Globe, Video, Phone,
@@ -33,6 +34,7 @@ function BookingModal({
   onSuccess: () => void
 }) {
   const tc = useTranslations('coaches')
+  const locale = useLocale()
   const [step, setStep] = useState<'details' | 'schedule' | 'confirm'>('details')
   const [selectedDate, setSelectedDate] = useState('')
   const [selectedTime, setSelectedTime] = useState('')
@@ -191,7 +193,7 @@ function BookingModal({
                 {[
                   { label: tc('consultant'), value: name },
                   { label: tc('topic'), value: topic },
-                  { label: tc('date'), value: new Date(`${selectedDate}T${selectedTime}`).toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
+                  { label: tc('date'), value: formatDate(new Date(`${selectedDate}T${selectedTime}`), locale) },
                   { label: tc('time'), value: selectedTime },
                   { label: tc('meetingMethod'), value: method === 'ZOOM' ? 'Zoom' : method === 'GOOGLE_MEET' ? 'Google Meet' : tc('phone') },
                   { label: tc('duration'), value: tc('sessionDuration') },

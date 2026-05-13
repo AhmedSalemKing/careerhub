@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
+import { formatDate } from '../../../../lib/time'
 import {
   CheckCircle2,
   XCircle,
@@ -28,6 +30,7 @@ interface VerifyResult {
 
 export default function CertificateVerifyPage() {
   const params = useParams()
+  const locale = useLocale()
   const verifyCode = params.serial as string
   const [cert, setCert] = useState<VerifyResult | null>(null)
   const [loading, setLoading] = useState(true)
@@ -232,11 +235,7 @@ export default function CertificateVerifyPage() {
                 {
                   icon: <Calendar size={18} color="#5120c8" />,
                   label: 'تاريخ الإصدار',
-                  value: new Date(cert.issueDate).toLocaleDateString('ar-SA', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  }),
+                  value: formatDate(new Date(cert.issueDate), locale),
                 },
                 { icon: <Shield size={18} color="#5120c8" />, label: 'رمز التحقق', value: cert.verifyCode, mono: true },
               ].map((item, i) => (
