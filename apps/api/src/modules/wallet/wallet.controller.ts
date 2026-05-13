@@ -13,6 +13,11 @@ export class WalletController {
     return { success: true, data };
   }
 
+  @Get('coach-earnings')
+  async getCoachEarnings(@Request() req: any) {
+    return this.walletService.getCoachEarnings(req.user.id);
+  }
+
   @Post('topup/create-intent')
   async createTopupIntent(@Request() req: any, @Body() body: { amount: number }) {
     const data = await this.walletService.createTopupIntent(req.user.id, body.amount);

@@ -265,4 +265,62 @@ export class WalletService {
     
     return { success: true, newBalance: updated.walletBalance, transferred: amount }
   }
+
+  async getCoachEarnings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { earningsBalance: true, walletBalance: true },
+    }).catch(() => null)
+
+    const sessions = await this.prisma.consultingSession.findMany({
+      where: { consultantId: userId },
+      include: {
+        user: {
+          select: {
+            profile: { select: { firstName: true, lastName: true, avatar: true } },
+          },
+        },
+        consultant: {
+          select: {
+            profile: { select: { sessionPrice: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    }).catch(() => [])
+
+    const transactions = sessions
+      .filter((s: any) => s.paymentStatus === 'PAID' && s.status !== 'CANCELLED')
+      .map((s: any) => ({
+        id: s.id,
+        clientName: s.user?.profile
+          ? `${s.user.profile.firstName || ''} ${s.user.profile.lastName || ''}`.trim() || 'طالب'
+          : 'طالب',
+        clientAvatar: s.user?.profile?.avatar || null,
+        amount: parseFloat(s.consultant?.profile?.sessionPrice?.toString() || '0'),
+        date: s.completedAt || s.paidAt || s.createdAt,
+        status: s.status,
+      }))
+
+    const totalEarnings = user?.earningsBalance || 0
+
+    const pendingSessions = sessions.filter(
+      (s: any) => s.status === 'CONFIRMED' && s.paymentStatus !== 'PAID'
+    )
+    const pendingAmount = pendingSessions.reduce(
+      (sum: number, s: any) =>
+        sum + parseFloat(s.consultant?.profile?.sessionPrice?.toString() || '0'),
+      0
+    )
+
+    return {
+      success: true,
+      data: {
+        totalEarnings,
+        pendingAmount,
+        walletBalance: user?.walletBalance || 0,
+        transactions,
+      },
+    }
+  }
 }
