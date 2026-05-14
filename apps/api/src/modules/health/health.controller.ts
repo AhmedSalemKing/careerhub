@@ -97,4 +97,16 @@ export class HealthController {
       data: metrics,
     };
   }
+
+  @Get('live')
+  @ApiOperation({ summary: 'Kubernetes liveness probe' })
+  getLive() {
+    return { status: 'alive', timestamp: new Date().toISOString() };
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Kubernetes readiness probe' })
+  async getReady() {
+    return this.healthService.getBasicHealth();
+  }
 }

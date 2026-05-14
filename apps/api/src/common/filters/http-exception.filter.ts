@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import {
   ExceptionFilter,
   Catch,
@@ -61,6 +62,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `${status} ${request.method} ${request.url}`,
         exception.stack,
       );
+      Sentry.captureException(exception, {
+        tags: { status: String(status), method: request.method, path: request.url },
+      });
     } else {
       this.logger.warn(
         `${status} ${request.method} ${request.url}: ${message}`,

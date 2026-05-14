@@ -525,7 +525,7 @@ export class CoachingService {
     });
 
     // Create coaching credits
-    await (this.prisma as any).coachingCredit.create({
+    await (this.prisma).coachingCredit.create({
       data: {
         userId,
         packageId,
@@ -554,7 +554,7 @@ export class CoachingService {
       this.prisma.coachingSession.count({
         where: { userId, status: 'COMPLETED' },
       }),
-      (this.prisma as any).coachingSession.aggregate({
+      (this.prisma).coachingSession.aggregate({
         where: { userId, status: 'COMPLETED' },
         _sum: { price: true }
       }),
@@ -593,7 +593,7 @@ export class CoachingService {
           startTime: { gt: new Date() },
         },
       }),
-      (this.prisma as any).coachingSession.aggregate({
+      (this.prisma).coachingSession.aggregate({
         where: { coachId, status: 'COMPLETED' },
         _sum: { price: true }
       }),
@@ -790,7 +790,7 @@ export class CoachingService {
   }
 
   async getAnalytics() {
-    const totalRevenue = await (this.prisma as any).coachingSession.aggregate({
+    const totalRevenue = await (this.prisma).coachingSession.aggregate({
       where: { status: 'COMPLETED' },
       _sum: { price: true }
     });

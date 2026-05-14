@@ -319,12 +319,12 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 3_600_000); // 1 hour
 
     // Delete any existing reset tokens for this user
-    await (this.prisma as any).passwordResetToken.deleteMany({
+    await (this.prisma).passwordResetToken.deleteMany({
       where: { userId: user.id },
     });
 
     // Store only the hashed token
-    await (this.prisma as any).passwordResetToken.create({
+    await (this.prisma).passwordResetToken.create({
       data: {
         userId: user.id,
         tokenHash,
@@ -359,7 +359,7 @@ export class AuthService {
     }
 
     // Find all unexpired, unused tokens for this user
-    const pendingTokens = await (this.prisma as any).passwordResetToken.findMany({
+    const pendingTokens = await (this.prisma).passwordResetToken.findMany({
       where: {
         userId: user.id,
         expiresAt: { gt: new Date() },
@@ -390,7 +390,7 @@ export class AuthService {
     });
 
     // Mark token as used
-    await (this.prisma as any).passwordResetToken.update({
+    await (this.prisma).passwordResetToken.update({
       where: { id: matchedToken.id },
       data: { usedAt: new Date() },
     });
@@ -540,9 +540,7 @@ export class AuthService {
     hourlyRate?: number;
     meetingMethod?: string;
   }) {
-    console.log('[Profile] Updating user:', userId)
-    console.log('[Profile] Data:', JSON.stringify(data))
-    
+    this.logger.debug(`Updating user profile: ${userId}`)
     const profileData: any = {}
     if (data.firstName !== undefined) profileData.firstName = data.firstName
     if (data.lastName !== undefined) profileData.lastName = data.lastName
@@ -553,7 +551,6 @@ export class AuthService {
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
     
-    console.log('[Profile] Profile fields:', Object.keys(profileData))
     
     const profile = await this.prisma.userProfile.upsert({
       where: { userId },
@@ -569,7 +566,6 @@ export class AuthService {
     if (data.bio !== undefined) userFields.bio = data.bio
     
     if (Object.keys(userFields).length > 0) {
-      console.log('[Profile] User fields:', Object.keys(userFields))
       await this.prisma.user.update({ where: { id: userId }, data: userFields })
     }
     

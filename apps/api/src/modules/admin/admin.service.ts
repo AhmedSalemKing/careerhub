@@ -1064,7 +1064,7 @@ export class AdminService {
     details?: any,
   ) {
     try {
-      await (this.prisma as any).auditLog.create({
+      await (this.prisma).auditLog.create({
         data: { action, entityType, entityId, adminId: adminId ?? null, details: details ?? null },
       });
     } catch (e) {
@@ -1073,7 +1073,7 @@ export class AdminService {
   }
 
   async getAuditLogs(limit = 50) {
-    return (this.prisma as any).auditLog.findMany({
+    return (this.prisma).auditLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: limit,
     });

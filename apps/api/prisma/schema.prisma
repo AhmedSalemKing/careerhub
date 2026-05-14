@@ -156,6 +156,7 @@ model User {
   receivedRatings      Rating[]            @relation("ConsultantRatings")
   activities           UserActivity[]
   walletTransactions   WalletTransaction[]
+  coachingCredits      CoachingCredit[]
 
   @@index([email])
   @@index([role])
@@ -714,7 +715,8 @@ model CoachingSession {
   status        SessionStatus @default(SCHEDULED)
   notes         String?
   recordingUrl  String?
-  startTime     DateTime // Added startTime field
+  price         Float?
+  startTime     DateTime
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
@@ -730,6 +732,21 @@ model CoachingSession {
   @@index([status])
   @@index([startTime])
   @@map("coaching_sessions")
+}
+
+model CoachingCredit {
+  id                String   @id @default(cuid())
+  userId            String
+  packageId         String
+  sessionsRemaining Int
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("coaching_credits")
 }
 
 model CoachReview {

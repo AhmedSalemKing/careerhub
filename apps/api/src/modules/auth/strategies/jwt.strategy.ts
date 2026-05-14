@@ -1,9 +1,10 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PrismaService } from '../../../prisma/prisma.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
   constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -13,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    console.log('[JwtStrategy] Payload:', payload);
+    this.logger.debug(`Validating JWT for user ${payload.sub}`);
 
     if (!payload?.sub || !payload?.email) {
       throw new UnauthorizedException('Invalid JWT payload');
@@ -60,7 +61,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
     }
 
-    console.log('[JwtStrategy] Validated user:', user.email, 'status:', user.status, 'accountType:', user.accountType);
+    this.logger.debug(`Validated user ${user.email} — status: ${user.status}`);
 
     return {
       id: user.id,

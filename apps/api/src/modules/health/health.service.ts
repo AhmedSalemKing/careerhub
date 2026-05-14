@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class HealthService {
@@ -8,6 +9,7 @@ export class HealthService {
 
   constructor(
     private configService: ConfigService,
+    private prisma: PrismaService,
   ) { }
 
   async getBasicHealth() {
@@ -60,8 +62,7 @@ export class HealthService {
   async getDatabaseHealth() {
     try {
       const start = Date.now();
-      // Mock database health check - would implement actual Prisma query
-      // await this.prisma.$queryRaw`SELECT 1`;
+      await this.prisma.$queryRaw`SELECT 1`;
       const responseTime = Date.now() - start;
 
       return {

@@ -50,6 +50,8 @@
     "@nestjs/throttler": "^5.0.1",
     "@nestjs/websockets": "^11.1.19",
     "@prisma/client": "^5.22.0",
+    "@sentry/nestjs": "^10.53.1",
+    "@sentry/node": "^10.53.1",
     "agora-access-token": "^2.0.4",
     "aws-sdk": "^2.1547.0",
     "axios": "^1.6.5",

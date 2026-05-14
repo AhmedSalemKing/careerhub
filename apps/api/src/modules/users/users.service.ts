@@ -245,7 +245,7 @@ export class UsersService {
           }
         }
       }),
-      (this.prisma as any).enrollment.findMany({
+      (this.prisma).enrollment.findMany({
         where: { userId },
         take: 5,
         orderBy: { enrolledAt: 'desc' },
@@ -258,7 +258,7 @@ export class UsersService {
           completedAt: true,
         }
       }),
-      (this.prisma as any).certificate.findMany({
+      (this.prisma).certificate.findMany({
         where: { userId },
         take: 3,
         orderBy: { issuedAt: 'desc' },
@@ -269,7 +269,7 @@ export class UsersService {
           courseId: true,
         }
       }),
-      (this.prisma as any).notification.findMany({
+      (this.prisma).notification.findMany({
         where: { userId },
         take: 5,
         orderBy: { createdAt: 'desc' },
