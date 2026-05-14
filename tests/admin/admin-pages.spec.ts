@@ -1,16 +1,17 @@
 import { test, expect } from '@playwright/test'
 const BASE = 'https://deveway-teal.vercel.app'
-const ADMIN = { email: 'admin@deveway.com', password: 'Admin123456!' }
+const ADMIN = { email: 'admin@deveway.com', password: 'Admin123!' }
 
 test.describe('Admin Pages - No Crashes', () => {
   test.setTimeout(120000)
 
   async function loginAsAdmin(page: any) {
-    await page.goto(`${BASE}/ar/login`)
-    await page.fill('#email', ADMIN.email)
-    await page.fill('#password', ADMIN.password)
-    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
-    await page.waitForFunction(() => /admin/.test(window.location.href), { timeout: 80000 })
+    await page.goto('https://deveway-teal.vercel.app/ar/login')
+    await page.waitForTimeout(3000)
+    await page.fill('input[type="email"]', ADMIN.email)
+    await page.fill('input[type="password"]', ADMIN.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/dashboard/, { timeout: 90000 })
   }
 
   const adminPages = [

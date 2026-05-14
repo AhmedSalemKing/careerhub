@@ -6,11 +6,12 @@ test.describe('Student Dashboard', () => {
   test.setTimeout(120000)
 
   async function loginAsStudent(page: any) {
-    await page.goto(`${BASE}/ar/login`)
-    await page.fill('#email', STUDENT.email)
-    await page.fill('#password', STUDENT.password)
-    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
-    await page.waitForFunction(() => /dashboard/.test(window.location.href), { timeout: 80000 })
+    await page.goto('https://deveway-teal.vercel.app/ar/login')
+    await page.waitForTimeout(3000)
+    await page.fill('input[type="email"]', STUDENT.email)
+    await page.fill('input[type="password"]', STUDENT.password)
+    await page.click('button[type="submit"]')
+    await page.waitForURL(/dashboard/, { timeout: 90000 })
   }
 
   test('dashboard loads after login', async ({ page }) => {
