@@ -589,5 +589,103 @@ npx prisma db push                   # Push schema to DB (dev only)
 
 ---
 
-*End of DeveWay Full Developer Documentation v2.0*
-*Next update: after next round of feature work*
+---
+
+## UPDATE LOG — May 2026 (Session 2)
+
+### Bug Fixes
+| Fix | File | Description |
+|-----|------|-------------|
+| React Error #321 | my-sessions/page.tsx, client-sessions/page.tsx | useState moved inside component |
+| React Error #321 | ai-chat/page.tsx | handleCompositionStart defined inside component |
+| Enrollment data extraction | dashboard/page.tsx | Safe fallback chain for all response shapes |
+| Course display | my-courses/page.tsx | course/progress/title nesting fixed |
+| AI Chat nested input bar | ai-chat/page.tsx | Single bar, no nested border |
+| AI Chat Enter delay | ai-chat/page.tsx | isComposing ref fix for instant send |
+| AI Chat per-message conversation | ai-chat/page.tsx | One conversation per session |
+| client-sessions crash | client-sessions/page.tsx | useState inside component |
+| my-sessions crash | my-sessions/page.tsx | useState inside component |
+| getMyCourses 500 error | courses.service.ts | Safe Prisma sections+lessons include |
+| handleCompositionStart | ai-chat/page.tsx | Defined inside component |
+| UTF-8 encoding errors | PricingPage.tsx, VerifyCertificatePage.tsx | Re-saved as clean UTF-8 |
+| Payment → Enrollment | payments.service.ts, wallet.service.ts | Enrollment created after payment |
+| Progress always 0 | enrollment.service.ts | Real DB calculation implemented |
+| Sitemap crash on Vercel | sitemap.ts | safeFetch + allSettled + null guards |
+
+### New Features Added
+| Feature | Files | Description |
+|---------|-------|-------------|
+| Student Dashboard redesign | dashboard/page.tsx | Real data, stats cards, course list, quick links |
+| Coach Dashboard redesign | dashboard/page.tsx | Sessions stats, upcoming sessions, quick actions |
+| AI Chat UI redesign | ai-chat/page.tsx | Professional chat with suggestions, typing indicator |
+| Instructor Dashboard | dashboard/page.tsx | Stats, recent courses, quick actions |
+| Certificates light mode fix | certificates/page.tsx | CSS variables for full light/dark support |
+| Earnings real data | earnings/page.tsx | Connected to /wallet/coach-earnings |
+| Coach bottom nav fix | BottomDock.tsx | Removed schedule button |
+| Time system (dayjs) | lib/time.ts (web + learn) | UTC, 12-hour, locale-aware, relative |
+| Live clock bar | RealTimeClock.tsx | Real-time clock in dashboard |
+| 12h session time slots | coaching/page.tsx | 9:00 AM / 2:00 PM format |
+| i18n complete fix | 10+ learn pages | All hardcoded Arabic replaced with next-intl |
+| SEO complete | sitemap.ts, robots.ts, layout.tsx, page files | metadata, JSON-LD, hreflang, OG image |
+| Sentry monitoring | main.ts, instrumentation*.ts | Error tracking all 3 apps |
+| Health checks | health.controller.ts | /health, /health/live, /health/ready + real DB check |
+| Prisma schema sync | schema.prisma | CoachingCredit model, removed (prisma as any) |
+| Security hardening | main.ts, auth DTOs, upload.controller.ts | Helmet CSP, rate limiting, bcrypt 12, path traversal |
+| Production docs | PRODUCTION_DEPLOYMENT.md | Full env vars, deployment order, checklist |
+| console.log removal | auth.controller.ts | Replaced with NestJS Logger |
+
+### New API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /wallet/coach-earnings | Coach earnings from consulting sessions |
+| GET | /health/live | Liveness probe |
+| GET | /health/ready | Readiness probe with DB check |
+| POST | /admin/test-email | Send test email (admin only) |
+
+### New Files Created
+| File | Purpose |
+|------|---------|
+| apps/web/src/lib/time.ts | dayjs UTC time utilities |
+| apps/learn/src/lib/time.ts | Same for learn app |
+| apps/web/src/components/RealTimeClock.tsx | Live clock component |
+| apps/web/src/instrumentation.ts | Sentry server/edge init |
+| apps/web/src/instrumentation-client.ts | Sentry client init |
+| apps/learn/src/instrumentation.ts | Same for learn app |
+| apps/learn/src/instrumentation-client.ts | Same for learn app |
+| apps/web/src/app/opengraph-image.tsx | Dynamic OG image |
+| PRODUCTION_DEPLOYMENT.md | Production deployment guide |
+| SECURITY_AUDIT.md | Security audit report |
+
+### Security Updates (Enterprise Grade — Score: A)
+| Measure | Before | After |
+|---------|--------|-------|
+| Backend Security | B+ | A |
+| Frontend Security | B+ | A |
+| Data Exposure | B+ | A |
+| File Upload | A | A+ |
+| Rate Limiting | A | A+ |
+| Input Sanitization | A | A+ |
+| CSP / Headers | A | A+ |
+
+### Known Issues Status Update
+| Issue | Status |
+|-------|--------|
+| Render API billing | ⏳ Client action required |
+| Payment → Enrollment | ✅ Fixed |
+| Progress always 0 | ✅ Fixed |
+| console.log credentials | ✅ Fixed |
+| Sentry deprecation warnings | ✅ Fixed |
+| sitemap.xml crash | ✅ Fixed |
+| UTF-8 encoding errors | ✅ Fixed |
+| Email delivery | ⏳ Client SendGrid verification |
+
+### Current Platform Status (May 2026)
+- **Web App:** ✅ Live — deveway-teal.vercel.app
+- **Learn App:** ✅ Live — devewayhub.vercel.app
+- **API:** ❌ Suspended (Render billing)
+- **Database:** ✅ Supabase PostgreSQL
+- **SEO:** ✅ sitemap.xml + robots.txt + JSON-LD live
+- **Monitoring:** ✅ Sentry configured (needs DSN)
+- **Domain:** ⏳ www.deveways.com (client NameCheap connection pending)
+
+*End of DeveWay Full Developer Documentation v2.1*
