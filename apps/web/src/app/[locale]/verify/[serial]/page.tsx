@@ -1,4 +1,4 @@
-import { VerifyCertificatePage } from './VerifyCertificatePage'
+import VerifyCertificatePage from './VerifyCertificatePage'
 
 export async function generateMetadata({ params }: { params: { serial: string; locale: string } }) {
   const isAr = params.locale === 'ar'

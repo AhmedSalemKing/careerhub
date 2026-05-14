@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { FaqPage } from './FaqPage'
+import FaqPage from './FaqPage'
 
 export const metadata: Metadata = {
   title: 'FAQ | DeveWay',

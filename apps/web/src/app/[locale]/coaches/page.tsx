@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { CoachesPage } from './CoachesPage'
+import CoachesPage from './CoachesPage'
 
 export const metadata: Metadata = {
   title: 'Professional Coaches | DeveWay',

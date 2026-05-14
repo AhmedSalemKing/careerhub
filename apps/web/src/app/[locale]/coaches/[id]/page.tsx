@@ -1,4 +1,4 @@
-import { CoachesDetailClient } from './CoachesDetailClient'
+import CoachesDetailClient from './CoachesDetailClient'
 
 export async function generateMetadata({ params }: { params: { locale: string; id: string } }) {
   const isAr = params.locale === 'ar'

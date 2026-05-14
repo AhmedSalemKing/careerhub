@@ -1,5 +1,5 @@
 ﻿import { Metadata } from 'next'
-import { CareersPage } from './CareersPage'
+import CareersPage from './CareersPage'
 
 export const metadata: Metadata = {
   title: 'Career Paths | DeveWay',
