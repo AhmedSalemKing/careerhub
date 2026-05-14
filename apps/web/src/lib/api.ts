@@ -41,9 +41,15 @@ if (typeof window !== 'undefined') {
   console.log('[API] ✅ Initialized with baseURL:', api.defaults.baseURL)
 }
 
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token')
+    const token = getCookie('access_token') || localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token')
     if (token) {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${token}`
@@ -109,6 +115,7 @@ api.interceptors.response.use(
         localStorage.removeItem('deveway_token')
         localStorage.removeItem('deveway_user')
         document.cookie = 'careerhub_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict'
       }
 
       // Check specific error codes

@@ -32,6 +32,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { ConsultingModule } from './modules/consulting/consulting.module';
 import { LiveModule } from './modules/live/live.module';
 import { AuditModule } from './common/services/audit.module';
+import { CsrfModule } from './modules/csrf/csrf.module';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { AuditModule } from './common/services/audit.module';
     ConsultingModule,
     LiveModule,
     AuditModule,
+    CsrfModule,
   ],
   controllers: [],
   providers: [

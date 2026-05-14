@@ -74,6 +74,14 @@ export class AuthController {
         path: '/',
       });
 
+      response.cookie('access_token', result.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+        path: '/',
+      });
+
       await this.audit.log({
         event: SecurityEvent.REGISTER,
         userId: result.user?.id,
@@ -139,6 +147,14 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
+      response.cookie('access_token', result.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge: 15 * 60 * 1000,
         path: '/',
       });
 
@@ -208,6 +224,14 @@ export class AuthController {
         path: '/',
       });
 
+      response.cookie('access_token', result.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 15 * 60 * 1000,
+        path: '/',
+      });
+
       return {
         success: true,
         message: 'Token refreshed successfully',
@@ -235,6 +259,13 @@ export class AuthController {
 
     response.clearCookie('refresh_token', {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+    });
+
+    response.clearCookie('access_token', {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
@@ -421,6 +452,14 @@ export class AuthController {
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+
+      response.cookie('access_token', result.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge: 15 * 60 * 1000,
         path: '/',
       });
 

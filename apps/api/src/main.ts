@@ -7,12 +7,14 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import { join } from 'path';
 import express from 'express';
+const cookieParser = require('cookie-parser');
 const compression = require('compression');
 const morgan = require('morgan');
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { CsrfMiddleware } from './common/middleware/csrf.middleware';
 
 async function bootstrap() {
   if (process.env.SENTRY_DSN) {
@@ -66,7 +68,7 @@ async function bootstrap() {
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token', 'x-csrf-token'],
   });
 
   // Compression
@@ -81,6 +83,17 @@ async function bootstrap() {
 
   // Custom logger middleware
   app.use(new LoggerMiddleware().use);
+
+  // Cookie parser (required for CSRF and refresh tokens)
+  app.use(cookieParser());
+
+  // CSRF protection for state-changing routes
+  const csrfMiddleware = new CsrfMiddleware();
+  app.use('/api/auth', (req, res, next) => csrfMiddleware.use(req, res, next));
+  app.use('/api/wallet', (req, res, next) => csrfMiddleware.use(req, res, next));
+  app.use('/api/admin', (req, res, next) => csrfMiddleware.use(req, res, next));
+  app.use('/api/payments', (req, res, next) => csrfMiddleware.use(req, res, next));
+  app.use('/api/certificates', (req, res, next) => csrfMiddleware.use(req, res, next));
 
   // Global pipes
   app.useGlobalPipes(new ValidationPipe({
