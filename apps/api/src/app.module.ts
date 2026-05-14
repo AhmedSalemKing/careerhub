@@ -31,6 +31,7 @@ import { VerificationModule } from './modules/verification/verification.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ConsultingModule } from './modules/consulting/consulting.module';
 import { LiveModule } from './modules/live/live.module';
+import { AuditModule } from './common/services/audit.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { LiveModule } from './modules/live/live.module';
     WalletModule,
     ConsultingModule,
     LiveModule,
+    AuditModule,
   ],
   controllers: [],
   providers: [

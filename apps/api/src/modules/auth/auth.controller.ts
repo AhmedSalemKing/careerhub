@@ -13,6 +13,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   ForbiddenException,
+  HttpException,
   Logger,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -30,6 +31,7 @@ import { Roles } from './decorators/roles.decorator';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { AuditService, SecurityEvent } from '../../common/services/audit.service';
 import { sanitize } from '../../common/utils/sanitize.util';
 
 @ApiTags('Auth')
@@ -37,7 +39,16 @@ import { sanitize } from '../../common/utils/sanitize.util';
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
 
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly audit: AuditService,
+  ) { }
+
+  private getIp(req: Request): string {
+    return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+      || (req as any).ip
+      || 'unknown'
+  }
 
   @Throttle({ default: { limit: 3, ttl: 60000 } })
   @Post('register')
@@ -48,6 +59,7 @@ export class AuthController {
   async register(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } })) registerDto: RegisterDto,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
     this.logger.log(`[Register] payload keys: ${Object.keys(registerDto).join(', ')}`);
     this.logger.log(`[Register] accountType=${registerDto.accountType}, hasCV=${!!registerDto.cvUrl}, hasAvatar=${!!registerDto.avatar}`);
@@ -60,6 +72,15 @@ export class AuthController {
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000,
         path: '/',
+      });
+
+      await this.audit.log({
+        event: SecurityEvent.REGISTER,
+        userId: result.user?.id,
+        email: registerDto.email,
+        ip: this.getIp(req),
+        userAgent: req.headers['user-agent'],
+        metadata: { accountType: registerDto.accountType },
       });
 
       return {
@@ -90,9 +111,27 @@ export class AuthController {
   async login(
     @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, transformOptions: { enableImplicitConversion: true } })) loginDto: LoginDto,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
     this.logger.log(`[AUTH CONTROLLER] login called for: ${loginDto.email}`);
     try {
+      const ip = this.getIp(req)
+
+      // Check brute force
+      const recentFailures = await this.audit.getRecentFailedLogins(ip, 15)
+      if (recentFailures >= 10) {
+        await this.audit.log({
+          event: SecurityEvent.LOGIN_BLOCKED,
+          email: loginDto.email,
+          ip,
+          metadata: { recentFailures, reason: 'brute_force_protection' },
+        })
+        throw new HttpException(
+          { message: 'Too many failed attempts. Please try again in 15 minutes.', messageAr: 'محاولات كثيرة. حاول مرة أخرى بعد 15 دقيقة.' },
+          429,
+        )
+      }
+
       const result = await this.authService.login(loginDto);
 
       response.cookie('refresh_token', result.refreshToken, {
@@ -104,6 +143,15 @@ export class AuthController {
       });
 
       this.logger.log(`[AUTH CONTROLLER] login success for: ${loginDto.email}`);
+
+      await this.audit.log({
+        event: SecurityEvent.LOGIN_SUCCESS,
+        userId: result.user?.id,
+        email: loginDto.email,
+        ip,
+        userAgent: req.headers['user-agent'],
+      });
+
       return {
         success: true,
         message: 'Login successful',
@@ -115,6 +163,18 @@ export class AuthController {
     } catch (error) {
       const errDetail = error instanceof Error ? error.stack || error.message : String(error);
       this.logger.error(`[AUTH CTRL] login FAILED for ${loginDto.email}: ${errDetail}`);
+
+      // Log failed login attempt
+      if (!(error instanceof HttpException && (error.getStatus ? error.getStatus() === 429 : false))) {
+        await this.audit.log({
+          event: SecurityEvent.LOGIN_FAILED,
+          email: loginDto.email,
+          ip: this.getIp(req),
+          userAgent: req.headers['user-agent'],
+          metadata: { reason: 'invalid_credentials' },
+        }).catch(() => {})
+      }
+
       // Re-throw ForbiddenException as-is so frontend can show "under review" / "rejected" UI
       if (error instanceof ForbiddenException) {
         throw error;
@@ -169,6 +229,7 @@ export class AuthController {
   async logout(
     @CurrentUser() user: User,
     @Res({ passthrough: true }) response: Response,
+    @Req() req: Request,
   ) {
     await this.authService.logout(user.id);
 
@@ -177,6 +238,12 @@ export class AuthController {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
+    });
+
+    await this.audit.log({
+      event: SecurityEvent.LOGOUT,
+      userId: user.id,
+      ip: this.getIp(req),
     });
 
     return {
@@ -228,7 +295,29 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset' })
   @ApiResponse({ status: 200, description: 'If this email is registered, a reset link has been sent.' })
   @ApiResponse({ status: 429, description: 'Too many requests. Please try again later.' })
-  async forgotPassword(@Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto) {
+  async forgotPassword(
+    @Body(ValidationPipe) forgotPasswordDto: ForgotPasswordDto,
+    @Req() req: Request,
+  ) {
+    // Check for excessive password resets
+    const recentResets = await this.audit.getRecentPasswordResets(forgotPasswordDto.email, 1)
+    if (recentResets >= 3) {
+      await this.audit.log({
+        event: SecurityEvent.SUSPICIOUS_ACTIVITY,
+        email: forgotPasswordDto.email,
+        ip: this.getIp(req),
+        metadata: { reason: 'excessive_password_resets', count: recentResets },
+      })
+      return { success: true, message: 'If email exists, reset link was sent.' }
+    }
+
+    await this.audit.log({
+      event: SecurityEvent.PASSWORD_RESET_REQUEST,
+      email: forgotPasswordDto.email,
+      ip: this.getIp(req),
+      userAgent: req.headers['user-agent'],
+    })
+
     await this.authService.forgotPassword(forgotPasswordDto.email);
 
     return {

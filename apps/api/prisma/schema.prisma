@@ -1074,6 +1074,23 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model SecurityLog {
+  id        String   @id @default(cuid())
+  event     String   // LOGIN_SUCCESS, LOGIN_FAIL, PASSWORD_RESET, etc.
+  userId    String?
+  email     String?
+  ip        String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([event])
+  @@index([ip])
+  @@index([createdAt])
+  @@map("security_logs")
+}
+
 model Conversation {
   id        String      @id @default(cuid())
   userId    String

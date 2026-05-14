@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
+import { AuditService, SecurityEvent } from '../../common/services/audit.service';
 
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
-  constructor(private walletService: WalletService) {}
+  constructor(
+    private walletService: WalletService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get()
   async getWallet(@Request() req: any) {
@@ -27,12 +31,22 @@ export class WalletController {
   @Post('topup/confirm')
   async confirmTopup(@Request() req: any, @Body() body: { paymentIntentId: string }) {
     const data = await this.walletService.confirmTopup(req.user.id, body.paymentIntentId);
+    await this.audit.log({
+      event: SecurityEvent.WALLET_TOPUP,
+      userId: req.user.id,
+      metadata: { method: 'stripe', newBalance: data?.balance },
+    });
     return { success: true, data };
   }
 
   @Post('pay/:courseId')
   async payWithWallet(@Request() req: any, @Param('courseId') courseId: string) {
     const data = await this.walletService.payWithWallet(req.user.id, courseId);
+    await this.audit.log({
+      event: SecurityEvent.WALLET_PAYMENT,
+      userId: req.user.id,
+      metadata: { courseId },
+    });
     return { success: true, data };
   }
 

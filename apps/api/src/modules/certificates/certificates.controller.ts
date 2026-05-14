@@ -13,11 +13,15 @@ import { CertificatesService } from './certificates.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { RolesGuard } from '../auth/guards/roles.guard'
 import { Roles } from '../auth/decorators/roles.decorator'
+import { AuditService, SecurityEvent } from '../../common/services/audit.service'
 
 @ApiTags('Certificates')
 @Controller('certificates')
 export class CertificatesController {
-  constructor(private readonly certificatesService: CertificatesService) {}
+  constructor(
+    private readonly certificatesService: CertificatesService,
+    private readonly audit: AuditService,
+  ) {}
 
   // ── Generate certificate for a course ──────────────────────
   // Accepts courseId via URL param OR request body
@@ -38,7 +42,14 @@ export class CertificatesController {
     const userId = req.user.sub || req.user.id
     const isAdmin = req.user.role === 'ADMIN' || req.user.accountType === 'ADMIN'
     console.log('[Certificate] Generate request:', { userId, courseId, isAdmin, pathCourseId, bodyCourseId: body?.courseId })
-    return this.certificatesService.generateCertificate(userId, courseId, isAdmin)
+    const cert = await this.certificatesService.generateCertificate(userId, courseId, isAdmin)
+    const certData = cert?.data || cert
+    await this.audit.log({
+      event: SecurityEvent.CERTIFICATE_ISSUED,
+      userId,
+      metadata: { courseId, serialNumber: certData?.serialNumber },
+    })
+    return cert
   }
 
   // ── Test endpoint to debug certificate generation ─────────────

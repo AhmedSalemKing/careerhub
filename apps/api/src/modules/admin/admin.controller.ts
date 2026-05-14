@@ -27,6 +27,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -34,7 +35,10 @@ import { User } from '@prisma/client';
 @Roles('ADMIN')
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get admin dashboard overview' })
@@ -847,6 +851,34 @@ export class AdminController {
   @ApiOperation({ summary: 'Get all CONFIRMED payments only (revenue)' })
   async getAllPayments() {
     return this.adminService.getAllConfirmedPayments();
+  }
+
+  // ── Security Logs ──────────────────────────────────────────────────────────
+
+  @Get('security-logs')
+  @ApiOperation({ summary: 'Get security log entries' })
+  @ApiQuery({ name: 'event', required: false, description: 'Filter by event type' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  async getSecurityLogs(
+    @Query('event') event?: string,
+    @Query('limit') limit = '50',
+    @Query('page') page = '1',
+  ) {
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const where = event ? { event } : {}
+
+    const [logs, total] = await Promise.all([
+      this.prisma.securityLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: parseInt(limit),
+        skip,
+      }),
+      this.prisma.securityLog.count({ where }),
+    ])
+
+    return { success: true, data: { logs, total, page: parseInt(page) } }
   }
 
   // ── Audit Logs ─────────────────────────────────────────────────────────────

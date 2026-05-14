@@ -64,6 +64,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.3.2",
     "@nestjs/testing": "^10.2.7",
+    "@playwright/test": "^1.60.0",
     "@types/bcrypt": "^5.0.2",
     "@types/compression": "^1.7.5",
     "@types/multer": "^1.4.11",
