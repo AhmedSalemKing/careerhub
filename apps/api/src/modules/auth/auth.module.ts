@@ -11,12 +11,14 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { RefreshGuard } from './guards/refresh.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { AuditModule } from '../../common/services/audit.module';
 import { getJwtConfig, getJwtRefreshConfig } from '../../config/jwt.config';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
     PrismaModule,
+    AuditModule,
     forwardRef(() => NotificationsModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
