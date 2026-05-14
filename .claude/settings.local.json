@@ -49,7 +49,8 @@
       "Bash(ls apps/web/public/*.png)",
       "Bash(ls apps/learn/public/*.png)",
       "WebFetch(domain:deve-way.onrender.com)",
-      "WebFetch(domain:deveway-teal.vercel.app)"
+      "WebFetch(domain:deveway-teal.vercel.app)",
+      "Bash(npx playwright:*)"
     ]
   }
 }
