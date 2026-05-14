@@ -1,6 +1,3 @@
-// ==========================================
-// File: src/app/layout.tsx
-// ==========================================
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
@@ -17,9 +14,33 @@ import { TokenSync } from './components/TokenSync'
 import KeepAlivePing from './components/KeepAlivePing'
 
 export const metadata: Metadata = {
-  title: 'DeveWay | منصة التدريب',
-  description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف',
-  keywords: 'كورسات, تدريب, تعليم, مهارات, مسار مهني',
+  metadataBase: new URL('https://devewayhub.vercel.app'),
+  title: {
+    default: 'DeveWay | منصة التدريب',
+    template: '%s | DeveWay',
+  },
+  description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف واستشارات مهنية',
+  keywords: ['كورسات', 'تدريب', 'تعليم', 'مهارات', 'مسار مهني', 'شهادات معتمدة'],
+  openGraph: {
+    type: 'website',
+    locale: 'ar_SA',
+    alternateLocale: 'en_US',
+    siteName: 'DeveWay',
+    title: 'DeveWay | منصة التدريب',
+    description: 'منصة DeveWay للتدريب الاحترافي - كورسات معتمدة وجلسات لايف',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DeveWay' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DeveWay | منصة التدريب',
+    description: 'منصة DeveWay للتدريب الاحترافي',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
 }
 
 export default async function RootLayout({
@@ -47,7 +68,6 @@ export default async function RootLayout({
                   var theme = localStorage.getItem('theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   var isDark = theme === 'dark' || (theme === 'system' && prefersDark) || (!theme && prefersDark);
-
                   document.documentElement.classList.toggle('dark', isDark);
                   document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
                   document.documentElement.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';

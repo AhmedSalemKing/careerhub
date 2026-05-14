@@ -19,8 +19,61 @@ const madinetAlBat = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'DeveWay — منصة التطوير المهني',
-  description: 'DeveWay — منصة احترافية للتطوير المهني والكورسات والاستشارات المهنية',
+  metadataBase: new URL('https://www.deveways.com'),
+  title: {
+    default: 'DeveWay | منصة التعليم والتطوير المهني',
+    template: '%s | DeveWay',
+  },
+  description: 'منصة تعليمية عربية متكاملة للكورسات المهنية والكوتشينج وبناء المسار الوظيفي. An Arabic educational platform for professional courses, coaching, and career development.',
+  keywords: ['كورسات اون لاين', 'تعليم عربي', 'كوتشينج مهني', 'مسار وظيفي', 'شهادات معتمدة', 'online courses arabic', 'career coaching', 'DeveWay'],
+  authors: [{ name: 'DeveWay', url: 'https://www.deveways.com' }],
+  creator: 'DeveWay',
+  publisher: 'DeveWay',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ar_SA',
+    alternateLocale: 'en_US',
+    url: 'https://www.deveways.com',
+    siteName: 'DeveWay',
+    title: 'DeveWay | منصة التعليم والتطوير المهني',
+    description: 'منصة تعليمية عربية متكاملة للكورسات والكوتشينج وبناء المسار الوظيفي',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'DeveWay Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DeveWay | منصة التعليم والتطوير المهني',
+    description: 'منصة تعليمية عربية متكاملة للكورسات والكوتشينج',
+    images: ['/og-image.png'],
+    creator: '@deveways',
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '',
+  },
+  alternates: {
+    canonical: 'https://www.deveways.com',
+    languages: {
+      'ar': 'https://www.deveways.com/ar',
+      'en': 'https://www.deveways.com/en',
+    },
+  },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
