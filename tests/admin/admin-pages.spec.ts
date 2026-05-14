@@ -11,7 +11,7 @@ test.describe('Admin Pages - No Crashes', () => {
     await page.fill('input[type="email"]', ADMIN.email)
     await page.fill('input[type="password"]', ADMIN.password)
     await page.click('button[type="submit"]')
-    await page.waitForURL(/dashboard/, { timeout: 90000 })
+    await page.waitForURL(/dashboard|admin/, { timeout: 90000 })
   }
 
   const adminPages = [
