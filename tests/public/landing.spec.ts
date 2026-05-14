@@ -31,9 +31,14 @@ test.describe('Landing Page', () => {
 
   test('language switcher button exists', async ({ page }) => {
     await page.goto(`${BASE}/ar`)
-    const switcher = page.locator('[href*="/en"], a[href*="en"], button').filter({ hasText: /EN|English|عربي|ar/i })
-    const count = await switcher.count()
-    expect(count).toBeGreaterThan(0)
+    await page.waitForTimeout(3000)
+    // On mobile, language switcher is inside the hamburger menu — open it first
+    const hamburger = page.locator('button[aria-label="Toggle menu"]')
+    if (await hamburger.isVisible()) {
+      await hamburger.click()
+    }
+    // :visible filters to the visible instance (desktop nav OR mobile menu)
+    await expect(page.locator('button[aria-label="Change language"]:visible').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('sitemap.xml accessible', async ({ page }) => {

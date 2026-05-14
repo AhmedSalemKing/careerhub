@@ -100,6 +100,7 @@ export function LanguageSwitcher() {
         aria-label="Change language"
         aria-expanded={open}
         aria-haspopup="listbox"
+        data-testid="language-switcher"
       >
         
         {/* Globe Icon */}

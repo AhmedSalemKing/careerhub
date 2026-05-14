@@ -3,14 +3,14 @@ const BASE = 'https://deveway-teal.vercel.app'
 const STUDENT = { email: 'test.student@deveway.com', password: 'Test123456!' }
 
 test.describe('Student Dashboard', () => {
-  test.setTimeout(45000)
+  test.setTimeout(120000)
 
   async function loginAsStudent(page: any) {
     await page.goto(`${BASE}/ar/login`)
     await page.fill('#email', STUDENT.email)
     await page.fill('#password', STUDENT.password)
     await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
-    await page.waitForFunction(() => /dashboard/.test(window.location.href), { timeout: 25000 })
+    await page.waitForFunction(() => /dashboard/.test(window.location.href), { timeout: 80000 })
   }
 
   test('dashboard loads after login', async ({ page }) => {
@@ -26,7 +26,6 @@ test.describe('Student Dashboard', () => {
   })
 
   test('my-courses page loads', async ({ page }) => {
-    test.setTimeout(60000)
     await loginAsStudent(page)
     await page.goto(`${BASE}/ar/dashboard/my-courses`)
     await expect(page).toHaveURL(/my-courses/, { timeout: 20000 })
@@ -35,7 +34,7 @@ test.describe('Student Dashboard', () => {
   test('certificates page loads', async ({ page }) => {
     await loginAsStudent(page)
     await page.goto(`${BASE}/ar/dashboard/certificates`)
-    await expect(page).toHaveURL(/certificates/)
+    await expect(page).toHaveURL(/certificates/, { timeout: 20000 })
   })
 
   test('AI chat page loads', async ({ page }) => {

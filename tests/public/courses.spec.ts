@@ -24,6 +24,7 @@ test.describe('Courses Public Page', () => {
     await page.waitForTimeout(3000)
     const grid = page.locator('[class*="grid"]').first()
     await expect(grid).toBeVisible({ timeout: 10000 })
+    // data-testid="course-card" is present when courses load
   })
 
   test('English courses page loads', async ({ page }) => {

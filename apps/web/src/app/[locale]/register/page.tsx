@@ -669,6 +669,7 @@ export default function RegisterPage() {
             {/* Next button */}
             <button
               onClick={() => { if (validateStep1()) setStep(2) }}
+              data-testid="register-submit"
               className="mt-7 w-full py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200 cursor-pointer"
               style={{
                 background: '#5120c8',
@@ -765,6 +766,7 @@ export default function RegisterPage() {
                   <button
                     key={type}
                     onClick={() => setStep2({ ...step2, accountType: type })}
+                    data-testid={`account-type-${type.toLowerCase()}`}
                     className="flex flex-col items-center gap-1.5 p-4 rounded-xl transition-all duration-200 text-center cursor-pointer"
                     style={{
                       border: `2px solid ${isActive ? '#5120c8' : colors.subCardBorder}`,

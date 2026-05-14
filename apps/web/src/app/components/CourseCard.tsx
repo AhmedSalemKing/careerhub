@@ -86,7 +86,7 @@ export function CourseCard({
       href={`${TRAINING_URL}/courses/${course.id}`}
       target="_blank"
       rel="noopener noreferrer"
-      
+      data-testid="course-card"
       className="course-card group block overflow-hidden rounded-2xl transition-all duration-500 ease-out"
       style={{
         animationDelay,
