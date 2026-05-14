@@ -105,7 +105,49 @@ export class EnrollmentService {
   }
 
   async getUserEnrollments(userId: string, options: any) { return { data: [], total: 0 }; }
-  async updateEnrollmentProgress(enrollmentId: string, progress: number) { return { success: true, progress }; }
+
+  async updateEnrollmentProgress(userId: string, courseId: string) {
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId } },
+    });
+    if (!enrollment) {
+      this.logger.warn(`Enrollment not found for user=${userId} course=${courseId}`);
+      return { success: false, progress: 0 };
+    }
+
+    const [completedCount, totalCount] = await Promise.all([
+      this.prisma.lessonProgress.count({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          lesson: { section: { courseId } },
+        },
+      }),
+      this.prisma.lesson.count({
+        where: {
+          section: { courseId },
+          isPublished: true,
+        },
+      }),
+    ]);
+
+    const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+    const isComplete = progress >= 100;
+
+    const updated = await this.prisma.enrollment.update({
+      where: { userId_courseId: { userId, courseId } },
+      data: {
+        progress,
+        ...(isComplete
+          ? { status: 'COMPLETED' as const, completedAt: new Date() }
+          : {}),
+      },
+    });
+
+    this.logger.log(`Progress updated: user=${userId} course=${courseId} ${completedCount}/${totalCount} (${progress}%)`);
+    return { success: true, progress: updated.progress, completedLessons: completedCount, totalLessons: totalCount };
+  }
+
   async completeEnrollment(enrollmentId: string) { return { success: true }; }
   async getEnrollmentDetails(userId: string, courseId: string, language?: string) { return { courseId, userId, progress: 0 }; }
   async getEnrollmentProgress(userId: string, courseId: string) { return { progress: 0, completedLessons: 0, totalLessons: 0 }; }

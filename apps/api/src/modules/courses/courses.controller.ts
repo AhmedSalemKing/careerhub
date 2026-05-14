@@ -407,11 +407,11 @@ export class CoursesController {
     @Body('progress') progress: number,
     @Body('timeSpent') timeSpent?: number,
   ) {
-    const updatedProgress = await this.enrollmentService.updateEnrollmentProgress(user.id, 0);
+    const result = await this.enrollmentService.updateEnrollmentProgress(user.id, courseId);
     return {
       success: true,
       message: 'Progress updated successfully',
-      data: updatedProgress,
+      data: result,
     };
   }
 

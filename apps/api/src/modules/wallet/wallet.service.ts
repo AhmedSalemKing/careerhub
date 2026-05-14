@@ -165,8 +165,10 @@ export class WalletService {
       }
     });
     
-    await this.prisma.enrollment.create({
-      data: { userId, courseId }
+    await this.prisma.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId } },
+      create: { userId, courseId, status: 'ACTIVE', progress: 0 },
+      update: { status: 'ACTIVE' },
     });
 
     await sendNotification(
