@@ -9,11 +9,6 @@ import { getMediaUrl } from '../../../../lib/media'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
 import ConfirmModal from '@/components/ConfirmModal'
 
-const [confirmModal, setConfirmModal] = useState<{
-  isOpen: boolean; title: string; message: string;
-  onConfirm: () => void; destructive?: boolean;
-}>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
-
 type AdminUser = {
   id: string
   email: string
@@ -50,6 +45,11 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean; title: string; message: string;
+    onConfirm: () => void; destructive?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
   // Role change confirmation dialog
   const [confirmDialog, setConfirmDialog] = useState<{
