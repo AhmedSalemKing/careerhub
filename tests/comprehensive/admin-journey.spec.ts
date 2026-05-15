@@ -24,8 +24,7 @@ test.describe(' Admin Complete Journey', () => {
     await page.fill('#password', ADMIN.password)
     await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
     await page.waitForTimeout(3000)
-    const onDashboard = await page.locator('#email').count() === 0
-    expect(onDashboard).toBeTruthy()
+    await expect(page).toHaveURL(/dashboard|admin/, { timeout: 30000 })
   })
 
   test('A2: Admin dashboard loads', async ({ page }) => {

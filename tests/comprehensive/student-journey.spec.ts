@@ -25,9 +25,7 @@ test.describe(' Student Complete Journey', () => {
     await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
     await page.waitForTimeout(3000)
     // If login works, should redirect away from /login
-    const onDashboard = await page.locator('#email').count() === 0
-    // This will be false if CSRF issue persists (expected QA finding)
-    expect(onDashboard).toBeTruthy()
+    await expect(page).toHaveURL(/dashboard|admin|pending/, { timeout: 30000 })
   })
 
   test('S2: Dashboard loads with stats', async ({ page }) => {

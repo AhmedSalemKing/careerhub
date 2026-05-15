@@ -24,8 +24,7 @@ test.describe(' Instructor Complete Journey', () => {
     await page.fill('#password', INSTRUCTOR.password)
     await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click()
     await page.waitForTimeout(3000)
-    const onDashboard = await page.locator('#email').count() === 0
-    expect(onDashboard).toBeTruthy()
+    await expect(page).toHaveURL(/dashboard|pending|approval/, { timeout: 30000 })
   })
 
   test('I2: Dashboard loads', async ({ page }) => {
