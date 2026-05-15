@@ -1607,34 +1607,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														</button>
 													))}
 												</div>
-												{/* Mark Complete button */}
-												{isEnrolled && (
-													<button
-														onClick={handleMarkComplete}
-														disabled={isCurrentCompleted || markingComplete}
-														style={{
-															display: "flex",
-															alignItems: "center",
-															gap: "6px",
-															padding: "8px 20px",
-															borderRadius: "8px",
-															background: isCurrentCompleted ? "#16a34a" : purple,
-															color: "#fff",
-															border: "none",
-															cursor: isCurrentCompleted ? "default" : "pointer",
-															fontSize: "14px",
-															fontWeight: 600,
-															fontFamily: "inherit",
-															boxShadow: isCurrentCompleted ? "none" : `0 4px 14px ${purple}50`,
-															opacity: markingComplete ? 0.7 : 1,
-														}}>
-														{isCurrentCompleted ? (
-															<><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg> {isAr ? t('completed') : "Completed"}</>
-														) : (
-															<><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /></svg> {isAr ? t('markComplete') : "Mark Complete"}</>
-														)}
-													</button>
-												)}
+
 											</div>
 										</div>
 									)}
