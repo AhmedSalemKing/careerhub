@@ -24,39 +24,10 @@ export class CsrfMiddleware implements NestMiddleware {
   ];
 
   use(req: Request, res: Response, next: NextFunction) {
-    const path = req.path || req.originalUrl || '';
-    if (this.excludedPaths.some(ex => path.startsWith(ex))) {
-      return next();
-    }
-
-    if (SAFE_METHODS.includes(req.method)) {
-      return next();
-    }
-
-    const tokenFromCookie = req.cookies?.[CSRF_COOKIE];
-    const tokenFromHeader = req.headers[CSRF_HEADER] as string;
-
-    if (!tokenFromCookie || !tokenFromHeader) {
-      this.logger.warn(`CSRF check failed: missing token on ${req.method} ${path}`);
-      res.status(403).json({
-        success: false,
-        message: 'CSRF token missing',
-        messageAr: 'رمز CSRF مفقود',
-      });
-      return;
-    }
-
-    if (tokenFromCookie !== tokenFromHeader) {
-      this.logger.warn(`CSRF check failed: token mismatch on ${req.method} ${path}`);
-      res.status(403).json({
-        success: false,
-        message: 'CSRF token invalid',
-        messageAr: 'رمز CSRF غير صالح',
-      });
-      return;
-    }
-
-    next();
+    // CSRF double-submit cookie disabled: cross-origin setup (Vercel → Render)
+    // is incompatible with cookie-based CSRF. Protected by: SameSite cookies +
+    // CORS whitelist + JWT bearer tokens.
+    return next();
   }
 
   static generateToken(): string {
