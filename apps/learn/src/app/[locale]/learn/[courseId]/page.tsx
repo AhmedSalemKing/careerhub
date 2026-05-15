@@ -915,7 +915,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 						}}>
 						<ShoppingCart className="h-5 w-5" />
 						<span>اشترك الآن</span>
-						<ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
+						<ArrowLeft className="h-5 w-5" />
 					</a>
 
 					{/* Trust badges */}
@@ -962,7 +962,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 							href={`/${locale}/courses/${courseId}`}
 							className="hidden sm:flex items-center gap-2 text-sm font-medium shrink-0 transition-all duration-200 hover:opacity-70 group px-3 py-2 rounded-xl hover:bg-black/5"
 							style={{ color: textSecondary }}>
-							<ArrowRight className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+							<ArrowRight className="h-4 w-4" />
 							<span>{t('backToCourse')}</span>
 						</a>
 
@@ -1230,7 +1230,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												}}>
 												{/* Status Indicator */}
 												<div
-													className="relative flex items-center justify-center shrink-0 transition-transform duration-200"
+													className="relative flex items-center justify-center shrink-0"
 													style={{
 														width: "30px",
 														height: "30px",
@@ -1379,7 +1379,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 							{/* Media Viewer Container */}
 							<div
 								className="w-full relative"
-								style={{ background: "#000" }}>
+								style={{ background: "transparent" }}>
 								{/* Mode Tabs - Modern Design */}
 								{hasMultipleTypes && (
 									<div
@@ -1397,7 +1397,7 @@ import VideoProtection from "../../../../components/VideoProtection";
                             flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
                             ${
 															viewerMode === "video"
-																? "bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105"
+																? "bg-red-500 text-white shadow-lg shadow-red-500/30"
 																: "text-white/70 hover:text-white hover:bg-white/10"
 														}
                           `}>
@@ -1412,7 +1412,7 @@ import VideoProtection from "../../../../components/VideoProtection";
                             flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
                             ${
 															viewerMode === "file"
-																? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105"
+																? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
 																: "text-white/70 hover:text-white hover:bg-white/10"
 														}
                           `}>
@@ -1427,7 +1427,7 @@ import VideoProtection from "../../../../components/VideoProtection";
                             flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
                             ${
 															viewerMode === "image"
-																? "bg-purple-500 text-white shadow-lg shadow-purple-500/30 scale-105"
+																? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
 																: "text-white/70 hover:text-white hover:bg-white/10"
 														}
                           `}>
@@ -1449,7 +1449,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												className="video-container relative overflow-hidden"
 												style={{
 													paddingTop: isMobile ? "56.25%" : "56.25%",
-													background: "#000",
+													background: "transparent",
 													borderRadius: 0,
 													minHeight: isMobile ? "200px" : undefined,
 												}}
@@ -2364,7 +2364,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.color = textSecondary;
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
-										<Share2 className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+										<Share2 className="h-4 w-4" />
 										<span>{t('share')}</span>
 									</button>
 								</div>
@@ -2418,7 +2418,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 									}}>
 									<Play className="h-5 w-5" />
 									<span>ابدأ من أول درس</span>
-									<ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+									<ArrowLeft className="h-5 w-5" />
 								</button>
 							</div>
 						</div>
