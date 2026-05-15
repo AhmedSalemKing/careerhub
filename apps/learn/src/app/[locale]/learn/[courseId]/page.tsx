@@ -1381,9 +1381,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 								className="w-full relative"
 								style={{
 									background: "#000",
-									minHeight: isMobile ? "auto" : "450px",
-									maxHeight: isMobile ? "none" : "72vh",
-									aspectRatio: isMobile ? "16/9" : undefined,
+									maxHeight: isMobile ? "45vh" : "60vh",
+									overflow: "hidden",
 								}}>
 								{/* Mode Tabs - Modern Design */}
 								{hasMultipleTypes && (
@@ -1624,6 +1623,46 @@ import VideoProtection from "../../../../components/VideoProtection";
 													))}
 												</div>
 											</div>
+
+											{/* Mark Complete Row - separate from speed controls */}
+											{isEnrolled && (
+												<div
+													className="hidden sm:flex items-center gap-3 px-6 py-3"
+													style={{
+														background: isDark ? "#0d0e14" : "#f8f9fc",
+														borderBottom: `1px solid ${borderColor}`,
+													}}>
+													<button
+														onClick={handleMarkComplete}
+														disabled={isCurrentCompleted || markingComplete}
+														style={{
+															display: "inline-flex",
+															alignItems: "center",
+															gap: "8px",
+															padding: "8px 18px",
+															borderRadius: "8px",
+															background: isCurrentCompleted ? "rgba(34,197,94,0.15)" : "rgba(81,32,200,0.15)",
+															border: isCurrentCompleted ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(81,32,200,0.3)",
+															color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
+															fontWeight: 600,
+															fontSize: "0.875rem",
+															cursor: isCurrentCompleted ? "default" : "pointer",
+															fontFamily: "inherit",
+														}}>
+														{isCurrentCompleted ? (
+															<>
+																<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
+																{isAr ? t('completed') : "Completed"}
+															</>
+														) : (
+															<>
+																<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" /></svg>
+																{isAr ? t('markComplete') : "Mark as Complete"}
+															</>
+														)}
+													</button>
+												</div>
+											)}
 										</div>
 									)}
 
@@ -1714,8 +1753,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 									hasImage &&
 									effectiveImageUrl && (
 										<div
-											className="min-h-[550px] flex flex-col items-center justify-center relative"
-											style={{ background: isDark ? "#080810" : "#0f0f23" }}>
+											className="flex flex-col items-center justify-center relative"
+											style={{ background: isDark ? "#080810" : "#0f0f23", height: "100%", minHeight: "300px" }}>
 											{/* Image Actions */}
 											<div className="absolute top-5 right-5 z-10 flex gap-2.5">
 												<a
@@ -1736,7 +1775,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											</div>
 
 											{/* Image Container */}
-											<div className="max-h-[650px] max-w-full p-8 flex items-center justify-center">
+											<div className="h-full w-full p-6 flex items-center justify-center">
 												<img
 													src={effectiveImageUrl}
 													alt={activeLesson.title || activeLesson.titleAr || ""}
@@ -2210,8 +2249,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 												fontSize: "0.875rem",
 												cursor: isCurrentCompleted ? "default" : "pointer",
 												fontFamily: "inherit",
-												position: "relative",
-												zIndex: 10,
 											}}>
 											{isCurrentCompleted ? (
 												<>
