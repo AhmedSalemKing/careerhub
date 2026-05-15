@@ -1379,11 +1379,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 							{/* Media Viewer Container */}
 							<div
 								className="w-full relative"
-								style={{
-									background: "#000",
-									maxHeight: isMobile ? "45vh" : "60vh",
-									overflow: "hidden",
-								}}>
+								style={{ background: "#000" }}>
 								{/* Mode Tabs - Modern Design */}
 								{hasMultipleTypes && (
 									<div
@@ -1575,94 +1571,71 @@ import VideoProtection from "../../../../components/VideoProtection";
 												)}
 											</div>
 
-											{/* Speed Controls - Modern - Hidden on Mobile */}
+											{/* Video Controls Bar — speed left, complete right */}
 											<div
-												className="hidden sm:flex items-center gap-3 px-6 py-4 flex-wrap"
 												style={{
-													background: isDark ? "#0d0e14" : "#f8f9fc",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "space-between",
+													padding: "10px 16px",
+													flexWrap: "wrap",
+													gap: "8px",
+													background: isDark ? "#111116" : "#f1f5f9",
 													borderBottom: `1px solid ${borderColor}`,
 												}}>
-												<div className="flex items-center gap-2 ml-2">
-													<Zap className="h-4 w-4" style={{ color: purple }} />
-													<span
-														className="text-xs font-semibold"
-														style={{ color: textSecondary }}>
-														السرعة:
-													</span>
-												</div>
-												<div className="flex gap-1.5">
+												{/* Speed buttons */}
+												<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+													<Zap style={{ color: purple, width: 14, height: 14, flexShrink: 0 }} />
+													<span style={{ color: textSecondary, fontSize: "13px", fontWeight: 600, marginLeft: 2 }}>{isAr ? "السرعة:" : "Speed:"}</span>
 													{speeds.map((speed) => (
 														<button
 															key={speed}
 															onClick={() => setPlaybackRate(speed)}
-															className={`
-                              px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200
-                              ${
-																playbackRate === speed
-																	? "text-white shadow-lg"
-																	: "hover:scale-105"
-															}
-                            `}
 															style={{
-																background:
-																	playbackRate === speed
-																		? purple
-																		: "transparent",
-																color:
-																	playbackRate === speed
-																		? "#fff"
-																		: textSecondary,
-																border: `1.5px solid ${playbackRate === speed ? "transparent" : borderColor}`,
-																boxShadow:
-																	playbackRate === speed
-																		? `0 4px 16px ${purple}35`
-																		: "none",
+																padding: "4px 12px",
+																borderRadius: "6px",
+																fontSize: "13px",
+																fontWeight: playbackRate === speed ? 700 : 400,
+																background: playbackRate === speed ? purple : "rgba(128,128,128,0.15)",
+																color: playbackRate === speed ? "#fff" : textSecondary,
+																border: `1px solid ${playbackRate === speed ? "transparent" : borderColor}`,
+																cursor: "pointer",
+																fontFamily: "inherit",
+																boxShadow: playbackRate === speed ? `0 2px 8px ${purple}40` : "none",
 															}}>
 															{speed}x
 														</button>
 													))}
 												</div>
-											</div>
-
-											{/* Mark Complete Row - separate from speed controls */}
-											{isEnrolled && (
-												<div
-													className="hidden sm:flex items-center gap-3 px-6 py-3"
-													style={{
-														background: isDark ? "#0d0e14" : "#f8f9fc",
-														borderBottom: `1px solid ${borderColor}`,
-													}}>
+												{/* Mark Complete button */}
+												{isEnrolled && (
 													<button
 														onClick={handleMarkComplete}
 														disabled={isCurrentCompleted || markingComplete}
 														style={{
-															display: "inline-flex",
+															display: "flex",
 															alignItems: "center",
-															gap: "8px",
-															padding: "8px 18px",
+															gap: "6px",
+															padding: "8px 20px",
 															borderRadius: "8px",
-															background: isCurrentCompleted ? "rgba(34,197,94,0.15)" : "rgba(81,32,200,0.15)",
-															border: isCurrentCompleted ? "1px solid rgba(34,197,94,0.3)" : "1px solid rgba(81,32,200,0.3)",
-															color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
-															fontWeight: 600,
-															fontSize: "0.875rem",
+															background: isCurrentCompleted ? "#16a34a" : purple,
+															color: "#fff",
+															border: "none",
 															cursor: isCurrentCompleted ? "default" : "pointer",
+															fontSize: "14px",
+															fontWeight: 600,
 															fontFamily: "inherit",
+															boxShadow: isCurrentCompleted ? "none" : `0 4px 14px ${purple}50`,
+															opacity: markingComplete ? 0.7 : 1,
 														}}>
 														{isCurrentCompleted ? (
-															<>
-																<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-																{isAr ? t('completed') : "Completed"}
-															</>
+															<><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg> {isAr ? t('completed') : "Completed"}</>
 														) : (
-															<>
-																<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><polyline points="12 8 12 12 14 14" /></svg>
-																{isAr ? t('markComplete') : "Mark as Complete"}
-															</>
+															<><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /></svg> {isAr ? t('markComplete') : "Mark Complete"}</>
 														)}
 													</button>
-												</div>
-											)}
+												)}
+											</div>
 										</div>
 									)}
 
