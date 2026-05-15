@@ -9,7 +9,19 @@ const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
   private readonly logger = new Logger(CsrfMiddleware.name);
-  private readonly excludedPaths = ['/api/csrf/token', '/api/health', '/api/auth/google/callback'];
+  private readonly excludedPaths = [
+    '/api/csrf/token',
+    '/api/health',
+    '/api/health/live',
+    '/api/health/ready',
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/auth/forgot-password',
+    '/api/auth/refresh',
+    '/api/auth/google',
+    '/api/auth/google/callback',
+    '/api/auth/logout',
+  ];
 
   use(req: Request, res: Response, next: NextFunction) {
     const path = req.path || req.originalUrl || '';
