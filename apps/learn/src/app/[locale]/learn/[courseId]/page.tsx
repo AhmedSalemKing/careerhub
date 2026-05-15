@@ -908,12 +908,12 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 					<a
 						href={`${MAIN_URL}/${locale}/checkout/${courseId}`}
-						className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+						className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300 hover:shadow-2xl"
 						style={{
 							background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
 							boxShadow: `0 10px 40px ${purple}40`,
 						}}>
-						<ShoppingCart className="h-5 w-5 transition-transform group-hover:scale-110" />
+						<ShoppingCart className="h-5 w-5" />
 						<span>اشترك الآن</span>
 						<ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-1" />
 					</a>
@@ -1039,7 +1039,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 						{/* Actions */}
 						<div className="flex items-center gap-2 shrink-0">
 							<button
-								className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+								className="p-2.5 rounded-xl transition-all duration-200"
 								style={{
 									color: textSecondary,
 									background: "transparent",
@@ -1056,7 +1056,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								<FileText className="h-5 w-5" />
 							</button>
 							<button
-								className="p-2.5 rounded-xl transition-all duration-200 hover:scale-105"
+								className="p-2.5 rounded-xl transition-all duration-200"
 								style={{
 									color: textSecondary,
 									background: "transparent",
@@ -1213,7 +1213,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												disabled={status === "locked"}
 												className={`
 													group relative w-full text-right transition-all duration-200
-													${status === "locked" ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:scale-[1.01]"}
+													${status === "locked" ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
 												`}
 												style={{
 													display: "flex",
@@ -1230,7 +1230,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												}}>
 												{/* Status Indicator */}
 												<div
-													className="relative flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-110"
+													className="relative flex items-center justify-center shrink-0 transition-transform duration-200"
 													style={{
 														width: "30px",
 														height: "30px",
@@ -1539,7 +1539,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 																	setVideoError(null);
 																	videoRef.current?.load();
 																}}
-																className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-all hover:scale-105">
+																className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl text-white text-sm font-medium transition-all">
 																إعادة المحاولة
 															</button>
 														</div>
@@ -1683,7 +1683,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														download={fileName}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+														className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
 														style={{
 															background: blueColor,
 															color: "white",
@@ -1696,7 +1696,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 														href={fileUrl}
 														target="_blank"
 														rel="noopener noreferrer"
-														className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+														className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
 														style={{
 															background: "transparent",
 															color: blueColor,
@@ -1734,14 +1734,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 													href={effectiveImageUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 backdrop-blur-sm"
 													title="تكبير">
 													<ZoomIn className="h-5 w-5" />
 												</a>
 												<a
 													href={effectiveImageUrl}
 													download
-													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 hover:scale-110 backdrop-blur-sm"
+													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 backdrop-blur-sm"
 													title="تحميل">
 													<Download className="h-5 w-5" />
 												</a>
@@ -2165,7 +2165,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 											<a
 												href={buildDownloadUrl(fileUrl, fileName)}
 												download={fileName}
-												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
 												style={{
 													background: blueColor,
 													color: "white",
@@ -2178,7 +2178,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												href={fileUrl}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105"
+												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
 												style={{
 													background: "transparent",
 													color: blueColor,
@@ -2326,7 +2326,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 									<button
 										className="
                       group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200 hover:scale-105
+                      transition-all duration-200
                     "
 										style={{
 											color: textSecondary,
@@ -2343,14 +2343,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.color = textSecondary;
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
-										<ThumbsUp className="h-4 w-4 group-hover:scale-110 transition-transform" />
+										<ThumbsUp className="h-4 w-4" />
 										<span>{t('helpful')}</span>
 									</button>
 
 									<button
 										className="
                       group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200 hover:scale-105
+                      transition-all duration-200
                     "
 										style={{
 											color: textSecondary,
@@ -2367,14 +2367,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 											e.currentTarget.style.color = textSecondary;
 											e.currentTarget.style.borderColor = borderColor;
 										}}>
-										<MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
+										<MessageSquare className="h-4 w-4" />
 										<span>{t('askQuestion')}</span>
 									</button>
 
 									<button
 										className="
                       group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium 
-                      transition-all duration-200 hover:scale-105
+                      transition-all duration-200
                     "
 										style={{
 											color: textSecondary,
@@ -2437,13 +2437,13 @@ import VideoProtection from "../../../../components/VideoProtection";
 									}}
 									className="
                     group inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold 
-                    text-base transition-all duration-300 hover:scale-105
+                    text-base transition-all duration-300
                   "
 									style={{
 										background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
 										boxShadow: `0 8px 32px ${purple}40`,
 									}}>
-									<Play className="h-5 w-5 group-hover:scale-110 transition-transform" />
+									<Play className="h-5 w-5" />
 									<span>ابدأ من أول درس</span>
 									<ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
 								</button>
@@ -2496,7 +2496,7 @@ import VideoProtection from "../../../../components/VideoProtection";
         <button 
           onClick={goToPrevLesson}
           disabled={!prevLesson}
-          className="p-3 rounded-xl transition-all duration-200 hover:scale-110 disabled:opacity-30 disabled:hover:scale-100"
+          className="p-3 rounded-xl transition-all duration-200 disabled:opacity-30"
           style={{ 
             background: prevLesson ? `${purple}10` : 'transparent',
             color: prevLesson ? purple : textSecondary
@@ -2520,7 +2520,7 @@ import VideoProtection from "../../../../components/VideoProtection";
         <button 
           onClick={goToNextLesson}
           disabled={!nextLesson}
-          className="p-3 rounded-xl transition-all duration-200 hover:scale-110 disabled:opacity-30 disabled:hover:scale-100"
+          className="p-3 rounded-xl transition-all duration-200 disabled:opacity-30"
           style={{ 
             background: nextLesson ? `${purple}10` : 'transparent',
             color: nextLesson ? purple : textSecondary
