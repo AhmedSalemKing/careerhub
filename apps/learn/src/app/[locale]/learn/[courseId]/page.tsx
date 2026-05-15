@@ -2210,6 +2210,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 												fontSize: "0.875rem",
 												cursor: isCurrentCompleted ? "default" : "pointer",
 												fontFamily: "inherit",
+												position: "relative",
+												zIndex: 10,
 											}}>
 											{isCurrentCompleted ? (
 												<>

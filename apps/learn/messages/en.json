@@ -175,6 +175,23 @@
     "approve": "Approve",
     "reject": "Reject"
   },
+  "footer": {
+    "courses": "Courses",
+    "coaching": "Coaching",
+    "career_paths": "Career Paths",
+    "pricing": "Pricing",
+    "help_center": "Help Center",
+    "contact": "Contact Us",
+    "faq": "FAQ",
+    "description": "An all-in-one platform combining career guidance, professional training, and 1:1 coaching",
+    "platform": "Platform",
+    "support": "Support",
+    "address": "Saudi Arabia",
+    "main_site": "Main Site",
+    "all_rights": "All rights reserved",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy"
+  },
   "learn": {
     "backToCourse": "Back to Course",
     "backToCourses": "Back to Courses",
