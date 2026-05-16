@@ -95,9 +95,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 	const [theme, setTheme] = useState<"light" | "dark">("light");
 
 	// Media states
-	const [viewerMode, setViewerMode] = useState<
-		"video" | "file" | "image" | "all"
-	>("all");
 	const [isLoadingMedia, setIsLoadingMedia] = useState(true);
 	const [videoError, setVideoError] = useState<string | null>(null);
 	const [playbackRate, setPlaybackRate] = useState(1);
@@ -400,7 +397,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 	// Reset states when lesson changes
 	useEffect(() => {
-		setViewerMode("all");
 		setIsLoadingMedia(true);
 		setVideoError(null);
 	}, [activeLessonId]);
@@ -819,8 +815,6 @@ import VideoProtection from "../../../../components/VideoProtection";
 		mediaType === "image"
 			? getSafeUrl(activeLesson?.imageUrl) || getSafeUrl(activeLesson?.videoUrl)
 			: imageUrl;
-	const hasMultipleTypes =
-		[hasVideo, hasFile, hasImage].filter(Boolean).length > 1;
 
 	// Colors - Professional Educational Platform Design
 	const isDark = theme === "dark";
@@ -1380,77 +1374,28 @@ import VideoProtection from "../../../../components/VideoProtection";
 							<div
 								className="w-full relative"
 								style={{ background: "transparent" }}>
-								{/* Mode Tabs - Modern Design */}
-								{hasMultipleTypes && (
-									<div
-										className="absolute top-0 left-0 right-0 z-20 flex gap-2 p-4"
-										style={{
-											background:
-												"linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.7), transparent)",
-											backdropFilter: "blur(8px)",
-										}}>
-										<div className="flex gap-1.5 ml-auto bg-black/30 p-1 rounded-xl backdrop-blur-sm">
-											{hasVideo && (
-												<button
-													onClick={() => setViewerMode("video")}
-													className={`
-                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
-                            ${
-															viewerMode === "video"
-																? "bg-red-500 text-white shadow-lg shadow-red-500/30"
-																: "text-white/70 hover:text-white hover:bg-white/10"
-														}
-                          `}>
-													<Video className="h-4 w-4" />
-													<span>فيديو</span>
-												</button>
-											)}
-											{hasFile && (
-												<button
-													onClick={() => setViewerMode("file")}
-													className={`
-                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
-                            ${
-															viewerMode === "file"
-																? "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
-																: "text-white/70 hover:text-white hover:bg-white/10"
-														}
-                          `}>
-													<FileText className="h-4 w-4" />
-													<span>ملف PDF</span>
-												</button>
-											)}
-											{hasImage && (
-												<button
-													onClick={() => setViewerMode("image")}
-													className={`
-                            flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold transition-all duration-300
-                            ${
-															viewerMode === "image"
-																? "bg-purple-500 text-white shadow-lg shadow-purple-500/30"
-																: "text-white/70 hover:text-white hover:bg-white/10"
-														}
-                          `}>
-													<Image className="h-4 w-4" />
-													<span>صورة</span>
-												</button>
-											)}
-										</div>
-									</div>
-								)}
 
-								{/* VIDEO PLAYER - Enhanced */}
-								{(viewerMode === "video" || viewerMode === "all") &&
-									hasVideo &&
-									videoUrl && (
-										<div className="relative">
-											{/* Video Container with Aspect Ratio */}
+								{/* VIDEO SECTION */}
+								{hasVideo && videoUrl && (
+									<div style={{ background: isDark ? '#0d0d0d' : '#ffffff' }}>
+										<div style={{
+											padding: '16px 16px 0',
+											display: 'flex', alignItems: 'center', gap: '8px',
+										}}>
+											<Video size={16} color="#a78bfa" />
+											<h3 style={{
+												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
+											}}>
+												{isAr ? 'الفيديو التعليمي' : 'Video Lecture'}
+											</h3>
+										</div>
+										<div className="relative" style={{ margin: '12px 16px 16px' }}>
 											<div
 												className="video-container relative overflow-hidden"
 												style={{
 													paddingTop: isMobile ? "56.25%" : "56.25%",
-													background: "transparent",
-													borderRadius: 0,
+													background: "#000",
+													borderRadius: "12px",
 													minHeight: isMobile ? "200px" : undefined,
 												}}
 												onTouchEnd={handleVideoTap}>
@@ -1461,6 +1406,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													controls
 													autoPlay
 													className="absolute top-0 left-0 w-full h-full object-contain"
+													style={{ borderRadius: '12px' }}
 													controlsList="nodownload"
 													disablePictureInPicture
 													playsInline
@@ -1483,21 +1429,16 @@ import VideoProtection from "../../../../components/VideoProtection";
 														if (!isCurrentCompleted) handleMarkComplete();
 														else if (nextLesson) goToLesson(nextLesson);
 													}}
-													style={{
-														filter: isLoadingMedia
-															? "brightness(0.7)"
-															: "brightness(1)",
-														transition: "filter 0.3s ease",
-													}}
 												/>
 
-												{/* Loading Overlay — shown until video is ready */}
+												{/* Loading Overlay */}
 												{(!videoReady || isLoadingMedia) && (
 													<div
 														className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
 														style={{
 															background: "#0a0a0a",
 															backdropFilter: "blur(4px)",
+															borderRadius: "12px",
 														}}>
 														<div className="relative flex items-center justify-center">
 															<div
@@ -1518,7 +1459,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												{videoError && (
 													<div
 														className="absolute inset-0 flex items-center justify-center z-10"
-														style={{ background: "rgba(0,0,0,0.95)" }}>
+														style={{ background: "rgba(0,0,0,0.95)", borderRadius: "12px" }}>
 														<div className="text-center p-8 max-w-sm">
 															<div
 																className="h-16 w-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
@@ -1562,185 +1503,162 @@ import VideoProtection from "../../../../components/VideoProtection";
 															fontSize: "13px",
 															backdropFilter: "blur(8px)",
 															boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-															transform: seekFeedback.visible
-																? "translateY(-50%) scale(1)"
-																: "translateY(-50%) scale(0.8)",
 														}}>
 														{seekFeedback.side === "backward" ? "-5s" : "+5s"}
 													</div>
 												)}
 											</div>
 
-											{/* Video Controls Bar — speed left, complete right */}
-											<div
-												style={{
-													display: "flex",
-													alignItems: "center",
-													justifyContent: "space-between",
-													padding: "10px 16px",
-													flexWrap: "wrap",
-													gap: "8px",
-													background: isDark ? "#111116" : "#f1f5f9",
-													borderBottom: `1px solid ${borderColor}`,
-												}}>
-												{/* Speed buttons */}
-												<div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-													<Zap style={{ color: purple, width: 14, height: 14, flexShrink: 0 }} />
-													<span style={{ color: textSecondary, fontSize: "13px", fontWeight: 600, marginLeft: 2 }}>{isAr ? "السرعة:" : "Speed:"}</span>
-													{speeds.map((speed) => (
-														<button
-															key={speed}
-															onClick={() => setPlaybackRate(speed)}
-															style={{
-																padding: "4px 12px",
-																borderRadius: "6px",
-																fontSize: "13px",
-																fontWeight: playbackRate === speed ? 700 : 400,
-																background: playbackRate === speed ? purple : "rgba(128,128,128,0.15)",
-																color: playbackRate === speed ? "#fff" : textSecondary,
-																border: `1px solid ${playbackRate === speed ? "transparent" : borderColor}`,
-																cursor: "pointer",
-																fontFamily: "inherit",
-																boxShadow: playbackRate === speed ? `0 2px 8px ${purple}40` : "none",
-															}}>
-															{speed}x
-														</button>
-													))}
-												</div>
-
+											{/* Speed Controls */}
+											<div style={{
+												display: "flex", alignItems: "center", gap: "8px",
+												marginTop: "10px", padding: "0 4px",
+											}}>
+												<Zap size={14} color="#a78bfa" />
+												<span style={{ color: textSecondary, fontSize: "13px", fontWeight: 600 }}>
+													{isAr ? "السرعة:" : "Speed:"}
+												</span>
+												{speeds.map((speed) => (
+													<button
+														key={speed}
+														onClick={() => setPlaybackRate(speed)}
+														style={{
+															padding: "3px 10px", borderRadius: "4px", fontSize: "12px",
+															background: playbackRate === speed ? "#5120c8" : "transparent",
+															color: playbackRate === speed ? "#fff" : "#9ca3af",
+															border: `1px solid ${playbackRate === speed ? "#5120c8" : "#374151"}`,
+															cursor: "pointer", fontFamily: "inherit",
+														}}>
+														{speed}x
+													</button>
+												))}
 											</div>
 										</div>
-									)}
+									</div>
+								)}
 
-								{/* PDF VIEWER - Professional */}
-								{(viewerMode === "file" ||
-									(viewerMode === "all" && !hasVideo)) &&
-									hasFile &&
-									fileUrl && (
-										<div
-											className="h-[650px] flex flex-col"
-											style={{ background: sidebarBg }}>
-											{/* PDF Header */}
-											<div
-												className="flex items-center justify-between px-6 py-5"
-												style={{
-													borderBottom: `1px solid ${borderColor}`,
-													background: isDark ? "#0d0e14" : "#ffffff",
-												}}>
-												<div className="flex items-center gap-4">
-													<div
-														className="h-12 w-12 rounded-2xl flex items-center justify-center"
-														style={{ background: `${blueColor}12` }}>
-														<FileText
-															className="h-6 w-6"
-															style={{ color: blueColor }}
-														/>
-													</div>
-													<div>
-														<p
-															className="text-sm font-bold"
-															style={{ color: textPrimary }}>
-															{fileName}
-														</p>
-														<p
-															className="text-xs mt-0.5"
-															style={{ color: textSecondary }}>
-															اضغط على زر التحميل لحفظ الملف
-														</p>
-													</div>
-												</div>
-
-												<div className="flex items-center gap-3">
-													<a
-														href={buildDownloadUrl(fileUrl, fileName)}
-														download={fileName}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
-														style={{
-															background: blueColor,
-															color: "white",
-															boxShadow: `0 4px 20px ${blueColor}30`,
-														}}>
-														<Download className="h-4 w-4 group-hover:animate-bounce" />
-														<span>تحميل الملف</span>
-													</a>
-													<a
-														href={fileUrl}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300"
-														style={{
-															background: "transparent",
-															color: blueColor,
-															border: `1.5px solid ${blueColor}25`,
-														}}>
-														<ExternalLink className="h-4 w-4" />
-														<span>فتح</span>
-													</a>
-												</div>
-											</div>
-
-											{/* PDF iframe */}
-											<div className="flex-1 relative">
-												<iframe
-													src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
-													className="w-full h-full border-0"
-													title={fileName}
-													style={{ background: isDark ? "#0a0a0f" : "#e5e7eb" }}
-												/>
-											</div>
+								{/* PDF SECTION */}
+								{hasFile && fileUrl && (
+									<div style={{
+										padding: '16px',
+										borderTop: hasVideo ? `1px solid ${borderColor}` : 'none',
+									}}>
+										<div style={{
+											display: 'flex', alignItems: 'center', gap: '8px',
+											marginBottom: '12px',
+										}}>
+											<FileText size={16} color="#a78bfa" />
+											<h3 style={{
+												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
+											}}>
+												{isAr ? 'الملفات الدراسية' : 'Study Materials'}
+											</h3>
 										</div>
-									)}
-
-								{/* IMAGE VIEWER - Gallery Style */}
-								{(viewerMode === "image" ||
-									(viewerMode === "all" && !hasVideo && !hasFile)) &&
-									hasImage &&
-									effectiveImageUrl && (
-										<div
-											className="flex flex-col items-center justify-center relative"
-											style={{ background: isDark ? "#080810" : "#0f0f23", height: "100%", minHeight: "300px" }}>
-											{/* Image Actions */}
-											<div className="absolute top-5 right-5 z-10 flex gap-2.5">
-												<a
-													href={effectiveImageUrl}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 backdrop-blur-sm"
-													title="تكبير">
-													<ZoomIn className="h-5 w-5" />
+										<div style={{
+											background: isDark ? '#111827' : '#f8fafc',
+											border: `1px solid ${borderColor}`,
+											borderRadius: '12px', padding: '20px',
+											display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+											flexWrap: 'wrap', gap: '12px',
+										}}>
+											<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+												<div style={{
+													width: '48px', height: '48px', borderRadius: '10px',
+													background: isDark ? '#1e1b4b' : '#ede9fe',
+													display: 'flex', alignItems: 'center',
+													justifyContent: 'center', fontSize: '24px',
+												}}>
+													<FileText size={22} color="#a78bfa" />
+												</div>
+												<div>
+													<p style={{ color: textPrimary, fontWeight: 600, fontSize: '14px' }}>
+														{fileName || (isAr ? 'ملف الدرس' : 'Lesson File')}
+													</p>
+													<p style={{ color: textSecondary, fontSize: '12px' }}>PDF Document</p>
+												</div>
+											</div>
+											<div style={{ display: 'flex', gap: '8px' }}>
+												<a href={fileUrl} target="_blank" rel="noopener noreferrer"
+													style={{
+														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
+														fontWeight: 600, background: '#5120c8', color: 'white',
+														textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+													}}>
+													<Eye size={16} />
+													{isAr ? 'عرض' : 'View'}
 												</a>
-												<a
-													href={effectiveImageUrl}
-													download
-													className="p-3 rounded-xl bg-black/40 text-white hover:bg-black/60 transition-all duration-200 backdrop-blur-sm"
-													title="تحميل">
-													<Download className="h-5 w-5" />
+												<a href={buildDownloadUrl(fileUrl, fileName)} download
+													style={{
+														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
+														fontWeight: 600, background: 'transparent', color: '#a78bfa',
+														border: `1px solid ${borderColor}`, textDecoration: 'none',
+														display: 'flex', alignItems: 'center', gap: '6px',
+													}}>
+													<Download size={16} />
+													{isAr ? 'تحميل' : 'Download'}
 												</a>
 											</div>
-
-											{/* Image Container */}
-											<div className="h-full w-full p-6 flex items-center justify-center">
-												<img
-													src={effectiveImageUrl}
-													alt={activeLesson.title || activeLesson.titleAr || ""}
-													className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl"
-													style={{ boxShadow: "0 25px 80px rgba(0,0,0,0.5)" }}
-												/>
-											</div>
-
-											{/* Image Caption */}
-											<div
-												className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl text-sm text-white/90 font-medium backdrop-blur-xl"
-												style={{
-													background: "rgba(0,0,0,0.7)",
-													boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-												}}>
-												{activeLesson.title || activeLesson.titleAr}
-											</div>
 										</div>
-									)}
+									</div>
+								)}
+
+								{/* IMAGE SECTION */}
+								{hasImage && effectiveImageUrl && (
+									<div style={{
+										padding: '16px',
+										borderTop: (hasVideo || hasFile) ? `1px solid ${borderColor}` : 'none',
+									}}>
+										<div style={{
+											display: 'flex', alignItems: 'center', gap: '8px',
+											marginBottom: '12px',
+										}}>
+											<Image size={16} color="#a78bfa" />
+											<h3 style={{
+												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
+											}}>
+												{isAr ? 'الصور والمخططات' : 'Images & Diagrams'}
+											</h3>
+										</div>
+										<div style={{
+											width: '100%', display: 'flex', alignItems: 'center',
+											justifyContent: 'center', background: isDark ? '#111827' : '#f8fafc',
+											borderRadius: '12px', overflow: 'hidden', padding: '16px',
+											border: `1px solid ${borderColor}`,
+											minHeight: '300px',
+										}}>
+											<img
+												src={effectiveImageUrl}
+												alt={activeLesson?.title || activeLesson?.titleAr || 'Lesson image'}
+												style={{
+													maxWidth: '100%', maxHeight: '600px',
+													objectFit: 'contain', borderRadius: '8px',
+												}}
+											/>
+										</div>
+										<div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+											<a href={effectiveImageUrl} target="_blank" rel="noopener noreferrer"
+												style={{
+													padding: '6px 14px', borderRadius: '6px', fontSize: '12px',
+													background: 'transparent', color: '#a78bfa',
+													border: `1px solid ${borderColor}`, textDecoration: 'none',
+													display: 'flex', alignItems: 'center', gap: '6px',
+												}}>
+												<ZoomIn size={14} />
+												{isAr ? 'تكبير' : 'Zoom'}
+											</a>
+											<a href={effectiveImageUrl} download
+												style={{
+													padding: '6px 14px', borderRadius: '6px', fontSize: '12px',
+													background: 'transparent', color: '#a78bfa',
+													border: `1px solid ${borderColor}`, textDecoration: 'none',
+													display: 'flex', alignItems: 'center', gap: '6px',
+												}}>
+												<Download size={14} />
+												{isAr ? 'تحميل' : 'Download'}
+											</a>
+										</div>
+									</div>
+								)}
 
 								{/* Live Lesson UI */}
 								{isCurrentLive && (() => {
