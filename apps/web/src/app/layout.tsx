@@ -107,16 +107,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
         
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            body { background: var(--background); }
-            :root { color-scheme: light; }
-            :root.dark { color-scheme: dark; }
-            html, body { min-height: 100vh; }
-            :root { background-color: #ffffff; }
-            :root.dark { background-color: #0d0d0d; }
-          `
-        }} />
+        <style dangerouslySetInnerHTML={{ __html: `
+            html { background-color: #ffffff; color-scheme: light; }
+            html.dark { background-color: #0d0d0d !important; color-scheme: dark !important; }
+            body { background-color: inherit; min-height: 100vh; }
+          `}} />
         
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
@@ -133,7 +128,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       
       {/* Body uses CSS variables only */}
-      <body className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
+      <body className="min-h-screen text-foreground" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <Providers locale={locale}>
             <LoadingProvider>

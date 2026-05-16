@@ -3,9 +3,9 @@
    Clean • Modern • Accessible
    ═════════════════════════════════════════════════════════════════ */
 
-/* ── Default dark to prevent any light flash before JS runs ── */
-html { color-scheme: light; }
-html.dark { color-scheme: dark; }
+html { background: #ffffff; color-scheme: light; }
+html.dark { background: #0d0d0d; color-scheme: dark; }
+html, body { min-height: 100vh; }
 
 /* Override any blue focus rings */
 *:focus-visible {
