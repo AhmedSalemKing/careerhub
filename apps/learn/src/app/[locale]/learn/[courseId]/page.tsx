@@ -2074,11 +2074,11 @@ import VideoProtection from "../../../../components/VideoProtection";
 												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
 												style={{
 													background: '#5120c8',
-													color: "white",
+													color: '#ffffff',
 													boxShadow: `0 4px 16px rgba(81,32,200,0.25)`,
 												}}>
-												<FileDown className="h-4 w-4 group-hover:animate-bounce" />
-												<span>تحميل {fileName}</span>
+												<FileDown className="h-4 w-4 group-hover:animate-bounce" color="#ffffff" />
+												<span style={{ color: '#ffffff' }}>تحميل {fileName}</span>
 											</a>
 											<a
 												href={fileUrl}
