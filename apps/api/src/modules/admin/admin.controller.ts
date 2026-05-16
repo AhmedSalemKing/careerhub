@@ -993,4 +993,18 @@ export class AdminController {
     const result = await this.adminService.getActivityStats();
     return { success: true, data: result };
   }
+
+  @Post('run-migrations')
+  @ApiOperation({ summary: 'Run pending database migrations (one-time admin tool)' })
+  async runMigrations() {
+    try {
+      await this.prisma.$executeRaw`
+        ALTER TABLE consulting_sessions 
+        ADD COLUMN IF NOT EXISTS price DOUBLE PRECISION NOT NULL DEFAULT 0
+      `
+      return { success: true, message: 'Migration applied' }
+    } catch (e: any) {
+      return { success: false, error: e.message }
+    }
+  }
 }
