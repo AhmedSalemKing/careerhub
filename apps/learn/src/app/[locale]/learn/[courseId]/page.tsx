@@ -811,6 +811,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 	const mediaType = activeLesson ? getMediaType(activeLesson) : "none";
 	const hasVideo = mediaType === "video" && !!videoUrl;
 	const hasFile = !!activeLesson?.fileUrl && !!fileUrl;
+	const tabCount = [!!videoUrl, !!fileUrl, !!(activeLesson?.imageUrl)].filter(Boolean).length;
 	const hasImage =
 		mediaType === "image" &&
 		!!(
@@ -1384,14 +1385,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 								className="w-full relative"
 								style={{ background: "transparent" }}>
 
-								{/* TAB BUTTONS */}
-								{(hasVideo || hasFile || hasImage) && (
+								{/* TAB BUTTONS — only when 2+ content types */}
+								{tabCount > 1 && (
 									<div style={{
 										display: 'flex', gap: '8px', flexWrap: 'wrap',
 										padding: '16px 16px 12px',
 										borderBottom: `1px solid ${borderColor}`,
 									}}>
-										{hasVideo && videoUrl && (
+										{!!videoUrl && (
 											<button
 												onClick={() => setActiveTab('video')}
 												style={{
@@ -1407,7 +1408,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												{isAr ? 'الفيديو' : 'Video'}
 											</button>
 										)}
-										{hasFile && fileUrl && (
+										{!!fileUrl && (
 											<button
 												onClick={() => setActiveTab('file')}
 												style={{
@@ -1423,7 +1424,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 												{isAr ? 'ملف PDF' : 'PDF File'}
 											</button>
 										)}
-										{hasImage && effectiveImageUrl && (
+										{!!activeLesson?.imageUrl && (
 											<button
 												onClick={() => setActiveTab('image')}
 												style={{
@@ -1443,7 +1444,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								)}
 
 								{/* VIDEO TAB */}
-								{activeTab === 'video' && hasVideo && videoUrl && (
+								{(activeTab === 'video' || (!activeLesson?.fileUrl && !activeLesson?.imageUrl)) && !!videoUrl && (
 									<div style={{ background: isDark ? '#0d0d0d' : '#ffffff' }}>
 										<div className="relative" style={{ margin: '16px' }}>
 											<div
@@ -1594,69 +1595,44 @@ import VideoProtection from "../../../../components/VideoProtection";
 								)}
 
 								{/* PDF TAB */}
-								{activeTab === 'file' && hasFile && fileUrl && (
+								{(activeTab === 'file' || (!videoUrl && !activeLesson?.imageUrl)) && !!fileUrl && (
 									<div style={{ padding: '16px' }}>
 										<div style={{
-											background: isDark ? '#111827' : '#f8fafc',
-											border: `1px solid ${borderColor}`,
-											borderRadius: '12px', padding: '20px',
-											display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-											flexWrap: 'wrap', gap: '12px',
-										}}>
-											<div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-												<div style={{
-													width: '48px', height: '48px', borderRadius: '10px',
-													background: isDark ? '#1e1b4b' : '#ede9fe',
-													display: 'flex', alignItems: 'center',
-													justifyContent: 'center',
-												}}>
-													<FileText size={22} color="#a78bfa" />
-												</div>
-												<div>
-													<p style={{ color: textPrimary, fontWeight: 600, fontSize: '14px' }}>
-														{fileName || (isAr ? 'ملف الدرس' : 'Lesson File')}
-													</p>
-													<p style={{ color: textSecondary, fontSize: '12px' }}>PDF Document</p>
-												</div>
-											</div>
-											<div style={{ display: 'flex', gap: '8px' }}>
-												<a href={fileUrl} target="_blank" rel="noopener noreferrer"
-													style={{
-														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
-														fontWeight: 600, background: '#5120c8', color: 'white',
-														textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px',
-													}}>
-													<Eye size={16} />
-													{isAr ? 'عرض' : 'View'}
-												</a>
-												<a href={buildDownloadUrl(fileUrl, fileName)} download
-													style={{
-														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
-														fontWeight: 600, background: 'transparent', color: '#a78bfa',
-														border: `1px solid ${borderColor}`, textDecoration: 'none',
-														display: 'flex', alignItems: 'center', gap: '6px',
-													}}>
-													<Download size={16} />
-													{isAr ? 'تحميل' : 'Download'}
-												</a>
-											</div>
-										</div>
-										<div style={{
-											width: '100%', height: '70vh', borderRadius: '8px',
+											width: '100%', height: '75vh', borderRadius: '8px',
 											overflow: 'hidden', border: `1px solid ${borderColor}`,
-											background: '#fff', marginTop: '12px',
 										}}>
 											<iframe
-												src={`${fileUrl}#toolbar=1&navpanes=1`}
+												src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
 												style={{ width: '100%', height: '100%', border: 'none' }}
 												title="PDF Viewer"
 											/>
+										</div>
+										<div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+											<a href={fileUrl} target="_blank" rel="noopener noreferrer"
+												style={{
+													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
+													fontWeight: 600, background: '#5120c8', color: 'white',
+													textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+												}}>
+												<Eye size={16} />
+												{isAr ? 'فتح في تبويب جديد' : 'Open in new tab'}
+											</a>
+											<a href={buildDownloadUrl(fileUrl, fileName)} download
+												style={{
+													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
+													fontWeight: 600, background: 'transparent', color: '#a78bfa',
+													border: `1px solid #5120c8`, textDecoration: 'none',
+													display: 'flex', alignItems: 'center', gap: '6px',
+												}}>
+												<Download size={16} />
+												{isAr ? 'تحميل' : 'Download'}
+											</a>
 										</div>
 									</div>
 								)}
 
 								{/* IMAGE TAB */}
-								{activeTab === 'image' && hasImage && effectiveImageUrl && (
+								{(activeTab === 'image' || (!videoUrl && !fileUrl)) && !!effectiveImageUrl && (
 									<div style={{ padding: '16px' }}>
 										<div style={{
 											width: '100%', display: 'flex', alignItems: 'center',
