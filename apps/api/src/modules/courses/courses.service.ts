@@ -1549,7 +1549,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         select: {
           id: true, titleAr: true, titleEn: true,
           status: true, price: true,
-          _count: { select: { enrollments: true } }
+          _count: { select: { enrollments: { where: { status: 'ACTIVE' } } } }
         }
       }).catch(() => [])
       
@@ -1557,7 +1557,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       
       const [totalStudents, certificatesIssued] = await Promise.all([
         courseIds.length ? this.prisma.enrollment.count({
-          where: { courseId: { in: courseIds } }
+          where: { courseId: { in: courseIds }, status: 'ACTIVE' }
         }).catch(() => 0) : Promise.resolve(0),
         courseIds.length ? this.prisma.certificate.count({
           where: { courseId: { in: courseIds } }
@@ -1565,12 +1565,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       ])
       
       let totalRevenue = 0
-      if (courseIds.length) {
-        const rev = await this.prisma.payment.aggregate({
-          where: { courseId: { in: courseIds }, status: 'CONFIRMED' },
-          _sum: { amount: true }
-        }).catch(() => ({ _sum: { amount: 0 } }))
-        totalRevenue = Number(rev._sum?.amount) || 0
+      for (const course of courses) {
+        if (course.price > 0) {
+          totalRevenue += course._count.enrollments * course.price
+        }
       }
       
       const completedEnrollments = courseIds.length ? await this.prisma.enrollment.count({
@@ -1984,44 +1982,30 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     const courses = await this.prisma.course.findMany({
       where: { instructorId },
       include: {
-        _count: { select: { enrollments: true } },
+        _count: {
+          select: { enrollments: { where: { status: 'ACTIVE' } } },
+        },
       },
     })
 
-    const courseIds = courses.map(c => c.id)
-
-    let totalRevenue = 0
-    const paymentMap: Record<string, number> = {}
-
-    if (courseIds.length > 0) {
-      const payments = await this.prisma.payment.findMany({
-        where: {
-          courseId: { in: courseIds },
-          status: 'CONFIRMED',
-        },
-        select: { courseId: true, amount: true },
-      })
-
-      for (const p of payments) {
-        const key = p.courseId || ''
-        paymentMap[key] = (paymentMap[key] || 0) + Number(p.amount)
-        totalRevenue += Number(p.amount)
+    const courseBreakdown = courses.map(course => {
+      const enrollmentCount = course._count.enrollments
+      const revenue = course.price > 0 ? enrollmentCount * course.price : 0
+      return {
+        id: course.id,
+        titleAr: course.titleAr,
+        titleEn: course.titleEn,
+        thumbnail: course.thumbnail,
+        price: course.price,
+        enrollmentCount,
+        revenue,
+        status: course.status,
       }
-    }
+    })
 
-    const courseBreakdown = courses.map(c => ({
-      id: c.id,
-      titleAr: c.titleAr,
-      titleEn: c.titleEn,
-      thumbnail: c.thumbnail,
-      price: c.price,
-      enrollmentCount: c._count.enrollments,
-      revenue: paymentMap[c.id] || 0,
-    }))
-
-    const totalStudents = courseIds.length > 0
-      ? await this.prisma.enrollment.count({ where: { courseId: { in: courseIds } } }).catch(() => 0)
-      : 0
+    const totalRevenue = courseBreakdown.reduce((sum, c) => sum + c.revenue, 0)
+    const totalStudents = courseBreakdown.reduce((sum, c) => sum + c.enrollmentCount, 0)
+    const publishedCourses = courses.filter(c => c.status === 'PUBLISHED').length
 
     return {
       success: true,
@@ -2029,7 +2013,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         totalRevenue,
         totalStudents,
         coursesCount: courses.length,
-        publishedCourses: courses.filter(c => c.status === 'PUBLISHED').length,
+        publishedCourses,
         courseBreakdown,
       },
     }
