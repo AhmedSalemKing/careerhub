@@ -320,7 +320,7 @@ export default function MySessionsPage() {
 
             {(session.price || 0) > 0 && !isPaid && isUpcoming && !isRescheduleReq && (
               <button onClick={() => paySession(session.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                 <CreditCard size={12} />{isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`}
               </button>
             )}
