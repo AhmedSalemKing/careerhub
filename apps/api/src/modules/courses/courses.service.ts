@@ -1567,7 +1567,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       let totalRevenue = 0
       if (courseIds.length) {
         const rev = await this.prisma.payment.aggregate({
-          where: { courseId: { in: courseIds } },
+          where: { courseId: { in: courseIds }, status: 'CONFIRMED' },
           _sum: { amount: true }
         }).catch(() => ({ _sum: { amount: 0 } }))
         totalRevenue = Number(rev._sum?.amount) || 0
