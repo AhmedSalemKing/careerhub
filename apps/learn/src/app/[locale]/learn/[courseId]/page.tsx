@@ -2073,9 +2073,9 @@ import VideoProtection from "../../../../components/VideoProtection";
 												download={fileName}
 												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
 												style={{
-													background: blueColor,
+													background: '#5120c8',
 													color: "white",
-													boxShadow: `0 4px 16px ${blueColor}25`,
+													boxShadow: `0 4px 16px rgba(81,32,200,0.25)`,
 												}}>
 												<FileDown className="h-4 w-4 group-hover:animate-bounce" />
 												<span>تحميل {fileName}</span>
@@ -2087,8 +2087,8 @@ import VideoProtection from "../../../../components/VideoProtection";
 												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
 												style={{
 													background: "transparent",
-													color: blueColor,
-													border: `1.5px solid ${blueColor}25`,
+													color: '#5120c8',
+													border: '1.5px solid rgba(81,32,200,0.25)',
 												}}>
 												<Eye className="h-4 w-4" />
 												<span>عرض</span>
