@@ -190,6 +190,25 @@ export default function GoLivePage() {
     if (camTrack) { await camTrack.setEnabled(!camOn); setCamOn(c => !c) }
   }
 
+  useEffect(() => {
+    if (!liveStarted) return
+    const camTrack = localTracksRef.current[1]
+    if (screenSharing) {
+      // Screen share active: play screen in main, camera in PiP
+      if (screenTrackRef.current && localVideoRef.current) {
+        screenTrackRef.current.play(localVideoRef.current)
+      }
+      if (camTrack && pipVideoRef.current) {
+        camTrack.play(pipVideoRef.current)
+      }
+    } else {
+      // Screen share off: play camera in main
+      if (camTrack && localVideoRef.current) {
+        camTrack.play(localVideoRef.current)
+      }
+    }
+  }, [screenSharing, liveStarted])
+
   const toggleScreenShare = async () => {
     if (!clientRef.current || !liveStarted) return
     try {
@@ -202,12 +221,8 @@ export default function GoLivePage() {
           screenTrackRef.current.close()
           screenTrackRef.current = null
         }
-        // Republish camera
         const camTrack = localTracksRef.current[1]
-        if (camTrack && localVideoRef.current) {
-          camTrack.play(localVideoRef.current)
-          await clientRef.current.publish(camTrack)
-        }
+        if (camTrack) await clientRef.current.publish(camTrack)
         setScreenSharing(false)
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
@@ -228,19 +243,16 @@ export default function GoLivePage() {
         const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack
         screenTrackRef.current = track
 
-        // Unpublish camera from remote (keep it playing locally)
         const camTrack = localTracksRef.current[1]
         if (camTrack) await clientRef.current.unpublish(camTrack)
 
-        // Publish screen
         await clientRef.current.publish(track)
 
-        // Show screen in main area
+        // Play screen in main immediately (avoids flash)
         if (localVideoRef.current) track.play(localVideoRef.current)
 
-        // Show camera in PiP
-        if (pipVideoRef.current && camTrack) camTrack.play(pipVideoRef.current)
-
+        // Set state — useEffect will handle PiP camera placement
+        // after React renders the PiP container
         setScreenSharing(true)
         toast.success(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
       }
