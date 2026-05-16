@@ -1979,6 +1979,61 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     })
   }
+
+  async getInstructorRevenue(instructorId: string) {
+    const courses = await this.prisma.course.findMany({
+      where: { instructorId },
+      include: {
+        _count: { select: { enrollments: true } },
+      },
+    })
+
+    const courseIds = courses.map(c => c.id)
+
+    let totalRevenue = 0
+    const paymentMap: Record<string, number> = {}
+
+    if (courseIds.length > 0) {
+      const payments = await this.prisma.payment.findMany({
+        where: {
+          courseId: { in: courseIds },
+          status: 'CONFIRMED',
+        },
+        select: { courseId: true, amount: true },
+      })
+
+      for (const p of payments) {
+        const key = p.courseId || ''
+        paymentMap[key] = (paymentMap[key] || 0) + Number(p.amount)
+        totalRevenue += Number(p.amount)
+      }
+    }
+
+    const courseBreakdown = courses.map(c => ({
+      id: c.id,
+      titleAr: c.titleAr,
+      titleEn: c.titleEn,
+      thumbnail: c.thumbnail,
+      price: c.price,
+      enrollmentCount: c._count.enrollments,
+      revenue: paymentMap[c.id] || 0,
+    }))
+
+    const totalStudents = courseIds.length > 0
+      ? await this.prisma.enrollment.count({ where: { courseId: { in: courseIds } } }).catch(() => 0)
+      : 0
+
+    return {
+      success: true,
+      data: {
+        totalRevenue,
+        totalStudents,
+        coursesCount: courses.length,
+        publishedCourses: courses.filter(c => c.status === 'PUBLISHED').length,
+        courseBreakdown,
+      },
+    }
+  }
 }
 
 

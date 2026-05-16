@@ -1,194 +1,184 @@
 'use client'
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { get, post } from '@/lib/api'
-import { useTheme } from 'next-themes'
-import { DollarSign, TrendingUp, Users, BookOpen, ArrowUpRight, Wallet } from 'lucide-react'
-import { useAuthStore } from '@/stores/authStore'
+import { useState, useEffect } from 'react'
+import { useLocale } from 'next-intl'
+import api from '@/lib/api'
+import { DollarSign, Users, BookOpen, TrendingUp, Download, Eye } from 'lucide-react'
 
 export default function RevenuePage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
-  const { user } = useAuthStore()
-  const queryClient = useQueryClient()
-  const [transferAmount, setTransferAmount] = useState('')
-  const [transferring, setTransferring] = useState(false)
-  const [msg, setMsg] = useState<{type:'success'|'error',text:string}| null>(null)
+  const locale = useLocale()
+  const isAr = locale === 'ar'
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['revenue'],
-    queryFn: async () => {
-      const res = await get('/payment/my-payments')
-      return res.data?.data ?? []
-    }
-  })
+  useEffect(() => {
+    api.get('/courses/instructor/revenue')
+      .then(r => setData(r.data?.data || r.data))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [])
 
-  const { data: walletData } = useQuery({
-    queryKey: ['wallet'],
-    queryFn: async () => {
-      const res = await get('/wallet')
-      return res.data?.data ?? { balance: 0, transactions: [] }
-    }
-  })
-
-  const payments = Array.isArray(data) ? data : []
-  const total = payments.reduce((s: number, p: any) => s + (p.amount || 0), 0)
-  const thisMonth = payments.filter((p: any) => {
-    const d = new Date(p.createdAt)
-    const now = new Date()
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  }).reduce((s: number, p: any) => s + (p.amount || 0), 0)
-
-  const transferred = (walletData?.transactions ?? [])
-    .filter((t: any) => t.type === 'EARNINGS_TRANSFER')
-    .reduce((s: number, t: any) => s + (t.amount || 0), 0)
-
-  const netEarnings = total - transferred
-
-  const handleTransfer = async () => {
-    const amount = parseFloat(transferAmount)
-    if (!amount || amount <= 0) return
-    if (amount > netEarnings) {
-      setMsg({ type:'error', text:'المبلغ أكبر من صافي أرباحك' })
-      return
-    }
-    setTransferring(true)
-    try {
-      await post('/wallet/transfer-from-earnings', { amount })
-      setMsg({ type:'success', text:`تم تحويل ${amount} ر.س للمحفظة بنجاح ` })
-      setTransferAmount('')
-      queryClient.invalidateQueries({ queryKey: ['wallet'] })
-      queryClient.invalidateQueries({ queryKey: ['wallet-balance'] })
-    } catch(e: any) {
-      setMsg({ type:'error', text: e.response?.data?.message || 'فشل التحويل' })
-    } finally {
-      setTransferring(false)
-      setTimeout(() => setMsg(null), 4000)
-    }
+  if (loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '3px solid rgba(81,32,200,0.3)', borderTopColor: '#5120c8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    )
   }
 
+  const { totalRevenue = 0, totalStudents = 0, coursesCount = 0, publishedCourses = 0, courseBreakdown = [] } = data || {}
+
   return (
-    <div style={{ minHeight:'100vh', background: isDark?'#0d0d0d':'#fafafa', padding:'32px 24px 120px', direction:'rtl' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: '#0d0d0d', padding: '32px 24px 120px', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ color: isDark?'#fff':'#0d0d0d', fontSize: 24, fontWeight: 800, margin: 0 }}>الإيرادات</h1>
-          <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>سجل المدفوعات والإيرادات</p>
-        </div>
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:14, marginBottom:24 }}>
-          {[
-            { label:'إجمالي الإيرادات', value:`${total.toFixed(2)} ر.س`, icon:<DollarSign size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
-            { label:'هذا الشهر', value:`${thisMonth.toFixed(2)} ر.س`, icon:<TrendingUp size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
-            { label:'محول للمحفظة', value:`${transferred.toFixed(2)} ر.س`, icon:<Wallet size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
-            { label:'صافي الأرباح', value:`${netEarnings.toFixed(2)} ر.س`, icon:<ArrowUpRight size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)', highlight: true },
-          ].map((s,i) => (
-            <div key={i} style={{
-              background: s.highlight 
-                ? 'linear-gradient(135deg,rgba(43,191,163,0.15),rgba(81,32,200,0.1))'
-                : isDark?'#121212':'#fff',
-              borderRadius:16, padding:'20px 18px',
-              border:`1px solid ${s.highlight ? 'rgba(43,191,163,0.3)' : isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`,
-            }}>
-              <div style={{ width:40,height:40,borderRadius:10,background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:12 }}>{s.icon}</div>
-              <div style={{ color: isDark?'#fff':'#0d0d0d', fontSize:18, fontWeight:800 }}>{s.value}</div>
-              <div style={{ color:'#6b7280', fontSize:12, marginTop:4 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{
-          background: isDark?'#121212':'#fff',
-          borderRadius:20, padding:24, marginBottom:24,
-          border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`,
-          direction:'rtl',
-        }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <h3 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:16, fontWeight:700, margin:0 }}>
-              تحويل إلى المحفظة
-            </h3>
-            <div style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(81,32,200,0.1)', padding:'6px 12px', borderRadius:8 }}>
-              <Wallet size={14} color="#5120c8"/>
-              <span style={{ color:'#5120c8', fontSize:13, fontWeight:700 }}>
-                رصيد المحفظة: {(walletData?.balance||0).toFixed(2)} ر.س
-              </span>
-            </div>
-          </div>
-
-          {msg && (
-            <div style={{
-              padding:'12px 16px', borderRadius:10, marginBottom:16,
-              background: msg.type==='success'?'rgba(22,163,74,0.1)':'rgba(239,68,68,0.1)',
-              border:`1px solid ${msg.type==='success'?'rgba(22,163,74,0.3)':'rgba(239,68,68,0.3)'}`,
-              color: msg.type==='success'?'#16a34a':'#ef4444',
-              fontSize:14, fontWeight:600,
-            }}>
-              {msg.text}
-            </div>
-          )}
-
-          <div style={{ display:'flex', gap:10 }}>
-            <input
-              type="number"
-              value={transferAmount}
-              onChange={e => setTransferAmount(e.target.value)}
-              placeholder={`الحد الأقصى: ${total.toFixed(2)} ر.س`}
-              style={{
-                flex:1, padding:'12px 16px', borderRadius:10,
-                background: isDark?'#1a1a1a':'#f8f8fa',
-                color: isDark?'#fff':'#0d0d0d',
-                border:`1px solid ${isDark?'rgba(255,255,255,0.1)':'#e5e7eb'}`,
-                fontSize:15, outline:'none',
-              }}
-            />
-            <button
-              onClick={handleTransfer}
-              disabled={transferring || !transferAmount || parseFloat(transferAmount) <= 0}
-              style={{
-                padding:'12px 24px', borderRadius:10, border:'none',
-                background: transferring||!transferAmount ? '#374151' : 'linear-gradient(135deg,#5120c8,#7c3aed)',
-                color:'#fff', cursor: transferring||!transferAmount ? 'not-allowed':'pointer',
-                fontWeight:700, fontSize:14,
-                display:'flex', alignItems:'center', gap:6,
-              }}
-            >
-              {transferring
-                ? <><div style={{ width:16,height:16,border:'2px solid rgba(255,255,255,0.3)',borderTopColor:'#fff',borderRadius:'50%',animation:'spin 1s linear infinite' }}/> جاري...</>
-                : <><Wallet size={16}/> تحويل</>
-              }
-            </button>
-          </div>
-          <p style={{ color:'#6b7280', fontSize:12, marginTop:8 }}>
-            سيتم تحويل المبلغ من إيراداتك إلى رصيد محفظتك فورا
+          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>
+            {isAr ? 'الإيرادات' : 'Revenue'}
+          </h1>
+          <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>
+            {isAr ? 'إيراداتك من مبيعات الكورسات' : 'Your earnings from course sales'}
           </p>
         </div>
 
-        <div style={{ background: isDark?'#121212':'#fff', borderRadius:20, padding:24, border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
-          <h3 style={{ color: isDark?'#fff':'#0d0d0d', fontSize:16, fontWeight:700, marginBottom:20 }}>سجل المعاملات</h3>
-          {isLoading ? (
-            <div style={{ textAlign:'center', padding:32 }}>
-              <div style={{ width:36, height:36, border:'3px solid #5120c8', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 1s linear infinite', margin:'0 auto' }}/>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
+          <div style={{ background: '#121212', borderRadius: 16, padding: '22px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(81,32,200,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <DollarSign size={20} color="#a78bfa" />
             </div>
-          ) : payments.length === 0 ? (
-            <div style={{ textAlign:'center', padding:32, color:'#6b7280' }}>
-              <DollarSign size={40} style={{ margin:'0 auto 12px', opacity:0.3 }}/>
-              <p>لا توجد معاملات بعد</p>
+            <div style={{ color: '#a78bfa', fontSize: 22, fontWeight: 800 }}>
+              {totalRevenue.toLocaleString()} <span style={{ fontSize: 14, fontWeight: 600 }}>{isAr ? 'ر.س' : 'SAR'}</span>
             </div>
-          ) : payments.map((p: any) => (
-            <div key={p.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 0', borderBottom:`1px solid ${isDark?'rgba(255,255,255,0.05)':'#f1f5f9'}` }}>
-              <div style={{ width:40, height:40, borderRadius:'50%', background:'rgba(22,163,74,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <DollarSign size={18} color="#16a34a"/>
-              </div>
-              <div style={{ flex:1 }}>
-                <div style={{ color: isDark?'#f1f5f9':'#0d0d0d', fontSize:14, fontWeight:600 }}>
-                  {p.course?.titleAr || p.course?.title || 'دفعة'}
-                </div>
-                <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>
-                  {new Date(p.createdAt).toLocaleDateString('ar-SA', { year:'numeric', month:'short', day:'numeric' })}
-                </div>
-              </div>
-              <div style={{ color:'#16a34a', fontWeight:700, fontSize:15 }}>+{(p.amount||0).toFixed(2)} ر.س</div>
+            <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
+              {isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}
             </div>
-          ))}
+          </div>
+
+          <div style={{ background: '#121212', borderRadius: 16, padding: '22px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <Users size={20} color="#60a5fa" />
+            </div>
+            <div style={{ color: '#60a5fa', fontSize: 22, fontWeight: 800 }}>
+              {totalStudents}
+            </div>
+            <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
+              {isAr ? 'إجمالي الطلاب' : 'Total Students'}
+            </div>
+          </div>
+
+          <div style={{ background: '#121212', borderRadius: 16, padding: '22px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <BookOpen size={20} color="#4ade80" />
+            </div>
+            <div style={{ color: '#4ade80', fontSize: 22, fontWeight: 800 }}>
+              {publishedCourses}
+            </div>
+            <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
+              {isAr ? 'الكورسات المنشورة' : 'Published Courses'}
+            </div>
+          </div>
+
+          <div style={{ background: '#121212', borderRadius: 16, padding: '22px 20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(251,191,36,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+              <TrendingUp size={20} color="#fbbf24" />
+            </div>
+            <div style={{ color: '#fbbf24', fontSize: 22, fontWeight: 800 }}>
+              {courseBreakdown.length}
+            </div>
+            <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
+              {isAr ? 'إجمالي الكورسات' : 'Total Courses'}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ background: '#121212', borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h2 style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              {isAr ? 'تفصيل الإيرادات حسب الكورس' : 'Revenue by Course'}
+            </h2>
+            {courseBreakdown.length > 0 && (
+              <span style={{ color: '#6b7280', fontSize: 13 }}>
+                {isAr ? 'إجمالي' : 'Total'}: <span style={{ color: '#a78bfa', fontWeight: 700 }}>{totalRevenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}</span>
+              </span>
+            )}
+          </div>
+
+          {courseBreakdown.length === 0 ? (
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <DollarSign size={48} style={{ color: '#374151', margin: '0 auto 16px', display: 'block' }} />
+              <p style={{ color: '#6b7280', fontSize: 14 }}>
+                {isAr ? 'لا توجد إيرادات بعد. عندما يشتري طلاب كورساتك، ستظهر هنا.' : 'No revenue yet. When students purchase your courses, it will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <th style={{ padding: '14px 20px', textAlign: isAr ? 'right' : 'left', color: '#6b7280', fontSize: 13, fontWeight: 600 }}>
+                      {isAr ? 'الكورس' : 'Course'}
+                    </th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center', color: '#6b7280', fontSize: 13, fontWeight: 600 }}>
+                      {isAr ? 'الطلاب' : 'Students'}
+                    </th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center', color: '#6b7280', fontSize: 13, fontWeight: 600 }}>
+                      {isAr ? 'السعر' : 'Price'}
+                    </th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center', color: '#6b7280', fontSize: 13, fontWeight: 600 }}>
+                      {isAr ? 'الإيرادات' : 'Revenue'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseBreakdown.map((course: any) => (
+                    <tr key={course.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.2s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '14px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {course.thumbnail ? (
+                            <img src={course.thumbnail} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 40, height: 40, borderRadius: 8, background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <BookOpen size={16} color="#5120c8" />
+                            </div>
+                          )}
+                          <span style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 600 }}>
+                            {isAr ? course.titleAr : course.titleEn}
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '14px 20px', textAlign: 'center', color: '#60a5fa', fontWeight: 700, fontSize: 14 }}>
+                        {course.enrollmentCount}
+                      </td>
+                      <td style={{ padding: '14px 20px', textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>
+                        {course.price === 0
+                          ? (isAr ? 'مجاني' : 'Free')
+                          : `${course.price} ${isAr ? 'ر.س' : 'SAR'}`}
+                      </td>
+                      <td style={{ padding: '14px 20px', textAlign: 'center', color: '#4ade80', fontWeight: 700, fontSize: 15 }}>
+                        {course.revenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: 'rgba(81,32,200,0.08)' }}>
+                    <td style={{ padding: '16px 20px', color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                      {isAr ? 'الإجمالي' : 'Total'}
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'center', color: '#60a5fa', fontWeight: 700, fontSize: 14 }}>
+                      {totalStudents}
+                    </td>
+                    <td style={{ padding: '16px 20px', textAlign: 'center' }} />
+                    <td style={{ padding: '16px 20px', textAlign: 'center', color: '#a78bfa', fontWeight: 800, fontSize: 16 }}>
+                      {totalRevenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
         </div>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>

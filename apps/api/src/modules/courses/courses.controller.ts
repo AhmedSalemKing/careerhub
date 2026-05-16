@@ -236,6 +236,14 @@ export class CoursesController {
     return this.coursesService.getInstructorStats(req.user.id);
   }
 
+  @Get('instructor/revenue')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get instructor revenue breakdown by course' })
+  async getInstructorRevenue(@Request() req: any) {
+    return this.coursesService.getInstructorRevenue(req.user.id);
+  }
+
   @Get(':slug')
   @ApiOperation({ summary: 'Get course by slug or ID' })
   @ApiResponse({ status: 200, description: 'Course retrieved successfully' })
