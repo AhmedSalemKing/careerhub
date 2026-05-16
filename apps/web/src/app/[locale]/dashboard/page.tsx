@@ -886,6 +886,13 @@ function ConsultantOverview() {
   const confirmed = (sessions as any[]).filter((s: any) => s.status === 'CONFIRMED')
   const completed = (sessions as any[]).filter((s: any) => s.status === 'COMPLETED')
   const totalRevenue = completed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
+  const upcomingStatuses = ['CONFIRMED', 'SCHEDULED', 'RESCHEDULE_REQUESTED']
+  const upcomingSessions = (sessions as any[]).filter((s: any) =>
+    upcomingStatuses.includes(s.status) &&
+    s.paymentStatus === 'PAID' &&
+    s.status !== 'CANCELLED' &&
+    s.status !== 'COMPLETED'
+  )
 
   return (
     <div style={{ padding: '1.5rem 2rem 2.5rem' }}>
@@ -1065,12 +1072,14 @@ function ConsultantOverview() {
             </a>
           </div>
 
-          {confirmed.length > 0 ? (
-            confirmed.slice(0, 4).map((session: any, i: number) => (
+          {upcomingSessions.length > 0 ? (
+            upcomingSessions.slice(0, 4).map((session: any, i: number) => (
               <div key={session.id || i} style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '10px 0',
-                borderBottom: '1px solid var(--border)',
+                padding: '10px 12px', marginBottom: '6px',
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
               }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '50%',
@@ -1078,15 +1087,15 @@ function ConsultantOverview() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#fff', fontSize: '0.85rem', fontWeight: 700, flexShrink: 0,
                 }}>
-                  {session.user?.profile?.firstName?.[0] || ''}
+                  {session.user?.profile?.firstName?.[0] || '?'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: '0 0 3px',
+                  <p style={{ fontWeight: 600, fontSize: '0.82rem', margin: '0 0 2px',
                     color: 'var(--foreground)', overflow: 'hidden',
                     textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {session.user?.profile?.firstName || (isAr ? 'طالب' : 'Student')}
+                    {session.sessionName || session.user?.profile?.firstName || (isAr ? 'جلسة' : 'Session')}
                   </p>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', margin: 0 }}>
                     {session.scheduledAt
                       ? new Date(session.scheduledAt).toLocaleDateString(
                           isAr ? 'ar-SA' : 'en-US',
@@ -1095,14 +1104,26 @@ function ConsultantOverview() {
                       : (isAr ? 'تاريخ غير محدد' : 'Date TBD')}
                   </p>
                 </div>
-                <div style={{
-                  padding: '3px 8px', borderRadius: '20px', fontSize: '0.68rem',
-                  fontWeight: 600, flexShrink: 0,
-                  background: 'rgba(52,211,153,0.1)',
-                  border: '1px solid rgba(52,211,153,0.3)',
-                  color: '#34d399',
-                }}>
-                  {isAr ? 'مؤكد' : 'Confirmed'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                  <div style={{
+                    padding: '3px 8px', borderRadius: '20px', fontSize: '0.65rem',
+                    fontWeight: 600,
+                    background: 'rgba(52,211,153,0.1)',
+                    border: '1px solid rgba(52,211,153,0.3)',
+                    color: '#34d399',
+                  }}>
+                    {isAr ? 'مؤكد' : 'Confirmed'}
+                  </div>
+                  {session.meetingLink && (
+                    <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
+                      style={{
+                        padding: '4px 10px', borderRadius: '8px', fontSize: '0.68rem',
+                        fontWeight: 700, textDecoration: 'none',
+                        background: '#5120c8', color: '#ffffff',
+                      }}>
+                      {isAr ? 'انضم' : 'Join'}
+                    </a>
+                  )}
                 </div>
               </div>
             ))
