@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -34,8 +33,6 @@ const CATEGORIES = [
 ]
 
 export default function CoachingPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
@@ -47,11 +44,11 @@ export default function CoachingPage() {
   const [bookingConsultant, setBookingConsultant] = useState<any>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
+  const bg = 'var(--background)'
+  const cardBg = 'var(--card)'
+  const border = 'var(--border)'
+  const text = 'var(--foreground)'
+  const subtext = 'var(--muted)'
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') { e.preventDefault(); searchRef.current?.focus() } }
@@ -118,7 +115,7 @@ export default function CoachingPage() {
 
       <div style={{ borderBottom: `1px solid ${border}`, background: cardBg, padding: '52px 24px 36px' }}>
         <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 100, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.04)' : '#f4f4f8', marginBottom: 18 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 100, border: `1px solid ${border}`, background: 'var(--surface)', marginBottom: 18 }}>
             <Users size={12} color="#5120c8" />
             <span style={{ color: subtext, fontSize: 12, fontWeight: 600 }}>{consultants.length} {isAr ? 'مستشار متاح' : 'consultants available'}</span>
           </div>
@@ -131,11 +128,11 @@ export default function CoachingPage() {
           <div style={{ position: 'relative', maxWidth: 460, margin: '0 auto' }}>
             <Search size={15} color={subtext} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
             <input ref={searchRef} type="text" placeholder={isAr ? 'ابحث باسم المستشار أو التخصص...' : 'Search by name or speciality...'} value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
+              style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.15s' }} />
             {search ? (
               <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, background: 'none', border: 'none', cursor: 'pointer', color: subtext, display: 'flex' }}><X size={14} /></button>
             ) : (
-              <kbd style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8', border: `1px solid ${border}`, borderRadius: 5, padding: '1px 6px', fontSize: 11, color: subtext, fontFamily: 'monospace' }}>/</kbd>
+              <kbd style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'var(--surface)', border: `1px solid ${border}`, borderRadius: 5, padding: '1px 6px', fontSize: 11, color: subtext, fontFamily: 'monospace' }}>/</kbd>
             )}
           </div>
         </div>
@@ -173,7 +170,7 @@ export default function CoachingPage() {
 
         {isLoading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
-            {[1,2,3,4,5,6].map(i => <div key={i} style={{ height: 280, borderRadius: 16, animation: 'pulse 1.5s infinite', background: isDark ? '#1a1a1a' : '#f4f4f8' }}><style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style></div>)}
+            {[1,2,3,4,5,6].map(i => <div key={i} style={{ height: 280, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface)' }}><style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style></div>)}
           </div>
         ) : consultants.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
@@ -194,7 +191,7 @@ export default function CoachingPage() {
                 <div key={c.id} className="c-card" style={{ animationDelay: `${(idx % 12) * 0.045}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.boxShadow = isDark ? '0 8px 28px rgba(0,0,0,0.4)' : '0 8px 28px rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}>
-                  <div style={{ height: 68, background: isDark ? '#1a1a1a' : '#f8f8fa', position: 'relative', flexShrink: 0 }}>
+                  <div style={{ height: 68, background: 'var(--surface)', position: 'relative', flexShrink: 0 }}>
                     <div style={{ position: 'absolute', top: 8, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
                       <Calendar size={9} />{c._count?.consultantSessions || 0} {isAr ? 'جلسة' : 'sessions'}
                     </div>
@@ -225,7 +222,7 @@ export default function CoachingPage() {
                     {areas.length > 0 && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {areas.slice(0, 3).map((a: string, i: number) => <span key={i} style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, fontWeight: 600, background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.15)', color: '#5120c8' }}>{a}</span>)}
-                        {areas.length > 3 && <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, background: isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8', border: `1px solid ${border}`, color: subtext }}>+{areas.length - 3}</span>}
+                        {areas.length > 3 && <span style={{ padding: '2px 8px', borderRadius: 6, fontSize: 10, background: 'var(--surface)', border: `1px solid ${border}`, color: subtext }}>+{areas.length - 3}</span>}
                       </div>
                     )}
                     <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 8 }}>
@@ -280,7 +277,7 @@ export default function CoachingPage() {
                   { v: detailConsultant.profile?.sessionDuration || 60, s: isAr ? 'دقيقة' : 'min' },
                   { v: detailConsultant._count?.consultantSessions || 0, s: isAr ? 'جلسة' : 'sessions' },
                 ].map((s, i) => (
-                  <div key={i} style={{ padding: '10px', borderRadius: 10, textAlign: 'center', border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa' }}>
+                  <div key={i} style={{ padding: '10px', borderRadius: 10, textAlign: 'center', border: `1px solid ${border}`, background: 'var(--surface)' }}>
                     <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 900 }}>{s.v}</div>
                     <div style={{ color: subtext, fontSize: 10, marginTop: 1 }}>{s.s}</div>
                   </div>
@@ -302,7 +299,7 @@ export default function CoachingPage() {
                 </div>
               )}
               {detailConsultant.profile?.linkedinUrl && (
-                <a href={detailConsultant.profile.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 9, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', textDecoration: 'none', color: text, fontSize: 12, fontWeight: 600 }}>
+                <a href={detailConsultant.profile.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--surface)', textDecoration: 'none', color: text, fontSize: 12, fontWeight: 600 }}>
                   <Linkedin size={14} color="#0077b5" />{isAr ? 'عرض LinkedIn' : 'View LinkedIn'}
                   <ChevronRight size={12} color={subtext} style={{ marginRight: isAr ? 'auto' : 0, marginLeft: isAr ? 0 : 'auto', transform: isAr ? 'rotate(180deg)' : 'none' }} />
                 </a>
@@ -386,7 +383,7 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
         <div style={{ padding: '14px 22px', borderBottom: `1px solid ${border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
           {[{n:1,ar:'تفاصيل الجلسة',en:'Session Details'},{n:2,ar:'نوع الاجتماع',en:'Meeting Type'},{n:3,ar:'تأكيد',en:'Confirm'}].map((s,i) => (
             <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'auto', gap: 5 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: step >= s.n ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), border: `2px solid ${step >= s.n ? '#5120c8' : border}` }}>
+              <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: step >= s.n ? '#5120c8' : ('var(--surface)'), border: `2px solid ${step >= s.n ? '#5120c8' : border}` }}>
                 {step > s.n ? <CheckCircle2 size={12} color="#fff" /> : <span style={{ color: step === s.n ? '#fff' : subtext, fontSize: 10, fontWeight: 800 }}>{s.n}</span>}
               </div>
               <span style={{ color: step === s.n ? text : subtext, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap' }}>{isAr ? s.ar : s.en}</span>
@@ -405,18 +402,18 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
                 <div key={f.key}>
                   <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{f.label} {f.required && '*'}</label>
                   <input type="text" placeholder={f.placeholder} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${(form as any)[f.key] ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${(form as any)[f.key] ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               ))}
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{isAr ? 'وصف إضافي (اختياري)' : 'Additional Details (optional)'}</label>
                 <textarea rows={2} placeholder={isAr ? 'أضف أي تفاصيل...' : 'Add any details...'} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{isAr ? 'التاريخ' : 'Date'} *</label>
                 <input type="date" min={today} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value, time: '' }))}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${form.date ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }} />
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${form.date ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }} />
               </div>
               {form.date && (
                 <div>
@@ -427,16 +424,16 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
                     </p>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, locale)}</button>)}
+                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : ('var(--surface)'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, locale)}</button>)}
                     </div>
                   )}
                 </div>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 9, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--surface)' }}>
                 <Clock size={12} color={subtext} />
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? `مدة الجلسة: ${consultant.profile?.sessionDuration || 60} دقيقة` : `Duration: ${consultant.profile?.sessionDuration || 60} min`}</span>
               </div>
-              <button disabled={!step1Ok} onClick={() => setStep(2)} style={{ width: '100%', padding: '12px', borderRadius: 11, background: step1Ok ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), color: step1Ok ? '#ffffff' : subtext, border: 'none', cursor: step1Ok ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700 }}>
+              <button disabled={!step1Ok} onClick={() => setStep(2)} style={{ width: '100%', padding: '12px', borderRadius: 11, background: step1Ok ? '#5120c8' : ('var(--surface)'), color: step1Ok ? '#ffffff' : subtext, border: 'none', cursor: step1Ok ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700 }}>
                 {isAr ? 'التالي ' : 'Next '}
               </button>
             </div>
@@ -469,7 +466,7 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
 
           {step === 3 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ padding: '14px', borderRadius: 12, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ padding: '14px', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {consultant.profile?.avatar ? <img src={consultant.profile.avatar} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} alt="" /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>{consultant.profile?.firstName?.[0]}</div>}
                   <div><div style={{ color: text, fontSize: 13, fontWeight: 700 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</div><div style={{ color: '#5120c8', fontSize: 11 }}>{consultant.profile?.speciality}</div></div>
