@@ -108,6 +108,8 @@ export class ConsultingService {
     })
     if (!consultant) throw new NotFoundException('Consultant not found')
 
+    const sessionPrice = parseFloat((consultant.profile?.sessionPrice as any)?.toString() || '0')
+
     const session = await this.prisma.consultingSession.create({
       data: {
         studentId: userId,
@@ -118,6 +120,7 @@ export class ConsultingService {
         scheduledAt,
         meetingType: data.meetingType,
         duration: data.duration || (consultant.profile?.sessionDuration as number) || 60,
+        price: sessionPrice,
         status: 'PENDING',
         paymentStatus: 'UNPAID',
         userApproved: true,
@@ -312,11 +315,10 @@ export class ConsultingService {
     })
 
     if (price > 0) {
-      try {
-        await this.prisma.$executeRawUnsafe(
-          `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${price} WHERE "id" = '${session.consultantId}'`
-        )
-      } catch(e) {}
+      await this.prisma.user.update({
+        where: { id: session.consultantId },
+        data: { earningsBalance: { increment: price } }
+      }).catch(() => {})
     }
 
     try {
@@ -543,9 +545,10 @@ export class ConsultingService {
 
     if (price > 0) {
       const consultantId = (session as any).consultant?.id || existingSession.consultantId
-      await this.prisma.$executeRawUnsafe(
-        `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance",0) + ${price} WHERE "id" = '${consultantId}'`
-      ).catch(() => {})
+      await this.prisma.user.update({
+        where: { id: consultantId },
+        data: { earningsBalance: { increment: price } }
+      }).catch(() => {})
     }
 
     const consultantId = (session as any).consultant?.id || existingSession.consultantId

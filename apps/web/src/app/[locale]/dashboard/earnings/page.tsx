@@ -1,38 +1,44 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
-import { DollarSign, ArrowDownLeft, Wallet, Clock, Loader2 } from 'lucide-react'
+import { DollarSign, Clock, Wallet, Loader2, ArrowDownLeft, CheckCircle } from 'lucide-react'
 import { post } from '@/lib/api'
 
 export default function EarningsPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [transferAmount, setTransferAmount] = useState('')
   const [transferring, setTransferring] = useState(false)
   const [msg, setMsg] = useState<{type:'success'|'error', text:string} | null>(null)
-  const [earnings, setEarnings] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+
+  const fetchEarnings = async () => {
+    try {
+      const token = localStorage.getItem('deveway_token') || localStorage.getItem('token') || ''
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/wallet/coach-earnings`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const res = await r.json()
+      setData(res?.data || res)
+    } catch(e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || ''
-    const token = localStorage.getItem('deveway_token') ||
-      localStorage.getItem('token') || ''
-
-    fetch(`${apiBase}/wallet/coach-earnings`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => { setEarnings(d?.data); setLoading(false) })
-      .catch(() => setLoading(false))
+    setMounted(true)
+    fetchEarnings()
   }, [])
 
   const handleTransfer = async () => {
     const amount = parseFloat(transferAmount)
     if (!amount || amount <= 0) return
-    if (amount > (earnings?.totalEarnings || 0)) {
+    const maxTransfer = data?.availableBalance || data?.totalEarnings || 0
+    if (amount > maxTransfer) {
       setMsg({ type: 'error', text: isAr ? 'المبلغ أكبر من أرباحك المتاحة' : 'Amount exceeds available earnings' })
       return
     }
@@ -41,13 +47,7 @@ export default function EarningsPage() {
       await post('/wallet/transfer-from-earnings', { amount })
       setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${amount} ${isAr ? 'ر.س إلى محفظتك بنجاح' : 'SAR to your wallet'}` })
       setTransferAmount('')
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || ''
-      const token = localStorage.getItem('deveway_token') || localStorage.getItem('token') || ''
-      const r = await fetch(`${apiBase}/wallet/coach-earnings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const d = await r.json()
-      setEarnings(d?.data)
+      await fetchEarnings()
     } catch(e: any) {
       setMsg({ type: 'error', text: e.response?.data?.message || (isAr ? 'فشل التحويل' : 'Transfer failed') })
     } finally {
@@ -56,164 +56,180 @@ export default function EarningsPage() {
     }
   }
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#121212' : '#fff'
-
-  if (loading) {
+  if (!mounted || loading) {
     return (
-      <div style={{ minHeight: '100vh', background: bg, padding: '32px 24px 120px', direction: 'rtl' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '80px' }}>
-          <Loader2 size={24} style={{ animation: 'spin 1s linear infinite', color: '#6b7280' }} />
-        </div>
+      <div className="p-8 text-center text-gray-400">
+        <Loader2 size={24} className="inline animate-spin mb-2" />
+        <p>{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
       </div>
     )
   }
 
+  const sessions = data?.transactions || []
+
   return (
-    <div style={{ minHeight: '100vh', background: bg, padding: '32px 24px 120px', direction: 'rtl' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        
-        {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 24, fontWeight: 800, margin: 0 }}>
-            {isAr ? 'أرباحي' : 'My Earnings'}
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>
-            {isAr ? 'إجمالي أرباحك من الجلسات الاستشارية' : 'Total earnings from consulting sessions'}
+    <div className="p-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold mb-2">
+        {isAr ? 'أرباحي' : 'My Earnings'}
+      </h1>
+      <p className="text-gray-400 text-sm mb-6">
+        {isAr ? 'إيراداتك من الجلسات الاستشارية المؤكدة' : 'Revenue from confirmed consulting sessions'}
+      </p>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <p className="text-gray-400 text-sm mb-1">
+            {isAr ? 'إجمالي الأرباح' : 'Total Earnings'}
+          </p>
+          <p className="text-3xl font-bold text-purple-400">
+            {(data?.totalEarnings || 0).toFixed(2)}
+            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
           </p>
         </div>
-
-        {/* Stats Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
-          {[
-            { labelAr: 'إجمالي الأرباح', labelEn: 'Total Earnings', value: earnings?.totalEarnings || 0, icon: <DollarSign size={20} color="#16a34a"/>, color: 'rgba(22,163,74,0.1)', border: 'rgba(22,163,74,0.2)' },
-            { labelAr: 'قيد الانتظار', labelEn: 'Pending', value: earnings?.pendingAmount || 0, icon: <Clock size={20} color="#f59e0b"/>, color: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)' },
-            { labelAr: 'رصيد المحفظة', labelEn: 'Wallet', value: earnings?.walletBalance || 0, icon: <Wallet size={20} color="#5120c8"/>, color: 'rgba(81,32,200,0.1)', border: 'rgba(81,32,200,0.2)' },
-          ].map((stat, i) => (
-            <div key={i} style={{
-              background: cardBg,
-              borderRadius: 16, padding: '20px 18px',
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-            }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: stat.color, border: `1px solid ${stat.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                {stat.icon}
-              </div>
-              <div style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 18, fontWeight: 800 }}>
-                {(stat.value as number).toFixed(2)} ر.س
-              </div>
-              <div style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
-                {isAr ? stat.labelAr : stat.labelEn}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Transfer to Wallet */}
-        <div style={{
-          background: cardBg,
-          borderRadius: 20, padding: 24, marginBottom: 24,
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-        }}>
-          <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ArrowDownLeft size={18} color="#5120c8"/>
-            {isAr ? 'تحويل إلى المحفظة' : 'Transfer to Wallet'}
-          </h3>
-          
-          {msg && (
-            <div style={{
-              padding: '12px 16px', borderRadius: 10, marginBottom: 16,
-              background: msg.type === 'success' ? 'rgba(22,163,74,0.1)' : 'rgba(239,68,68,0.1)',
-              border: `1px solid ${msg.type === 'success' ? 'rgba(22,163,74,0.3)' : 'rgba(239,68,68,0.3)'}`,
-              color: msg.type === 'success' ? '#16a34a' : '#ef4444',
-              fontSize: 14, fontWeight: 600,
-            }}>
-              {msg.text}
-            </div>
-          )}
-          
-          <div style={{ display: 'flex', gap: 10 }}>
-            <input
-              type="number"
-              value={transferAmount}
-              onChange={e => setTransferAmount(e.target.value)}
-              placeholder={isAr ? `الحد الأقصى: ${(earnings?.totalEarnings || 0).toFixed(2)} ر.س` : `Max: ${(earnings?.totalEarnings || 0).toFixed(2)} SAR`}
-              style={{
-                flex: 1, padding: '12px 16px', borderRadius: 10,
-                background: isDark ? '#1a1a1a' : '#f8f8fa',
-                color: isDark ? '#fff' : '#0d0d0d',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}`,
-                fontSize: 15, outline: 'none',
-              }}
-            />
-            <button
-              onClick={handleTransfer}
-              disabled={transferring || !transferAmount}
-              style={{
-                padding: '12px 24px', borderRadius: 10,
-                background: transferring || !transferAmount ? '#374151' : 'linear-gradient(135deg, #5120c8, #7c3aed)',
-                color: '#fff', border: 'none', cursor: transferring || !transferAmount ? 'not-allowed' : 'pointer',
-                fontWeight: 700, fontSize: 14,
-                display: 'flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              {transferring ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Wallet size={16} />}
-              {transferring ? (isAr ? 'جاري التحويل...' : 'Transferring...') : (isAr ? 'تحويل' : 'Transfer')}
-            </button>
-          </div>
-          <p style={{ color: '#6b7280', fontSize: 12, marginTop: 10 }}>
-            {isAr ? 'سيتم تحويل المبلغ من أرباحك إلى محفظتك فورا' : 'Amount will be transferred from earnings to your wallet immediately'}
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <p className="text-gray-400 text-sm mb-1">
+            {isAr ? 'الرصيد المتاح للسحب' : 'Available to Transfer'}
+          </p>
+          <p className="text-3xl font-bold text-green-400">
+            {(data?.availableBalance || 0).toFixed(2)}
+            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
           </p>
         </div>
-
-        {/* Sessions List */}
-        <div style={{
-          background: cardBg,
-          borderRadius: 20, padding: 24,
-          border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
-        }}>
-          <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, marginBottom: 20 }}>
-            {isAr ? 'سجل الأرباح' : 'Earnings History'}
-          </h3>
-          {(!earnings?.transactions || earnings.transactions.length === 0) ? (
-            <div style={{ textAlign: 'center', padding: '32px', color: '#6b7280' }}>
-              <DollarSign size={40} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-              <p>{isAr ? 'لا توجد أرباح بعد' : 'No earnings yet'}</p>
-            </div>
-          ) : (
-            earnings.transactions.map((tx: any, i: number) => (
-              <div key={tx.id || i} style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '14px 0',
-                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'}`,
-              }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                  background: 'linear-gradient(135deg,#059669,#34d399)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '0.85rem', fontWeight: 700,
-                }}>
-                  {tx.clientAvatar
-                    ? <img src={tx.clientAvatar} alt=""
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}/>
-                    : (tx.clientName?.[0] || 'C')}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ color: isDark ? '#f1f5f9' : '#0d0d0d', fontSize: 14, fontWeight: 600 }}>
-                    {tx.clientName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
-                  </div>
-                  <div style={{ color: '#6b7280', fontSize: 12, marginTop: 2 }}>
-                    {tx.date ? new Date(tx.date).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}
-                  </div>
-                </div>
-                <div style={{ color: '#16a34a', fontWeight: 700, fontSize: 15 }}>
-                  +{(tx.amount || 0).toFixed(2)} ر.س
-                </div>
-              </div>
-            ))
-          )}
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <p className="text-gray-400 text-sm mb-1">
+            {isAr ? 'قيد الانتظار' : 'Pending'}
+          </p>
+          <p className="text-3xl font-bold text-yellow-400">
+            {(data?.pendingAmount || 0).toFixed(2)}
+            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
+          </p>
+        </div>
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
+          <p className="text-gray-400 text-sm mb-1">
+            {isAr ? 'الجلسات المكتملة' : 'Completed Sessions'}
+          </p>
+          <p className="text-3xl font-bold text-blue-400">
+            {sessions.length}
+          </p>
         </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+      {/* Transfer to Wallet */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 mb-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <ArrowDownLeft size={18} className="text-purple-400" />
+          {isAr ? 'تحويل إلى المحفظة' : 'Transfer to Wallet'}
+        </h3>
+
+        {msg && (
+          <div className={`p-3 rounded-lg mb-4 text-sm font-semibold flex items-center gap-2 ${
+            msg.type === 'success'
+              ? 'bg-green-900/30 text-green-400 border border-green-800'
+              : 'bg-red-900/30 text-red-400 border border-red-800'
+          }`}>
+            {msg.type === 'success' ? <CheckCircle size={16} /> : null}
+            {msg.text}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <input
+            type="number"
+            value={transferAmount}
+            onChange={e => setTransferAmount(e.target.value)}
+            placeholder={isAr
+              ? `الحد الأقصى: ${(data?.availableBalance || 0).toFixed(2)} ر.س`
+              : `Max: ${(data?.availableBalance || 0).toFixed(2)} SAR`}
+            className="flex-1 px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 text-sm outline-none focus:border-purple-500 transition-colors"
+          />
+          <button
+            onClick={handleTransfer}
+            disabled={transferring || !transferAmount}
+            className="px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 hover:bg-purple-500 text-white"
+          >
+            {transferring ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Wallet size={16} />
+            )}
+            {transferring
+              ? (isAr ? 'جاري التحويل...' : 'Transferring...')
+              : (isAr ? 'تحويل' : 'Transfer')}
+          </button>
+        </div>
+        <p className="text-gray-500 text-xs mt-3">
+          {isAr ? 'سيتم تحويل المبلغ من أرباحك إلى محفظتك فورا' : 'Amount will be transferred from earnings to your wallet immediately'}
+        </p>
+      </div>
+
+      {/* Sessions Table */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
+        <div className="p-4 border-b border-gray-800">
+          <h2 className="font-semibold flex items-center gap-2">
+            <DollarSign size={18} className="text-purple-400" />
+            {isAr ? 'سجل الجلسات' : 'Sessions History'}
+          </h2>
+        </div>
+        {sessions.length === 0 ? (
+          <div className="p-12 text-center text-gray-500">
+            <DollarSign size={40} className="mx-auto mb-3 opacity-30" />
+            <p>{isAr ? 'لا توجد جلسات مكتملة بعد' : 'No completed sessions yet'}</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-800 text-gray-400 text-sm">
+                  <th className="p-4 text-right">{isAr ? 'العميل' : 'Client'}</th>
+                  <th className="p-4 text-right">{isAr ? 'الجلسة' : 'Session'}</th>
+                  <th className="p-4 text-center">{isAr ? 'التاريخ' : 'Date'}</th>
+                  <th className="p-4 text-center">{isAr ? 'المبلغ' : 'Amount'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((session: any) => (
+                  <tr key={session.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-purple-900 flex items-center justify-center text-purple-300 font-bold text-sm flex-shrink-0">
+                          {session.clientName?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                        <span className="text-sm font-medium">{session.clientName || (isAr ? 'عميل' : 'Client')}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-300">{session.sessionName || '—'}</td>
+                    <td className="p-4 text-center text-sm text-gray-400 max-w-[120px]">
+                      {session.date
+                        ? new Date(session.date).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                          })
+                        : '—'}
+                    </td>
+                    <td className="p-4 text-center">
+                      <span className={`font-bold ${session.amount > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                        {session.amount > 0
+                          ? `${session.amount.toFixed(2)} ${isAr ? 'ر.س' : 'SAR'}`
+                          : (isAr ? 'مجاني' : 'Free')}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-800/50">
+                  <td className="p-4 font-bold" colSpan={3}>
+                    {isAr ? 'الإجمالي' : 'Total'}
+                  </td>
+                  <td className="p-4 text-center text-purple-400 font-bold text-lg">
+                    {(data?.totalEarnings || 0).toFixed(2)} {isAr ? 'ر.س' : 'SAR'}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

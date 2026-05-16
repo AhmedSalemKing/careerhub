@@ -272,56 +272,55 @@ export class WalletService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { earningsBalance: true, walletBalance: true },
-    }).catch(() => null)
+    })
 
-    const sessions = await this.prisma.consultingSession.findMany({
-      where: { consultantId: userId },
+    const paidSessions = await this.prisma.consultingSession.findMany({
+      where: {
+        consultantId: userId,
+        paymentStatus: 'PAID',
+        status: { not: 'CANCELLED' },
+      },
       include: {
         user: {
           select: {
-            profile: { select: { firstName: true, lastName: true, avatar: true } },
-          },
-        },
-        consultant: {
-          select: {
-            profile: { select: { sessionPrice: true } },
+            email: true,
+            profile: { select: { firstName: true, lastName: true } },
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
-    }).catch(() => [])
+      orderBy: { paidAt: 'desc' },
+    })
 
-    const transactions = sessions
-      .filter((s: any) => s.paymentStatus === 'PAID' && s.status !== 'CANCELLED')
-      .map((s: any) => ({
-        id: s.id,
-        clientName: s.user?.profile
-          ? `${s.user.profile.firstName || ''} ${s.user.profile.lastName || ''}`.trim() || 'طالب'
-          : 'طالب',
-        clientAvatar: s.user?.profile?.avatar || null,
-        amount: parseFloat(s.consultant?.profile?.sessionPrice?.toString() || '0'),
-        date: s.completedAt || s.paidAt || s.createdAt,
-        status: s.status,
-      }))
-
-    const totalEarnings = user?.earningsBalance || 0
-
-    const pendingSessions = sessions.filter(
-      (s: any) => s.status === 'CONFIRMED' && s.paymentStatus !== 'PAID'
+    const totalEarnings = paidSessions.reduce(
+      (sum, s) => sum + (s.price || 0), 0
     )
-    const pendingAmount = pendingSessions.reduce(
-      (sum: number, s: any) =>
-        sum + parseFloat(s.consultant?.profile?.sessionPrice?.toString() || '0'),
-      0
-    )
+
+    const pendingAgg = await this.prisma.consultingSession.aggregate({
+      where: {
+        consultantId: userId,
+        status: 'CONFIRMED',
+        paymentStatus: { not: 'PAID' },
+      },
+      _sum: { price: true },
+    })
 
     return {
       success: true,
       data: {
         totalEarnings,
-        pendingAmount,
+        pendingAmount: pendingAgg._sum.price || 0,
+        availableBalance: user?.earningsBalance || 0,
         walletBalance: user?.walletBalance || 0,
-        transactions,
+        transactions: paidSessions.map(s => ({
+          id: s.id,
+          sessionName: s.sessionName,
+          clientName: s.user?.profile
+            ? `${s.user.profile.firstName || ''} ${s.user.profile.lastName || ''}`.trim()
+            : s.user?.email || 'Student',
+          amount: s.price || 0,
+          date: s.completedAt || s.paidAt || s.updatedAt,
+          status: s.status,
+        })),
       },
     }
   }

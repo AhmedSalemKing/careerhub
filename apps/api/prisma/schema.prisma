@@ -1037,6 +1037,7 @@ model ConsultingSession {
   meetingType         String    @default("zoom")
   meetingLink         String?
   meetingLinkExpiresAt DateTime?
+  price               Float     @default(0)
   paymentStatus       String    @default("UNPAID")
   paidAt              DateTime?
   proposedAt          DateTime?
