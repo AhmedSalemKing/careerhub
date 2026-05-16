@@ -1120,7 +1120,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 								className="px-3 py-1 rounded-lg text-xs font-bold"
 								style={{
 									background: `linear-gradient(135deg, ${purple}, ${purpleColor})`,
-									color: "white",
+									color: '#ffffff',
 								}}>
 								{progress}%
 							</div>
@@ -1395,48 +1395,48 @@ import VideoProtection from "../../../../components/VideoProtection";
 										{!!videoUrl && (
 											<button
 												onClick={() => setActiveTab('video')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													background: activeTab === 'video' ? '#5120c8' : 'transparent',
-													color: activeTab === 'video' ? 'white' : '#9ca3af',
-													border: `1px solid ${activeTab === 'video' ? '#5120c8' : '#374151'}`,
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.15s', fontFamily: 'inherit',
-												}}>
-												<Video size={14} />
-												{isAr ? 'الفيديو' : 'Video'}
+														style={{
+															display: 'flex', alignItems: 'center', gap: '6px',
+															padding: '8px 16px', borderRadius: '8px',
+															background: activeTab === 'video' ? '#5120c8' : 'transparent',
+															color: activeTab === 'video' ? '#ffffff' : '#9ca3af',
+															border: `1px solid ${activeTab === 'video' ? '#5120c8' : '#374151'}`,
+															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+															transition: 'all 0.15s', fontFamily: 'inherit',
+														}}>
+														<Video size={14} color={activeTab === 'video' ? '#ffffff' : '#9ca3af'} />
+														{isAr ? 'الفيديو' : 'Video'}
 											</button>
 										)}
 										{!!fileUrl && (
 											<button
 												onClick={() => setActiveTab('file')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													background: activeTab === 'file' ? '#5120c8' : 'transparent',
-													color: activeTab === 'file' ? 'white' : '#9ca3af',
-													border: `1px solid ${activeTab === 'file' ? '#5120c8' : '#374151'}`,
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.15s', fontFamily: 'inherit',
-												}}>
-												<FileText size={14} />
-												{isAr ? 'ملف PDF' : 'PDF File'}
+														style={{
+															display: 'flex', alignItems: 'center', gap: '6px',
+															padding: '8px 16px', borderRadius: '8px',
+															background: activeTab === 'file' ? '#5120c8' : 'transparent',
+															color: activeTab === 'file' ? '#ffffff' : '#9ca3af',
+															border: `1px solid ${activeTab === 'file' ? '#5120c8' : '#374151'}`,
+															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+															transition: 'all 0.15s', fontFamily: 'inherit',
+														}}>
+														<FileText size={14} color={activeTab === 'file' ? '#ffffff' : '#9ca3af'} />
+														{isAr ? 'ملف PDF' : 'PDF File'}
 											</button>
 										)}
 										{!!activeLesson?.imageUrl && (
 											<button
 												onClick={() => setActiveTab('image')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													background: activeTab === 'image' ? '#5120c8' : 'transparent',
-													color: activeTab === 'image' ? 'white' : '#9ca3af',
-													border: `1px solid ${activeTab === 'image' ? '#5120c8' : '#374151'}`,
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.15s', fontFamily: 'inherit',
-												}}>
-												<Image size={14} />
+														style={{
+															display: 'flex', alignItems: 'center', gap: '6px',
+															padding: '8px 16px', borderRadius: '8px',
+															background: activeTab === 'image' ? '#5120c8' : 'transparent',
+															color: activeTab === 'image' ? '#ffffff' : '#9ca3af',
+															border: `1px solid ${activeTab === 'image' ? '#5120c8' : '#374151'}`,
+															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+															transition: 'all 0.15s', fontFamily: 'inherit',
+														}}>
+														<Image size={14} color={activeTab === 'image' ? '#ffffff' : '#9ca3af'} />
 												{isAr ? 'الصورة' : 'Image'}
 											</button>
 										)}
