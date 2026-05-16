@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { get, patch } from '@/lib/api'
+import { get, patch, post } from '@/lib/api'
 import {
   Calendar, Clock, Video, CheckCircle2, XCircle,
   ExternalLink, RefreshCw, Link2, X, Copy, Check,
@@ -31,6 +31,7 @@ export default function ClientSessionsPage() {
   const qc = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<'upcoming'|'completed'|'cancelled'>('upcoming')
+  const [loadingId, setLoadingId] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean; title: string; message: string;
     onConfirm: () => void; destructive?: boolean;
@@ -103,6 +104,32 @@ export default function ClientSessionsPage() {
       qc.invalidateQueries({ queryKey: ['client-sessions'] })
     }
   })
+
+  const handleApprove = async (sessionId: string) => {
+    try {
+      setLoadingId(sessionId)
+      await patch(`/consulting/sessions/${sessionId}/confirm`, {})
+      toast.success(isAr ? 'تمت الموافقة على الجلسة' : 'Session approved')
+      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+    } catch {
+      toast.error(isAr ? 'حدث خطأ' : 'Error')
+    } finally {
+      setLoadingId(null)
+    }
+  }
+
+  const handleReject = async (sessionId: string) => {
+    try {
+      setLoadingId(sessionId)
+      await patch(`/consulting/sessions/${sessionId}/cancel`, {})
+      toast.success(isAr ? 'تم رفض الجلسة' : 'Session rejected')
+      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+    } catch {
+      toast.error(isAr ? 'حدث خطأ' : 'Error')
+    } finally {
+      setLoadingId(null)
+    }
+  }
 
   const isSoon = (d: string) => {
     const diff = new Date(d).getTime() - Date.now()
@@ -288,6 +315,17 @@ export default function ClientSessionsPage() {
                     )}
 
                     <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                      {session.status === 'PENDING' && !isPaid && (
+                        <>
+                          <button onClick={() => handleApprove(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: loadingId === session.id ? '#9333ea' : '#16a34a', color: '#ffffff', border: 'none', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
+                            <CheckCircle2 size={12} />{isAr ? 'الموافقة على الجلسة' : 'Approve Session'}
+                          </button>
+                          <button onClick={() => handleReject(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'transparent', color: '#dc2626', border: '1.5px solid #dc2626', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
+                            <X size={12} />{isAr ? 'رفض' : 'Reject'}
+                          </button>
+                        </>
+                      )}
+
                       {session.meetingLink && !linkExpired && isUpcoming && (
                         <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}>
                           <Video size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}

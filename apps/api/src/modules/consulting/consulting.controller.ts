@@ -88,8 +88,14 @@ export class ConsultingController {
   async confirmPayment(
     @Param('id') id: string,
     @Request() req: any,
-    @Body() body: { paymentIntentId: string }
+    @Body() body: { paymentIntentId?: string }
   ) {
     return this.consultingService.confirmPayment(id, req.user.id, body.paymentIntentId)
+  }
+
+  @Patch('sessions/:id/confirm')
+  @UseGuards(JwtAuthGuard)
+  async confirmSession(@Param('id') id: string, @Request() req: any) {
+    return this.consultingService.confirmSessionByConsultant(id, req.user.id)
   }
 }

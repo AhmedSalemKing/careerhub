@@ -329,11 +329,11 @@ export default function MySessionsPage() {
               <button
                 onClick={async () => {
                   try {
-                    await post(`/consulting/sessions/${session.id}/create-payment-intent`, {})
+                    await post(`/consulting/sessions/${session.id}/confirm-payment`, { paymentIntentId: 'free' })
                     toast.success(isAr ? 'تم تأكيد الجلسة المجانية!' : 'Free session confirmed!')
                     qc.invalidateQueries({ queryKey: ['my-sessions'] })
                   } catch(e) {
-                    toast.error(isAr ? 'حدث خطأ' : 'Error occurred')
+                    toast.error(isAr ? 'حدث خطأ حاول مرة أخرى' : 'Error, please try again')
                   }
                 }}
                 style={{

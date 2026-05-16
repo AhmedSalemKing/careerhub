@@ -426,8 +426,6 @@ export class ConsultingService {
   }
 
   async createPaymentIntent(sessionId: string, userId: string) {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-
     const session = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
       include: { consultant: { include: { profile: true } } }
@@ -437,7 +435,7 @@ export class ConsultingService {
 
     const price = parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
 
-    // Free session - mark as paid directly
+    // Free session - mark as paid directly (no Stripe needed)
     if (price === 0) {
       await this.prisma.consultingSession.update({
         where: { id: sessionId },
@@ -455,6 +453,8 @@ export class ConsultingService {
       }).catch(() => {})
       return { success: true, free: true }
     }
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
     // Create Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -479,14 +479,7 @@ export class ConsultingService {
     }
   }
 
-  async confirmPayment(sessionId: string, userId: string, paymentIntentId: string) {
-    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-    if (paymentIntent.status !== 'succeeded') {
-      throw new BadRequestException('Payment not completed')
-    }
-
+  async confirmPayment(sessionId: string, userId: string, paymentIntentId?: string) {
     const existingSession = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
       include: { consultant: { include: { profile: true } } }
@@ -495,6 +488,34 @@ export class ConsultingService {
     if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
 
     const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+
+    // Free session - confirm directly without Stripe
+    if (price === 0 || paymentIntentId === 'free') {
+      await this.prisma.consultingSession.update({
+        where: { id: sessionId },
+        data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
+      })
+      try {
+        await this.prisma.notification.create({
+          data: {
+            userId: existingSession.consultantId,
+            titleEn: 'Free Session Confirmed',
+            titleAr: 'تم تأكيد الجلسة المجانية',
+            contentEn: `The free session "${existingSession.sessionName || existingSession.topic}" has been confirmed`,
+            contentAr: `تم تأكيد الجلسة المجانية "${existingSession.sessionName || existingSession.topic}"`,
+            type: 'PAYMENT_CONFIRMED', isRead: false,
+          }
+        })
+      } catch(e) {}
+      return { success: true, data: existingSession }
+    }
+
+    const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId!)
+    if (paymentIntent.status !== 'succeeded') {
+      throw new BadRequestException('Payment not completed')
+    }
 
     await this.prisma.payment.create({
       data: {
@@ -540,5 +561,32 @@ export class ConsultingService {
     }).catch(() => {})
 
     return { success: true, data: session }
+  }
+
+  async confirmSessionByConsultant(sessionId: string, consultantId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, consultantId },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: { status: 'CONFIRMED', consultantApproved: true }
+    })
+
+    try {
+      await this.prisma.notification.create({
+        data: {
+          userId: session.studentId,
+          titleEn: 'Session Approved by Consultant',
+          titleAr: 'تمت الموافقة على الجلسة من قبل المستشار',
+          contentEn: `Your session "${session.sessionName || session.topic}" has been approved by the consultant`,
+          contentAr: `تمت الموافقة على جلستك "${session.sessionName || session.topic}" من قبل المستشار`,
+          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
+        }
+      })
+    } catch(e) {}
+
+    return { success: true, data: updated }
   }
 }
