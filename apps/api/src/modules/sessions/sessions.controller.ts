@@ -561,24 +561,27 @@ export class SessionsController {
       }).catch(() => {})
     }
     
+    // Free sessions: auto-confirm; paid sessions: only mark paid, consultant confirms separately
+    const isFree = !price || price <= 0
     await this.prisma.consultingSession.update({
       where: { id },
-      data: { status: 'CONFIRMED', paymentStatus: 'PAID' }
+      data: isFree
+        ? { status: 'CONFIRMED', paymentStatus: 'PAID' }
+        : { paymentStatus: 'PAID' }
     })
     
     // Notify student
-    const isFree = !price || price <= 0
     await this.prisma.notification.create({
       data: {
         userId,
-        titleEn: isFree ? 'Free Session Confirmed' : 'Session Confirmed',
-        titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم تأكيد الجلسة',
+        titleEn: isFree ? 'Free Session Confirmed' : 'Payment Successful',
+        titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم الدفع بنجاح',
         contentEn: isFree
           ? `Your free session has been confirmed`
-          : `Your session has been confirmed for ${price} SAR`,
+          : `Payment of ${price} SAR completed. Waiting for consultant to confirm.`,
         contentAr: isFree
           ? `تم تأكيد جلستك المجانية`
-          : `تم تأكيد جلستك بمبلغ ${price} ر.س`,
+          : `تم دفع ${price} ر.س. في انتظار تأكيد المستشار.`,
         type: 'SUCCESS' as any, isRead: false,
       }
     }).catch(() => {})
@@ -586,11 +589,22 @@ export class SessionsController {
     // Notify consultant
     if (session.consultantId) {
       await this.prisma.notification.create({
-        data: { userId: session.consultantId, titleEn: 'تم تأكيد جلستك', titleAr: 'تم تأكيد جلستك', contentEn: 'قام المستخدم بتأكيد الجلسة', contentAr: 'قام المستخدم بتأكيد الجلسة', type: 'INFO' as any, isRead: false }
+        data: {
+          userId: session.consultantId,
+          titleEn: isFree ? 'Free Session Booked' : 'Payment Received',
+          titleAr: isFree ? 'تم حجز جلسة مجانية' : 'تم استلام الدفع',
+          contentEn: isFree
+            ? `A free session has been booked. Please confirm.`
+            : `Payment of ${price} SAR received for the session. Please confirm.`,
+          contentAr: isFree
+            ? `تم حجز جلسة مجانية. يرجى التأكيد.`
+            : `تم استلام دفع ${price} ر.س للجلسة. يرجى تأكيد الموعد.`,
+          type: 'INFO' as any, isRead: false,
+        }
       }).catch(() => {})
     }
     
-    return { success: true, message: 'Session confirmed' }
+    return { success: true, message: isFree ? 'Session confirmed' : 'Payment completed' }
   }
 
   @Patch(':id/complete')

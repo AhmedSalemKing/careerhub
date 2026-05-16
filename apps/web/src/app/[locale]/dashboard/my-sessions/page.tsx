@@ -318,14 +318,14 @@ export default function MySessionsPage() {
               </a>
             )}
 
-            {!isPaid && isUpcoming && !isRescheduleReq && parseFloat(session.consultant?.profile?.sessionPrice || '0') > 0 && (
+            {(session.price || 0) > 0 && !isPaid && isUpcoming && !isRescheduleReq && (
               <button onClick={() => paySession(session.id)}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-                <CreditCard size={12} />{isAr ? 'ادفع الآن' : 'Pay Now'}
+                <CreditCard size={12} />{isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`}
               </button>
             )}
 
-            {viewType === 'my' && !isPaid && isUpcoming && parseFloat(session.consultant?.profile?.sessionPrice || '0') === 0 && (
+            {viewType === 'my' && !isPaid && isUpcoming && !(session.price || 0) && (
               <button
                 onClick={async () => {
                   try {
