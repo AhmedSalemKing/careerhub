@@ -1,46 +1,59 @@
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import localizedFormat from 'dayjs/plugin/localizedFormat'
-import utc from 'dayjs/plugin/utc'
-import timezone from 'dayjs/plugin/timezone'
-import 'dayjs/locale/ar'
-
-dayjs.extend(relativeTime)
-dayjs.extend(localizedFormat)
-dayjs.extend(utc)
-dayjs.extend(timezone)
+export function localDateTimeToISO(date: string, time: string): string {
+  const localStr = `${date}T${time}:00`
+  return new Date(localStr).toISOString()
+}
 
 export function formatDate(date: string | Date, locale = 'en'): string {
-  const d = dayjs(date)
-  if (locale === 'ar') {
-    return d.locale('ar').format('D MMMM YYYY  hh:mm A')
-  }
-  return d.format('MMMM D, YYYY  hh:mm A')
+  const d = new Date(date)
+  const loc = locale === 'ar' ? 'ar-EG' : 'en-US'
+  return d.toLocaleDateString(loc, {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  })
+}
+
+export function formatTimeOnly(date: string | Date, locale = 'en'): string {
+  return new Date(date).toLocaleTimeString(
+    locale === 'ar' ? 'ar-EG' : 'en-US',
+    { hour: 'numeric', minute: '2-digit', hour12: true }
+  )
 }
 
 export function formatDateOnly(date: string | Date, locale = 'en'): string {
-  const d = dayjs(date)
-  if (locale === 'ar') {
-    return d.locale('ar').format('D MMMM YYYY')
-  }
-  return d.format('MMMM D, YYYY')
-}
-
-export function formatTimeOnly(date: string | Date): string {
-  return dayjs(date).format('hh:mm A')
+  return new Date(date).toLocaleDateString(
+    locale === 'ar' ? 'ar-EG' : 'en-US',
+    { year: 'numeric', month: 'long', day: 'numeric' }
+  )
 }
 
 export function formatRelative(date: string | Date, locale = 'en'): string {
-  return dayjs(date).locale(locale === 'ar' ? 'ar' : 'en').fromNow()
+  const d = new Date(date)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+  if (locale === 'ar') {
+    if (diffMins < 1) return 'الآن'
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`
+    if (diffDays < 7) return `منذ ${diffDays} يوم`
+    return formatDateOnly(d, 'ar')
+  }
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffDays < 7) return `${diffDays}d ago`
+  return formatDateOnly(d, 'en')
 }
 
 export function formatCertDate(date: string | Date, locale = 'en'): string {
-  if (locale === 'ar') {
-    return 'صدرت في ' + dayjs(date).locale('ar').format('D MMMM YYYY')
-  }
-  return 'Issued on ' + dayjs(date).format('MMMM D, YYYY')
+  const formatted = formatDateOnly(date, locale)
+  return locale === 'ar' ? `صدرت في ${formatted}` : `Issued on ${formatted}`
 }
 
 export function getNow(): string {
-  return dayjs().format('hh:mm:ss A')
+  return new Date().toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+  })
 }
