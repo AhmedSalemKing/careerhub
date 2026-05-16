@@ -21,7 +21,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   async headers() {
     return [
       {
