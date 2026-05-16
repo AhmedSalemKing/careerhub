@@ -1,6 +1,7 @@
 export function localDateTimeToISO(date: string, time: string): string {
-  const localStr = `${date}T${time}:00`
-  return new Date(localStr).toISOString()
+  const [year, month, day] = date.split('-').map(Number)
+  const [hours, minutes] = time.split(':').map(Number)
+  return new Date(year, month - 1, day, hours, minutes, 0).toISOString()
 }
 
 export function formatDate(date: string | Date, locale = 'en'): string {
