@@ -103,6 +103,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 		visible: boolean;
 	}>({ side: "forward", visible: false });
 	const speeds = [0.75, 1, 1.25, 1.5, 2];
+	const [activeTab, setActiveTab] = useState<'video' | 'file' | 'image'>('video');
 
 	// Theme detection
 	useEffect(() => {
@@ -399,6 +400,14 @@ import VideoProtection from "../../../../components/VideoProtection";
 	useEffect(() => {
 		setIsLoadingMedia(true);
 		setVideoError(null);
+	}, [activeLessonId]);
+
+	// Reset active tab when lesson changes
+	useEffect(() => {
+		if (!activeLesson) return;
+		if (activeLesson.videoUrl) setActiveTab('video');
+		else if (activeLesson.fileUrl) setActiveTab('file');
+		else if (activeLesson.imageUrl) setActiveTab('image');
 	}, [activeLessonId]);
 
 	// Apply playback speed to video element
@@ -1375,21 +1384,68 @@ import VideoProtection from "../../../../components/VideoProtection";
 								className="w-full relative"
 								style={{ background: "transparent" }}>
 
-								{/* VIDEO SECTION */}
-								{hasVideo && videoUrl && (
+								{/* TAB BUTTONS */}
+								{(hasVideo || hasFile || hasImage) && (
+									<div style={{
+										display: 'flex', gap: '8px', flexWrap: 'wrap',
+										padding: '16px 16px 12px',
+										borderBottom: `1px solid ${borderColor}`,
+									}}>
+										{hasVideo && videoUrl && (
+											<button
+												onClick={() => setActiveTab('video')}
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													background: activeTab === 'video' ? '#5120c8' : 'transparent',
+													color: activeTab === 'video' ? 'white' : '#9ca3af',
+													border: `1px solid ${activeTab === 'video' ? '#5120c8' : '#374151'}`,
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.15s', fontFamily: 'inherit',
+												}}>
+												<Video size={14} />
+												{isAr ? 'الفيديو' : 'Video'}
+											</button>
+										)}
+										{hasFile && fileUrl && (
+											<button
+												onClick={() => setActiveTab('file')}
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													background: activeTab === 'file' ? '#5120c8' : 'transparent',
+													color: activeTab === 'file' ? 'white' : '#9ca3af',
+													border: `1px solid ${activeTab === 'file' ? '#5120c8' : '#374151'}`,
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.15s', fontFamily: 'inherit',
+												}}>
+												<FileText size={14} />
+												{isAr ? 'ملف PDF' : 'PDF File'}
+											</button>
+										)}
+										{hasImage && effectiveImageUrl && (
+											<button
+												onClick={() => setActiveTab('image')}
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													background: activeTab === 'image' ? '#5120c8' : 'transparent',
+													color: activeTab === 'image' ? 'white' : '#9ca3af',
+													border: `1px solid ${activeTab === 'image' ? '#5120c8' : '#374151'}`,
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.15s', fontFamily: 'inherit',
+												}}>
+												<Image size={14} />
+												{isAr ? 'الصورة' : 'Image'}
+											</button>
+										)}
+									</div>
+								)}
+
+								{/* VIDEO TAB */}
+								{activeTab === 'video' && hasVideo && videoUrl && (
 									<div style={{ background: isDark ? '#0d0d0d' : '#ffffff' }}>
-										<div style={{
-											padding: '16px 16px 0',
-											display: 'flex', alignItems: 'center', gap: '8px',
-										}}>
-											<Video size={16} color="#a78bfa" />
-											<h3 style={{
-												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
-											}}>
-												{isAr ? 'الفيديو التعليمي' : 'Video Lecture'}
-											</h3>
-										</div>
-										<div className="relative" style={{ margin: '12px 16px 16px' }}>
+										<div className="relative" style={{ margin: '16px' }}>
 											<div
 												className="video-container relative overflow-hidden"
 												style={{
@@ -1537,23 +1593,9 @@ import VideoProtection from "../../../../components/VideoProtection";
 									</div>
 								)}
 
-								{/* PDF SECTION */}
-								{hasFile && fileUrl && (
-									<div style={{
-										padding: '16px',
-										borderTop: hasVideo ? `1px solid ${borderColor}` : 'none',
-									}}>
-										<div style={{
-											display: 'flex', alignItems: 'center', gap: '8px',
-											marginBottom: '12px',
-										}}>
-											<FileText size={16} color="#a78bfa" />
-											<h3 style={{
-												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
-											}}>
-												{isAr ? 'الملفات الدراسية' : 'Study Materials'}
-											</h3>
-										</div>
+								{/* PDF TAB */}
+								{activeTab === 'file' && hasFile && fileUrl && (
+									<div style={{ padding: '16px' }}>
 										<div style={{
 											background: isDark ? '#111827' : '#f8fafc',
 											border: `1px solid ${borderColor}`,
@@ -1566,7 +1608,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													width: '48px', height: '48px', borderRadius: '10px',
 													background: isDark ? '#1e1b4b' : '#ede9fe',
 													display: 'flex', alignItems: 'center',
-													justifyContent: 'center', fontSize: '24px',
+													justifyContent: 'center',
 												}}>
 													<FileText size={22} color="#a78bfa" />
 												</div>
@@ -1599,26 +1641,23 @@ import VideoProtection from "../../../../components/VideoProtection";
 												</a>
 											</div>
 										</div>
+										<div style={{
+											width: '100%', height: '70vh', borderRadius: '8px',
+											overflow: 'hidden', border: `1px solid ${borderColor}`,
+											background: '#fff', marginTop: '12px',
+										}}>
+											<iframe
+												src={`${fileUrl}#toolbar=1&navpanes=1`}
+												style={{ width: '100%', height: '100%', border: 'none' }}
+												title="PDF Viewer"
+											/>
+										</div>
 									</div>
 								)}
 
-								{/* IMAGE SECTION */}
-								{hasImage && effectiveImageUrl && (
-									<div style={{
-										padding: '16px',
-										borderTop: (hasVideo || hasFile) ? `1px solid ${borderColor}` : 'none',
-									}}>
-										<div style={{
-											display: 'flex', alignItems: 'center', gap: '8px',
-											marginBottom: '12px',
-										}}>
-											<Image size={16} color="#a78bfa" />
-											<h3 style={{
-												fontSize: '15px', fontWeight: 600, color: '#a78bfa',
-											}}>
-												{isAr ? 'الصور والمخططات' : 'Images & Diagrams'}
-											</h3>
-										</div>
+								{/* IMAGE TAB */}
+								{activeTab === 'image' && hasImage && effectiveImageUrl && (
+									<div style={{ padding: '16px' }}>
 										<div style={{
 											width: '100%', display: 'flex', alignItems: 'center',
 											justifyContent: 'center', background: isDark ? '#111827' : '#f8fafc',
