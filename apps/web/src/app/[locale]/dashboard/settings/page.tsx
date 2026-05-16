@@ -193,7 +193,7 @@ export default function SettingsPage() {
         linkedinUrl: me.profile?.linkedinUrl || '',
         speciality: me.profile?.speciality || '',
         experience: me.profile?.experience?.toString() || '',
-        hourlyRate: me.profile?.sessionPrice?.toString() || me.hourlyRate?.toString() || '',
+        hourlyRate: me.hourlyRate?.toString() || me.profile?.sessionPrice?.toString() || '',
         meetingMethod: me.profile?.meetingMethod || '',
       })
       if (me.profile?.avatar) {
