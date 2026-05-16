@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
+import { useTheme } from 'next-themes'
 import { get, patch, post } from '../../../../lib/api'
 import { getMediaUrl } from '../../../../lib/media'
 import api from '../../../../lib/api'
@@ -148,6 +149,7 @@ export default function SettingsPage() {
   const isAr = locale === 'ar'
   const queryClient = useQueryClient()
   const authStore = useAuthStore()
+  const { setTheme } = useTheme()
   const [activeTab, setActiveTab] = useState('profile')
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -464,7 +466,7 @@ export default function SettingsPage() {
                 const Icon = opt.icon
                 const active = prefForm.theme === opt.value
                 return (
-                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); if (opt.value === 'dark') { document.documentElement.classList.add('dark'); localStorage.setItem('deveway-theme', 'dark') } else { document.documentElement.classList.remove('dark'); localStorage.setItem('deveway-theme', 'light') } }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: active ? 700 : 500 }}>
+                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); setTheme(opt.value) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: active ? 700 : 500 }}>
                     <Icon size={16} />{opt.label}
                   </button>
                 )

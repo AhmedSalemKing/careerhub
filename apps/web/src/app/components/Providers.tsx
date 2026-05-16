@@ -136,6 +136,7 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
       defaultTheme="dark"
       enableSystem={false}
       disableTransitionOnChange
+      storageKey="deveway-theme"
     >
       <ThemeTransitionHandler>
         <QueryClientProvider client={queryClient}>

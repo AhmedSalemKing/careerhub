@@ -95,31 +95,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             __html: `
               (function() {
                 try {
-                  var theme = localStorage.getItem('theme');
+                  var theme = localStorage.getItem('deveway-theme') || localStorage.getItem('theme');
                   var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                   var isDark = theme === 'dark' || (!theme && prefersDark);
 
                   document.documentElement.classList.toggle('dark', isDark);
                   document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-                  document.documentElement.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
-                  if (document.body) document.body.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
                 } catch(e) {}
-
-                window.addEventListener('load', function() {
-                  requestAnimationFrame(function() {
-                    document.documentElement.classList.remove('no-transition');
-                  });
-                });
               })();
             `,
           }}
         />
         
-        {/* Minimal critical CSS - only prevent flash on html/body */}
         <style dangerouslySetInnerHTML={{
           __html: `
+            html { color-scheme: light; }
             html.dark { color-scheme: dark; }
-            html:not(.dark) { color-scheme: light; }
             html, body { min-height: 100vh; }
             html { background-color: #ffffff; }
             html.dark { background-color: #0d0d0d; }
