@@ -144,4 +144,11 @@ export class UpdateProfileDto {
   @IsString({ message: 'Timezone must be a string' })
   @MaxLength(50, { message: 'Timezone cannot exceed 50 characters' })
   timezone?: string;
+
+  @ApiPropertyOptional({
+    description: 'Session price for consulting sessions',
+    example: 200,
+  })
+  @IsOptional()
+  sessionPrice?: number;
 }

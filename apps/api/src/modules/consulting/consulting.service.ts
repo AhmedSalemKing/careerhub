@@ -307,7 +307,7 @@ export class ConsultingService {
     if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
     if (session.paymentStatus === 'PAID') throw new BadRequestException('Already paid')
 
-    const price = parseFloat((session.consultant?.profile?.sessionPrice as any)?.toString() || '0')
+    const price = session.price || parseFloat((session.consultant?.profile?.sessionPrice as any)?.toString() || '0')
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
@@ -435,7 +435,7 @@ export class ConsultingService {
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = session.price || parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
 
     // Free session - mark as paid directly (no Stripe needed)
     if (price === 0) {
@@ -448,7 +448,7 @@ export class ConsultingService {
           userId: session.consultantId,
           titleEn: 'Free Session Confirmed',
           titleAr: 'تم تأكيد الجلسة المجانية',
-          contentEn: `The free session "${session.sessionName || session.topic}" has been confirmed`,
+          contentEn: `Free session "${session.sessionName || session.topic}" confirmed`,
           contentAr: `تم تأكيد الجلسة المجانية "${session.sessionName || session.topic}"`,
           type: 'PAYMENT_CONFIRMED', isRead: false,
         }
@@ -489,10 +489,11 @@ export class ConsultingService {
     if (!existingSession) throw new NotFoundException('Session not found')
     if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = existingSession.price || parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+    const isFree = price === 0
 
     // Free session - confirm directly without Stripe
-    if (price === 0 || paymentIntentId === 'free') {
+    if (isFree || paymentIntentId === 'free') {
       await this.prisma.consultingSession.update({
         where: { id: sessionId },
         data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
@@ -501,10 +502,14 @@ export class ConsultingService {
         await this.prisma.notification.create({
           data: {
             userId: existingSession.consultantId,
-            titleEn: 'Free Session Confirmed',
-            titleAr: 'تم تأكيد الجلسة المجانية',
-            contentEn: `The free session "${existingSession.sessionName || existingSession.topic}" has been confirmed`,
-            contentAr: `تم تأكيد الجلسة المجانية "${existingSession.sessionName || existingSession.topic}"`,
+            titleEn: isFree ? 'Free Session Confirmed' : 'Session Confirmed',
+            titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم تأكيد الجلسة',
+            contentEn: isFree
+              ? `Free session "${existingSession.sessionName || existingSession.topic}" confirmed`
+              : `Session "${existingSession.sessionName || existingSession.topic}" confirmed for ${price} SAR`,
+            contentAr: isFree
+              ? `تم تأكيد الجلسة المجانية "${existingSession.sessionName || existingSession.topic}"`
+              : `تم تأكيد جلستك "${existingSession.sessionName || existingSession.topic}" بمبلغ ${price} ر.س`,
             type: 'PAYMENT_CONFIRMED', isRead: false,
           }
         })

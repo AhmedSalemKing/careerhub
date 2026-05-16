@@ -173,6 +173,7 @@ export class UsersService {
           linkedinUrl: updateProfileDto.linkedinUrl,
           language: updateProfileDto.language,
           timezone: updateProfileDto.timezone,
+          sessionPrice: updateProfileDto.sessionPrice,
         },
       });
 

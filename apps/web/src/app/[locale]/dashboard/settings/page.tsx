@@ -191,7 +191,7 @@ export default function SettingsPage() {
         linkedinUrl: me.profile?.linkedinUrl || '',
         speciality: me.profile?.speciality || '',
         experience: me.profile?.experience?.toString() || '',
-        hourlyRate: me.profile?.hourlyRate?.toString() || '',
+        hourlyRate: me.profile?.sessionPrice?.toString() || me.hourlyRate?.toString() || '',
         meetingMethod: me.profile?.meetingMethod || '',
       })
       if (me.profile?.avatar) {
@@ -225,7 +225,7 @@ export default function SettingsPage() {
         linkedinUrl: profileForm.linkedinUrl,
         speciality: profileForm.speciality,
         experience: profileForm.experience ? parseInt(profileForm.experience) : undefined,
-        hourlyRate: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
+        sessionPrice: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
         meetingMethod: profileForm.meetingMethod,
       }
       if (avatarUrl !== undefined) body.avatar = avatarUrl
