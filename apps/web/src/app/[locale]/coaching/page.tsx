@@ -189,7 +189,7 @@ export default function CoachingPage() {
               const quals = c.profile?.qualifications || []
               return (
                 <div key={c.id} className="c-card" style={{ animationDelay: `${(idx % 12) * 0.045}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.boxShadow = isDark ? '0 8px 28px rgba(0,0,0,0.4)' : '0 8px 28px rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}>
                   <div style={{ height: 68, background: 'var(--surface)', position: 'relative', flexShrink: 0 }}>
                     <div style={{ position: 'absolute', top: 8, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
@@ -295,7 +295,7 @@ export default function CoachingPage() {
               {detailConsultant.profile?.qualifications?.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
                   <h4 style={{ color: text, fontSize: 12, fontWeight: 800, marginBottom: 8 }}>{isAr ? 'المؤهلات' : 'Qualifications'}</h4>
-                  {detailConsultant.profile.qualifications.map((q: string, i: number) => <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 6 }}><CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 1 }} /><span style={{ color: isDark ? '#e2e8f0' : '#374151', fontSize: 12 }}>{q}</span></div>)}
+                  {detailConsultant.profile.qualifications.map((q: string, i: number) => <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 6 }}><CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 1 }} /><span style={{ color: 'var(--foreground-2)', fontSize: 12 }}>{q}</span></div>)}
                 </div>
               )}
               {detailConsultant.profile?.linkedinUrl && (
@@ -319,7 +319,7 @@ export default function CoachingPage() {
       )}
 
       {bookingConsultant && (
-        <BookingModal consultant={bookingConsultant} isDark={isDark} isAr={isAr} locale={locale} onClose={() => setBookingConsultant(null)} onSuccess={() => { setBookingConsultant(null); router.push(`/${locale}/dashboard/my-sessions`) }} cardBg={cardBg} border={border} text={text} subtext={subtext} />
+        <BookingModal consultant={bookingConsultant} isAr={isAr} locale={locale} onClose={() => setBookingConsultant(null)} onSuccess={() => { setBookingConsultant(null); router.push(`/${locale}/dashboard/my-sessions`) }} cardBg={cardBg} border={border} text={text} subtext={subtext} />
       )}
     </div>
   )
@@ -336,7 +336,7 @@ function formatTimeSlot(time: string, locale: string): string {
   return formatted
 }
 
-function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, cardBg, border, text, subtext }: any) {
+function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, border, text, subtext }: any) {
   const [step, setStep] = useState<1|2|3>(1)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ sessionName: '', topic: '', description: '', date: '', time: '', meetingType: 'zoom' as 'zoom'|'meet' })
@@ -446,7 +446,7 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
                 { type: 'zoom', label: 'Zoom', desc: isAr ? 'اجتماع عبر Zoom  رابط سيُرسل بعد الدفع' : 'Via Zoom  link sent after payment', color: '#2D8CFF' },
                 { type: 'meet', label: 'Google Meet', desc: isAr ? 'اجتماع عبر Google Meet  رابط سيُرسل بعد الدفع' : 'Via Google Meet  link sent after payment', color: '#00897B' },
               ].map(m => (
-                <div key={m.type} onClick={() => setForm(p => ({ ...p, meetingType: m.type as 'zoom'|'meet' }))} style={{ padding: '15px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? (isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.04)') : cardBg, display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.15s' }}>
+                <div key={m.type} onClick={() => setForm(p => ({ ...p, meetingType: m.type as 'zoom'|'meet' }))} style={{ padding: '15px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? 'var(--primary-subtle)' : cardBg, display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.15s' }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Video size={18} color="white" /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ color: text, fontSize: 13, fontWeight: 800 }}>{m.label}</div>
