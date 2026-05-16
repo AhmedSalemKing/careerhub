@@ -93,8 +93,8 @@ export default function CoachingPage() {
 
     switch(sortBy) {
       case 'experience': result.sort((a: any, b: any) => (b.profile?.yearsExperience || 0) - (a.profile?.yearsExperience || 0)); break
-      case 'price-low': result.sort((a: any, b: any) => parseFloat(a.profile?.sessionPrice || '0') - parseFloat(b.profile?.sessionPrice || '0')); break
-      case 'price-high': result.sort((a: any, b: any) => parseFloat(b.profile?.sessionPrice || '0') - parseFloat(a.profile?.sessionPrice || '0')); break
+      case 'price-low': result.sort((a: any, b: any) => (a.hourlyRate || parseFloat(a.profile?.sessionPrice || '0')) - (b.hourlyRate || parseFloat(b.profile?.sessionPrice || '0'))); break
+      case 'price-high': result.sort((a: any, b: any) => (b.hourlyRate || parseFloat(b.profile?.sessionPrice || '0')) - (a.hourlyRate || parseFloat(a.profile?.sessionPrice || '0'))); break
     }
     return result
   }, [raw, activeFilter, search, sortBy])
@@ -183,7 +183,7 @@ export default function CoachingPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
             {consultants.map((c: any, idx: number) => {
-              const price = parseFloat(c.profile?.sessionPrice || '0')
+              const price = c.hourlyRate || parseFloat(c.profile?.sessionPrice || '0')
               const years = c.profile?.yearsExperience || 0
               const areas = c.profile?.consultingAreas || []
               const quals = c.profile?.qualifications || []
@@ -307,7 +307,7 @@ export default function CoachingPage() {
             </div>
             <div style={{ padding: '14px 22px', borderTop: `1px solid ${border}`, display: 'flex', gap: 8, alignItems: 'center', position: 'sticky', bottom: 0, background: cardBg }}>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{parseFloat(detailConsultant.profile?.sessionPrice || '0') > 0 ? `${detailConsultant.profile.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
+                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? `${detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>
               </div>
               <button onClick={() => { setDetailConsultant(null); setBookingConsultant(detailConsultant) }} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -488,7 +488,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 <div style={{ height: 1, background: border }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{isAr ? 'السعر' : 'Price'}</span>
-                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 900 }}>{parseFloat(consultant.profile?.sessionPrice || '0') > 0 ? `${consultant.profile.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</span>
+                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 900 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? `${consultant.hourlyRate || consultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
