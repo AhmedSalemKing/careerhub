@@ -29,13 +29,13 @@ const ICON_MAP: Record<string, React.ElementType> = {
 }
 
 const CATEGORIES = [
-  { key: 'all', labelAr: '????', labelEn: 'All' },
-  { key: 'Technology & Development', labelAr: '???????', labelEn: 'Technology' },
-  { key: 'Cybersecurity', labelAr: '????? ?????????', labelEn: 'Cybersecurity' },
-  { key: 'Design & Creative', labelAr: '???????', labelEn: 'Design' },
-  { key: 'Marketing & Sales', labelAr: '???????', labelEn: 'Marketing' },
-  { key: 'Business & Management', labelAr: '???????', labelEn: 'Business' },
-  { key: 'Hybrid Tech + Business', labelAr: '??????', labelEn: 'Hybrid' },
+  { key: 'all', labelAr: 'الكل', labelEn: 'All' },
+  { key: 'Technology & Development', labelAr: 'التقنية والتطوير', labelEn: 'Technology' },
+  { key: 'Cybersecurity', labelAr: 'الأمن السيبراني', labelEn: 'Cybersecurity' },
+  { key: 'Design & Creative', labelAr: 'التصميم والإبداع', labelEn: 'Design' },
+  { key: 'Marketing & Sales', labelAr: 'التسويق والمبيعات', labelEn: 'Marketing' },
+  { key: 'Business & Management', labelAr: 'الأعمال والإدارة', labelEn: 'Business' },
+  { key: 'Hybrid Tech + Business', labelAr: 'تقنية وأعمال', labelEn: 'Hybrid' },
 ]
 
 export default function CareersPage() {
@@ -148,25 +148,25 @@ export default function CareersPage() {
           }}>
             <Sparkles size={14} color="#5120c8" />
             <span style={{ color:'#5120c8', fontSize:13, fontWeight:600 }}>
-              {isAr ? '????? ?????? ?????' : 'Explore Career Paths'}
+              {isAr ? 'استكشف المسارات المهنية' : 'Explore Career Paths'}
             </span>
           </div>
           
           <h1 style={{ color:text, fontSize:'clamp(28px,4vw,42px)', fontWeight:900, margin:'0 0 16px', lineHeight:1.2 }}>
-            {isAr ? '??? ??????? ??????' : 'Build Your Career Future'}
+            {isAr ? 'ابن مستقبلك المهني' : 'Build Your Career Future'}
           </h1>
           <p style={{ color:'#6b7280', fontSize:16, margin:'0 0 32px', lineHeight:1.7 }}>
             {isAr
-              ? '???? ????? ?? ???? ?? 30 ???? ????? ???? ????? ??????'
+              ? 'اختر مسارك المهني من أكثر من 30 مساراً متخصصاً وابدأ بخطة واضحة ومنظمة'
               : 'Choose your career path from 30+ specialized paths and start with a clear structured plan'}
           </p>
           
           {/* Stats row */}
           <div style={{ display:'flex', justifyContent:'center', gap:32, flexWrap:'wrap', marginBottom:32 }}>
             {[
-              { value: allPaths.length.toString(), labelAr:'???? ????', labelEn:'Paths Available' },
-              { value: CAREER_PATHS.length.toString(), labelAr:'????', labelEn:'Specializations' },
-              { value: '100%', labelAr:'????? ?????????', labelEn:'Free to Explore' },
+              { value: allPaths.length.toString(), labelAr:'المسارات المتاحة', labelEn:'Paths Available' },
+              { value: CAREER_PATHS.length.toString(), labelAr:'التخصصات', labelEn:'Specializations' },
+              { value: '100%', labelAr:'مجاني للاستكشاف', labelEn:'Free to Explore' },
             ].map((stat, i) => (
               <div key={i} style={{ textAlign:'center' }}>
                 <div style={{ color:'#5120c8', fontSize:28, fontWeight:900 }}>{stat.value}</div>
@@ -183,7 +183,7 @@ export default function CareersPage() {
             }} />
             <input
               type="text"
-              placeholder={isAr ? '???? ?? ???? ?? ?????...' : 'Search paths or skills...'}
+              placeholder={isAr ? 'ابحث عن مسار أو مهارة...' : 'Search paths or skills...'}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               style={{
@@ -223,7 +223,7 @@ export default function CareersPage() {
         
         {/* Results count */}
         <div style={{ color:'#6b7280', fontSize:14, marginBottom:20 }}>
-          {isAr ? `${filteredPaths.length} ???? ????` : `${filteredPaths.length} paths available`}
+          {isAr ? `${filteredPaths.length} مسار متاح` : `${filteredPaths.length} paths available`}
         </div>
         
         {/* Paths grid */}
@@ -298,8 +298,8 @@ export default function CareersPage() {
                       fontSize:11, fontWeight:700,
                     }}>
                       {(path.demand || '').toLowerCase().includes('very')
-                        ? (isAr?'??? ????':'High')
-                        : (isAr?'??? ???':'Good')}
+                        ? (isAr?'مرتفع':'High')
+                        : (isAr?'جيد':'Good')}
                     </span>
                   </div>
                 </div>
@@ -327,7 +327,7 @@ export default function CareersPage() {
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <DollarSign size={13} color="#5120c8" />
                     <span style={{ color:'#5120c8', fontSize:12, fontWeight:700 }}>
-                      {path.salary} {isAr?'?.?':'SAR'}
+                      {path.salary} {isAr?'ر.س':'SAR'}
                     </span>
                   </div>
                 </div>
@@ -387,7 +387,7 @@ export default function CareersPage() {
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'; e.currentTarget.style.color='#5120c8' }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor=border; e.currentTarget.style.color=subtext }}>
-                    {isAr ? '????????' : 'Details'}
+                    {isAr ? 'تفاصيل' : 'Details'}
                   </button>
                   <button
                     onClick={() => {
@@ -410,7 +410,7 @@ export default function CareersPage() {
                     onMouseEnter={e => e.currentTarget.style.opacity='0.88'}
                     onMouseLeave={e => e.currentTarget.style.opacity='1'}>
                     <ChevronRight size={14} style={{ transform: isAr?'rotate(180deg)':'none' }} />
-                    {isAr ? '???? ??????' : 'Start Path'}
+                    {isAr ? 'ابدأ المسار' : 'Start Path'}
                   </button>
                 </div>
               </div>
@@ -436,11 +436,11 @@ export default function CareersPage() {
               <Sparkles size={24} color="#5120c8" />
             </div>
             <h2 style={{ color:text, fontSize:22, fontWeight:800, margin:'0 0 12px' }}>
-              {isAr ? '?? ????? ??????? ??' : "Not sure which path?"}
+              {isAr ? 'لست متأكداً من مسارك' : "Not sure which path?"}
             </h2>
             <p style={{ color:'#6b7280', fontSize:14, margin:'0 0 24px', lineHeight:1.7 }}>
               {isAr
-                ? '????? ?????? ????????? ?????? ?? ???? ???? ????? ??? ??????? ??????????'
+                ? 'قم بإجراء التقييم بالذكاء الاصطناعي وسنوصي بأفضل مسار بناءً على مهاراتك واهتماماتك'
                 : 'Take the AI assessment and we\'ll recommend the best path based on your skills and interests'}
             </p>
             <Link href={`/${locale}/dashboard/assessment`}>
@@ -452,7 +452,7 @@ export default function CareersPage() {
                 display:'inline-flex', alignItems:'center', gap:8,
               }}>
                 <Sparkles size={16} />
-                {isAr ? '????? ????? ??????? ?????????' : 'Discover Your Path with AI'}
+                {isAr ? 'اكتشف مسارك بالذكاء الاصطناعي' : 'Discover Your Path with AI'}
               </button>
             </Link>
           </div>
@@ -522,7 +522,7 @@ export default function CareersPage() {
                 <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:4 }}>
                   <DollarSign size={13} color="#5120c8" />
                   <span style={{ color:subtext, fontSize:11, fontWeight:600 }}>
-                    {isAr ? '?????? ??????' : 'Monthly Salary'}
+                    {isAr ? 'الراتب الشهري' : 'Monthly Salary'}
                   </span>
                 </div>
                 <div style={{ color:'#5120c8', fontWeight:900, fontSize:16 }}>
@@ -536,7 +536,7 @@ export default function CareersPage() {
                 background: isDark?'rgba(255,255,255,0.03)':'#fafafa',
               }}>
                 <div style={{ color:subtext, fontSize:11, fontWeight:600, marginBottom:4 }}>
-                  {isAr ? '????? ?? ?????' : 'Market Demand'}
+                  {isAr ? 'الطلب في السوق' : 'Market Demand'}
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                   {(detailPath.demand || '').toLowerCase().includes('very')
@@ -547,8 +547,8 @@ export default function CareersPage() {
                     color: (detailPath.demand || '').toLowerCase().includes('very')?'#16a34a':'#d97706',
                   }}>
                     {(detailPath.demand || '').toLowerCase().includes('very')
-                      ? (isAr?'??? ???? ????':'Very High')
-                      : (isAr?'??? ???':'Good')}
+                      ? (isAr?'مرتفع جداً':'Very High')
+                      : (isAr?'جيد':'Good')}
                   </span>
                 </div>
               </div>
@@ -560,10 +560,10 @@ export default function CareersPage() {
               position:'sticky', top:93, background:cardBg, zIndex:9,
             }}>
               {[
-                { key:'tasks', labelAr:'??????', labelEn:'Tasks' },
-                { key:'skills', labelAr:'????????', labelEn:'Skills' },
-                { key:'qualifications', labelAr:'????????', labelEn:'Qualifications' },
-                { key:'progression', labelAr:'?????? ???????', labelEn:'Career Path' },
+                { key:'tasks', labelAr:'المهام', labelEn:'Tasks' },
+                { key:'skills', labelAr:'المهارات', labelEn:'Skills' },
+                { key:'qualifications', labelAr:'المؤهلات', labelEn:'Qualifications' },
+                { key:'progression', labelAr:'المسار المهني', labelEn:'Career Path' },
               ].map(tab => (
                 <button key={tab.key} onClick={() => setDetailTab(tab.key as any)} style={{
                   padding:'12px 20px', background:'none', border:'none', cursor:'pointer',
@@ -582,7 +582,7 @@ export default function CareersPage() {
               {detailTab === 'tasks' && (
                 <div>
                   <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
-                    {isAr ? '?????? ????????' : 'Job Tasks'}
+                    {isAr ? 'مهام الوظيفة' : 'Job Tasks'}
                   </h3>
                   {(detailPath.tasks || []).map((task: string, i: number) => (
                     <div key={i} style={{
@@ -606,7 +606,7 @@ export default function CareersPage() {
               {detailTab === 'skills' && (
                 <div>
                   <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
-                    {isAr ? '???????? ????????' : 'Required Skills'}
+                    {isAr ? 'المهارات المطلوبة' : 'Required Skills'}
                   </h3>
                   <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                     {(detailPath.skills || []).map((skill: string, i: number) => (
@@ -628,7 +628,7 @@ export default function CareersPage() {
               {detailTab === 'qualifications' && (
                 <div>
                   <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:16 }}>
-                    {isAr ? '???????? ????????' : 'Required Qualifications'}
+                    {isAr ? 'المؤهلات المطلوبة' : 'Required Qualifications'}
                   </h3>
                   {(detailPath.qualifications || []).map((q: string, i: number) => (
                     <div key={i} style={{
@@ -645,7 +645,7 @@ export default function CareersPage() {
               {detailTab === 'progression' && (
                 <div>
                   <h3 style={{ color:text, fontSize:14, fontWeight:800, marginBottom:20 }}>
-                    {isAr ? '?????? ???????' : 'Career Progression'}
+                    {isAr ? 'التدرج المهني' : 'Career Progression'}
                   </h3>
                   <div style={{ position:'relative' }}>
                     <div style={{
@@ -666,8 +666,8 @@ export default function CareersPage() {
                         </div>
                         <div>
                           <div style={{ color:text, fontWeight:700, fontSize:14 }}>{level}</div>
-                          {i===0 && <div style={{ color:'#5120c8', fontSize:11, marginTop:2 }}>{isAr?'???? ???????':'Starting Point'}</div>}
-                          {i===(detailPath.progression?.length || 1)-1 && <div style={{ color:'#16a34a', fontSize:11, marginTop:2 }}>{isAr?'????? ???????':'End Goal'}</div>}
+                          {i===0 && <div style={{ color:'#5120c8', fontSize:11, marginTop:2 }}>{isAr?'نقطة البداية':'Starting Point'}</div>}
+                          {i===(detailPath.progression?.length || 1)-1 && <div style={{ color:'#16a34a', fontSize:11, marginTop:2 }}>{isAr?'الهدف النهائي':'End Goal'}</div>}
                         </div>
                       </div>
                     ))}
@@ -699,7 +699,7 @@ export default function CareersPage() {
                   display:'flex', alignItems:'center', justifyContent:'center', gap:6,
                 }}>
                 <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
-                {isAr ? '???? ??? ??????' : 'Start This Path'}
+                {isAr ? 'ابدأ هذا المسار' : 'Start This Path'}
               </button>
               <button
                 onClick={() => router.push(`/${locale}/coaching`)}
@@ -710,7 +710,7 @@ export default function CareersPage() {
                   display:'flex', alignItems:'center', gap:5,
                 }}>
                 <Users size={14} />
-                {isAr ? '???????' : 'Coaching'}
+                {isAr ? 'تدريب' : 'Coaching'}
               </button>
             </div>
           </div>

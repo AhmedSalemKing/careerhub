@@ -29,9 +29,9 @@ export const CAREER_PATHS: CareerCategory[] = [
     paths: [
       { 
         id: "software-engineer", title: "Software Engineer", titleAr: "مهندس برمجيات", level: "Mid-Senior", demand: "Very High", salary: "12,000-30,000",
-        descriptionAr: "مسؤول عن تصميم وتطوير الأنظمة ��لبرمجية الكاملة", descriptionEn: "Responsible for designing and developing complete software systems",
+        descriptionAr: "مسؤول عن تصميم وتطوير الأنظمة البرمجية الكاملة", descriptionEn: "Responsible for designing and developing complete software systems",
         skills: ["JavaScript/TypeScript", "Python/Java", "Git", "Databases", "REST APIs", "Docker", "Testing"],
-        tasks: ["كتابة كود نظيف وقابل للصيانة", "تصميم архитектура التطبيقات", "مراجعة الكود", "إصلاح الأخطاء", "كتابة التوثيق", "التعاون مع الفريق"],
+        tasks: ["كتابة كود نظيف وقابل للصيانة", "تصميم بنية التطبيقات", "مراجعة الكود", "إصلاح الأخطاء", "كتابة التوثيق", "التعاون مع الفريق"],
         qualifications: ["بكالوريوس في الحاسب الآلي", "خبرة 3+ سنوات", "إجادة لغة برمجة واحدة على الأقل", "فهم أنماط التصميم"],
         kpis: ["عدد الـ bugs", "وقت تسليم المهام", "تغطية الكود بالاختبارات"],
         progression: ["Junior Developer", "Mid Developer", "Senior Developer", "Tech Lead", "CTO"]
@@ -178,7 +178,7 @@ export const CAREER_PATHS: CareerCategory[] = [
         id: "data-analyst", title: "Data Analyst", titleAr: "محلل بيانات", level: "Junior-Senior", demand: "Very High", salary: "8,000-25,000",
         descriptionAr: "تحليل البيانات واستخراج الرؤى", descriptionEn: "Analyzing data and extracting insights",
         skills: ["SQL", "Python/R", "Excel", "Tableau/PowerBI", "Statistics"],
-        tasks: ["تحليل البيانات", "إنشاء ��قارير", "visualization", "تنظيف البيانات"],
+        tasks: ["تحليل البيانات", "إنشاء تقارير", "visualization", "تنظيف البيانات"],
         qualifications: ["فهم statistics", "خبرة في SQL", "مهارات Excel"],
         kpis: ["دقة التحليل", "وقت التقرير", "رضا stakeholders"],
         progression: ["Junior Analyst", "Data Analyst", "Senior Analyst", "Analytics Lead", "Head of Analytics"]
