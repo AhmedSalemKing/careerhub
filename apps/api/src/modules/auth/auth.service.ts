@@ -490,10 +490,12 @@ export class AuthService {
         id: true, email: true, role: true, isActive: true,
         accountType: true, status: true, createdAt: true,
         bio: true, experience: true, speciality: true,
+        hourlyRate: true,
         profile: {
           select: {
             firstName: true, lastName: true, avatar: true,
             bio: true, phone: true, language: true, timezone: true,
+            sessionPrice: true,
           }
         }
       }
@@ -538,6 +540,7 @@ export class AuthService {
     speciality?: string;
     experience?: number;
     hourlyRate?: number;
+    sessionPrice?: number;
     meetingMethod?: string;
   }) {
     this.logger.debug(`Updating user profile: ${userId}`)
@@ -550,6 +553,7 @@ export class AuthService {
     if (data.country !== undefined) profileData.country = data.country
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
+    if (data.sessionPrice !== undefined) profileData.sessionPrice = data.sessionPrice
     
     
     const profile = await this.prisma.userProfile.upsert({

@@ -315,6 +315,7 @@ export class AuthController {
     speciality?: string;
     experience?: number;
     hourlyRate?: number;
+    sessionPrice?: number;
     meetingMethod?: string;
   }) {
     return this.authService.updateProfile(user.id, body);

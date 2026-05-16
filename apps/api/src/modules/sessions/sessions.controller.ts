@@ -97,7 +97,7 @@ export class SessionsController {
     })
     if (conflict) throw new BadRequestException('This time slot is not available')
 
-    const price = consultant.hourlyRate || 0
+    const price = consultant.hourlyRate || consultant.profile?.sessionPrice || 0
     const duration = body.duration || 60
 
     const session = await this.prisma.consultingSession.create({
@@ -110,6 +110,7 @@ export class SessionsController {
         topic: body.topic,
         description: body.notes,
         status: 'PENDING',
+        price,
         paymentStatus: price > 0 ? 'UNPAID' : 'PAID',
       },
       include: {
@@ -566,8 +567,20 @@ export class SessionsController {
     })
     
     // Notify student
+    const isFree = !price || price <= 0
     await this.prisma.notification.create({
-      data: { userId, titleEn: 'تم تأكيد الجلسة', titleAr: 'تم تأكيد الجلسة', contentEn: 'تم الدفع وتأكيد جلستك بنجاح', contentAr: 'تم الدفع وتأكيد جلستك بنجاح', type: 'SUCCESS' as any, isRead: false }
+      data: {
+        userId,
+        titleEn: isFree ? 'Free Session Confirmed' : 'Session Confirmed',
+        titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم تأكيد الجلسة',
+        contentEn: isFree
+          ? `Your free session has been confirmed`
+          : `Your session has been confirmed for ${price} SAR`,
+        contentAr: isFree
+          ? `تم تأكيد جلستك المجانية`
+          : `تم تأكيد جلستك بمبلغ ${price} ر.س`,
+        type: 'SUCCESS' as any, isRead: false,
+      }
     }).catch(() => {})
     
     // Notify consultant

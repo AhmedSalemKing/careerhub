@@ -227,7 +227,7 @@ export default function SettingsPage() {
         linkedinUrl: profileForm.linkedinUrl,
         speciality: profileForm.speciality,
         experience: profileForm.experience ? parseInt(profileForm.experience) : undefined,
-        sessionPrice: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
+        hourlyRate: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
         meetingMethod: profileForm.meetingMethod,
       }
       if (avatarUrl !== undefined) body.avatar = avatarUrl

@@ -435,7 +435,7 @@ export class ConsultingService {
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = session.price || parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = session.price || session.consultant?.hourlyRate || parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
 
     // Free session - mark as paid directly (no Stripe needed)
     if (price === 0) {
@@ -489,7 +489,7 @@ export class ConsultingService {
     if (!existingSession) throw new NotFoundException('Session not found')
     if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = existingSession.price || parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = existingSession.price || (existingSession as any).consultant?.hourlyRate || parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
     const isFree = price === 0
 
     // Free session - confirm directly without Stripe
