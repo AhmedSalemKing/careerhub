@@ -96,11 +96,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               (function() {
                 try {
                   var theme = localStorage.getItem('deveway-theme') || localStorage.getItem('theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = theme === 'dark' || (!theme && prefersDark);
-
-                  document.documentElement.classList.toggle('dark', isDark);
-                  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+                  if (theme === 'light') {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                  }
                 } catch(e) {}
               })();
             `,
@@ -108,8 +110,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         
         <style dangerouslySetInnerHTML={{ __html: `
-            html { background-color: #ffffff; color-scheme: light; }
-            html.dark { background-color: #0d0d0d !important; color-scheme: dark !important; }
+            html { background-color: #0d0d0d; color-scheme: dark; }
+            html.light { background-color: #ffffff !important; color-scheme: light !important; }
             body { background-color: inherit; min-height: 100vh; }
           `}} />
         

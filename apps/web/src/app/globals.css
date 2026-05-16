@@ -3,9 +3,10 @@
    Clean • Modern • Accessible
    ═════════════════════════════════════════════════════════════════ */
 
-html { background: #ffffff; color-scheme: light; }
-html.dark { background: #0d0d0d; color-scheme: dark; }
+html { background-color: #0d0d0d; color-scheme: dark; }
+html.light { background-color: #ffffff; color-scheme: light; }
 html, body { min-height: 100vh; }
+body { background-color: inherit; }
 
 /* Override any blue focus rings */
 *:focus-visible {
