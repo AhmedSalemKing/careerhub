@@ -15,7 +15,7 @@ import {
 import PaymentModal from '@/components/PaymentModal'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
-import { formatDate, formatTimeOnly } from '@/lib/time'
+import { formatDate, formatTimeOnly, localDateTimeToISO } from '@/lib/time'
 
 const formatTimeSlot = (time: string, isAr: boolean): string => {
   const [h, m] = time.split(':').map(Number)
@@ -515,7 +515,7 @@ export default function MySessionsPage() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setRescheduleModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
                 <button disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
-                  onClick={() => requestRescheduleMutation.mutate({ id: rescheduleModal.id, proposedAt: `${newDate}T${newTime}:00`, reason: rescheduleReason })}
+                  onClick={() => requestRescheduleMutation.mutate({ id: rescheduleModal.id, proposedAt: localDateTimeToISO(newDate, newTime), reason: rescheduleReason })}
                   style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
                   {requestRescheduleMutation.isPending ? (isAr ? 'جاري الإرسال...' : 'Sending...') : (isAr ? 'إرسال الطلب' : 'Send Request')}
                 </button>

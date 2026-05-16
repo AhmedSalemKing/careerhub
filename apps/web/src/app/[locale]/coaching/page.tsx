@@ -4,6 +4,7 @@ import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import { localDateTimeToISO } from '@/lib/time'
 import {
   Search, X, ChevronRight, Briefcase, Clock,
   CheckCircle2, Calendar, DollarSign, GraduationCap,
@@ -354,12 +355,13 @@ function BookingModal({ consultant, isDark, isAr, locale, onClose, onSuccess, ca
       // Debug: log token existence
       const token = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
       console.log('[Booking] token exists:', !!token)
-      console.log('[Booking] payload:', { consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, scheduledAt: `${form.date}T${form.time}:00` })
+      const scheduledAt = localDateTimeToISO(form.date, form.time)
+      console.log('[Booking] payload:', { consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, scheduledAt })
 
       const res = await fetch('https://deve-way.onrender.com/api/consulting/sessions/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, description: form.description, scheduledAt: `${form.date}T${form.time}:00`, meetingType: form.meetingType, duration: consultant.profile?.sessionDuration || 60 })
+        body: JSON.stringify({ consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, description: form.description, scheduledAt, meetingType: form.meetingType, duration: consultant.profile?.sessionDuration || 60 })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Failed')
