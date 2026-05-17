@@ -1718,18 +1718,30 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     });
 
-    // Auto Certificate Generation - fire-and-forget (non-blocking)
+    // Auto Certificate Generation - only if instructor has enabled certificates and marked course complete
     if (isCourseComplete) {
-      this.certificatesService
-        .generateCertificate(userId, courseId)
-        .then((cert) => {
-          if (cert) {
-            this.logger.log(`[Certificate] Auto-issued: ${cert.data?.serialNumber}`)
-          }
-        })
-        .catch((err: any) => {
-          this.logger.error(`[Certificate] Auto-generation failed: ${err.message}`)
-        })
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { certificateEnabled: true, isCompleted: true },
+      })
+
+      if (course?.certificateEnabled && course?.isCompleted) {
+        this.certificatesService
+          .generateCertificate(userId, courseId)
+          .then((cert) => {
+            if (cert) {
+              this.logger.log(`[Certificate] Auto-issued: ${cert.data?.serialNumber}`)
+            }
+          })
+          .catch((err: any) => {
+            this.logger.error(`[Certificate] Auto-generation failed: ${err.message}`)
+          })
+      } else {
+        this.logger.log(
+          `[Certificate] Skipped: course ${courseId} not yet completed by instructor ` +
+          `(certificateEnabled=${course?.certificateEnabled}, isCompleted=${course?.isCompleted})`
+        )
+      }
     }
 
     return {
