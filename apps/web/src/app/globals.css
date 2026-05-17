@@ -1626,6 +1626,13 @@ button:is([style*="5120c8"]) {
 	color: #ffffff !important;
 }
 
+/* Ghost-green: transparent bg with green border/text for action buttons */
+.ghost-green {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: rgb(22, 163, 74) !important;
+  border: 1px solid rgba(22, 163, 74, 0.4) !important;
+}
+
 /* ══════════════════════════════════════
    END OF FILE
    DeveWay Dashboard Design System v4.0

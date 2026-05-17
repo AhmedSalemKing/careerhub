@@ -218,7 +218,7 @@ export default function MySessionsPage() {
               )}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: '#16a34a', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+              <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
                 {isAr ? 'موافقة' : 'Approve'}
               </button>
               <button onClick={() => rejectRescheduleMutation.mutate(session.id)} disabled={rejectRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: '#dc2626', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>

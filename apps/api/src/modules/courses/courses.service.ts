@@ -118,6 +118,7 @@ export class CoursesService {
           locationLng: true,
           offlinePaymentType: true,
           maxAttendees: true,
+          createdAt: true,
           instructor: {
             select: {
               id: true,
@@ -162,6 +163,7 @@ export class CoursesService {
       locationLng: course.locationLng,
       offlinePaymentType: course.offlinePaymentType,
       maxAttendees: course.maxAttendees,
+      createdAt: course.createdAt,
       instructor: course.instructor ? {
         id: course.instructor.id,
         isVerified: course.instructor.isVerified,

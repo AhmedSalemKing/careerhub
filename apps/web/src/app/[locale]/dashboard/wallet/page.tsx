@@ -117,12 +117,13 @@ function TopupForm({ onSuccess }: { onSuccess: (balance: number) => void }) {
         disabled={loading || amount < 10 || !stripePromise}
         style={{
           width: '100%', padding: '16px', borderRadius: 14,
-          background: loading || amount < 10 ? '#374151' : 'linear-gradient(135deg, #16a34a, #22c55e)',
-          color: '#fff', border: 'none',
+          background: loading || amount < 10 ? '#374151' : 'rgba(22,163,74,0.15)',
+          color: loading || amount < 10 ? '#fff' : 'rgb(22,163,74)',
+          border: loading || amount < 10 ? 'none' : '1px solid rgba(22,163,74,0.4)',
           cursor: loading || amount < 10 ? 'not-allowed' : 'pointer',
           fontSize: 15, fontWeight: 700,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          boxShadow: loading ? 'none' : '0 8px 24px rgba(22,163,74,0.3)',
+          boxShadow: 'none',
           transition: 'all 0.2s',
         }}
       >
@@ -262,10 +263,11 @@ export default function WalletPage() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '14px 24px', borderRadius: 14,
-                  background: '#16a34a',
-                  color: '#fff', border: 'none',
+                  background: 'rgba(22,163,74,0.15)',
+                  color: 'rgb(22,163,74)',
+                  border: '1px solid rgba(22,163,74,0.4)',
                   cursor: 'pointer', fontSize: 14, fontWeight: 700,
-                  boxShadow: '0 4px 16px rgba(22,163,74,0.35)',
+                  boxShadow: 'none',
                   transition: 'all 0.2s',
                 }}
               >

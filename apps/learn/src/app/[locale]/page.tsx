@@ -162,17 +162,29 @@ export default function HomePage() {
     { icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 35, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
   ]
 
-  const featuredCourses = apiCourses.map((c: any, i: number) => ({
+  const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
+
+  const featuredCourses = apiCourses.map((c: any) => ({
     id: c.id,
     title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
     duration: c.duration || 0,
     students: c._count?.enrollments || 0,
-    rating: 4.7 + i * 0.1,
+    rating: c.rating || 4.5,
     price: c.price ?? 0,
-    badge: c.isMostPopular ? (locale === 'ar' ? 'الأكثر طلباً' : 'Popular') : i === 1 ? (locale === 'ar' ? 'جديد' : 'New') : null,
-    badgeBg: c.isMostPopular ? '#F5A623' : '#2BBFA3',
+    isMostPopular: c.isMostPopular === true,
+    createdAt: c.createdAt,
+    enrollmentCount: c._count?.enrollments || 0,
     thumbnail: c.thumbnail,
   }))
+
+  const sortedCourses = [...featuredCourses].sort((a, b) => {
+    if (courseSort === 'popular') {
+      return (b.enrollmentCount || 0) - (a.enrollmentCount || 0)
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+
+  const maxEnrollment = Math.max(...featuredCourses.map(c => c.enrollmentCount), 0)
 
   // Handler for Start Free button
   const handleStartFreeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -401,15 +413,32 @@ export default function HomePage() {
       {/* ========== COURSES ========== */}
       <section style={{ background: 'var(--background)' }} className="py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <span className="inline-block text-sm font-medium mb-2" style={{ color: 'var(--primary)' }}>
-                {locale === 'ar' ? 'الأكثر طلباً' : 'Most Popular'}
-              </span>
               <h2 className="text-3xl sm:text-4xl font-bold font-madinet" style={{ color: 'var(--foreground)' }}>
                 {locale === 'ar' ? 'الكورسات المميزة' : 'Featured Courses'}
               </h2>
             </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[
+                { key: 'popular' as const, ar: 'الأكثر طلباً', en: 'Most Popular' },
+                { key: 'newest' as const, ar: 'الأحدث', en: 'Newest' },
+              ].map(tab => (
+                <button key={tab.key} onClick={() => setCourseSort(tab.key)}
+                  style={{
+                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    cursor: 'pointer', border: courseSort === tab.key ? 'none' : '1px solid var(--border)',
+                    background: courseSort === tab.key ? 'var(--primary)' : 'transparent',
+                    color: courseSort === tab.key ? '#fff' : 'var(--muted)',
+                    transition: 'all 0.15s',
+                  }}>
+                  {locale === 'ar' ? tab.ar : tab.en}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
             <Button variant="outline" asChild className="shrink-0">
               <Link href={`/${locale}/courses`}>
                 {locale === 'ar' ? 'عرض الكل' : 'View All'}
@@ -418,7 +447,7 @@ export default function HomePage() {
             </Button>
           </div>
 
-          {featuredCourses.length === 0 && (
+          {sortedCourses.length === 0 && (
             <div className="text-center py-12" style={{ color: 'var(--muted)' }}>
               {locale === 'ar' ? tl('loadingCourses') : 'Loading courses...'}
             </div>
@@ -431,7 +460,7 @@ export default function HomePage() {
               : 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: isMobile ? 12 : 20,
           }}>
-            {featuredCourses.map((course, index) => (
+            {sortedCourses.map((course, index) => (
               <div key={course.id} className="group relative rounded-xl overflow-hidden card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--navy)' }}>
                   {thumbUrl(course.thumbnail) ? (
@@ -446,7 +475,12 @@ export default function HomePage() {
                       <Play className="h-6 w-6" style={{ color: 'var(--navy)', transform: 'translateX(2px)' }} />
                     </div>
                   </div>
-                  {course.badge && (<div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: course.badgeBg }}>{course.badge}</div>)}
+                  {courseSort === 'popular' && course.enrollmentCount === maxEnrollment && maxEnrollment > 0 && (
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: '#F5A623' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
+                  )}
+                  {courseSort === 'newest' && index === 0 && (
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: 'var(--primary)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
+                  )}
                   <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs text-white flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
                 </div>
                 <div className="p-5">
