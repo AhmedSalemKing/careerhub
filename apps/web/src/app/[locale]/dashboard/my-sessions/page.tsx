@@ -109,7 +109,7 @@ export default function MySessionsPage() {
   const paySession = async (sessionId: string, price: number) => {
     setPayingId(sessionId)
     try {
-      const res = await post(`/consulting/sessions/${sessionId}/pay`)
+      const res = await post(`/payments/checkout/consulting/${sessionId}`, { locale })
       const payload = res?.data?.data ?? res?.data ?? res
       const checkoutUrl = payload?.checkoutUrl || payload?.url
       if (checkoutUrl) {
