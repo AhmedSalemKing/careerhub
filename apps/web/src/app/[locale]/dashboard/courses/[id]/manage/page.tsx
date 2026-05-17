@@ -1262,14 +1262,20 @@ function CourseSettingsTab({
   async function handleSave() {
     setSaving(true)
     try {
-      await patch(`/courses/${courseId}`, {
-        title: form.title,
-        titleAr: form.titleAr,
-        description: form.description,
-        price: parseFloat(form.price) || 0,
-        level: form.level,
-        status: form.status,
-      })
+      await Promise.all([
+        patch(`/courses/${courseId}`, {
+          title: form.title,
+          titleAr: form.titleAr,
+          description: form.description,
+          price: parseFloat(form.price) || 0,
+          level: form.level,
+          status: form.status,
+        }),
+        patch(`/courses/${courseId}/course-settings`, {
+          expectedLessons,
+          certificateEnabled,
+        }),
+      ])
       setSaved(true)
       onRefresh()
       setTimeout(() => setSaved(false), 2000)
