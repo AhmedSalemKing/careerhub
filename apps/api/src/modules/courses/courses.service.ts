@@ -683,7 +683,7 @@ export class CoursesService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { enrolledAt: 'desc' },
       });
       return { success: true, data: enrollments };
     } catch (error) {
