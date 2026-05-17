@@ -1672,18 +1672,27 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     });
 
-    // Count completed lessons and total published lessons for this course in parallel
+    // Count completed lessons and total lessons for this course in parallel
+    // Lessons can belong to sections OR modules — count both to avoid premature completion
     const [completedCount, totalCount] = await Promise.all([
       this.prisma.lessonProgress.count({
         where: {
           userId,
           status: 'COMPLETED',
-          lesson: { section: { courseId } },
+          lesson: {
+            OR: [
+              { section: { courseId } },
+              { module: { courseId } },
+            ],
+          },
         },
       }),
       this.prisma.lesson.count({
         where: {
-          section: { courseId },
+          OR: [
+            { section: { courseId } },
+            { module: { courseId } },
+          ],
         },
       }),
     ]);
@@ -1932,14 +1941,24 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
   async getCourseProgress(userId: string, courseId: string) {
     const totalLessons = await this.prisma.lesson.count({
-      where: { section: { courseId } },
+      where: {
+        OR: [
+          { section: { courseId } },
+          { module: { courseId } },
+        ],
+      },
     });
 
     const completedLessons = await this.prisma.lessonProgress.count({
       where: {
         userId,
         status: 'COMPLETED',
-        lesson: { section: { courseId } },
+        lesson: {
+          OR: [
+            { section: { courseId } },
+            { module: { courseId } },
+          ],
+        },
       },
     });
 
