@@ -307,7 +307,7 @@ export default function HomePage() {
                   <a
                     href="#"
                     onClick={handleBrowseCoursesClick}
-                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10 active:scale-95"
+                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10"
                     style={{
                       background: 'transparent',
                       border: '1.5px solid rgba(255,255,255,0.6)',
@@ -464,7 +464,7 @@ export default function HomePage() {
               <div key={course.id} className="group relative rounded-xl overflow-hidden card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                 <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--navy)' }}>
                   {thumbUrl(course.thumbnail) ? (
-                    <img src={thumbUrl(course.thumbnail)!} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                    <img src={thumbUrl(course.thumbnail)!} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Laptop className="h-10 w-10 text-primary" />
@@ -503,7 +503,7 @@ export default function HomePage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((category, index) => (
                 <Link key={index} href={`/${locale}/courses?category=${index}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                  <div className="shrink-0 h-12 w-12 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: category.bg }}><category.icon className="h-6 w-6" style={{ color: category.color }} /></div>
+                  <div className="shrink-0 h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: category.bg }}><category.icon className="h-6 w-6" style={{ color: category.color }} /></div>
                   <div><h4 className="font-semibold" style={{ color: 'var(--foreground)' }}>{category.name[locale]}</h4><p className="text-sm" style={{ color: 'var(--muted)' }}>{category.count} {locale === 'ar' ? 'كورس' : 'Courses'}</p></div>
                 </Link>
               ))}
@@ -548,7 +548,7 @@ export default function HomePage() {
             <a
               href="#"
               onClick={handleBrowseCoursesClick}
-              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10 active:scale-95"
+              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10"
               style={{
                 background: 'transparent',
                 border: '1.5px solid rgba(248,248,250,0.25)',

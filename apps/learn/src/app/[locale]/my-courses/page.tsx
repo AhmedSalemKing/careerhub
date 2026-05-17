@@ -138,7 +138,7 @@ function ErrorMessage({
       <button
         onClick={handleRetry}
         disabled={retrying}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-70"
+        className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium disabled:opacity-70"
         style={{ background: 'var(--primary)', color: 'white', boxShadow: '0 4px 14px rgba(99,102,241,0.25)' }}
       >
         {retrying ? (
@@ -183,7 +183,7 @@ function EmptyState({ locale }: { locale: string }) {
         </p>
         
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" asChild className="rounded-xl px-8 py-3.5 font-bold text-base hover:scale-105 active:scale-95">
+          <Button size="lg" asChild className="rounded-xl px-8 py-3.5 font-bold text-base">
             <Link href={`/${locale}/courses`} className="flex items-center gap-2">
               {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}
               <ArrowRight className="h-5 w-5 rtl:rotate-180" />
@@ -460,7 +460,7 @@ export default function MyCoursesPage() {
                 <div key={course.id} className="rounded-2xl overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 group" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
                   <div className="relative aspect-video overflow-hidden">
                     {course.thumbnail ? (
-                      <img src={getMediaUrl(course.thumbnail) || ''} alt={getCourseTitle(course, locale)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      <img src={getMediaUrl(course.thumbnail) || ''} alt={getCourseTitle(course, locale)} className="w-full h-full object-cover" />
                     ) : (
                       <div className="flex h-full items-center justify-center" style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #5120c8 100%)' }}>
                         <BookOpen className="h-12 w-12 text-white/30" />

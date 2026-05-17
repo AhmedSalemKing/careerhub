@@ -531,7 +531,7 @@ export default function CourseDetailPage({
 										/>
 										<div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
 											<div
-												className="h-16 w-16 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
+												className="h-16 w-16 rounded-full flex items-center justify-center"
 												style={{
 													background: `${purple}cc`,
 													boxShadow: `0 8px 32px ${purple}50`,
@@ -1151,7 +1151,7 @@ export default function CourseDetailPage({
 								<>
 									<button
 										onClick={() => isLive ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}
-										className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95"
+										className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all"
 										style={{
 											background: isLive
 												? "linear-gradient(135deg, #dc2626, #b91c1c)"
@@ -1428,7 +1428,7 @@ export default function CourseDetailPage({
 								<button
 									onClick={handleEnroll}
 									disabled={enrolling}
-									className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+									className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all disabled:opacity-70 disabled:cursor-not-allowed"
 									style={{
 										background: isLive
 											? "linear-gradient(135deg, #dc2626, #b91c1c)"
