@@ -1,7 +1,6 @@
 "use client";
 
 import { useLocale } from "next-intl";
-import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,26 +48,44 @@ function getStatusConfig(status: string) {
 	}
 }
 
-export default function InstructorCoursesPage() {
+export default function MyCoursesPage() {
 	const locale = useLocale();
 	const router = useRouter();
 	const { user, hydrate } = useAuthStore();
+	const [courses, setCourses] = useState<any[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => { hydrate(); }, [hydrate]);
 
-	const { data: courses = [], isLoading } = useQuery({
-		queryKey: ["instructor-courses"],
-		queryFn: async () => {
-			const res = await get("/courses/my-courses");
-			const raw = (res?.data as any)?.data ?? (res?.data as any);
-			const list =
-				Array.isArray(raw) ? raw :
-				Array.isArray(raw?.data) ? raw.data :
-				Array.isArray(raw?.courses) ? raw.courses :
-				[];
-			return list;
-		},
-	});
+	const isInstructor = user?.accountType === 'INSTRUCTOR';
+
+	useEffect(() => {
+		if (!user) return;
+		setIsLoading(true);
+
+		const endpoint = isInstructor
+			? '/courses/my-courses'
+			: '/courses/enrolled';
+
+		get(endpoint).then(res => {
+			const raw = (res?.data as any)?.data ?? (res?.data as any) ?? [];
+			let list = Array.isArray(raw) ? raw : (Array.isArray(raw?.courses) ? raw.courses : []);
+
+			if (!isInstructor) {
+				list = list.map((e: any) => ({
+					...e.course,
+					progress: e.progress,
+					enrollmentStatus: e.status,
+				}));
+			}
+
+			setCourses(list);
+			setIsLoading(false);
+		}).catch(() => {
+			setCourses([]);
+			setIsLoading(false);
+		});
+	}, [user, isInstructor]);
 
 	const isAr = locale === "ar";
 
@@ -112,22 +129,24 @@ export default function InstructorCoursesPage() {
 							{courses.length} {isAr ? 'كورس' : 'courses'}
 						</p>
 					</div>
-					<Link href={`/${locale}/dashboard/create-course`} style={{
-						display: 'inline-flex', alignItems: 'center', gap: '8px',
-						padding: '10px 20px', borderRadius: '10px',
-						background: 'var(--primary, #5120c8)', color: '#fff',
-						fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
-					}}>
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-							stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-							<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-						</svg>
-						{isAr ? 'إنشاء كورس' : 'New Course'}
-					</Link>
+					{isInstructor && (
+						<Link href={`/${locale}/dashboard/create-course`} style={{
+							display: 'inline-flex', alignItems: 'center', gap: '8px',
+							padding: '10px 20px', borderRadius: '10px',
+							background: 'var(--primary, #5120c8)', color: '#fff',
+							fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+						}}>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+								stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+								<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+							</svg>
+							{isAr ? 'إنشاء كورس' : 'New Course'}
+						</Link>
+					)}
 				</div>
 
 				{/* STATS BAR */}
-				{!isLoading && courses.length > 0 && (
+				{isInstructor && !isLoading && courses.length > 0 && (
 					<div style={{
 						display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
 						gap: '1rem', marginBottom: '2rem',
@@ -222,13 +241,17 @@ export default function InstructorCoursesPage() {
 							</svg>
 						</div>
 						<h3 style={{ fontSize:'1.1rem', fontWeight:700, margin:'0 0 8px' }}>
-							{isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}
+							{isInstructor
+								? (isAr ? 'لا توجد كورسات بعد' : 'No courses yet')
+								: (isAr ? 'لم تشترك في أي كورس بعد' : 'Not enrolled in any course')}
 						</h3>
 						<p style={{ color:'var(--muted-foreground)', fontSize:'0.875rem',
 							margin:'0 0 1.5rem', maxWidth:'300px', marginInline:'auto' }}>
-							{isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge'}
+							{isInstructor
+								? (isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge')
+								: (isAr ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start your learning journey')}
 						</p>
-						<a href={`/${locale}/dashboard/create-course`} style={{
+						<a href={isInstructor ? `/${locale}/dashboard/create-course` : `/${locale}/courses`} style={{
 							padding:'10px 24px', borderRadius:'10px',
 							background:'#5120c8', color:'#fff',
 							textDecoration:'none', fontWeight:600, fontSize:'0.875rem',
@@ -239,7 +262,9 @@ export default function InstructorCoursesPage() {
 								<line x1="12" y1="5" x2="12" y2="19"/>
 								<line x1="5" y1="12" x2="19" y2="12"/>
 							</svg>
-							{isAr ? 'إنشاء كورس جديد' : 'Create Course'}
+							{isInstructor
+								? (isAr ? 'إنشاء كورس جديد' : 'Create Course')
+								: (isAr ? 'تصفح الكورسات' : 'Browse Courses')}
 						</a>
 					</div>
 				)}
@@ -371,55 +396,92 @@ export default function InstructorCoursesPage() {
 											display: 'flex', alignItems: 'center', gap: '16px',
 											marginBottom: '1rem',
 										}}>
-											<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-												fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-												<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-													stroke="currentColor" strokeWidth="2">
-													<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-													<circle cx="9" cy="7" r="4"/>
-												</svg>
-												{enrollments}
-											</span>
-											<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-												fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-												<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-													stroke="currentColor" strokeWidth="2">
-													<line x1="12" y1="1" x2="12" y2="23"/>
-													<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-												</svg>
-												{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}
-											</span>
-											<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-												fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}>
-												{earnings.toLocaleString()} ر.س
-											</span>
+											{isInstructor ? (
+												<>
+													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
+														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+															stroke="currentColor" strokeWidth="2">
+															<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+															<circle cx="9" cy="7" r="4"/>
+														</svg>
+														{enrollments}
+													</span>
+													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
+														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+															stroke="currentColor" strokeWidth="2">
+															<line x1="12" y1="1" x2="12" y2="23"/>
+															<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+														</svg>
+														{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}
+													</span>
+													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
+														fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}>
+														{earnings.toLocaleString()} ر.س
+													</span>
+												</>
+											) : (
+												<>
+													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
+														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
+														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+															stroke="currentColor" strokeWidth="2">
+															<line x1="12" y1="1" x2="12" y2="23"/>
+															<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+														</svg>
+														{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}
+													</span>
+													{course.progress !== undefined && (
+														<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
+															fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600 }}>
+															{Math.round(course.progress)}% {isAr ? 'مكتمل' : 'complete'}
+														</span>
+													)}
+												</>
+											)}
 										</div>
 
 										{/* Actions */}
 										<div style={{ display: 'flex', gap: '8px' }}>
-											<Link href={`/${locale}/dashboard/courses/${course.id}/manage`}
-												style={{
-													flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
-													background: 'rgba(81,32,200,0.15)',
-													border: '1px solid rgba(81,32,200,0.3)',
-													color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
-													textDecoration: 'none',
-												}}>
-												{isAr ? 'إدارة' : 'Manage'}
-											</Link>
-											<button onClick={() => handleDelete(course.id)}
-												style={{
-													padding: '8px 14px', borderRadius: '8px',
-													background: 'rgba(239,68,68,0.08)',
-													border: '1px solid rgba(239,68,68,0.2)',
-													color: '#f87171', fontSize: '0.82rem', cursor: 'pointer',
-												}}>
-												<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-													stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-													<polyline points="3 6 5 6 21 6"/>
-													<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-												</svg>
-											</button>
+											{isInstructor ? (
+												<>
+													<Link href={`/${locale}/dashboard/courses/${course.id}/manage`}
+														style={{
+															flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
+															background: 'rgba(81,32,200,0.15)',
+															border: '1px solid rgba(81,32,200,0.3)',
+															color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+															textDecoration: 'none',
+														}}>
+														{isAr ? 'إدارة' : 'Manage'}
+													</Link>
+													<button onClick={() => handleDelete(course.id)}
+														style={{
+															padding: '8px 14px', borderRadius: '8px',
+															background: 'rgba(239,68,68,0.08)',
+															border: '1px solid rgba(239,68,68,0.2)',
+															color: '#f87171', fontSize: '0.82rem', cursor: 'pointer',
+														}}>
+														<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+															stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+															<polyline points="3 6 5 6 21 6"/>
+															<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+														</svg>
+													</button>
+												</>
+											) : (
+												<Link href={`/${locale}/courses/${course.id}`}
+													style={{
+														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
+														background: 'rgba(81,32,200,0.15)',
+														border: '1px solid rgba(81,32,200,0.3)',
+														color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+														textDecoration: 'none',
+													}}>
+													{isAr ? 'متابعة' : 'Continue'}
+												</Link>
+											)}
 										</div>
 									</div>
 								</div>
