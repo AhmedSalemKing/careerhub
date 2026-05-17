@@ -192,8 +192,7 @@ export class CoursesController {
   @ApiOperation({ summary: 'Get enrolled courses for current user' })
   async getEnrolledCourses(@Request() req: any) {
     const userId = req.user.sub || req.user.id
-    const result = await this.coursesService.getMyCourses(userId, { page: 1, limit: 100 })
-    return { success: true, data: result.enrollments }
+    return this.coursesService.getEnrolledCourses(userId)
   }
 
   @Get('my-courses')

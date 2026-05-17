@@ -48,6 +48,8 @@ function getStatusConfig(status: string) {
 	}
 }
 
+const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app';
+
 export default function MyCoursesPage() {
 	const locale = useLocale();
 	const router = useRouter();
@@ -251,7 +253,7 @@ export default function MyCoursesPage() {
 								? (isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge')
 								: (isAr ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start your learning journey')}
 						</p>
-						<a href={isInstructor ? `/${locale}/dashboard/create-course` : `/${locale}/courses`} style={{
+						<a href={isInstructor ? `/${locale}/dashboard/create-course` : `${LEARN_URL}/${locale}/courses`} target="_blank" rel="noopener noreferrer" style={{
 							padding:'10px 24px', borderRadius:'10px',
 							background:'#5120c8', color:'#fff',
 							textDecoration:'none', fontWeight:600, fontSize:'0.875rem',
@@ -471,7 +473,8 @@ export default function MyCoursesPage() {
 													</button>
 												</>
 											) : (
-												<Link href={`/${locale}/courses/${course.id}`}
+												<a href={`${LEARN_URL}/${locale}/courses/${course.slug || course.id}`}
+													target="_blank" rel="noopener noreferrer"
 													style={{
 														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
 														background: 'rgba(81,32,200,0.15)',
@@ -480,7 +483,7 @@ export default function MyCoursesPage() {
 														textDecoration: 'none',
 													}}>
 													{isAr ? 'متابعة' : 'Continue'}
-												</Link>
+												</a>
 											)}
 										</div>
 									</div>

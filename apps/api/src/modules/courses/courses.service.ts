@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -668,7 +669,29 @@ export class CoursesService {
     };
   }
 
-async getMyEnrollments(userId: string) {
+  async getEnrolledCourses(userId: string) {
+    try {
+      const enrollments = await this.prisma.enrollment.findMany({
+        where: { userId },
+        include: {
+          course: {
+            select: {
+              id: true, slug: true,
+              titleAr: true, titleEn: true,
+              thumbnail: true, price: true,
+              instructor: { select: { profile: { select: { firstName: true, lastName: true } } } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return { success: true, data: enrollments };
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to fetch enrolled courses');
+    }
+  }
+
+  async getMyEnrollments(userId: string) {
     try {
 const enrollments: any[] = await this.prisma.enrollment.findMany({
         where: { userId },
