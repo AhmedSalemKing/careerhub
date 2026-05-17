@@ -101,9 +101,9 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
         </button>
       </div>
 
-      {/* MAIN DOCK - show only on mobile (hidden on lg+) */}
+      {/* MAIN DOCK - hidden on mobile, visible on desktop */}
       <div
-        className={`flex ${expanded ? '!flex' : ''}`}
+        className={`hidden lg:flex ${expanded ? '!flex' : ''}`}
         style={dockStyle}
       >
         {items.map((item, i) => {
