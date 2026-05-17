@@ -53,7 +53,6 @@ import {
 	GraduationCap,
 	Target,
 	Star,
-	Zap,
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
 
@@ -1395,48 +1394,51 @@ import VideoProtection from "../../../../components/VideoProtection";
 										{!!videoUrl && (
 											<button
 												onClick={() => setActiveTab('video')}
-														style={{
-															display: 'flex', alignItems: 'center', gap: '6px',
-															padding: '8px 16px', borderRadius: '8px',
-															background: activeTab === 'video' ? '#5120c8' : 'transparent',
-															color: activeTab === 'video' ? '#ffffff' : '#9ca3af',
-															border: `1px solid ${activeTab === 'video' ? '#5120c8' : '#374151'}`,
-															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-															transition: 'all 0.15s', fontFamily: 'inherit',
-														}}>
-														<Video size={14} color={activeTab === 'video' ? '#ffffff' : '#9ca3af'} />
-														{isAr ? 'الفيديو' : 'Video'}
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													border: activeTab === 'video' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
+													background: activeTab === 'video' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
+													color: activeTab === 'video' ? '#fff' : '#94a3b8',
+													boxShadow: activeTab === 'video' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.18s ease', fontFamily: 'inherit',
+												}}>
+												<Video size={14} />
+												{isAr ? 'الفيديو' : 'Video'}
 											</button>
 										)}
 										{!!fileUrl && (
 											<button
 												onClick={() => setActiveTab('file')}
-														style={{
-															display: 'flex', alignItems: 'center', gap: '6px',
-															padding: '8px 16px', borderRadius: '8px',
-															background: activeTab === 'file' ? '#5120c8' : 'transparent',
-															color: activeTab === 'file' ? '#ffffff' : '#9ca3af',
-															border: `1px solid ${activeTab === 'file' ? '#5120c8' : '#374151'}`,
-															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-															transition: 'all 0.15s', fontFamily: 'inherit',
-														}}>
-														<FileText size={14} color={activeTab === 'file' ? '#ffffff' : '#9ca3af'} />
-														{isAr ? 'ملف PDF' : 'PDF File'}
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													border: activeTab === 'file' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
+													background: activeTab === 'file' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
+													color: activeTab === 'file' ? '#fff' : '#94a3b8',
+													boxShadow: activeTab === 'file' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.18s ease', fontFamily: 'inherit',
+												}}>
+												<FileText size={14} />
+												{isAr ? 'ملف PDF' : 'PDF File'}
 											</button>
 										)}
 										{!!activeLesson?.imageUrl && (
 											<button
 												onClick={() => setActiveTab('image')}
-														style={{
-															display: 'flex', alignItems: 'center', gap: '6px',
-															padding: '8px 16px', borderRadius: '8px',
-															background: activeTab === 'image' ? '#5120c8' : 'transparent',
-															color: activeTab === 'image' ? '#ffffff' : '#9ca3af',
-															border: `1px solid ${activeTab === 'image' ? '#5120c8' : '#374151'}`,
-															cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-															transition: 'all 0.15s', fontFamily: 'inherit',
-														}}>
-														<Image size={14} color={activeTab === 'image' ? '#ffffff' : '#9ca3af'} />
+												style={{
+													display: 'flex', alignItems: 'center', gap: '6px',
+													padding: '8px 16px', borderRadius: '8px',
+													border: activeTab === 'image' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
+													background: activeTab === 'image' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
+													color: activeTab === 'image' ? '#fff' : '#94a3b8',
+													boxShadow: activeTab === 'image' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
+													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+													transition: 'all 0.18s ease', fontFamily: 'inherit',
+												}}>
+												<Image size={14} />
 												{isAr ? 'الصورة' : 'Image'}
 											</button>
 										)}
@@ -1445,8 +1447,15 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 								{/* VIDEO TAB */}
 								{(activeTab === 'video' || (!activeLesson?.fileUrl && !activeLesson?.imageUrl)) && !!videoUrl && (
-									<div style={{ background: isDark ? '#0d0d0d' : '#ffffff' }}>
-										<div className="relative" style={{ margin: '16px' }}>
+									<div className="relative" style={{ margin: '16px' }}>
+										<div style={{
+											position: 'relative',
+											overflow: 'hidden',
+											borderRadius: '18px',
+											background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+											border: '1px solid rgba(255,255,255,0.08)',
+											boxShadow: '0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
+										}}>
 											<div
 												className="video-container relative overflow-hidden"
 												style={{
@@ -1454,7 +1463,10 @@ import VideoProtection from "../../../../components/VideoProtection";
 													background: "#000",
 													borderRadius: "12px",
 													minHeight: isMobile ? "200px" : undefined,
+													transition: 'box-shadow 0.3s ease',
 												}}
+												onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 40px rgba(81,32,200,0.18)' }}
+												onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none' }}
 												onTouchEnd={handleVideoTap}>
 												<video
 													ref={videoRef}
@@ -1566,41 +1578,42 @@ import VideoProtection from "../../../../components/VideoProtection";
 												)}
 											</div>
 
-											{/* Speed Controls */}
 											<div style={{
-												marginTop: "10px", padding: "0 4px",
+												position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
+												background: 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)',
+												pointerEvents: 'none',
+											}} />
+										</div>
+
+										{/* Speed Controls — Segmented Pills */}
+										<div style={{ marginTop: '12px' }}>
+											<div style={{
+												display: 'inline-flex', gap: '4px', padding: '5px',
+												borderRadius: '12px',
+												background: 'rgba(255,255,255,0.05)',
+												border: '1px solid rgba(255,255,255,0.06)',
 											}}>
-												<div style={{
-													display: "inline-flex", alignItems: "center", gap: "6px",
-													padding: "4px 10px", borderRadius: "8px",
-													background: "rgba(255,255,255,0.08)",
-													border: "1px solid rgba(255,255,255,0.12)",
-												}}>
-													<Zap size={13} color="#a78bfa" />
-													<span style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 500 }}>
-														{isAr ? "السرعة" : "Speed"}
-													</span>
-													<select
-														value={playbackRate}
-														onChange={(e) => setPlaybackRate(Number(e.target.value))}
+												{speeds.map((speed) => (
+													<button
+														key={speed}
+														onClick={() => { videoRef.current!.playbackRate = speed; setPlaybackRate(speed) }}
 														style={{
-															background: "transparent",
-															border: "none",
-															color: "#fff",
-															fontSize: "12px",
+															border: 'none',
+															padding: '6px 11px',
+															borderRadius: '9px',
+															fontSize: '12px',
 															fontWeight: 600,
-															cursor: "pointer",
-															outline: "none",
-															fontFamily: "inherit",
+															cursor: 'pointer',
+															transition: 'all 0.18s ease',
+															background: playbackRate === speed ? '#5120C8' : 'transparent',
+															color: playbackRate === speed ? '#fff' : '#94a3b8',
+															boxShadow: playbackRate === speed ? '0 4px 12px rgba(81,32,200,0.35)' : 'none',
+															fontFamily: 'inherit',
 														}}
 													>
-														{speeds.map((s) => (
-															<option key={s} value={s} style={{ background: "#1a1a1a" }}>
-																{s === 1 ? (isAr ? "عادي" : "Normal") : `${s}x`}
-															</option>
-														))}
-													</select>
-												</div>
+														{speed === 1 ? '1x' : `${speed}x`}
+													</button>
+												))}
 											</div>
 										</div>
 									</div>
