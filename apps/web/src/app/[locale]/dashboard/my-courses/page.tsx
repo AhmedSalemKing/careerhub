@@ -473,7 +473,7 @@ export default function MyCoursesPage() {
 													</button>
 												</>
 											) : (
-												<a href={`${LEARN_URL}/${locale}/courses/${course.slug || course.id}`}
+												<a href={`${LEARN_URL}/${locale}/courses/${course.id}`}
 													target="_blank" rel="noopener noreferrer"
 													style={{
 														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
