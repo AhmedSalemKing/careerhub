@@ -14,7 +14,7 @@ import {
   Calendar, CalendarDays, DollarSign, Wallet,
   Brain, MessageSquare, Award, Settings,
   Shield, Users, Bell, ClipboardList, CalendarCheck,
-  X, Menu
+  X, Menu, LogOut
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -179,16 +179,39 @@ return [
           )}
           
           {/* Drawer */}
-          <div className={`fixed top-0 bottom-0 z-50 w-[280px] bg-[color:var(--surface)] shadow-2xl transition-transform duration-300 lg:hidden ${
+          <div className={`fixed top-0 bottom-0 z-50 w-[280px] shadow-2xl transition-transform duration-300 lg:hidden ${
             sidebarOpen ? (isAr ? 'translate-x-0' : 'translate-x-0') : (isAr ? 'translate-x-full' : '-translate-x-full')
-          }`} style={{ right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0 }}>
+          }`} style={{
+            right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0,
+            background: 'rgba(13, 13, 13, 0.97)',
+            backdropFilter: 'blur(20px)',
+            borderLeft: '1px solid rgba(255,255,255,0.06)',
+          }}>
             {/* Drawer header */}
-            <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
-              <span className="font-bold text-foreground text-lg">DeveWay</span>
-              <button onClick={() => setSidebarOpen(false)} className="p-2 rounded-full bg-[color:var(--surface-2)]">
-                <X className="h-4 w-4 text-[color:var(--muted)]" />
+            <div className="flex items-center justify-between p-5">
+              <span className="font-bold text-white text-lg">
+                <span style={{ color: '#5120C8' }}>Deve</span>Way
+              </span>
+              <button onClick={() => setSidebarOpen(false)}
+                style={{
+                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer',
+                }}>
+                <X className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
               </button>
             </div>
+
+            {/* User info */}
+            {user && (
+              <div style={{
+                margin: '0 12px 12px', padding: '12px 16px', borderRadius: '12px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: 0 }}>{user?.profile?.firstName || user?.name || ''}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0 0' }}>{user?.email}</p>
+              </div>
+            )}
             
             {/* Drawer nav items */}
             <nav className="p-3 space-y-1">
@@ -198,24 +221,46 @@ return [
                 return (
                   <a key={i} href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                      isActive 
-                        ? 'bg-primary text-white' 
-                        : 'text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] hover:text-foreground'
-                    }`}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      padding: '11px 16px', borderRadius: '10px',
+                      textDecoration: 'none', fontSize: '14px', fontWeight: 600,
+                      background: isActive ? 'rgba(81,32,200,0.15)' : 'transparent',
+                      color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                      border: isActive ? '1px solid rgba(81,32,200,0.25)' : '1px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease, color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff' }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }
+                    }}
                   >
                     <Icon className="h-5 w-5" />
-                    <span className="font-semibold">{isAr ? item.labelAr : item.labelEn}</span>
+                    <span>{isAr ? item.labelAr : item.labelEn}</span>
                   </a>
                 )
               })}
               
+              {/* Divider */}
+              <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '12px 0' }} />
+
               {/* Logout */}
               <button onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all mt-4"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '11px 16px', borderRadius: '10px',
+                  background: 'rgba(22, 163, 74, 0.1)',
+                  color: 'rgb(22, 163, 74)',
+                  border: '1px solid rgba(22, 163, 74, 0.3)',
+                  cursor: 'pointer', fontSize: '14px', fontWeight: 600,
+                  fontFamily: 'inherit',
+                }}
               >
-                <X className="h-5 w-5" />
-                <span className="font-semibold">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
+                <LogOut className="h-5 w-5" />
+                <span>{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
               </button>
             </nav>
           </div>
