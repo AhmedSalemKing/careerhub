@@ -109,23 +109,14 @@ export default function MySessionsPage() {
   const paySession = async (sessionId: string, price: number) => {
     setPayingId(sessionId)
     try {
-      // Check wallet balance first
-      const walletRes = await get('/wallet')
-      const walletBalance = walletRes?.data?.data?.balance ?? walletRes?.data?.balance ?? 0
-
-      if (walletBalance >= price) {
-        await post(`/consulting/sessions/${sessionId}/pay-wallet`)
-        toast.success(isAr ? 'تم الدفع من المحفظة!' : 'Paid from wallet!')
-      } else {
-        const { data } = await post(`/consulting/sessions/${sessionId}/pay`)
-        const clientSecret = data?.data?.clientSecret
-        if (clientSecret) {
-          toast.success(isAr ? 'تم تجهيز الدفع. أكمل عبر البطاقة.' : 'Proceed with card payment.')
-        } else {
-          toast.error(isAr ? 'رصيد المحفظة غير كافٍ' : 'Insufficient wallet balance')
-          return
-        }
+      const res = await post(`/consulting/sessions/${sessionId}/pay`)
+      const payload = res?.data?.data ?? res?.data ?? res
+      const checkoutUrl = payload?.checkoutUrl || payload?.url
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl
+        return
       }
+      toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
       qc.invalidateQueries({ queryKey: ['my-sessions'] })
     } catch(e: any) {
       toast.error(e.message || (isAr ? 'خطأ في الدفع' : 'Payment error'))
