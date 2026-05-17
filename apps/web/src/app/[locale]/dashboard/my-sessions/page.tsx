@@ -62,6 +62,7 @@ export default function MySessionsPage() {
   const [rescheduleReason, setRescheduleReason] = useState('')
   const [copied, setCopied] = useState('')
   const [paymentSession, setPaymentSession] = useState<any>(null)
+  const [payingId, setPayingId] = useState<string | null>(null)
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -106,21 +107,15 @@ export default function MySessionsPage() {
   const upcomingCount = sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length
 
   const paySession = async (sessionId: string) => {
-    const token = localStorage.getItem('deveway_token') || sessionStorage.getItem('deveway_token') || ''
+    setPayingId(sessionId)
     try {
-      const res = await fetch(`https://deve-way.onrender.com/api/payments/checkout/consulting/${sessionId}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locale })
-      })
-      const data = await res.json()
-      if (data?.data?.url) {
-        window.location.href = data.data.url
-      } else {
-        throw new Error(data.message || 'Failed')
-      }
+      await post(`/consulting/sessions/${sessionId}/pay`)
+      toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+      qc.invalidateQueries({ queryKey: ['my-sessions'] })
     } catch(e: any) {
       toast.error(e.message || (isAr ? 'خطأ في الدفع' : 'Payment error'))
+    } finally {
+      setPayingId(null)
     }
   }
 
@@ -320,8 +315,9 @@ export default function MySessionsPage() {
 
             {(session.price || 0) > 0 && !isPaid && isUpcoming && !isRescheduleReq && (
               <button onClick={() => paySession(session.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-                <CreditCard size={12} />{isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`}
+                disabled={payingId === session.id}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 700, opacity: payingId === session.id ? 0.7 : 1 }}>
+                <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`)}
               </button>
             )}
 
