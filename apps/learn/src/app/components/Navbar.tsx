@@ -369,9 +369,11 @@ export function Navbar() {
               <div className="hidden sm:flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
                 <LanguageSwitcher />
                 <ThemeToggle />
-                {mounted && isLoggedIn && (
-                  <Link
-                    href={`/${locale}/dashboard/ai-chat`}
+                  {mounted && isLoggedIn && (
+                  <a
+                    href={`https://deveway-teal.vercel.app/${locale}/dashboard/ai-chat`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     title="DeveWay AI"
                     className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
                     style={{ background: 'rgba(81, 32, 200, 0.10)' }}
@@ -379,7 +381,7 @@ export function Navbar() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
                   >
                     <Sparkles className="h-[14px] w-[14px]" style={{ color: '#5120c8' }} />
-                  </Link>
+                  </a>
                 )}
               </div>
 
@@ -541,14 +543,16 @@ export function Navbar() {
               <LanguageSwitcher />
               <ThemeToggle />
               {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/ai-chat`}
+                <a
+                  href={`https://deveway-teal.vercel.app/${locale}/dashboard/ai-chat`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   AI
-                </Link>
+                </a>
               )}
               {/* <NotificationBell /> */}
               <CartIcon />
