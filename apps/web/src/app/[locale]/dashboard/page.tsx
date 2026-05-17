@@ -849,13 +849,13 @@ function Stat({
 }) {
   return (
     <div 
-      className={`rounded-2xl p-6 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${delay + 1}`}
+      className={`rounded-2xl p-4 md:p-6 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${delay + 1}`}
     >
       <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} shadow-md`}>
         {icon || <BookOpen className="h-5 w-5 text-white" />}
       </div>
       <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{label}</p>
-      <p className="text-3xl font-extrabold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
+      <p className="text-2xl md:text-3xl font-extrabold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
         {value}
       </p>
     </div>
@@ -896,6 +896,10 @@ function ConsultantOverview() {
 
   return (
     <div style={{ padding: '1.5rem 2rem 2.5rem' }}>
+      <style>{`
+        .consultant-two-col { display: grid; grid-template-columns: 1fr 280px; gap: 1.25rem; }
+        @media (max-width: 768px) { .consultant-two-col { grid-template-columns: 1fr; } }
+      `}</style>
 
       {/* Welcome Banner */}
       <div style={{
@@ -1051,10 +1055,7 @@ function ConsultantOverview() {
       </div>
 
       {/* Two column: upcoming sessions + quick actions */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: '1fr 280px',
-        gap: '1.25rem',
-      }}>
+      <div className="consultant-two-col">
         {/* Upcoming Sessions */}
         <div style={{
           background: 'var(--card-bg)',
@@ -1291,10 +1292,10 @@ export default function DashboardPage() {
 
   if (!mounted) {
     return (
-      <div className="p-6 lg:p-8 space-y-6">
+      <div className="p-4 md:p-6 lg:p-8 space-y-6">
         {/* Skeleton Welcome Card */}
-        <div className="rounded-2xl p-8 bg-surface border border-border">
-          <div className="flex items-center gap-4">
+        <div className="rounded-2xl p-4 md:p-8 bg-surface border border-border">
+          <div className="flex items-center gap-4 flex-wrap">
             <Skeleton className="w-14 h-14 rounded-2xl" />
             <div className="space-y-2">
               <Skeleton className="h-8 w-48 rounded-lg" />
@@ -1304,7 +1305,7 @@ export default function DashboardPage() {
         </div>
         
         {/* Skeleton Stats */}
-        <div className="grid gap-5 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-36 rounded-2xl" />
           ))}

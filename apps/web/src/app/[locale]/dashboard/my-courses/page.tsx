@@ -117,14 +117,14 @@ export default function MyCoursesPage() {
 
 	return (
 		<AuthGate>
-			<div className="p-6" dir={isAr ? "rtl" : "ltr"}>
+			<div className="p-4 md:p-6" dir={isAr ? "rtl" : "ltr"} style={{ overflowX: 'hidden' }}>
 				{/* PAGE HEADER */}
 				<div style={{
 					display: 'flex', alignItems: 'center', justifyContent: 'space-between',
 					marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
 				}}>
 					<div>
-						<h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
+						<h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 800, margin: 0 }}>
 							{isAr ? 'كورساتي' : 'My Courses'}
 						</h1>
 						<p style={{ color: 'var(--muted-foreground)', marginTop: '4px', fontSize: '0.9rem' }}>
@@ -150,7 +150,7 @@ export default function MyCoursesPage() {
 				{/* STATS BAR */}
 				{isInstructor && !isLoading && courses.length > 0 && (
 					<div style={{
-						display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+						display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
 						gap: '1rem', marginBottom: '2rem',
 					}}>
 						{[
@@ -202,7 +202,7 @@ export default function MyCoursesPage() {
 				{isLoading && (
 					<div style={{
 						display: 'grid',
-						gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+						gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
 						gap: '1.25rem',
 					}}>
 						{[1, 2, 3].map(i => (
@@ -224,7 +224,7 @@ export default function MyCoursesPage() {
 				{/* EMPTY STATE */}
 				{!isLoading && courses.length === 0 && (
 					<div style={{
-						textAlign:'center', padding:'5rem 2rem',
+						textAlign:'center', padding:'3rem 1rem',
 						background:'rgba(255,255,255,0.02)',
 						border:'1px dashed rgba(255,255,255,0.08)',
 						borderRadius:'16px',
@@ -275,7 +275,7 @@ export default function MyCoursesPage() {
 				{!isLoading && courses.length > 0 && (
 					<div style={{
 						display: 'grid',
-						gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+						gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
 						gap: '1.25rem',
 					}}>
 						{courses.map((course: any) => {
@@ -395,8 +395,8 @@ export default function MyCoursesPage() {
 
 										{/* Stats row */}
 										<div style={{
-											display: 'flex', alignItems: 'center', gap: '16px',
-											marginBottom: '1rem',
+											display: 'flex', alignItems: 'center', gap: '12px',
+											marginBottom: '1rem', flexWrap: 'wrap',
 										}}>
 											{isInstructor ? (
 												<>
