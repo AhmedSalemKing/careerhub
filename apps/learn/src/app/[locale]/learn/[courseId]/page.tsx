@@ -1568,27 +1568,39 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 											{/* Speed Controls */}
 											<div style={{
-												display: "flex", alignItems: "center", gap: "8px",
 												marginTop: "10px", padding: "0 4px",
 											}}>
-												<Zap size={14} color="#a78bfa" />
-												<span style={{ color: textSecondary, fontSize: "13px", fontWeight: 600 }}>
-													{isAr ? "السرعة:" : "Speed:"}
-												</span>
-												{speeds.map((speed) => (
-													<button
-														key={speed}
-														onClick={() => setPlaybackRate(speed)}
+												<div style={{
+													display: "inline-flex", alignItems: "center", gap: "6px",
+													padding: "4px 10px", borderRadius: "8px",
+													background: "rgba(255,255,255,0.08)",
+													border: "1px solid rgba(255,255,255,0.12)",
+												}}>
+													<Zap size={13} color="#a78bfa" />
+													<span style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 500 }}>
+														{isAr ? "السرعة" : "Speed"}
+													</span>
+													<select
+														value={playbackRate}
+														onChange={(e) => setPlaybackRate(Number(e.target.value))}
 														style={{
-															padding: "3px 10px", borderRadius: "4px", fontSize: "12px",
-															background: playbackRate === speed ? "#5120c8" : "transparent",
-															color: playbackRate === speed ? "#fff" : "#9ca3af",
-															border: `1px solid ${playbackRate === speed ? "#5120c8" : "#374151"}`,
-															cursor: "pointer", fontFamily: "inherit",
-														}}>
-														{speed}x
-													</button>
-												))}
+															background: "transparent",
+															border: "none",
+															color: "#fff",
+															fontSize: "12px",
+															fontWeight: 600,
+															cursor: "pointer",
+															outline: "none",
+															fontFamily: "inherit",
+														}}
+													>
+														{speeds.map((s) => (
+															<option key={s} value={s} style={{ background: "#1a1a1a" }}>
+																{s === 1 ? (isAr ? "عادي" : "Normal") : `${s}x`}
+															</option>
+														))}
+													</select>
+												</div>
 											</div>
 										</div>
 									</div>
