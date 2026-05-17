@@ -37,6 +37,13 @@ export class PaymentsController {
     )
   }
 
+  // Verify payment on success page redirect (when webhook is unreliable)
+  @Post('verify-payment')
+  @UseGuards(JwtAuthGuard)
+  async verifyPayment(@Body() body: { stripeSessionId?: string }, @Request() req: any) {
+    return this.paymentsService.verifyStripePayment(body.stripeSessionId || '', req.user.id)
+  }
+
   // Stripe Webhook - NO AUTH
   @Post('webhook')
   async stripeWebhook(

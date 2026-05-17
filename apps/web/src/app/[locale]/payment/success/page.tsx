@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, Video, Radio, MapPin, Calendar, ArrowRight, Loader2 } from 'lucide-react'
+import api from '@/lib/api'
 
 export default function PaymentSuccessPage() {
   const locale = useLocale()
@@ -10,7 +11,7 @@ export default function PaymentSuccessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const sessionId = searchParams.get('session_id')
+  const stripeSessionId = searchParams.get('session_id')
   const type = searchParams.get('type') || 'course'
   const courseId = searchParams.get('courseId')
   const courseType = searchParams.get('courseType') || 'recorded'
@@ -18,6 +19,24 @@ export default function PaymentSuccessPage() {
 
   const [countdown, setCountdown] = useState(5)
   const [redirecting, setRedirecting] = useState(false)
+  const [verifying, setVerifying] = useState(true)
+  const [verifyError, setVerifyError] = useState('')
+
+  // Verify consulting payment with backend
+  useEffect(() => {
+    if (type !== 'consulting' || !stripeSessionId) {
+      setVerifying(false)
+      return
+    }
+    setVerifying(true)
+    api.post('/payments/verify-payment', { stripeSessionId })
+      .then(() => setVerifyError(''))
+      .catch((e: any) => {
+        console.error('[Payment] Verify failed:', e)
+        setVerifyError(e?.response?.data?.message || e?.message || 'Verification failed')
+      })
+      .finally(() => setVerifying(false))
+  }, [type, stripeSessionId])
 
   const bg = 'var(--background)'
   const cardBg = 'var(--card)'
@@ -106,21 +125,50 @@ export default function PaymentSuccessPage() {
           <span style={{ color: config.color, fontSize: 13, fontWeight: 700 }}>{isAr ? config.ar : config.en}</span>
         </div>
 
-        {/* Card */}
-        <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, padding: '20px', marginBottom: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', animation: 'pulse 2s infinite' }} />
-            <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
-            <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 700 }}>
-              {isAr ? 'تم التأكيد' : 'Confirmed'}
-            </span>
+        {/* Card - verify consulting payment */}
+        {type === 'consulting' && verifying ? (
+          <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, padding: '20px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8 }}>
+              <Loader2 size={18} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+              <span style={{ color: '#5120c8', fontSize: 14, fontWeight: 700 }}>
+                {isAr ? 'جاري تأكيد الدفع...' : 'Confirming payment...'}
+              </span>
+            </div>
+            <p style={{ color: subtext, fontSize: 13, margin: 0, textAlign: 'center' }}>
+              {isAr ? 'الرجاء الانتظار أثناء تأكيد الدفع مع البنك' : 'Please wait while we confirm your payment'}
+            </p>
           </div>
-          <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
-            {isAr
-              ? `سيتم تحويلك تلقائيا خلال ${countdown} ثواني...`
-              : `Redirecting automatically in ${countdown} seconds...`}
-          </p>
-        </div>
+        ) : verifyError ? (
+          <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, padding: '20px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626' }} />
+              <span style={{ color: '#dc2626', fontSize: 13, fontWeight: 700 }}>
+                {isAr ? 'تحذير' : 'Warning'}
+              </span>
+            </div>
+            <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
+              {isAr
+                ? `لم يتم تأكيد الدفع تلقائيا. إذا تم خصم المبلغ، جلساتك ستظهر كمدفوعة لاحقا.`
+                : `Payment could not be verified automatically. If the amount was deducted, your sessions will appear as paid shortly.`}
+            </p>
+          </div>
+        ) : (
+          <div style={{ background: cardBg, borderRadius: 16, border: `1px solid ${border}`, padding: '20px', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#16a34a', animation: 'pulse 2s infinite' }} />
+              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}`}</style>
+              <span style={{ color: '#16a34a', fontSize: 13, fontWeight: 700 }}>
+                {isAr ? 'تم التأكيد' : 'Confirmed'}
+              </span>
+            </div>
+            <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
+              {isAr
+                ? `سيتم تحويلك تلقائيا خلال ${countdown} ثواني...`
+                : `Redirecting automatically in ${countdown} seconds...`}
+            </p>
+          </div>
+        )}
 
         {/* CTA buttons */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>

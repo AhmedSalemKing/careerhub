@@ -291,4 +291,64 @@ export class PaymentsService {
 
     console.log(`[Webhook] Consulting payment confirmed: ${sessionId}`)
   }
+
+  async verifyStripePayment(stripeSessionId: string, userId: string) {
+    if (!stripeSessionId) throw new BadRequestException('Missing stripeSessionId')
+
+    const stripeSession = await this.stripe.checkout.sessions.retrieve(stripeSessionId)
+    const metadata = stripeSession.metadata || {}
+
+    if (metadata.type !== 'consulting_session') {
+      throw new BadRequestException('Not a consulting session payment')
+    }
+
+    const sessionId = metadata.sessionId
+    if (!sessionId) throw new BadRequestException('Missing sessionId in metadata')
+
+    // Verify ownership
+    const consultingSession = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      select: { studentId: true, paymentStatus: true },
+    })
+    if (!consultingSession) throw new NotFoundException('Session not found')
+    if (consultingSession.studentId !== userId) throw new BadRequestException('Not authorized')
+    if (consultingSession.paymentStatus === 'PAID') {
+      return { success: true, message: 'Already confirmed', alreadyPaid: true }
+    }
+
+    if (stripeSession.payment_status !== 'paid') {
+      // Attempt to re-fetch after a moment in case Stripe is still processing
+      await new Promise(r => setTimeout(r, 2000))
+      const refreshed = await this.stripe.checkout.sessions.retrieve(stripeSessionId)
+      if (refreshed.payment_status !== 'paid') {
+        throw new BadRequestException('Payment not completed')
+      }
+    }
+
+    await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        paymentStatus: 'PAID',
+        paidAt: new Date(),
+        status: 'CONFIRMED',
+      },
+    })
+
+    // Notify consultant
+    try {
+      await this.prisma.notification.create({
+        data: {
+          userId: metadata.consultantId,
+          titleAr: 'تم الدفع - أضف رابط الاجتماع',
+          titleEn: 'Payment Received - Add Meeting Link',
+          contentAr: `تم استلام دفعة - الرجاء إضافة رابط الاجتماع`,
+          contentEn: `Payment received - please add meeting link`,
+          type: 'SESSION_BOOKED',
+          isRead: false,
+        },
+      })
+    } catch {}
+
+    return { success: true, message: 'Payment confirmed' }
+  }
 }
