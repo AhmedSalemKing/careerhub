@@ -1248,6 +1248,15 @@ function CourseSettingsTab({
   const [expectedLessons, setExpectedLessons] = useState(course?.expectedLessons ?? 0)
   const [certificateEnabled, setCertificateEnabled] = useState(course?.certificateEnabled ?? true)
 
+  useEffect(() => {
+    if (course?.expectedLessons !== undefined) {
+      setExpectedLessons(course.expectedLessons)
+    }
+    if (course?.certificateEnabled !== undefined) {
+      setCertificateEnabled(course.certificateEnabled)
+    }
+  }, [course?.expectedLessons, course?.certificateEnabled])
+
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }))
 
   async function handleSave() {
