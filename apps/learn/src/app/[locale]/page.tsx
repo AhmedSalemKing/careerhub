@@ -162,7 +162,6 @@ export default function HomePage() {
     { icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 35, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
   ]
 
-  const maxEnrollments = Math.max(...apiCourses.map((c: any) => c._count?.enrollments || 0), 0)
   const featuredCourses = apiCourses.map((c: any, i: number) => ({
     id: c.id,
     title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
@@ -170,8 +169,8 @@ export default function HomePage() {
     students: c._count?.enrollments || 0,
     rating: 4.7 + i * 0.1,
     price: c.price ?? 0,
-    badge: (c._count?.enrollments || 0) === maxEnrollments && maxEnrollments > 0 ? (locale === 'ar' ? 'الأكثر طلباً' : 'Popular') : i === 1 ? (locale === 'ar' ? 'جديد' : 'New') : null,
-    badgeBg: (c._count?.enrollments || 0) === maxEnrollments && maxEnrollments > 0 ? '#F5A623' : '#2BBFA3',
+    badge: c.isMostPopular ? (locale === 'ar' ? 'الأكثر طلباً' : 'Popular') : i === 1 ? (locale === 'ar' ? 'جديد' : 'New') : null,
+    badgeBg: c.isMostPopular ? '#F5A623' : '#2BBFA3',
     thumbnail: c.thumbnail,
   }))
 

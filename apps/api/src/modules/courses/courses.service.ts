@@ -134,6 +134,7 @@ export class CoursesService {
         },
         orderBy: [
           { isFeatured: 'desc' },
+          { enrollments: { _count: 'desc' } },
           { createdAt: 'desc' },
         ],
         skip,
@@ -142,6 +143,7 @@ export class CoursesService {
       this.prisma.course.count({ where }),
     ]);
 
+    const maxEnrollment = Math.max(...courses.map(c => c._count.enrollments), 0)
     const transformedCourses = courses.map(course => ({
       id: course.id,
       title: language === 'ar' ? course.titleAr : course.titleEn,
@@ -166,6 +168,7 @@ export class CoursesService {
         profile: course.instructor.profile,
       } : undefined,
       _count: course._count,
+      isMostPopular: course._count.enrollments === maxEnrollment && maxEnrollment > 0,
     }));
 
     // If userId provided, check enrollment for each course
