@@ -52,7 +52,6 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
     opacity: visible ? 1 : 0,
     transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease',
     zIndex: 9999,
-    display: 'flex',
     alignItems: 'center',
     gap: '2px',
     padding: '8px 12px',
