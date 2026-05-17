@@ -44,7 +44,7 @@ export function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+        className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
       >
         <Globe className="h-4 w-4" />
         <span className="hidden sm:inline">{currentLang?.flag}</span>
@@ -52,7 +52,7 @@ export function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 right-0 rtl:right-auto rtl:left-0 w-36 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden z-50">
+        <div className="absolute top-full mt-2 right-0 rtl:right-auto rtl:left-0 w-36 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent shadow-lg overflow-hidden z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}

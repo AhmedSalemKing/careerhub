@@ -361,7 +361,7 @@ export default function HomePage() {
         </div>
 
         {/* ========== ADAPTIVE WAVE DIVIDER ========== */}
-        <div className={`absolute bottom-0 left-0 right-0 overflow-hidden leading-none z-10 ${isDarkMode ? 'wave-dark' : 'wave-light'}`}>
+        <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none z-10">
           <svg 
             className="relative block w-full h-[120px] sm:h-[150px] lg:h-[180px]" 
             viewBox="0 0 1440 180" 
@@ -442,7 +442,7 @@ export default function HomePage() {
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <div className="h-14 w-14 rounded-full bg-white/90 flex items-center justify-center">
+                    <div className="h-14 w-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.9)' }}>
                       <Play className="h-6 w-6" style={{ color: 'var(--navy)', transform: 'translateX(2px)' }} />
                     </div>
                   </div>
@@ -557,23 +557,13 @@ export default function HomePage() {
         </a>
       </div>
 
-      {/* ========== CSS ANIMATIONS & WAVE COLORS ========== */}
+      {/* ========== ANIMATIONS ========== */}
       <style>{`
         @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
         @keyframes floatBadge { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-badge { animation: floatBadge 7s ease-in-out infinite; }
         .animate-float-badge-reverse { animation: floatBadge 5s ease-in-out infinite reverse; }
-
-        /* Dark Mode - Black Waves */
-        .wave-dark .wave-main-path { fill: #0D0D0D; }
-        .wave-dark .wave-secondary-path { fill: #1a1a2e; }
-        .wave-dark .wave-accent-path { fill: url(#waveGradientDark); }
-
-        /* Light Mode - White Waves */
-        .wave-light .wave-main-path { fill: #ffffff; }
-        .wave-light .wave-secondary-path { fill: #f8f9fa; }
-        .wave-light .wave-accent-path { fill: url(#waveGradientLight); }
       `}</style>
     </div>
   )

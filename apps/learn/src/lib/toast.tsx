@@ -57,7 +57,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               if (!open) setItems((prev) => prev.filter((x) => x.id !== item.id))
             }}
             className={[
-              'rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 shadow-lg',
+              'rounded-xl border bg-transparent px-4 py-3 shadow-lg',
               item.variant === 'success' && 'border-green-200 dark:border-green-800',
               item.variant === 'danger' && 'border-red-200 dark:border-red-800',
             ]

@@ -66,12 +66,13 @@ export default async function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('theme');
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  var isDark = theme === 'dark' || (theme === 'system' && prefersDark) || (!theme && prefersDark);
-                  document.documentElement.classList.toggle('dark', isDark);
-                  document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-                  document.documentElement.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
-                  if (document.body) document.body.style.backgroundColor = isDark ? '#0d0d0d' : '#ffffff';
+                  if (theme === 'light') {
+                    document.documentElement.classList.add('light');
+                    document.documentElement.classList.remove('dark');
+                  } else {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                  }
                 } catch(e) {}
                 window.addEventListener('load', function() {
                   requestAnimationFrame(function() {
@@ -82,13 +83,6 @@ export default async function RootLayout({
             `,
           }}
         />
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            html, body { min-height: 100vh; }
-            html, body { background-color: #ffffff; }
-            html.dark, html.dark body { background-color: #0d0d0d; }
-          `
-        }} />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{

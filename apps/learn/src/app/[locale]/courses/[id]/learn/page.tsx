@@ -45,7 +45,7 @@ export default function CheckoutPage() {
         <div className="grid gap-8 lg:grid-cols-5">
           {/* Payment Form */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="rounded-2xl border bg-white p-6 dark:bg-gray-800">
+            <div className="rounded-2xl border bg-transparent p-6">
               <h2 className="text-lg font-bold mb-4">{t('checkout.payment_method')}</h2>
 
               <div className="space-y-3">
@@ -99,7 +99,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border bg-white p-6 dark:bg-gray-800">
+            <div className="rounded-2xl border bg-transparent p-6">
               <h2 className="text-lg font-bold mb-4">{t('checkout.card_details')}</h2>
 
               <div className="space-y-4">
@@ -140,7 +140,7 @@ export default function CheckoutPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl border bg-white p-6 dark:bg-gray-800 sticky top-24">
+            <div className="rounded-2xl border bg-transparent p-6 sticky top-24">
               <h2 className="text-lg font-bold mb-4">{t('checkout.summary')}</h2>
 
               <div className="flex gap-4 mb-4">
