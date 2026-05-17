@@ -1174,7 +1174,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													color: openSections.has(section.id) ? '#a78bfa' : '#666680',
 													display: 'flex', alignItems: 'center', justifyContent: 'center',
 													fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
-													transition: 'all 0.2s ease',
+													transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
 												}}>
 												{sectionIndex + 1}
 											</span>
@@ -1402,7 +1402,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													color: activeTab === 'video' ? '#fff' : '#94a3b8',
 													boxShadow: activeTab === 'video' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
 													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.18s ease', fontFamily: 'inherit',
+													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
 												}}>
 												<Video size={14} />
 												{isAr ? 'الفيديو' : 'Video'}
@@ -1419,7 +1419,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													color: activeTab === 'file' ? '#fff' : '#94a3b8',
 													boxShadow: activeTab === 'file' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
 													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.18s ease', fontFamily: 'inherit',
+													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
 												}}>
 												<FileText size={14} />
 												{isAr ? 'ملف PDF' : 'PDF File'}
@@ -1436,7 +1436,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 													color: activeTab === 'image' ? '#fff' : '#94a3b8',
 													boxShadow: activeTab === 'image' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
 													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'all 0.18s ease', fontFamily: 'inherit',
+													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
 												}}>
 												<Image size={14} />
 												{isAr ? 'الصورة' : 'Image'}
@@ -1604,7 +1604,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 															fontSize: '12px',
 															fontWeight: 600,
 															cursor: 'pointer',
-															transition: 'all 0.18s ease',
+															transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease',
 															background: playbackRate === speed ? '#5120C8' : 'transparent',
 															color: playbackRate === speed ? '#fff' : '#94a3b8',
 															boxShadow: playbackRate === speed ? '0 4px 12px rgba(81,32,200,0.35)' : 'none',
@@ -2401,7 +2401,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 					alignItems: "center",
 					justifyContent: "center",
 					boxShadow: "0 4px 16px rgba(81,32,200,0.3)",
-					transition: "all 0.2s ease",
+					transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
 					zIndex: 50,
 					textDecoration: "none",
 				}}
