@@ -1,13 +1,10 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, Video, Radio, MapPin, Calendar, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function PaymentSuccessPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
@@ -22,11 +19,11 @@ export default function PaymentSuccessPage() {
   const [countdown, setCountdown] = useState(5)
   const [redirecting, setRedirecting] = useState(false)
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
+  const bg = 'var(--background)'
+  const cardBg = 'var(--card)'
+  const border = 'var(--border)'
+  const text = 'var(--foreground)'
+  const subtext = 'var(--muted)'
 
   const learnBase = 'https://devewayhub.vercel.app'
 
