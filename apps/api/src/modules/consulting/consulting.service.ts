@@ -108,7 +108,7 @@ export class ConsultingService {
     })
     if (!consultant) throw new NotFoundException('Consultant not found')
 
-    const sessionPrice = parseFloat((consultant.profile?.sessionPrice as any)?.toString() || '0')
+    const sessionPrice = Number(consultant.hourlyRate || consultant.profile?.sessionPrice || 0)
 
     const session = await this.prisma.consultingSession.create({
       data: {
@@ -122,7 +122,7 @@ export class ConsultingService {
         duration: data.duration || (consultant.profile?.sessionDuration as number) || 60,
         price: sessionPrice,
         status: 'PENDING',
-        paymentStatus: 'UNPAID',
+        paymentStatus: sessionPrice > 0 ? 'UNPAID' : 'PAID',
         userApproved: true,
         consultantApproved: false,
       },
