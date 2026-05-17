@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
@@ -22,7 +22,6 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
   const [visible, setVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const [expanded, setExpanded] = useState(false) // for responsive collapse
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const locale = pathname.split('/')[1] || 'ar'
@@ -68,41 +67,9 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
 
   return (
     <>
-      {/* RESPONSIVE: small icon button to expand on mobile - hidden on desktop (lg+) */}
-      <div
-        className="fixed lg:hidden z-[9998]"
-        style={{
-          ...(position === 'bottom' ? { bottom: '24px', right: '16px' } : { top: '16px', right: '16px' }),
-        }}
-      >
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: '#5120c8',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(81,32,200,0.4)',
-            color: '#fff',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            {expanded
-              ? <path d="M18 6L6 18M6 6l12 12"/>
-              : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>
-            }
-          </svg>
-        </button>
-      </div>
-
       {/* MAIN DOCK - hidden on mobile, visible on desktop */}
       <div
-        className={`hidden lg:flex ${expanded ? '!flex' : ''}`}
+        className="hidden lg:flex"
         style={dockStyle}
       >
         {items.map((item, i) => {
@@ -234,103 +201,7 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
         )}
       </div>
 
-      {/* MOBILE EXPANDED OVERLAY */}
-      {expanded && (
-        <div
-          className="md:hidden fixed inset-0 z-[9997]"
-          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setExpanded(false)}
-        />
-      )}
 
-      {/* MOBILE EXPANDED MENU */}
-      {expanded && (
-        <div
-          className="md:hidden fixed z-[9998]"
-          style={{
-            ...(position === 'bottom' ? { bottom: '80px' } : { top: '80px' }),
-            right: '16px',
-            background: isDark ? 'rgba(15,18,33,0.95)' : 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(24px)',
-            borderRadius: '16px',
-            padding: '8px',
-            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.2)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            minWidth: '180px',
-          }}
-        >
-          {items.map((item, i) => {
-            const Icon = item.icon
-            const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-            const label = isRTL ? item.labelAr : item.labelEn
-            return (
-              <Link
-                key={i}
-                href={item.href}
-                onClick={() => setExpanded(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '10px 14px',
-                  borderRadius: '10px',
-                  textDecoration: 'none',
-                  background: isActive
-                    ? isDark ? 'rgba(81,32,200,0.25)' : 'rgba(81,32,200,0.1)'
-                    : 'transparent',
-                }}
-              >
-                <Icon size={18} style={{ color: isActive ? '#5120c8' : isDark ? 'rgba(255,255,255,0.65)' : 'rgba(13,13,13,0.55)' }} />
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: isActive ? '600' : '400',
-                  color: isActive ? '#5120c8' : isDark ? 'rgba(255,255,255,0.8)' : '#0d0d0d',
-                }}>
-                  {label}
-                </span>
-              </Link>
-            )
-          })}
-
-          <div style={{ height: '1px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)', margin: '4px 0' }} />
-
-          <button
-            onClick={() => { setTheme(isDark ? 'light' : 'dark'); setExpanded(false) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '10px 14px', borderRadius: '10px',
-              background: 'transparent', border: 'none', cursor: 'pointer', width: '100%',
-            }}
-          >
-            {mounted && (isDark
-              ? <Sun size={18} style={{ color: 'rgba(255,255,255,0.65)' }} />
-              : <Moon size={18} style={{ color: 'rgba(13,13,13,0.55)' }} />
-            )}
-            <span style={{ fontSize: '14px', color: isDark ? 'rgba(255,255,255,0.8)' : '#0d0d0d' }}>
-              {mounted ? (isDark ? (isRTL ? 'الوضع الفاتح' : 'Light Mode') : (isRTL ? 'الوضع الداكن' : 'Dark Mode')) : ''}
-            </span>
-          </button>
-
-          {onLogout && (
-            <button
-              onClick={() => { onLogout(); setExpanded(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '10px 14px', borderRadius: '10px',
-                background: 'transparent', border: 'none', cursor: 'pointer', width: '100%',
-              }}
-            >
-              <LogOut size={18} style={{ color: '#ef4444' }} />
-              <span style={{ fontSize: '14px', color: '#ef4444' }}>
-                {isRTL ? 'تسجيل الخروج' : 'Sign Out'}
-              </span>
-            </button>
-          )}
-        </div>
-      )}
     </>
   )
 }
