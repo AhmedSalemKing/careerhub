@@ -106,11 +106,26 @@ export default function MySessionsPage() {
 
   const upcomingCount = sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length
 
-  const paySession = async (sessionId: string) => {
+  const paySession = async (sessionId: string, price: number) => {
     setPayingId(sessionId)
     try {
-      await post(`/consulting/sessions/${sessionId}/pay`)
-      toast.success(isAr ? 'تم الدفع بنجاح!' : 'Payment successful!')
+      // Check wallet balance first
+      const walletRes = await get('/wallet')
+      const walletBalance = walletRes?.data?.data?.balance ?? walletRes?.data?.balance ?? 0
+
+      if (walletBalance >= price) {
+        await post(`/consulting/sessions/${sessionId}/pay-wallet`)
+        toast.success(isAr ? 'تم الدفع من المحفظة!' : 'Paid from wallet!')
+      } else {
+        const { data } = await post(`/consulting/sessions/${sessionId}/pay`)
+        const clientSecret = data?.data?.clientSecret
+        if (clientSecret) {
+          toast.success(isAr ? 'تم تجهيز الدفع. أكمل عبر البطاقة.' : 'Proceed with card payment.')
+        } else {
+          toast.error(isAr ? 'رصيد المحفظة غير كافٍ' : 'Insufficient wallet balance')
+          return
+        }
+      }
       qc.invalidateQueries({ queryKey: ['my-sessions'] })
     } catch(e: any) {
       toast.error(e.message || (isAr ? 'خطأ في الدفع' : 'Payment error'))
@@ -314,7 +329,7 @@ export default function MySessionsPage() {
             )}
 
             {(session.price || 0) > 0 && !isPaid && isUpcoming && !isRescheduleReq && (
-              <button onClick={() => paySession(session.id)}
+              <button onClick={() => paySession(session.id, session.price)}
                 disabled={payingId === session.id}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 700, opacity: payingId === session.id ? 0.7 : 1 }}>
                 <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`)}
