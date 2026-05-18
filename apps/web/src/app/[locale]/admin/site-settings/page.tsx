@@ -59,7 +59,34 @@ export default function CMSSettingsPage() {
     setSaving(true)
     setSaved(false)
     try {
-      await api.patch('/admin/cms-settings', siteConfig)
+      // Build explicit flat payload with no undefined values
+      const payload: Record<string, any> = {}
+      for (const [key, fallback] of Object.entries({
+        'theme.primaryColor': '#5120C8',
+        'theme.backgroundColor': '#0d0d0d',
+        'theme.buttonColor': '#5120C8',
+        'brand.siteName': 'DeveWay',
+        'brand.logoUrl': '',
+        'hero.title': '',
+        'hero.subtitle': '',
+        'hero.ctaText': '',
+        'sections.testimonials.visible': true,
+        'sections.features.visible': true,
+        'sections.courses.visible': true,
+        'sections.careers.visible': true,
+        'sections.pricing.visible': true,
+        'testimonials.items': [],
+        'landing.stats.courses': 0,
+        'landing.stats.coaches': 0,
+        'landing.stats.students': 0,
+        'pages.privacy': '',
+        'pages.terms': '',
+      })) {
+        const val = g(key)
+        if (val !== undefined && val !== null) payload[key] = val
+      }
+      console.log('[CMS] Sending payload:', JSON.stringify(payload, null, 2))
+      await api.patch('/admin/cms-settings', payload)
       applySiteSettings({
         primaryColor: g('theme.primaryColor', '#5120C8'),
         backgroundColor: g('theme.backgroundColor', '#0d0d0d'),
