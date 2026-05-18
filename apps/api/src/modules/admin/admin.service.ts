@@ -1627,13 +1627,40 @@ export class AdminService {
 
   // ── Activity stats ──
   async getActivityStats() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
-    const [onlineUsers, todayActivity, totalActivities] = await Promise.all([
-      this.prisma.user.count({ where: { lastSeenAt: { gte: fiveMinAgo } } as any }).catch(() => 0),
-      this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
+
+    const [activeUsers, loginsToday, enrollmentsToday, sessionsToday] = await Promise.all([
+      this.prisma.userActivity.groupBy({
+        by: ['userId'],
+        where: { createdAt: { gte: today, lt: tomorrow } },
+        _count: { userId: true },
+      }).then(r => r.length).catch(() => 0),
+      this.prisma.userActivity.count({
+        where: { action: 'LOGIN', createdAt: { gte: today, lt: tomorrow } },
+      }).catch(() => 0),
+      this.prisma.enrollment.count({
+        where: { createdAt: { gte: today, lt: tomorrow } },
+      }).catch(() => 0),
+      this.prisma.consultingSession.count({
+        where: { createdAt: { gte: today, lt: tomorrow } },
+      }).catch(() => 0),
+    ]);
+
+    const [todayActivity, totalActivities] = await Promise.all([
+      this.prisma.userActivity.count({ where: { createdAt: { gte: today } } }).catch(() => 0),
       this.prisma.userActivity.count().catch(() => 0),
     ]);
-    return { onlineUsers, todayActivity, totalActivities };
+
+    return {
+      onlineUsers: activeUsers,
+      todayActivity,
+      totalActivities,
+      todayEnrollments: enrollmentsToday,
+      todaySessions: sessionsToday,
+    };
   }
 }

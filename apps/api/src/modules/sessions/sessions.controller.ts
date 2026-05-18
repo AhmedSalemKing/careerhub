@@ -488,6 +488,16 @@ export class SessionsController {
       : 'المستشار'
     const dateStr = new Date(session.scheduledAt).toLocaleDateString('ar-SA')
 
+    await this.prisma.userActivity.create({
+      data: {
+        userId,
+        action: 'PAYMENT_SUCCESS',
+        entity: 'Session',
+        entityId: session.id,
+        metadata: { amount: session.price, consultantName, date: dateStr, method },
+      },
+    }).catch(() => {})
+
     await this.prisma.notification.create({
       data: {
         userId,

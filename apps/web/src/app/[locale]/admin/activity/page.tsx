@@ -40,14 +40,37 @@ const ACTION_I18N: Record<string, { ar: string; en: string }> = {
   LOGIN:        { ar: 'تسجيل دخول', en: 'Login' },
   REGISTER:     { ar: 'تسجيل جديد', en: 'Registration' },
   VIEW_COURSES: { ar: 'تصفح كورسات', en: 'View Courses' },
+  VIEW_COURSE:  { ar: 'مشاهدة كورس', en: 'View Course' },
   ENROLL_COURSE:{ ar: 'اشتراك كورس', en: 'Course Enrollment' },
   PAYMENT:      { ar: 'عملية دفع', en: 'Payment' },
+  PAYMENT_SUCCESS:{ ar: 'دفع ناجح', en: 'Payment Success' },
   BOOK_SESSION: { ar: 'حجز جلسة', en: 'Book Session' },
   COMPLETE_LESSON: { ar: 'إكمال درس', en: 'Complete Lesson' },
   WATCH_LESSON: { ar: 'مشاهدة درس', en: 'Watch Lesson' },
+  WALLET_TOPUP: { ar: 'شحن محفظة', en: 'Wallet Top-up' },
   AI_CHAT:      { ar: 'محادثة ذكية', en: 'AI Chat' },
   ASSESSMENT:   { ar: 'اختبار تقييم', en: 'Assessment' },
   CREATE_COURSE:{ ar: 'إنشاء كورس', en: 'Create Course' },
+  SEARCH_COURSES:{ ar: 'بحث في الكورسات', en: 'Search Courses' },
+  CERTIFICATE_ISSUED:{ ar: 'إصدار شهادة', en: 'Certificate Issued' },
+}
+
+function getDetails(act: any, isAr: boolean): string {
+  const meta = act.metadata || {}
+  switch (act.action) {
+    case 'LOGIN': return act.user?.email || '—'
+    case 'ENROLL_COURSE': return meta.courseTitle || meta.resourceId || act.entityId || act.entity || '—'
+    case 'BOOK_SESSION': return [meta.consultantName, meta.date].filter(Boolean).join(' - ') || '—'
+    case 'PAYMENT_SUCCESS': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
+    case 'PAYMENT': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
+    case 'VIEW_COURSE': return meta.courseTitle || act.entityId || '—'
+    case 'SEARCH_COURSES': return meta.query || '—'
+    case 'WALLET_TOPUP': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
+    case 'COMPLETE_LESSON':
+    case 'WATCH_LESSON': return meta.lessonTitle || act.entityId || '—'
+    case 'CERTIFICATE_ISSUED': return meta.courseTitle || '—'
+    default: return act.entity || meta.resourceId || act.entityId || '—'
+  }
 }
 
 function actionLabel(action: string, isAr: boolean): string {
@@ -72,8 +95,14 @@ export default function ActivityPage() {
   const isAr = locale === 'ar'
   const [isDark, setIsDark] = useState(false)
   const [activeTab, setActiveTab] = useState('ALL')
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 400)
+    return () => clearTimeout(timer)
+  }, [searchInput])
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
   const [page, setPage] = useState(1)
@@ -209,7 +238,7 @@ export default function ActivityPage() {
           </label>
           <div style={{ position: 'relative' }}>
             <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: muted }} />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            <input value={searchInput} onChange={(e) => { setSearchInput(e.target.value); setPage(1) }}
               placeholder={isAr ? 'بحث باسم المستخدم...' : 'Search by name...'}
               style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px 8px 34px', fontSize: '13px', width: '100%', outline: 'none', boxSizing: 'border-box' }} />
           </div>
@@ -305,7 +334,7 @@ export default function ActivityPage() {
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', color: muted, fontSize: '12px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {act.entity || act.metadata?.title || '—'}
+                      {getDetails(act, isAr)}
                     </td>
                     <td style={{ padding: '12px 16px', color: muted, fontSize: '12px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
