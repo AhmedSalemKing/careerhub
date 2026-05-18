@@ -1643,7 +1643,7 @@ export class AdminService {
         where: { action: 'LOGIN', createdAt: { gte: today, lt: tomorrow } },
       }).catch(() => 0),
       this.prisma.enrollment.count({
-        where: { createdAt: { gte: today, lt: tomorrow } },
+        where: { enrolledAt: { gte: today, lt: tomorrow } },
       }).catch(() => 0),
       this.prisma.consultingSession.count({
         where: { createdAt: { gte: today, lt: tomorrow } },
