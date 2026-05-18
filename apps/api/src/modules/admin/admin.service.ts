@@ -1521,7 +1521,25 @@ export class AdminService {
       ]);
 
       return { items, total, page: opts.page, limit: opts.limit, totalPages: Math.ceil(total / opts.limit) };
-    } catch { return { items: [], total: 0, page: opts.page, limit: opts.limit, totalPages: 0 }; }
+    } catch (e: any) {
+      this.logger.error(`[Activity] getFilteredActivity failed: ${e?.message}`);
+      return { items: [], total: 0, page: opts.page, limit: opts.limit, totalPages: 0 };
+    }
+  }
+
+  // ── Debug: raw counts for activity system health check ──
+  async debugActivityCounts() {
+    const [activityCount, sessionCount, enrollmentCount, latestActivities] = await Promise.all([
+      this.prisma.userActivity.count().catch((e: any) => ({ error: e?.message })),
+      this.prisma.consultingSession.count().catch((e: any) => ({ error: e?.message })),
+      this.prisma.enrollment.count().catch((e: any) => ({ error: e?.message })),
+      this.prisma.userActivity.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { email: true } } },
+      }).catch((e: any) => ({ error: e?.message })),
+    ]);
+    return { activityCount, sessionCount, enrollmentCount, latestActivities };
   }
 
   // ── User activity timeline ──

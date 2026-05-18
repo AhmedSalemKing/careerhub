@@ -1031,6 +1031,12 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Get('activity/debug')
+  async debugActivity() {
+    const result = await this.adminService.debugActivityCounts();
+    return { success: true, data: result };
+  }
+
   @Post('run-migrations')
   @ApiOperation({ summary: 'Run pending database migrations (one-time admin tool)' })
   async runMigrations() {
