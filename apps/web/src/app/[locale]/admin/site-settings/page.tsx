@@ -101,6 +101,9 @@ export default function CMSSettingsPage() {
         if (bg) { root.style.setProperty('--background', bg); document.body.style.background = bg }
         if (btn) root.style.setProperty('--button-color', btn)
       }
+      // Tell Next.js to revalidate cached pages on Vercel
+      try { await fetch('/api/revalidate?path=/ar', { method: 'POST' }) } catch {}
+      try { await fetch('/api/revalidate?path=/en', { method: 'POST' }) } catch {}
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (e: any) {

@@ -68,9 +68,14 @@ const websiteSchema = {
 
 async function getSiteConfig() {
   try {
-    const res = await fetch(`${API_BASE}/admin/site-config`, { cache: 'no-store' })
+    const res = await fetch(`${API_BASE}/admin/site-config`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+    })
     if (!res.ok) return {}
-    return await res.json()
+    const data = await res.json()
+    console.log('[LANDING] siteConfig:', JSON.stringify(data))
+    return data
   } catch {
     return {}
   }
