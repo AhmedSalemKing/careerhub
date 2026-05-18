@@ -98,6 +98,13 @@ export default function AdminCreateSessionPage() {
   const set = (key: keyof SessionForm, value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
 
+  const handleConsultantChange = (consultantId: string) => {
+    set('consultantId', consultantId)
+    const consultant = (consultants as any[]).find((c: any) => c.id === consultantId)
+    const rate = Number(consultant?.hourlyRate || 0)
+    set('price', rate > 0 ? String(rate) : '0')
+  }
+
   async function handleImageUpload(file: File) {
     setImageUploading(true)
     try {
@@ -281,7 +288,7 @@ export default function AdminCreateSessionPage() {
                 </label>
                 <select
                   value={form.consultantId}
-                  onChange={(e) => set('consultantId', e.target.value)}
+                  onChange={(e) => handleConsultantChange(e.target.value)}
                   style={inputStyle}
                 >
                   <option value="">{isAr ? 'اختر المستشار' : 'Select Consultant'}</option>
@@ -331,13 +338,22 @@ export default function AdminCreateSessionPage() {
                   <DollarSign size={14} style={{ marginRight: 4 }} />
                   {isAr ? 'السعر' : 'Price'}
                 </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.price}
-                  onChange={(e) => set('price', e.target.value)}
-                  style={inputStyle}
-                />
+                <div style={{
+                  padding: '12px 16px', borderRadius: '10px',
+                  background: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9',
+                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                  color: isDark ? '#fff' : '#0d0d0d',
+                  fontSize: '14px', fontWeight: '600',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  opacity: 0.8,
+                }}>
+                  <span style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#64748b', fontSize: '13px' }}>
+                    {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
+                  </span>
+                  <span>
+                    {parseFloat(form.price) > 0 ? `${form.price} ${isAr ? 'ر.س' : 'SAR'}` : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}
+                  </span>
+                </div>
               </div>
             </div>
 
