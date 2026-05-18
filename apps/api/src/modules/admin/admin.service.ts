@@ -1527,7 +1527,7 @@ export class AdminService {
     }
   }
 
-  // ── Debug: raw counts for activity system health check ──
+  // ── Debug: raw counts + filtered query test ──
   async debugActivityCounts() {
     const [activityCount, sessionCount, enrollmentCount, latestActivities] = await Promise.all([
       this.prisma.userActivity.count().catch((e: any) => ({ error: e?.message })),
@@ -1539,7 +1539,30 @@ export class AdminService {
         include: { user: { select: { email: true } } },
       }).catch((e: any) => ({ error: e?.message })),
     ]);
-    return { activityCount, sessionCount, enrollmentCount, latestActivities };
+
+    // Run the exact same query as getFilteredActivity (no filters) to surface any error
+    let filteredTest: any;
+    try {
+      const items = await this.prisma.userActivity.findMany({
+        where: {},
+        orderBy: { createdAt: 'desc' },
+        skip: 0,
+        take: 5,
+        include: {
+          user: {
+            select: {
+              id: true, email: true, accountType: true,
+              profile: { select: { firstName: true, lastName: true, avatar: true } },
+            },
+          },
+        },
+      });
+      filteredTest = { ok: true, count: items.length, sample: items[0] ?? null };
+    } catch (e: any) {
+      filteredTest = { ok: false, error: e?.message };
+    }
+
+    return { activityCount, sessionCount, enrollmentCount, latestActivities, filteredTest };
   }
 
   // ── Backfill existing data into userActivity ──
