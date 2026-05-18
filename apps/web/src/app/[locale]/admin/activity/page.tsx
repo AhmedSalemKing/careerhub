@@ -130,7 +130,15 @@ export default function ActivityPage() {
       params.set('page', String(page))
       params.set('limit', String(limit))
       const res = await get(`/admin/activity?${params.toString()}`)
-      return (res as any).data?.data ?? { items: [], total: 0, page: 1, limit: 20, totalPages: 0 }
+      const body = (res as any)?.data
+      const result = body?.data ?? body ?? {}
+      return {
+        items: result.items ?? [],
+        total: result.total ?? 0,
+        page: result.page ?? 1,
+        limit: result.limit ?? limit,
+        totalPages: result.totalPages ?? 0,
+      }
     },
   })
 
@@ -138,7 +146,8 @@ export default function ActivityPage() {
     queryKey: ['admin-activity-stats'],
     queryFn: async () => {
       const res = await get('/admin/activity/stats')
-      return (res as any).data?.data ?? {}
+      const body = (res as any)?.data
+      return body?.data ?? body ?? {}
     },
     refetchInterval: 30000,
   })
