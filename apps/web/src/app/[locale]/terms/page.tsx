@@ -1,11 +1,23 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { useLocale } from 'next-intl'
+import { api } from '../../../lib/api'
+
 export default function TermsPage() {
+  const locale = useLocale()
+  const isAr = locale === 'ar'
+  const [html, setHtml] = useState('')
+
+  useEffect(() => {
+    api.get('/admin/site-config')
+      .then((res) => setHtml(res.data?.['pages.terms'] || ''))
+      .catch(() => {})
+  }, [])
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-2xl font-bold mb-6">شروط الاستخدام</h1>
-      <p className="text-muted-foreground">
-        يخضع استخدامك لمنصة DeveWay لشروط الاستخدام هذه. يرجى قراءتها بعناية
-        قبل استخدام المنصة.
-      </p>
-    </div>
+    <main className="max-w-3xl mx-auto px-4 py-16">
+      <h1 className="text-2xl font-bold mb-6">{isAr ? 'الشروط والأحكام' : 'Terms & Conditions'}</h1>
+      <div className="text-sm leading-relaxed opacity-80" dangerouslySetInnerHTML={{ __html: html }} />
+    </main>
   )
 }

@@ -1351,6 +1351,81 @@ export class AdminService {
     return this.prisma.siteSettings.create({ data: data as any });
   }
 
+  // ── CMS Key-Value Site Settings ──────────────────────────────────────
+
+  async seedDefaultSettings() {
+    const defaults = [
+      { key: 'theme.primaryColor', value: '#5120C8', group: 'theme', type: 'color' },
+      { key: 'theme.backgroundColor', value: '#0d0d0d', group: 'theme', type: 'color' },
+      { key: 'theme.buttonColor', value: '#5120C8', group: 'theme', type: 'color' },
+      { key: 'brand.logoUrl', value: '', group: 'brand', type: 'image' },
+      { key: 'brand.siteName', value: 'DeveWay', group: 'brand', type: 'text' },
+      { key: 'hero.title', value: 'اكتشف مسارك المهني مع DeveWay', group: 'landing', type: 'text' },
+      { key: 'hero.subtitle', value: 'منصة متكاملة تجمع بين التوجيه المهني والتدريب', group: 'landing', type: 'text' },
+      { key: 'hero.ctaText', value: 'ابدأ رحلتك مجانا', group: 'landing', type: 'text' },
+      { key: 'sections.testimonials.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.features.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.courses.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.careers.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.pricing.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'testimonials.items', value: [
+        { name: 'سارة العتيبي', role: 'خريجة حديثا', text: 'التقييم ساعدني أفهم نقاط قوتي واختار مسار واضح.' },
+        { name: 'محمد الدوسري', role: 'محلل بيانات', text: 'التوصيات كانت دقيقة وتعلمت بسرعة مع خطة واضحة.' },
+        { name: 'نورة الشمري', role: 'طالبة جامعية', text: 'المنصة غيرت نظرتي لمسيرتي المهنية بالكامل.' },
+      ], group: 'content', type: 'json' },
+      { key: 'landing.stats.courses', value: 150, group: 'landing', type: 'number' },
+      { key: 'landing.stats.coaches', value: 50, group: 'landing', type: 'number' },
+      { key: 'landing.stats.students', value: 5000, group: 'landing', type: 'number' },
+      { key: 'pages.privacy', value: 'سياسة الخصوصية...', group: 'pages', type: 'richtext' },
+      { key: 'pages.terms', value: 'الشروط والأحكام...', group: 'pages', type: 'richtext' },
+    ];
+
+    for (const d of defaults) {
+      await this.prisma.siteSetting.upsert({
+        where: { key: d.key },
+        update: {},
+        create: d,
+      });
+    }
+  }
+
+  async getCmsSettings() {
+    const count = await this.prisma.siteSetting.count();
+    if (count === 0) {
+      await this.seedDefaultSettings();
+    }
+    const settings = await this.prisma.siteSetting.findMany({ orderBy: { createdAt: 'asc' } });
+    const grouped = settings.reduce((acc: Record<string, any>, s) => {
+      if (!acc[s.group]) acc[s.group] = {};
+      acc[s.group][s.key] = s;
+      return acc;
+    }, {} as Record<string, any>);
+    return { settings, grouped };
+  }
+
+  async updateCmsSettings(data: Record<string, any>) {
+    const updates = Object.entries(data).map(([key, value]) =>
+      this.prisma.siteSetting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value, group: key.split('.')[0], type: 'text' },
+      }),
+    );
+    await Promise.all(updates);
+  }
+
+  async getPublicSiteConfig() {
+    const count = await this.prisma.siteSetting.count();
+    if (count === 0) {
+      await this.seedDefaultSettings();
+    }
+    const settings = await this.prisma.siteSetting.findMany();
+    return settings.reduce((acc: Record<string, any>, s) => {
+      acc[s.key] = s.value;
+      return acc;
+    }, {});
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   // 💼 SESSIONS MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────

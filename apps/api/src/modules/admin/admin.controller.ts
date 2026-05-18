@@ -919,6 +919,31 @@ export class AdminController {
     return { success: true, data: { settings } };
   }
 
+  // ── CMS Site Settings (key-value) ──────────────────────────────────────────
+
+  @Get('cms-settings')
+  @ApiOperation({ summary: 'Get all CMS site settings grouped' })
+  async getCmsSettings() {
+    const result = await this.adminService.getCmsSettings();
+    return { success: true, data: result };
+  }
+
+  @Patch('cms-settings')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk update CMS settings' })
+  async updateCmsSettings(@Body() body: Record<string, any>) {
+    await this.adminService.updateCmsSettings(body);
+    return { success: true };
+  }
+
+  @Get('site-config')
+  @Public()
+  @ApiOperation({ summary: 'Public site configuration for frontend' })
+  async getPublicSiteConfig() {
+    const config = await this.adminService.getPublicSiteConfig();
+    return config;
+  }
+
   @Post('users/create')
   async createUser(@Body() body: CreateUserAdminDto) {
     const result = await this.adminService.createUser(body);

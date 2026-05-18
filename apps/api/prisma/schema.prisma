@@ -1021,7 +1021,20 @@ model SiteSettings {
   logoUrl         String?
   updatedAt       DateTime @updatedAt
 
-  @@map("site_settings")
+   @@map("site_settings")
+}
+
+// CMS key-value settings for admin site configuration
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  group     String   @default("general")
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("site_setting")
 }
 
 model ConsultingSession {

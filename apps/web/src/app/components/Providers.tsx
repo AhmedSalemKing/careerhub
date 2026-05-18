@@ -8,6 +8,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { createQueryClient } from '../../lib/query-client'
 import { startKeepAlive } from '../../lib/keepAlive'
 import { ThemeProvider, useTheme } from 'next-themes'
+import { SiteConfigProvider } from '../contexts/SiteConfigContext'
 
 export const SITE_NAME = 'DeveWay'
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
@@ -140,7 +141,9 @@ export function Providers({ children, locale }: { children: React.ReactNode; loc
     >
       <ThemeTransitionHandler>
         <QueryClientProvider client={queryClient}>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <SiteConfigProvider>{children}</SiteConfigProvider>
+          </ToastProvider>
         </QueryClientProvider>
       </ThemeTransitionHandler>
     </ThemeProvider>
