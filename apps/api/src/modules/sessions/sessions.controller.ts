@@ -5,11 +5,15 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { PrismaService } from '../../prisma/prisma.service'
+import { ActivityService } from '../../common/services/activity.service'
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
 export class SessionsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityService: ActivityService,
+  ) {}
 
   @Get('consultants')
   async getConsultants() {
@@ -119,12 +123,30 @@ export class SessionsController {
       }
     })
 
+    const consultantName = session.consultant?.profile
+      ? `${session.consultant.profile.firstName || ''} ${session.consultant.profile.lastName || ''}`.trim()
+      : 'مستشار'
+    const dateStr = scheduledAt.toLocaleDateString('ar-SA')
+
+    await this.activityService.track({
+      userId,
+      action: 'BOOK_SESSION',
+      entity: 'Session',
+      entityId: session.id,
+      metadata: {
+        consultantName,
+        date: dateStr,
+        sessionDate: scheduledAt,
+        price,
+        status: session.status,
+      },
+    })
+
     const student = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true }
     })
     const studentName = `${student?.profile?.firstName || ''} ${student?.profile?.lastName || ''}`.trim()
-    const dateStr = scheduledAt.toLocaleDateString('ar-SA')
 
     await this.prisma.notification.create({
       data: {
