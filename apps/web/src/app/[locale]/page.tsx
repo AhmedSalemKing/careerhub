@@ -6,7 +6,7 @@ import { CTASection } from './sections/CTASection'
 import { CoursesShowcase } from '../components/CoursesShowcase'
 import { HashScrollHandler } from '../components/HashScrollHandler'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
 
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   const isAr = params.locale === 'ar'
