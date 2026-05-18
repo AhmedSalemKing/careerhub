@@ -68,6 +68,13 @@ export class AdminService {
       if (!validStatuses.includes(status)) status = 'PUBLISHED';
 
       // 4. Create the course
+      const sanitizeId = (val: any): string | null => {
+        if (!val) return null;
+        if (val === 'null' || val === 'undefined' || val === '') return null;
+        if (typeof val === 'string' && val.length > 5) return val;
+        return null;
+      };
+
       const course = await this.prisma.course.create({
         data: {
           slug,
@@ -82,9 +89,9 @@ export class AdminService {
           status: status as any,
           thumbnail: courseData.thumbnail || null,
           previewVideo: courseData.previewVideo || null,
-          ...(instructorId && { instructorId }),
-          careerPathId: courseData.careerPathId || null,
-          categoryId: courseData.categoryId || null,
+          instructorId: sanitizeId(instructorId),
+          careerPathId: sanitizeId(courseData.careerPathId),
+          categoryId: sanitizeId(courseData.categoryId),
         },
       });
 
@@ -191,6 +198,13 @@ export class AdminService {
     }
 
     // Create the course first ✅ مصحح
+    const sanitizeId = (val: any): string | null => {
+      if (!val) return null;
+      if (val === 'null' || val === 'undefined' || val === '') return null;
+      if (typeof val === 'string' && val.length > 5) return val;
+      return null;
+    };
+
     const course = await this.prisma.course.create({
       data: {
         slug,
@@ -204,9 +218,9 @@ export class AdminService {
         level: courseData.level || 'BEGINNER',
         status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'PUBLISHED') as any,
         thumbnail: thumbnailUrl,
-        careerPathId: courseData.careerPathId || null,
-        ...(instructorId && { instructorId }),
-        categoryId: courseData.categoryId || null,
+        instructorId: sanitizeId(instructorId),
+        careerPathId: sanitizeId(courseData.careerPathId),
+        categoryId: sanitizeId(courseData.categoryId),
       },
     });
 
@@ -695,6 +709,13 @@ export class AdminService {
     const slug = `${baseSlug}-${Date.now()}`;
     const instructorId = courseData.instructorId || adminId || undefined;
 
+    const sanitizeId = (val: any): string | null => {
+      if (!val) return null;
+      if (val === 'null' || val === 'undefined' || val === '') return null;
+      if (typeof val === 'string' && val.length > 5) return val;
+      return null;
+    };
+
     return await this.prisma.course.create({
       data: {
         slug,
@@ -709,9 +730,9 @@ export class AdminService {
         status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
-        careerPathId: courseData.careerPathId || null,
-        ...(instructorId && { instructorId }),
-        categoryId: courseData.categoryId || null,
+        instructorId: sanitizeId(instructorId),
+        careerPathId: sanitizeId(courseData.careerPathId),
+        categoryId: sanitizeId(courseData.categoryId),
       },
     });
   }
