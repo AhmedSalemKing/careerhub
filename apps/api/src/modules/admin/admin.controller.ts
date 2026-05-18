@@ -1037,6 +1037,12 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Post('activity/backfill')
+  async backfillActivity() {
+    const result = await this.adminService.backfillActivityFromExistingData();
+    return result;
+  }
+
   @Post('run-migrations')
   @ApiOperation({ summary: 'Run pending database migrations (one-time admin tool)' })
   async runMigrations() {

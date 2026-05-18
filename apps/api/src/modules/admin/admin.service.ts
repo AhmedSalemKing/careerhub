@@ -1542,6 +1542,121 @@ export class AdminService {
     return { activityCount, sessionCount, enrollmentCount, latestActivities };
   }
 
+  // ── Backfill existing data into userActivity ──
+  async backfillActivityFromExistingData() {
+    const results: { sessions: number; enrollments: number; payments: number; errors: string[] } = {
+      sessions: 0, enrollments: 0, payments: 0, errors: [],
+    };
+
+    // Sessions → BOOK_SESSION
+    const sessions = await this.prisma.consultingSession.findMany({
+      include: {
+        consultant: { include: { profile: true } },
+      },
+    });
+    for (const s of sessions) {
+      if (!s.studentId) continue;
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'BOOK_SESSION', entityId: s.id },
+        });
+        if (!exists) {
+          const consultantName = s.consultant?.profile
+            ? `${s.consultant.profile.firstName || ''} ${s.consultant.profile.lastName || ''}`.trim()
+            : 'مستشار';
+          await this.prisma.userActivity.create({
+            data: {
+              userId: s.studentId,
+              action: 'BOOK_SESSION',
+              entity: 'Session',
+              entityId: s.id,
+              metadata: {
+                consultantName,
+                date: s.scheduledAt.toLocaleDateString('ar-SA'),
+                sessionDate: s.scheduledAt,
+                price: (s as any).price ?? 0,
+                status: s.status,
+              },
+              createdAt: s.createdAt,
+            },
+          });
+          results.sessions++;
+        }
+      } catch (e: any) {
+        results.errors.push(`session ${s.id}: ${e?.message}`);
+      }
+    }
+
+    // Enrollments → ENROLL_COURSE
+    const enrollments = await this.prisma.enrollment.findMany({
+      include: { course: { select: { titleAr: true, titleEn: true } } },
+    });
+    for (const e of enrollments) {
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'ENROLL_COURSE', entityId: e.courseId, userId: e.userId },
+        });
+        if (!exists) {
+          await this.prisma.userActivity.create({
+            data: {
+              userId: e.userId,
+              action: 'ENROLL_COURSE',
+              entity: 'Course',
+              entityId: e.courseId,
+              metadata: {
+                courseTitle: (e.course as any)?.titleAr || (e.course as any)?.titleEn || 'كورس',
+              },
+              createdAt: e.enrolledAt ?? new Date(),
+            },
+          });
+          results.enrollments++;
+        }
+      } catch (err: any) {
+        results.errors.push(`enrollment ${e.courseId}: ${err?.message}`);
+      }
+    }
+
+    // Paid sessions → PAYMENT_SUCCESS
+    const paidSessions = await this.prisma.consultingSession.findMany({
+      where: { paymentStatus: 'PAID' },
+      include: { consultant: { include: { profile: true } } },
+    });
+    for (const s of paidSessions) {
+      if (!s.studentId) continue;
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'PAYMENT_SUCCESS', entityId: s.id },
+        });
+        if (!exists) {
+          const consultantName = s.consultant?.profile
+            ? `${s.consultant.profile.firstName || ''} ${s.consultant.profile.lastName || ''}`.trim()
+            : 'المستشار';
+          await this.prisma.userActivity.create({
+            data: {
+              userId: s.studentId,
+              action: 'PAYMENT_SUCCESS',
+              entity: 'Session',
+              entityId: s.id,
+              metadata: {
+                amount: (s as any).price ?? 0,
+                consultantName,
+                date: s.scheduledAt.toLocaleDateString('ar-SA'),
+                method: 'backfill',
+              },
+              createdAt: s.updatedAt ?? s.createdAt,
+            },
+          });
+          results.payments++;
+        }
+      } catch (e: any) {
+        results.errors.push(`payment ${s.id}: ${e?.message}`);
+      }
+    }
+
+    this.logger.log(`[Backfill] sessions=${results.sessions} enrollments=${results.enrollments} payments=${results.payments} errors=${results.errors.length}`);
+    return { success: true, results };
+  }
+
   // ── User activity timeline ──
   async getUserActivity(userId: string, filter: string = 'all') {
     try {
