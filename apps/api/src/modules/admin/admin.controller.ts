@@ -992,6 +992,33 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Get('activity')
+  @ApiOperation({ summary: 'Get filtered activity with pagination' })
+  @ApiQuery({ name: 'type', required: false })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'role', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  async getFilteredActivity(
+    @Query('type') type?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('userId') userId?: string,
+    @Query('role') role?: string,
+    @Query('search') search?: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '50',
+  ) {
+    const result = await this.adminService.getFilteredActivity({
+      type, from, to, userId, role, search,
+      page: parseInt(page), limit: parseInt(limit),
+    });
+    return { success: true, data: result };
+  }
+
   @Get('activity/live')
   async getLiveActivity(@Query('limit') limit = '50') {
     const result = await this.adminService.getLiveActivity(+limit);

@@ -1465,6 +1465,55 @@ export class AdminService {
     } catch { return []; }
   }
 
+  // ── Filtered activity with pagination ──
+  async getFilteredActivity(opts: {
+    type?: string; from?: string; to?: string; userId?: string;
+    role?: string; search?: string; page: number; limit: number;
+  }) {
+    try {
+      const where: any = {};
+      if (opts.type) where.action = opts.type;
+      if (opts.userId) where.userId = opts.userId;
+      if (opts.from || opts.to) {
+        where.createdAt = {};
+        if (opts.from) where.createdAt.gte = new Date(opts.from);
+        if (opts.to) where.createdAt.lte = new Date(opts.to);
+      }
+      if (opts.search) {
+        where.user = {
+          OR: [
+            { email: { contains: opts.search } },
+            { profile: { firstName: { contains: opts.search } } },
+            { profile: { lastName: { contains: opts.search } } },
+          ],
+        };
+      }
+      if (opts.role) {
+        where.user = { ...where.user, accountType: opts.role };
+      }
+
+      const [items, total] = await Promise.all([
+        this.prisma.userActivity.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip: (opts.page - 1) * opts.limit,
+          take: opts.limit,
+          include: {
+            user: {
+              select: {
+                id: true, email: true, accountType: true,
+                profile: { select: { firstName: true, lastName: true, avatar: true } },
+              },
+            },
+          },
+        }),
+        this.prisma.userActivity.count({ where }),
+      ]);
+
+      return { items, total, page: opts.page, limit: opts.limit, totalPages: Math.ceil(total / opts.limit) };
+    } catch { return { items: [], total: 0, page: opts.page, limit: opts.limit, totalPages: 0 }; }
+  }
+
   // ── User activity timeline ──
   async getUserActivity(userId: string, filter: string = 'all') {
     try {

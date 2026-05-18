@@ -1,27 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
 import {
-  Activity, Users, Eye, Clock, TrendingUp, RefreshCw,
-  Search, Monitor, LogIn, ShoppingCart, BookOpen,
-  MessageSquare, ClipboardList, Upload, UserPlus, Settings,
+  Activity, Users, LogIn, BookOpen, Calendar, DollarSign,
+  Search, RefreshCw, Monitor, TrendingUp, Clock, MapPin,
+  ChevronLeft, ChevronRight, ShoppingCart,
 } from 'lucide-react'
-
-const getActionConfig = (isAr: boolean): Record<string, { label: string; icon: any; color: string }> => ({
-  LOGIN:         { label: isAr ? 'سجل دخول' : 'Login',              icon: LogIn,         color: '#2BBFA3' },
-  REGISTER:      { label: isAr ? 'تسجيل جديد' : 'Registration',     icon: UserPlus,      color: '#10B981' },
-  VIEW_COURSES:  { label: isAr ? 'تصفح الكورسات' : 'View Courses',  icon: Eye,           color: '#5120c8' },
-  PAYMENT:       { label: isAr ? 'عملية دفع' : 'Payment',           icon: ShoppingCart,   color: '#F5A623' },
-  UPLOAD:        { label: isAr ? 'رفع ملف' : 'Upload',              icon: Upload,        color: '#EF4444' },
-  BOOK_SESSION:  { label: isAr ? 'حجز جلسة' : 'Book Session',       icon: BookOpen,      color: '#8B5CF6' },
-  AI_CHAT:       { label: isAr ? 'محادثة ذكية' : 'AI Chat',         icon: MessageSquare, color: '#06B6D4' },
-  ASSESSMENT:    { label: isAr ? 'اختبار تقييم' : 'Assessment',     icon: ClipboardList, color: '#F59E0B' },
-  ADMIN_ACTION:  { label: isAr ? 'إجراء إداري' : 'Admin Action',    icon: Settings,      color: '#EF4444' },
-  CREATE_COURSE: { label: isAr ? 'إنشاء كورس' : 'Create Course',    icon: BookOpen,      color: '#2BBFA3' },
-})
 
 function timeAgo(dateStr: string, isAr: boolean): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -34,22 +20,89 @@ function timeAgo(dateStr: string, isAr: boolean): string {
   return isAr ? `منذ ${days} ي` : `${days}d ago`
 }
 
-export default function ActivityMonitor() {
+function fmtDateTime(dateStr: string, isAr: boolean): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+const TABS = [
+  { key: 'ALL', labelAr: 'كل النشاطات', labelEn: 'All Activities', icon: Activity },
+  { key: 'LOGIN', labelAr: 'تسجيل الدخول', labelEn: 'Login', icon: LogIn },
+  { key: 'COURSE', labelAr: 'الكورسات', labelEn: 'Courses', icon: BookOpen },
+  { key: 'SESSION', labelAr: 'الجلسات', labelEn: 'Sessions', icon: Calendar },
+  { key: 'PAYMENT', labelAr: 'المدفوعات', labelEn: 'Payments', icon: DollarSign },
+]
+
+const ACTION_I18N: Record<string, { ar: string; en: string }> = {
+  LOGIN:        { ar: 'تسجيل دخول', en: 'Login' },
+  REGISTER:     { ar: 'تسجيل جديد', en: 'Registration' },
+  VIEW_COURSES: { ar: 'تصفح كورسات', en: 'View Courses' },
+  ENROLL_COURSE:{ ar: 'اشتراك كورس', en: 'Course Enrollment' },
+  PAYMENT:      { ar: 'عملية دفع', en: 'Payment' },
+  BOOK_SESSION: { ar: 'حجز جلسة', en: 'Book Session' },
+  COMPLETE_LESSON: { ar: 'إكمال درس', en: 'Complete Lesson' },
+  WATCH_LESSON: { ar: 'مشاهدة درس', en: 'Watch Lesson' },
+  AI_CHAT:      { ar: 'محادثة ذكية', en: 'AI Chat' },
+  ASSESSMENT:   { ar: 'اختبار تقييم', en: 'Assessment' },
+  CREATE_COURSE:{ ar: 'إنشاء كورس', en: 'Create Course' },
+}
+
+function actionLabel(action: string, isAr: boolean): string {
+  const entry = ACTION_I18N[action]
+  if (entry) return isAr ? entry.ar : entry.en
+  return action
+}
+
+function actionColor(action: string): string {
+  if (action.startsWith('LOGIN') || action === 'REGISTER') return '#2BBFA3'
+  if (action.startsWith('ENROLL')) return '#10B981'
+  if (action.startsWith('BOOK')) return '#8B5CF6'
+  if (action.startsWith('PAYMENT')) return '#F5A623'
+  if (action.startsWith('WATCH') || action.startsWith('COMPLETE')) return '#5120c8'
+  if (action.startsWith('VIEW')) return '#06B6D4'
+  if (action.startsWith('AI')) return '#EC4899'
+  return '#6B7280'
+}
+
+export default function ActivityPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
-  const ACTION_CONFIG = getActionConfig(isAr)
+  const [isDark, setIsDark] = useState(false)
+  const [activeTab, setActiveTab] = useState('ALL')
   const [search, setSearch] = useState('')
-  const [filterAction, setFilterAction] = useState('')
+  const [filterRole, setFilterRole] = useState('')
+  const [filterFrom, setFilterFrom] = useState('')
+  const [filterTo, setFilterTo] = useState('')
+  const [page, setPage] = useState(1)
+  const limit = 20
 
-  const { data: rawData = [], isLoading, refetch } = useQuery({
-    queryKey: ['admin-activity'],
+  useEffect(() => {
+    const check = () => setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
+    check()
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', check)
+    return () => media.removeEventListener('change', check)
+  }, [])
+
+  const queryType = activeTab === 'ALL' ? undefined : activeTab === 'LOGIN' ? 'LOGIN' : activeTab === 'COURSE' ? 'ENROLL_COURSE,COMPLETE_LESSON,WATCH_LESSON,VIEW_COURSES' : activeTab === 'SESSION' ? 'BOOK_SESSION' : 'PAYMENT'
+
+  const { data: activityData, isLoading, refetch } = useQuery({
+    queryKey: ['admin-filtered-activity', queryType, filterFrom, filterTo, filterRole, search, page],
     queryFn: async () => {
-      const res = await get('/admin/activity/live?limit=100')
-      return (res as any).data?.data ?? []
+      const params = new URLSearchParams()
+      if (queryType) params.set('type', queryType)
+      if (filterFrom) params.set('from', filterFrom)
+      if (filterTo) params.set('to', filterTo)
+      if (filterRole) params.set('role', filterRole)
+      if (search) params.set('search', search)
+      params.set('page', String(page))
+      params.set('limit', String(limit))
+      const res = await get(`/admin/activity?${params.toString()}`)
+      return (res as any).data?.data ?? { items: [], total: 0, page: 1, limit: 20, totalPages: 0 }
     },
-    refetchInterval: 10000,
   })
 
   const { data: stats } = useQuery({
@@ -61,351 +114,257 @@ export default function ActivityMonitor() {
     refetchInterval: 30000,
   })
 
-  const activities = (rawData as any[]).filter((a: any) => {
-    const name = `${a.user?.profile?.firstName ?? ''} ${a.user?.profile?.lastName ?? ''} ${a.user?.email ?? ''}`.toLowerCase()
-    return (!search || name.includes(search.toLowerCase())) &&
-           (!filterAction || a.action === filterAction)
-  })
+  const items = (activityData as any)?.items ?? []
+  const total = (activityData as any)?.total ?? 0
+  const totalPages = (activityData as any)?.totalPages ?? 0
 
-  const uniqueActions = Array.from(new Set((rawData as any[]).map((a: any) => a.action as string)))
-
-  // Extract active users (unique users from recent activity)
-  const activeUsersMap = new Map<string, any>()
-  for (const act of (rawData as any[]).slice(0, 50)) {
-    if (act.user?.id && !activeUsersMap.has(act.user.id)) {
-      activeUsersMap.set(act.user.id, {
-        id: act.user.id,
-        name: act.user.profile?.firstName
-          ? `${act.user.profile.firstName} ${act.user.profile.lastName}`
-          : act.user.email?.split('@')[0] ?? '?',
-        initial: (act.user.profile?.firstName?.[0] || act.user.email?.[0] || '?').toUpperCase(),
-        email: act.user.email,
-        lastAction: act.action,
-        lastSeen: act.createdAt,
-        accountType: act.user.accountType,
-      })
-    }
-  }
-  const activeUsers = Array.from(activeUsersMap.values()).slice(0, 12)
-
-  // Action counts for chart-like display
-  const actionCounts: Record<string, number> = {}
-  for (const act of rawData as any[]) {
-    actionCounts[act.action] = (actionCounts[act.action] || 0) + 1
-  }
-  const topActions = Object.entries(actionCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
-  const maxCount = topActions.length > 0 ? topActions[0][1] : 1
+  const tableBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+  const tableHover = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+  const borderColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'
+  const surface = isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc'
+  const fg = isDark ? '#f1f5f9' : '#0d0d0d'
+  const muted = isDark ? 'rgba(255,255,255,0.4)' : '#64748b'
+  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'
 
   return (
-    <div className="space-y-6" dir={isAr ? 'rtl' : 'ltr'}>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px', color: fg }} dir={isAr ? 'rtl' : 'ltr'}>
 
       {/* ─── Header ─── */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
-            <Activity style={{ color: '#5120c8' }} />
-            {isAr ? 'مراقب النشاط المباشر' : 'Live Activity Monitor'}
+          <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Activity size={22} color="#5120c8" />
+            {isAr ? 'نشاط المنصة' : 'Platform Activity'}
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>
-            {isAr ? 'تتبع مباشر لنشاط المستخدمين — يتحدث كل ١٠ ثوانٍ' : 'Real-time user activity tracking — refreshes every 10 seconds'}
+          <p style={{ fontSize: '13px', color: muted, margin: '4px 0 0' }}>
+            {isAr ? 'سجل شامل لنشاط المستخدمين مع تصفية وبحث متقدم' : 'Comprehensive user activity log with filtering and search'}
           </p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
-          style={{
-            background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)',
-            color: '#5120c8',
-            border: '1px solid rgba(81,32,200,0.2)',
-          }}
-        >
+        <button onClick={() => refetch()} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px',
+          background: 'rgba(81,32,200,0.1)', color: '#5120c8', border: '1px solid rgba(81,32,200,0.2)',
+          fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+        }}>
           <RefreshCw size={14} />
           {isAr ? 'تحديث' : 'Refresh'}
         </button>
       </div>
 
-      {/* ─── Stats Row ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ─── Stats Bar ─── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
-          { label: isAr ? 'المستخدمون النشطون' : 'Active Users', value: (stats as any)?.onlineUsers ?? 0, icon: Users, color: '#2BBFA3' },
-          { label: isAr ? 'نشاط اليوم' : "Today's Activity", value: (stats as any)?.todayActivity ?? 0, icon: TrendingUp, color: '#5120c8' },
-          { label: isAr ? 'إجمالي الأحداث' : 'Total Events', value: (stats as any)?.totalActivities ?? 0, icon: Activity, color: '#F5A623' },
-          { label: isAr ? 'مستخدمون فريدون' : 'Unique Users', value: activeUsersMap.size, icon: Monitor, color: '#8b5cf6' },
+          { label: isAr ? 'المستخدمون النشطون اليوم' : 'Active Users Today', value: (stats as any)?.onlineUsers ?? 0, icon: Users, color: '#2BBFA3' },
+          { label: isAr ? 'تسجيلات الدخول اليوم' : 'Logins Today', value: (stats as any)?.todayActivity ?? 0, icon: LogIn, color: '#5120c8' },
+          { label: isAr ? 'اشتراكات جديدة اليوم' : 'New Enrollments Today', value: (stats as any)?.todayEnrollments ?? 0, icon: BookOpen, color: '#10B981' },
+          { label: isAr ? 'جلسات محجوزة اليوم' : 'Sessions Booked Today', value: (stats as any)?.todaySessions ?? 0, icon: Calendar, color: '#8B5CF6' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
-            <div
-              key={i}
-              className="rounded-xl border p-4 transition-all hover:-translate-y-0.5"
-              style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <Icon size={18} style={{ color: s.color }} />
-                <span className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</span>
+            <div key={i} style={{
+              background: surface, border: `1px solid ${borderColor}`, borderRadius: '16px', padding: '20px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Icon size={20} color={s.color} />
+                <span style={{ fontSize: '24px', fontWeight: 700, color: s.color }}>{s.value}</span>
               </div>
-              <p className="text-xs" style={{ color: 'var(--muted)' }}>{s.label}</p>
+              <p style={{ fontSize: '12px', color: muted, margin: 0 }}>{s.label}</p>
             </div>
           )
         })}
       </div>
 
-      {/* ─── Live Users ─── */}
-      {activeUsers.length > 0 && (
-        <div
-          className="rounded-xl border p-5"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
-          <h2 className="font-bold mb-4 flex items-center gap-2 text-sm" style={{ color: 'var(--foreground)' }}>
-            <Users size={16} style={{ color: '#2BBFA3' }} />
-            {isAr ? 'المستخدمون النشطون' : 'Active Users'}
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isAr ? 'mr-2' : 'ml-2'}`}
-              style={{
-                background: isDark ? 'rgba(43,191,163,0.12)' : 'rgba(43,191,163,0.08)',
-                color: isDark ? '#2BBFA3' : '#0d9488',
-              }}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#2BBFA3' }} />
-                <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: '#2BBFA3' }} />
-              </span>
-              {isAr ? 'مباشر' : 'Live'}
-            </span>
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            {activeUsers.map((u) => {
-              const actionConf = ACTION_CONFIG[u.lastAction]
-              return (
-                <div
-                  key={u.id}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors cursor-default"
-                  style={{
-                    background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  {/* Pulsing avatar */}
-                  <div className="relative">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{
-                        background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
-                        color: '#5120c8',
-                      }}
-                    >
-                      {u.initial}
-                    </div>
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: '#2BBFA3' }} />
-                      <span className="relative inline-flex rounded-full h-3 w-3 border-2" style={{ background: '#2BBFA3', borderColor: 'var(--surface)' }} />
-                    </span>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium" style={{ color: 'var(--foreground)' }}>{u.name}</p>
-                    <p className="text-[10px]" style={{ color: 'var(--muted)' }}>
-                      {actionConf?.label ?? u.lastAction} · {timeAgo(u.lastSeen, isAr)}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+      {/* ─── Filters Bar ─── */}
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'end' }}>
+        <div>
+          <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>
+            {isAr ? 'من تاريخ' : 'From Date'}
+          </label>
+          <input type="date" value={filterFrom} onChange={(e) => { setFilterFrom(e.target.value); setPage(1) }}
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }} />
         </div>
-      )}
-
-      {/* ─── Two Column: Activity Feed + Action Chart ─── */}
-      <div className="grid lg:grid-cols-3 gap-4">
-
-        {/* Activity Feed (2/3) */}
-        <div
-          className="lg:col-span-2 rounded-xl border overflow-hidden"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
-          {/* Search + Filter */}
-          <div
-            className="p-4 flex gap-2 flex-wrap"
-            style={{ borderBottom: '1px solid var(--border)' }}
-          >
-            <div className="relative flex-1 min-w-[180px]">
-              <Search size={14} className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2`} style={{ color: 'var(--muted)' }} />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={isAr ? 'بحث بالاسم أو الإيميل...' : 'Search by name or email...'}
-                className={`w-full ${isAr ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2 rounded-lg text-sm`}
-                style={{
-                  background: 'var(--input-bg)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--foreground)',
-                }}
-              />
-            </div>
-            <select
-              value={filterAction}
-              onChange={(e) => setFilterAction(e.target.value)}
-              className="px-3 py-2 rounded-lg text-sm"
-              style={{
-                background: 'var(--input-bg)',
-                border: '1px solid var(--border)',
-                color: 'var(--foreground)',
-              }}
-            >
-              <option value="">{isAr ? 'كل الأفعال' : 'All Actions'}</option>
-              {uniqueActions.map((a) => (
-                <option key={a} value={a}>{ACTION_CONFIG[a]?.label ?? a}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Feed items */}
-          <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-            {isLoading ? (
-              <div className="p-12 text-center">
-                <div
-                  className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-t-transparent mb-3"
-                  style={{ borderColor: '#5120c8', borderTopColor: 'transparent' }}
-                />
-                <p className="text-sm" style={{ color: 'var(--muted)' }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
-              </div>
-            ) : activities.length === 0 ? (
-              <div className="p-12 text-center">
-                <Activity size={40} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
-                <p className="font-medium" style={{ color: 'var(--muted)' }}>{isAr ? 'لا يوجد نشاط' : 'No activity'}</p>
-              </div>
-            ) : (
-              activities.slice(0, 30).map((act: any, i: number) => {
-                const conf = ACTION_CONFIG[act.action] || { label: act.action, icon: Activity, color: '#5120c8' }
-                const ActionIcon = conf.icon
-                const name = act.user?.profile?.firstName
-                  ? `${act.user.profile.firstName} ${act.user.profile.lastName}`
-                  : act.user?.email?.split('@')[0] ?? '?'
-                const initial = (act.user?.profile?.firstName?.[0] || act.user?.email?.[0] || '?').toUpperCase()
-
-                return (
-                  <div
-                    key={act.id || i}
-                    className="flex items-center gap-3 px-4 py-3 transition-colors"
-                    style={{
-                      borderBottom: '1px solid var(--border)',
-                      animation: i < 3 ? `fadeUp 0.3s ease ${i * 0.1}s both` : undefined,
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    {/* Avatar */}
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                      style={{
-                        background: isDark ? `${conf.color}20` : `${conf.color}10`,
-                        color: conf.color,
-                      }}
-                    >
-                      {initial}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{name}</span>
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                          style={{
-                            background: isDark ? `${conf.color}18` : `${conf.color}10`,
-                            color: conf.color,
-                          }}
-                        >
-                          <ActionIcon size={10} />
-                          {conf.label}
-                        </span>
-                      </div>
-                      {act.entity && (
-                        <p className="text-[11px] mt-0.5 truncate" style={{ color: 'var(--muted)' }}>{act.entity}</p>
-                      )}
-                    </div>
-
-                    {/* Time */}
-                    <div className="text-[11px] shrink-0 flex items-center gap-1" style={{ color: 'var(--muted)' }}>
-                      <Clock size={10} />
-                      {timeAgo(act.createdAt, isAr)}
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </div>
+        <div>
+          <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>
+            {isAr ? 'إلى تاريخ' : 'To Date'}
+          </label>
+          <input type="date" value={filterTo} onChange={(e) => { setFilterTo(e.target.value); setPage(1) }}
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }} />
         </div>
-
-        {/* Action Distribution (1/3) */}
-        <div
-          className="rounded-xl border p-5"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
-        >
-          <h3 className="font-bold text-sm mb-4 flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
-            <TrendingUp size={16} style={{ color: '#5120c8' }} />
-            {isAr ? 'توزيع النشاطات' : 'Activity Distribution'}
-          </h3>
-
-          {topActions.length === 0 ? (
-            <div className="py-8 text-center">
-              <TrendingUp size={32} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 8px' }} />
-              <p className="text-xs" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد بيانات بعد' : 'No data yet'}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {topActions.map(([action, count]) => {
-                const conf = ACTION_CONFIG[action] || { label: action, icon: Activity, color: '#5120c8' }
-                const ActionIcon = conf.icon
-                const pct = Math.round((count / maxCount) * 100)
-                return (
-                  <div key={action}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--foreground)' }}>
-                        <ActionIcon size={12} style={{ color: conf.color }} />
-                        {conf.label}
-                      </span>
-                      <span className="text-xs font-bold" style={{ color: conf.color }}>{count}</span>
-                    </div>
-                    <div
-                      className="h-2 rounded-full overflow-hidden"
-                      style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${pct}%`,
-                          background: conf.color,
-                          opacity: 0.8,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-
-          {/* Quick summary */}
-          <div
-            className="mt-5 pt-4"
-            style={{ borderTop: '1px solid var(--border)' }}
-          >
-            <div className="space-y-2">
-              {[
-                { label: isAr ? 'إجمالي الأحداث' : 'Total Events', value: (rawData as any[]).length },
-                { label: isAr ? 'أنواع النشاط' : 'Action Types', value: uniqueActions.length },
-                { label: isAr ? 'مستخدمون فريدون' : 'Unique Users', value: activeUsersMap.size },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="text-xs" style={{ color: 'var(--muted)' }}>{item.label}</span>
-                  <span className="text-xs font-bold" style={{ color: 'var(--foreground)' }}>{item.value}</span>
-                </div>
-              ))}
-            </div>
+        <div>
+          <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>
+            {isAr ? 'الدور' : 'Role'}
+          </label>
+          <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPage(1) }}
+            style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }}>
+            <option value="">{isAr ? 'الكل' : 'All'}</option>
+            <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
+            <option value="INSTRUCTOR">{isAr ? 'مدرس' : 'Instructor'}</option>
+            <option value="CONSULTANT">{isAr ? 'مستشار' : 'Consultant'}</option>
+            <option value="ADMIN">{isAr ? 'مدير' : 'Admin'}</option>
+          </select>
+        </div>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <label style={{ fontSize: '11px', color: muted, display: 'block', marginBottom: '4px' }}>
+            {isAr ? 'بحث' : 'Search'}
+          </label>
+          <div style={{ position: 'relative' }}>
+            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: muted }} />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+              placeholder={isAr ? 'بحث باسم المستخدم...' : 'Search by name...'}
+              style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px 8px 34px', fontSize: '13px', width: '100%', outline: 'none', boxSizing: 'border-box' }} />
           </div>
         </div>
       </div>
+
+      {/* ─── Tabs ─── */}
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        {TABS.map((tab) => {
+          const Icon = tab.icon
+          const isActive = activeTab === tab.key
+          return (
+            <button key={tab.key} onClick={() => { setActiveTab(tab.key); setPage(1) }} style={{
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px',
+              border: isActive ? '1px solid #5120c8' : `1px solid transparent`,
+              background: isActive ? 'rgba(81,32,200,0.1)' : 'transparent',
+              color: isActive ? '#5120c8' : muted, fontSize: '13px', fontWeight: isActive ? 600 : 400,
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}>
+              <Icon size={14} />
+              {isAr ? tab.labelAr : tab.labelEn}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* ─── Table Container ─── */}
+      <div style={{ background: surface, border: `1px solid ${borderColor}`, borderRadius: '12px', overflow: 'hidden' }}>
+
+        {/* Table */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${borderColor}` }}>
+                <th style={{ padding: '12px 16px', textAlign: isAr ? 'right' : 'left', color: muted, fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isAr ? 'المستخدم' : 'User'}
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: isAr ? 'right' : 'left', color: muted, fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isAr ? 'الدور' : 'Role'}
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: isAr ? 'right' : 'left', color: muted, fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isAr ? 'النشاط' : 'Activity'}
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: isAr ? 'right' : 'left', color: muted, fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isAr ? 'التفاصيل' : 'Details'}
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: isAr ? 'right' : 'left', color: muted, fontWeight: 500, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isAr ? 'الوقت' : 'Time'}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '60px', textAlign: 'center', color: muted }}>
+                    <div style={{ width: 24, height: 24, border: '2px solid #5120c8', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+                    {isAr ? 'جاري التحميل...' : 'Loading...'}
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ padding: '60px', textAlign: 'center', color: muted }}>
+                    <Activity size={36} style={{ opacity: 0.3, margin: '0 auto 8px', display: 'block' }} />
+                    {isAr ? 'لا يوجد نشاط' : 'No activity found'}
+                  </td>
+                </tr>
+              ) : items.map((act: any, i: number) => {
+                const roleLabel: Record<string, string> = {
+                  STUDENT: isAr ? 'طالب' : 'Student',
+                  INSTRUCTOR: isAr ? 'مدرس' : 'Instructor',
+                  CONSULTANT: isAr ? 'مستشار' : 'Consultant',
+                  ADMIN: isAr ? 'مدير' : 'Admin',
+                }
+                const name = act.user?.profile?.firstName
+                  ? `${act.user.profile.firstName} ${act.user.profile.lastName}`
+                  : act.user?.email?.split('@')[0] ?? '?'
+                return (
+                  <tr key={act.id || i} style={{ borderBottom: `1px solid ${borderColor}`, transition: 'background 0.15s' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = tableHover}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ padding: '12px 16px', fontWeight: 500 }}>{name}</td>
+                    <td style={{ padding: '12px 16px', color: muted }}>
+                      {roleLabel[act.user?.accountType] || act.user?.accountType}
+                    </td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px',
+                        borderRadius: '6px', fontSize: '12px', fontWeight: 500,
+                        background: `${actionColor(act.action)}15`, color: actionColor(act.action),
+                      }}>
+                        {actionLabel(act.action, isAr)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', color: muted, fontSize: '12px', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {act.entity || act.metadata?.title || '—'}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: muted, fontSize: '12px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Clock size={12} />
+                        {timeAgo(act.createdAt, isAr)}
+                      </div>
+                      <div style={{ fontSize: '10px', color: muted, opacity: 0.6, marginTop: '2px' }}>
+                        {new Date(act.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ─── Pagination ─── */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '16px' }}>
+          <button disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} style={{
+            display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px',
+            background: surface, border: `1px solid ${borderColor}`, color: fg, fontSize: '12px',
+            cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.4 : 1,
+          }}>
+            <ChevronRight size={14} />
+            {isAr ? 'السابق' : 'Prev'}
+          </button>
+          <span style={{ fontSize: '12px', color: muted }}>
+            {isAr ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`} · {isAr ? `إجمالي ${total}` : `${total} total`}
+          </span>
+          <button disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))} style={{
+            display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 12px', borderRadius: '8px',
+            background: surface, border: `1px solid ${borderColor}`, color: fg, fontSize: '12px',
+            cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.4 : 1,
+          }}>
+            {isAr ? 'التالي' : 'Next'}
+            <ChevronLeft size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* ─── Live Tracking Placeholder (Phase 2) ─── */}
+      <div style={{
+        background: 'rgba(81,32,200,0.05)', border: '1px solid rgba(81,32,200,0.15)',
+        borderRadius: '16px', padding: '32px', textAlign: 'center', marginTop: '24px',
+      }}>
+        <Monitor size={28} style={{ color: 'rgba(81,32,200,0.3)', margin: '0 auto 8px', display: 'block' }} />
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: 0 }}>
+          {isAr ? 'الخريطة التفاعلية المباشرة قريباً' : 'Live Interactive Map — Coming Soon'}
+        </p>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }
