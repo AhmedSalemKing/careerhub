@@ -34,6 +34,16 @@ const MODAL_INPUT = {
   boxSizing: 'border-box' as const,
 }
 
+const USER_TABS = [
+  { id: 'ALL', labelAr: 'الكل', labelEn: 'All' },
+  { id: 'STUDENT', labelAr: 'الطلاب', labelEn: 'Students' },
+  { id: 'INSTRUCTOR', labelAr: 'المحاضرون', labelEn: 'Instructors' },
+  { id: 'CONSULTANT', labelAr: 'المستشارون', labelEn: 'Consultants' },
+  { id: 'ADMIN', labelAr: 'الإداريون', labelEn: 'Admins' },
+] as const
+
+type UserTab = typeof USER_TABS[number]['id']
+
 export default function AdminUsersPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -45,6 +55,14 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<UserTab>('ALL')
+  const [counts, setCounts] = useState({ all: 0, students: 0, instructors: 0, consultants: 0, admins: 0 })
+
+  useEffect(() => {
+    api.get('/admin/users/counts')
+      .then((res) => { const d = res.data.data ?? res.data; setCounts(d) })
+      .catch(() => {})
+  }, [])
 
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean; title: string; message: string;
@@ -93,7 +111,14 @@ export default function AdminUsersPage() {
 
   function fetchUsers() {
     setLoading(true)
-    api.get('/admin/users', { params: { page, limit: 20, search: search || undefined } })
+    api.get('/admin/users', {
+      params: {
+        page,
+        limit: 20,
+        search: search || undefined,
+        role: activeTab === 'ALL' ? undefined : activeTab,
+      },
+    })
       .then((res) => {
         const d = res.data.data ?? res.data
         setUsers(d.users ?? d.items ?? [])
@@ -103,7 +128,7 @@ export default function AdminUsersPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(fetchUsers, [page, search])
+  useEffect(fetchUsers, [page, search, activeTab])
 
   async function ban(userId: string) {
     setProcessing(userId)
@@ -172,6 +197,44 @@ export default function AdminUsersPage() {
           <UserPlus size={16} />
           {isAr ? 'إضافة مستخدم' : 'Add User'}
         </button>
+      </div>
+
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {USER_TABS.map((tab) => {
+          const count = tab.id === 'ALL' ? counts.all
+            : tab.id === 'STUDENT' ? counts.students
+            : tab.id === 'INSTRUCTOR' ? counts.instructors
+            : tab.id === 'CONSULTANT' ? counts.consultants
+            : counts.admins
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setPage(1) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px',
+                background: isActive ? 'rgba(81,32,200,0.15)' : 'rgba(255,255,255,0.04)',
+                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 10,
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                fontFamily: 'DM Sans, sans-serif',
+                transition: 'all 0.15s',
+              }}
+            >
+              {isAr ? tab.labelAr : tab.labelEn}
+              <span style={{
+                background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
+                color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
+                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              }}>{count}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Search */}

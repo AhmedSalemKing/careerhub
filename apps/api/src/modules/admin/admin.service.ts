@@ -491,6 +491,17 @@ export class AdminService {
   // 👥 USER MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────
 
+  async getUserCounts() {
+    const [all, students, instructors, consultants, admins] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { accountType: 'STUDENT' } }),
+      this.prisma.user.count({ where: { accountType: 'INSTRUCTOR' } }),
+      this.prisma.user.count({ where: { accountType: 'CONSULTANT' } }),
+      this.prisma.user.count({ where: { accountType: { in: ['ADMIN', 'SUPER_ADMIN'] } } }),
+    ]);
+    return { all, students, instructors, consultants, admins };
+  }
+
   async getUsers(options: { page: number; limit: number; search?: string; role?: string; status?: string }) {
     const where: any = {};
     if (options.search) {
@@ -661,6 +672,16 @@ export class AdminService {
   // ─────────────────────────────────────────────────────────────────────
   // 🎓 COURSE MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────
+
+  async getCourseCounts() {
+    const [all, published, draft, pending] = await Promise.all([
+      this.prisma.course.count(),
+      this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+      this.prisma.course.count({ where: { status: 'DRAFT' } }),
+      this.prisma.course.count({ where: { status: 'PENDING_REVIEW' } }),
+    ]);
+    return { all, published, draft, pending };
+  }
 
   async getAdminCourses(options: { page: number; limit: number; search?: string; status?: string; level?: string }) {
     const where: any = {};

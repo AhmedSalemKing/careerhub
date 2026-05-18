@@ -39,10 +39,24 @@ export default function AdminCoursesPage() {
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const [counts, setCounts] = useState({ all: 0, published: 0, draft: 0, pending: 0 })
+
+  useEffect(() => {
+    api.get('/admin/courses/counts')
+      .then((res) => { const d = res.data.data ?? res.data; setCounts(d) })
+      .catch(() => {})
+  }, [])
 
   function fetchCourses() {
     setLoading(true)
-    api.get('/admin/courses', { params: { page, limit: 20, search: search || undefined } })
+    api.get('/admin/courses', {
+      params: {
+        page,
+        limit: 20,
+        search: search || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+      },
+    })
       .then((res) => {
         const d = res.data.data ?? res.data
         setCourses(d.courses ?? d.items ?? [])
@@ -52,7 +66,7 @@ export default function AdminCoursesPage() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(fetchCourses, [page, search])
+  useEffect(fetchCourses, [page, search, statusFilter])
 
   async function approve(id: string) {
     setProcessing(id)
@@ -73,16 +87,7 @@ export default function AdminCoursesPage() {
     router.push(`/${locale}/admin/create-course`)
   }
 
-  const filtered = statusFilter === 'ALL'
-    ? courses
-    : courses.filter((c) => c.status === statusFilter)
-
-  const stats = {
-    total,
-    published: courses.filter((c) => c.status === 'PUBLISHED').length,
-    pending: courses.filter((c) => c.status === 'PENDING_REVIEW').length,
-    draft: courses.filter((c) => c.status === 'DRAFT').length,
-  }
+  const filtered = courses
 
   const statusBadgeClass = (status: string) => {
     const map: Record<string, string> = {
@@ -122,11 +127,11 @@ export default function AdminCoursesPage() {
     return map[status] || status
   }
 
-  const filterTabs: { key: StatusFilter; label: string }[] = [
-    { key: 'ALL', label: isAr ? 'الكل' : 'All' },
-    { key: 'PUBLISHED', label: isAr ? 'منشور' : 'Published' },
-    { key: 'PENDING_REVIEW', label: isAr ? 'قيد المراجعة' : 'Pending' },
-    { key: 'DRAFT', label: isAr ? 'مسودة' : 'Draft' },
+  const filterTabs: { key: StatusFilter; label: string; count: number }[] = [
+    { key: 'ALL', label: isAr ? 'الكل' : 'All', count: counts.all },
+    { key: 'PUBLISHED', label: isAr ? 'منشور' : 'Published', count: counts.published },
+    { key: 'PENDING_REVIEW', label: isAr ? 'قيد المراجعة' : 'Pending', count: counts.pending },
+    { key: 'DRAFT', label: isAr ? 'مسودة' : 'Draft', count: counts.draft },
   ]
 
   return (
@@ -166,10 +171,10 @@ export default function AdminCoursesPage() {
       {/* ─── Stats Row ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: isAr ? 'الإجمالي' : 'Total', value: stats.total, color: '#5120c8' },
-          { label: isAr ? 'منشور' : 'Published', value: stats.published, color: '#10b981' },
-          { label: isAr ? 'قيد المراجعة' : 'Pending', value: stats.pending, color: '#f59e0b' },
-          { label: isAr ? 'مسودة' : 'Draft', value: stats.draft, color: '#6b7280' },
+          { label: isAr ? 'الإجمالي' : 'Total', value: counts.all, color: '#5120c8' },
+          { label: isAr ? 'منشور' : 'Published', value: counts.published, color: '#10b981' },
+          { label: isAr ? 'قيد المراجعة' : 'Pending', value: counts.pending, color: '#f59e0b' },
+          { label: isAr ? 'مسودة' : 'Draft', value: counts.draft, color: '#6b7280' },
         ].map((stat, i) => (
           <div
             key={i}
@@ -214,26 +219,35 @@ export default function AdminCoursesPage() {
 
       {/* ─── Filter Tabs ─── */}
       <div className="flex gap-2 flex-wrap">
-        {filterTabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setStatusFilter(tab.key)}
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-            style={{
-              background: statusFilter === tab.key
-                ? '#5120c8'
-                : 'var(--surface)',
-              color: statusFilter === tab.key
-                ? '#fff'
-                : 'var(--muted)',
-              border: statusFilter === tab.key
-                ? '1px solid #5120c8'
-                : '1px solid var(--border)',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {filterTabs.map((tab) => {
+          const isActive = statusFilter === tab.key
+          return (
+            <button
+              key={tab.key}
+              onClick={() => { setStatusFilter(tab.key); setPage(1) }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px',
+                background: isActive ? 'rgba(81,32,200,0.15)' : 'rgba(255,255,255,0.04)',
+                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 10,
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: isActive ? 700 : 500,
+                fontFamily: 'DM Sans, sans-serif',
+                transition: 'all 0.15s',
+              }}
+            >
+              {tab.label}
+              <span style={{
+                background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
+                color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
+                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+              }}>{tab.count}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* ─── Table ─── */}

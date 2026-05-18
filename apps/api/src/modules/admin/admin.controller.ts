@@ -63,6 +63,13 @@ export class AdminController {
   }
 
   // User Management
+  @Get('users/counts')
+  @ApiOperation({ summary: 'Get user counts by role' })
+  async getUserCounts() {
+    const counts = await this.adminService.getUserCounts();
+    return { success: true, data: counts };
+  }
+
   @Get('users')
   @ApiOperation({ summary: 'Get all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
@@ -238,6 +245,13 @@ export class AdminController {
   }
 
   // Course Management - General Routes
+  @Get('courses/counts')
+  @ApiOperation({ summary: 'Get course counts by status' })
+  async getCourseCounts() {
+    const counts = await this.adminService.getCourseCounts();
+    return { success: true, data: counts };
+  }
+
   @Get('courses')
   @ApiOperation({ summary: 'Get all courses for admin' })
   @ApiResponse({ status: 200, description: 'Courses retrieved successfully' })
