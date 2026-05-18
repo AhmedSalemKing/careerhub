@@ -9,6 +9,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CertificatesModule } from '../certificates/certificates.module';
+import { AuditModule } from '../../common/services/audit.module';
 
 const bullImports = process.env.REDIS_URL
   ? [BullModule.registerQueue({ name: 'certificates' })]
@@ -20,6 +21,7 @@ const bullImports = process.env.REDIS_URL
     AuthModule,
     NotificationsModule,
     CertificatesModule,
+    AuditModule,
     ...bullImports,
   ],
   controllers: [CoursesController],

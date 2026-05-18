@@ -1472,19 +1472,29 @@ export class AdminService {
   }) {
     try {
       const where: any = {};
-      if (opts.type) where.action = opts.type;
+      if (opts.type) {
+        const actions = opts.type.split(',').map((s: string) => s.trim()).filter(Boolean);
+        if (actions.length === 1) where.action = actions[0];
+        else where.action = { in: actions };
+      }
       if (opts.userId) where.userId = opts.userId;
       if (opts.from || opts.to) {
         where.createdAt = {};
-        if (opts.from) where.createdAt.gte = new Date(opts.from);
-        if (opts.to) where.createdAt.lte = new Date(opts.to);
+        if (opts.from) {
+          const d = new Date(opts.from);
+          where.createdAt.gte = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0));
+        }
+        if (opts.to) {
+          const d = new Date(opts.to);
+          where.createdAt.lte = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59));
+        }
       }
       if (opts.search) {
         where.user = {
           OR: [
-            { email: { contains: opts.search } },
-            { profile: { firstName: { contains: opts.search } } },
-            { profile: { lastName: { contains: opts.search } } },
+            { email: { contains: opts.search, mode: 'insensitive' } },
+            { profile: { firstName: { contains: opts.search, mode: 'insensitive' } } },
+            { profile: { lastName: { contains: opts.search, mode: 'insensitive' } } },
           ],
         };
       }
@@ -1627,31 +1637,29 @@ export class AdminService {
 
   // ── Activity stats ──
   async getActivityStats() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const now = new Date();
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+    const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
 
     const [activeUsers, loginsToday, enrollmentsToday, sessionsToday] = await Promise.all([
       this.prisma.userActivity.groupBy({
         by: ['userId'],
-        where: { createdAt: { gte: today, lt: tomorrow } },
+        where: { createdAt: { gte: todayStart, lte: todayEnd } },
         _count: { userId: true },
       }).then(r => r.length).catch(() => 0),
       this.prisma.userActivity.count({
-        where: { action: 'LOGIN', createdAt: { gte: today, lt: tomorrow } },
+        where: { action: 'LOGIN', createdAt: { gte: todayStart, lte: todayEnd } },
       }).catch(() => 0),
       this.prisma.enrollment.count({
-        where: { enrolledAt: { gte: today, lt: tomorrow } },
+        where: { enrolledAt: { gte: todayStart, lte: todayEnd } },
       }).catch(() => 0),
       this.prisma.consultingSession.count({
-        where: { createdAt: { gte: today, lt: tomorrow } },
+        where: { createdAt: { gte: todayStart, lte: todayEnd } },
       }).catch(() => 0),
     ]);
 
     const [todayActivity, totalActivities] = await Promise.all([
-      this.prisma.userActivity.count({ where: { createdAt: { gte: today } } }).catch(() => 0),
+      this.prisma.userActivity.count({ where: { createdAt: { gte: todayStart } } }).catch(() => 0),
       this.prisma.userActivity.count().catch(() => 0),
     ]);
 
