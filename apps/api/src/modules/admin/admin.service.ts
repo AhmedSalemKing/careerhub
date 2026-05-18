@@ -83,8 +83,8 @@ export class AdminService {
           thumbnail: courseData.thumbnail || null,
           previewVideo: courseData.previewVideo || null,
           ...(instructorId && { instructorId }),
-          ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
-          ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+          careerPathId: courseData.careerPathId || null,
+          categoryId: courseData.categoryId || null,
         },
       });
 
@@ -204,9 +204,9 @@ export class AdminService {
         level: courseData.level || 'BEGINNER',
         status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'PUBLISHED') as any,
         thumbnail: thumbnailUrl,
-        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+        careerPathId: courseData.careerPathId || null,
         ...(instructorId && { instructorId }),
-        ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+        categoryId: courseData.categoryId || null,
       },
     });
 
@@ -709,10 +709,9 @@ export class AdminService {
         status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
-        // ✅ تم إزالة isPublished (غير موجود في Schema)
-        ...(courseData.careerPathId && { careerPathId: courseData.careerPathId }),
+        careerPathId: courseData.careerPathId || null,
         ...(instructorId && { instructorId }),
-        ...(courseData.categoryId && { categoryId: courseData.categoryId }),
+        categoryId: courseData.categoryId || null,
       },
     });
   }

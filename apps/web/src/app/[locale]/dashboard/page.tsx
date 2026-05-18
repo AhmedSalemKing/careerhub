@@ -44,7 +44,7 @@ function InstructorOverview() {
   })
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1200px' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
       <style>{`
         .dashboard-two-col { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; }
         @media (max-width: 768px) { .dashboard-two-col { grid-template-columns: 1fr; } }
@@ -61,8 +61,9 @@ function InstructorOverview() {
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '1rem',
+        maxWidth: '100%', minWidth: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, maxWidth: '100%' }}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '50%',
             border: '2px solid rgba(81,32,200,0.5)',
@@ -77,7 +78,7 @@ function InstructorOverview() {
               : (user?.profile?.firstName?.[0] || 'م')
             }
           </div>
-          <div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'لوحة التحكم' : 'Dashboard'}
             </p>
@@ -110,6 +111,7 @@ function InstructorOverview() {
         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem',
         marginBottom: '1.5rem',
+        maxWidth: '100%', minWidth: 0,
       }}>
         {[
           {
@@ -162,6 +164,7 @@ function InstructorOverview() {
               borderRadius: '14px',
               display: 'flex', alignItems: 'flex-start', gap: '1rem',
               cursor: 'pointer', transition: 'border-color 0.2s',
+              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
             onMouseLeave={e => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
@@ -173,7 +176,7 @@ function InstructorOverview() {
               }}>
                 {stat.icon}
               </div>
-              <div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
                   color: 'var(--foreground)' }}>
                   {stat.value}
@@ -187,12 +190,13 @@ function InstructorOverview() {
         ))}
       </div>
 
-      <div className="dashboard-two-col" style={{ marginBottom: '1.5rem' }}>
+      <div className="dashboard-two-col" style={{ marginBottom: '1.5rem', maxWidth: '100%', minWidth: 0 }}>
         <div style={{
           background: 'rgba(255,255,255,0.02)',
           border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: '14px',
           padding: '1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <div style={{ display:'flex', alignItems:'center',
             justifyContent:'space-between', marginBottom:'1rem' }}>
@@ -212,6 +216,7 @@ function InstructorOverview() {
                 display:'flex', alignItems:'center', gap:'12px',
                 padding:'10px 0',
                 borderBottom:'1px solid rgba(255,255,255,0.05)',
+                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
               onMouseLeave={e => e.currentTarget.style.opacity='1'}
@@ -233,7 +238,7 @@ function InstructorOverview() {
                       </div>
                   }
                 </div>
-                <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
                   <p style={{ fontWeight:600, fontSize:'0.875rem', margin:'0 0 3px',
                     overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                     color:'var(--foreground)' }}>
@@ -276,6 +281,7 @@ function InstructorOverview() {
           border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: '14px',
           padding: '1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
             {isAr ? 'إجراءات سريعة' : 'Quick Actions'}
@@ -333,12 +339,13 @@ function InstructorOverview() {
               </svg>,
             },
           ].map((action, i) => (
-            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block' }}>
+            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
               <div style={{
                 display:'flex', alignItems:'center', gap:'12px',
                 padding:'10px 12px', borderRadius:'10px', marginBottom:'6px',
                 background: 'transparent', cursor:'pointer',
                 transition:'background 0.15s',
+                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}
               onMouseEnter={e => e.currentTarget.style.background=action.bg}
               onMouseLeave={e => e.currentTarget.style.background='transparent'}
@@ -461,7 +468,7 @@ function StudentOverview() {
   }
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1200px' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
       <style>{`
         .student-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
         .student-two-col { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; }
@@ -479,8 +486,9 @@ function StudentOverview() {
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '1rem',
+        maxWidth: '100%', minWidth: 0,
       }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'1rem', minWidth: 0, maxWidth: '100%' }}>
           <div style={{
             width:'56px', height:'56px', borderRadius:'50%',
             border:'2px solid rgba(81,32,200,0.5)',
@@ -495,7 +503,7 @@ function StudentOverview() {
               : (user?.profile?.firstName?.[0] || 'ط')
             }
           </div>
-          <div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'مرحبا بك' : 'Welcome back,'}
             </p>
@@ -584,6 +592,7 @@ function StudentOverview() {
               display:'flex', alignItems:'flex-start', gap:'1rem',
               transition:'border-color 0.2s',
               cursor:'pointer',
+              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
             }}
             onMouseEnter={(e: any) => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
             onMouseLeave={(e: any) => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
@@ -595,7 +604,7 @@ function StudentOverview() {
               }}>
                 {stat.icon}
               </div>
-              <div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <p style={{ fontSize:'1.6rem', fontWeight:800, margin:'0 0 2px',
                   color:'var(--foreground)' }}>
                   {stat.value}
@@ -610,12 +619,13 @@ function StudentOverview() {
       </div>
 
       {/* Two column layout */}
-      <div className="student-two-col">
+      <div className="student-two-col" style={{ maxWidth: '100%', minWidth: 0 }}>
         {/* My Courses - recent enrollments */}
         <div style={{
           background:'rgba(255,255,255,0.02)',
           border:'1px solid rgba(255,255,255,0.07)',
           borderRadius:'14px', padding:'1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <div style={{ display:'flex', alignItems:'center',
             justifyContent:'space-between', marginBottom:'1rem' }}>
@@ -645,6 +655,7 @@ function StudentOverview() {
                     padding:'10px 0',
                     borderBottom:'1px solid rgba(255,255,255,0.05)',
                     transition:'opacity 0.15s',
+                    minWidth: 0, maxWidth: '100%', overflow: 'hidden',
                   }}
                   onMouseEnter={(e: any) => e.currentTarget.style.opacity='0.8'}
                   onMouseLeave={(e: any) => e.currentTarget.style.opacity='1'}
@@ -669,7 +680,7 @@ function StudentOverview() {
                     </div>
 
                     {/* Info */}
-                    <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
                       <p style={{
                         fontWeight:600, fontSize:'0.875rem', margin:'0 0 4px',
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
@@ -744,6 +755,7 @@ function StudentOverview() {
           background:'rgba(255,255,255,0.02)',
           border:'1px solid rgba(255,255,255,0.07)',
           borderRadius:'14px', padding:'1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
@@ -798,12 +810,13 @@ function StudentOverview() {
               </svg>,
             },
           ].map((action: any, i: number) => (
-            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block' }}>
+            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
               <div style={{
                 display:'flex', alignItems:'center', gap:'12px',
                 padding:'9px 10px', borderRadius:'10px', marginBottom:'4px',
                 background:'transparent', cursor:'pointer',
                 transition:'background 0.15s',
+                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}
               onMouseEnter={(e: any) => e.currentTarget.style.background=action.bg}
               onMouseLeave={(e: any) => e.currentTarget.style.background='transparent'}
@@ -895,7 +908,7 @@ function ConsultantOverview() {
   )
 
   return (
-    <div style={{ padding: '1.5rem 2rem 2.5rem' }}>
+    <div style={{ padding: '1.5rem 2rem 2.5rem', width: '100%', maxWidth: '100vw', minWidth: 0 }}>
       <style>{`
         .consultant-two-col { display: grid; grid-template-columns: 1fr 280px; gap: 1.25rem; }
         @media (max-width: 768px) { .consultant-two-col { grid-template-columns: 1fr; } }
@@ -911,8 +924,9 @@ function ConsultantOverview() {
         display: 'flex', alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '1rem',
+        maxWidth: '100%', minWidth: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, maxWidth: '100%' }}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '50%',
             border: '2px solid rgba(52,211,153,0.5)',
@@ -927,7 +941,7 @@ function ConsultantOverview() {
               : (user?.profile?.firstName?.[0] || 'م')
             }
           </div>
-          <div>
+          <div style={{ minWidth: 0, overflow: 'hidden' }}>
             <p style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 500, margin: '0 0 3px' }}>
               {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
             </p>
@@ -964,6 +978,7 @@ function ConsultantOverview() {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
         gap: '1rem', marginBottom: '1.5rem',
+        maxWidth: '100%', minWidth: 0,
       }}>
         {[
           {
@@ -999,6 +1014,7 @@ function ConsultantOverview() {
               borderRadius: '14px',
               display: 'flex', alignItems: 'flex-start', gap: '1rem',
               transition: 'border-color 0.2s', cursor: 'pointer',
+              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(52,211,153,0.3)'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
@@ -1040,7 +1056,7 @@ function ConsultantOverview() {
                   </svg>
                 )}
               </div>
-              <div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
                   color: 'var(--foreground)' }}>
                   {stat.value}
@@ -1055,12 +1071,13 @@ function ConsultantOverview() {
       </div>
 
       {/* Two column: upcoming sessions + quick actions */}
-      <div className="consultant-two-col">
+      <div className="consultant-two-col" style={{ maxWidth: '100%', minWidth: 0 }}>
         {/* Upcoming Sessions */}
         <div style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--border)',
           borderRadius: '14px', padding: '1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'center',
             justifyContent: 'space-between', marginBottom: '1rem' }}>
@@ -1081,6 +1098,7 @@ function ConsultantOverview() {
                 background: 'rgba(255,255,255,0.02)',
                 borderRadius: '12px',
                 border: '1px solid var(--border)',
+                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}>
                 <div style={{
                   width: '38px', height: '38px', borderRadius: '50%',
@@ -1090,7 +1108,7 @@ function ConsultantOverview() {
                 }}>
                   {session.user?.profile?.firstName?.[0] || '?'}
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                   <p style={{ fontWeight: 600, fontSize: '0.82rem', margin: '0 0 2px',
                     color: 'var(--foreground)', overflow: 'hidden',
                     textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1151,6 +1169,7 @@ function ConsultantOverview() {
           background: 'var(--card-bg)',
           border: '1px solid var(--border)',
           borderRadius: '14px', padding: '1.25rem',
+          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1rem' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
@@ -1177,12 +1196,13 @@ function ConsultantOverview() {
               color: '#9999aa', bg: 'rgba(153,153,170,0.1)',
             },
           ].map((action, i) => (
-            <a key={i} href={action.href} style={{ textDecoration: 'none', display: 'block' }}>
+            <a key={i} href={action.href} style={{ textDecoration: 'none', display: 'block', maxWidth:'100%' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
                 padding: '9px 10px', borderRadius: '10px', marginBottom: '4px',
                 background: 'transparent', cursor: 'pointer',
                 transition: 'background 0.15s',
+                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}
               onMouseEnter={e => e.currentTarget.style.background = action.bg}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}

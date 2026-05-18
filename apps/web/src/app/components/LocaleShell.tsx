@@ -27,7 +27,7 @@ export function LocaleShell({ children }: { children: React.ReactNode }) {
       <Navbar />
       
       {/* Main Content - يتوسع ليملأ المساحة المتاحة */}
-      <main className="flex-1 relative">
+      <main className="flex-1 relative overflow-x-hidden w-full max-w-[100vw]">
         {children}
       </main>
       

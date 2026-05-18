@@ -217,8 +217,8 @@ export class AdminController {
       if (body.duration) courseData.duration = parseInt(body.duration);
       if (body.level) courseData.level = body.level;
       if (body.status) courseData.status = body.status;
-      if (body.careerPathId) courseData.careerPathId = body.careerPathId;
-      if (body.categoryId) courseData.categoryId = body.categoryId;
+      if (body.careerPathId && body.careerPathId !== 'null' && body.careerPathId !== 'undefined') courseData.careerPathId = body.careerPathId;
+      if (body.categoryId && body.categoryId !== 'null' && body.categoryId !== 'undefined') courseData.categoryId = body.categoryId;
       if (body.isInstructor === 'true' || body.isInstructor === true) courseData.isInstructor = true;
       if (body.instructorId) courseData.instructorId = body.instructorId;
       
@@ -277,6 +277,8 @@ export class AdminController {
     thumbnail?: string;
     tags?: string[];
   }, @Req() req: any) {
+    if (courseData.careerPathId === 'null' || courseData.careerPathId === 'undefined') (courseData as any).careerPathId = undefined;
+    if ((courseData as any).categoryId === 'null' || (courseData as any).categoryId === 'undefined') (courseData as any).categoryId = undefined;
     const course = await this.adminService.createCourse(courseData, req.user?.sub || req.user?.id);
     return {
       success: true,

@@ -130,7 +130,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       
       {/* Body uses CSS variables only */}
-      <body className="min-h-screen text-foreground" suppressHydrationWarning>
+      <body className="min-h-screen text-foreground overflow-x-hidden max-w-[100vw]" suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <Providers locale={locale}>
             <LoadingProvider>

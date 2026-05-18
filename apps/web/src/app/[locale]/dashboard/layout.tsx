@@ -168,20 +168,16 @@ return [
   }
 
   return (
-    <div className="min-h-screen dashboard-root bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen dashboard-root bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ overflowX: 'clip' }}>
       
-      {/* MOBILE DRAWER */}
-      {isMobile && (
+      {/* MOBILE DRAWER - only rendered when open to prevent overflow from off-screen transforms */}
+      {isMobile && sidebarOpen && (
         <>
           {/* Overlay */}
-          {sidebarOpen && (
-            <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
-          )}
+          <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
           
           {/* Drawer */}
-          <div className={`fixed top-0 bottom-0 z-50 w-[280px] shadow-2xl transition-transform duration-300 lg:hidden ${
-            sidebarOpen ? (isAr ? 'translate-x-0' : 'translate-x-0') : (isAr ? 'translate-x-full' : '-translate-x-full')
-          }`} style={{
+          <div className="fixed top-0 bottom-0 z-50 w-[280px] shadow-2xl" style={{
             right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0,
             background: 'rgba(13, 13, 13, 0.97)',
             backdropFilter: 'blur(20px)',
@@ -278,7 +274,7 @@ return [
       )}
 
       {/* Page content */}
-      <main className="main-content">
+      <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
         <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
           {children}
         </div>

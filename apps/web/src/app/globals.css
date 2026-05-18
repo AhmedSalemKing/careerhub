@@ -3,7 +3,7 @@
    Clean • Modern • Accessible
    ═════════════════════════════════════════════════════════════════ */
 
-html { background-color: #0d0d0d; color-scheme: dark; }
+html { background-color: #0d0d0d; color-scheme: dark; overflow-x: hidden; max-width: 100vw; }
 html.light { background-color: #ffffff; color-scheme: light; }
 html, body { min-height: 100vh; }
 body { background-color: inherit; }
@@ -377,6 +377,13 @@ img {
 
 .dashboard-root {
 	background-color: var(--background);
+	max-width: 100%;
+	overflow-x: clip;
+}
+
+.dashboard-content, [data-dashboard] {
+	max-width: 100%;
+	overflow-x: clip;
 }
 
 .mobile-backdrop {
