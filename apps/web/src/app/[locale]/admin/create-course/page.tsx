@@ -142,6 +142,16 @@ export default function AdminCreateCoursePage() {
     },
   })
 
+  const { data: careerPaths = [] } = useQuery({
+    queryKey: ['career-paths'],
+    queryFn: async () => {
+      try {
+        const res = await get('/career/paths')
+        return (res?.data as any)?.data?.careerPaths ?? []
+      } catch { return [] }
+    },
+  })
+
   const { data: instructors = [] } = useQuery({
     queryKey: ['instructors-list'],
     queryFn: async () => {
@@ -446,36 +456,34 @@ export default function AdminCreateCoursePage() {
             </div>
 
             {/* Career Path & Category */}
-            {(categories as any[]).length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <div>
-                  <label style={labelStyle}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
-                  <select
-                    value={form.careerPathId}
-                    onChange={(e) => set('careerPathId', e.target.value)}
-                    style={inputStyle}
-                  >
-                    <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
-                    {(categories as any[]).map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>{isAr ? 'التصنيف' : 'Category'}</label>
-                  <select
-                    value={form.categoryId}
-                    onChange={(e) => set('categoryId', e.target.value)}
-                    style={inputStyle}
-                  >
-                    <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
-                    {(categories as any[]).map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div>
+                <label style={labelStyle}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
+                <select
+                  value={form.careerPathId}
+                  onChange={(e) => set('careerPathId', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
+                  {(careerPaths as any[]).map((cp) => (
+                    <option key={cp.id} value={cp.id}>{isAr ? cp.titleAr : cp.titleEn}</option>
+                  ))}
+                </select>
               </div>
-            )}
+              <div>
+                <label style={labelStyle}>{isAr ? 'التصنيف' : 'Category'}</label>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => set('categoryId', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
+                  {(categories as any[]).map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Divider */}
