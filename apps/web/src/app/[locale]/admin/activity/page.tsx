@@ -61,8 +61,26 @@ function getDetails(act: any, isAr: boolean): string {
     case 'LOGIN': return act.user?.email || '—'
     case 'ENROLL_COURSE': return meta.courseTitle || meta.resourceId || act.entityId || act.entity || '—'
     case 'BOOK_SESSION': return [meta.consultantName, meta.date].filter(Boolean).join(' - ') || '—'
-    case 'PAYMENT_SUCCESS': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
-    case 'PAYMENT': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
+    case 'PAYMENT_SUCCESS':
+    case 'PAYMENT': {
+      const paymentParts: string[] = []
+      if (meta.amount) paymentParts.push(`${meta.amount} ${isAr ? 'ر.س' : 'SAR'}`)
+      if (meta.type === 'consultation') {
+        if (meta.consultantName) {
+          const prefix = isAr ? 'جلسة مع' : 'Session with'
+          paymentParts.push(`${prefix} ${meta.consultantName}`)
+        }
+        if (meta.sessionDate) {
+          paymentParts.push(new Date(meta.sessionDate).toLocaleDateString(isAr ? 'ar-SA' : 'en-US'))
+        }
+      } else if (meta.type === 'course' && meta.courseTitle) {
+        const prefix = isAr ? 'كورس' : 'Course'
+        paymentParts.push(`${prefix}: ${meta.courseTitle}`)
+      } else if (meta.consultantName) {
+        paymentParts.push(meta.consultantName)
+      }
+      return paymentParts.filter(Boolean).join('  •  ') || '—'
+    }
     case 'VIEW_COURSE': return meta.courseTitle || act.entityId || '—'
     case 'SEARCH_COURSES': return meta.query || '—'
     case 'WALLET_TOPUP': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'

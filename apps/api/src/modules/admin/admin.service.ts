@@ -1639,6 +1639,20 @@ export class AdminService {
       }
     }
 
+    // Delete old backfill PAYMENT_SUCCESS records so they get recreated with better metadata
+    await this.prisma.userActivity.deleteMany({
+      where: {
+        action: 'PAYMENT_SUCCESS',
+        metadata: { path: ['method'], equals: 'backfill' },
+      },
+    });
+    await this.prisma.userActivity.deleteMany({
+      where: {
+        action: 'PAYMENT_SUCCESS',
+        entity: 'Payment',
+      },
+    });
+
     // Paid sessions → PAYMENT_SUCCESS
     const paidSessions = await this.prisma.consultingSession.findMany({
       where: { paymentStatus: 'PAID' },
@@ -1662,8 +1676,9 @@ export class AdminService {
               entityId: s.id,
               metadata: {
                 amount: (s as any).price ?? 0,
+                type: 'consultation',
                 consultantName,
-                date: s.scheduledAt.toLocaleDateString('ar-SA'),
+                sessionDate: s.scheduledAt,
                 method: 'backfill',
               },
               createdAt: s.updatedAt ?? s.createdAt,
@@ -1746,6 +1761,7 @@ export class AdminService {
               entityId: p.id,
               metadata: {
                 amount: p.amount,
+                type: 'course',
                 courseTitle,
                 method: p.method,
                 itemType: p.itemType,
