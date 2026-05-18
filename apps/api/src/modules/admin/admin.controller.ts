@@ -957,6 +957,14 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  // ── Create Session (JSON) ──
+  @Post('sessions')
+  @ApiOperation({ summary: 'Create new session (Admin only)' })
+  async createSessionJson(@Body() body: any) {
+    const result = await this.adminService.createSession(body);
+    return { success: true, data: result };
+  }
+
   // ── Create Session WITH Image ──
   @Post('sessions/create')
   @UseInterceptors(FileInterceptor('image'))
