@@ -1567,8 +1567,8 @@ export class AdminService {
 
   // ── Backfill existing data into userActivity ──
   async backfillActivityFromExistingData() {
-    const results: { sessions: number; enrollments: number; payments: number; errors: string[] } = {
-      sessions: 0, enrollments: 0, payments: 0, errors: [],
+    const results: { sessions: number; enrollments: number; payments: number; logins: number; paymentRecords: number; errors: string[] } = {
+      sessions: 0, enrollments: 0, payments: 0, logins: 0, paymentRecords: 0, errors: [],
     };
 
     // Sessions → BOOK_SESSION
@@ -1676,8 +1676,92 @@ export class AdminService {
       }
     }
 
-    this.logger.log(`[Backfill] sessions=${results.sessions} enrollments=${results.enrollments} payments=${results.payments} errors=${results.errors.length}`);
-    return { success: true, results };
+    // Backfill REGISTER from all users
+    const users = await this.prisma.user.findMany({
+      select: { id: true, email: true, role: true, createdAt: true, lastSeenAt: true },
+    });
+    let registrations = 0;
+    for (const u of users) {
+      const regExists = await this.prisma.userActivity.findFirst({
+        where: { action: 'REGISTER', userId: u.id },
+      });
+      if (!regExists) {
+        await this.prisma.userActivity.create({
+          data: {
+            userId: u.id,
+            action: 'REGISTER',
+            entity: 'User',
+            entityId: u.id,
+            metadata: { email: u.email, role: u.role },
+            createdAt: u.createdAt,
+          },
+        });
+        registrations++;
+      }
+    }
+
+    // Backfill LOGIN for all users (use lastSeenAt as proxy, fall back to createdAt)
+    for (const u of users) {
+      try {
+        const loginExists = await this.prisma.userActivity.findFirst({
+          where: { action: 'LOGIN', userId: u.id },
+        });
+        if (!loginExists) {
+          await this.prisma.userActivity.create({
+            data: {
+              userId: u.id,
+              action: 'LOGIN',
+              entity: 'User',
+              entityId: u.id,
+              metadata: { email: u.email, role: u.role },
+              createdAt: u.lastSeenAt ?? u.createdAt,
+            },
+          });
+          results.logins++;
+        }
+      } catch (e: any) {
+        results.errors.push(`login ${u.id}: ${e?.message}`);
+      }
+    }
+
+    // Backfill PAYMENT_SUCCESS from all successful payments (course purchases, etc.)
+    const paymentRecords = await this.prisma.payment.findMany({
+      where: { status: { in: ['SUCCESS', 'COMPLETED'] } },
+      include: { course: { select: { titleAr: true, titleEn: true } } },
+    });
+    for (const p of paymentRecords) {
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'PAYMENT_SUCCESS', entityId: p.id },
+        });
+        if (!exists) {
+          const courseTitle = (p.course as any)
+            ? ((p.course as any).titleAr || (p.course as any).titleEn)
+            : null;
+          await this.prisma.userActivity.create({
+            data: {
+              userId: p.userId,
+              action: 'PAYMENT_SUCCESS',
+              entity: 'Payment',
+              entityId: p.id,
+              metadata: {
+                amount: p.amount,
+                courseTitle,
+                method: p.method,
+                itemType: p.itemType,
+              },
+              createdAt: p.completedAt ?? p.createdAt,
+            },
+          });
+          results.paymentRecords++;
+        }
+      } catch (e: any) {
+        results.errors.push(`payment ${p.id}: ${e?.message}`);
+      }
+    }
+
+    this.logger.log(`[Backfill] sessions=${results.sessions} enrollments=${results.enrollments} payments=${results.payments} logins=${results.logins} paymentRecords=${results.paymentRecords} registrations=${registrations} errors=${results.errors.length}`);
+    return { success: true, results: { ...results, registrations } };
   }
 
   // ── User activity timeline ──

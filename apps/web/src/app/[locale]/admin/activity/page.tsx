@@ -116,7 +116,7 @@ export default function ActivityPage() {
     return () => media.removeEventListener('change', check)
   }, [])
 
-  const queryType = activeTab === 'ALL' ? undefined : activeTab === 'LOGIN' ? 'LOGIN' : activeTab === 'COURSE' ? 'ENROLL_COURSE,COMPLETE_LESSON,WATCH_LESSON,VIEW_COURSES' : activeTab === 'SESSION' ? 'BOOK_SESSION' : 'PAYMENT'
+  const queryType = activeTab === 'ALL' ? undefined : activeTab === 'LOGIN' ? 'LOGIN' : activeTab === 'COURSE' ? 'ENROLL_COURSE,COMPLETE_LESSON,WATCH_LESSON,VIEW_COURSES' : activeTab === 'SESSION' ? 'BOOK_SESSION' : 'PAYMENT_SUCCESS,PAYMENT'
 
   const { data: activityData, isLoading, refetch } = useQuery({
     queryKey: ['admin-filtered-activity', queryType, filterFrom, filterTo, filterRole, search, page],
