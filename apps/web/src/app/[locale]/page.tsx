@@ -8,8 +8,9 @@ import { HashScrollHandler } from '../components/HashScrollHandler'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
 
-export async function generateMetadata({ params }: { params: { locale: string } }) {
-  const isAr = params.locale === 'ar'
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  const isAr = locale === 'ar'
   return {
     title: isAr
       ? 'DeveWay | منصة التعليم والتطوير المهني العربية'
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ? 'منصة تعليمية عربية متكاملة. كورسات احترافية، كوتشينج مهني، مسارات وظيفية، وشهادات معتمدة. ابدأ رحلتك التعليمية اليوم.'
       : 'An integrated Arabic educational platform. Professional courses, career coaching, job paths, and verified certificates. Start your learning journey today.',
     alternates: {
-      canonical: `https://www.deveways.com/${params.locale}`,
+      canonical: `https://www.deveways.com/${locale}`,
       languages: {
         'ar': 'https://www.deveways.com/ar',
         'en': 'https://www.deveways.com/en',
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       description: isAr
         ? 'كورسات احترافية وكوتشينج مهني وشهادات معتمدة'
         : 'Professional courses, career coaching, and verified certificates',
-      url: `https://www.deveways.com/${params.locale}`,
+      url: `https://www.deveways.com/${locale}`,
       locale: isAr ? 'ar_SA' : 'en_US',
       alternateLocale: isAr ? 'en_US' : 'ar_SA',
     },
@@ -73,8 +74,10 @@ async function getSiteConfig() {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
     })
     if (!res.ok) return {}
-    const data = await res.json()
-    console.log('[LANDING] siteConfig:', JSON.stringify(data))
+    const json = await res.json()
+    // API wraps responses: { success: true, data: {...} }
+    const data = json?.data ?? json
+    console.log('[LANDING] siteConfig keys:', Object.keys(data || {}))
     return data
   } catch {
     return {}
