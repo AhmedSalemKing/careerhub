@@ -6,6 +6,8 @@ import { CTASection } from './sections/CTASection'
 import { CoursesShowcase } from '../components/CoursesShowcase'
 import { HashScrollHandler } from '../components/HashScrollHandler'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
+
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   const isAr = params.locale === 'ar'
   return {
@@ -64,23 +66,48 @@ const websiteSchema = {
   },
 }
 
-export default function HomePage() {
+async function getSiteConfig() {
+  try {
+    const res = await fetch(`${API_BASE}/admin/site-config`, { next: { revalidate: 60 } })
+    if (!res.ok) return {}
+    return await res.json()
+  } catch {
+    return {}
+  }
+}
+
+export default async function HomePage() {
+  const config = await getSiteConfig()
+
+  const showFeatures = config['sections.features.visible'] !== false
+  const showCourses = config['sections.courses.visible'] !== false
+  const showCareers = config['sections.careers.visible'] !== false
+  const showTestimonials = config['sections.testimonials.visible'] !== false
+  const showPricing = config['sections.pricing.visible'] !== false
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
       <main id="main-content" aria-label="DeveWay homepage" className="scroll-smooth">
         <HashScrollHandler />
-        <HeroSection />
-        <div style={{ borderTop: '1px solid var(--border)' }}>
-          <FeaturesSection />
-        </div>
-        <CareerPathsSection />
-        <CoursesShowcase />
-        <div style={{ borderTop: '1px solid var(--border)' }}>
-          <TestimonialsSection />
-        </div>
-        <CTASection />
+        <HeroSection siteConfig={config} />
+        {showFeatures && (
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <FeaturesSection />
+          </div>
+        )}
+        {showCareers && <CareerPathsSection />}
+        {showCourses && <CoursesShowcase />}
+        {showTestimonials && (
+          <div style={{ borderTop: '1px solid var(--border)' }}>
+            <TestimonialsSection siteConfig={config} />
+          </div>
+        )}
+        {showPricing && <CTASection />}
+        {!showPricing && (
+          <div style={{ height: '80px' }} />
+        )}
       </main>
     </>
   )

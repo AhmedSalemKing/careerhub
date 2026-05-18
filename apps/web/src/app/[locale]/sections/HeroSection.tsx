@@ -7,13 +7,24 @@ import { Sparkles } from 'lucide-react'
 import { useAuthStore } from '../../../stores/authStore'
 import { TypewriterHero } from '../../components/TypewriterHero'
 
-export function HeroSection() {
+export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }) {
   const t = useTranslations('hero')
   const locale = useLocale()
   const { user } = useAuthStore()
   const [mounted, setMounted] = useState(false)
   
   useEffect(() => setMounted(true), [])
+  
+  const cfg = siteConfig || {}
+  const heroTitle = cfg['hero.title'] || t('title')
+  const heroSubtitle = cfg['hero.subtitle'] || t('subtitle')
+  const ctaPrimary = cfg['hero.ctaText'] || t('cta_primary')
+  const statCourses = cfg['landing.stats.courses']
+    ? `${cfg['landing.stats.courses']}+` : '150+'
+  const statCoaches = cfg['landing.stats.coaches']
+    ? `${cfg['landing.stats.coaches']}+` : '40+'
+  const statStudents = cfg['landing.stats.students']
+    ? `${cfg['landing.stats.students'].toLocaleString()}+` : '10,000+'
 
   const ctaHref = mounted && user
     ? `/${locale}/dashboard/assessment`
@@ -84,7 +95,7 @@ export function HeroSection() {
               color: 'var(--hero-fg)'
             }}
           >
-            {t('title')}
+            {heroTitle}
           </span>
           
           <span 
@@ -102,7 +113,7 @@ export function HeroSection() {
             color: 'var(--hero-muted)'
           }}
         >
-          {t('subtitle')}
+          {heroSubtitle}
         </p>
 
         <div 
@@ -113,7 +124,7 @@ export function HeroSection() {
             href={ctaHref} 
             className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 hero-cta-primary"
           >
-            <span>{t('cta_primary')}</span>
+            <span>{ctaPrimary}</span>
             <svg 
               className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1 rtl:group-hover:translate-x-1" 
               fill="none" 
@@ -153,7 +164,7 @@ export function HeroSection() {
                 
                 <div className="flex flex-col items-center flex-shrink-0">
                   <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
-                    150+
+                    {statCourses}
                   </span>
                   <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_courses')}
@@ -164,7 +175,7 @@ export function HeroSection() {
 
                 <div className="flex flex-col items-center flex-shrink-0">
                   <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
-                    40+
+                    {statCoaches}
                   </span>
                   <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_coaches')}
@@ -175,7 +186,7 @@ export function HeroSection() {
 
                 <div className="flex flex-col items-center flex-shrink-0">
                   <span className="text-lg sm:text-xl lg:text-2xl font-bold tracking-tight" style={{ color: 'var(--hero-fg)' }}>
-                    10,000+
+                    {statStudents}
                   </span>
                   <span className="mt-0.5 text-xs font-medium whitespace-nowrap" style={{ color: 'var(--hero-muted)' }}>
                     {t('stat_students')}

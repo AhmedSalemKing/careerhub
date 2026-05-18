@@ -1434,11 +1434,22 @@ export class AdminService {
         )`);
       } catch { /* ignore */ }
     }
+    const detectType = (v: any): string =>
+      typeof v === 'boolean' ? 'boolean' :
+      typeof v === 'number' ? 'number' :
+      Array.isArray(v) ? 'json' :
+      v !== null && typeof v === 'object' ? 'json' : 'text';
+
     const updates = Object.entries(data).map(([key, value]) =>
       this.prisma.siteSetting.upsert({
         where: { key },
-        update: { value },
-        create: { key, value, group: key.split('.')[0], type: 'text' },
+        update: { value: value as any },
+        create: {
+          key,
+          value: value as any,
+          group: key.split('.')[0],
+          type: detectType(value),
+        },
       }),
     );
     await Promise.all(updates);

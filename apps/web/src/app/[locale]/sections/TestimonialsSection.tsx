@@ -7,15 +7,32 @@ import { Star } from 'lucide-react'
    COMPONENT
    ════════════════════════════════════════ */
 
-export function TestimonialsSection() {
+const DEFAULT_TESTIMONIALS = [
+  { name: '', role: '', quote: '' },
+  { name: '', role: '', quote: '' },
+  { name: '', role: '', quote: '' },
+  { name: '', role: '', quote: '' },
+]
+
+export function TestimonialsSection({ siteConfig }: { siteConfig?: Record<string, any> }) {
   const t = useTranslations('testimonials')
 
-  const items = [
-    { name: t('t1_name'), role: t('t1_role'), quote: t('t1_quote') },
-    { name: t('t2_name'), role: t('t2_role'), quote: t('t2_quote') },
-    { name: t('t3_name'), role: t('t3_role'), quote: t('t3_quote') },
-    { name: t('t4_name'), role: t('t4_role'), quote: t('t4_quote') },
-  ] as const
+  const cfg = siteConfig || {}
+  const dbItems = cfg['testimonials.items']
+
+  const items: readonly { name: string; role: string; quote: string }[] =
+    Array.isArray(dbItems) && dbItems.length > 0
+      ? dbItems.map((item: any) => ({
+          name: item.name || '',
+          role: item.role || '',
+          quote: item.text || item.quote || '',
+        }))
+      : [
+          { name: t('t1_name'), role: t('t1_role'), quote: t('t1_quote') },
+          { name: t('t2_name'), role: t('t2_role'), quote: t('t2_quote') },
+          { name: t('t3_name'), role: t('t3_role'), quote: t('t3_quote') },
+          { name: t('t4_name'), role: t('t4_role'), quote: t('t4_quote') },
+        ]
 
   return (
     <section className="testimonials-section">

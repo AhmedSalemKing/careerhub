@@ -2,19 +2,30 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { applySiteSettings } from '../../../components/Providers'
-import {
-  Save, Palette, Layout, Eye, FileText, Image,
-} from 'lucide-react'
 
 type SiteConfig = Record<string, any>
 
 const TABS = [
-  { id: 'theme', labelAr: 'الهوية البصرية', labelEn: 'Theme', icon: Palette },
-  { id: 'landing', labelAr: 'الصفحة الرئيسية', labelEn: 'Landing', icon: Layout },
-  { id: 'visibility', labelAr: 'إظهار/إخفاء', labelEn: 'Visibility', icon: Eye },
-  { id: 'content', labelAr: 'المحتوى', labelEn: 'Content', icon: Image },
-  { id: 'pages', labelAr: 'الصفحات', labelEn: 'Pages', icon: FileText },
+  { id: 'theme', label: 'الهوية البصرية', icon: '🎨' },
+  { id: 'landing', label: 'الصفحة الرئيسية', icon: '🏠' },
+  { id: 'visibility', label: 'إظهار / إخفاء', icon: '👁️' },
+  { id: 'testimonials', label: 'آراء المستخدمين', icon: '💬' },
+  { id: 'pages', label: 'الصفحات', icon: '📄' },
 ]
+
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '10px 14px',
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '10px', color: '#fff',
+  fontSize: '14px', outline: 'none',
+}
+
+const cardStyle: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.07)',
+  borderRadius: '16px', padding: '24px', marginBottom: '16px',
+}
 
 export default function CMSSettingsPage() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({})
@@ -24,6 +35,8 @@ export default function CMSSettingsPage() {
   const [saved, setSaved] = useState(false)
 
   const g = (key: string, fallback: any = '') => siteConfig[key] ?? fallback
+  const set = (key: string, value: any) =>
+    setSiteConfig((prev) => ({ ...prev, [key]: value }))
 
   useEffect(() => {
     api.get('/admin/cms-settings')
@@ -40,9 +53,6 @@ export default function CMSSettingsPage() {
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
-
-  const set = (key: string, value: any) =>
-    setSiteConfig((prev) => ({ ...prev, [key]: value }))
 
   async function handleSaveAll() {
     setSaving(true)
@@ -67,325 +77,386 @@ export default function CMSSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="text-gray-400 text-sm">Loading settings...</div>
+        <div className="text-gray-400 text-sm">جاري التحميل...</div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Site Settings</h1>
-        <button
-          onClick={handleSaveAll}
-          disabled={saving}
-          className="flex items-center gap-2 px-4 py-2 bg-[#5120c8] hover:bg-[#3d1a99] disabled:bg-[#2d1370] text-white font-semibold rounded-lg transition-colors text-sm"
-        >
-          <Save size={15} />
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save All'}
-        </button>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#fff' }}>
+          إعدادات المنصة
+        </h1>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginTop: '4px' }}>
+          تحكم في مظهر ومحتوى الموقع بالكامل
+        </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 flex-wrap" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '4px' }}>
-        {TABS.map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '10px 16px', borderRadius: '10px',
-                border: 'none', cursor: 'pointer',
-                background: isActive ? '#5120c8' : 'transparent',
-                color: isActive ? '#fff' : 'rgba(255,255,255,0.5)',
-                fontSize: 13, fontWeight: isActive ? 700 : 500,
-                transition: 'all 0.15s',
-              }}
-            >
-              <Icon size={15} />
-              {tab.labelAr}
-            </button>
-          )
-        })}
-      </div>
+      <div style={{ display: 'flex', gap: '24px', flexDirection: 'row', alignItems: 'flex-start' }}>
+        {/* Sidebar */}
+        <div style={{ width: '200px', flexShrink: 0, position: 'sticky', top: '24px' }}>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  width: '100%', padding: '12px 16px', borderRadius: '12px',
+                  marginBottom: '4px', border: 'none', cursor: 'pointer',
+                  textAlign: 'right', fontSize: '14px', fontWeight: '600',
+                  background: isActive ? 'rgba(81,32,200,0.2)' : 'transparent',
+                  color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                  borderRight: isActive ? '3px solid #5120C8' : '3px solid transparent',
+                }}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
 
-      <div className="space-y-6" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.06)' }}>
-        {/* ═══ THEME TAB ═══ */}
-        {activeTab === 'theme' && (
-          <div className="space-y-5">
-            <SectionTitle label="Site Name & Logo" />
-            <div className="grid grid-cols-2 gap-4">
-              <FieldRow label="Site Name">
-                <input
-                  type="text"
-                  value={g('brand.siteName', 'DeveWay')}
-                  onChange={(e) => set('brand.siteName', e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-                />
-              </FieldRow>
-              <FieldRow label="Logo URL">
-                <input
-                  type="url"
-                  value={g('brand.logoUrl', '')}
-                  onChange={(e) => set('brand.logoUrl', e.target.value)}
-                  placeholder="https://example.com/logo.png"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-                />
-              </FieldRow>
-            </div>
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
 
-            <SectionTitle label="Colors" />
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { key: 'theme.primaryColor', label: 'Primary' },
-                { key: 'theme.backgroundColor', label: 'Background' },
-                { key: 'theme.buttonColor', label: 'Button' },
-              ].map(({ key, label }) => (
-                <div key={key}>
-                  <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
-                  <div className="flex items-center gap-2">
+          {/* ══ THEME ══ */}
+          {activeTab === 'theme' && (
+            <>
+              <div style={cardStyle}>
+                <SectionTitle label="اسم الموقع والشعار" />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
+                  <div>
+                    <Label text="اسم الموقع" />
                     <input
-                      type="color"
-                      value={g(key, '#000000')}
-                      onChange={(e) => set(key, e.target.value)}
-                      className="w-10 h-10 rounded-lg border-0 cursor-pointer"
-                      style={{ background: 'transparent' }}
+                      type="text"
+                      value={g('brand.siteName', 'DeveWay')}
+                      onChange={(e) => set('brand.siteName', e.target.value)}
+                      style={inputStyle}
                     />
-                    <span className="text-xs text-gray-500 font-mono">{g(key, '')}</span>
+                  </div>
+                  <div>
+                    <Label text="رابط الشعار" />
+                    <input
+                      type="url"
+                      value={g('brand.logoUrl', '')}
+                      onChange={(e) => set('brand.logoUrl', e.target.value)}
+                      placeholder="https://example.com/logo.png"
+                      style={inputStyle}
+                    />
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <SectionTitle label="Preview" />
-            <div
-              className="rounded-xl p-6 space-y-4"
-              style={{ background: g('theme.backgroundColor', '#0d0d0d'), border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <div className="flex items-center gap-3">
-                {g('brand.logoUrl') && (
-                  <img src={g('brand.logoUrl')} alt="logo" className="h-8 w-8 rounded-lg object-cover" />
-                )}
-                <span style={{ color: g('theme.primaryColor', '#5120C8') }} className="font-bold text-lg">
-                  {g('brand.siteName', 'DeveWay')}
-                </span>
               </div>
-              <button
-                style={{ background: g('theme.buttonColor', '#5120C8'), color: '#fff' }}
-                className="w-full py-2.5 rounded-lg text-sm font-semibold border-0 cursor-pointer"
-              >
-                Sample Button
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* ═══ LANDING TAB ═══ */}
-        {activeTab === 'landing' && (
-          <div className="space-y-5">
-            <SectionTitle label="Hero Section" />
-            <FieldRow label="Title">
-              <input
-                type="text"
-                value={g('hero.title', '')}
-                onChange={(e) => set('hero.title', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm text-white"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-              />
-            </FieldRow>
-            <FieldRow label="Subtitle">
-              <textarea
-                value={g('hero.subtitle', '')}
-                onChange={(e) => set('hero.subtitle', e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg text-sm text-white resize-none"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-              />
-            </FieldRow>
-            <FieldRow label="CTA Button Text">
-              <input
-                type="text"
-                value={g('hero.ctaText', '')}
-                onChange={(e) => set('hero.ctaText', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm text-white"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-              />
-            </FieldRow>
+              <div style={cardStyle}>
+                <SectionTitle label="الألوان" />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '12px' }}>
+                  {[
+                    { key: 'theme.primaryColor', label: 'اللون الأساسي' },
+                    { key: 'theme.backgroundColor', label: 'لون الخلفية' },
+                    { key: 'theme.buttonColor', label: 'لون الأزرار' },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <Label text={label} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <input
+                          type="color"
+                          value={g(key, '#000000')}
+                          onChange={(e) => set(key, e.target.value)}
+                          style={{
+                            width: '48px', height: '48px', borderRadius: '10px',
+                            border: 'none', cursor: 'pointer', padding: '2px',
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={g(key, '')}
+                          onChange={(e) => set(key, e.target.value)}
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <SectionTitle label="Stats" />
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { key: 'landing.stats.courses', label: 'Courses Count' },
-                { key: 'landing.stats.coaches', label: 'Coaches Count' },
-                { key: 'landing.stats.students', label: 'Students Count' },
-              ].map(({ key, label }) => (
-                <FieldRow key={key} label={label}>
-                  <input
-                    type="number"
-                    value={g(key, 0)}
-                    onChange={(e) => set(key, parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 rounded-lg text-sm text-white"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  />
-                </FieldRow>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ═══ VISIBILITY TAB ═══ */}
-        {activeTab === 'visibility' && (
-          <div className="space-y-4">
-            <SectionTitle label="Toggle sections visibility" />
-            {[
-              { key: 'sections.features.visible', label: 'قسم المميزات' },
-              { key: 'sections.courses.visible', label: 'قسم الكورسات' },
-              { key: 'sections.careers.visible', label: 'قسم المسارات' },
-              { key: 'sections.testimonials.visible', label: 'آراء المستخدمين' },
-              { key: 'sections.pricing.visible', label: 'قسم الأسعار' },
-            ].map(({ key, label }) => (
-              <div key={key} className="flex items-center justify-between py-3 px-4 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.03)' }}
-              >
-                <span className="text-sm text-white">{label}</span>
-                <button
-                  onClick={() => set(key, !g(key, true))}
+              <div style={cardStyle}>
+                <SectionTitle label="معاينة حية" />
+                <div
                   style={{
-                    width: 48, height: 28, borderRadius: 50,
-                    border: 'none', cursor: 'pointer',
-                    background: g(key, true) ? '#5120C8' : 'rgba(255,255,255,0.1)',
-                    position: 'relative', transition: 'all 0.2s',
+                    borderRadius: '12px', padding: '24px',
+                    background: g('theme.backgroundColor', '#0d0d0d'),
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    marginTop: '12px',
                   }}
                 >
-                  <span style={{
-                    position: 'absolute', top: 3, width: 22, height: 22,
-                    borderRadius: '50%', background: '#fff',
-                    left: g(key, true) ? 24 : 3, transition: 'all 0.2s',
-                  }} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ═══ CONTENT TAB ═══ */}
-        {activeTab === 'content' && (
-          <div className="space-y-5">
-            <SectionTitle label="Testimonials" />
-            <p className="text-xs text-gray-500">Add, edit, or remove testimonials shown on the landing page.</p>
-            {Array.isArray(g('testimonials.items')) && (g('testimonials.items') as any[]).map((item: any, idx: number) => (
-              <div key={idx} className="p-4 rounded-lg space-y-3"
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <div className="flex justify-between">
-                  <span className="text-xs text-gray-500">#{idx + 1}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    {g('brand.logoUrl') && (
+                      <img src={g('brand.logoUrl')} alt="" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
+                    )}
+                    <span style={{ color: g('theme.primaryColor', '#5120C8'), fontWeight: '700', fontSize: '18px' }}>
+                      {g('brand.siteName', 'DeveWay')}
+                    </span>
+                  </div>
                   <button
-                    onClick={() => {
-                      const items = [...(g('testimonials.items') as any[])]
-                      items.splice(idx, 1)
-                      set('testimonials.items', items)
+                    style={{
+                      width: '100%', padding: '12px', borderRadius: '10px',
+                      background: g('theme.buttonColor', '#5120C8'), color: '#fff',
+                      border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
                     }}
-                    className="text-xs text-red-400 bg-transparent border-0 cursor-pointer"
                   >
-                    Remove
+                    زر تجريبي
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+              </div>
+            </>
+          )}
+
+          {/* ══ LANDING ══ */}
+          {activeTab === 'landing' && (
+            <>
+              <div style={cardStyle}>
+                <SectionTitle label="القسم الرئيسي (Hero)" />
+                <div style={{ marginTop: '12px' }}>
+                  <Label text="العنوان" />
                   <input
                     type="text"
-                    value={item.name || ''}
-                    onChange={(e) => {
-                      const items = [...(g('testimonials.items') as any[])]
-                      items[idx] = { ...items[idx], name: e.target.value }
-                      set('testimonials.items', items)
-                    }}
-                    placeholder="Name"
-                    className="px-3 py-2 rounded-lg text-sm text-white"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-                  />
-                  <input
-                    type="text"
-                    value={item.role || ''}
-                    onChange={(e) => {
-                      const items = [...(g('testimonials.items') as any[])]
-                      items[idx] = { ...items[idx], role: e.target.value }
-                      set('testimonials.items', items)
-                    }}
-                    placeholder="Role"
-                    className="px-3 py-2 rounded-lg text-sm text-white"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+                    value={g('hero.title', '')}
+                    onChange={(e) => set('hero.title', e.target.value)}
+                    style={inputStyle}
                   />
                 </div>
-                <textarea
-                  value={item.text || ''}
-                  onChange={(e) => {
-                    const items = [...(g('testimonials.items') as any[])]
-                    items[idx] = { ...items[idx], text: e.target.value }
+                <div style={{ marginTop: '12px' }}>
+                  <Label text="الوصف" />
+                  <textarea
+                    value={g('hero.subtitle', '')}
+                    onChange={(e) => set('hero.subtitle', e.target.value)}
+                    rows={3}
+                    style={{ ...inputStyle, resize: 'vertical' }}
+                  />
+                </div>
+                <div style={{ marginTop: '12px' }}>
+                  <Label text="نص الزر" />
+                  <input
+                    type="text"
+                    value={g('hero.ctaText', '')}
+                    onChange={(e) => set('hero.ctaText', e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              <div style={cardStyle}>
+                <SectionTitle label="الإحصائيات" />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '12px' }}>
+                  {[
+                    { key: 'landing.stats.courses', label: 'عدد الكورسات' },
+                    { key: 'landing.stats.coaches', label: 'عدد المدربين' },
+                    { key: 'landing.stats.students', label: 'عدد الطلاب' },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <Label text={label} />
+                      <input
+                        type="number"
+                        value={g(key, 0)}
+                        onChange={(e) => set(key, parseInt(e.target.value) || 0)}
+                        style={inputStyle}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ══ VISIBILITY ══ */}
+          {activeTab === 'visibility' && (
+            <div style={cardStyle}>
+              <SectionTitle label="إظهار أو إخفاء أقسام الموقع" />
+              <div style={{ marginTop: '12px' }}>
+                {[
+                  { key: 'sections.features.visible', label: 'قسم المميزات' },
+                  { key: 'sections.courses.visible', label: 'قسم الكورسات' },
+                  { key: 'sections.careers.visible', label: 'قسم المسارات' },
+                  { key: 'sections.testimonials.visible', label: 'آراء المستخدمين' },
+                  { key: 'sections.pricing.visible', label: 'قسم الأسعار' },
+                ].map(({ key, label }) => {
+                  const isVisible = g(key, true) !== false
+                  return (
+                    <div
+                      key={key}
+                      style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '16px', background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '12px', marginBottom: '8px',
+                      }}
+                    >
+                      <span style={{ color: '#fff', fontSize: '14px' }}>{label}</span>
+                      <div
+                        onClick={() => set(key, !isVisible)}
+                        style={{
+                          width: '48px', height: '26px', borderRadius: '50px', cursor: 'pointer',
+                          background: isVisible ? '#5120C8' : 'rgba(255,255,255,0.1)',
+                          position: 'relative', transition: 'background 0.2s ease',
+                        }}
+                      >
+                        <div style={{
+                          position: 'absolute', top: '3px',
+                          left: isVisible ? '24px' : '3px',
+                          width: '20px', height: '20px',
+                          borderRadius: '50%', background: '#fff',
+                          transition: 'left 0.2s ease',
+                        }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ══ TESTIMONIALS ══ */}
+          {activeTab === 'testimonials' && (
+            <div style={cardStyle}>
+              <SectionTitle label="آراء المستخدمين" />
+              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginTop: '4px' }}>
+                أضف أو عدّل آراء المستخدمين التي تظهر في الصفحة الرئيسية
+              </p>
+              <div style={{ marginTop: '16px' }}>
+                {(Array.isArray(g('testimonials.items')) ? g('testimonials.items') : []).map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '16px', borderRadius: '12px', marginBottom: '12px',
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>#{idx + 1}</span>
+                      <button
+                        onClick={() => {
+                          const items = [...(g('testimonials.items') as any[])]
+                          items.splice(idx, 1)
+                          set('testimonials.items', items)
+                        }}
+                        style={{
+                          color: '#ef4444', fontSize: '12px',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                        }}
+                      >
+                        حذف
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                      <input
+                        type="text"
+                        value={item.name || ''}
+                        onChange={(e) => {
+                          const items = [...(g('testimonials.items') as any[])]
+                          items[idx] = { ...items[idx], name: e.target.value }
+                          set('testimonials.items', items)
+                        }}
+                        placeholder="الاسم"
+                        style={inputStyle}
+                      />
+                      <input
+                        type="text"
+                        value={item.role || ''}
+                        onChange={(e) => {
+                          const items = [...(g('testimonials.items') as any[])]
+                          items[idx] = { ...items[idx], role: e.target.value }
+                          set('testimonials.items', items)
+                        }}
+                        placeholder="الوظيفة"
+                        style={inputStyle}
+                      />
+                    </div>
+                    <textarea
+                      value={item.text || ''}
+                      onChange={(e) => {
+                        const items = [...(g('testimonials.items') as any[])]
+                        items[idx] = { ...items[idx], text: e.target.value }
+                        set('testimonials.items', items)
+                      }}
+                      rows={2}
+                      placeholder="نص الرأي"
+                      style={{ ...inputStyle, resize: 'vertical' }}
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const items = [...((g('testimonials.items') as any[]) || [])]
+                    items.push({ name: '', role: '', text: '' })
                     set('testimonials.items', items)
                   }}
-                  rows={2}
-                  placeholder="Testimonial text"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white resize-none"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
-                />
-              </div>
-            ))}
-            <button
-              onClick={() => {
-                const items = [...(g('testimonials.items') as any[] || [])]
-                items.push({ name: '', role: '', text: '' })
-                set('testimonials.items', items)
-              }}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-transparent border cursor-pointer"
-              style={{ border: '1px dashed rgba(255,255,255,0.2)' }}
-            >
-              + Add Testimonial
-            </button>
-          </div>
-        )}
-
-        {/* ═══ PAGES TAB ═══ */}
-        {activeTab === 'pages' && (
-          <div className="space-y-5">
-            {[
-              { key: 'pages.privacy', label: 'Privacy Policy' },
-              { key: 'pages.terms', label: 'Terms & Conditions' },
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <SectionTitle label={label} />
-                <textarea
-                  value={g(key, '')}
-                  onChange={(e) => set(key, e.target.value)}
-                  rows={12}
-                  className="w-full px-4 py-3 rounded-xl text-sm text-white resize-none font-sans leading-relaxed"
                   style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    fontFamily: 'inherit',
+                    width: '100%', padding: '12px', borderRadius: '10px',
+                    border: '1px dashed rgba(255,255,255,0.2)',
+                    background: 'transparent', color: '#fff',
+                    fontSize: '14px', cursor: 'pointer', marginTop: '8px',
                   }}
-                />
+                >
+                  + إضافة رأي جديد
+                </button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+
+          {/* ══ PAGES ══ */}
+          {activeTab === 'pages' && (
+            <>
+              {[
+                { key: 'pages.privacy', label: 'سياسة الخصوصية' },
+                { key: 'pages.terms', label: 'الشروط والأحكام' },
+              ].map(({ key, label }) => (
+                <div key={key} style={cardStyle}>
+                  <SectionTitle label={label} />
+                  <textarea
+                    value={g(key, '')}
+                    onChange={(e) => set(key, e.target.value)}
+                    rows={12}
+                    style={{
+                      width: '100%', padding: '14px', marginTop: '12px',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: '12px', color: '#fff',
+                      fontSize: '14px', resize: 'vertical',
+                      fontFamily: 'inherit', lineHeight: '1.7',
+                      outline: 'none',
+                    }}
+                  />
+                </div>
+              ))}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Bottom save */}
-      <div className="flex justify-end">
+      {/* Sticky save button */}
+      <div style={{
+        position: 'sticky', bottom: '24px',
+        display: 'flex', justifyContent: 'flex-end',
+        marginTop: '32px', paddingTop: '16px',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+      }}>
         <button
           onClick={handleSaveAll}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#5120c8] hover:bg-[#3d1a99] disabled:bg-[#2d1370] text-white font-semibold rounded-lg transition-colors text-sm"
+          style={{
+            padding: '12px 32px', borderRadius: '12px',
+            background: saving ? 'rgba(81,32,200,0.5)' : '#5120C8',
+            color: '#fff', border: 'none', fontSize: '15px',
+            fontWeight: '700', cursor: saving ? 'wait' : 'pointer',
+            boxShadow: saving ? 'none' : '0 4px 20px rgba(81,32,200,0.4)',
+            transition: 'all 0.2s ease',
+          }}
         >
-          <Save size={15} />
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save All Changes'}
+          {saving ? 'جاري الحفظ...' : '💾 حفظ جميع الإعدادات'}
         </button>
       </div>
     </div>
@@ -394,17 +465,14 @@ export default function CMSSettingsPage() {
 
 function SectionTitle({ label }: { label: string }) {
   return (
-    <p className="text-xs font-semibold tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>
+    <p style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>
       {label}
     </p>
   )
 }
 
-function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
+function Label({ text }: { text: string }) {
   return (
-    <div>
-      <label className="block text-xs text-gray-400 mb-1.5">{label}</label>
-      {children}
-    </div>
+    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>{text}</p>
   )
 }
