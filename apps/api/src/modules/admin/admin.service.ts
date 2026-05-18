@@ -1390,9 +1390,24 @@ export class AdminService {
   }
 
   async getCmsSettings() {
-    const count = await this.prisma.siteSetting.count();
-    if (count === 0) {
-      await this.seedDefaultSettings();
+    try {
+      const count = await this.prisma.siteSetting.count();
+      if (count === 0) {
+        await this.seedDefaultSettings();
+      }
+    } catch {
+      try {
+        await this.prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "site_setting" (
+          "id" TEXT PRIMARY KEY,
+          "key" TEXT NOT NULL UNIQUE,
+          "value" JSONB NOT NULL,
+          "group" TEXT NOT NULL DEFAULT 'general',
+          "type" TEXT NOT NULL DEFAULT 'text',
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`);
+        await this.seedDefaultSettings();
+      } catch { /* table still missing — return empty */ }
     }
     const settings = await this.prisma.siteSetting.findMany({ orderBy: { createdAt: 'asc' } });
     const grouped = settings.reduce((acc: Record<string, any>, s) => {
@@ -1404,6 +1419,21 @@ export class AdminService {
   }
 
   async updateCmsSettings(data: Record<string, any>) {
+    try {
+      await this.prisma.siteSetting.count();
+    } catch {
+      try {
+        await this.prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "site_setting" (
+          "id" TEXT PRIMARY KEY,
+          "key" TEXT NOT NULL UNIQUE,
+          "value" JSONB NOT NULL,
+          "group" TEXT NOT NULL DEFAULT 'general',
+          "type" TEXT NOT NULL DEFAULT 'text',
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`);
+      } catch { /* ignore */ }
+    }
     const updates = Object.entries(data).map(([key, value]) =>
       this.prisma.siteSetting.upsert({
         where: { key },
@@ -1415,9 +1445,24 @@ export class AdminService {
   }
 
   async getPublicSiteConfig() {
-    const count = await this.prisma.siteSetting.count();
-    if (count === 0) {
-      await this.seedDefaultSettings();
+    try {
+      const count = await this.prisma.siteSetting.count();
+      if (count === 0) {
+        await this.seedDefaultSettings();
+      }
+    } catch {
+      try {
+        await this.prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "site_setting" (
+          "id" TEXT PRIMARY KEY,
+          "key" TEXT NOT NULL UNIQUE,
+          "value" JSONB NOT NULL,
+          "group" TEXT NOT NULL DEFAULT 'general',
+          "type" TEXT NOT NULL DEFAULT 'text',
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`);
+        await this.seedDefaultSettings();
+      } catch { /* table still missing — return empty */ }
     }
     const settings = await this.prisma.siteSetting.findMany();
     return settings.reduce((acc: Record<string, any>, s) => {
