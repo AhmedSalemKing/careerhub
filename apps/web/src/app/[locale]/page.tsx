@@ -68,7 +68,7 @@ const websiteSchema = {
 
 async function getSiteConfig() {
   try {
-    const res = await fetch(`${API_BASE}/admin/site-config`, { next: { revalidate: 60 } })
+    const res = await fetch(`${API_BASE}/admin/site-config`, { cache: 'no-store' })
     if (!res.ok) return {}
     return await res.json()
   } catch {
@@ -85,10 +85,16 @@ export default async function HomePage() {
   const showTestimonials = config['sections.testimonials.visible'] !== false
   const showPricing = config['sections.pricing.visible'] !== false
 
+  const primaryColor = config['theme.primaryColor'] || '#5120C8'
+  const bgColor = config['theme.backgroundColor'] || '#0d0d0d'
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
+      <style dangerouslySetInnerHTML={{
+        __html: `:root{--primary:${primaryColor};--background:${bgColor};}`,
+      }} />
       <main id="main-content" aria-label="DeveWay homepage" className="scroll-smooth">
         <HashScrollHandler />
         <HeroSection siteConfig={config} />
