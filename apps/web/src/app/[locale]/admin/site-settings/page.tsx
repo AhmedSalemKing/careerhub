@@ -2,15 +2,16 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { applySiteSettings } from '../../../components/Providers'
+import { Palette, Home, Eye, MessageSquare, FileText, Save } from 'lucide-react'
 
 type SiteConfig = Record<string, any>
 
 const TABS = [
-  { id: 'theme', label: 'الهوية البصرية', icon: '🎨' },
-  { id: 'landing', label: 'الصفحة الرئيسية', icon: '🏠' },
-  { id: 'visibility', label: 'إظهار / إخفاء', icon: '👁️' },
-  { id: 'testimonials', label: 'آراء المستخدمين', icon: '💬' },
-  { id: 'pages', label: 'الصفحات', icon: '📄' },
+  { id: 'theme', label: 'الهوية البصرية', icon: Palette },
+  { id: 'landing', label: 'الصفحة الرئيسية', icon: Home },
+  { id: 'visibility', label: 'إظهار / إخفاء', icon: Eye },
+  { id: 'testimonials', label: 'آراء المستخدمين', icon: MessageSquare },
+  { id: 'pages', label: 'الصفحات', icon: FileText },
 ]
 
 const inputStyle: React.CSSProperties = {
@@ -99,6 +100,7 @@ export default function CMSSettingsPage() {
         <div style={{ width: '200px', flexShrink: 0, position: 'sticky', top: '24px' }}>
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id
+            const Icon = tab.icon
             return (
               <button
                 key={tab.id}
@@ -113,7 +115,7 @@ export default function CMSSettingsPage() {
                   borderRight: isActive ? '3px solid #5120C8' : '3px solid transparent',
                 }}
               >
-                <span>{tab.icon}</span>
+                <Icon className="h-4 w-4" />
                 <span>{tab.label}</span>
               </button>
             )
@@ -456,7 +458,7 @@ export default function CMSSettingsPage() {
             transition: 'all 0.2s ease',
           }}
         >
-          {saving ? 'جاري الحفظ...' : '💾 حفظ جميع الإعدادات'}
+          <Save className="h-4 w-4" /> {saving ? 'جاري الحفظ...' : 'حفظ جميع الإعدادات'}
         </button>
       </div>
     </div>
