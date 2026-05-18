@@ -66,10 +66,20 @@ export default function CMSSettingsPage() {
         buttonColor: g('theme.buttonColor', '#5120C8'),
         siteName: g('brand.siteName', 'DeveWay'),
       })
+      // Apply CSS vars directly for immediate effect
+      if (typeof document !== 'undefined') {
+        const root = document.documentElement
+        const primary = g('theme.primaryColor')
+        const bg = g('theme.backgroundColor')
+        const btn = g('theme.buttonColor')
+        if (primary) root.style.setProperty('--primary', primary)
+        if (bg) { root.style.setProperty('--background', bg); document.body.style.background = bg }
+        if (btn) root.style.setProperty('--button-color', btn)
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-    } catch (e) {
-      console.error(e)
+    } catch (e: any) {
+      console.error('Save failed:', e?.response?.data || e)
     } finally {
       setSaving(false)
     }

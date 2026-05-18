@@ -1418,7 +1418,7 @@ export class AdminService {
     return { settings, grouped };
   }
 
-  async updateCmsSettings(data: Record<string, any>) {
+  async updateCmsSettings(body: Record<string, any>) {
     try {
       await this.prisma.siteSetting.count();
     } catch {
@@ -1434,25 +1434,41 @@ export class AdminService {
         )`);
       } catch { /* ignore */ }
     }
+
     const detectType = (v: any): string =>
+      v === null ? 'text' :
+      Array.isArray(v) ? 'json' :
       typeof v === 'boolean' ? 'boolean' :
       typeof v === 'number' ? 'number' :
-      Array.isArray(v) ? 'json' :
-      v !== null && typeof v === 'object' ? 'json' : 'text';
+      typeof v === 'object' ? 'json' : 'text';
 
-    const updates = Object.entries(data).map(([key, value]) =>
-      this.prisma.siteSetting.upsert({
-        where: { key },
-        update: { value: value as any },
-        create: {
-          key,
-          value: value as any,
-          group: key.split('.')[0],
-          type: detectType(value),
-        },
-      }),
-    );
-    await Promise.all(updates);
+    const results: { key: string; ok: boolean; error?: string }[] = [];
+
+    for (const [key, rawValue] of Object.entries(body)) {
+      try {
+        const value = rawValue === undefined ? null : rawValue;
+        await this.prisma.siteSetting.upsert({
+          where: { key },
+          update: { value: value as any },
+          create: {
+            key,
+            value: value as any,
+            group: key.split('.')[0] || 'general',
+            type: detectType(value),
+          },
+        });
+        results.push({ key, ok: true });
+      } catch (err: any) {
+        console.error(`siteSetting upsert failed for key="${key}":`, err?.message || err);
+        results.push({ key, ok: false, error: err?.message || 'Unknown error' });
+      }
+    }
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      throw new Error(`Failed to save: ${failed.map((f) => f.key).join(', ')}`);
+    }
+    return { success: true, saved: results.length };
   }
 
   async getPublicSiteConfig() {
