@@ -64,7 +64,7 @@ export class CoursesController {
 
     const courses = await this.coursesService.getCourses({
       page: page || 1,
-      limit: limit || 12,
+      limit: limit || 100,
       careerPath,
       categoryId,
       level,

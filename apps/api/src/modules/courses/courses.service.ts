@@ -33,7 +33,7 @@ export class CoursesService {
     userId?: string;
   }) {
     const { page, limit, careerPath, categoryId, level, search, language, type, userId } = options;
-    const effectiveLimit = limit || 12;
+    const effectiveLimit = limit || 100;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
     const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}`;
@@ -43,7 +43,7 @@ export class CoursesService {
     }
 
     const where: any = {
-      status: 'PUBLISHED',
+      status: { in: ['PUBLISHED', 'APPROVED'] },
     };
 
     const andConditions: any[] = [];
@@ -92,7 +92,7 @@ export class CoursesService {
       }
     }
 
-    const finalWhere: any = andConditions.length > 0 ? { AND: [{ status: 'PUBLISHED' }, ...andConditions] } : { status: 'PUBLISHED' };
+    const finalWhere: any = andConditions.length > 0 ? { AND: [{ status: { in: ['PUBLISHED', 'APPROVED'] } }, ...andConditions] } : { status: { in: ['PUBLISHED', 'APPROVED'] } };
 
     this.logger.log(`[getCourses] type=${type}, where=${JSON.stringify(finalWhere)}`)
 
