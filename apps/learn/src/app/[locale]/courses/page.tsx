@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -22,6 +22,8 @@ const API_BASE = (() => {
   const cleaned = url.replace(/\/+$/, '')
   return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
 })()
+
+const PAGE_SIZE = 15
 
 const TABS = [
   { key: 'recorded', labelKey: 'recordedTab', icon: Video, color: '#5120c8' },
@@ -73,6 +75,7 @@ export default function CoursesPage() {
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
   const [allCategories, setAllCategories] = useState<any[]>([])
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const categoryId = searchParams.get('categoryId')
 
   const queryClient = useQueryClient()
@@ -115,7 +118,7 @@ export default function CoursesPage() {
       const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
 
       try {
-        const params = new URLSearchParams({ limit: '50' })
+        const params = new URLSearchParams({ limit: '500' })
         if (activeTab === 'recorded') params.set('type', 'recorded')
         else params.set('type', activeTab)
         if (search) params.set('search', search)
@@ -153,30 +156,37 @@ export default function CoursesPage() {
     retryDelay: 1000,
   })
 
-  const filtered = courses.filter((c: any) => {
-    if (search) {
-      const q = search.toLowerCase()
-      const matchesSearch = (c.title || c.titleEn || '').toLowerCase().includes(q) ||
-        (c.description || c.descriptionEn || '').toLowerCase().includes(q) ||
-        (c.instructor?.profile?.firstName || '').toLowerCase().includes(q)
-      if (!matchesSearch) return false
-    }
-    if (level !== 'all' && c.level !== level) return false
-    if (priceFilter === 'free' && parseFloat(c.price || 0) > 0) return false
-    if (priceFilter === 'paid' && parseFloat(c.price || 0) <= 0) return false
-    return true
-  })
+  const sortedCourses = useMemo(() => {
+    let result = courses.filter((c: any) => {
+      if (search) {
+        const q = search.toLowerCase()
+        const ok = (c.title || c.titleEn || '').toLowerCase().includes(q) ||
+          (c.description || c.descriptionEn || '').toLowerCase().includes(q) ||
+          (c.instructor?.profile?.firstName || '').toLowerCase().includes(q)
+        if (!ok) return false
+      }
+      if (level !== 'all' && c.level !== level) return false
+      if (priceFilter === 'free' && parseFloat(c.price || 0) > 0) return false
+      if (priceFilter === 'paid' && parseFloat(c.price || 0) <= 0) return false
+      return true
+    })
+    result = [...result].sort((a: any, b: any) => {
+      if (sortBy === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      if (sortBy === 'popular') return (b.enrollmentCount || b._count?.enrollments || 0) - (a.enrollmentCount || a._count?.enrollments || 0)
+      return 0
+    })
+    return result
+  }, [courses, search, level, priceFilter, sortBy])
 
-  const sortedCourses = [...filtered].sort((a: any, b: any) => {
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    }
-    if (sortBy === 'popular') {
-      return (b.enrollmentCount || b._count?.enrollments || 0) -
-             (a.enrollmentCount || a._count?.enrollments || 0)
-    }
-    return 0
-  })
+  // Alias for count display (previously `filtered`)
+  const filtered = sortedCourses
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [categoryId, activeTab, level, priceFilter, sortBy, search])
+
+  const visibleCourses = sortedCourses.slice(0, visibleCount)
+  const hasMore = visibleCount < sortedCourses.length
 
   const activeTabConfig = TABS.find(t => t.key === activeTab)!
 
@@ -395,7 +405,7 @@ export default function CoursesPage() {
         {/* RECORDED */}
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
-            {sortedCourses.map((course: any, idx: number) => (
+            {visibleCourses.map((course: any, idx: number) => (
               <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
           </div>
@@ -404,7 +414,7 @@ export default function CoursesPage() {
         {/* LIVE */}
         {!isLoading && activeTab === 'live' && filtered.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {sortedCourses.map((course: any, idx: number) => (
+            {visibleCourses.map((course: any, idx: number) => (
               <LiveCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} API={API_BASE} tl={tl} />
             ))}
           </div>
@@ -413,9 +423,30 @@ export default function CoursesPage() {
         {/* OFFLINE */}
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
-            {sortedCourses.map((course: any, idx: number) => (
+            {visibleCourses.map((course: any, idx: number) => (
               <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
+          </div>
+        )}
+
+        {/* Load More */}
+        {!isLoading && hasMore && (
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <button
+              onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
+              style={{
+                padding: '12px 32px', borderRadius: 12,
+                background: 'rgba(81,32,200,0.1)',
+                border: '1px solid rgba(81,32,200,0.3)',
+                color: '#5120C8', fontWeight: 700, fontSize: 14,
+                cursor: 'pointer', transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#5120C8'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(81,32,200,0.1)'; e.currentTarget.style.color = '#5120C8' }}>
+              {isAr
+                ? `عرض المزيد (${sortedCourses.length - visibleCount} كورس متبقي)`
+                : `Load more (${sortedCourses.length - visibleCount} remaining)`}
+            </button>
           </div>
         )}
       </div>
