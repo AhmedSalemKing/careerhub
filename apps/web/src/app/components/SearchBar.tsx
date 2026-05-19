@@ -84,8 +84,8 @@ export function SearchBar() {
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          background: open ? '#1A1A1A' : '#0D0D0D',
-          border: `1px solid ${open ? 'rgba(81,32,200,0.5)' : 'rgba(255,255,255,0.08)'}`,
+          background: 'var(--surface-2)',
+          border: `1px solid ${open ? 'rgba(81,32,200,0.5)' : 'var(--border)'}`,
           borderRadius: 10,
           padding: '7px 12px',
           cursor: 'pointer',
@@ -98,13 +98,13 @@ export function SearchBar() {
         }}
         onMouseLeave={e => {
           if (!open)
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)'
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border)'
         }}
       >
-        <Search size={14} color="rgba(255,255,255,0.35)" strokeWidth={2} />
+        <Search size={14} style={{ color: 'var(--muted)' }} strokeWidth={2} />
         <span style={{
           fontSize: 13,
-          color: 'rgba(255,255,255,0.3)',
+          color: 'var(--muted)',
           fontFamily: 'DM Sans, sans-serif',
           flex: 1,
           textAlign: isAr ? 'right' : 'left',
@@ -113,9 +113,9 @@ export function SearchBar() {
         </span>
         <kbd style={{
           fontSize: 10,
-          color: 'rgba(255,255,255,0.2)',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          color: 'var(--muted)',
+          background: 'var(--surface-3)',
+          border: '1px solid var(--border)',
           borderRadius: 4,
           padding: '1px 5px',
           fontFamily: 'monospace',
