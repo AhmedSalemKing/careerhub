@@ -747,25 +747,28 @@ export default function RegisterPage() {
                     data-testid={`account-type-${type.toLowerCase()}`}
                     className="flex flex-col items-center gap-1.5 p-4 rounded-xl transition-all duration-200 text-center cursor-pointer"
                     style={{
-                      border: `2px solid ${isActive ? '#5120c8' : colors.subCardBorder}`,
-                      background: isActive ? 'rgba(81,32,200,0.15)' : colors.subCardBg,
-                      boxShadow: isActive ? '0 0 20px rgba(81,32,200,0.15)' : 'none',
+                      border: `2px solid ${isActive ? '#5120C8' : colors.subCardBorder}`,
+                      background: isActive ? '#5120C8' : colors.subCardBg,
+                      color: isActive ? '#ffffff' : 'inherit',
+                      boxShadow: isActive ? '0 0 20px rgba(81,32,200,0.25)' : 'none',
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive) {
-                        e.currentTarget.style.borderColor = theme === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'
-                        e.currentTarget.style.background = theme === 'dark' ? '#0F0F0F' : '#f0f0f0'
+                        e.currentTarget.style.background = '#5120C8'
+                        e.currentTarget.style.color = '#ffffff'
+                        e.currentTarget.style.borderColor = '#5120C8'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isActive) {
-                        e.currentTarget.style.borderColor = colors.subCardBorder
                         e.currentTarget.style.background = colors.subCardBg
+                        e.currentTarget.style.color = 'inherit'
+                        e.currentTarget.style.borderColor = colors.subCardBorder
                       }
                     }}
                   >
                     <Icon className="h-6 w-6 mb-1" />
-                    <span className="font-semibold text-sm transition-colors duration-200" style={{ color: colors.textColor }}>{label}</span>
+                    <span className="font-semibold text-sm transition-colors duration-200" style={{ color: 'inherit' }}>{label}</span>
                     <span className="text-[11px]" style={{ color: colors.mutedColor }}>{sub}</span>
                   </button>
                 )
