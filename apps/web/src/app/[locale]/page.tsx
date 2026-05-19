@@ -95,14 +95,13 @@ export default async function HomePage() {
   const showPricing = config['sections.pricing.visible'] !== false
 
   const primaryColor = normalisePrimary(config['theme.primaryColor'] || '#5120C8')
-  const bgColor = config['theme.backgroundColor'] || '#0d0d0d'
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
       <style dangerouslySetInnerHTML={{
-        __html: `:root{--primary:${primaryColor};--background:${bgColor};}`,
+        __html: `:root{--primary:${primaryColor};}`,
       }} />
       <main id="main-content" aria-label="DeveWay homepage" className="scroll-smooth">
         <HashScrollHandler />

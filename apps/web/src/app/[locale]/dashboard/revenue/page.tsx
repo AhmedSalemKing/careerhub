@@ -19,7 +19,7 @@ export default function RevenuePage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0d0d0d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 36, height: 36, border: '3px solid rgba(81,32,200,0.3)', borderTopColor: '#5120c8', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -29,7 +29,7 @@ export default function RevenuePage() {
   const { totalRevenue = 0, totalStudents = 0, coursesCount = 0, publishedCourses = 0, courseBreakdown = [] } = data || {}
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0d0d', padding: '32px 24px 120px', direction: isAr ? 'rtl' : 'ltr' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--background)', padding: '32px 24px 120px', direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: 0 }}>

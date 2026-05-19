@@ -25,6 +25,12 @@ function hexToRgb(hex: string): string {
 /* ══════════════════════════════════════
    ✅ FIXED: Smart Background Handling
    ══════════════════════════════════════ */
+const DARK_HEX_PATTERNS = /^#(0d0d0d|000000|111111|1a1a1a|0a0a0a|0d0d10|0a0a15)$/i
+
+function isDarkColor(hex: string): boolean {
+  return DARK_HEX_PATTERNS.test(hex.trim())
+}
+
 export function applySiteSettings(s: {
   primaryColor?: string
   backgroundColor?: string
@@ -48,10 +54,9 @@ export function applySiteSettings(s: {
     } catch {}
   }
   
-  /* ── Background: Only set for LIGHT mode or if not dark ── */
+  /* ── Background: Only set for LIGHT mode, skip if dark color ── */
   if (s.backgroundColor) {
-    if (!isDarkMode) {
-      // Light mode: use admin setting
+    if (!isDarkMode && !isDarkColor(s.backgroundColor)) {
       root.style.setProperty('--background', s.backgroundColor)
     }
     // Dark mode: DON'T override - let CSS handle it with #0D0D0D
