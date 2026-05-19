@@ -160,7 +160,8 @@ export default function HomePage() {
   useEffect(() => {
     get('/courses/categories?language=' + locale)
       .then((res: any) => {
-        const list = Array.isArray(res) ? res : (res?.data ?? [])
+        const payload = res?.data
+        const list = Array.isArray(payload) ? payload : (payload?.data ?? [])
         setApiCategories(list.filter((c: any) => !c.parentId).slice(0, 4))
       })
       .catch(() => setApiCategories([]))
