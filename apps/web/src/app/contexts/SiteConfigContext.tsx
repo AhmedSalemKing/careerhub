@@ -1,6 +1,7 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../../lib/api'
+import { applySiteSettings } from '../components/Providers'
 
 type SiteConfig = Record<string, any>
 
@@ -18,12 +19,12 @@ export function SiteConfigProvider({ children }: { children: React.ReactNode }) 
       .then((res) => {
         const data = res.data ?? res
         setConfig(data)
-        if (typeof document !== 'undefined') {
-          const root = document.documentElement
-          if (data['theme.primaryColor']) root.style.setProperty('--primary', data['theme.primaryColor'])
-          if (data['theme.backgroundColor']) root.style.setProperty('--background', data['theme.backgroundColor'])
-          if (data['theme.buttonColor']) root.style.setProperty('--button-color', data['theme.buttonColor'])
-        }
+        applySiteSettings({
+          primaryColor: data['theme.primaryColor'],
+          backgroundColor: data['theme.backgroundColor'],
+          buttonColor: data['theme.buttonColor'],
+          siteName: data['brand.siteName'],
+        })
       })
       .catch(() => {})
   }, [])
