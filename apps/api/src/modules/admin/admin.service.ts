@@ -64,7 +64,7 @@ export class AdminService {
 
       // 3. Validate status against CourseStatus enum
       const validStatuses = ['DRAFT', 'PENDING_REVIEW', 'PUBLISHED', 'REJECTED', 'ARCHIVED'];
-      let status = courseData.status === 'APPROVED' ? 'PUBLISHED' : (courseData.status || 'DRAFT');
+      let status = courseData.status === 'APPROVED' ? 'PUBLISHED' : (courseData.status || 'PUBLISHED');
       if (!validStatuses.includes(status)) status = 'PUBLISHED';
 
       // 4. Create the course
@@ -750,7 +750,7 @@ export class AdminService {
         currency: courseData.currency || 'USD',
         duration: courseData.duration ? parseInt(String(courseData.duration)) : undefined,
         level: courseData.level || 'BEGINNER',
-        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'DRAFT') as any,
+        status: (courseData.status === 'APPROVED' ? 'PUBLISHED' : courseData.status || 'PUBLISHED') as any,
         thumbnail: courseData.thumbnail || null,
         previewVideo: courseData.previewVideo || null,
         instructorId: sanitizeId(instructorId),

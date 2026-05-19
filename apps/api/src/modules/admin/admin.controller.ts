@@ -245,6 +245,15 @@ export class AdminController {
   }
 
   // Course Management - General Routes
+  @Post('courses/publish-drafts')
+  async publishDraftCourses() {
+    const result = await this.prisma.course.updateMany({
+      where: { status: 'DRAFT' },
+      data: { status: 'PUBLISHED' }
+    })
+    return { success: true, updated: result.count }
+  }
+
   @Get('courses/counts')
   @ApiOperation({ summary: 'Get course counts by status' })
   async getCourseCounts() {
