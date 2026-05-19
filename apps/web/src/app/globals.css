@@ -1382,12 +1382,6 @@ button[class*="bg-primary"] {
 		border-top: 1px solid var(--border) !important;
 	}
 
-	.text-white:not([data-dark-section] *):not(.dark-section *):not(
-			[data-keep-white]
-		) {
-		color: var(--foreground) !important;
-	}
-
 	code,
 	pre,
 	[class*="code"] {
@@ -1437,8 +1431,8 @@ button[class*="bg-primary"] {
 	color: var(--muted) !important;
 }
 
-:root:not(.dark) .text-white {
-	color: var(--foreground) !important;
+.text-white {
+	color: #ffffff !important;
 }
 
 /* ══════════════════════════════════════
