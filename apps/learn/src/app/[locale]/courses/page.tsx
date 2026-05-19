@@ -66,6 +66,7 @@ export default function CoursesPage() {
   const enrolledCourseId = searchParams.get('enrolled')
 
   const [activeTab, setActiveTab] = useState<'recorded' | 'live' | 'offline'>('recorded')
+  const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest')
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
@@ -145,6 +146,17 @@ export default function CoursesPage() {
       (c.instructor?.profile?.firstName || '').toLowerCase().includes(q)
   })
 
+  const sortedCourses = [...filtered].sort((a: any, b: any) => {
+    if (sortBy === 'newest') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    }
+    if (sortBy === 'popular') {
+      return (b.enrollmentCount || b._count?.enrollments || 0) -
+             (a.enrollmentCount || a._count?.enrollments || 0)
+    }
+    return 0
+  })
+
   const activeTabConfig = TABS.find(t => t.key === activeTab)!
 
   return (
@@ -222,6 +234,28 @@ export default function CoursesPage() {
           )}
         </div>
 
+        {/* Sort */}
+        {!isLoading && filtered.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
+              { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
+            ].map(s => (
+              <button key={s.id} onClick={() => setSortBy(s.id as any)}
+                style={{
+                  padding: '8px 16px', borderRadius: '10px',
+                  border: sortBy === s.id ? '1px solid rgba(81,32,200,0.4)' : '1px solid var(--border)',
+                  background: sortBy === s.id ? 'rgba(81,32,200,0.12)' : 'var(--surface)',
+                  color: sortBy === s.id ? '#5120C8' : 'var(--muted)',
+                  fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Loading */}
         {isLoading && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
@@ -258,7 +292,7 @@ export default function CoursesPage() {
         {/* RECORDED */}
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
-            {filtered.map((course: any, idx: number) => (
+            {sortedCourses.map((course: any, idx: number) => (
               <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
           </div>
@@ -267,7 +301,7 @@ export default function CoursesPage() {
         {/* LIVE */}
         {!isLoading && activeTab === 'live' && filtered.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {filtered.map((course: any, idx: number) => (
+            {sortedCourses.map((course: any, idx: number) => (
               <LiveCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} API={API_BASE} tl={tl} />
             ))}
           </div>
@@ -276,7 +310,7 @@ export default function CoursesPage() {
         {/* OFFLINE */}
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
-            {filtered.map((course: any, idx: number) => (
+            {sortedCourses.map((course: any, idx: number) => (
               <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
           </div>
