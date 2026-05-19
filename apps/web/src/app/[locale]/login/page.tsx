@@ -209,40 +209,20 @@ export default function LoginPage() {
   }
 
   // ════════════════════════════════════════
-  // 🎨 نظام الألوان الديناميكي - متناسق
+  // 🎨 نظام الألوان - يستخدم متغيرات CSS
   // ════════════════════════════════════════
   const colors = {
-    // ✅ خلفية الصفحة الخارجية: Dark→داكن | Light→أبيض
-    pageBg: theme === 'dark' ? '#0D0D0D' : '#FFFFFF',
-    
-    // ✅ بوكس تسجيل الدخول: Dark→داكن | Light→أبيض
-    cardBg: theme === 'dark' ? '#141414' : '#FFFFFF',
-    
-    // ✅ عنوان "تسجيل الدخول": Dark→أبيض | Light→أسود
-    titleColor: theme === 'dark' ? '#FFFFFF' : '#0d0d0d',
-    
-    // النصوص العادية
-    textColor: theme === 'dark' ? '#E6E6E6' : '#1a1a2e',
-    
-    // النصوص الخافتة (labels, descriptions)
-    mutedColor: theme === 'dark' ? '#9CA3AF' : '#6b7280',
-    
-    // حقول الإدخال
-    inputBg: theme === 'dark' ? '#0A0A0A' : '#f8f9fa',
-    inputBorder: theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-    inputText: theme === 'dark' ? '#E6E6E6' : '#1a1a2e',
-    inputPlaceholder: theme === 'dark' ? '#6b7280' : '#9ca3af',
-    
-    // حدود البوكس
-    cardBorder: theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-    
-    // ظل البوكس
-    cardShadow: theme === 'dark' 
-      ? '0 25px 60px -12px rgba(0,0,0,0.5)' 
-      : '0 25px 60px -12px rgba(0,0,0,0.15)',
-    
-    // Glow Effects
-    glowOpacity: theme === 'dark' ? 0.03 : 0.008,
+    pageBg: 'var(--background)',
+    cardBg: 'var(--card)',
+    titleColor: 'var(--foreground)',
+    textColor: 'var(--foreground)',
+    mutedColor: 'var(--muted)',
+    inputBg: 'var(--surface)',
+    inputBorder: 'var(--border)',
+    inputText: 'var(--foreground)',
+    inputPlaceholder: 'var(--muted)',
+    cardBorder: 'var(--border)',
+    cardShadow: 'var(--shadow-xl)',
   }
 
   if (isPending) {
