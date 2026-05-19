@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../../lib/api'
 import toast from 'react-hot-toast'
 import {
@@ -72,21 +71,17 @@ export default function CoursesPage() {
   const [level, setLevel] = useState<string>('all')
   const [priceFilter, setPriceFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [token, setToken] = useState('')
-  const [tokenReady, setTokenReady] = useState(false)
   const [allCategories, setAllCategories] = useState<any[]>([])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
-  const categoryId = searchParams.get('categoryId')
+  const [courses, setCourses] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [fetchKey, setFetchKey] = useState(0)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    searchParams.get('categoryId')
+  )
 
-  const queryClient = useQueryClient()
-
-  useEffect(() => {
-    const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
-      localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
-    setToken(t)
-    setTokenReady(true) // query can now fire
-  }, [])
-
+  // Fetch categories once
   useEffect(() => {
     fetch(`${API_BASE}/courses/categories?language=${locale}`)
       .then(r => r.json())
@@ -97,12 +92,36 @@ export default function CoursesPage() {
       .catch(() => {})
   }, [locale])
 
-  // Force refetch when redirected from payment success with ?enrolled=courseId
+  // Main fetch — re-runs when category or tab changes, with race-condition guard
+  useEffect(() => {
+    let mounted = true
+    const fetchCourses = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const params: any = { limit: 500, type: activeTab }
+        if (selectedCategory) params.categoryId = selectedCategory
+        console.log('[Fetch] params:', params)
+        const res = await api.get('/courses', { params })
+        if (!mounted) return
+        const data = res?.data?.data?.courses ?? res?.data?.data ?? res?.data?.courses ?? []
+        console.log('[Fetch] returned:', Array.isArray(data) ? data.length : '?', 'courses')
+        setCourses(Array.isArray(data) ? data : [])
+      } catch (e: any) {
+        console.error('[Fetch] error:', e)
+        if (mounted) setError(e?.message || 'Failed to load')
+        if (mounted) setCourses([])
+      } finally {
+        if (mounted) setIsLoading(false)
+      }
+    }
+    fetchCourses()
+    return () => { mounted = false }
+  }, [selectedCategory, activeTab, fetchKey])
+
+  // Clean up ?enrolled param after payment redirect
   useEffect(() => {
     if (enrolledCourseId) {
-      queryClient.invalidateQueries({ queryKey: ['courses'] })
-      console.log('[Courses] Enrollment cache invalidated after payment for:', enrolledCourseId)
-      // Clean URL without page reload
       const url = new URL(window.location.href)
       url.searchParams.delete('enrolled')
       url.searchParams.delete('t')
@@ -110,52 +129,7 @@ export default function CoursesPage() {
     }
   }, [enrolledCourseId])
 
-  const { data: courses = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['courses', activeTab, search, categoryId, token ? 'auth' : 'anon', enrolledCourseId || ''],
-    queryFn: async () => {
-      console.log('[Courses] Fetching tab:', activeTab, 'token:', !!token, 'categoryId:', categoryId)
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
-
-      try {
-        const params = new URLSearchParams({ limit: '500' })
-        if (activeTab === 'recorded') params.set('type', 'recorded')
-        else params.set('type', activeTab)
-        if (search) params.set('search', search)
-        if (categoryId) params.set('categoryId', categoryId)
-
-        const headers: Record<string, string> = {}
-        if (token) headers['Authorization'] = `Bearer ${token}`
-
-        const res = await fetch(`${API_BASE}/courses?${params}`, {
-          headers,
-          signal: controller.signal,
-        })
-        clearTimeout(timeout)
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-        const data = await res.json()
-        const result = data?.data?.courses ?? data?.courses ?? data?.data ?? []
-        console.log('[Courses] Got:', result.length, 'courses')
-        return result
-      } catch(e: any) {
-        clearTimeout(timeout)
-        if (e.name === 'AbortError') {
-          console.error('[Courses] Fetch timeout after 8s')
-          return []
-        }
-        throw e
-      }
-    },
-    enabled: tokenReady, // wait until localStorage check is done
-    staleTime: 0, // always fetch fresh so isEnrolled is up to date after payment
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    retry: 1,
-    retryDelay: 1000,
-  })
-
+  // Client-side filters (category already handled server-side)
   const sortedCourses = useMemo(() => {
     let result = courses.filter((c: any) => {
       if (search) {
@@ -166,8 +140,8 @@ export default function CoursesPage() {
         if (!ok) return false
       }
       if (level !== 'all' && c.level !== level) return false
-      if (priceFilter === 'free' && parseFloat(c.price || 0) > 0) return false
-      if (priceFilter === 'paid' && parseFloat(c.price || 0) <= 0) return false
+      if (priceFilter === 'free' && Number(c.price || 0) > 0) return false
+      if (priceFilter === 'paid' && Number(c.price || 0) <= 0) return false
       return true
     })
     result = [...result].sort((a: any, b: any) => {
@@ -178,12 +152,12 @@ export default function CoursesPage() {
     return result
   }, [courses, search, level, priceFilter, sortBy])
 
-  // Alias for count display (previously `filtered`)
   const filtered = sortedCourses
 
+  // Reset pagination when any filter changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [categoryId, activeTab, level, priceFilter, sortBy, search])
+  }, [selectedCategory, activeTab, level, priceFilter, sortBy, search])
 
   const visibleCourses = sortedCourses.slice(0, visibleCount)
   const hasMore = visibleCount < sortedCourses.length
@@ -269,24 +243,28 @@ export default function CoursesPage() {
         {allCategories.length > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
             <button
-              onClick={() => router.push(`/${locale}/courses`)}
+              onClick={() => { setSelectedCategory(null); router.push(`/${locale}/courses`, { scroll: false }) }}
               style={{
                 padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
                 cursor: 'pointer', border: 'none',
-                background: !categoryId ? '#5120C8' : 'var(--surface-2)',
-                color: !categoryId ? '#fff' : 'var(--muted)',
+                background: !selectedCategory ? '#5120C8' : 'var(--surface-2)',
+                color: !selectedCategory ? '#fff' : 'var(--muted)',
                 transition: 'all 0.15s',
               }}>
               {isAr ? 'الكل' : 'All'}
             </button>
             {allCategories.map((cat: any) => (
               <button key={cat.id}
-                onClick={() => router.push(`/${locale}/courses?categoryId=${cat.id}`)}
+                onClick={() => {
+                  const next = cat.id === selectedCategory ? null : cat.id
+                  setSelectedCategory(next)
+                  router.push(next ? `/${locale}/courses?categoryId=${next}` : `/${locale}/courses`, { scroll: false })
+                }}
                 style={{
                   padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
                   cursor: 'pointer', border: 'none',
-                  background: categoryId === cat.id ? '#5120C8' : 'var(--surface-2)',
-                  color: categoryId === cat.id ? '#fff' : 'var(--muted)',
+                  background: selectedCategory === cat.id ? '#5120C8' : 'var(--surface-2)',
+                  color: selectedCategory === cat.id ? '#fff' : 'var(--muted)',
                   transition: 'all 0.15s',
                 }}>
                 {isAr ? (cat.nameAr || cat.name) : (cat.nameEn || cat.name)}
@@ -383,7 +361,7 @@ export default function CoursesPage() {
             <p style={{ color: '#dc2626', fontSize: 14, marginBottom: 16 }}>
               {tl('failedLoadCourses')}
             </p>
-            <button onClick={() => refetch()} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            <button onClick={() => setFetchKey(k => k + 1)} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               {tl('tryAgain')}
             </button>
           </div>
