@@ -10,7 +10,7 @@ export default function TermsPage() {
 
   useEffect(() => {
     api.get('/admin/site-config')
-      .then((res) => setHtml(res.data?.['pages.terms'] || ''))
+      .then((res) => { const d = res.data?.data ?? res.data; setHtml(d?.['pages.terms'] || '') })
       .catch(() => {})
   }, [])
 

@@ -10,7 +10,7 @@ export default function PrivacyPage() {
 
   useEffect(() => {
     api.get('/admin/site-config')
-      .then((res) => setHtml(res.data?.['pages.privacy'] || ''))
+      .then((res) => { const d = res.data?.data ?? res.data; setHtml(d?.['pages.privacy'] || '') })
       .catch(() => {})
   }, [])
 
