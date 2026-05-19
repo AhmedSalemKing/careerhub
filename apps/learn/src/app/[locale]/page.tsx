@@ -145,6 +145,8 @@ export default function HomePage() {
     }
   }, [])
 
+  const [apiCategories, setApiCategories] = useState<any[]>([])
+
   useEffect(() => {
     get('/courses?limit=6&language=' + locale)
       .then((res) => {
@@ -155,12 +157,36 @@ export default function HomePage() {
       .catch(() => setApiCourses([]))
   }, [locale])
 
-  const categories = [
-    { icon: Code, name: { ar: 'البرمجة', en: 'Programming' }, count: 45, bg: 'rgba(81,32,200,0.12)', color: '#5120c8' },
-    { icon: Palette, name: { ar: 'التصميم', en: 'Design' }, count: 32, bg: 'rgba(43,191,163,0.12)', color: '#2BBFA3' },
-    { icon: BarChart3, name: { ar: 'التسويق الرقمي', en: 'Digital Marketing' }, count: 28, bg: 'rgba(245,166,35,0.12)', color: '#F5A623' },
-    { icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 35, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
-  ]
+  useEffect(() => {
+    get('/courses/categories?language=' + locale)
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : (res?.data ?? [])
+        setApiCategories(list.filter((c: any) => !c.parentId).slice(0, 4))
+      })
+      .catch(() => setApiCategories([]))
+  }, [locale])
+
+  const iconMap: Record<string, React.ComponentType<any>> = {
+    Code, Palette, BarChart3, Briefcase,
+    Laptop, BookOpen, Globe, Award,
+  }
+
+  const categories = apiCategories.length > 0
+    ? apiCategories.map((cat: any) => ({
+        id: cat.id,
+        slug: cat.slug,
+        icon: iconMap[cat.icon as string] || Code,
+        name: { ar: cat.nameAr || cat.name, en: cat.nameEn || cat.name },
+        count: cat.courseCount || 0,
+        bg: 'rgba(81,32,200,0.10)',
+        color: '#5120c8',
+      }))
+    : [
+        { id: null, slug: null, icon: Code, name: { ar: 'البرمجة', en: 'Programming' }, count: 0, bg: 'rgba(81,32,200,0.12)', color: '#5120c8' },
+        { id: null, slug: null, icon: Palette, name: { ar: 'التصميم', en: 'Design' }, count: 0, bg: 'rgba(43,191,163,0.12)', color: '#2BBFA3' },
+        { id: null, slug: null, icon: BarChart3, name: { ar: 'التسويق الرقمي', en: 'Digital Marketing' }, count: 0, bg: 'rgba(245,166,35,0.12)', color: '#F5A623' },
+        { id: null, slug: null, icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 0, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
+      ]
 
   const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
@@ -502,7 +528,7 @@ export default function HomePage() {
             <h3 className="text-xl font-bold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((category, index) => (
-                <Link key={index} href={`/${locale}/courses?category=${index}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                <Link key={category.slug || index} href={`/${locale}/courses?categoryId=${category.id}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                   <div className="shrink-0 h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: category.bg }}><category.icon className="h-6 w-6" style={{ color: category.color }} /></div>
                   <div><h4 className="font-semibold" style={{ color: 'var(--foreground)' }}>{category.name[locale]}</h4><p className="text-sm" style={{ color: 'var(--muted)' }}>{category.count} {locale === 'ar' ? 'كورس' : 'Courses'}</p></div>
                 </Link>
