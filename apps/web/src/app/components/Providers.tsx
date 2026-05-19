@@ -9,21 +9,10 @@ import { createQueryClient } from '../../lib/query-client'
 import { startKeepAlive } from '../../lib/keepAlive'
 import { ThemeProvider, useTheme } from 'next-themes'
 import { SiteConfigProvider } from '../contexts/SiteConfigContext'
+import { normalisePrimary } from '../../lib/utils'
 
 export const SITE_NAME = 'DeveWay'
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
-
-const BRAND_PURPLE = '#5120c8'
-// Tailwind/shadcn default blues that leak from DB when no brand color was saved
-const DEFAULT_BLUES = new Set([
-  '#3b82f6', '#2563eb', '#1d4ed8', '#60a5fa', '#93c5fd',
-  '#2563EB', '#3B82F6', '#1D4ED8',
-  '#2fb68e', '#2FB68E',
-])
-
-function normalisePrimary(color: string): string {
-  return DEFAULT_BLUES.has(color.trim()) ? BRAND_PURPLE : color.trim()
-}
 
 function hexToRgb(hex: string): string {
   const h = hex.replace('#', '')
