@@ -2,14 +2,12 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { applySiteSettings } from '../../../components/Providers'
-import { Palette, Home, Eye, MessageSquare, FileText, Save } from 'lucide-react'
+import { Home, MessageSquare, FileText, Save } from 'lucide-react'
 
 type SiteConfig = Record<string, any>
 
 const TABS = [
-  { id: 'theme', label: 'الهوية البصرية', icon: Palette },
   { id: 'landing', label: 'الصفحة الرئيسية', icon: Home },
-  { id: 'visibility', label: 'إظهار / إخفاء', icon: Eye },
   { id: 'testimonials', label: 'آراء المستخدمين', icon: MessageSquare },
   { id: 'pages', label: 'الصفحات', icon: FileText },
 ]
@@ -32,7 +30,7 @@ export default function CMSSettingsPage() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState('theme')
+  const [activeTab, setActiveTab] = useState('landing')
   const [saved, setSaved] = useState(false)
 
   const g = (key: string, fallback: any = '') => siteConfig[key] ?? fallback
@@ -62,19 +60,11 @@ export default function CMSSettingsPage() {
       // Build explicit flat payload with no undefined values
       const payload: Record<string, any> = {}
       for (const [key, fallback] of Object.entries({
-        'theme.primaryColor': '#5120C8',
-        'theme.backgroundColor': '#0d0d0d',
-        'theme.buttonColor': '#5120C8',
         'brand.siteName': 'DeveWay',
         'brand.logoUrl': '',
         'hero.title': '',
         'hero.subtitle': '',
         'hero.ctaText': '',
-        'sections.testimonials.visible': true,
-        'sections.features.visible': true,
-        'sections.courses.visible': true,
-        'sections.careers.visible': true,
-        'sections.pricing.visible': true,
         'testimonials.items': [],
         'landing.stats.courses': 0,
         'landing.stats.coaches': 0,
@@ -87,22 +77,7 @@ export default function CMSSettingsPage() {
       }
       console.log('[CMS] Sending payload:', JSON.stringify(payload, null, 2))
       await api.patch('/admin/cms-settings', payload)
-      applySiteSettings({
-        primaryColor: g('theme.primaryColor', '#5120C8'),
-        backgroundColor: g('theme.backgroundColor', '#0d0d0d'),
-        buttonColor: g('theme.buttonColor', '#5120C8'),
-        siteName: g('brand.siteName', 'DeveWay'),
-      })
-      // Apply CSS vars directly for immediate effect
-      if (typeof document !== 'undefined') {
-        const root = document.documentElement
-        const primary = g('theme.primaryColor')
-        const bg = g('theme.backgroundColor')
-        const btn = g('theme.buttonColor')
-        if (primary) root.style.setProperty('--primary', primary)
-        if (bg) { root.style.setProperty('--background', bg); document.body.style.background = bg }
-        if (btn) root.style.setProperty('--button-color', btn)
-      }
+      applySiteSettings({ siteName: g('brand.siteName', 'DeveWay') })
       // Tell Next.js to revalidate cached pages on Vercel
       try { await fetch('/api/revalidate?path=/ar', { method: 'POST' }) } catch {}
       try { await fetch('/api/revalidate?path=/en', { method: 'POST' }) } catch {}
@@ -165,98 +140,6 @@ export default function CMSSettingsPage() {
         {/* Content */}
         <div style={{ flex: 1, minWidth: 0 }}>
 
-          {/* ══ THEME ══ */}
-          {activeTab === 'theme' && (
-            <>
-              <div style={cardStyle}>
-                <SectionTitle label="اسم الموقع والشعار" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
-                  <div>
-                    <Label text="اسم الموقع" />
-                    <input
-                      type="text"
-                      value={g('brand.siteName', 'DeveWay')}
-                      onChange={(e) => set('brand.siteName', e.target.value)}
-                      style={inputStyle}
-                    />
-                  </div>
-                  <div>
-                    <Label text="رابط الشعار" />
-                    <input
-                      type="url"
-                      value={g('brand.logoUrl', '')}
-                      onChange={(e) => set('brand.logoUrl', e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                      style={inputStyle}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div style={cardStyle}>
-                <SectionTitle label="الألوان" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '12px' }}>
-                  {[
-                    { key: 'theme.primaryColor', label: 'اللون الأساسي' },
-                    { key: 'theme.backgroundColor', label: 'لون الخلفية' },
-                    { key: 'theme.buttonColor', label: 'لون الأزرار' },
-                  ].map(({ key, label }) => (
-                    <div key={key}>
-                      <Label text={label} />
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <input
-                          type="color"
-                          value={g(key, '#000000')}
-                          onChange={(e) => set(key, e.target.value)}
-                          style={{
-                            width: '48px', height: '48px', borderRadius: '10px',
-                            border: 'none', cursor: 'pointer', padding: '2px',
-                          }}
-                        />
-                        <input
-                          type="text"
-                          value={g(key, '')}
-                          onChange={(e) => set(key, e.target.value)}
-                          style={{ ...inputStyle, flex: 1 }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div style={cardStyle}>
-                <SectionTitle label="معاينة حية" />
-                <div
-                  style={{
-                    borderRadius: '12px', padding: '24px',
-                    background: g('theme.backgroundColor', '#0d0d0d'),
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    marginTop: '12px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                    {g('brand.logoUrl') && (
-                      <img src={g('brand.logoUrl')} alt="" style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover' }} />
-                    )}
-                    <span style={{ color: g('theme.primaryColor', '#5120C8'), fontWeight: '700', fontSize: '18px' }}>
-                      {g('brand.siteName', 'DeveWay')}
-                    </span>
-                  </div>
-                  <button
-                    style={{
-                      width: '100%', padding: '12px', borderRadius: '10px',
-                      background: g('theme.buttonColor', '#5120C8'), color: '#fff',
-                      border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                    }}
-                  >
-                    زر تجريبي
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
           {/* ══ LANDING ══ */}
           {activeTab === 'landing' && (
             <>
@@ -312,52 +195,6 @@ export default function CMSSettingsPage() {
                 </div>
               </div>
             </>
-          )}
-
-          {/* ══ VISIBILITY ══ */}
-          {activeTab === 'visibility' && (
-            <div style={cardStyle}>
-              <SectionTitle label="إظهار أو إخفاء أقسام الموقع" />
-              <div style={{ marginTop: '12px' }}>
-                {[
-                  { key: 'sections.features.visible', label: 'قسم المميزات' },
-                  { key: 'sections.courses.visible', label: 'قسم الكورسات' },
-                  { key: 'sections.careers.visible', label: 'قسم المسارات' },
-                  { key: 'sections.testimonials.visible', label: 'آراء المستخدمين' },
-                  { key: 'sections.pricing.visible', label: 'قسم الأسعار' },
-                ].map(({ key, label }) => {
-                  const isVisible = g(key, true) !== false
-                  return (
-                    <div
-                      key={key}
-                      style={{
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '16px', background: 'rgba(255,255,255,0.03)',
-                        borderRadius: '12px', marginBottom: '8px',
-                      }}
-                    >
-                      <span style={{ color: '#fff', fontSize: '14px' }}>{label}</span>
-                      <div
-                        onClick={() => set(key, !isVisible)}
-                        style={{
-                          width: '48px', height: '26px', borderRadius: '50px', cursor: 'pointer',
-                          background: isVisible ? '#5120C8' : 'rgba(255,255,255,0.1)',
-                          position: 'relative', transition: 'background 0.2s ease',
-                        }}
-                      >
-                        <div style={{
-                          position: 'absolute', top: '3px',
-                          left: isVisible ? '24px' : '3px',
-                          width: '20px', height: '20px',
-                          borderRadius: '50%', background: '#fff',
-                          transition: 'left 0.2s ease',
-                        }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
           )}
 
           {/* ══ TESTIMONIALS ══ */}
