@@ -72,7 +72,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
-  const [categoryName, setCategoryName] = useState<string>('')
+  const [allCategories, setAllCategories] = useState<any[]>([])
   const categoryId = searchParams.get('categoryId')
 
   const queryClient = useQueryClient()
@@ -85,17 +85,14 @@ export default function CoursesPage() {
   }, [])
 
   useEffect(() => {
-    if (!categoryId) { setCategoryName(''); return }
     fetch(`${API_BASE}/courses/categories?language=${locale}`)
       .then(r => r.json())
       .then(d => {
         const list: any[] = Array.isArray(d) ? d : (d?.data ?? [])
-        const flat = list.flatMap((c: any) => [c, ...(c.children ?? [])])
-        const match = flat.find((c: any) => c.id === categoryId)
-        if (match) setCategoryName(isAr ? (match.nameAr || match.name) : (match.nameEn || match.name))
+        setAllCategories(list)
       })
       .catch(() => {})
-  }, [categoryId, locale])
+  }, [locale])
 
   // Force refetch when redirected from payment success with ?enrolled=courseId
   useEffect(() => {
@@ -258,18 +255,38 @@ export default function CoursesPage() {
           )}
         </div>
 
-        {/* Category title when filtered */}
-        {categoryId && categoryName && (
-          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--foreground)' }}>
-              {categoryName}
-            </h2>
-            <span style={{ color: 'var(--muted-foreground)', fontWeight: 400, fontSize: 13 }}>
-              ({filtered.length} {isAr ? 'كورس' : 'Courses'})
-            </span>
-            <button onClick={() => router.push(`/${locale}/courses`)} style={{ marginInlineStart: 4, padding: '3px 10px', borderRadius: 20, border: '1px solid var(--border)', background: 'none', color: 'var(--muted-foreground)', fontSize: 12, cursor: 'pointer' }}>
-              {isAr ? '× إلغاء الفلتر' : '× Clear'}
+        {/* Category pills */}
+        {allCategories.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+            <button
+              onClick={() => router.push(`/${locale}/courses`)}
+              style={{
+                padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', border: 'none',
+                background: !categoryId ? '#5120C8' : 'var(--surface-2)',
+                color: !categoryId ? '#fff' : 'var(--muted)',
+                transition: 'all 0.15s',
+              }}>
+              {isAr ? 'الكل' : 'All'}
             </button>
+            {allCategories.map((cat: any) => (
+              <button key={cat.id}
+                onClick={() => router.push(`/${locale}/courses?categoryId=${cat.id}`)}
+                style={{
+                  padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', border: 'none',
+                  background: categoryId === cat.id ? '#5120C8' : 'var(--surface-2)',
+                  color: categoryId === cat.id ? '#fff' : 'var(--muted)',
+                  transition: 'all 0.15s',
+                }}>
+                {isAr ? (cat.nameAr || cat.name) : (cat.nameEn || cat.name)}
+                {cat.courseCount > 0 && (
+                  <span style={{ marginInlineStart: 5, fontSize: 11, opacity: 0.75 }}>
+                    ({cat.courseCount})
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
         )}
 
