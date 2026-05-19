@@ -101,6 +101,7 @@ export class CoursesService {
         where: finalWhere,
         select: {
           id: true,
+          categoryId: true,
           titleEn: true,
           titleAr: true,
           descriptionEn: true,
@@ -148,6 +149,7 @@ export class CoursesService {
     const maxEnrollment = Math.max(...courses.map(c => c._count.enrollments), 0)
     const transformedCourses = courses.map(course => ({
       id: course.id,
+      categoryId: course.categoryId,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
@@ -958,29 +960,37 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
   async getCategories(language: string = 'en') {
     const categories = await this.prisma.category.findMany({
-      include: {
-        _count: { select: { courses: true } },
-        children: {
-          include: { _count: { select: { courses: true } } }
-        }
-      },
       orderBy: { nameAr: 'asc' },
     });
 
-    return categories.map(cat => ({
+    const publishedCounts = await this.prisma.course.groupBy({
+      by: ['categoryId'],
+      where: { status: 'PUBLISHED', categoryId: { not: null } },
+      _count: { id: true },
+    });
+
+    const countMap = new Map(publishedCounts.map(c => [c.categoryId, c._count.id]));
+
+    const catWithCount = (cat: any) => ({
       id: cat.id,
       name: language === 'ar' ? cat.nameAr : cat.nameEn,
       slug: cat.slug,
       icon: cat.icon,
       parentId: (cat as any).parentId ?? null,
-      courseCount: (cat as any)._count.courses + ((cat as any).children?.reduce((s: number, sub: any) => s + sub._count.courses, 0) || 0),
-      children: (cat as any).children.map((sub: any) => ({
-        id: sub.id,
-        name: language === 'ar' ? sub.nameAr : sub.nameEn,
-        slug: sub.slug,
-        parentId: sub.parentId,
-        courseCount: (sub as any)._count.courses,
-      })),
+      courseCount: countMap.get(cat.id) || 0,
+    });
+
+    const topLevel = categories.filter(c => !c.parentId);
+    const children = categories.filter(c => c.parentId);
+
+    return topLevel.map(parent => ({
+      ...catWithCount(parent),
+      courseCount: (countMap.get(parent.id) || 0) + children
+        .filter(c => c.parentId === parent.id)
+        .reduce((sum, sub) => sum + (countMap.get(sub.id) || 0), 0),
+      children: children
+        .filter(c => c.parentId === parent.id)
+        .map(sub => catWithCount(sub)),
     }));
   }
 

@@ -70,6 +70,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
+  const categoryId = searchParams.get('categoryId')
 
   const queryClient = useQueryClient()
 
@@ -94,9 +95,9 @@ export default function CoursesPage() {
   }, [enrolledCourseId])
 
   const { data: courses = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['courses', activeTab, search, token ? 'auth' : 'anon', enrolledCourseId || ''],
+    queryKey: ['courses', activeTab, search, categoryId, token ? 'auth' : 'anon', enrolledCourseId || ''],
     queryFn: async () => {
-      console.log('[Courses] Fetching tab:', activeTab, 'token:', !!token)
+      console.log('[Courses] Fetching tab:', activeTab, 'token:', !!token, 'categoryId:', categoryId)
       const controller = new AbortController()
       const timeout = setTimeout(() => controller.abort(), 8000) // 8s timeout
 
@@ -105,6 +106,7 @@ export default function CoursesPage() {
         if (activeTab === 'recorded') params.set('type', 'recorded')
         else params.set('type', activeTab)
         if (search) params.set('search', search)
+        if (categoryId) params.set('categoryId', categoryId)
 
         const headers: Record<string, string> = {}
         if (token) headers['Authorization'] = `Bearer ${token}`

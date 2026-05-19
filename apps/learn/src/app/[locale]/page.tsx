@@ -181,12 +181,7 @@ export default function HomePage() {
         bg: 'rgba(81,32,200,0.10)',
         color: '#5120c8',
       }))
-    : [
-        { id: null, slug: null, icon: Code, name: { ar: 'البرمجة', en: 'Programming' }, count: 0, bg: 'rgba(81,32,200,0.12)', color: '#5120c8' },
-        { id: null, slug: null, icon: Palette, name: { ar: 'التصميم', en: 'Design' }, count: 0, bg: 'rgba(43,191,163,0.12)', color: '#2BBFA3' },
-        { id: null, slug: null, icon: BarChart3, name: { ar: 'التسويق الرقمي', en: 'Digital Marketing' }, count: 0, bg: 'rgba(245,166,35,0.12)', color: '#F5A623' },
-        { id: null, slug: null, icon: Briefcase, name: { ar: 'إدارة الأعمال', en: 'Business' }, count: 0, bg: 'rgba(27,35,64,0.12)', color: '#1B2340' },
-      ]
+    : []
 
   const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
