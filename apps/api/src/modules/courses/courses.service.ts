@@ -36,7 +36,7 @@ export class CoursesService {
     const effectiveLimit = limit || 100;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
-    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}`;
+    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${categoryId || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}`;
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -82,20 +82,28 @@ export class CoursesService {
     }
 
     if (categoryId) {
-      // Collect all descendant category IDs recursively (handles multi-level hierarchies)
-      const collectIds = async (id: string): Promise<string[]> => {
-        const children = await this.prisma.category.findMany({
-          where: { parentId: id },
-          select: { id: true },
-        });
-        const childIds = await Promise.all(children.map(c => collectIds(c.id)));
-        return [id, ...childIds.flat()];
-      };
-      const exists = await this.prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
-      if (exists) {
-        const ids = await collectIds(categoryId);
-        this.logger.log(`[getCourses] categoryId=${categoryId} expanded to ${ids.length} ids`);
-        andConditions.push({ categoryId: { in: ids } });
+      try {
+        // Collect all descendant category IDs recursively (handles multi-level hierarchies)
+        const collectIds = async (id: string): Promise<string[]> => {
+          const children = await this.prisma.category.findMany({
+            where: { parentId: id },
+            select: { id: true },
+          });
+          const childIds = await Promise.all(children.map(c => collectIds(c.id)));
+          return [id, ...childIds.flat()];
+        };
+        const exists = await this.prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+        if (exists) {
+          const ids = await collectIds(categoryId);
+          this.logger.log(`[getCourses] categoryId=${categoryId} expanded to ${ids.length} ids`);
+          andConditions.push({ categoryId: { in: ids } });
+        } else {
+          // Category not found — direct match fallback
+          andConditions.push({ categoryId });
+        }
+      } catch (e) {
+        this.logger.warn(`[getCourses] categoryId filter failed, using direct match: ${e}`);
+        andConditions.push({ categoryId });
       }
     }
 
