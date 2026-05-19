@@ -82,12 +82,19 @@ export class CoursesService {
     }
 
     if (categoryId) {
-      const cat = await this.prisma.category.findUnique({
-        where: { id: categoryId },
-        include: { children: { select: { id: true } } },
-      });
-      if (cat) {
-        const ids = [cat.id, ...((cat as any).children?.map((c: any) => c.id) || [])];
+      // Collect all descendant category IDs recursively (handles multi-level hierarchies)
+      const collectIds = async (id: string): Promise<string[]> => {
+        const children = await this.prisma.category.findMany({
+          where: { parentId: id },
+          select: { id: true },
+        });
+        const childIds = await Promise.all(children.map(c => collectIds(c.id)));
+        return [id, ...childIds.flat()];
+      };
+      const exists = await this.prisma.category.findUnique({ where: { id: categoryId }, select: { id: true } });
+      if (exists) {
+        const ids = await collectIds(categoryId);
+        this.logger.log(`[getCourses] categoryId=${categoryId} expanded to ${ids.length} ids`);
         andConditions.push({ categoryId: { in: ids } });
       }
     }

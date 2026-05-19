@@ -73,10 +73,17 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const [allCategories, setAllCategories] = useState<any[]>([])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [token, setToken] = useState('')
   const [courses, setCourses] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fetchKey, setFetchKey] = useState(0)
+
+  useEffect(() => {
+    const t = localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token') ||
+      localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+    setToken(t)
+  }, [])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get('categoryId')
   )
