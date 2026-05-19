@@ -650,6 +650,7 @@ export default function RegisterPage() {
               className="mt-7 w-full py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200 cursor-pointer"
               style={{
                 background: '#5120c8',
+                color: '#ffffff',
                 border: 'none',
                 fontFamily: 'var(--font-brand), var(--font-display)',
                 boxShadow: '0 4px 12px rgba(81,32,200,0.2)',
@@ -979,6 +980,7 @@ export default function RegisterPage() {
                 className="flex-[2] py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{
                   background: loading ? 'rgba(81,32,200,0.5)' : '#5120c8',
+                  color: '#ffffff',
                   border: 'none',
                   fontFamily: 'var(--font-brand), var(--font-display)',
                   letterSpacing: '0.01em',
