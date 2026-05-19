@@ -445,7 +445,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 font-semibold rounded-xl text-[15px] transition-all duration-200 cursor-pointer disabled:opacity-50 mt-8"
+            className="w-full py-3.5 font-semibold rounded-xl text-white text-[15px] transition-all duration-200 cursor-pointer disabled:opacity-50 mt-8"
             style={{
               background: '#5120c8',
               border: 'none',

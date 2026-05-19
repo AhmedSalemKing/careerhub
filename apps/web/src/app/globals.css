@@ -1626,6 +1626,12 @@ input[type="button"] {
 	color: var(--primary-fg, #ffffff);
 }
 
+/* Ensure text-white always white on buttons */
+button.text-white,
+button[class*="text-white"] {
+	color: #ffffff !important;
+}
+
 /* ══════════════════════════════════════
    FIX BRAND COLOR TEXT ON BUTTONS
    Force white text on buttons with brand purple
