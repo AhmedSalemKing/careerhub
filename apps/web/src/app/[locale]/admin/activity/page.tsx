@@ -197,7 +197,7 @@ export default function ActivityPage() {
             {isAr ? 'سجل شامل لنشاط المستخدمين مع تصفية وبحث متقدم' : 'Comprehensive user activity log with filtering and search'}
           </p>
         </div>
-        <button onClick={() => refetch()} style={{
+        <button onClick={() => refetch().catch(() => {})} style={{
           display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px',
           background: 'rgba(81,32,200,0.1)', color: '#5120c8', border: '1px solid rgba(81,32,200,0.2)',
           fontSize: '13px', fontWeight: 600, cursor: 'pointer',

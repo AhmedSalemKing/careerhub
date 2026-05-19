@@ -77,7 +77,7 @@ export default function VerifyCertificatePage() {
             </p>
             <button
               type="button"
-              onClick={() => q.refetch()}
+              onClick={() => q.refetch().catch(() => {})}
               className="mt-6 inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-6 py-2.5 text-sm font-bold text-amber-600 dark:text-amber-400 transition hover:bg-amber-500/20"
             >
               {isAr ? '+++++ ++++++++' : 'Retry'}

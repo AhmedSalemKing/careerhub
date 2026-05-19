@@ -54,7 +54,7 @@ export default function AdminCoachesPage() {
               className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
               onClick={() => {
                 toast({ title: c('loading'), description: c('loading') })
-                q.refetch()
+                q.refetch().catch(() => {})
               }}
             >
               {c('retry')}
