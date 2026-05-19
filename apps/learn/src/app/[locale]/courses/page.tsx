@@ -67,9 +67,12 @@ export default function CoursesPage() {
 
   const [activeTab, setActiveTab] = useState<'recorded' | 'live' | 'offline'>('recorded')
   const [sortBy, setSortBy] = useState<'newest' | 'popular'>('newest')
+  const [level, setLevel] = useState<string>('all')
+  const [priceFilter, setPriceFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [token, setToken] = useState('')
   const [tokenReady, setTokenReady] = useState(false)
+  const [categoryName, setCategoryName] = useState<string>('')
   const categoryId = searchParams.get('categoryId')
 
   const queryClient = useQueryClient()
@@ -80,6 +83,19 @@ export default function CoursesPage() {
     setToken(t)
     setTokenReady(true) // query can now fire
   }, [])
+
+  useEffect(() => {
+    if (!categoryId) { setCategoryName(''); return }
+    fetch(`${API_BASE}/courses/categories?language=${locale}`)
+      .then(r => r.json())
+      .then(d => {
+        const list: any[] = Array.isArray(d) ? d : (d?.data ?? [])
+        const flat = list.flatMap((c: any) => [c, ...(c.children ?? [])])
+        const match = flat.find((c: any) => c.id === categoryId)
+        if (match) setCategoryName(isAr ? (match.nameAr || match.name) : (match.nameEn || match.name))
+      })
+      .catch(() => {})
+  }, [categoryId, locale])
 
   // Force refetch when redirected from payment success with ?enrolled=courseId
   useEffect(() => {
@@ -141,11 +157,17 @@ export default function CoursesPage() {
   })
 
   const filtered = courses.filter((c: any) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (c.title || c.titleEn || '').toLowerCase().includes(q) ||
-      (c.description || c.descriptionEn || '').toLowerCase().includes(q) ||
-      (c.instructor?.profile?.firstName || '').toLowerCase().includes(q)
+    if (search) {
+      const q = search.toLowerCase()
+      const matchesSearch = (c.title || c.titleEn || '').toLowerCase().includes(q) ||
+        (c.description || c.descriptionEn || '').toLowerCase().includes(q) ||
+        (c.instructor?.profile?.firstName || '').toLowerCase().includes(q)
+      if (!matchesSearch) return false
+    }
+    if (level !== 'all' && c.level !== level) return false
+    if (priceFilter === 'free' && parseFloat(c.price || 0) > 0) return false
+    if (priceFilter === 'paid' && parseFloat(c.price || 0) <= 0) return false
+    return true
   })
 
   const sortedCourses = [...filtered].sort((a: any, b: any) => {
@@ -236,25 +258,87 @@ export default function CoursesPage() {
           )}
         </div>
 
-        {/* Sort */}
-        {!isLoading && filtered.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-            {[
-              { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
-              { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
-            ].map(s => (
-              <button key={s.id} onClick={() => setSortBy(s.id as any)}
-                style={{
-                  padding: '8px 16px', borderRadius: '10px',
-                  border: sortBy === s.id ? '1px solid rgba(81,32,200,0.4)' : '1px solid var(--border)',
-                  background: sortBy === s.id ? 'rgba(81,32,200,0.12)' : 'var(--surface)',
-                  color: sortBy === s.id ? '#5120C8' : 'var(--muted)',
-                  fontWeight: '600', fontSize: '13px', cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}>
-                {s.label}
-              </button>
-            ))}
+        {/* Category title when filtered */}
+        {categoryId && categoryName && (
+          <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: 'var(--foreground)' }}>
+              {categoryName}
+            </h2>
+            <span style={{ color: 'var(--muted-foreground)', fontWeight: 400, fontSize: 13 }}>
+              ({filtered.length} {isAr ? 'كورس' : 'Courses'})
+            </span>
+            <button onClick={() => router.push(`/${locale}/courses`)} style={{ marginInlineStart: 4, padding: '3px 10px', borderRadius: 20, border: '1px solid var(--border)', background: 'none', color: 'var(--muted-foreground)', fontSize: 12, cursor: 'pointer' }}>
+              {isAr ? '× إلغاء الفلتر' : '× Clear'}
+            </button>
+          </div>
+        )}
+
+        {/* Filters */}
+        {!isLoading && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+            {/* Sort + Level + Price row */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Sort */}
+              {[
+                { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
+                { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
+              ].map(s => (
+                <button key={s.id} onClick={() => setSortBy(s.id as any)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
+                    fontWeight: 600, cursor: 'pointer',
+                    border: sortBy === s.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
+                    background: sortBy === s.id ? '#5120C8' : 'var(--surface)',
+                    color: sortBy === s.id ? '#fff' : 'var(--muted)',
+                    transition: 'all 0.15s ease',
+                  }}>
+                  {s.label}
+                </button>
+              ))}
+
+              <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+
+              {/* Level */}
+              {[
+                { id: 'all', label: isAr ? 'الكل' : 'All' },
+                { id: 'BEGINNER', label: isAr ? 'مبتدئ' : 'Beginner' },
+                { id: 'INTERMEDIATE', label: isAr ? 'متوسط' : 'Intermediate' },
+                { id: 'ADVANCED', label: isAr ? 'متقدم' : 'Advanced' },
+              ].map(opt => (
+                <button key={opt.id} onClick={() => setLevel(opt.id)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
+                    fontWeight: 600, cursor: 'pointer',
+                    border: level === opt.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
+                    background: level === opt.id ? '#5120C8' : 'var(--surface)',
+                    color: level === opt.id ? '#fff' : 'var(--muted)',
+                    transition: 'all 0.15s ease',
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
+
+              <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+
+              {/* Price */}
+              {[
+                { id: 'all', label: isAr ? 'الكل' : 'All' },
+                { id: 'free', label: isAr ? 'مجاني' : 'Free' },
+                { id: 'paid', label: isAr ? 'مدفوع' : 'Paid' },
+              ].map(opt => (
+                <button key={opt.id} onClick={() => setPriceFilter(opt.id)}
+                  style={{
+                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
+                    fontWeight: 600, cursor: 'pointer',
+                    border: priceFilter === opt.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
+                    background: priceFilter === opt.id ? '#5120C8' : 'var(--surface)',
+                    color: priceFilter === opt.id ? '#fff' : 'var(--muted)',
+                    transition: 'all 0.15s ease',
+                  }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
