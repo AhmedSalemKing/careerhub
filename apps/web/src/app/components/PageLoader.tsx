@@ -81,7 +81,7 @@ export function PageLoader({ show }: { show: boolean }) {
       }}>
         <div style={{
           height: '100%',
-          background: 'var(--primary)',
+          background: '#5120c8',
           borderRadius: 99,
           animation: 'deveway-load 1.6s ease-in-out infinite',
         }} />
