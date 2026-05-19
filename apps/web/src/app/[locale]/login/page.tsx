@@ -217,7 +217,7 @@ export default function LoginPage() {
     titleColor: 'var(--foreground)',
     textColor: 'var(--foreground)',
     mutedColor: 'var(--muted)',
-    inputBg: 'var(--surface)',
+    inputBg: 'var(--input-bg)',
     inputBorder: 'var(--border)',
     inputText: 'var(--foreground)',
     inputPlaceholder: 'var(--muted)',
