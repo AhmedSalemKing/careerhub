@@ -950,6 +950,13 @@ export class AdminController {
     return { success: true };
   }
 
+  @Post('cms-settings/reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset all CMS settings to defaults' })
+  async resetCmsSettings() {
+    return await this.adminService.resetCmsSettings();
+  }
+
   @Get('site-config')
   @Public()
   @ApiOperation({ summary: 'Public site configuration for frontend' })

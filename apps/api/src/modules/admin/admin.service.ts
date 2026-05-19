@@ -1521,6 +1521,50 @@ export class AdminService {
     }, {});
   }
 
+  async resetCmsSettings() {
+    const defaults = [
+      { key: 'theme.primaryColor', value: '#5120C8', group: 'theme', type: 'color' },
+      { key: 'theme.backgroundColor', value: '#0d0d0d', group: 'theme', type: 'color' },
+      { key: 'theme.buttonColor', value: '#5120C8', group: 'theme', type: 'color' },
+      { key: 'brand.logoUrl', value: '', group: 'brand', type: 'image' },
+      { key: 'brand.siteName', value: 'DeveWay', group: 'brand', type: 'text' },
+      { key: 'hero.title', value: 'اكتشف مسارك المهني مع DeveWay', group: 'landing', type: 'text' },
+      { key: 'hero.subtitle', value: 'منصة متكاملة تجمع بين التوجيه المهني والتدريب', group: 'landing', type: 'text' },
+      { key: 'hero.ctaText', value: 'ابدأ رحلتك مجانا', group: 'landing', type: 'text' },
+      { key: 'sections.testimonials.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.features.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.courses.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.careers.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'sections.pricing.visible', value: true, group: 'visibility', type: 'boolean' },
+      { key: 'testimonials.items', value: [
+        { name: 'سارة العتيبي', role: 'خريجة حديثا', text: 'التقييم ساعدني أفهم نقاط قوتي واختار مسار واضح.' },
+        { name: 'محمد الدوسري', role: 'محلل بيانات', text: 'التوصيات كانت دقيقة وتعلمت بسرعة مع خطة واضحة.' },
+        { name: 'نورة الشمري', role: 'طالبة جامعية', text: 'المنصة غيرت نظرتي لمسيرتي المهنية بالكامل.' },
+      ], group: 'content', type: 'json' },
+      { key: 'landing.stats.courses', value: 150, group: 'landing', type: 'number' },
+      { key: 'landing.stats.coaches', value: 50, group: 'landing', type: 'number' },
+      { key: 'landing.stats.students', value: 5000, group: 'landing', type: 'number' },
+      { key: 'pages.privacy', value: 'سياسة الخصوصية...', group: 'pages', type: 'richtext' },
+      { key: 'pages.terms', value: 'الشروط والأحكام...', group: 'pages', type: 'richtext' },
+    ];
+
+    const results: { key: string; ok: boolean }[] = [];
+    for (const d of defaults) {
+      try {
+        await this.prisma.siteSetting.upsert({
+          where: { key: d.key },
+          update: { value: d.value as any, group: d.group, type: d.type },
+          create: d,
+        });
+        results.push({ key: d.key, ok: true });
+      } catch (err: any) {
+        console.error(`reset failed for ${d.key}:`, err?.message || err);
+        results.push({ key: d.key, ok: false });
+      }
+    }
+    return { success: true, results };
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   // 💼 SESSIONS MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────
