@@ -62,7 +62,7 @@ export function applySiteSettings(s: {
     // Dark mode: DON'T override - let CSS handle it with #0D0D0D
   }
   
-  if (s.buttonColor) root.style.setProperty('--button-color', s.buttonColor)
+  if (s.buttonColor) root.style.setProperty('--button-color', normalisePrimary(s.buttonColor))
   
   document.title = s.siteName || SITE_NAME
 }
