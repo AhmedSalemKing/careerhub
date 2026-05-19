@@ -36,12 +36,12 @@ export function Footer() {
           <div className="text-sm font-semibold text-foreground">{tNav('careers')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
-              <Link className="hover:text-foreground transition-colors" href="/careers">
+              <Link className="footer-link" href="/careers">
                 {tNav('careers')}
               </Link>
             </li>
             <li>
-              <Link className="hover:text-foreground transition-colors" href="/pricing">
+              <Link className="footer-link" href="/pricing">
                 {tNav('pricing')}
               </Link>
             </li>
@@ -52,13 +52,13 @@ export function Footer() {
           <div className="text-sm font-semibold text-foreground">{tNav('training')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
-              <a className="hover:text-foreground transition-colors" href={TRAINING_URL} target="_blank" rel="noopener noreferrer">
+              <a className="footer-link" href={TRAINING_URL} target="_blank" rel="noopener noreferrer">
                 {t('all_courses')}
               </a>
             </li>
             <li>
               <a
-                className="hover:text-foreground transition-colors"
+                className="footer-link"
                 href={`${TRAINING_URL}/my-courses`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -73,12 +73,12 @@ export function Footer() {
           <div className="text-sm font-semibold text-foreground">{tNav('coaches')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
-              <Link className="hover:text-foreground transition-colors" href="/coaches">
+              <Link className="footer-link" href="/coaches">
                 {tNav('coaches')}
               </Link>
             </li>
             <li>
-              <Link className="hover:text-foreground transition-colors" href="/login">
+              <Link className="footer-link" href="/login">
                 {tNav('login')}
               </Link>
             </li>
@@ -90,10 +90,10 @@ export function Footer() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-[color:var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>{t('rights')}</div>
           <div className="flex items-center gap-4">
-            <Link className="hover:text-foreground transition-colors" href="/privacy">
+            <Link className="footer-link" href="/privacy">
               {t('privacy')}
             </Link>
-            <Link className="hover:text-foreground transition-colors" href="/terms">
+            <Link className="footer-link" href="/terms">
               {t('terms')}
             </Link>
           </div>

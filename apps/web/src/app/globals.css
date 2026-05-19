@@ -784,8 +784,16 @@ a {
 }
 
 /* Only colour plain links purple on hover — not elements with a background class */
-a:not([class*="bg-"]):not([class*="btn-"]):hover {
+a:not([class*="bg-"]):not([class*="btn-"]):not([class*="footer-link"]):hover {
 	color: var(--primary);
+}
+
+.footer-link {
+	color: var(--muted);
+	transition: color 150ms ease;
+}
+.footer-link:hover {
+	color: var(--foreground);
 }
 
 /* Enforce white text on solid primary-coloured elements regardless of hover/specificity */
