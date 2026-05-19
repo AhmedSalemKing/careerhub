@@ -43,7 +43,7 @@ export class CoursesService {
     }
 
     const where: any = {
-      status: { in: ['PUBLISHED', 'APPROVED'] },
+      status: 'PUBLISHED',
     };
 
     const andConditions: any[] = [];
@@ -92,7 +92,7 @@ export class CoursesService {
       }
     }
 
-    const finalWhere: any = andConditions.length > 0 ? { AND: [{ status: { in: ['PUBLISHED', 'APPROVED'] } }, ...andConditions] } : { status: { in: ['PUBLISHED', 'APPROVED'] } };
+    const finalWhere: any = andConditions.length > 0 ? { AND: [{ status: 'PUBLISHED' }, ...andConditions] } : { status: 'PUBLISHED' };
 
     this.logger.log(`[getCourses] type=${type}, where=${JSON.stringify(finalWhere)}`)
 
