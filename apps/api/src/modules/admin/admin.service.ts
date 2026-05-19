@@ -512,7 +512,9 @@ export class AdminService {
       ];
     }
     if (options.role) {
-      where.role = options.role;
+      where.accountType = options.role === 'ADMIN'
+        ? { in: ['ADMIN', 'SUPER_ADMIN'] }
+        : options.role;
     }
     if (options.status) {
       where.isActive = options.status === 'ACTIVE';
