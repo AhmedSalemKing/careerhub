@@ -130,8 +130,10 @@ function UserDropdown({ locale }: { locale: string }) {
     window.location.href = `/${locale}`
   }
 
+  const isRtl = locale === 'ar'
+
   return (
-    <div className="relative" ref={ref}>
+    <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 rounded-full focus:outline-none transition-opacity duration-200 hover:opacity-80"
@@ -163,88 +165,135 @@ function UserDropdown({ locale }: { locale: string }) {
 
       {open && (
         <div
-          className="absolute left-0 rtl:left-auto rtl:right-0 top-full mt-2.5 w-56 rounded-2xl border py-1.5 z-50"
           style={{
-            background: 'var(--surface)',
-            borderColor: 'var(--border)',
-            boxShadow: 'var(--shadow-xl)',
+            position: 'absolute',
+            top: 'calc(100% + 10px)',
+            left: isRtl ? 0 : 'auto',
+            right: isRtl ? 'auto' : 0,
+            zIndex: 9999,
+            minWidth: '220px',
+            background: 'var(--card)',
+            border: '1px solid var(--border)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+            padding: '8px',
             animation: 'navFadeIn 0.15s ease-out',
           }}
         >
-          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-            <p className="text-sm font-semibold truncate flex items-center gap-1.5" style={{ color: 'var(--foreground)' }}>
-              {user?.profile?.firstName
-                ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
-                : user?.email}
-              {user?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
+          {/* User info header */}
+          <div style={{
+            padding: '12px 14px',
+            borderBottom: '1px solid var(--border)',
+            marginBottom: '6px',
+          }}>
+            <p style={{ fontWeight: '700', fontSize: '14px', color: 'var(--foreground)', margin: 0 }}>
+              {user?.profile?.firstName ?? ''} {user?.profile?.lastName ?? ''}
             </p>
-            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--muted)' }}>{user?.email}</p>
+            <p style={{ fontSize: '12px', color: 'var(--muted)', margin: '2px 0 0' }}>
+              {user?.email}
+            </p>
           </div>
 
+          {/* Dashboard link */}
           <Link
             href={`/${locale}/dashboard`}
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-            style={{ color: 'var(--muted)' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px', borderRadius: '10px',
+              color: 'var(--foreground)', textDecoration: 'none',
+              fontSize: '14px', fontWeight: '600',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
           >
-            <LayoutDashboard className="h-4 w-4" />
+            <LayoutDashboard size={16} />
             {t('dashboard')}
           </Link>
 
+          {/* Admin link */}
           {user?.accountType === 'ADMIN' && (
             <Link
               href={`/${locale}/admin`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-              style={{ color: '#5120c8', fontWeight: 600 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.08)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px', borderRadius: '10px',
+                color: '#5120c8', textDecoration: 'none',
+                fontSize: '14px', fontWeight: '700',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(81,32,200,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <Shield className="h-4 w-4" color="#5120c8" />
+              <Shield size={16} color="#5120c8" />
               {t('admin')}
             </Link>
           )}
+
+          {/* Instructor link */}
           {user?.accountType === 'INSTRUCTOR' && (
             <Link
               href={`/${locale}/dashboard/create-course`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-              style={{ color: '#2BBFA3', fontWeight: 600 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(43,191,163,0.08)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px', borderRadius: '10px',
+                color: '#2BBFA3', textDecoration: 'none',
+                fontSize: '14px', fontWeight: '700',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(43,191,163,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <BookOpen className="h-4 w-4" color="#2BBFA3" />
+              <BookOpen size={16} color="#2BBFA3" />
               {locale === 'ar' ? 'لوحة المحاضر' : 'Instructor Panel'}
             </Link>
           )}
+
+          {/* Consultant link */}
           {user?.accountType === 'CONSULTANT' && (
             <Link
               href={`/${locale}/dashboard/my-sessions`}
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-              style={{ color: '#f59e0b', fontWeight: 600 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '10px 14px', borderRadius: '10px',
+                color: '#f59e0b', textDecoration: 'none',
+                fontSize: '14px', fontWeight: '700',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
             >
-              <Calendar className="h-4 w-4" color="#f59e0b" />
+              <Calendar size={16} color="#f59e0b" />
               {locale === 'ar' ? 'لوحة المستشار' : 'Consultant Panel'}
             </Link>
           )}
 
-          <div className="mt-1 pt-1" style={{ borderTop: '1px solid var(--border)' }}>
-            <button
-              onClick={handleLogout}
-              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm transition-colors duration-150"
-              style={{ color: 'var(--error)', fontFamily: NAV_FONT }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-            >
-              <LogOut className="h-4 w-4" />
-              {t('logout')}
-            </button>
-          </div>
+          {/* Divider */}
+          <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px', borderRadius: '10px',
+              color: '#ef4444', background: 'transparent',
+              border: 'none', width: '100%', cursor: 'pointer',
+              fontSize: '14px', fontWeight: '600',
+              fontFamily: 'inherit',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <LogOut size={16} />
+            {t('logout')}
+          </button>
         </div>
       )}
     </div>
