@@ -30,6 +30,13 @@ const TABS = [
   { key: 'offline', labelKey: 'offlineTab', icon: MapPin, color: '#16a34a' },
 ]
 
+const MAIN_CATS = [
+  { id: 'programming', nameAr: 'البرمجة', keywords: ['Frontend','Backend','Mobile','Game','DevOps','Database','Python','JavaScript','Cpp','Java','Network','Linux','برمجة','تطوير','قواعد','شبكات'] },
+  { id: 'design', nameAr: 'التصميم', keywords: ['Design','UI','UX','Motion','Graphic','تصميم','موشن'] },
+  { id: 'marketing', nameAr: 'التسويق الرقمي', keywords: ['Marketing','SEO','Content','Advertising','تسويق','إعلانات','محتوى'] },
+  { id: 'business', nameAr: 'إدارة الأعمال', keywords: ['Business','Management','Project','Product','Entrepreneur','Analysis','إدارة','أعمال','ريادة','تحليل'] },
+]
+
 function getTitle(c: any, locale: string) {
   if (locale === 'ar') return c.titleAr || c.titleEn || c.title || 'Untitled'
   return c.titleEn || c.titleAr || c.title || 'Untitled'
@@ -71,7 +78,6 @@ export default function CoursesPage() {
   const [level, setLevel] = useState<string>('all')
   const [priceFilter, setPriceFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [allCategories, setAllCategories] = useState<any[]>([])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [token, setToken] = useState('')
   const [courses, setCourses] = useState<any[]>([])
@@ -84,20 +90,7 @@ export default function CoursesPage() {
       localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     setToken(t)
   }, [])
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    searchParams.get('categoryId')
-  )
-
-  // Fetch categories once
-  useEffect(() => {
-    fetch(`${API_BASE}/courses/categories?language=${locale}`)
-      .then(r => r.json())
-      .then(d => {
-        const list: any[] = Array.isArray(d) ? d : (d?.data ?? [])
-        setAllCategories(list)
-      })
-      .catch(() => {})
-  }, [locale])
+  const [selectedMainCat, setSelectedMainCat] = useState<string | null>(null)
 
   // Main fetch — re-runs when category or tab changes, with race-condition guard
   useEffect(() => {
@@ -107,7 +100,6 @@ export default function CoursesPage() {
       setError(null)
       try {
         const params: any = { limit: 500, type: activeTab }
-        if (selectedCategory) params.categoryId = selectedCategory
         console.log('[Fetch] params:', params)
         const res = await api.get('/courses', { params })
         if (!mounted) return
@@ -124,7 +116,7 @@ export default function CoursesPage() {
     }
     fetchCourses()
     return () => { mounted = false }
-  }, [selectedCategory, activeTab, fetchKey])
+  }, [activeTab, fetchKey])
 
   // Clean up ?enrolled param after payment redirect
   useEffect(() => {
@@ -136,7 +128,7 @@ export default function CoursesPage() {
     }
   }, [enrolledCourseId])
 
-  // Client-side filters (category already handled server-side)
+  // Client-side filters
   const sortedCourses = useMemo(() => {
     let result = courses.filter((c: any) => {
       if (search) {
@@ -151,20 +143,29 @@ export default function CoursesPage() {
       if (priceFilter === 'paid' && Number(c.price || 0) <= 0) return false
       return true
     })
+    if (selectedMainCat) {
+      const mainCat = MAIN_CATS.find(c => c.id === selectedMainCat)
+      if (mainCat) {
+        result = result.filter(course => {
+          const cat = (course.category || '').toLowerCase()
+          return mainCat.keywords.some(kw => cat.includes(kw.toLowerCase()))
+        })
+      }
+    }
     result = [...result].sort((a: any, b: any) => {
       if (sortBy === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
       if (sortBy === 'popular') return (b.enrollmentCount || b._count?.enrollments || 0) - (a.enrollmentCount || a._count?.enrollments || 0)
       return 0
     })
     return result
-  }, [courses, search, level, priceFilter, sortBy])
+  }, [courses, search, level, priceFilter, sortBy, selectedMainCat])
 
   const filtered = sortedCourses
 
   // Reset pagination when any filter changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE)
-  }, [selectedCategory, activeTab, level, priceFilter, sortBy, search])
+  }, [selectedMainCat, activeTab, level, priceFilter, sortBy, search])
 
   const visibleCourses = sortedCourses.slice(0, visibleCount)
   const hasMore = visibleCount < sortedCourses.length
@@ -247,43 +248,21 @@ export default function CoursesPage() {
         </div>
 
         {/* Category pills */}
-        {allCategories.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-            <button
-              onClick={() => { setSelectedCategory(null); router.push(`/${locale}/courses`, { scroll: false }) }}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+          {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
+            <button key={cat.id || 'all'}
+              onClick={() => setSelectedMainCat(cat.id)}
               style={{
-                padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                cursor: 'pointer', border: 'none',
-                background: !selectedCategory ? '#5120C8' : 'var(--surface-2)',
-                color: !selectedCategory ? '#fff' : 'var(--muted)',
+                padding: '7px 18px', borderRadius: '20px', border: 'none',
+                fontWeight: '600', fontSize: '13px', cursor: 'pointer',
+                background: selectedMainCat === cat.id ? '#5120C8' : 'var(--surface-2)',
+                color: selectedMainCat === cat.id ? '#fff' : 'var(--muted)',
                 transition: 'all 0.15s',
               }}>
-              {isAr ? 'الكل' : 'All'}
+              {isAr ? cat.nameAr : cat.nameEn}
             </button>
-            {allCategories.map((cat: any) => (
-              <button key={cat.id}
-                onClick={() => {
-                  const next = cat.id === selectedCategory ? null : cat.id
-                  setSelectedCategory(next)
-                  router.push(next ? `/${locale}/courses?categoryId=${next}` : `/${locale}/courses`, { scroll: false })
-                }}
-                style={{
-                  padding: '7px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-                  cursor: 'pointer', border: 'none',
-                  background: selectedCategory === cat.id ? '#5120C8' : 'var(--surface-2)',
-                  color: selectedCategory === cat.id ? '#fff' : 'var(--muted)',
-                  transition: 'all 0.15s',
-                }}>
-                {isAr ? (cat.nameAr || cat.name) : (cat.nameEn || cat.name)}
-                {cat.courseCount > 0 && (
-                  <span style={{ marginInlineStart: 5, fontSize: 11, opacity: 0.75 }}>
-                    ({cat.courseCount})
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
 
         {/* Filters */}
         {!isLoading && (
