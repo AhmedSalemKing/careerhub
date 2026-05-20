@@ -149,6 +149,7 @@ export default function CoursesPage() {
           console.log('[Categories] sample:', data.slice(0, 3).map((c: any) => ({ id: c.id, category: c.category, categoryId: c.categoryId, title: c.titleEn || c.titleAr })))
         }
         setCourses(Array.isArray(data) ? data : [])
+        console.log('[ALL CATEGORIES]', [...new Set((Array.isArray(data) ? data : []).map((c: any) => c.category))].filter(Boolean))
       } catch (e: any) {
         console.error('[Fetch] error:', e)
         if (mounted) setError(e?.message || 'Failed to load')
@@ -193,7 +194,11 @@ export default function CoursesPage() {
       if (mainCat) {
         result = result.filter(course => {
           const cat = (course.category || '').toLowerCase()
-          return mainCat.categoryNames.some(name => cat.includes(name.toLowerCase()))
+          const matches = mainCat.categoryNames.some(name => cat.includes(name.toLowerCase()))
+          if (!matches) {
+            console.log('[FILTERED OUT]', course.titleEn || course.titleAr, 'category:', course.category, 'categoryId:', course.categoryId)
+          }
+          return matches || (mainCat.id === 'programming' && !course.category)
         })
       }
     }
