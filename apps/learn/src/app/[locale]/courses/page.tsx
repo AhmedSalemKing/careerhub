@@ -158,6 +158,8 @@ export default function CoursesPage() {
 
   // Client-side filters
   const sortedCourses = useMemo(() => {
+    console.log('[DEBUG] courses sample:', courses.slice(0, 5).map((c: any) => ({ title: c.titleEn || c.titleAr, category: c.category, categoryId: c.categoryId })))
+    console.log('[DEBUG] selectedMainCat:', selectedMainCat)
     let result = courses.filter((c: any) => {
       if (search) {
         const q = search.toLowerCase()

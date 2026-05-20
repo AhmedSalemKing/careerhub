@@ -117,6 +117,7 @@ export class CoursesService {
         select: {
           id: true,
           categoryId: true,
+          category: { select: { nameEn: true, nameAr: true } },
           titleEn: true,
           titleAr: true,
           descriptionEn: true,
@@ -165,6 +166,7 @@ export class CoursesService {
     const transformedCourses = courses.map(course => ({
       id: course.id,
       categoryId: course.categoryId,
+      category: language === 'ar' ? course.category?.nameAr : course.category?.nameEn,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
