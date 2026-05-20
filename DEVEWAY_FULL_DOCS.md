@@ -757,4 +757,62 @@ npx prisma db push                   # Push schema to DB (dev only)
 | Production Ready | 4/10 | 7/10 | 8/10 |
 | **Overall** | **5.9/10** | **7.5/10** | **8.2/10** |
 
-*End of DeveWay Full Developer Documentation v3.0*
+## Version 4.0 — Session 4 Changes
+
+### Theme & Dark Mode
+- All hardcoded dark colors removed (#2fb68e, #22d380, #111827, #0d0d0d)
+- `normalisePrimary()` prevents wrong colors from DB
+- Light mode fixed across ALL pages (login, register, coaching, admin, dashboard)
+- Loading bar hardcoded to #5120C8
+- Autofill CSS variables instead of hardcoded #111827
+- Footer hover uses white not primary color
+
+### Site Settings CMS
+- Visual CMS with persistent DB storage (SiteSetting model)
+- 19 key-value settings: hero text, testimonials, visibility, pages
+- Landing page reads from DB (no-store cache)
+- Privacy/Terms pages dynamic from DB
+- Admin save triggers Vercel revalidation
+- Category/career path searchable dropdowns
+
+### Courses & Learn App
+- 4 main category filters: البرمجة/التصميم/التسويق/الأعمال
+- 33 real categories seeded in DB
+- Pagination — 15 per page + load more
+- Sort: newest/most popular
+- Level/price filters
+- Category filter matches course.category text field
+- All 29 published courses visible on learn app
+- publish-drafts endpoint to bulk publish
+
+### Admin Dashboard
+- Activity page — tabs + filters + pagination + backfill endpoint
+- Centralized ActivityService — 21 event types tracked
+- UTC stats fix
+- Users/Courses filter tabs with counts
+- Create course — searchable category dropdown
+- Create session — auto-fill price from consultant hourlyRate
+- Admin categories/seed endpoint — 33 categories
+
+### Sessions & Payments
+- Stripe checkout redirect restored and working
+- Wallet balance check before Stripe
+- verify-payment endpoint for post-Stripe confirmation
+- Free sessions auto-confirm via pay-wallet
+
+### Certificates
+- Only issued when certificateEnabled=true AND isCompleted=true
+- Counts ALL lessons (section + module)
+
+### Mobile & Responsive
+- Bottom dock hidden on mobile (hidden lg:flex)
+- Mobile sidebar glass dark redesign
+- overflow-x eliminated across all pages
+- Dashboard grid responsive
+
+### Performance
+- Race condition prevention (mounted guard)
+- Request cancellation on filter change
+- Vercel cache revalidation after admin saves
+
+*End of DeveWay Full Developer Documentation v4.0*

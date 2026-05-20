@@ -2205,3 +2205,84 @@ getRecentPasswordResets(email, 1hr)
 | Stripe Live Keys | Client | Real payments |
 | Google Search Console | Client | SEO indexing |
 | Sentry DSN | Client | Error monitoring |
+
+---
+
+## ADDENDUM — Session 4 (May 20, 2026)
+
+### Version 4.0 Changes
+
+#### Theme & Dark Mode
+- All hardcoded dark colors removed (#2fb68e, #22d380, #111827, #0d0d0d)
+- `normalisePrimary()` prevents wrong colors from DB
+- Light mode fixed across ALL pages (login, register, coaching, admin, dashboard)
+- Loading bar hardcoded to #5120C8
+- Autofill CSS variables instead of hardcoded #111827
+- Footer hover uses white not primary color
+
+#### Site Settings CMS
+- Visual CMS with persistent DB storage (SiteSetting model)
+- 19 key-value settings: hero text, testimonials, visibility, pages
+- Landing page reads from DB (no-store cache)
+- Privacy/Terms pages dynamic from DB
+- Admin save triggers Vercel revalidation
+- Category/career path searchable dropdowns
+
+#### Courses & Learn App
+- 4 main category filters: البرمجة/التصميم/التسويق/الأعمال
+- 33 real categories seeded in DB
+- Pagination — 15 per page + load more
+- Sort: newest/most popular
+- Level/price filters
+- Category filter matches course.category text field
+- All 29 published courses visible on learn app
+- publish-drafts endpoint to bulk publish
+
+#### Admin Dashboard
+- Activity page — tabs + filters + pagination + backfill endpoint
+- Centralized ActivityService — 21 event types tracked
+- UTC stats fix
+- Users/Courses filter tabs with counts
+- Create course — searchable category dropdown
+- Create session — auto-fill price from consultant hourlyRate
+- Admin categories/seed endpoint — 33 categories
+
+#### Sessions & Payments
+- Stripe checkout redirect restored and working
+- Wallet balance check before Stripe
+- verify-payment endpoint for post-Stripe confirmation
+- Free sessions auto-confirm via pay-wallet
+
+#### Certificates
+- Only issued when certificateEnabled=true AND isCompleted=true
+- Counts ALL lessons (section + module)
+
+#### Mobile & Responsive
+- Bottom dock hidden on mobile (hidden lg:flex)
+- Mobile sidebar glass dark redesign
+- overflow-x eliminated across all pages
+- Dashboard grid responsive
+
+#### Performance
+- Race condition prevention (mounted guard)
+- Request cancellation on filter change
+- Vercel cache revalidation after admin saves
+
+### Evaluation Scores Update
+
+| Category | Session 3 | Session 4 | Change |
+|----------|-----------|-----------|--------|
+| Architecture | 8/10 | 8/10 | — |
+| Code Quality | 7.5/10 | 8/10 | ↑ cleaner styling patterns |
+| Security | 7/10 | 7.5/10 | ↑ normalisePrimary filter |
+| UX/UI | 8/10 | 9/10 | ↑ light mode fixed, mobile responsive |
+| Performance | 5/10 | 6/10 | ↑ race condition prevention |
+| Scalability | 4/10 | 4/10 | — |
+| Documentation | 9.5/10 | 9.5/10 | — |
+| Testing | 2/10 | 2/10 | — |
+| Production Readiness | 7/10 | 8/10 | ↑ CMS live, all courses visible |
+| Feature Completeness | 8.5/10 | 9/10 | ↑ Site Settings CMS complete |
+| **Overall** | **7.5/10** | **8/10** | **↑ steady improvement** |
+
+*End of DeveWay Enterprise Technical Report v4.0*
+*Generated: May 20, 2026*

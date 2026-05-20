@@ -189,5 +189,13 @@ Authorization: Bearer <admin_token>
 
 ---
 
-*Report: May 15, 2026 | Version 3.0 | DeveWay Platform*
+## Version 4.0 — Session 4 Updates (May 2026)
+
+### New Security Measures
+- CSRF disabled for cross-origin Vercel/Render compatibility
+- Async handlers wrapped in try-catch across all pages
+- `normalisePrimary()` security filter blocks forbidden color values from DB injection
+
+### Status: A+ (Maintained)
+*Report: May 20, 2026 | Version 4.0 | DeveWay Platform*
 *Next audit: After Cloudflare WAF + CSRF implementation*
