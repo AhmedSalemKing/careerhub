@@ -33,46 +33,46 @@ const TABS = [
 const MAIN_CATS = [
   {
     id: 'programming',
-    nameAr: 'البرمجة',
-    keywords: [
-      // Programming & Development
-      'Software', 'Frontend', 'Backend', 'Mobile', 'Game', 'DevOps',
-      'Database', 'Python', 'JavaScript', 'Java', 'Web', 'Full Stack',
-      'API', 'Development', 'Engineer', 'C++', 'Control', 'Linux',
-      'برمجة', 'تطوير', 'قواعد', 'مطور', 'هندسة',
-      // Cybersecurity
-      'Cyber', 'Security', 'Hacking', 'Penetration', 'Network',
-      'Networking', 'Firewall', 'Ethical', 'OSCP', 'SOC', 'Kali',
-      'أمن', 'سيبراني', 'اختراق', 'شبكات', 'حماية',
-      // IT & Cloud
-      'Cloud', 'AWS', 'Azure', 'Docker', 'Kubernetes', 'DevOps',
-      'IT', 'System', 'Hardware', 'Operating',
-      // AI & Data
-      'Machine Learning', 'ML', 'AI', 'Data Science', 'Data',
-      'Intelligence', 'Deep Learning', 'Neural',
-      'ذكاء', 'بيانات', 'تعلم الآلة',
-      // Computer Science general
-      'Computer', 'Algorithm', 'Programming', 'Quantum',
-      'كومبيوتر', 'حاسوب', 'حاسب',
+    nameAr: 'البرمجة والتقنية',
+    categoryNames: [
+      'Frontend Development', 'Backend Development', 'Mobile Development',
+      'Game Development', 'DevOps and Cloud', 'Databases',
+      'Python Programming', 'JavaScript Programming', 'Cpp Programming',
+      'Java Programming', 'Cybersecurity', 'Penetration Testing',
+      'Network Security', 'Networking', 'Artificial Intelligence',
+      'Machine Learning', 'Data Science', 'Data Analysis',
+      'تطوير الويب الأمامي', 'تطوير الويب الخلفي', 'تطوير التطبيقات المحمولة',
+      'تطوير الألعاب', 'DevOps والسحابة', 'قواعد البيانات',
+      'برمجة Python', 'برمجة JavaScript', 'برمجة C++', 'برمجة Java',
+      'الأمن السيبراني', 'اختبار الاختراق', 'أمن الشبكات', 'الشبكات',
+      'الذكاء الاصطناعي', 'تعلم الآلة', 'علم البيانات', 'تحليل البيانات',
     ],
   },
   {
     id: 'design',
     nameAr: 'التصميم',
-    keywords: ['Design', 'UI', 'UX', 'Motion', 'Graphic', 'تصميم', 'موشن'],
+    categoryNames: [
+      'UI UX Design', 'Graphic Design', 'Motion Graphics', 'Product Design',
+      'تصميم UI/UX', 'تصميم الجرافيك', 'الموشن جرافيك', 'تصميم المنتجات',
+    ],
   },
   {
     id: 'marketing',
     nameAr: 'التسويق الرقمي',
-    keywords: ['Marketing', 'SEO', 'Content', 'Advertising', 'تسويق', 'Digital'],
+    categoryNames: [
+      'Digital Marketing', 'SEO', 'Content Marketing', 'Paid Advertising',
+      'التسويق الرقمي', 'تحسين محركات البحث', 'إدارة المحتوى', 'الإعلانات المدفوعة',
+    ],
   },
   {
     id: 'business',
     nameAr: 'إدارة الأعمال',
-    keywords: [
-      'Business', 'Management', 'Project', 'Product', 'Entrepreneur',
-      'Analysis', 'إدارة', 'أعمال', 'ريادة', 'تحليل', 'Data Science',
-      'Machine Learning', 'ML', 'AI', 'Data', 'Science',
+    categoryNames: [
+      'Project Management', 'Product Management', 'Entrepreneurship',
+      'Business Administration', 'Business Analysis',
+      'English Language', 'Communication Skills',
+      'إدارة المشاريع', 'إدارة المنتجات', 'ريادة الأعمال',
+      'إدارة الأعمال', 'تحليل الأعمال', 'اللغة الإنجليزية', 'مهارات التواصل',
     ],
   },
 ]
@@ -192,13 +192,8 @@ export default function CoursesPage() {
       const mainCat = MAIN_CATS.find(c => c.id === selectedMainCat)
       if (mainCat) {
         result = result.filter(course => {
-          const fields = [
-            course.category,
-            course.categoryId,
-            course.titleEn,
-            course.titleAr,
-          ].filter(Boolean).join(' ').toLowerCase()
-          return mainCat.keywords.some(kw => fields.includes(kw.toLowerCase()))
+          const cat = (course.category || '').toLowerCase()
+          return mainCat.categoryNames.some(name => cat.includes(name.toLowerCase()))
         })
       }
     }
