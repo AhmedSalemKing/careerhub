@@ -1,7 +1,7 @@
 # DeveWay Platform — Full Developer Documentation
 
-**Version:** 2.0  
-**Last Updated:** 2026-05-13  
+**Version:** 4.0  
+**Last Updated:** 2026-05-20  
 **Purpose:** Complete source-code-level reference for the DeveWay monorepo.
 
 ---
@@ -814,5 +814,18 @@ npx prisma db push                   # Push schema to DB (dev only)
 - Race condition prevention (mounted guard)
 - Request cancellation on filter change
 - Vercel cache revalidation after admin saves
+
+### Security Hardening Phase 1 (Session 4 — May 20, 2026)
+All changes are zero-breaking-risk:
+
+| Change | Files | Why |
+|--------|-------|-----|
+| `NEXT_LOCALE` cookie: `secure`, `httpOnly`, `sameSite: 'lax'` | `apps/web/src/middleware.ts`, `apps/learn/src/middleware.ts` | Prevent XSS cookie theft |
+| `poweredByHeader: false` | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Hide framework version |
+| `COOP: same-origin` + `CORP: same-origin` | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Cross-origin attack prevention |
+| `Permissions-Policy` tightened | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Disable unused browser features |
+| `security.txt` at `/.well-known/` | `apps/web/public/.well-known/security.txt`, `apps/learn/public/.well-known/security.txt` | RFC 9116 vulnerability disclosure |
+| 21 debug scripts deleted | `apps/api/` and root | Reduce attack surface |
+| `X-Robots-Tag: noindex, nofollow` | `apps/api/src/main.ts` | Prevent API indexing |
 
 *End of DeveWay Full Developer Documentation v4.0*

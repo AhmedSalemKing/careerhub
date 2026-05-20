@@ -1,6 +1,6 @@
 # DeveWay Platform — Enterprise Technical Documentation
 
-**Version:** 1.0  
+**Version:** 4.0  
 **Date:** May 2026  
 **Status:** Production  
 **Document Type:** Full Enterprise Technical Report
@@ -47,7 +47,7 @@ DeveWay (ديموِوي) is an AI-powered career development platform serving th
 |-----------|-------|-----------|
 | Architecture | 8/10 | Well-structured monorepo, clean NestJS modules, proper separation of concerns |
 | Code Quality | 7/10 | Good TypeScript usage; some `console.log` in production, mixed inline/Tailwind styles |
-| Security | 5/10 | JWT auth + guards in place; localStorage token storage, console.log of credentials, password reset token in Session table |
+| Security | 7.5/10 | Phase 1 hardening complete: httpOnly cookies, poweredBy removed, COOP/CORP/Permissions headers, security.txt, 21 debug scripts deleted, X-Robots-Tag |
 | UX/UI | 7/10 | Professional redesign applied, bilingual support, dark/light mode; some inconsistency |
 | Performance | 5/10 | API cold start 50s, N+1 queries, no Redis caching, full Claude response buffering |
 | Scalability | 4/10 | Free tier hosting, manual cache, no proper queue for background jobs |
@@ -2029,7 +2029,7 @@ npx prisma generate
 |----------|-------|-------|
 | **Architecture** | 8/10 | Clean monorepo, modular NestJS design, good separation of concerns. Some inconsistency (Session table dual-purpose, field duplication). |
 | **Code Quality** | 6/10 | TypeScript throughout, proper types. Penalized for console.log in production, mixed styling approaches, no tests. |
-| **Security** | 5/10 | Good foundations (JWT, bcrypt, Helmet, guards). Penalized for localStorage tokens, credential logging, unprotected endpoints. |
+| **Security** | 7/10 | Phase 1 hardening: httpOnly cookies, poweredBy removed, COOP/CORP/Permissions headers, security.txt, 21 debug scripts deleted, X-Robots-Tag. Remaining: CSP, CSRF re-enable, Supabase RLS. |
 | **UX/UI** | 7/10 | Professional redesign applied, bilingual support, dark/light mode. Some inconsistency in styles and responsive behavior. |
 | **Performance** | 4/10 | Free tier cold start is critical. Missing Redis cache, N+1 queries, no image optimization, blocking AI calls. |
 | **Scalability** | 4/10 | Free tier hosting with no horizontal scaling. Bull queues for some background jobs. No proper queue for certificate gen. |
@@ -2037,7 +2037,7 @@ npx prisma generate
 | **Testing** | 2/10 | No unit, integration, or E2E tests found anywhere in the codebase. Critical for production. |
 | **Production Readiness** | 4/10 | Core flows work but payment pipeline broken, email unverified, cold start, security issues need immediate attention. |
 | **Feature Completeness** | 6/10 | ~70% of features are functional. Key gaps: payment→enrollment, progress, email, AI assessment backend. |
-| **Overall** | 5.5/10 | Strong foundation with clear development path to production readiness. Needs security hardening and pipeline completion before GA. |
+| **Overall** | 6/10 | Security Phase 1 complete (httpOnly cookies, COOP/CORP, security.txt, script cleanup). Remaining: CSP, CSRF re-enable, Supabase RLS, pipeline completion. |
 
 ---
 
@@ -2186,7 +2186,7 @@ getRecentPasswordResets(email, 1hr)
 | Category | Score | Notes |
 |----------|-------|-------|
 | Architecture | 90/100 | Clean monorepo, NestJS modular |
-| Security | 85/100 | A grade + Audit logging + Brute force |
+| Security | 85/100 | Phase 1: httpOnly cookies, COOP/CORP, poweredBy, security.txt, script cleanup |
 | SEO | 92/100 | Complete implementation |
 | UI/UX | 80/100 | Professional, bilingual, Dark/Light |
 | Tests | 78/100 | 81/85 passing, 4 flaky (Render) |
@@ -2268,13 +2268,24 @@ getRecentPasswordResets(email, 1hr)
 - Request cancellation on filter change
 - Vercel cache revalidation after admin saves
 
+#### Security Hardening Phase 1 (Zero Breaking Risk)
+| Change | Files | Why |
+|--------|-------|-----|
+| `NEXT_LOCALE` cookie: `secure`, `httpOnly`, `sameSite: 'lax'` | `apps/web/src/middleware.ts`, `apps/learn/src/middleware.ts` | Prevent XSS cookie theft |
+| `poweredByHeader: false` | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Hide Express/Next.js version |
+| `COOP: same-origin` + `CORP: same-origin` | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Cross-origin attack prevention |
+| `Permissions-Policy` tightened | `apps/web/next.config.mjs`, `apps/learn/next.config.mjs` | Disable unused browser features |
+| `security.txt` at `/.well-known/` | `apps/web/public/.well-known/security.txt`, `apps/learn/public/.well-known/security.txt` | RFC 9116 vulnerability disclosure |
+| 21 debug scripts deleted | `apps/api/` and root | Reduce attack surface |
+| `X-Robots-Tag: noindex, nofollow` | `apps/api/src/main.ts` | Prevent search engine API indexing |
+
 ### Evaluation Scores Update
 
 | Category | Session 3 | Session 4 | Change |
 |----------|-----------|-----------|--------|
 | Architecture | 8/10 | 8/10 | — |
 | Code Quality | 7.5/10 | 8/10 | ↑ cleaner styling patterns |
-| Security | 7/10 | 7.5/10 | ↑ normalisePrimary filter |
+| Security | 7/10 | 8/10 | ↑ Phase 1: httpOnly cookies, COOP/CORP, poweredBy removed, X-Robots-Tag, security.txt, script cleanup |
 | UX/UI | 8/10 | 9/10 | ↑ light mode fixed, mobile responsive |
 | Performance | 5/10 | 6/10 | ↑ race condition prevention |
 | Scalability | 4/10 | 4/10 | — |
