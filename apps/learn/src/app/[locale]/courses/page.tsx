@@ -35,10 +35,25 @@ const MAIN_CATS = [
     id: 'programming',
     nameAr: 'البرمجة',
     keywords: [
+      // Programming & Development
       'Software', 'Frontend', 'Backend', 'Mobile', 'Game', 'DevOps',
-      'Database', 'Python', 'JavaScript', 'Java', 'Network', 'Linux',
-      'Full Stack', 'API', 'Web', 'برمجة', 'تطوير', 'قواعد', 'شبكات',
-      'Networking', 'Engineer', 'Development', 'C++', 'Control',
+      'Database', 'Python', 'JavaScript', 'Java', 'Web', 'Full Stack',
+      'API', 'Development', 'Engineer', 'C++', 'Control', 'Linux',
+      'برمجة', 'تطوير', 'قواعد', 'مطور', 'هندسة',
+      // Cybersecurity
+      'Cyber', 'Security', 'Hacking', 'Penetration', 'Network',
+      'Networking', 'Firewall', 'Ethical', 'OSCP', 'SOC', 'Kali',
+      'أمن', 'سيبراني', 'اختراق', 'شبكات', 'حماية',
+      // IT & Cloud
+      'Cloud', 'AWS', 'Azure', 'Docker', 'Kubernetes', 'DevOps',
+      'IT', 'System', 'Hardware', 'Operating',
+      // AI & Data
+      'Machine Learning', 'ML', 'AI', 'Data Science', 'Data',
+      'Intelligence', 'Deep Learning', 'Neural',
+      'ذكاء', 'بيانات', 'تعلم الآلة',
+      // Computer Science general
+      'Computer', 'Algorithm', 'Programming', 'Quantum',
+      'كومبيوتر', 'حاسوب', 'حاسب',
     ],
   },
   {
