@@ -31,10 +31,35 @@ const TABS = [
 ]
 
 const MAIN_CATS = [
-  { id: 'programming', nameAr: 'البرمجة', keywords: ['Frontend','Backend','Mobile','Game','DevOps','Database','Python','JavaScript','Cpp','Java','Network','Linux','برمجة','تطوير','قواعد','شبكات'] },
-  { id: 'design', nameAr: 'التصميم', keywords: ['Design','UI','UX','Motion','Graphic','تصميم','موشن'] },
-  { id: 'marketing', nameAr: 'التسويق الرقمي', keywords: ['Marketing','SEO','Content','Advertising','تسويق','إعلانات','محتوى'] },
-  { id: 'business', nameAr: 'إدارة الأعمال', keywords: ['Business','Management','Project','Product','Entrepreneur','Analysis','إدارة','أعمال','ريادة','تحليل'] },
+  {
+    id: 'programming',
+    nameAr: 'البرمجة',
+    keywords: [
+      'Software', 'Frontend', 'Backend', 'Mobile', 'Game', 'DevOps',
+      'Database', 'Python', 'JavaScript', 'Java', 'Network', 'Linux',
+      'Full Stack', 'API', 'Web', 'برمجة', 'تطوير', 'قواعد', 'شبكات',
+      'Networking', 'Engineer', 'Development', 'C++', 'Control',
+    ],
+  },
+  {
+    id: 'design',
+    nameAr: 'التصميم',
+    keywords: ['Design', 'UI', 'UX', 'Motion', 'Graphic', 'تصميم', 'موشن'],
+  },
+  {
+    id: 'marketing',
+    nameAr: 'التسويق الرقمي',
+    keywords: ['Marketing', 'SEO', 'Content', 'Advertising', 'تسويق', 'Digital'],
+  },
+  {
+    id: 'business',
+    nameAr: 'إدارة الأعمال',
+    keywords: [
+      'Business', 'Management', 'Project', 'Product', 'Entrepreneur',
+      'Analysis', 'إدارة', 'أعمال', 'ريادة', 'تحليل', 'Data Science',
+      'Machine Learning', 'ML', 'AI', 'Data', 'Science',
+    ],
+  },
 ]
 
 function getTitle(c: any, locale: string) {
@@ -105,6 +130,9 @@ export default function CoursesPage() {
         if (!mounted) return
         const data = res?.data?.data?.courses ?? res?.data?.data ?? res?.data?.courses ?? []
         console.log('[Fetch] returned:', Array.isArray(data) ? data.length : '?', 'courses')
+        if (Array.isArray(data)) {
+          console.log('[Categories] sample:', data.slice(0, 3).map((c: any) => ({ id: c.id, category: c.category, categoryId: c.categoryId, title: c.titleEn || c.titleAr })))
+        }
         setCourses(Array.isArray(data) ? data : [])
       } catch (e: any) {
         console.error('[Fetch] error:', e)
@@ -147,8 +175,13 @@ export default function CoursesPage() {
       const mainCat = MAIN_CATS.find(c => c.id === selectedMainCat)
       if (mainCat) {
         result = result.filter(course => {
-          const cat = (course.category || '').toLowerCase()
-          return mainCat.keywords.some(kw => cat.includes(kw.toLowerCase()))
+          const fields = [
+            course.category,
+            course.categoryId,
+            course.titleEn,
+            course.titleAr,
+          ].filter(Boolean).join(' ').toLowerCase()
+          return mainCat.keywords.some(kw => fields.includes(kw.toLowerCase()))
         })
       }
     }
