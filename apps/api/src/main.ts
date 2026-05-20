@@ -37,6 +37,12 @@ async function bootstrap() {
   app.useStaticAssets(uploadsPath, { prefix: '/uploads' });
   const configService = app.get(ConfigService);
 
+  // Prevent search engine indexing of API
+  app.use((req, res, next) => {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    next();
+  });
+
   // Security middleware - Helmet with enterprise-grade configuration
   app.use(helmet({
     contentSecurityPolicy: {
