@@ -13,6 +13,7 @@ import {
   Activity,
   ExternalLink,
   Menu,
+  LogOut,
   X,
 } from 'lucide-react'
 import { api } from '../../../lib/api'
@@ -97,49 +98,199 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <>
           {/* Overlay */}
           {drawerOpen && (
-            <div onClick={() => setDrawerOpen(false)} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
+            <div
+              onClick={() => setDrawerOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 50,
+                background: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(4px)',
+                WebkitBackdropFilter: 'blur(4px)',
+              }}
+            />
           )}
-          
-          {/* Drawer */}
-          <div className={`fixed top-0 bottom-0 z-50 w-[280px] bg-[color:var(--surface)] shadow-2xl transition-transform duration-300 lg:hidden ${
-            drawerOpen ? (isAr ? 'translate-x-0' : 'translate-x-0') : (isAr ? 'translate-x-full' : '-translate-x-full')
-          }`} style={{ right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0 }}>
+
+          {/* Drawer panel */}
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: 280,
+              zIndex: 51,
+              background: 'var(--card)',
+              borderLeft: '1px solid var(--border)',
+              boxShadow: '-8px 0 32px rgba(0,0,0,0.25)',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+              transform: drawerOpen ? 'translateX(0)' : 'translateX(100%)',
+              transition: 'transform 0.3s ease',
+            }}
+          >
             {/* Drawer header */}
-            <div className="flex items-center justify-between border-b border-[color:var(--border)] p-5">
-              <span className="font-bold text-foreground text-lg">DeveWay</span>
-              <button onClick={() => setDrawerOpen(false)} className="p-2 rounded-full bg-[color:var(--surface-2)]">
-                <X className="h-4 w-4 text-[color:var(--muted)]" />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '20px 20px 16px',
+                borderBottom: '1px solid var(--border)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 6,
+                    background: 'linear-gradient(135deg, #5120C8, #7C3AED)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontWeight: 800,
+                    fontSize: 14,
+                    fontFamily: 'var(--font-brand)',
+                    flexShrink: 0,
+                  }}
+                >
+                  D
+                </div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-brand)',
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: 'var(--foreground)',
+                  }}
+                >
+                  DeveWay
+                </span>
+              </div>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: 'var(--muted)',
+                }}
+              >
+                <X size={16} />
               </button>
             </div>
-            
-            {/* Drawer nav items */}
-            <nav className="p-3 space-y-1">
-              {adminItems.map((item: any, i: number) => {
+
+            {/* Nav items */}
+            <nav style={{ flex: 1, padding: '12px 10px' }}>
+              {adminItems.filter((item: any) => item.icon !== ExternalLink).map((item: any, i: number) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                const active = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
-                  <a key={i} href={item.href}
+                  <a
+                    key={i}
+                    href={item.href}
                     onClick={() => setDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                      isActive 
-                        ? 'bg-primary text-white' 
-                        : 'text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] hover:text-foreground'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '11px 14px',
+                      borderRadius: 12,
+                      marginBottom: '2px',
+                      color: active ? '#5120C8' : 'var(--foreground)',
+                      background: active ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      fontWeight: active ? 700 : 500,
+                      fontSize: '14px',
+                      textDecoration: 'none',
+                      transition: 'background 0.15s ease',
+                      borderRight: active ? '3px solid #5120C8' : '3px solid transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) e.currentTarget.style.background = 'var(--surface)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) e.currentTarget.style.background = 'transparent'
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-semibold">{isAr ? item.labelAr : item.labelEn}</span>
+                    <Icon size={18} style={{ flexShrink: 0 }} />
+                    <span>{isAr ? item.labelAr : item.labelEn}</span>
                   </a>
                 )
               })}
-              
-              {/* Logout */}
-              <button onClick={handleLogout}
-                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-all mt-4"
-              >
-                <X className="h-5 w-5" />
-                <span className="font-semibold">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
-              </button>
             </nav>
+
+            {/* Bottom section */}
+            <div
+              style={{
+                padding: '12px 10px',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
+              <a
+                href={`/${locale}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '11px 14px',
+                  borderRadius: 12,
+                  color: '#5120C8',
+                  fontSize: '14px',
+                  textDecoration: 'none',
+                  marginBottom: '4px',
+                  transition: 'background 0.15s',
+                  opacity: 0.8,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(81,32,200,0.06)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.opacity = '0.8'
+                }}
+              >
+                <ExternalLink size={16} />
+                <span>{isAr ? 'الموقع الرئيسي' : 'Main Site'}</span>
+              </a>
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '11px 14px',
+                  borderRadius: 12,
+                  color: '#ef4444',
+                  background: 'transparent',
+                  border: 'none',
+                  width: '100%',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239,68,68,0.08)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <LogOut size={16} />
+                <span>{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
+              </button>
+            </div>
           </div>
         </>
       )}
