@@ -4,6 +4,7 @@ import { useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { api } from "../../../lib/api";
+import { ErrorBoundary } from "../../../components/ErrorBoundary";
 import {
 	Users,
 	BookOpen,
@@ -132,6 +133,7 @@ export default function AdminOverviewPage() {
 	};
 
 	return (
+		<ErrorBoundary>
 		<div dir={isAr ? "rtl" : "ltr"} className="space-y-6">
 			{/* ─── Header ─── */}
 			<h1 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
@@ -457,5 +459,6 @@ export default function AdminOverviewPage() {
 				)}
 			</div>
 		</div>
+		</ErrorBoundary>
 	);
 }

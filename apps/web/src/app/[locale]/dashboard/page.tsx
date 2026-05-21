@@ -15,6 +15,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
+import { ErrorBoundary } from '../../../components/ErrorBoundary'
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -1336,6 +1337,7 @@ export default function DashboardPage() {
 
   return (
     <AuthGate>
+      <ErrorBoundary>
       {roleCard && (
         <Link href={roleCard.href} style={{
           display:'flex',alignItems:'center',gap:16,
@@ -1362,7 +1364,8 @@ export default function DashboardPage() {
       )}
       {user?.accountType === 'INSTRUCTOR' ? <InstructorOverview /> :
        user?.accountType === 'CONSULTANT' ? <ConsultantOverview /> :
-       <StudentOverview />}
+        <StudentOverview />}
+      </ErrorBoundary>
     </AuthGate>
   )
 }

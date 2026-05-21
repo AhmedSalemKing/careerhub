@@ -11,6 +11,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { ErrorBoundary } from "../../../../components/ErrorBoundary";
 import { get, post } from "../../../../lib/api";
 import { toast, Toaster } from "react-hot-toast";
 import {
@@ -2524,6 +2525,7 @@ function ShieldCheck({
 export default function LearnPage() {
 	const t = useTranslations('learn')
 	return (
+		<ErrorBoundary>
 		<>
 			<Toaster />
 			<Suspense
@@ -2546,5 +2548,6 @@ export default function LearnPage() {
 				<LearnPageInner />
 			</Suspense>
 		</>
+		</ErrorBoundary>
 	);
 }
