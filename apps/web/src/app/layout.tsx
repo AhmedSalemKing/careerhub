@@ -19,7 +19,7 @@ const madinetAlBat = localFont({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.deveways.com'),
+  metadataBase: new URL('https://deveway-teal.vercel.app'),
   title: {
     default: 'DeveWay | منصة التعليم والتطوير المهني',
     template: '%s | DeveWay',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ar_SA',
     alternateLocale: 'en_US',
-    url: 'https://www.deveways.com',
+    url: 'https://deveway-teal.vercel.app',
     siteName: 'DeveWay',
     title: 'DeveWay | منصة التعليم والتطوير المهني',
     description: 'منصة تعليمية عربية متكاملة للكورسات والكوتشينج وبناء المسار الوظيفي',
