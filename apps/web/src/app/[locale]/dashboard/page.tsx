@@ -1337,7 +1337,6 @@ export default function DashboardPage() {
 
   return (
     <AuthGate>
-      <ErrorBoundary>
       {roleCard && (
         <Link href={roleCard.href} style={{
           display:'flex',alignItems:'center',gap:16,
@@ -1362,6 +1361,7 @@ export default function DashboardPage() {
           <ChevronLeft size={18} color={roleCard.chevronColor}/>
         </Link>
       )}
+      <ErrorBoundary>
       {user?.accountType === 'INSTRUCTOR' ? <InstructorOverview /> :
        user?.accountType === 'CONSULTANT' ? <ConsultantOverview /> :
         <StudentOverview />}

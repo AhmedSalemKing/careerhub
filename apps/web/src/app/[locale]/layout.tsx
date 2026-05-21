@@ -3,11 +3,11 @@ import { LocaleShell } from '../components/LocaleShell'
 export async function generateMetadata({ params }: { params: { locale: string } }) {
   return {
     alternates: {
-      canonical: `https://www.deveways.com/${params.locale}`,
+      canonical: `/${params.locale}`,
       languages: {
-        'ar': 'https://www.deveways.com/ar',
-        'en': 'https://www.deveways.com/en',
-        'x-default': 'https://www.deveways.com/ar',
+        'ar': '/ar',
+        'en': '/en',
+        'x-default': '/ar',
       },
     },
   }
