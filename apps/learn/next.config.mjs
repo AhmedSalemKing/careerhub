@@ -25,6 +25,9 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     domains: ['localhost', 'supabase.co', 'cloudflare.com', 'imagedelivery.net'],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: false,
   },
   async headers() {
     return [

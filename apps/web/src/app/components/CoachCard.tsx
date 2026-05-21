@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
@@ -19,10 +20,9 @@ export function CoachCard({ coach }: { coach: CoachCardCoach }) {
   return (
     <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-sm">
       <div className="flex items-start gap-4">
-        <div className="h-12 w-12 overflow-hidden rounded-xl bg-[color:var(--surface-2)]">
+        <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-[color:var(--surface-2)]">
           {coach.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={coach.avatarUrl} alt={coach.name || ''} className="h-full w-full object-cover" />
+            <Image src={coach.avatarUrl} alt={coach.name || ''} fill className="object-cover" loading="lazy" />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-[color:var(--muted)]">CH</div>
           )}

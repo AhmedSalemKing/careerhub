@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 
 export function PageLoader({ show }: { show: boolean }) {
   const [visible, setVisible] = useState(show)
@@ -29,21 +30,13 @@ export function PageLoader({ show }: { show: boolean }) {
     >
       {/* Logo — transparent bg, no blend mode */}
       <div className="mb-8 flex flex-col items-center gap-3">
-        <img
+        <Image
           src="/logo.png"
           alt="DeveWay"
-          style={{
-            height: 64,
-            width: 'auto',
-            objectFit: 'contain',
-            background: 'transparent',
-          }}
-          onError={(e) => {
-            const el = e.currentTarget
-            el.style.display = 'none'
-            const fallback = el.nextElementSibling as HTMLElement
-            if (fallback) fallback.style.display = 'flex'
-          }}
+          width={64}
+          height={64}
+          priority
+          style={{ objectFit: 'contain', background: 'transparent' }}
         />
         {/* Fallback text if image fails */}
         <span

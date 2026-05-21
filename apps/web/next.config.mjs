@@ -25,6 +25,11 @@ const nextConfig = {
   },
   reactStrictMode: false,
   poweredByHeader: false,
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    dangerouslyAllowSVG: false,
+  },
   async headers() {
     return [
       {

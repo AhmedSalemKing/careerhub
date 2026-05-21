@@ -3,6 +3,7 @@
 // ==========================================
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, ExternalLink } from 'lucide-react'
@@ -38,8 +39,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href={`/${locale}`} className="inline-flex items-center gap-2.5 group">
-              <img src="/logo-icon.png" alt="DeveWay" style={{ height: 32, width: 'auto' }}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+              <Image src="/logo-icon.png" alt="DeveWay" width={32} height={32} loading="lazy" />
               <span style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 800, fontSize: 20, color: 'var(--foreground)', letterSpacing: '-0.02em' }}>
                 DeveWay
               </span>

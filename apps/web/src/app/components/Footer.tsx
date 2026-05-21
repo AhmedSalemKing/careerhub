@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { TRAINING_URL } from '../../lib/constants'
@@ -13,11 +14,13 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div>
           <div className="flex items-center gap-2.5">
-            <img
+            <Image
               src="/logo-icon.png"
               alt="DeveWay"
-              style={{ height: 28, width: 'auto', background: 'transparent' }}
-              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+              width={28}
+              height={28}
+              loading="lazy"
+              style={{ background: 'transparent' }}
             />
             <span style={{
               fontFamily: 'Plus Jakarta Sans, sans-serif',
