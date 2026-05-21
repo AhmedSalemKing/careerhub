@@ -1,18 +1,5 @@
 import { LocaleShell } from '../components/LocaleShell'
 
-export async function generateMetadata({ params }: { params: { locale: string } }) {
-  return {
-    alternates: {
-      canonical: `/${params.locale}`,
-      languages: {
-        'ar': '/ar',
-        'en': '/en',
-        'x-default': '/ar',
-      },
-    },
-  }
-}
-
 export default function LocaleLayout({ children }: { children: React.ReactNode }) {
   return (
     <LocaleShell>
