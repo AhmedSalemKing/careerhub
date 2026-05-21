@@ -68,9 +68,10 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '',
   },
   alternates: {
+    canonical: '/',
     languages: {
-      'ar': 'https://deveway-teal.vercel.app/ar',
-      'en': 'https://deveway-teal.vercel.app/en',
+      'ar': '/ar',
+      'en': '/en',
     },
   },
 }
