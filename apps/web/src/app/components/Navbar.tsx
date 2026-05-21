@@ -9,6 +9,7 @@ import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar' 
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
+import Image from 'next/image'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
@@ -394,12 +395,14 @@ export function Navbar() {
 
           {/* ═══ Branding (Logo + Text) ═══ */}
           <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:me-6 md:me-8" style={{ marginInlineEnd: '12px' }}>
-            <img
+            <Image
               src="/logo-icon.png"
               alt="DeveWay"
-              className="h-[44px] w-auto object-contain transition-opacity duration-200 hover:opacity-80 sm:h-[52px]"
-              style={{ background: 'transparent', minWidth: '44px' }}
-              onError={(e) => { e.currentTarget.style.display = 'none' }}
+              width={52}
+              height={52}
+              priority
+              className="object-contain transition-opacity duration-200 hover:opacity-80"
+              style={{ background: 'transparent', width: 'auto', height: '44px', minWidth: '44px' }}
             />
             {/* ✅ تم تعديل اللون هنا ليكون ديناميكياً حسب الوضع */}
             <span

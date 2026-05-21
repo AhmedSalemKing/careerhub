@@ -68,10 +68,10 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '',
   },
   alternates: {
-    canonical: 'https://www.deveways.com',
+    canonical: 'https://deveway-teal.vercel.app',
     languages: {
-      'ar': 'https://www.deveways.com/ar',
-      'en': 'https://www.deveways.com/en',
+      'ar': 'https://deveway-teal.vercel.app/ar',
+      'en': 'https://deveway-teal.vercel.app/en',
     },
   },
 }
@@ -116,6 +116,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             body { background-color: inherit; min-height: 100vh; }
           `}} />
         
+        <link rel="preconnect" href="https://deve-way.onrender.com" />
+        <link rel="dns-prefetch" href="https://deve-way.onrender.com" />
+        <meta name="theme-color" content="#5120C8" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             function ping() {
