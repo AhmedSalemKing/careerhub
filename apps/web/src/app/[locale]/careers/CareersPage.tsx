@@ -162,21 +162,21 @@ export default function CareersPage() {
           </p>
           
           {/* Stats row */}
-          <div style={{ display:'flex', justifyContent:'center', gap:32, flexWrap:'wrap', marginBottom:32 }}>
+          <div className="grid grid-cols-3 gap-2 mb-6">
             {[
               { value: allPaths.length.toString(), labelAr:'المسارات المتاحة', labelEn:'Paths Available' },
               { value: CAREER_PATHS.length.toString(), labelAr:'التخصصات', labelEn:'Specializations' },
               { value: '100%', labelAr:'مجاني للاستكشاف', labelEn:'Free to Explore' },
             ].map((stat, i) => (
-              <div key={i} style={{ textAlign:'center' }}>
-                <div style={{ color:'#5120c8', fontSize:28, fontWeight:900 }}>{stat.value}</div>
-                <div style={{ color:'#6b7280', fontSize:13 }}>{isAr ? stat.labelAr : stat.labelEn}</div>
+              <div key={i} style={{ textAlign:'center', padding:'8px 4px' }}>
+                <div style={{ color:'#5120c8', fontSize:'clamp(20px, 5vw, 32px)', fontWeight:900 }}>{stat.value}</div>
+                <div style={{ color:'#6b7280', fontSize:'clamp(9px, 2vw, 12px)' }}>{isAr ? stat.labelAr : stat.labelEn}</div>
               </div>
             ))}
           </div>
           
           {/* Search bar */}
-          <div style={{ position:'relative', maxWidth:480, margin:'0 auto' }}>
+          <div style={{ width:'100%', boxSizing:'border-box', position:'relative', maxWidth:480, margin:'0 auto' }}>
             <Search size={16} color="#6b7280" style={{
               position:'absolute', top:'50%', transform:'translateY(-50%)',
               right: isAr ? 16 : 'auto', left: isAr ? 'auto' : 16,
@@ -199,12 +199,13 @@ export default function CareersPage() {
       </div>
       
       {/* Main content */}
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'32px 24px' }}>
+      <div style={{ width:'100%', boxSizing:'border-box', maxWidth:1200, margin:'0 auto', padding:'32px 24px', overflowX:'hidden' }}>
         
         {/* Category tabs */}
-        <div style={{ display:'flex', gap:8, marginBottom:28, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', gap:'8px', width:'100%', paddingBottom:'4px' }}>
           {CATEGORIES.map(cat => (
             <button key={cat.key} onClick={() => setActiveCategory(cat.key)} style={{
+              flexShrink:0, whiteSpace:'nowrap',
               padding:'10px 22px', borderRadius:12, border:'none', cursor:'pointer',
               fontSize:13, fontWeight:700,
               background: activeCategory===cat.key ? '#5120c8' : isDark?'rgba(255,255,255,0.06)':'#f4f4f8',
@@ -227,16 +228,13 @@ export default function CareersPage() {
         </div>
         
         {/* Paths grid */}
-        <div key={`grid-${activeCategory}-${searchQuery}`} style={{
-          display:'grid',
-          gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))',
-          gap:20,
-        }}>
+        <div key={`grid-${activeCategory}-${searchQuery}`} className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
           {filteredPaths.map((path, idx) => {
             const IconComp = ICON_MAP[path.icon] || Briefcase
             
             return (
               <div key={path.id} className="career-card" style={{
+                width:'100%', minWidth:0,
                 background: cardBg,
                 borderRadius:20,
                 border:`1px solid ${border}`,
@@ -274,10 +272,10 @@ export default function CareersPage() {
                       <IconComp size={22} color="#5120c8" />
                     </div>
                     <div>
-                      <div style={{ color:'#6b7280', fontSize:11, fontWeight:600, marginBottom:2 }}>
+                      <div style={{ color:'#6b7280', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600, marginBottom:2 }}>
                         {String(idx + 1).padStart(2, '0')}
                       </div>
-                      <h3 style={{ color:text, fontSize:16, fontWeight:800, margin:0 }}>
+                      <h3 style={{ color:text, fontSize:'clamp(12px, 3vw, 16px)', fontWeight:700, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                         {isAr ? path.titleAr : path.titleEn}
                       </h3>
                     </div>
@@ -326,31 +324,31 @@ export default function CareersPage() {
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <DollarSign size={13} color="#5120c8" />
-                    <span style={{ color:'#5120c8', fontSize:12, fontWeight:700 }}>
+                    <span style={{ color:'#5120c8', fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:700 }}>
                       {path.salary} {isAr?'ر.س':'SAR'}
                     </span>
                   </div>
                 </div>
                 
                 {/* Skills chips */}
-                {path.skills && path.skills.length > 0 && (
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:18 }}>
+                  {path.skills && path.skills.length > 0 && (
+                  <div style={{ display:'flex', gap:'4px', flexWrap:'wrap', marginBottom:18 }}>
                     {path.skills.slice(0,4).map((skill, i) => (
                       <span key={i} style={{
-                        padding:'4px 10px', borderRadius:20,
+                        padding:'2px 6px', borderRadius:20,
                         background: isDark?'rgba(255,255,255,0.05)':'#f4f4f8',
                         border:`1px solid ${border}`,
-                        color:'#6b7280', fontSize:11, fontWeight:600,
+                        color:'#6b7280', fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
                       }}>
                         {skill}
                       </span>
                     ))}
                     {path.skills.length > 4 && (
                       <span style={{
-                        padding:'4px 10px', borderRadius:20,
+                        padding:'2px 6px', borderRadius:20,
                         background:'rgba(81,32,200,0.06)',
                         border:'1px solid rgba(81,32,200,0.15)',
-                        color:'#5120c8', fontSize:11, fontWeight:600,
+                        color:'#5120c8', fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
                       }}>
                         +{path.skills.length - 4}
                       </span>
@@ -375,14 +373,14 @@ export default function CareersPage() {
                 )}
                 
                 {/* CTA Buttons */}
-                <div style={{ display:'flex', gap:8, marginTop:'auto' }}>
+                <div className="grid grid-cols-2 gap-2 mt-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
                     style={{
-                      flex:1, padding:'10px', borderRadius:10,
+                      width:'100%', padding:'10px', borderRadius:10,
                       background:'transparent',
                       border:`1px solid ${border}`,
-                      color:subtext, cursor:'pointer', fontSize:13, fontWeight:600,
+                      color:subtext, cursor:'pointer', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600,
                       transition:'all 0.15s',
                     }}
                     onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'; e.currentTarget.style.color='#5120c8' }}
@@ -401,9 +399,9 @@ export default function CareersPage() {
                       router.push(`/${locale}/dashboard/career-path`)
                     }}
                     style={{
-                      flex:1, padding:'10px', borderRadius:10,
+                      width:'100%', padding:'10px', borderRadius:10,
                       background:'#5120c8', color:'#ffffff',
-                      border:'none', cursor:'pointer', fontSize:13, fontWeight:700,
+                      border:'none', cursor:'pointer', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:700,
                       display:'flex', alignItems:'center', justifyContent:'center', gap:5,
                       transition:'opacity 0.15s',
                     }}
