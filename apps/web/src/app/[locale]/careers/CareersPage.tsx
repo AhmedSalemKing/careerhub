@@ -119,11 +119,11 @@ export default function CareersPage() {
     return () => observer.disconnect()
   }, [filteredPaths])
   
-  const bg = isDark ? '#0d0d0d' : '#f8fafc'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
+  const bg = 'var(--background)'
+  const cardBg = 'var(--card)'
+  const border = 'var(--border)'
+  const text = 'var(--foreground)'
+  const subtext = 'var(--muted)'
   const textMuted = isDark ? '#64748b' : '#9ca3af'
   
   return (
@@ -155,7 +155,7 @@ export default function CareersPage() {
           <h1 style={{ color:text, fontSize:'clamp(28px,4vw,42px)', fontWeight:900, margin:'0 0 16px', lineHeight:1.2 }}>
             {isAr ? 'ابن مستقبلك المهني' : 'Build Your Career Future'}
           </h1>
-          <p style={{ color:'#6b7280', fontSize:16, margin:'0 0 32px', lineHeight:1.7 }}>
+          <p style={{ color:subtext, fontSize:16, margin:'0 0 32px', lineHeight:1.7 }}>
             {isAr
               ? 'اختر مسارك المهني من أكثر من 30 مساراً متخصصاً وابدأ بخطة واضحة ومنظمة'
               : 'Choose your career path from 30+ specialized paths and start with a clear structured plan'}
@@ -170,7 +170,7 @@ export default function CareersPage() {
             ].map((stat, i) => (
               <div key={i} style={{ textAlign:'center', padding:'8px 4px' }}>
                 <div style={{ color:'#5120c8', fontSize:'clamp(20px, 5vw, 32px)', fontWeight:900 }}>{stat.value}</div>
-                <div style={{ color:'#6b7280', fontSize:'clamp(9px, 2vw, 12px)' }}>{isAr ? stat.labelAr : stat.labelEn}</div>
+                <div style={{ color:subtext, fontSize:'clamp(9px, 2vw, 12px)' }}>{isAr ? stat.labelAr : stat.labelEn}</div>
               </div>
             ))}
           </div>
@@ -208,8 +208,8 @@ export default function CareersPage() {
               flexShrink:0, whiteSpace:'nowrap',
               padding:'10px 22px', borderRadius:12, border:'none', cursor:'pointer',
               fontSize:13, fontWeight:700,
-              background: activeCategory===cat.key ? '#5120c8' : isDark?'rgba(255,255,255,0.06)':'#f4f4f8',
-              color: activeCategory===cat.key ? '#fff' : '#6b7280',
+              background: activeCategory===cat.key ? '#5120c8' : 'var(--surface)',
+              color: activeCategory===cat.key ? '#fff' : subtext,
               transition:'all 0.2s',
             }}>
               {isAr ? cat.labelAr : cat.labelEn}
@@ -223,7 +223,7 @@ export default function CareersPage() {
         </div>
         
         {/* Results count */}
-        <div style={{ color:'#6b7280', fontSize:14, marginBottom:20 }}>
+        <div style={{ color:subtext, fontSize:14, marginBottom:20 }}>
           {isAr ? `${filteredPaths.length} مسار متاح` : `${filteredPaths.length} paths available`}
         </div>
         
@@ -272,7 +272,7 @@ export default function CareersPage() {
                       <IconComp size={22} color="#5120c8" />
                     </div>
                     <div>
-                      <div style={{ color:'#6b7280', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600, marginBottom:2 }}>
+                      <div style={{ color:subtext, fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600, marginBottom:2 }}>
                         {String(idx + 1).padStart(2, '0')}
                       </div>
                       <h3 style={{ color:text, fontSize:'clamp(12px, 3vw, 16px)', fontWeight:700, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
@@ -304,7 +304,7 @@ export default function CareersPage() {
                 
                 {/* Description */}
                 <p style={{
-                  color:'#6b7280', fontSize:13, lineHeight:1.6,
+                  color:subtext, fontSize:13, lineHeight:1.6,
                   margin:'0 0 16px',
                   display:'-webkit-box',
                   WebkitLineClamp:2,
@@ -318,7 +318,7 @@ export default function CareersPage() {
                 <div style={{ display:'flex', gap:16, marginBottom:16 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <Star size={13} color="#6b7280" />
-                    <span style={{ color:'#6b7280', fontSize:12 }}>
+                    <span style={{ color:subtext, fontSize:12 }}>
                       {path.level || 'All Levels'}
                     </span>
                   </div>
@@ -336,9 +336,9 @@ export default function CareersPage() {
                     {path.skills.slice(0,4).map((skill, i) => (
                       <span key={i} style={{
                         padding:'2px 6px', borderRadius:20,
-                        background: isDark?'rgba(255,255,255,0.05)':'#f4f4f8',
+                        background: 'var(--surface)',
                         border:`1px solid ${border}`,
-                        color:'#6b7280', fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
+                        color:subtext, fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
                       }}>
                         {skill}
                       </span>
@@ -360,9 +360,9 @@ export default function CareersPage() {
                 {path.progression && path.progression.length > 0 && (
                   <div style={{
                     padding:'10px 14px', borderRadius:10,
-                    background: isDark?'rgba(255,255,255,0.03)':'#f8fafc',
+                    background: 'var(--surface)',
                     border:`1px solid ${border}`,
-                    marginBottom:18, fontSize:12, color:'#6b7280',
+                    marginBottom:18, fontSize:12, color:subtext,
                     display:'flex', alignItems:'center', gap:6,
                   }}>
                     <Users size={12} color="#6b7280" />
@@ -436,7 +436,7 @@ export default function CareersPage() {
             <h2 style={{ color:text, fontSize:22, fontWeight:800, margin:'0 0 12px' }}>
               {isAr ? 'لست متأكداً من مسارك' : "Not sure which path?"}
             </h2>
-            <p style={{ color:'#6b7280', fontSize:14, margin:'0 0 24px', lineHeight:1.7 }}>
+            <p style={{ color:subtext, fontSize:14, margin:'0 0 24px', lineHeight:1.7 }}>
               {isAr
                 ? 'قم بإجراء التقييم بالذكاء الاصطناعي وسنوصي بأفضل مسار بناءً على مهاراتك واهتماماتك'
                 : 'Take the AI assessment and we\'ll recommend the best path based on your skills and interests'}
@@ -649,7 +649,7 @@ export default function CareersPage() {
                     <div style={{
                       position:'absolute', top:20, bottom:20,
                       right: isAr ? 19 : 'auto', left: isAr ? 'auto' : 19,
-                      width:2, background: isDark?'rgba(255,255,255,0.06)':'#e5e7eb',
+                      width:2, background: 'var(--border)',
                     }} />
                     {(detailPath.progression || []).map((level: string, i: number) => (
                       <div key={i} style={{ display:'flex', gap:14, alignItems:'center', marginBottom:16, position:'relative' }}>
