@@ -258,7 +258,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', gap: 0 }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '8px', width: '100%', paddingBottom: '2px' }}>
           {TABS.map(tab => {
             const Icon = tab.icon
             const active = activeTab === tab.key
@@ -276,7 +276,7 @@ export default function CoursesPage() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px' }}>
+      <div style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px', overflowX: 'hidden', boxSizing: 'border-box' }}>
 
         {/* Tab description */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '14px 18px', borderRadius: 12, border: `1px solid ${activeTabConfig.color}25`, background: `${activeTabConfig.color}08` }}>
@@ -300,7 +300,7 @@ export default function CoursesPage() {
         </div>
 
         {/* Category pills */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
           {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
@@ -320,7 +320,7 @@ export default function CoursesPage() {
         {!isLoading && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             {/* Sort + Level + Price row */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%' }}>
               {/* Sort */}
               {[
                 { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
@@ -387,7 +387,7 @@ export default function CoursesPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface-2)' }} />)}
           </div>
         )}
@@ -420,7 +420,7 @@ export default function CoursesPage() {
 
         {/* RECORDED */}
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
             {visibleCourses.map((course: any, idx: number) => (
               <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
@@ -438,7 +438,7 @@ export default function CoursesPage() {
 
         {/* OFFLINE */}
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
             {visibleCourses.map((course: any, idx: number) => (
               <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
@@ -480,13 +480,13 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   console.log('[RecordedCard]', course.id, 'isEnrolled:', course.isEnrolled)
 
   return (
-    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
+    <div className="course-card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}
       onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)' }}
       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
 
       {/* Thumbnail */}
-      <div style={{ height: 160, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', flexShrink: 0 }}>
+      <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
           <Video size={10} />
           {tl('recordedBadge')}
@@ -501,7 +501,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
       </div>
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 14, fontWeight: 800, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 'clamp(12px, 3.5vw, 15px)', fontWeight: 800, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getTitle(course, locale)}
         </h3>
 

@@ -270,7 +270,7 @@ body {
     color: var(--foreground);
     background-color: inherit;
     overflow-x: hidden;
-    max-width: 100vw;
+    max-width: 100%;
 }
 
 /* ── Arabic Headings → PingARLT ── */
