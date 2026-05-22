@@ -86,7 +86,7 @@ function CourseCardSkeleton() {
 
 function LoadingSkeleton() {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, i) => (
         <CourseCardSkeleton key={i} />
       ))}
@@ -590,6 +590,10 @@ export default function MyCoursesPage() {
       background: 'var(--background)',
       padding: '32px 24px 120px',
       direction: isAr ? 'rtl' : 'ltr',
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
     }}>
       {/* PAGE HEADER */}
       <div style={{
@@ -623,10 +627,7 @@ export default function MyCoursesPage() {
       </div>
 
       {/* STATS BAR */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3,1fr)',
-        gap: '1rem', marginBottom: '1.5rem',
-      }}>
+      <div className="grid grid-cols-3 gap-3 w-full mb-6">
         {[
           { labelAr: 'إجمالي الكورسات', labelEn: 'Total Courses', value: enrollments.length,
             color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
@@ -650,38 +651,30 @@ export default function MyCoursesPage() {
             </svg> },
         ].map((stat, i) => (
           <div key={i} style={{
-            padding: '1rem 1.25rem',
+            padding: '12px 8px', textAlign: 'center',
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: '12px',
-            display: 'flex', alignItems: 'center', gap: '12px',
           }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: stat.bg, color: stat.color, flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {stat.icon}
-            </div>
-            <div>
-              <p style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 2px', color: 'var(--foreground)' }}>
-                {stat.value}
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>
-                {isAr ? stat.labelAr : stat.labelEn}
-              </p>
-            </div>
+            <p style={{ fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 800, margin: '0 0 2px', color: 'var(--foreground)' }}>
+              {stat.value}
+            </p>
+            <p style={{ fontSize: 'clamp(10px, 2.5vw, 13px)', color: 'var(--muted-foreground)', margin: 0 }}>
+              {isAr ? stat.labelAr : stat.labelEn}
+            </p>
           </div>
         ))}
       </div>
 
       {/* FILTER TABS */}
       <div style={{
-        display: 'flex', gap: '6px', marginBottom: '1.5rem',
-        background: 'rgba(255,255,255,0.02)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: '10px', padding: '4px',
-        width: 'fit-content',
+        display: 'flex',
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        gap: '8px',
+        width: '100%',
+        paddingBottom: '4px',
+        marginBottom: '1.5rem',
       }}>
         {tabs.map(tab => (
           <button key={tab.key}
@@ -736,11 +729,7 @@ export default function MyCoursesPage() {
           </a>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '1.25rem',
-        }}>
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
           {filteredEnrollments2.map((enrollment: any) => {
             const course = enrollment.course
             const totalLessons = enrollment.totalLessons || course?.stats?.lessonsCount || course?._count?.lessons || 0
@@ -754,9 +743,10 @@ export default function MyCoursesPage() {
             return (
               <div key={enrollment.id}
                 style={{
+                  width: '100%', minWidth: 0, overflow: 'hidden',
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
-                  borderRadius: '16px', overflow: 'hidden',
+                  borderRadius: '16px',
                   transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
                 onMouseEnter={e => {
@@ -769,7 +759,7 @@ export default function MyCoursesPage() {
                 }}>
 
                 {/* Thumbnail */}
-                <div style={{ height: '140px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ width: '100%', aspectRatio: '16/9', position: 'relative', overflow: 'hidden' }}>
                   {thumbSrc ? (
                     <img src={thumbSrc} alt={title}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -802,10 +792,10 @@ export default function MyCoursesPage() {
 
                 <div style={{ padding: '1rem 1.25rem' }}>
                   <h3 style={{
-                    fontSize: '0.9rem', fontWeight: 700, margin: '0 0 10px',
+                    fontSize: 'clamp(11px, 3vw, 14px)', fontWeight: 700,
+                    margin: '0 0 10px',
                     overflow: 'hidden', textOverflow: 'ellipsis',
-                    display: '-webkit-box', WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical', lineHeight: 1.4,
+                    whiteSpace: 'nowrap',
                     color: 'var(--foreground)',
                   }}>
                     {title}
@@ -860,11 +850,15 @@ export default function MyCoursesPage() {
                   {/* CTA button */}
                   <a href={learnUrl} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: '8px', padding: '9px', borderRadius: '9px',
+                    gap: '8px', padding: '8px', borderRadius: '8px',
+                    width: '100%',
                     background: isComplete ? 'rgba(34,197,94,0.12)' : '#5120c8',
                     border: isComplete ? '1px solid rgba(34,197,94,0.3)' : 'none',
                     color: isComplete ? '#4ade80' : '#fff',
-                    textDecoration: 'none', fontWeight: 600, fontSize: '0.82rem',
+                    textDecoration: 'none', fontWeight: 600,
+                    fontSize: 'clamp(11px, 2.5vw, 13px)',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
                     transition: 'opacity 0.15s',
                   }}>
                     {isComplete ? (
