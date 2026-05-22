@@ -696,9 +696,9 @@ section + section {
 }
 
 /* ══════════════════════════════════════
-   FORM ELEMENTS
-   Inputs • Select • Focus States
-   ══════════════════════════════════════ */
+    FORM ELEMENTS
+    Inputs • Select • Focus States
+    ══════════════════════════════════════ */
 
 input,
 textarea,
@@ -707,6 +707,25 @@ select {
 	border-color: var(--border) !important;
 	color: var(--foreground) !important;
 	border-radius: var(--radius-md);
+}
+
+/* Global select/dropdown mobile fix */
+select {
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	text-overflow: ellipsis !important;
+	overflow: hidden !important;
+}
+
+/* Custom dropdown lists */
+[role="listbox"],
+[role="option"] {
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+	white-space: nowrap !important;
 }
 
 input::placeholder,

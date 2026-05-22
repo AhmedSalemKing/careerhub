@@ -257,7 +257,8 @@ export default function AdminCreateCoursePage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 16px', borderRadius: 10,
+    width: '100%', maxWidth: '100%', boxSizing: 'border-box',
+    padding: '12px 16px', borderRadius: 10,
     background: isDark ? '#1a1a1a' : '#f8fafc',
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
     color: isDark ? '#f1f5f9' : '#0d0d0d',

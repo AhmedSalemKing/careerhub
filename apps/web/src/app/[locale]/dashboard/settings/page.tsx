@@ -283,7 +283,7 @@ export default function SettingsPage() {
   ]
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px',
+    width: '100%', maxWidth: '100%', padding: '10px 12px',
     background: 'var(--surface-2)', border: '1px solid var(--border)',
     borderRadius: 8, color: 'var(--foreground)', fontSize: 14,
     fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box',

@@ -323,7 +323,7 @@ export default function AdminUsersPage() {
                           u.accountType,
                           e.target.value
                         )}
-                        style={{ padding: '4px 8px', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e0e0e0', fontSize: 12, cursor: 'pointer' }}
+                        style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '4px 8px', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e0e0e0', fontSize: 12, cursor: 'pointer' }}
                       >
                         <option value="STUDENT">{roleLabels.STUDENT}</option>
                         <option value="INSTRUCTOR">{roleLabels.INSTRUCTOR}</option>

@@ -251,7 +251,7 @@ export default function ActivityPage() {
             {isAr ? 'الدور' : 'Role'}
           </label>
           <select value={filterRole} onChange={(e) => { setFilterRole(e.target.value); setPage(1) }}
-            style={{ background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }}>
+            style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', background: inputBg, border: `1px solid ${inputBorder}`, borderRadius: '10px', color: fg, padding: '8px 12px', fontSize: '13px', outline: 'none' }}>
             <option value="">{isAr ? 'الكل' : 'All'}</option>
             <option value="STUDENT">{isAr ? 'طالب' : 'Student'}</option>
             <option value="INSTRUCTOR">{isAr ? 'مدرس' : 'Instructor'}</option>
