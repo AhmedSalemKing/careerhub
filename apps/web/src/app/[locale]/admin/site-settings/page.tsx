@@ -12,19 +12,25 @@ const TABS = [
   { id: 'pages', label: 'الصفحات', icon: FileText },
 ]
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 14px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: '10px', color: '#fff',
-  fontSize: '14px', outline: 'none',
-}
+  const inputStyle: React.CSSProperties = {
+    width: '100%', maxWidth: '100%', boxSizing: 'border-box',
+    fontSize: 'clamp(13px, 3vw, 15px)',
+    padding: '10px 14px',
+    borderRadius: '10px',
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: '#fff', outline: 'none',
+  }
 
-const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.07)',
-  borderRadius: '16px', padding: '24px', marginBottom: '16px',
-}
+  const cardStyle: React.CSSProperties = {
+    width: '100%',
+    boxSizing: 'border-box',
+    padding: 'clamp(16px, 4vw, 24px)',
+    borderRadius: '16px',
+    marginBottom: '16px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.07)',
+  }
 
 export default function CMSSettingsPage() {
   const [siteConfig, setSiteConfig] = useState<SiteConfig>({})
@@ -99,46 +105,52 @@ export default function CMSSettingsPage() {
   }
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 24px' }}>
+    <div style={{
+      width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
+      padding: '16px',
+    }}>
       {/* Header */}
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#fff' }}>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: '700', color: '#fff' }}>
           إعدادات المنصة
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px', marginTop: '4px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'clamp(12px, 2.5vw, 14px)', marginTop: '4px' }}>
           تحكم في مظهر ومحتوى الموقع بالكامل
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', flexDirection: 'row', alignItems: 'flex-start' }}>
-        {/* Sidebar */}
-        <div style={{ width: '200px', flexShrink: 0, position: 'sticky', top: '24px' }}>
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  width: '100%', padding: '12px 16px', borderRadius: '12px',
-                  marginBottom: '4px', border: 'none', cursor: 'pointer',
-                  textAlign: 'right', fontSize: '14px', fontWeight: '600',
-                  background: isActive ? 'rgba(81,32,200,0.2)' : 'transparent',
-                  color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
-                  borderRight: isActive ? '3px solid #5120C8' : '3px solid transparent',
-                }}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </button>
-            )
-          })}
-        </div>
+      {/* Mobile tabs */}
+      <div style={{
+        display: 'flex', overflowX: 'auto', scrollbarWidth: 'none',
+        WebkitOverflowScrolling: 'touch', gap: '8px',
+        width: '100%', paddingBottom: '4px', marginBottom: '20px',
+      }}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id
+          const Icon = tab.icon
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flexShrink: 0, whiteSpace: 'nowrap',
+                fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '600',
+                padding: '10px 20px', borderRadius: '12px',
+                border: 'none', cursor: 'pointer',
+                background: isActive ? 'rgba(81,32,200,0.2)' : 'transparent',
+                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </div>
 
-        {/* Content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Content */}
+      <div style={{ width: '100%', boxSizing: 'border-box' }}>
 
           {/* ══ LANDING ══ */}
           {activeTab === 'landing' && (
@@ -176,7 +188,7 @@ export default function CMSSettingsPage() {
 
               <div style={cardStyle}>
                 <SectionTitle label="الإحصائيات" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '12px' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full" style={{ marginTop: '12px' }}>
                   {[
                     { key: 'landing.stats.courses', label: 'عدد الكورسات' },
                     { key: 'landing.stats.coaches', label: 'عدد المدربين' },
@@ -230,7 +242,7 @@ export default function CMSSettingsPage() {
                         حذف
                       </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ marginBottom: '12px' }}>
                       <input
                         type="text"
                         value={item.name || ''}
@@ -277,7 +289,7 @@ export default function CMSSettingsPage() {
                     width: '100%', padding: '12px', borderRadius: '10px',
                     border: '1px dashed rgba(255,255,255,0.2)',
                     background: 'transparent', color: '#fff',
-                    fontSize: '14px', cursor: 'pointer', marginTop: '8px',
+                    fontSize: 'clamp(13px, 3vw, 15px)', cursor: 'pointer', marginTop: '8px',
                   }}
                 >
                   + إضافة رأي جديد
@@ -300,11 +312,12 @@ export default function CMSSettingsPage() {
                     onChange={(e) => set(key, e.target.value)}
                     rows={12}
                     style={{
-                      width: '100%', padding: '14px', marginTop: '12px',
+                      width: '100%', maxWidth: '100%', boxSizing: 'border-box',
+                      padding: '14px', marginTop: '12px',
                       background: 'rgba(255,255,255,0.04)',
                       border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: '12px', color: '#fff',
-                      fontSize: '14px', resize: 'vertical',
+                      fontSize: 'clamp(13px, 3vw, 15px)', resize: 'vertical',
                       fontFamily: 'inherit', lineHeight: '1.7',
                       outline: 'none',
                     }}
@@ -314,25 +327,25 @@ export default function CMSSettingsPage() {
             </>
           )}
         </div>
-      </div>
 
       {/* Sticky save button */}
       <div style={{
-        position: 'sticky', bottom: '24px',
-        display: 'flex', justifyContent: 'flex-end',
-        marginTop: '32px', paddingTop: '16px',
+        position: 'sticky', bottom: '0',
+        width: '100%', marginTop: '32px', paddingTop: '16px',
         borderTop: '1px solid rgba(255,255,255,0.06)',
       }}>
         <button
           onClick={handleSaveAll}
           disabled={saving}
           style={{
-            padding: '12px 32px', borderRadius: '12px',
+            width: '100%', padding: '14px',
+            fontSize: 'clamp(13px, 3vw, 16px)', fontWeight: '700',
+            borderRadius: '12px', marginTop: '16px',
             background: saving ? 'rgba(81,32,200,0.5)' : '#5120C8',
-            color: '#fff', border: 'none', fontSize: '15px',
-            fontWeight: '700', cursor: saving ? 'wait' : 'pointer',
+            color: '#fff', border: 'none',
+            cursor: saving ? 'wait' : 'pointer',
             boxShadow: saving ? 'none' : '0 4px 20px rgba(81,32,200,0.4)',
-            transition: 'all 0.2s ease',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           }}
         >
           <Save className="h-4 w-4" /> {saving ? 'جاري الحفظ...' : 'حفظ جميع الإعدادات'}
@@ -344,7 +357,7 @@ export default function CMSSettingsPage() {
 
 function SectionTitle({ label }: { label: string }) {
   return (
-    <p style={{ fontSize: '13px', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px' }}>
+    <p style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', marginBottom: '16px' }}>
       {label}
     </p>
   )
@@ -352,6 +365,8 @@ function SectionTitle({ label }: { label: string }) {
 
 function Label({ text }: { text: string }) {
   return (
-    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', marginBottom: '6px' }}>{text}</p>
+    <p style={{ display: 'block', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: '600', marginBottom: '6px', color: 'rgba(255,255,255,0.5)' }}>
+      {text}
+    </p>
   )
 }
