@@ -387,6 +387,7 @@ model Course {
   @@index([sortOrder])
   @@index([instructorId])
   @@index([categoryId])
+  @@index([status, createdAt])
   @@index([careerPathId, status])
 }
 
@@ -609,6 +610,7 @@ model Enrollment {
   @@index([userId])
   @@index([courseId])
   @@index([status])
+  @@index([userId, courseId])
   @@map("enrollments")
 }
 
@@ -796,6 +798,7 @@ model Payment {
 
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
   @@index([method])
   @@index([transactionId])
   @@index([userId, status])
@@ -842,6 +845,7 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, isRead])
   @@index([type])
   @@index([isRead])
   @@index([createdAt])
@@ -1070,6 +1074,7 @@ model ConsultingSession {
   @@index([studentId])
   @@index([consultantId])
   @@index([status])
+  @@index([consultantId, status])
   @@map("consulting_sessions")
 }
 
