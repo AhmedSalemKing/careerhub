@@ -330,9 +330,9 @@ export default function AdminCreateCoursePage() {
             </div>
 
             {/* Assign Instructor */}
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', marginBottom: 16 }}>
               <label style={labelStyle}>
-                <User size={14} style={{ marginRight: 4 }} />
+                <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                 {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
               </label>
               <select
@@ -346,11 +346,18 @@ export default function AdminCreateCoursePage() {
                     set('instructorId', e.target.value)
                   }
                 }}
-                style={inputStyle}
+                style={{
+                  ...inputStyle,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                <option value="self">{isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}</option>
+                <option value="self" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}
+                </option>
                 {(instructors as any[]).map((inst: any) => (
-                  <option key={inst.id} value={inst.id}>
+                  <option key={inst.id} value={inst.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {inst.profile?.firstName} {inst.profile?.lastName}
                   </option>
                 ))}
