@@ -387,7 +387,7 @@ export default function CoursesPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface-2)' }} />)}
           </div>
         )}
@@ -420,7 +420,7 @@ export default function CoursesPage() {
 
         {/* RECORDED */}
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             {visibleCourses.map((course: any, idx: number) => (
               <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
@@ -438,7 +438,7 @@ export default function CoursesPage() {
 
         {/* OFFLINE */}
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             {visibleCourses.map((course: any, idx: number) => (
               <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
