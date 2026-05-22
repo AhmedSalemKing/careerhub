@@ -92,6 +92,7 @@ export default function AiChatPage() {
   const locale = useLocale()
   const qc = useQueryClient()
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const isComposingRef = useRef(false)
   const isInitialMount = useRef(true)
@@ -311,10 +312,10 @@ export default function AiChatPage() {
     [activeConvId, isStreaming, qc]
   )
 
-  // ── Auto-scroll to bottom ─────────────
+  // ── Auto-scroll inside messages container only ──
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
     }
   }, [messages, streamingContent])
 
@@ -583,10 +584,11 @@ export default function AiChatPage() {
       )}
 
       {/* ═══ MAIN CHAT AREA (REDESIGNED) ═══ */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0" style={{ height: '100vh', maxHeight: '100vh', overflow: 'hidden' }}>
         <div style={{
           display: 'flex', flexDirection: 'column',
-          height: '100%',
+          height: '100%', maxHeight: '100%',
+          overflow: 'hidden',
           maxWidth: '900px', margin: '0 auto',
           padding: '0 1rem',
         }}>
@@ -663,8 +665,10 @@ export default function AiChatPage() {
           </div>
 
           {/* ── MESSAGES AREA ── */}
-          <div style={{
-            flex: 1, overflowY: 'auto', padding: '1.5rem 0',
+          <div ref={messagesContainerRef} style={{
+            flex: 1, overflowY: 'auto', overflowX: 'hidden',
+            height: '0', minHeight: '300px', scrollBehavior: 'smooth',
+            padding: '1.5rem 0',
             display: 'flex', flexDirection: 'column', gap: '1.25rem',
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(81,32,200,0.3) transparent',
