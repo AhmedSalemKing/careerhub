@@ -134,7 +134,7 @@ export default function AdminOverviewPage() {
 
 	return (
 		<ErrorBoundary>
-		<div dir={isAr ? "rtl" : "ltr"} className="space-y-6">
+		<div dir={isAr ? "rtl" : "ltr"} className="space-y-6" style={{ width:'100%', maxWidth:'100%', overflowX:'hidden', boxSizing:'border-box', padding:16 }}>
 			{/* ─── Header ─── */}
 			<h1 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
 				{isAr ? "نظرة عامة على المنصة" : "Platform Overview"}
@@ -177,7 +177,7 @@ export default function AdminOverviewPage() {
 			)}
 
 			{/* ─── Stats Cards ─── */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full mb-6">
 				{[
 					{
 						label: isAr ? "إجمالي المستخدمين" : "Total Users",
@@ -214,15 +214,16 @@ export default function AdminOverviewPage() {
 					return (
 						<div
 							key={i}
-							className="rounded-xl p-5 border transition-all hover:-translate-y-0.5"
+							className="rounded-xl border transition-all hover:-translate-y-0.5"
 							style={{
 								background: "var(--surface)",
 								borderColor: "var(--border)",
+								padding: 'clamp(12px, 3vw, 20px)',
 							}}>
 							<div className="flex items-center justify-between mb-3">
 								<span
-									className="text-sm font-medium"
-									style={{ color: "var(--muted)" }}>
+									className="font-medium"
+									style={{ color: "var(--muted)", fontSize: 'clamp(11px, 2.5vw, 14px)' }}>
 									{s.label}
 								</span>
 								<div
@@ -234,8 +235,8 @@ export default function AdminOverviewPage() {
 								</div>
 							</div>
 							<p
-								className="text-2xl font-bold mb-1"
-								style={{ color: "var(--foreground)" }}>
+								className="font-bold mb-1"
+								style={{ color: "var(--foreground)", fontSize: 'clamp(20px, 5vw, 32px)' }}>
 								{s.value}
 							</p>
 							{s.sub && (
@@ -249,7 +250,7 @@ export default function AdminOverviewPage() {
 			</div>
 
 			{/* ─── Quick Actions ─── */}
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+			<div className="grid grid-cols-2 gap-3 w-full mb-6">
 				{[
 					{
 						label: isAr ? "إضافة كورس" : "Add Course",
@@ -326,37 +327,39 @@ export default function AdminOverviewPage() {
 						</p>
 					</div>
 				) : (
-					<div className="flex items-end gap-2 h-40 w-full">
-						{monthlyChart.map((m) => {
-							const heightPct = Math.round((m.revenue / maxRevenue) * 100);
-							return (
-								<div
-									key={m.month}
-									className="flex-1 flex flex-col items-center gap-2 group">
-									<div className="relative w-full">
-										<div
-											className="w-full rounded-t transition-all duration-300"
-											style={{
-												height: `${heightPct}%`,
-												minHeight: m.revenue > 0 ? "4px" : "0",
-												background: isDark
-													? "linear-gradient(to top, #5120c8, #8b5cf6)"
-													: "linear-gradient(to top, #5120c8, #a78bfa)",
-												position: "absolute",
-												bottom: 0,
-												left: 0,
-												right: 0,
-											}}
-										/>
+					<div style={{ width: '100%', overflowX: 'auto' }}>
+						<div className="flex items-end gap-2 h-40" style={{ minWidth: '300px' }}>
+							{monthlyChart.map((m) => {
+								const heightPct = Math.round((m.revenue / maxRevenue) * 100);
+								return (
+									<div
+										key={m.month}
+										className="flex-1 flex flex-col items-center gap-2 group">
+										<div className="relative w-full">
+											<div
+												className="w-full rounded-t transition-all duration-300"
+												style={{
+													height: `${heightPct}%`,
+													minHeight: m.revenue > 0 ? "4px" : "0",
+													background: isDark
+														? "linear-gradient(to top, #5120c8, #8b5cf6)"
+														: "linear-gradient(to top, #5120c8, #a78bfa)",
+													position: "absolute",
+													bottom: 0,
+													left: 0,
+													right: 0,
+												}}
+											/>
+										</div>
+										<span
+											className="text-[10px] font-medium"
+											style={{ color: "var(--muted)" }}>
+											{m.month}
+										</span>
 									</div>
-									<span
-										className="text-[10px] font-medium"
-										style={{ color: "var(--muted)" }}>
-										{m.month}
-									</span>
-								</div>
-							);
-						})}
+								);
+							})}
+						</div>
 					</div>
 				)}
 			</div>
@@ -445,7 +448,7 @@ export default function AdminOverviewPage() {
 											{accountTypeLabel(u.accountType)}
 										</span>
 										<span
-											className="text-[10px]"
+											className="hidden sm:block text-[10px]"
 											style={{ color: "var(--muted)" }}>
 											{new Date(u.createdAt).toLocaleDateString(
 												isAr ? "ar-SA" : "en-US",
