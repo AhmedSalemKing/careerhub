@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', gap: '8px', width: '100%', paddingBottom: '4px' }}>
         {USER_TABS.map((tab) => {
           const count = tab.id === 'ALL' ? counts.all
             : tab.id === 'STUDENT' ? counts.students
@@ -213,6 +213,7 @@ export default function AdminUsersPage() {
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setPage(1) }}
               style={{
+                flexShrink: 0, whiteSpace: 'nowrap',
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px',
                 background: isActive ? 'rgba(81,32,200,0.15)' : 'rgba(255,255,255,0.04)',
@@ -270,8 +271,8 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="text-center text-gray-400 text-sm py-16">Loading...</div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: 12, border: '1px solid var(--border)' }}>
+          <table style={{ minWidth: '700px', width: '100%', borderCollapse: 'collapse' }} className="text-sm">
             <thead>
               <tr className="border-b border-gray-800 text-gray-400 text-left">
                 <th className="px-4 py-3 font-medium">{isAr ? 'الاسم / البريد' : 'Name / Email'}</th>
