@@ -228,20 +228,17 @@ export default function CareersPage() {
         </div>
         
         {/* Paths grid */}
-        <div key={`grid-${activeCategory}-${searchQuery}`} className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full">
+        <div key={`grid-${activeCategory}-${searchQuery}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
           {filteredPaths.map((path, idx) => {
             const IconComp = ICON_MAP[path.icon] || Briefcase
             
             return (
               <div key={path.id} className="career-card" style={{
-                width:'100%', minWidth:0,
-                background: cardBg,
-                borderRadius:20,
-                border:`1px solid ${border}`,
-                padding:24,
-                cursor:'pointer',
-                position:'relative',
-                overflow:'hidden',
+                display:'flex', flexDirection:'column', width:'100%',
+                height:'auto', minHeight:'280px', overflow:'hidden',
+                borderRadius:'16px', padding:'16px',
+                background: cardBg, border:`1px solid ${border}`,
+                boxSizing:'border-box', cursor:'pointer', position:'relative',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)'
@@ -258,42 +255,41 @@ export default function CareersPage() {
                 <div style={{
                   position:'absolute', top:0, right:0, left:0, height:3,
                   background:'linear-gradient(90deg, #5120c8, #2BBFA3)',
-                  borderRadius:'20px 20px 0 0',
+                  borderRadius:'16px 16px 0 0',
                 }} />
                 
                 {/* Header */}
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                    <div style={{
-                      width:44, height:44, borderRadius:12,
-                      background:'rgba(81,32,200,0.1)',
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                    }}>
-                      <IconComp size={22} color="#5120c8" />
+                <div style={{ display:'flex', alignItems:'flex-start', gap:'8px', marginBottom:'8px' }}>
+                  <div style={{
+                    width:36, height:36, borderRadius:10, flexShrink:0,
+                    background:'rgba(81,32,200,0.1)',
+                    display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>
+                    <IconComp size={18} color="#5120c8" />
+                  </div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ color:subtext, fontSize:'10px', fontWeight:600, marginBottom:'1px' }}>
+                      {String(idx + 1).padStart(2, '0')}
                     </div>
-                    <div>
-                      <div style={{ color:subtext, fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600, marginBottom:2 }}>
-                        {String(idx + 1).padStart(2, '0')}
-                      </div>
-                      <h3 style={{ color:text, fontSize:'clamp(12px, 3vw, 16px)', fontWeight:700, margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {isAr ? path.titleAr : path.titleEn}
-                      </h3>
-                    </div>
+                    <h3 style={{ color:text, fontSize:'clamp(13px, 3vw, 16px)', fontWeight:700, margin:0 }}>
+                      {isAr ? path.titleAr : path.titleEn}
+                    </h3>
                   </div>
                   
                   {/* Demand badge */}
                   <div style={{
-                    display:'flex', alignItems:'center', gap:4,
-                    padding:'4px 10px', borderRadius:20,
+                    display:'flex', alignItems:'center', gap:'3px', flexShrink:0,
+                    padding:'3px 8px', borderRadius:'20px',
                     background: (path.demand || '').toLowerCase().includes('very') ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)',
                     border: `1px solid ${(path.demand || '').toLowerCase().includes('very')?'rgba(22,163,74,0.2)':'rgba(245,158,11,0.2)'}`,
+                    whiteSpace:'nowrap',
                   }}>
                     {(path.demand || '').toLowerCase().includes('very')
-                      ? <Flame size={11} color="#16a34a" />
-                      : <Zap size={11} color="#d97706" />}
+                      ? <Flame size={10} color="#16a34a" />
+                      : <Zap size={10} color="#d97706" />}
                     <span style={{
                       color: (path.demand || '').toLowerCase().includes('very')?'#16a34a':'#d97706',
-                      fontSize:11, fontWeight:700,
+                      fontSize:'10px', fontWeight:700,
                     }}>
                       {(path.demand || '').toLowerCase().includes('very')
                         ? (isAr?'مرتفع':'High')
@@ -304,51 +300,56 @@ export default function CareersPage() {
                 
                 {/* Description */}
                 <p style={{
-                  color:subtext, fontSize:13, lineHeight:1.6,
-                  margin:'0 0 16px',
+                  fontSize:'clamp(11px, 2.5vw, 13px)',
+                  color:subtext,
+                  overflow:'hidden',
                   display:'-webkit-box',
                   WebkitLineClamp:2,
                   WebkitBoxOrient:'vertical',
-                  overflow:'hidden',
+                  marginBottom:'8px',
                 }}>
                   {isAr ? path.descriptionAr : path.descriptionEn}
                 </p>
                 
-                {/* Meta row */}
-                <div style={{ display:'flex', gap:16, marginBottom:16 }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                    <Star size={13} color="#6b7280" />
-                    <span style={{ color:subtext, fontSize:12 }}>
-                      {path.level || 'All Levels'}
+                {/* Salary + Level row */}
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+                    <DollarSign size={12} color="#5120c8" />
+                    <span style={{ color:'#5120c8', fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:700, whiteSpace:'nowrap', overflow:'hidden' }}>
+                      {path.salary} {isAr?'ر.س':'SAR'}
                     </span>
                   </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                    <DollarSign size={13} color="#5120c8" />
-                    <span style={{ color:'#5120c8', fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:700 }}>
-                      {path.salary} {isAr?'ر.س':'SAR'}
+                  <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+                    <Star size={12} color="#6b7280" />
+                    <span style={{ color:subtext, fontSize:'clamp(11px, 2.5vw, 13px)', whiteSpace:'nowrap', overflow:'hidden' }}>
+                      {path.level || 'All Levels'}
                     </span>
                   </div>
                 </div>
                 
-                {/* Skills chips */}
-                  {path.skills && path.skills.length > 0 && (
-                  <div style={{ display:'flex', gap:'4px', flexWrap:'wrap', marginBottom:18 }}>
+                {/* Skills tags */}
+                {path.skills && path.skills.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', marginBottom:'8px', overflow:'hidden', maxHeight:'52px' }}>
                     {path.skills.slice(0,4).map((skill, i) => (
                       <span key={i} style={{
-                        padding:'2px 6px', borderRadius:20,
-                        background: 'var(--surface)',
-                        border:`1px solid ${border}`,
-                        color:subtext, fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
+                        padding:'2px 8px', borderRadius:'20px',
+                        fontSize:'clamp(9px, 2vw, 11px)',
+                        background:'var(--primary-subtle)',
+                        color:'var(--primary)',
+                        whiteSpace:'nowrap',
+                        flexShrink:0,
                       }}>
                         {skill}
                       </span>
                     ))}
                     {path.skills.length > 4 && (
                       <span style={{
-                        padding:'2px 6px', borderRadius:20,
-                        background:'rgba(81,32,200,0.06)',
-                        border:'1px solid rgba(81,32,200,0.15)',
-                        color:'#5120c8', fontSize:'clamp(9px, 2vw, 11px)', fontWeight:600,
+                        padding:'2px 8px', borderRadius:'20px',
+                        fontSize:'clamp(9px, 2vw, 11px)',
+                        background:'var(--primary-subtle)',
+                        color:'var(--primary)',
+                        whiteSpace:'nowrap',
+                        flexShrink:0,
                       }}>
                         +{path.skills.length - 4}
                       </span>
@@ -356,35 +357,40 @@ export default function CareersPage() {
                   </div>
                 )}
                 
-                {/* Progression preview */}
+                {/* Career path steps */}
                 {path.progression && path.progression.length > 0 && (
                   <div style={{
-                    padding:'10px 14px', borderRadius:10,
-                    background: 'var(--surface)',
-                    border:`1px solid ${border}`,
-                    marginBottom:18, fontSize:12, color:subtext,
-                    display:'flex', alignItems:'center', gap:6,
+                    display:'flex', alignItems:'center', gap:'2px',
+                    overflowX:'auto', scrollbarWidth:'none', marginBottom:'12px', paddingBottom:'2px',
                   }}>
-                    <Users size={12} color="#6b7280" />
-                    <span style={{ overflow:'hidden', whiteSpace:'nowrap', textOverflow:'ellipsis' }}>
-                      {path.progression.join('  ')}
-                    </span>
+                    {path.progression.map((step, i) => (
+                      <span key={i} style={{ display:'flex', alignItems:'center', gap:'2px' }}>
+                        <span style={{
+                          fontSize:'clamp(8px, 1.8vw, 10px)',
+                          whiteSpace:'nowrap', flexShrink:0,
+                          color:subtext,
+                        }}>
+                          {step}
+                        </span>
+                        {i < path.progression.length - 1 && (
+                          <span style={{ fontSize:'10px', color:'var(--muted)' }}>›</span>
+                        )}
+                      </span>
+                    ))}
                   </div>
                 )}
                 
                 {/* CTA Buttons */}
-                <div className="grid grid-cols-2 gap-2 mt-2">
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginTop:'auto' }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
                     style={{
-                      width:'100%', padding:'10px', borderRadius:10,
-                      background:'transparent',
-                      border:`1px solid ${border}`,
-                      color:subtext, cursor:'pointer', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:600,
-                      transition:'all 0.15s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'; e.currentTarget.style.color='#5120c8' }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor=border; e.currentTarget.style.color=subtext }}>
+                      padding:'8px 4px', borderRadius:'10px',
+                      fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:600,
+                      textAlign:'center', width:'100%', whiteSpace:'nowrap', overflow:'hidden',
+                      background:'transparent', border:`1px solid ${border}`,
+                      color:subtext, cursor:'pointer',
+                    }}>
                     {isAr ? 'تفاصيل' : 'Details'}
                   </button>
                   <button
@@ -399,15 +405,12 @@ export default function CareersPage() {
                       router.push(`/${locale}/dashboard/career-path`)
                     }}
                     style={{
-                      width:'100%', padding:'10px', borderRadius:10,
+                      padding:'8px 4px', borderRadius:'10px',
+                      fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:600,
+                      textAlign:'center', width:'100%', whiteSpace:'nowrap', overflow:'hidden',
                       background:'#5120c8', color:'#ffffff',
-                      border:'none', cursor:'pointer', fontSize:'clamp(10px, 2.5vw, 12px)', fontWeight:700,
-                      display:'flex', alignItems:'center', justifyContent:'center', gap:5,
-                      transition:'opacity 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.opacity='0.88'}
-                    onMouseLeave={e => e.currentTarget.style.opacity='1'}>
-                    <ChevronRight size={14} style={{ transform: isAr?'rotate(180deg)':'none' }} />
+                      border:'none', cursor:'pointer',
+                    }}>
                     {isAr ? 'ابدأ المسار' : 'Start Path'}
                   </button>
                 </div>
