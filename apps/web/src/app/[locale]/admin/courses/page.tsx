@@ -218,7 +218,14 @@ export default function AdminCoursesPage() {
       </div>
 
       {/* ─── Filter Tabs ─── */}
-      <div className="flex gap-2 flex-wrap">
+      <div style={{
+        display: 'flex',
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        gap: '8px',
+        width: '100%',
+        paddingBottom: '4px',
+      }}>
         {filterTabs.map((tab) => {
           const isActive = statusFilter === tab.key
           return (
@@ -263,13 +270,25 @@ export default function AdminCoursesPage() {
         </div>
       ) : (
         <div
-          className="rounded-2xl overflow-hidden border"
+          className="rounded-2xl border"
           style={{
             background: 'var(--surface)',
             borderColor: 'var(--border)',
+            overflow: 'hidden',
           }}
         >
-          <table className="w-full text-sm">
+          <div style={{
+            width: '100%',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            borderRadius: '12px',
+            border: '1px solid var(--border)',
+          }}>
+          <table style={{
+            minWidth: '750px',
+            width: '100%',
+            borderCollapse: 'collapse',
+          }}>
             <thead>
               <tr
                 className="border-b text-left"
@@ -437,6 +456,7 @@ export default function AdminCoursesPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

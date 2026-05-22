@@ -295,7 +295,7 @@ export default function AdminCreateCoursePage() {
             }}>
               <BookOpen size={24} color="#5120c8" />
             </div>
-            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 28, fontWeight: 800, margin: 0 }}>
+            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
               {isAr ? 'إضافة كورس جديد' : 'Add New Course'}
             </h1>
           </div>
@@ -405,7 +405,7 @@ export default function AdminCreateCoursePage() {
             </div>
 
             {/* Price, Duration, Level, Currency */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" style={{ marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>{isAr ? 'السعر' : 'Price'}</label>
                 <input
@@ -671,14 +671,17 @@ export default function AdminCreateCoursePage() {
           )}
 
           {/* Submit Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+          <div className="grid grid-cols-3 gap-2 w-full mt-6">
             <button
               type="button"
               onClick={() => router.back()}
               style={{
-                padding: '12px 24px', borderRadius: 12, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
                 background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
-                fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                cursor: 'pointer', textAlign: 'center',
               }}
             >
               {isAr ? 'إلغاء' : 'Cancel'}
@@ -689,16 +692,18 @@ export default function AdminCreateCoursePage() {
               onClick={() => handleSubmit('DRAFT')}
               disabled={saving}
               style={{
-                padding: '12px 24px', borderRadius: 12, cursor: 'pointer',
+                padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
                 background: 'transparent',
                 border: `2px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#e5e7eb'}`,
                 color: isDark ? '#94a3b8' : '#6b7280',
-                fontSize: 14, fontWeight: 600,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                cursor: 'pointer', textAlign: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}
             >
-              <FileText size={16} />
-              {saving ? (isAr ? 'جاري...' : 'Saving...') : (isAr ? 'حفظ كمسودة' : 'Save as Draft')}
+              <FileText size={14} />
+              {saving ? (isAr ? 'جاري...' : 'Saving...') : (isAr ? 'مسودة' : 'Draft')}
             </button>
             
             <button
@@ -706,23 +711,25 @@ export default function AdminCreateCoursePage() {
               onClick={() => handleSubmit('PUBLISHED')}
               disabled={saving}
               style={{
-                padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
+                border: 'none', cursor: 'pointer', textAlign: 'center',
                 background: saving ? '#4b5563' : '#5120c8',
-                color: '#fff', fontSize: 14, fontWeight: 700,
+                color: '#fff',
                 boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}
             >
               {saving ? (
                 <>
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
-                  {isAr ? 'جاري النشر...' : 'Publishing...'}
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                  {isAr ? 'نشر...' : 'Pub...'}
                 </>
               ) : (
                 <>
-                  <Globe size={16} />
-                  {isAr ? 'نشر الكورس' : 'Publish Course'}
+                  <Globe size={14} />
+                  {isAr ? 'نشر' : 'Publish'}
                 </>
               )}
             </button>
