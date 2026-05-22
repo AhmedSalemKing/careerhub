@@ -166,7 +166,8 @@ export default function AdminCreateSessionPage() {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '12px 16px', borderRadius: 10,
+    width: '100%', maxWidth: '100%', boxSizing: 'border-box',
+    padding: '12px 16px', borderRadius: 10,
     background: isDark ? '#1a1a1a' : '#f8fafc',
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
     color: isDark ? '#f1f5f9' : '#0d0d0d',
@@ -179,20 +180,30 @@ export default function AdminCreateSessionPage() {
   }
 
   const cardStyle: React.CSSProperties = {
+    width: '100%',
+    maxWidth: '640px',
+    margin: '0 auto',
+    padding: 'clamp(16px, 4vw, 32px)',
+    boxSizing: 'border-box',
+    overflowX: 'hidden',
     background: isDark ? '#111111' : '#fff',
-    borderRadius: 20, padding: 32,
+    borderRadius: 20,
     border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
   }
 
   return (
     <div style={{
+      width: '100%',
+      maxWidth: '100%',
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
       minHeight: '100vh',
       background: isDark ? '#0d0d0d' : '#f8fafc',
       padding: '32px 16px',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', boxSizing: 'border-box' }}>
         
         {/* Header */}
         <div style={{ marginBottom: 32, textAlign: 'center' }}>
@@ -204,7 +215,7 @@ export default function AdminCreateSessionPage() {
             }}>
               <Calendar size={24} color="#5120c8" />
             </div>
-            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 28, fontWeight: 800, margin: 0 }}>
+            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
               {isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}
             </h1>
           </div>
@@ -261,10 +272,10 @@ export default function AdminCreateSessionPage() {
             </div>
 
             {/* Student & Consultant */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ marginBottom: 16 }}>
               <div>
                 <label style={labelStyle}>
-                  <User size={14} style={{ marginRight: 4 }} />
+                  <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                   {isAr ? 'المستخدم (اختياري)' : 'User (optional)'}
                 </label>
                 <select
@@ -283,7 +294,7 @@ export default function AdminCreateSessionPage() {
 
               <div>
                 <label style={labelStyle}>
-                  <GraduationCap size={14} style={{ marginRight: 4 }} />
+                  <GraduationCap size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                   {isAr ? 'المستشار / المحاضر (اختياري)' : 'Consultant / Instructor (optional)'}
                 </label>
                 <select
@@ -301,88 +312,98 @@ export default function AdminCreateSessionPage() {
               </div>
             </div>
 
-            {/* Schedule, Duration, Price */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div>
-                <label style={labelStyle}>
-                  <Calendar size={14} style={{ marginRight: 4 }} />
-                  {isAr ? 'الموعد والتوقيت *' : 'Date & Time *'}
-                </label>
-                <input
-                  type="datetime-local"
-                  value={form.scheduledAt}
-                  onChange={(e) => set('scheduledAt', e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
+            {/* Schedule */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                <Calendar size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
+                {isAr ? 'الموعد والتوقيت *' : 'Date & Time *'}
+              </label>
+              <input
+                type="datetime-local"
+                value={form.scheduledAt}
+                onChange={(e) => set('scheduledAt', e.target.value)}
+                style={inputStyle}
+              />
+            </div>
 
-              <div>
-                <label style={labelStyle}>
-                  <Clock size={14} style={{ marginRight: 4 }} />
-                  {isAr ? 'المدة' : 'Duration'}
-                </label>
-                <select
-                  value={form.duration}
-                  onChange={(e) => set('duration', e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="30">{isAr ? '30 دقيقة' : '30 min'}</option>
-                  <option value="60">{isAr ? '60 دقيقة' : '60 min'}</option>
-                  <option value="90">{isAr ? '90 دقيقة' : '90 min'}</option>
-                  <option value="120">{isAr ? '120 دقيقة' : '120 min'}</option>
-                </select>
+            {/* Duration */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ ...labelStyle, marginBottom: 10 }}>
+                <Clock size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
+                {isAr ? 'المدة' : 'Duration'}
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+                {['30', '60', '90', '120'].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => set('duration', d)}
+                    style={{
+                      padding: '10px 4px', borderRadius: 10,
+                      border: `2px solid ${form.duration === d ? '#5120c8' : isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                      background: form.duration === d ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      color: form.duration === d ? '#5120c8' : isDark ? '#94a3b8' : '#6b7280',
+                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
+                      width: '100%', textAlign: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isAr ? `${d} دقيقة` : `${d} min`}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <label style={labelStyle}>
-                  <DollarSign size={14} style={{ marginRight: 4 }} />
-                  {isAr ? 'السعر' : 'Price'}
-                </label>
-                <div style={{
-                  padding: '12px 16px', borderRadius: '10px',
-                  background: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9',
-                  border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                  color: isDark ? '#fff' : '#0d0d0d',
-                  fontSize: '14px', fontWeight: '600',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  opacity: 0.8,
-                }}>
-                  <span style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#64748b', fontSize: '13px' }}>
-                    {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
-                  </span>
-                  <span>
-                    {parseFloat(form.price) > 0 ? `${form.price} ${isAr ? 'ر.س' : 'SAR'}` : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}
-                  </span>
-                </div>
+            {/* Price */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                <DollarSign size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
+                {isAr ? 'السعر' : 'Price'}
+              </label>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: '8px', width: '100%',
+                padding: '12px 16px', borderRadius: '10px',
+                background: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                color: isDark ? '#fff' : '#0d0d0d',
+                fontSize: '14px', fontWeight: '600',
+                opacity: 0.8, boxSizing: 'border-box',
+              }}>
+                <span style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#64748b', fontSize: '13px' }}>
+                  {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
+                </span>
+                <span>
+                  {parseFloat(form.price) > 0 ? `${form.price} ${isAr ? 'ر.س' : 'SAR'}` : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}
+                </span>
               </div>
             </div>
 
             {/* Meeting Method */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ ...labelStyle, marginBottom: 12 }}>
-                <MapPin size={14} style={{ marginRight: 4 }} />
+              <label style={{ ...labelStyle, marginBottom: 10 }}>
+                <MapPin size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
                 {isAr ? 'طريقة الاجتماع' : 'Meeting Method'}
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+              <div className="grid grid-cols-3 gap-2 w-full">
                 {MEETING_METHODS.map((method) => (
                   <button
                     key={method.value}
                     type="button"
                     onClick={() => set('meetingMethod', method.value)}
                     style={{
-                      padding: '12px', borderRadius: 12,
+                      padding: '8px 4px', borderRadius: 12,
                       border: `2px solid ${form.meetingMethod === method.value ? '#5120c8' : isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
                       background: form.meetingMethod === method.value ? 'rgba(81,32,200,0.1)' : 'transparent',
                       color: form.meetingMethod === method.value ? '#5120c8' : isDark ? '#94a3b8' : '#6b7280',
-                      cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      width: '100%', textAlign: 'center',
                       transition: 'all 0.2s',
                     }}
                   >
-                    <method.icon size={20} />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>
-                      {isAr ? method.labelAr : method.labelEn}
-                    </span>
+                    <method.icon size={18} />
+                    <span>{isAr ? method.labelAr : method.labelEn}</span>
                   </button>
                 ))}
               </div>
@@ -419,8 +440,10 @@ export default function AdminCreateSessionPage() {
             <div
               onClick={() => !imageUploading && imageRef.current?.click()}
               style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '24px 16px', textAlign: 'center',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
-                borderRadius: 16, padding: 24,
+                borderRadius: 16,
                 border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
                 background: isDark ? '#1a1a1a' : '#f8fafc',
                 cursor: 'pointer', transition: 'border-color 0.2s',
@@ -484,15 +507,16 @@ export default function AdminCreateSessionPage() {
           )}
 
           {/* Submit Buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+          <div className="grid grid-cols-2 gap-3 w-full mt-6">
             <button
               type="button"
               onClick={() => router.back()}
               style={{
-                padding: '12px 24px', borderRadius: 12, border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                width: '100%', padding: '12px 4px', borderRadius: 12,
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
                 background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
-                fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                transition: 'all 0.2s',
+                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 600, cursor: 'pointer',
+                textAlign: 'center',
               }}
             >
               {isAr ? 'إلغاء' : 'Cancel'}
@@ -502,26 +526,28 @@ export default function AdminCreateSessionPage() {
               type="submit"
               disabled={saving || success}
               style={{
-                padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                background: '#5120c8', color: '#fff', fontSize: 14, fontWeight: 700,
+                width: '100%', padding: '12px 4px', borderRadius: 12,
+                border: 'none', cursor: 'pointer',
+                background: '#5120c8', color: '#fff',
+                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 700,
                 boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
-                display: 'flex', alignItems: 'center', gap: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 transition: 'all 0.2s ease', opacity: saving || success ? 0.7 : 1,
               }}
             >
               {saving ? (
                 <>
-                  <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                  <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #fff', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
                   {isAr ? 'جارٍ الإنشاء...' : 'Creating...'}
                 </>
               ) : success ? (
                 <>
-                  <CheckCircle size={16} />
+                  <CheckCircle size={14} />
                   {isAr ? 'تم بنجاح!' : 'Success!'}
                 </>
               ) : (
                 <>
-                  <Plus size={16} />
+                  <Plus size={14} />
                   {isAr ? 'إنشاء الجلسة' : 'Create Session'}
                 </>
               )}
