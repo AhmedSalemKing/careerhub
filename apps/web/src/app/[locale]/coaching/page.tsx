@@ -138,14 +138,14 @@ export default function CoachingPage() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px' }}>
+      <div style={{ width: '100%', maxWidth: 1280, margin: '0 auto', padding: '28px 24px 80px', overflowX: 'hidden', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', gap: '8px', width: '100%', paddingBottom: '4px' }}>
             {CATEGORIES.map(cat => {
               const count = getCategoryCount(cat.key)
               const active = activeFilter === cat.key
               return (
-                <button key={cat.key} onClick={() => setActiveFilter(cat.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s', border: active ? 'none' : `1px solid ${border}`, background: active ? '#5120c8' : 'transparent', color: active ? '#ffffff' : subtext }}>
+                <button key={cat.key} onClick={() => setActiveFilter(cat.key)} style={{ flexShrink: 0, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 600, transition: 'all 0.15s', border: active ? 'none' : `1px solid ${border}`, background: active ? '#5120c8' : 'transparent', color: active ? '#ffffff' : subtext }}>
                   {cat.Icon && <cat.Icon size={12} />}
                   {isAr ? cat.ar : cat.en}
                   <span style={{ opacity: 0.75, fontSize: 11 }}>{count}</span>
@@ -164,12 +164,19 @@ export default function CoachingPage() {
           </div>
         </div>
 
-        <div style={{ color: subtext, fontSize: 12, marginBottom: 18 }}>
-          {consultants.length} {isAr ? 'مستشار' : 'consultants'}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div style={{ padding: '12px 8px', textAlign: 'center', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)' }}>
+            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 900, margin: '0 0 2px' }}>{consultants.length}</p>
+            <p style={{ color: subtext, fontSize: 'clamp(10px, 2.5vw, 13px)', margin: 0 }}>{isAr ? 'مستشار' : 'consultants'}</p>
+          </div>
+          <div style={{ padding: '12px 8px', textAlign: 'center', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)' }}>
+            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 900, margin: '0 0 2px' }}>{raw.reduce((sum: number, c: any) => sum + (c._count?.consultantSessions || 0), 0)}</p>
+            <p style={{ color: subtext, fontSize: 'clamp(10px, 2.5vw, 13px)', margin: 0 }}>{isAr ? 'جلسة' : 'sessions'}</p>
+          </div>
         </div>
 
         {isLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             {[1,2,3,4,5,6].map(i => <div key={i} style={{ height: 280, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface)' }}><style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style></div>)}
           </div>
         ) : consultants.length === 0 ? (
@@ -181,14 +188,14 @@ export default function CoachingPage() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 14 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
             {consultants.map((c: any, idx: number) => {
               const price = c.hourlyRate || parseFloat(c.profile?.sessionPrice || '0')
               const years = c.profile?.yearsExperience || 0
               const areas = c.profile?.consultingAreas || []
               const quals = c.profile?.qualifications || []
               return (
-                <div key={c.id} className="c-card" style={{ animationDelay: `${(idx % 12) * 0.045}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}
+                <div key={c.id} className="c-card" style={{ width: '100%', minWidth: 0, overflow: 'hidden', animationDelay: `${(idx % 12) * 0.045}s`, background: cardBg, borderRadius: 16, border: `1px solid ${border}`, display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}>
                   <div style={{ height: 68, background: 'var(--surface)', position: 'relative', flexShrink: 0 }}>
@@ -198,8 +205,8 @@ export default function CoachingPage() {
                     <div style={{ position: 'absolute', bottom: -22, [isAr ? 'right' : 'left']: 18 }}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         {c.profile?.avatar
-                          ? <img src={c.profile.avatar} alt="" style={{ width: 48, height: 48, borderRadius: 12, objectFit: 'cover', border: `3px solid ${cardBg}`, display: 'block' }} />
-                          : <div style={{ width: 48, height: 48, borderRadius: 12, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 800 }}>{getInitials(c)}</div>}
+                          ? <img src={c.profile.avatar} alt="" style={{ width: 'clamp(40px, 10vw, 56px)', height: 'clamp(40px, 10vw, 56px)', borderRadius: 12, objectFit: 'cover', border: `3px solid ${cardBg}`, display: 'block' }} />
+                          : <div style={{ width: 'clamp(40px, 10vw, 56px)', height: 'clamp(40px, 10vw, 56px)', borderRadius: 12, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 800 }}>{getInitials(c)}</div>}
                         {c.isVerified && (
                           <div style={{ position: 'absolute', bottom: -4, left: -5, width: 20, height: 20, borderRadius: '50%', background: '#5120c8', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(81,32,200,0.5)' }}>
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -210,8 +217,8 @@ export default function CoachingPage() {
                   </div>
                   <div style={{ padding: '30px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div>
-                      <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 1px' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
-                      {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 12, fontWeight: 600, margin: 0 }}>{c.profile.speciality}</p>}
+                      <h3 style={{ color: text, fontSize: 'clamp(12px, 3vw, 15px)', fontWeight: 800, margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
+                      {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 'clamp(10px, 2.5vw, 13px)', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.profile.speciality}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                       {years > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: subtext, fontSize: 11 }}><Briefcase size={11} />{years} {isAr ? 'سنة' : 'yrs'}</span>}
@@ -227,16 +234,16 @@ export default function CoachingPage() {
                     )}
                     <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 8 }}>
                       <div>
-                        <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 900, lineHeight: 1 }}>{price > 0 ? price : (isAr ? 'مجاني' : 'Free')}{price > 0 && <span style={{ fontSize: 10, fontWeight: 500, color: subtext, marginRight: 2 }}> {isAr ? 'ر.س' : 'SAR'}</span>}</div>
+                        <div style={{ color: '#5120c8', fontSize: 'clamp(13px, 3.5vw, 16px)', fontWeight: 700, lineHeight: 1 }}>{price > 0 ? price : (isAr ? 'مجاني' : 'Free')}{price > 0 && <span style={{ fontSize: 10, fontWeight: 500, color: subtext, marginRight: 2 }}> {isAr ? 'ر.س' : 'SAR'}</span>}</div>
                         {price > 0 && <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>}
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => setDetailConsultant(c)} style={{ padding: '8px 12px', borderRadius: 9, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 11, fontWeight: 600, transition: 'all 0.15s' }}
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button onClick={() => setDetailConsultant(c)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: text, fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, transition: 'all 0.15s' }}
                           onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.3)'; e.currentTarget.style.color = '#5120c8' }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = text }}>
                           {isAr ? 'التفاصيل' : 'Details'}
                         </button>
-                        <button onClick={() => setBookingConsultant(c)} style={{ padding: '8px 14px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                        <button onClick={() => setBookingConsultant(c)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                           onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                           {isAr ? 'احجز' : 'Book'}<ChevronRight size={12} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
