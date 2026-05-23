@@ -559,14 +559,15 @@ export default function CreateCoursePage() {
                 </div>
                 <div>
                   <label className={labelCls}>{isAr ? 'المستوى' : 'Level'}</label>
-                  <div className="flex gap-2">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', width: '100%', boxSizing: 'border-box' }}>
                     {LEVELS.map(l => (
                       <button key={l.value} onClick={() => set('level', l.value)}
-                        className={`flex-1 rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                        className={`rounded-xl border font-bold transition-all ${
                           form.level === l.value
                             ? 'border-primary bg-primary/10 text-primary'
                             : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-[color:var(--muted)]'
-                        }`}>
+                        }`}
+                        style={{ width: '100%', padding: '10px 4px', fontSize: 'clamp(11px, 2.5vw, 14px)', borderRadius: '10px', textAlign: 'center', whiteSpace: 'nowrap', boxSizing: 'border-box' }}>
                         {isAr ? l.ar : l.en}
                       </button>
                     ))}
