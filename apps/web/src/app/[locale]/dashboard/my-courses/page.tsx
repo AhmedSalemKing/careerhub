@@ -117,7 +117,9 @@ export default function MyCoursesPage() {
 
 	return (
 		<AuthGate>
-			<div className="p-4 md:p-6" dir={isAr ? "rtl" : "ltr"} style={{ overflowX: 'hidden' }}>
+			<div className="p-4 md:p-6" dir={isAr ? "rtl" : "ltr"} style={{
+			width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
+		}}>
 				{/* PAGE HEADER */}
 				<div style={{
 					display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -273,11 +275,7 @@ export default function MyCoursesPage() {
 
 				{/* COURSE GRID */}
 				{!isLoading && courses.length > 0 && (
-					<div style={{
-						display: 'grid',
-						gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
-						gap: '1.25rem',
-					}}>
+					<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
 						{courses.map((course: any) => {
 							const title = getTitle(course, locale);
 							const typeConfig = getTypeConfig(course);
@@ -294,15 +292,16 @@ export default function MyCoursesPage() {
 									overflow: 'hidden',
 									transition: 'border-color 0.2s',
 									position: 'relative',
+									width: '100%', minWidth: 0, boxSizing: 'border-box',
 								}}>
 									{/* Thumbnail */}
 									<div style={{
-										height: '160px', background: '#1a1a2e',
+										width: '100%', aspectRatio: '16/9', background: '#1a1a2e',
 										position: 'relative', overflow: 'hidden',
 									}}>
 										{course.thumbnail ? (
 											<img src={getMediaUrl(course.thumbnail) ?? ''} alt={title}
-												style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+												style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
 										) : (
 											<div style={{
 												width: '100%', height: '100%',
@@ -385,7 +384,7 @@ export default function MyCoursesPage() {
 									{/* Card body */}
 									<div style={{ padding: '1rem 1.25rem' }}>
 										<h3 style={{
-											fontSize: '0.95rem', fontWeight: 700, margin: '0 0 8px',
+											fontSize: 'clamp(11px, 3vw, 14px)', fontWeight: 700, margin: '0 0 8px',
 											overflow: 'hidden', textOverflow: 'ellipsis',
 											display: '-webkit-box', WebkitLineClamp: 2,
 											WebkitBoxOrient: 'vertical',
@@ -453,17 +452,24 @@ export default function MyCoursesPage() {
 															flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
 															background: 'rgba(81,32,200,0.15)',
 															border: '1px solid rgba(81,32,200,0.3)',
-															color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+															color: '#a78bfa',
+															fontWeight: 600,
 															textDecoration: 'none',
+															fontSize: 'clamp(11px, 2.5vw, 13px)',
+															width: '100%',
 														}}>
 														{isAr ? 'إدارة' : 'Manage'}
 													</Link>
 													<button onClick={() => handleDelete(course.id)}
 														style={{
-															padding: '8px 14px', borderRadius: '8px',
+															padding: '8px', borderRadius: '8px',
 															background: 'rgba(239,68,68,0.08)',
 															border: '1px solid rgba(239,68,68,0.2)',
-															color: '#f87171', fontSize: '0.82rem', cursor: 'pointer',
+															color: '#f87171',
+															fontSize: 'clamp(11px, 2.5vw, 13px)',
+															cursor: 'pointer',
+															width: '100%',
+															textAlign: 'center',
 														}}>
 														<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
 															stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -479,8 +485,11 @@ export default function MyCoursesPage() {
 														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
 														background: 'rgba(81,32,200,0.15)',
 														border: '1px solid rgba(81,32,200,0.3)',
-														color: '#a78bfa', fontSize: '0.82rem', fontWeight: 600,
+														color: '#a78bfa',
+														fontWeight: 600,
 														textDecoration: 'none',
+														fontSize: 'clamp(11px, 2.5vw, 13px)',
+														width: '100%',
 													}}>
 													{isAr ? 'متابعة' : 'Continue'}
 												</a>
