@@ -68,7 +68,7 @@ export default function EarningsPage() {
   const sessions = data?.transactions || []
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto" style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
       <h1 className="text-2xl font-bold mb-2">
         {isAr ? 'أرباحي' : 'My Earnings'}
       </h1>
@@ -77,39 +77,39 @@ export default function EarningsPage() {
       </p>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-          <p className="text-gray-400 text-sm mb-1">
+      <div className="grid grid-cols-2 gap-3 w-full mb-6">
+        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
+          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
             {isAr ? 'إجمالي الأرباح' : 'Total Earnings'}
           </p>
-          <p className="text-3xl font-bold text-purple-400">
+          <p className="font-bold text-purple-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
             {(data?.totalEarnings || 0).toFixed(2)}
-            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
+            <span className="mr-1" style={{ fontSize: 'clamp(11px, 2.5vw, 14px)' }}>{isAr ? ' ر.س' : ' SAR'}</span>
           </p>
         </div>
-        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-          <p className="text-gray-400 text-sm mb-1">
+        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
+          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
             {isAr ? 'الرصيد المتاح للسحب' : 'Available to Transfer'}
           </p>
-          <p className="text-3xl font-bold text-green-400">
+          <p className="font-bold text-green-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
             {(data?.availableBalance || 0).toFixed(2)}
-            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
+            <span className="mr-1" style={{ fontSize: 'clamp(11px, 2.5vw, 14px)' }}>{isAr ? ' ر.س' : ' SAR'}</span>
           </p>
         </div>
-        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-          <p className="text-gray-400 text-sm mb-1">
+        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
+          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
             {isAr ? 'قيد الانتظار' : 'Pending'}
           </p>
-          <p className="text-3xl font-bold text-yellow-400">
+          <p className="font-bold text-yellow-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
             {(data?.pendingAmount || 0).toFixed(2)}
-            <span className="text-base mr-1">{isAr ? ' ر.س' : ' SAR'}</span>
+            <span className="mr-1" style={{ fontSize: 'clamp(11px, 2.5vw, 14px)' }}>{isAr ? ' ر.س' : ' SAR'}</span>
           </p>
         </div>
-        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800">
-          <p className="text-gray-400 text-sm mb-1">
+        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
+          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
             {isAr ? 'الجلسات المكتملة' : 'Completed Sessions'}
           </p>
-          <p className="text-3xl font-bold text-blue-400">
+          <p className="font-bold text-blue-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
             {sessions.length}
           </p>
         </div>
@@ -133,7 +133,7 @@ export default function EarningsPage() {
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
           <input
             type="number"
             value={transferAmount}
@@ -141,12 +141,14 @@ export default function EarningsPage() {
             placeholder={isAr
               ? `الحد الأقصى: ${(data?.availableBalance || 0).toFixed(2)} ر.س`
               : `Max: ${(data?.availableBalance || 0).toFixed(2)} SAR`}
-            className="flex-1 px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 text-sm outline-none focus:border-purple-500 transition-colors"
+            className="px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 text-sm outline-none focus:border-purple-500 transition-colors"
+            style={{ flex: 1, minWidth: 0, boxSizing: 'border-box' }}
           />
           <button
             onClick={handleTransfer}
             disabled={transferring || !transferAmount}
-            className="px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 hover:bg-purple-500 text-white"
+            className="py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 hover:bg-purple-500 text-white"
+            style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '0 16px' }}
           >
             {transferring ? (
               <Loader2 size={16} className="animate-spin" />
@@ -177,8 +179,8 @@ export default function EarningsPage() {
             <p>{isAr ? 'لا توجد جلسات مكتملة بعد' : 'No completed sessions yet'}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={{ minWidth: '500px', width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr className="border-b border-gray-800 text-gray-400 text-sm">
                   <th className="p-4 text-right">{isAr ? 'العميل' : 'Client'}</th>
