@@ -71,8 +71,9 @@ const websiteSchema = {
 async function getSiteConfig() {
   try {
     const res = await fetch(`${API_BASE}/admin/site-config`, {
-      cache: 'no-store',
+      next: { revalidate: 300 },
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+      signal: AbortSignal.timeout(5000),
     })
     if (!res.ok) return {}
     const json = await res.json()
