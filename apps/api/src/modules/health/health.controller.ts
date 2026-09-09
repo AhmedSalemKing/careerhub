@@ -1,9 +1,13 @@
 import {
   Controller,
   Get,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { HealthService } from './health.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Health')
 @Controller('health')
@@ -22,6 +26,8 @@ export class HealthController {
   }
 
   @Get('detailed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Get detailed health status' })
   @ApiResponse({ status: 200, description: 'Detailed health status retrieved successfully' })
   async getDetailedHealth() {
@@ -33,6 +39,8 @@ export class HealthController {
   }
 
   @Get('database')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Check database health' })
   @ApiResponse({ status: 200, description: 'Database health status retrieved successfully' })
   async getDatabaseHealth() {
@@ -44,6 +52,8 @@ export class HealthController {
   }
 
   @Get('redis')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Check Redis health' })
   @ApiResponse({ status: 200, description: 'Redis health status retrieved successfully' })
   async getRedisHealth() {
@@ -88,6 +98,8 @@ export class HealthController {
   }
 
   @Get('metrics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Get application metrics' })
   @ApiResponse({ status: 200, description: 'Application metrics retrieved successfully' })
   async getMetrics() {
