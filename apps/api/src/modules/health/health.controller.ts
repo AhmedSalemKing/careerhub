@@ -65,6 +65,8 @@ export class HealthController {
   }
 
   @Get('external-services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Check external services health' })
   @ApiResponse({ status: 200, description: 'External services health status retrieved successfully' })
   async getExternalServicesHealth() {
@@ -76,6 +78,8 @@ export class HealthController {
   }
 
   @Get('uptime')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Get system uptime' })
   @ApiResponse({ status: 200, description: 'System uptime retrieved successfully' })
   async getUptime() {
@@ -87,6 +91,8 @@ export class HealthController {
   }
 
   @Get('version')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SUPER_ADMIN')
   @ApiOperation({ summary: 'Get application version' })
   @ApiResponse({ status: 200, description: 'Application version retrieved successfully' })
   async getVersion() {
