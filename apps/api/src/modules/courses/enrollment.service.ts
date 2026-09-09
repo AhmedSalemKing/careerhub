@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { sendNotification } from '../../common/utils/notify.util';
 
@@ -18,7 +18,20 @@ export class EnrollmentService {
 
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) {
-      throw new Error('Course not found');
+      throw new NotFoundException('Course not found');
+    }
+
+    if (course.price > 0) {
+      const payment = await this.prisma.payment.findFirst({
+        where: {
+          userId,
+          courseId,
+          status: 'COMPLETED',
+        },
+      });
+      if (!payment) {
+        throw new ForbiddenException('Payment required to enroll in this course');
+      }
     }
 
     const enrollment = await this.prisma.enrollment.create({

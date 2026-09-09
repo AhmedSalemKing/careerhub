@@ -97,9 +97,41 @@ export class CertificatesService {
     }
     console.log('[Certificate] Course found:', course.titleEn)
 
-    // 4. Enrollment check removed - any authenticated user who completed
-    //    the course can get a certificate (covers INSTRUCTOR, COACH, STUDENT)
-    console.log('[Certificate] Skipping enrollment check - open to all authenticated users')
+    // 4. Verify enrollment, certificate eligibility, and course completion
+    const enrollment = await this.prisma.enrollment.findFirst({
+      where: { userId, courseId, status: 'ACTIVE' },
+    })
+    if (!enrollment) throw new ForbiddenException('Not enrolled')
+
+    if (!course.certificateEnabled) {
+      throw new ForbiddenException('Certificates are not enabled for this course')
+    }
+
+    const totalLessons = await this.prisma.lesson.count({
+      where: {
+        isPublished: true,
+        OR: [
+          { section: { courseId } },
+          { module: { courseId } },
+        ],
+      },
+    })
+    const completedLessons = await this.prisma.lessonProgress.count({
+      where: {
+        userId,
+        status: 'COMPLETED',
+        lesson: {
+          OR: [
+            { section: { courseId } },
+            { module: { courseId } },
+          ],
+        },
+      },
+    })
+
+    if (totalLessons === 0 || completedLessons < totalLessons) {
+      throw new ForbiddenException('Course not completed yet')
+    }
 
     // 5. Generate unique serial number (our verifyCode)
     const serialNumber = `DVW-${Date.now().toString(36).toUpperCase()}-${uuidv4().slice(0, 8).toUpperCase()}`
