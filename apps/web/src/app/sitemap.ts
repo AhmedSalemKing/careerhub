@@ -26,7 +26,7 @@ async function safeFetch(url: string): Promise<any[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages = [
     '', '/courses', '/coaches', '/coaching',
-    '/careers', '/pricing', '/faq', '/contact', '/help',
+    '/careers', '/faq', '/contact', '/help',
   ]
 
   const [courses, careerPaths, coaches] = await Promise.allSettled([

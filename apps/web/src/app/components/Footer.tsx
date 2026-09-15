@@ -4,10 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { TRAINING_URL } from '../../lib/constants'
+import { useAuthStore } from '../../stores/authStore'
 
 export function Footer() {
   const tNav = useTranslations('nav')
   const t = useTranslations('footer')
+  const user = useAuthStore((s) => s.user)
 
   return (
     <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
@@ -43,11 +45,6 @@ export function Footer() {
                 {tNav('careers')}
               </Link>
             </li>
-            <li>
-              <Link className="footer-link" href="/pricing">
-                {tNav('pricing')}
-              </Link>
-            </li>
           </ul>
         </div>
 
@@ -76,15 +73,17 @@ export function Footer() {
           <div className="text-sm font-semibold text-foreground">{tNav('coaches')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
-              <Link className="footer-link" href="/coaches">
+              <Link className="footer-link" href="/coaching">
                 {tNav('coaches')}
               </Link>
             </li>
-            <li>
-              <Link className="footer-link" href="/login">
-                {tNav('login')}
-              </Link>
-            </li>
+            {!user && (
+              <li>
+                <Link className="footer-link" href="/login">
+                  {tNav('login')}
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>
