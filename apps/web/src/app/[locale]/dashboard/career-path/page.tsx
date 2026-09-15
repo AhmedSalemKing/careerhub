@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -47,6 +47,7 @@ const [courses, setCourses] = useState<any[]>([])
 const [coursesLoading, setCoursesLoading] = useState(false)
 const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
+const [busyPaths, setBusyPaths] = useState<Set<string>>(new Set())
 const MAX_PATHS = 5
 
 const [confirmModal, setConfirmModal] = useState<{
@@ -96,34 +97,44 @@ const [confirmModal, setConfirmModal] = useState<{
     } catch {}
   }, [myPathIds])
 
-  // Sync with server on mount — server is source of truth, cache is for instant display
-  useEffect(() => {
+  // Server is source of truth — cache is for instant display only
+  const fetchMyPaths = useCallback(async () => {
     const token = getToken()
     if (!token) return
-    fetch(`${apiUrl}/career/paths/my`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(data => {
-        const paths = data?.data?.paths ?? data?.data ?? []
-        if (Array.isArray(paths)) {
-          const serverIds = new Set<string>(
-            paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean)
-          )
-          setMyPathIds(serverIds)
-          localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(Array.from(serverIds)))
-        }
+    try {
+      const res = await fetch(`${apiUrl}/career/paths/my`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-      .catch(() => {})
-  }, [])
+      const data = await res.json()
+      const paths = data?.data?.paths ?? data?.data ?? []
+      if (Array.isArray(paths)) {
+        const serverIds = new Set<string>(
+          paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean)
+        )
+        setMyPathIds(serverIds)
+        localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(Array.from(serverIds)))
+      }
+    } catch (e) {
+      console.error('[fetchMyPaths] error:', e)
+    }
+  }, [apiUrl])
+
+  useEffect(() => {
+    fetchMyPaths()
+  }, [fetchMyPaths])
 
   useEffect(() => {
     setCoursesLoading(true)
     const token = getToken()
 
     const pathIds = Array.from(myPathIds)
+    if (pathIds.length === 0) {
+      setCourses([])
+      setCoursesLoading(false)
+      return
+    }
     const params = new URLSearchParams()
-    if (pathIds.length > 0) params.set('paths', pathIds.join(','))
+    params.set('paths', pathIds.join(','))
     params.set('limit', '12')
 
     fetch(`${apiUrl}/courses/recommended?${params}`, {
@@ -160,16 +171,66 @@ const [confirmModal, setConfirmModal] = useState<{
       .finally(() => setBundlesLoading(false))
   }, [])
 
-  const resolveSlugToDbId = (slugId: string): string | null => {
-    const matched = allPaths.find((p: any) => p.slug === slugId || p.id === slugId)
-    return matched?.id ?? null
+  const isPathIdSelected = (id: string): boolean => {
+    if (!id) return false
+    if (myPathIds.has(id)) return true
+    const p = allPaths.find(x => x.id === id || x.slug === id)
+    return !!p && (myPathIds.has(p.id) || myPathIds.has(p.slug))
   }
 
-  const togglePath = async (pathId: string) => {
-    const isSelected = myPathIds.has(pathId)
+  const isPathSelected = (p: any) => isPathIdSelected(p?.id)
+
+  const removePath = async (pathId: string) => {
+    if (!isPathIdSelected(pathId)) return
+    if (busyPaths.has(pathId)) return
     const token = getToken()
 
-    if (!isSelected && myPathIds.size >= MAX_PATHS) {
+    setBusyPaths(prev => new Set(prev).add(pathId))
+    setMyPathIds(prev => {
+      const next = new Set(prev)
+      next.delete(pathId)
+      return next
+    })
+    setSelectedPaths(prev => {
+      const next = prev.filter(p => p !== pathId && !isPathIdSelected(p))
+      localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
+      return next
+    })
+
+    try {
+      await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+    } catch (e: any) {
+      console.error('[removePath] API error:', e.message)
+      setMyPathIds(prev => {
+        const next = new Set(prev)
+        next.add(pathId)
+        return next
+      })
+      setSelectedPaths(prev =>
+        prev.includes(pathId) ? prev : [...prev, pathId]
+      )
+    } finally {
+      setBusyPaths(prev => {
+        const next = new Set(prev)
+        next.delete(pathId)
+        return next
+      })
+      fetchMyPaths()
+    }
+  }
+
+  const addPath = async (pathId: string) => {
+    if (isPathIdSelected(pathId)) return
+    if (busyPaths.has(pathId)) return
+    const token = getToken()
+
+    if (myPathIds.size >= MAX_PATHS) {
       setConfirmModal({
         isOpen: true, title: isAr ? 'تنبيه' : 'Notice',
         message: isAr ? 'لا يمكنك اختيار أكثر من 5 مسارات.' : 'Maximum 5 paths allowed.',
@@ -179,49 +240,37 @@ const [confirmModal, setConfirmModal] = useState<{
       return
     }
 
-    console.log('[TogglePath] pathId:', pathId, '| isSelected:', isSelected)
-
-    setMyPathIds(prev => {
-      const next = new Set(prev)
-      if (isSelected) next.delete(pathId); else next.add(pathId)
-      return next
-    })
-
+    setBusyPaths(prev => new Set(prev).add(pathId))
+    setMyPathIds(prev => new Set(prev).add(pathId))
     setSelectedPaths(prev => {
-      const next = isSelected ? prev.filter(p => p !== pathId) : [...prev, pathId]
+      const next = prev.includes(pathId) ? prev : [...prev, pathId]
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
 
     try {
-      if (isSelected) {
-        console.log('[TogglePath] Calling API remove with UUID:', pathId)
-        const res = await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        })
-        console.log('[TogglePath] API remove response:', res.status)
-      } else {
-        console.log('[TogglePath] Calling API add with UUID:', pathId)
-        const res = await fetch(`${apiUrl}/career/paths/add/${pathId}?source=MANUAL`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        })
-        console.log('[TogglePath] API add response:', res.status)
-      }
+      await fetch(`${apiUrl}/career/paths/add/${pathId}?source=MANUAL`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
     } catch (e: any) {
-      console.error('[TogglePath] API error:', e.message)
+      console.error('[addPath] API error:', e.message)
       setMyPathIds(prev => {
         const next = new Set(prev)
-        if (isSelected) next.add(pathId); else next.delete(pathId)
+        next.delete(pathId)
         return next
       })
+      setSelectedPaths(prev => prev.filter(p => p !== pathId))
+    } finally {
+      setBusyPaths(prev => {
+        const next = new Set(prev)
+        next.delete(pathId)
+        return next
+      })
+      fetchMyPaths()
     }
   }
 
@@ -275,8 +324,7 @@ const [confirmModal, setConfirmModal] = useState<{
       console.warn('[AddPath] No DB path found for field:', field.titleAr, field.track)
       return
     }
-    console.log('[AddPath] Adding pathId (UUID):', pathId)
-    await togglePath(pathId)
+    await addPath(pathId)
   }
 
   const TABS = [
@@ -290,15 +338,6 @@ const [confirmModal, setConfirmModal] = useState<{
     data: BarChart, security: Shield, devops: Settings,
     product: Package, business: Briefcase, creative: Users,
   }
-
-  const selectedKeySet = useMemo(() => {
-    const ids = new Set<string>()
-    Array.from(myPathIds).forEach(v => ids.add(v))
-    selectedPaths.forEach(v => ids.add(v))
-    return ids
-  }, [myPathIds, selectedPaths])
-
-  const isPathSelected = (p: any) => selectedKeySet.has(p.id) || selectedKeySet.has(p.slug)
 
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
@@ -390,7 +429,7 @@ const [confirmModal, setConfirmModal] = useState<{
                           <BookOpen size={12} />
                           {isAr ? 'كورسات' : 'Courses'}
                         </button>
-                        <button onClick={() => togglePath(path.id)} style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
+                        <button onClick={() => removePath(path.id)} disabled={busyPaths.has(path.id)} style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}>
                           <X size={14} />
                         </button>
                       </div>
@@ -422,7 +461,7 @@ const [confirmModal, setConfirmModal] = useState<{
                     background: isSelected ? (isDark ? 'rgba(81,32,200,0.08)' : 'rgba(81,32,200,0.03)') : cardBg,
                     cursor: 'pointer', transition: 'all 0.15s', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative',
                   }}
-                  onClick={() => togglePath(dbId)}>
+                  onClick={() => isPathIdSelected(dbId) ? removePath(dbId) : addPath(dbId)}>
                     {isSelected && (
                       <div style={{ position: 'absolute', top: 12, left: isAr ? 12 : 'auto', right: isAr ? 'auto' : 12 }}>
                         <CheckCircle2 size={18} color="#5120c8" />
@@ -476,21 +515,26 @@ const [confirmModal, setConfirmModal] = useState<{
                       {isAr ? 'جاري تحميل المسارات...' : 'Loading paths...'}
                     </p>
                   )}
-                  {assessmentResults.slice(0, 5).map((result, idx) => (
-                    <div key={idx} style={{ padding: '16px 20px', borderRadius: 12, border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.3)' : border}`, background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)') : cardBg, display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 800 }}>{idx + 1}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? result.titleAr : result.titleEn}</div>
-                        <div style={{ marginTop: 6, height: 4, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ width: `${result.normalized}%`, height: '100%', background: idx === 0 ? '#5120c8' : '#94a3b8', borderRadius: 2 }} />
+                  {assessmentResults.slice(0, 5).map((result, idx) => {
+                      const resolvedPathId = getPathIdForResult(result)
+                      const pathAlreadyAdded = resolvedPathId ? isPathIdSelected(resolvedPathId) : false
+                      const pathBusy = resolvedPathId ? busyPaths.has(resolvedPathId) : false
+                      return (
+                        <div key={idx} style={{ padding: '16px 20px', borderRadius: 12, border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.3)' : border}`, background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)') : cardBg, display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 800 }}>{idx + 1}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? result.titleAr : result.titleEn}</div>
+                            <div style={{ marginTop: 6, height: 4, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', borderRadius: 2, overflow: 'hidden' }}>
+                              <div style={{ width: `${result.normalized}%`, height: '100%', background: idx === 0 ? '#5120c8' : '#94a3b8', borderRadius: 2 }} />
+                            </div>
+                          </div>
+                          <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
+                          <button disabled={pathBusy} onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: pathAlreadyAdded || pathBusy ? 'default' : 'pointer', opacity: pathBusy ? 0.5 : 1, background: pathAlreadyAdded ? 'transparent' : '#5120c8', color: pathAlreadyAdded ? subtext : '#ffffff', border: `1px solid ${pathAlreadyAdded ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            {pathAlreadyAdded ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
+                          </button>
                         </div>
-                      </div>
-                      <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
-                      <button onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: 'pointer', background: (getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? 'transparent' : '#5120c8', color: (getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? subtext : '#ffffff', border: `1px solid ${(getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {(getPathIdForResult(result) && myPathIds.has(getPathIdForResult(result)!)) ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
-                      </button>
-                    </div>
-                  ))}
+                      )
+                    })}
                 </div>
                 
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -522,7 +566,21 @@ const [confirmModal, setConfirmModal] = useState<{
 
         {activeTab === 'courses' && (
           <div>
-            {true && (
+            {myPathIds.size === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                <Target size={36} color={subtext} style={{ marginBottom: 12 }} />
+                <p style={{ color: text, fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>
+                  {isAr ? 'يرجى اختيار مسار مهني أولاً' : 'Please select a career path first'}
+                </p>
+                <p style={{ color: subtext, fontSize: 13, margin: '0 0 24px' }}>
+                  {isAr ? 'اختر مساراً مهنياً لعرض الكورسات المخصصة لك' : 'Choose a career path to see courses tailored to you'}
+                </p>
+                <button onClick={() => setActiveTab('paths')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 13, fontWeight: 700 }}>
+                  <Target size={14} />
+                  {isAr ? 'اختر مساراً' : 'Select a Path'}
+                </button>
+              </div>
+            ) : (
               <div>
                 <div style={{ marginBottom: 20 }}>
                   <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
