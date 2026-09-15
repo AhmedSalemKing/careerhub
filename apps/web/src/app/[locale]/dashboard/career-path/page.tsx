@@ -273,20 +273,29 @@ const [confirmModal, setConfirmModal] = useState<{
     if (busyPaths.has(pathId)) return
     const token = getToken()
 
+    // 1. Update UI immediately — remove from state NOW
+    const target = allPaths.find(p => p?.id === pathId || p?.slug === pathId)
+    const targetForms = new Set<string>([pathId, target?.id, target?.slug].filter(Boolean))
     setBusyPaths(prev => new Set(prev).add(pathId))
     setMyPathIds(prev => {
       const next = new Set(prev)
       next.delete(pathId)
       return next
     })
-    const target = allPaths.find(p => p?.id === pathId || p?.slug === pathId)
-    const targetForms = new Set<string>([pathId, target?.id, target?.slug].filter(Boolean))
     setSelectedPaths(prev => {
       const next = prev.filter(p => !targetForms.has(p))
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
+    try {
+      const cached = JSON.parse(localStorage.getItem(PATHS_CACHE_KEY) || '[]')
+      if (Array.isArray(cached)) {
+        localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(cached.filter((p: string) => !targetForms.has(p))))
+      }
+    } catch (e) {}
 
+    // 2. Call API in background — do NOT re-sync from server on success
+    //    (a stale/uncommitted read must never resurrect the removed path)
     try {
       const res = await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
         method: 'DELETE',
@@ -301,13 +310,8 @@ const [confirmModal, setConfirmModal] = useState<{
         throw new Error(`API ${res.status}`)
       }
       console.log('[removePath] API success for', pathId)
-      try {
-        const cached = JSON.parse(localStorage.getItem(PATHS_CACHE_KEY) || '[]')
-        if (Array.isArray(cached)) {
-          localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(cached.filter((p: string) => !targetForms.has(p))))
-        }
-      } catch (e) {}
     } catch (e: any) {
+      // 3. Rollback only on a real API failure
       console.error('[removePath] API error:', e.message)
       toast.error(isAr ? 'تعذر إزالة المسار، حاول مرة أخرى' : 'Could not remove path, please try again')
       setMyPathIds(prev => {
@@ -318,13 +322,18 @@ const [confirmModal, setConfirmModal] = useState<{
       setSelectedPaths(prev =>
         prev.includes(pathId) ? prev : [...prev, pathId]
       )
+      try {
+        const cached = JSON.parse(localStorage.getItem(PATHS_CACHE_KEY) || '[]')
+        if (Array.isArray(cached) && !cached.some((p: string) => targetForms.has(p))) {
+          localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify([...cached, pathId]))
+        }
+      } catch (e) {}
     } finally {
       setBusyPaths(prev => {
         const next = new Set(prev)
         next.delete(pathId)
         return next
       })
-      fetchMyPaths()
     }
   }
 
