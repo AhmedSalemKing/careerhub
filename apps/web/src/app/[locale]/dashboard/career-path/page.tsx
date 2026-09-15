@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -291,6 +291,15 @@ const [confirmModal, setConfirmModal] = useState<{
     product: Package, business: Briefcase, creative: Users,
   }
 
+  const selectedKeySet = useMemo(() => {
+    const ids = new Set<string>()
+    Array.from(myPathIds).forEach(v => ids.add(v))
+    selectedPaths.forEach(v => ids.add(v))
+    return ids
+  }, [myPathIds, selectedPaths])
+
+  const isPathSelected = (p: any) => selectedKeySet.has(p.id) || selectedKeySet.has(p.slug)
+
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
       <div style={{ padding: '28px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
@@ -366,7 +375,7 @@ const [confirmModal, setConfirmModal] = useState<{
                   <span style={{ color: subtext, fontSize: 12 }}>{myPathIds.size} / {MAX_PATHS} {isAr ? 'مسارات' : 'paths'}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {allPaths.filter(p => myPathIds.has(p.id)).map(path => {
+                  {allPaths.filter(p => isPathSelected(p)).map(path => {
                     const IconComp = ICON_MAP[(path as any).icon] || Briefcase
                     return (
                       <div key={path.id} style={{ padding: '16px 20px', borderRadius: 14, border: '1.5px solid rgba(81,32,200,0.3)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -405,7 +414,7 @@ const [confirmModal, setConfirmModal] = useState<{
               {allPaths.slice(0, 30).map((path: any) => {
                 const IconComp = ICON_MAP[path.icon] || Briefcase
                 const dbId = path.id
-                const isSelected = myPathIds.has(dbId)
+                const isSelected = isPathSelected(path)
                 return (
                   <div key={dbId} style={{
                     padding: '18px', borderRadius: 14,

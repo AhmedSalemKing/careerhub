@@ -1,11 +1,10 @@
 'use client'
 
-import { useCallback, useState, useMemo, useEffect } from 'react'
+import { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { toast } from 'sonner'
 import ConfirmModal from '@/components/ConfirmModal'
 import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
@@ -53,6 +52,9 @@ export default function CareersPage() {
   const [detailPath, setDetailPath] = useState<any>(null)
   const [detailTab, setDetailTab] = useState<'tasks'|'skills'|'qualifications'|'progression'>('tasks')
   const [confirmPath, setConfirmPath] = useState<any>(null)
+  const [noticeMsg, setNoticeMsg] = useState('')
+  const [noticeVisible, setNoticeVisible] = useState(false)
+  const noticeTimer = useRef<any>(null)
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
   const getToken = () =>
@@ -62,16 +64,43 @@ export default function CareersPage() {
   
   const requestStartPath = (path: any) => setConfirmPath(path)
   
+  const showNotice = useCallback((msg: string) => {
+    setNoticeMsg(msg)
+    setNoticeVisible(true)
+    if (noticeTimer.current) clearTimeout(noticeTimer.current)
+    noticeTimer.current = setTimeout(() => setNoticeVisible(false), 3000)
+  }, [])
+  
+  const resolveSlugToDbId = async (slugId: string): Promise<string> => {
+    try {
+      const res = await fetch(`${apiUrl}/career/paths`)
+      const data = await res.json()
+      const arr = data?.data?.careerPaths ?? data?.data ?? data ?? []
+      const all = Array.isArray(arr) ? arr : []
+      const match = all.find((p: any) => p.slug === slugId || p.id === slugId)
+      if (match?.id) return match.id
+    } catch(e) {}
+    return slugId
+  }
+  
   const confirmAddPath = useCallback(async () => {
     if (!confirmPath) return
-    const pathId = confirmPath.id
     setConfirmPath(null)
+    const pathId = await resolveSlugToDbId(confirmPath.id)
     
     try {
       const saved = localStorage.getItem('selectedCareerPaths')
       const current: string[] = saved ? JSON.parse(saved) : []
       if (!current.includes(pathId)) {
         localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, pathId].slice(0,5)))
+      }
+    } catch(e) {}
+    
+    try {
+      const cached = localStorage.getItem('deveway_my_path_ids')
+      const list: string[] = cached ? JSON.parse(cached) : []
+      if (!list.includes(pathId)) {
+        localStorage.setItem('deveway_my_path_ids', JSON.stringify([...list, pathId].slice(0,5)))
       }
     } catch(e) {}
     
@@ -84,13 +113,11 @@ export default function CareersPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       })
-      toast.success(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
-    } catch(e) {
-      toast.success(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
-    }
+    } catch(e) {}
     
-    router.push(`/${locale}/dashboard/career-path`)
-  }, [confirmPath, apiUrl, locale, isAr, router])
+    showNotice(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
+    setTimeout(() => router.push(`/${locale}/dashboard/career-path`), 800)
+  }, [confirmPath, apiUrl, locale, isAr, router, showNotice])
   
   const allPaths = useMemo(() => {
     return CAREER_PATHS.flatMap(cat => 
@@ -740,6 +767,28 @@ export default function CareersPage() {
           </div>
         </>
       )}
+
+      {noticeMsg && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          padding: '16px 24px', textAlign: 'center',
+          background: 'var(--card)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          color: 'var(--foreground)',
+          fontFamily: 'var(--font-body)',
+          fontSize: 14, fontWeight: 600,
+          borderBottom: '1px solid var(--border)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
+          animation: noticeVisible ? 'noticeSlideDown 0.35s ease forwards' : 'noticeSlideUp 0.35s ease forwards',
+        }}>
+          {noticeMsg}
+        </div>
+      )}
+      <style>{`
+        @keyframes noticeSlideDown { from { transform: translateY(-100%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+        @keyframes noticeSlideUp { from { transform: translateY(0); opacity: 1 } to { transform: translateY(-100%); opacity: 0 } }
+      `}</style>
 
       <ConfirmModal
         isOpen={!!confirmPath}
