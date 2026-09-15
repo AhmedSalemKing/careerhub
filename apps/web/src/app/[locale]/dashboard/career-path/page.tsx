@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -12,6 +12,37 @@ import {
 } from 'lucide-react'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import ConfirmModal from '@/components/ConfirmModal'
+
+const PATH_KEYWORDS: Record<string, string[]> = {
+  'سيبراني': ['سيبر', 'اختراق', 'أمن', 'شبكات', 'حماية', 'cyber', 'security', 'pentest', 'network', 'ethical hacking', 'vulnerability', 'forensics', 'malware', 'SIEM', 'SOC', 'firewall', 'encryption', 'cryptography'],
+  'اختراق': ['اختراق', 'سيبر', 'أمن', 'هاكر', 'pentest', 'security', 'ethical', 'burp', 'metasploit', 'kali', 'nmap', 'OWASP', 'CTF', 'exploit', 'vulnerability'],
+  'محلل أمن': ['SIEM', 'SOC', 'threat', 'incident', 'log analysis', 'security operations', 'تهديدات', 'تحليل أمني', 'استجابة'],
+  'شبكات': ['شبكات', 'network', 'cisco', 'routing', 'switching', 'TCP/IP', 'LAN', 'WAN', 'VPN', 'firewall', 'IDS', 'IPS', 'packet', 'wireshark'],
+  'برمجيات': ['برمجة', 'تطوير', 'javascript', 'python', 'react', 'backend', 'frontend', 'fullstack', 'software', 'coding', 'programming', 'java', 'typescript', 'algorithms', 'data structures'],
+  'واجهات': ['واجهة', 'frontend', 'react', 'html', 'css', 'javascript', 'UI', 'vue', 'angular', 'responsive', 'tailwind', 'bootstrap'],
+  'خلفيات': ['backend', 'node', 'python', 'api', 'database', 'sql', 'REST', 'GraphQL', 'microservices', 'server', 'django', 'fastapi', 'nestjs', 'express'],
+  'متكامل': ['fullstack', 'full stack', 'frontend', 'backend', 'javascript', 'react', 'node', 'database', 'api', 'typescript'],
+  'موبايل': ['mobile', 'flutter', 'react native', 'ios', 'android', 'dart', 'swift', 'kotlin', 'تطبيق', 'موبايل'],
+  'ألعاب': ['game', 'unity', 'unreal', 'C#', 'C++', '3D', 'gaming', 'ألعاب', 'game development'],
+  'بيانات': ['بيانات', 'data', 'python', 'machine learning', 'sql', 'analytics', 'تعلم آلي', 'pandas', 'numpy', 'statistics', 'tableau', 'powerbi', 'excel', 'R'],
+  'عالم بيانات': ['data science', 'machine learning', 'deep learning', 'python', 'tensorflow', 'pytorch', 'neural network', 'NLP', 'computer vision'],
+  'تعلم آلي': ['machine learning', 'deep learning', 'AI', 'python', 'tensorflow', 'pytorch', 'scikit', 'neural', 'NLP', 'computer vision', 'MLOps'],
+  'ذكاء': ['ذكاء', 'ai', 'artificial intelligence', 'machine learning', 'deep learning', 'llm', 'python', 'LLMs', 'prompt engineering', 'vector', 'generative', 'chatbot'],
+  'تصميم': ['تصميم', 'design', 'ui', 'ux', 'figma', 'photoshop', 'illustrator', 'adobe', 'graphic', 'visual', 'prototype', 'wireframe', 'typography', 'color theory'],
+  'تجربة مستخدم': ['UX', 'user experience', 'user research', 'usability', 'wireframe', 'prototype', 'figma', 'accessibility', 'تجربة مستخدم'],
+  'موشن': ['motion', 'animation', 'after effects', 'cinema 4D', 'animate', 'رسوم متحركة', 'موشن جرافيك'],
+  'تسويق': ['تسويق', 'marketing', 'seo', 'sem', 'ads', 'social media', 'google ads', 'meta ads', 'content', 'email marketing', 'analytics', 'conversion'],
+  'محتوى': ['content', 'copywriting', 'SEO', 'blog', 'محتوى', 'كتابة', 'social media', 'content strategy'],
+  'سحابي': ['cloud', 'aws', 'azure', 'gcp', 'terraform', 'kubernetes', 'docker', 'serverless', 'infrastructure'],
+  'devops': ['devops', 'docker', 'kubernetes', 'ci/cd', 'linux', 'cloud', 'ansible', 'jenkins', 'github actions', 'terraform', 'monitoring'],
+  'موثوقية': ['SRE', 'reliability', 'monitoring', 'observability', 'incident', 'automation', 'linux', 'cloud', 'prometheus', 'grafana'],
+  'ذكاء أعمال': ['BI', 'business intelligence', 'tableau', 'powerbi', 'sql', 'data modeling', 'reporting', 'dashboard'],
+  'أعمال': ['business', 'management', 'strategy', 'leadership', 'MBA', 'project management', 'agile', 'scrum', 'إدارة', 'أعمال'],
+  'منتج': ['product', 'product management', 'agile', 'scrum', 'roadmap', 'user stories', 'backlog', 'stakeholder', 'إدارة منتج'],
+  'مشاريع': ['project management', 'PMP', 'agile', 'scrum', 'kanban', 'risk management', 'إدارة مشاريع', 'تخطيط'],
+  'مستشار': ['consulting', 'architecture', 'system design', 'enterprise', 'استشارات', 'هندسة أنظمة'],
+  'تقني': ['technical', 'product', 'engineering', 'system design', 'architecture', 'agile', 'technology'],
+}
 
 type TabKey = 'paths' | 'assessment' | 'courses'
 
@@ -43,7 +74,7 @@ const [myPathIds, setMyPathIds] = useState<Set<string>>(() => {
 })
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 const [allPaths, setAllPaths] = useState<any[]>([])
-const [courses, setCourses] = useState<any[]>([])
+const [allCourses, setAllCourses] = useState<any[]>([])
 const [coursesLoading, setCoursesLoading] = useState(false)
 const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
@@ -127,17 +158,7 @@ const [confirmModal, setConfirmModal] = useState<{
     setCoursesLoading(true)
     const token = getToken()
 
-    const pathIds = Array.from(myPathIds)
-    if (pathIds.length === 0) {
-      setCourses([])
-      setCoursesLoading(false)
-      return
-    }
-    const params = new URLSearchParams()
-    params.set('paths', pathIds.join(','))
-    params.set('limit', '12')
-
-    fetch(`${apiUrl}/courses/recommended?${params}`, {
+    fetch(`${apiUrl}/courses?page=1&limit=100&language=${locale === 'ar' ? 'ar' : 'en'}`, {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -145,16 +166,15 @@ const [confirmModal, setConfirmModal] = useState<{
     })
       .then(r => r.json())
       .then(data => {
-        console.log('[Recommended courses]', data)
-        const arr = data?.data ?? data?.courses ?? data ?? []
-        setCourses(Array.isArray(arr) ? arr : [])
+        const arr = data?.data?.courses ?? data?.data ?? data ?? []
+        setAllCourses(Array.isArray(arr) ? arr : [])
       })
       .catch(e => {
-        console.error('[Recommended error]', e)
-        setCourses([])
+        console.error('[Courses error]', e)
+        setAllCourses([])
       })
       .finally(() => setCoursesLoading(false))
-  }, [myPathIds])
+  }, [apiUrl, locale])
 
   useEffect(() => {
     setBundlesLoading(true)
@@ -179,6 +199,62 @@ const [confirmModal, setConfirmModal] = useState<{
   }
 
   const isPathSelected = (p: any) => isPathIdSelected(p?.id)
+
+  const collectPathKeywords = (): string[] => {
+    if (myPathIds.size === 0) return []
+    const selected = allPaths.filter(p => isPathIdSelected(p?.id))
+    const keywords = new Set<string>()
+
+    const addKeyWords = (kws: string[]) => {
+      kws.forEach(k => keywords.add(String(k).toLowerCase()))
+    }
+    const collectForKey = (name: string) => {
+      const lowerName = name.toLowerCase()
+      for (const [key, kws] of Object.entries(PATH_KEYWORDS)) {
+        const lowerKey = key.toLowerCase()
+        if (lowerName.includes(lowerKey) || lowerKey.includes(lowerName)) {
+          addKeyWords(kws)
+        }
+      }
+    }
+
+    for (const path of selected) {
+      const names = [path.titleAr, path.titleEn, path.title, path.slug]
+        .filter(Boolean)
+        .map(n => String(n).toLowerCase())
+
+      // Primary: path name contains a keyword key (or key contains part of the name)
+      names.forEach(name => collectForKey(name))
+
+      // Fallback: token overlap between path name words and keyword values
+      for (const name of names) {
+        const tokens = new Set<string>(
+          name.split(/[^a-zA-Z0-9\u0600-\u06FF]+/).filter(t => t.length >= 2)
+        )
+        for (const kws of Object.values(PATH_KEYWORDS)) {
+          for (const kw of kws) {
+            const kwTokens = String(kw).toLowerCase().split(/[^a-zA-Z0-9\u0600-\u06FF]+/).filter(t => t.length >= 2)
+            if (kwTokens.some(t => tokens.has(t))) addKeyWords(kws)
+          }
+        }
+      }
+    }
+
+    return Array.from(keywords)
+  }
+
+  const courses = useMemo(() => {
+    const keywords = collectPathKeywords()
+    if (keywords.length === 0 || allCourses.length === 0) return []
+    return allCourses.filter(course => {
+      const haystack = [
+        course.title, course.description,
+        course.category, course.titleEn, course.titleAr,
+        course.descriptionEn, course.descriptionAr,
+      ].filter(Boolean).map(String).join(' ').toLowerCase()
+      return keywords.some(kw => kw.length > 0 && haystack.includes(kw))
+    })
+  }, [myPathIds, allPaths, allCourses])
 
   const removePath = async (pathId: string) => {
     if (!isPathIdSelected(pathId)) return
@@ -439,6 +515,18 @@ const [confirmModal, setConfirmModal] = useState<{
               </div>
             )}
 
+            {myPathIds.size === 0 && (
+              <div style={{ padding: '28px 20px', borderRadius: 14, border: `1px dashed ${border}`, background: cardBg, textAlign: 'center', marginBottom: 24 }}>
+                <Target size={20} color={subtext} style={{ marginBottom: 8 }} />
+                <p style={{ color: text, fontSize: 14, fontWeight: 700, margin: 0 }}>
+                  {isAr ? 'لم تختر أي مسار مهني بعد' : 'No career path selected yet'}
+                </p>
+                <p style={{ color: subtext, fontSize: 12, margin: '4px 0 0' }}>
+                  {isAr ? 'اختر مساراً من القائمة أدناه لبدء رحلتك' : 'Choose a path from the list below to start your journey'}
+                </p>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'استكشف المسارات' : 'Explore Paths'}</h3>
               {myPathIds.size < MAX_PATHS && (
@@ -621,7 +709,7 @@ const [confirmModal, setConfirmModal] = useState<{
                   <div style={{ textAlign:'center', padding:'60px 24px' }}>
                     <BookOpen size={36} color={subtext} style={{ marginBottom:12 }} />
                     <p style={{ color:subtext, fontSize:14, marginBottom:16 }}>
-                      {isAr ? 'لا توجد كورسات منشورة حالياً' : 'No published courses yet'}
+                      {isAr ? 'لا توجد كورسات مطابقة لمساراتك المختارة حالياً' : 'No courses matching your selected paths yet'}
                     </p>
                     <a
                       href="https://devewayhub.vercel.app/ar/courses"
