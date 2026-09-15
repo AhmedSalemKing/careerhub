@@ -63,7 +63,8 @@ export class CareerService {
     pathIds: string[],
     source: string,
   ) {
-    await this.prisma.userCareerPath.deleteMany({ where: { userId } }).catch(() => {})
+    const cleared = await this.prisma.userCareerPath.deleteMany({ where: { userId } })
+    console.log('[saveUserCareerPaths] cleared', cleared.count, 'rows for user', userId)
 
     const created = await Promise.all(
       pathIds.slice(0, 5).map(async pathId => {
@@ -76,10 +77,10 @@ export class CareerService {
             pathCategory: cp?.titleAr || '',
             aiRecommended: source === 'ASSESSMENT',
           },
-        }).catch(() => null)
+        })
       })
     )
-    return { success: true, data: created.filter(Boolean) }
+    return { success: true, data: created }
   }
 
   async addUserCareerPath(userId: string, pathId: string, source: string) {
@@ -88,34 +89,32 @@ export class CareerService {
       throw new BadRequestException('Maximum 5 career paths allowed')
     }
     const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
-    const result = await this.prisma.userCareerPath.upsert({
+    const data = {
+      userId,
+      pathId,
+      pathTitle: cp?.titleEn || pathId,
+      pathCategory: cp?.titleAr || '',
+      aiRecommended: source === 'ASSESSMENT' || source === 'RECOMMENDED',
+    }
+    let result = await this.prisma.userCareerPath.upsert({
       where: { userId_pathId: { userId, pathId } },
-      create: {
-        userId,
-        pathId,
-        pathTitle: cp?.titleEn || pathId,
-        pathCategory: cp?.titleAr || '',
-        aiRecommended: source === 'ASSESSMENT' || source === 'RECOMMENDED',
-      },
+      create: data,
       update: {},
     }).catch(() => null)
+    if (!result) {
+      // Compound-owner upsert depends on the DB unique constraint; if it was never
+      // applied (duplicate legacy rows), fall back to an idempotent find-or-create.
+      const existing = await this.prisma.userCareerPath.findFirst({ where: { userId, pathId } })
+      result = existing || await this.prisma.userCareerPath.create({ data })
+    }
     return { success: true, data: result }
   }
 
   async removeUserCareerPath(userId: string, pathId: string) {
-    let deleted: string | null = null
-    try {
-      await this.prisma.userCareerPath.delete({
-        where: { userId_pathId: { userId, pathId } },
-      })
-      deleted = pathId
-    } catch (e: any) {
-      // P2025 = record not found → already removed, treat as idempotent success
-      if (e?.code !== 'P2025') {
-        throw e
-      }
-    }
-    return { success: true, deleted }
+    const result = await this.prisma.userCareerPath.deleteMany({
+      where: { userId, pathId },
+    })
+    return { success: true, deleted: result.count }
   }
 
   async getCareerPaths(language: string = 'en') {
