@@ -254,7 +254,7 @@ export default function CareersPage() {
                 {/* Top accent line */}
                 <div style={{
                   position:'absolute', top:0, right:0, left:0, height:3,
-                  background:'linear-gradient(90deg, #5120c8, #2BBFA3)',
+                  background:'#5120c8',
                   borderRadius:'16px 16px 0 0',
                 }} />
                 
