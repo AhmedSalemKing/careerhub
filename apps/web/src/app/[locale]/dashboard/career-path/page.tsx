@@ -565,15 +565,18 @@ const [confirmModal, setConfirmModal] = useState<{
                     <p style={{ color:subtext, fontSize:14, marginBottom:16 }}>
                       {isAr ? 'لا توجد كورسات منشورة حالياً' : 'No published courses yet'}
                     </p>
-                    <button
-                      onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses`, '_blank')}
+                    <a
+                      href="https://devewayhub.vercel.app/ar/courses"
+                      target="_blank" rel="noopener noreferrer"
                       style={{
+                        display:'inline-block',
                         padding:'10px 22px', borderRadius:10,
-                        background:'#5120c8', color:'#ffffff', border:'none', cursor:'pointer',
+                        background:'#5120c8', color:'#ffffff',
+                        textDecoration:'none', cursor:'pointer',
                         fontSize:13, fontWeight:700,
                       }}>
                       {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
-                    </button>
+                    </a>
                   </div>
                 )}
                 
@@ -598,14 +601,14 @@ const [confirmModal, setConfirmModal] = useState<{
                 )}
                 
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
-                  <button onClick={() => {
-                    const firstPathId = Array.from(myPathIds)[0] || selectedPaths[0]
-                    window.open(`https://deveway-teal.vercel.app/${locale}/courses`, '_blank')
-                  }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700 }}>
+                  <a
+                    href="https://devewayhub.vercel.app/ar/courses"
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                     <BookOpen size={14} />
                     {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
                     <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
-                  </button>
+                  </a>
                 </div>
               </div>
             )}
