@@ -97,7 +97,11 @@ const [confirmModal, setConfirmModal] = useState<{
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
   const getToken = () =>
     typeof window !== 'undefined'
-      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+      ? localStorage.getItem('deveway_token')
+        || localStorage.getItem('careerhub_token')
+        || localStorage.getItem('token')
+        || sessionStorage.getItem('token')
+        || ''
       : ''
 
   useEffect(() => {
