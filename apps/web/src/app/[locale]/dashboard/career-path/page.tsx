@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -79,6 +79,7 @@ const [coursesLoading, setCoursesLoading] = useState(false)
 const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
 const [busyPaths, setBusyPaths] = useState<Set<string>>(new Set())
+  const fetchSeqRef = useRef(0)
 const MAX_PATHS = 5
 
 const [confirmModal, setConfirmModal] = useState<{
@@ -132,6 +133,7 @@ const [confirmModal, setConfirmModal] = useState<{
   const fetchMyPaths = useCallback(async () => {
     const token = getToken()
     if (!token) return
+    const seq = ++fetchSeqRef.current
     try {
       const res = await fetch(`${apiUrl}/career/paths/my`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -142,6 +144,7 @@ const [confirmModal, setConfirmModal] = useState<{
         const serverIds = new Set<string>(
           paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean)
         )
+        if (seq !== fetchSeqRef.current) return
         setMyPathIds(serverIds)
         localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(Array.from(serverIds)))
       }
@@ -267,8 +270,10 @@ const [confirmModal, setConfirmModal] = useState<{
       next.delete(pathId)
       return next
     })
+    const target = allPaths.find(p => p?.id === pathId || p?.slug === pathId)
+    const targetForms = new Set<string>([pathId, target?.id, target?.slug].filter(Boolean))
     setSelectedPaths(prev => {
-      const next = prev.filter(p => p !== pathId && !isPathIdSelected(p))
+      const next = prev.filter(p => !targetForms.has(p))
       localStorage.setItem('selectedCareerPaths', JSON.stringify(next))
       return next
     })
