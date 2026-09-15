@@ -301,6 +301,12 @@ const [confirmModal, setConfirmModal] = useState<{
         throw new Error(`API ${res.status}`)
       }
       console.log('[removePath] API success for', pathId)
+      try {
+        const cached = JSON.parse(localStorage.getItem(PATHS_CACHE_KEY) || '[]')
+        if (Array.isArray(cached)) {
+          localStorage.setItem(PATHS_CACHE_KEY, JSON.stringify(cached.filter((p: string) => !targetForms.has(p))))
+        }
+      } catch (e) {}
     } catch (e: any) {
       console.error('[removePath] API error:', e.message)
       toast.error(isAr ? 'تعذر إزالة المسار، حاول مرة أخرى' : 'Could not remove path, please try again')

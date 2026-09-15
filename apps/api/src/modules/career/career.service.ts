@@ -103,10 +103,19 @@ export class CareerService {
   }
 
   async removeUserCareerPath(userId: string, pathId: string) {
-    await this.prisma.userCareerPath.delete({
-      where: { userId_pathId: { userId, pathId } },
-    }).catch(() => {})
-    return { success: true }
+    let deleted: string | null = null
+    try {
+      await this.prisma.userCareerPath.delete({
+        where: { userId_pathId: { userId, pathId } },
+      })
+      deleted = pathId
+    } catch (e: any) {
+      // P2025 = record not found → already removed, treat as idempotent success
+      if (e?.code !== 'P2025') {
+        throw e
+      }
+    }
+    return { success: true, deleted }
   }
 
   async getCareerPaths(language: string = 'en') {
