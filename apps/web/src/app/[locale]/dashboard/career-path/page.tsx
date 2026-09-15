@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import ConfirmModal from '@/components/ConfirmModal'
+import toast from 'react-hot-toast'
 
 const PATH_KEYWORDS: Record<string, string[]> = {
   'سيبراني': ['سيبر', 'اختراق', 'أمن', 'شبكات', 'حماية', 'cyber', 'security', 'pentest', 'network', 'ethical hacking', 'vulnerability', 'forensics', 'malware', 'SIEM', 'SOC', 'firewall', 'encryption', 'cryptography'],
@@ -260,7 +261,11 @@ const [confirmModal, setConfirmModal] = useState<{
   }, [myPathIds, allPaths, allCourses])
 
   const removePath = async (pathId: string) => {
-    if (!isPathIdSelected(pathId)) return
+    console.log('[removePath] called with', pathId, 'current count:', myPathIds.size)
+    if (!isPathIdSelected(pathId)) {
+      console.warn('[removePath] path not selected, aborting', pathId)
+      return
+    }
     if (busyPaths.has(pathId)) return
     const token = getToken()
 
@@ -279,15 +284,22 @@ const [confirmModal, setConfirmModal] = useState<{
     })
 
     try {
-      await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
+      const res = await fetch(`${apiUrl}/career/paths/remove/${pathId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        console.error('[removePath] API returned', res.status, body)
+        throw new Error(`API ${res.status}`)
+      }
+      console.log('[removePath] API success for', pathId)
     } catch (e: any) {
       console.error('[removePath] API error:', e.message)
+      toast.error(isAr ? 'تعذر إزالة المسار، حاول مرة أخرى' : 'Could not remove path, please try again')
       setMyPathIds(prev => {
         const next = new Set(prev)
         next.add(pathId)
