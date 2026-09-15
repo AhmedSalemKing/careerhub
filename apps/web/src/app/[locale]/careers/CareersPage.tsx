@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useCallback, useState, useMemo, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import ConfirmModal from '@/components/ConfirmModal'
 import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
   Briefcase, Package, ChevronRight, Clock, Star, DollarSign,
@@ -50,6 +52,45 @@ export default function CareersPage() {
   const [visibleCards, setVisibleCards] = useState<Set<string>>(new Set())
   const [detailPath, setDetailPath] = useState<any>(null)
   const [detailTab, setDetailTab] = useState<'tasks'|'skills'|'qualifications'|'progression'>('tasks')
+  const [confirmPath, setConfirmPath] = useState<any>(null)
+  
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+  const getToken = () =>
+    typeof window !== 'undefined'
+      ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''
+      : ''
+  
+  const requestStartPath = (path: any) => setConfirmPath(path)
+  
+  const confirmAddPath = useCallback(async () => {
+    if (!confirmPath) return
+    const pathId = confirmPath.id
+    setConfirmPath(null)
+    
+    try {
+      const saved = localStorage.getItem('selectedCareerPaths')
+      const current: string[] = saved ? JSON.parse(saved) : []
+      if (!current.includes(pathId)) {
+        localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, pathId].slice(0,5)))
+      }
+    } catch(e) {}
+    
+    try {
+      const token = getToken()
+      await fetch(`${apiUrl}/career/paths/add/${pathId}?source=MANUAL`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      })
+      toast.success(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
+    } catch(e) {
+      toast.success(isAr ? 'تمت إضافة المسار بنجاح' : 'Career path added successfully')
+    }
+    
+    router.push(`/${locale}/dashboard/career-path`)
+  }, [confirmPath, apiUrl, locale, isAr, router])
   
   const allPaths = useMemo(() => {
     return CAREER_PATHS.flatMap(cat => 
@@ -394,16 +435,7 @@ export default function CareersPage() {
                     {isAr ? 'تفاصيل' : 'Details'}
                   </button>
                   <button
-                    onClick={() => {
-                      try {
-                        const saved = localStorage.getItem('selectedCareerPaths')
-                        const current: string[] = saved ? JSON.parse(saved) : []
-                        if (!current.includes(path.id)) {
-                          localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, path.id].slice(0,5)))
-                        }
-                      } catch(e) {}
-                      router.push(`/${locale}/dashboard/career-path`)
-                    }}
+                    onClick={() => requestStartPath(path)}
                     style={{
                       padding:'8px 4px', borderRadius:'10px',
                       fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:600,
@@ -683,16 +715,7 @@ export default function CareersPage() {
               position:'sticky', bottom:0, background:cardBg,
             }}>
               <button
-                onClick={() => {
-                  try {
-                    const saved = localStorage.getItem('selectedCareerPaths')
-                    const current: string[] = saved ? JSON.parse(saved) : []
-                    if (!current.includes(detailPath.id)) {
-                      localStorage.setItem('selectedCareerPaths', JSON.stringify([...current, detailPath.id].slice(0,5)))
-                    }
-                  } catch(e) {}
-                  router.push(`/${locale}/dashboard/career-path`)
-                }}
+                onClick={() => requestStartPath(detailPath)}
                 style={{
                   flex:1, padding:'13px', borderRadius:12,
                   background:'#5120c8', color:'#ffffff', border:'none', cursor:'pointer',
@@ -717,6 +740,16 @@ export default function CareersPage() {
           </div>
         </>
       )}
+
+      <ConfirmModal
+        isOpen={!!confirmPath}
+        title={isAr ? 'إضافة مسار مهني' : 'Add Career Path'}
+        message={isAr ? 'هل تريد إضافة هذا المسار إلى مساراتك المهنية؟' : 'Do you want to add this career path to your career paths?'}
+        confirmLabel={isAr ? 'أضف المسار' : 'Add Path'}
+        cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
+        onConfirm={confirmAddPath}
+        onCancel={() => setConfirmPath(null)}
+      />
     </div>
   )
 }
