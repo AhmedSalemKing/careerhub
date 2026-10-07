@@ -11,6 +11,7 @@ import {
   BarChart, Users, Award
 } from 'lucide-react'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
+import { learnUrl } from '../../../../lib/constants'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 
@@ -727,7 +728,7 @@ const [confirmModal, setConfirmModal] = useState<{
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14 }}>
                     {courses.map((course: any) => (
                       <div key={course.id} style={{ borderRadius: 14, border: `1px solid ${border}`, background: cardBg, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.15s' }}
-                      onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses/${course.slug || course.id}`, '_blank')}>
+                      onClick={() => window.open(learnUrl(`/${locale}/courses/${course.slug || course.id}`), '_blank')}>
                         <div style={{ height: 120, background: isDark ? '#1a1a1a' : '#f8f8fa', overflow: 'hidden' }}>
                           {course.thumbnail ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={28} color={subtext} /></div>}
                         </div>
@@ -748,7 +749,7 @@ const [confirmModal, setConfirmModal] = useState<{
                       {isAr ? 'لا توجد كورسات مطابقة لمساراتك المختارة حالياً' : 'No courses matching your selected paths yet'}
                     </p>
                     <a
-                      href="https://devewayhub.vercel.app/ar/courses"
+                      href={learnUrl(`/${locale}/courses`)}
                       target="_blank" rel="noopener noreferrer"
                       style={{
                         display:'inline-block',
@@ -784,7 +785,7 @@ const [confirmModal, setConfirmModal] = useState<{
                 
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
                   <a
-                    href="https://devewayhub.vercel.app/ar/courses"
+                    href={learnUrl(`/${locale}/courses`)}
                     target="_blank" rel="noopener noreferrer"
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
                     <BookOpen size={14} />

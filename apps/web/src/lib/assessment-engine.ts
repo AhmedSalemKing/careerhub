@@ -1,3 +1,5 @@
+import { LEARN_URL } from './constants'
+
 export type CareerTrack = 
   'frontend' | 'backend' | 'fullstack' | 'mobile' | 'devops' |
   'data-science' | 'ai-ml' | 'cybersecurity' | 'ui-ux' | 'graphic-design' |
@@ -505,7 +507,7 @@ export function calculateResults(questions: Question[], answers: Record<string, 
         titleAr: meta?.titleAr || track,
         titleEn: meta?.titleEn || track,
         icon: meta?.icon || 'code',
-        learnUrl: `https://deveway-teal.vercel.app/${locale}/courses?category=${meta?.category || 'tech'}`,
+        learnUrl: `${LEARN_URL}/${locale}/courses?category=${meta?.category || 'tech'}`,
       }
     })
     .sort((a, b) => b.score - a.score)

@@ -12,6 +12,7 @@ import { TypewriterHero } from './TypewriterHero' // استيراد مكون ا�
 // import { CareerPathsSection } from '../components/CareerPathsSection' // تم التعطيل لتجنب الأخطاء
 // import { Button } from '../components/ui/button' // تم الاستغناء عنه لتجنب أخطاء الـ Typescript
 import { get } from '../../lib/api'
+import { learnUrl } from '../../lib/constants'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
@@ -288,7 +289,7 @@ export default function HomePage() {
                       </span>
                     </div>
                     <Link
-                      href={`/${locale}/courses/${course.id}`}
+                      href={learnUrl(`/${locale}/courses/${course.id}`)}
                       className="btn-primary"
                       style={{ fontSize: 13, padding: '8px 16px' }}
                     >

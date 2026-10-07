@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { learnUrl } from '../../../../lib/constants'
 
 export default function PublicProfilePage() {
   const params = useParams()
@@ -112,7 +113,7 @@ export default function PublicProfilePage() {
           <h2 style={{ fontSize:'1.1rem', fontWeight:700, marginBottom:'1rem' }}>{isAr ? 'كورسات المحاضر' : 'Instructor Courses'}</h2>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:'1rem' }}>
             {profile.courses.map((course: any) => (
-              <Link key={course.id} href={`/${locale}/courses/${course.id}`} style={{ textDecoration:'none' }}>
+              <Link key={course.id} href={learnUrl(`/${locale}/courses/${course.id}`)} style={{ textDecoration:'none' }}>
                 <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'12px', overflow:'hidden', transition:'border-color 0.2s', cursor:'pointer' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}>

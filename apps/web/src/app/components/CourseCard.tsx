@@ -83,7 +83,7 @@ export function CourseCard({
   return (
     <a
       ref={cardRef}
-      href={`${TRAINING_URL}/courses/${course.id}`}
+      href={`${TRAINING_URL}/${locale}/courses/${course.id}`}
       target="_blank"
       rel="noopener noreferrer"
       data-testid="course-card"

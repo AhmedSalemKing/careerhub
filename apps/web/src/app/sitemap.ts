@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next'
+import { LEARN_URL } from '../lib/constants'
 
 const BASE_URL = 'https://www.deveways.com'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
@@ -58,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (!course?.slug) continue
     for (const locale of locales) {
       entries.push({
-        url: `${BASE_URL}/${locale}/courses/${course.slug}`,
+        url: `${LEARN_URL}/${locale}/courses/${course.slug}`,
         lastModified: new Date(course.updatedAt || course.createdAt || Date.now()),
         changeFrequency: 'weekly',
         priority: 0.9,

@@ -1,5 +1,11 @@
-export const LEARN_URL =
-  process.env.NEXT_PUBLIC_LEARN_URL || 'http://localhost:3002'
+export const LEARN_URL = (() => {
+  const u = process.env.NEXT_PUBLIC_LEARN_URL
+  if (u && u.trim()) return u.trim().replace(/\/+$/, '')
+  // Fallback: production build → learn app origin, dev build → local learn app
+  return process.env.NODE_ENV === 'production'
+    ? 'https://devewayhub.vercel.app'
+    : 'http://localhost:3002'
+})()
 
 export const TRAINING_URL = LEARN_URL
 

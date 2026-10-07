@@ -9,7 +9,7 @@ import {
   RotateCcw, ArrowLeft, ArrowRight, RefreshCw
 } from 'lucide-react'
 import {
-  QUESTION_BANK, TRACK_META, selectAdaptiveQuestions,
+  QUESTION_BANK, selectAdaptiveQuestions,
   calculateResults, type Question, type CareerScore
 } from '@/lib/assessment-engine'
 
@@ -345,7 +345,7 @@ export default function AssessmentPage() {
                 </div>
                 
                 <button
-                  onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/courses?category=${TRACK_META[result.track]?.category || 'tech'}`, '_blank')}
+                  onClick={() => window.open(result.learnUrl, '_blank')}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 6,
                     padding: '8px 14px', borderRadius: 10,
