@@ -403,18 +403,60 @@ export default function RegisterPage() {
       }
       const res = await api.post('/auth/register', payload)
       const data = res.data.data ?? res.data
+      const registeredUser = data.user ?? null
 
-      if (data.pendingReview) {
+      // Instructors / consultants wait for approval — no session yet
+      if (data.pendingReview || registeredUser?.status === 'PENDING') {
         setIsPending(true)
-      } else {
-        if (data.accessToken) {
-          localStorage.setItem('careerhub_token', data.accessToken)
-          document.cookie = `careerhub_token=${data.accessToken}; path=/; SameSite=Lax; max-age=604800`
-          localStorage.setItem('careerhub_refresh', data.refreshToken || '')
-        }
+        setStep(3)
+        window.dispatchEvent(new Event('auth:updated'))
+        return
       }
-      setStep(3)
+
+      // ── Auto-login (same response as login: user + accessToken) ──────────
+      let authUser = registeredUser
+      let token = data.accessToken ?? null
+      let refreshToken = data.refreshToken ?? null
+
+      if (!token) {
+        const loginRes = await api.post('/auth/login', {
+          email: step1.email,
+          password: step1.password,
+        })
+        const loginData = loginRes.data.data ?? loginRes.data
+        authUser = loginData.user ?? null
+        token = loginData.accessToken ?? null
+        refreshToken = loginData.refreshToken ?? null
+      }
+
+      if (authUser?.status === 'PENDING') {
+        setIsPending(true)
+        setStep(3)
+        window.dispatchEvent(new Event('auth:updated'))
+        return
+      }
+
+      if (!token || !authUser) {
+        console.error('[Register] auto-login failed: no token returned')
+        setStep(3)
+        window.dispatchEvent(new Event('auth:updated'))
+        return
+      }
+
+      localStorage.setItem('careerhub_token', token)
+      localStorage.setItem('deveway_token', token)
+      document.cookie = `careerhub_token=${token}; path=/; SameSite=Lax; max-age=604800`
+      localStorage.setItem('careerhub_user', JSON.stringify(authUser))
+      localStorage.setItem('deveway_user', JSON.stringify(authUser))
+      if (refreshToken) {
+        localStorage.setItem('careerhub_refresh', refreshToken)
+        localStorage.setItem('deveway_refresh', refreshToken)
+      }
+      setToken(token)
+      setUser(authUser)
       window.dispatchEvent(new Event('auth:updated'))
+      router.push(`/${locale}/dashboard`)
+      return
     } catch (err: unknown) {
       console.log('[Register] Error details:', (err as any)?.response?.data)
       const msg = (err as any).response?.data?.message || (ar ? 'حدث خطأ' : 'An error occurred')

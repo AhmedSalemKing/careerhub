@@ -111,6 +111,9 @@ export class AuthService {
       return { user, profile };
     });
 
+    // The frontend auto-login stores this user — include the profile we just created
+    const registeredUser = this.sanitizeUser({ ...result.user, profile: result.profile });
+
     // Send notification
     await this.notificationsService.createNotification({
       userId: result.user.id,
@@ -138,7 +141,7 @@ export class AuthService {
     // Pending users don't get tokens — they must wait for approval
     if (isPendingAccount) {
       return {
-        user: this.sanitizeUser(result.user),
+        user: registeredUser,
         pendingReview: true,
         accessToken: null,
         refreshToken: null,
@@ -150,7 +153,7 @@ export class AuthService {
     await this.storeRefreshToken(result.user.id, refreshToken);
 
     return {
-      user: this.sanitizeUser(result.user),
+      user: registeredUser,
       pendingReview: false,
       accessToken,
       refreshToken,
@@ -169,6 +172,7 @@ export class AuthService {
         where: { email },
         select: {
           id: true, email: true, password: true, role: true, isActive: true, deletedAt: true,
+          provider: true,
           stripeCustomerId: true, createdAt: true, updatedAt: true,
           accountType: true, status: true, cvUrl: true, bio: true, experience: true,
           speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
@@ -186,6 +190,12 @@ export class AuthService {
     if (!user || user.isActive === false) {
       this.logger.warn(`[LOGIN] rejected: user=${!!user}, isActive=${user?.isActive}`);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // OAuth accounts have no local password — never call bcrypt.compare with null/undefined
+    if (!user.password) {
+      this.logger.warn(`[LOGIN] rejected: user=${user.id} has no local password (provider=${user.provider ?? 'unknown'})`);
+      throw new UnauthorizedException('Use Google login for this account');
     }
 
     // Verify password

@@ -66,21 +66,26 @@ export class AuthController {
     try {
       const result = await this.authService.register(registerDto);
 
-      response.cookie('refresh_token', result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-        path: '/',
-      });
+      // Pending accounts get no tokens — never write `access_token=null` cookies
+      if (result.refreshToken) {
+        response.cookie('refresh_token', result.refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+          path: '/',
+        });
+      }
 
-      response.cookie('access_token', result.accessToken, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 15 * 60 * 1000,
-        path: '/',
-      });
+      if (result.accessToken) {
+        response.cookie('access_token', result.accessToken, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 15 * 60 * 1000,
+          path: '/',
+        });
+      }
 
       await this.audit.log({
         event: SecurityEvent.REGISTER,
@@ -97,6 +102,7 @@ export class AuthController {
         data: {
           user: result.user,
           accessToken: result.accessToken,
+          pendingReview: result.pendingReview,
         },
       };
     } catch (error) {

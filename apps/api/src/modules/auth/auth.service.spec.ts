@@ -22,6 +22,7 @@ describe('AuthService', () => {
     },
     session: {
       create: jest.fn(),
+      deleteMany: jest.fn(),
     },
     userActivity: {
       create: jest.fn(),
@@ -31,6 +32,7 @@ describe('AuthService', () => {
       findFirst: jest.fn(),
       updateMany: jest.fn(),
     },
+    transaction: jest.fn(),
   };
 
   const mockJwt = {
@@ -128,7 +130,77 @@ describe('AuthService', () => {
         service.login({ email: 'test@test.com', password: 'pass' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should reject login when the account has no local password (Google OAuth)', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: '1',
+        email: 'oauth@test.com',
+        password: null,
+        provider: 'google',
+        role: 'USER',
+        isActive: true,
+        accountType: 'STUDENT',
+        status: 'ACTIVE',
+        profile: { firstName: 'Test', lastName: 'User', avatar: null, language: 'en' },
+      });
+      await expect(
+        service.login({ email: 'oauth@test.com', password: 'whatever' }),
+      ).rejects.toThrow('Use Google login for this account');
+    });
+
+    it('should authenticate a freshly registered user with the same password', async () => {
+      const stored = await createRegisteredUser('fresh@test.com', 'Pass123!');
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        ...stored.user,
+        password: stored.hashedPassword,
+        profile: { firstName: 'Fresh', lastName: 'User', avatar: null, language: 'en' },
+      });
+
+      const result = await service.login({ email: 'fresh@test.com', password: 'Pass123!' });
+      expect(result.accessToken).toBeTruthy();
+      expect(result.user).toBeTruthy();
+      expect((result.user as any).password).toBeUndefined();
+    });
   });
+
+  // Registers a user and returns what actually got persisted
+  async function createRegisteredUser(email: string, password: string) {
+    let hashedPassword = '';
+
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null);
+    mockPrisma.transaction.mockImplementation(async (fn: any) =>
+      fn({
+        user: {
+          create: jest.fn(async ({ data }: any) => {
+            hashedPassword = data.password;
+            return { id: 'u-1', role: 'USER', isActive: true, ...data };
+          }),
+        },
+        userProfile: {
+          create: jest.fn().mockResolvedValue({
+            userId: 'u-1',
+            firstName: 'Fresh',
+            lastName: 'User',
+            language: 'en',
+            avatar: null,
+          }),
+        },
+      }),
+    );
+    mockPrisma.session.deleteMany.mockResolvedValue({});
+    mockPrisma.session.create.mockResolvedValue({});
+
+    const result = await service.register({
+      email,
+      password,
+      firstName: 'Fresh',
+      lastName: 'User',
+      accountType: 'STUDENT',
+    });
+
+    return { hashedPassword, user: result.user, accessToken: result.accessToken };
+  }
 
   describe('register', () => {
     it('should throw BadRequestException on duplicate email', async () => {
@@ -142,6 +214,16 @@ describe('AuthService', () => {
           accountType: 'STUDENT',
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should hash the password with bcrypt before saving it', async () => {
+      const stored = await createRegisteredUser('hashed@test.com', 'Pass123!');
+
+      expect(stored.hashedPassword).not.toBe('Pass123!');
+      expect(stored.hashedPassword).toMatch(/^\$2[aby]\$/);
+      await expect(bcrypt.compare('Pass123!', stored.hashedPassword)).resolves.toBe(true);
+      expect(stored.accessToken).toBeTruthy();
+      expect((stored.user as any).password).toBeUndefined();
     });
   });
 });

@@ -16,6 +16,7 @@ type AuthState = {
   token: string | null
   refreshToken: string | null
   isLoading: boolean
+  isAuthenticated: boolean
   setUser: (user: AuthUser | null) => void
   setToken: (token: string | null) => void
   setRefreshToken: (token: string | null) => void
@@ -29,13 +30,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   refreshToken: null,
   isLoading: true,
+  isAuthenticated: false,
   setUser: (user) => {
-    set({ user })
+    set({ user, isAuthenticated: !!user || !!get().token })
     if (user) setUser(user)
     else removeUser()
   },
   setToken: (token) => {
-    set({ token })
+    set({ token, isAuthenticated: !!token || !!get().user })
     if (token) setToken(token)
     else removeToken()
   },
@@ -52,12 +54,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = getUser<AuthUser>()
     let refreshToken: string | null = null
     try { refreshToken = localStorage.getItem('deveway_refresh') } catch {}
-    set({ token, user, refreshToken, isLoading: false })
+    set({ token, user, refreshToken, isLoading: false, isAuthenticated: !!user || !!token })
   },
   logout: () => {
     hardLogout()
     try { localStorage.removeItem('deveway_refresh') } catch {}
-    set({ user: null, token: null, refreshToken: null })
+    set({ user: null, token: null, refreshToken: null, isAuthenticated: false })
   },
   updateUser: (partial) => {
     const current = get().user
