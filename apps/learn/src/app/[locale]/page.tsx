@@ -7,11 +7,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Play, Users, BookOpen, Star, Clock, ArrowRight,
   Award, Globe, Code, Palette,
-  BarChart3, Briefcase, Sparkles, Laptop
+  BarChart3, Briefcase, Sparkles, Laptop, CheckCircle2
 } from 'lucide-react'
 import { CareerPathsSection } from '../components/CareerPathsSection'
 import { Button } from '../components/ui/button'
 import { get } from '../../lib/api'
+import { useAuthStore } from '../../stores/authStore'
 
 const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
 const API_BASE = (() => {
@@ -96,6 +97,36 @@ export default function HomePage() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+
+  // Enrolled courses for the logged-in user (featured carousel badges)
+  const authUser = useAuthStore((s) => s.user)
+  const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!authUser) {
+      setEnrolledIds(new Set())
+      return
+    }
+    let cancelled = false
+    get('/courses/enrolled')
+      .then((res: any) => {
+        const body = res?.data?.data
+        const data = body?.items || body || res?.data || []
+        const list = Array.isArray(data) ? data : []
+        const ids = new Set<string>(
+          list
+            .map((e: any) => e?.courseId || e?.course?.id || e?.id)
+            .filter(Boolean)
+        )
+        if (!cancelled) setEnrolledIds(ids)
+      })
+      .catch(() => {
+        if (!cancelled) setEnrolledIds(new Set())
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [authUser])
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640)
@@ -513,7 +544,28 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.price}<span className="text-sm font-normal ml-1" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? 'ر.س' : 'SAR'}</span></div>
-                    <Link href={`/${locale}/courses/${course.id}`} className="btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>{locale === 'ar' ? 'التحقق الآن' : 'Enroll'}</Link>
+                    {enrolledIds.has(course.id) ? (
+                      <Link
+                        href={`/${locale}/learn/${course.id}`}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 16px',
+                          borderRadius: '10px',
+                          background: 'rgba(16,185,129,0.12)',
+                          border: '1px solid rgba(16,185,129,0.4)',
+                          color: '#10B981',
+                          fontSize: 13,
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                        }}>
+                        <CheckCircle2 size={14} />
+                        {locale === 'ar' ? 'مشترك بالفعل' : 'Already Enrolled'}
+                      </Link>
+                    ) : (
+                      <Link href={`/${locale}/courses/${course.id}`} className="btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>{locale === 'ar' ? 'التحقق الآن' : 'Enroll'}</Link>
+                    )}
                   </div>
                 </div>
               </div>
