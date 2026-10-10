@@ -56,6 +56,7 @@ import {
 	Star,
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
+import { useAuthStore } from "../../../../stores/authStore";
 
 	function LearnPageInner() {
 		const params = useParams();
@@ -81,6 +82,10 @@ import VideoProtection from "../../../../components/VideoProtection";
 
 	const t = useTranslations('learn')
 	const isAr = locale === 'ar'
+
+	// Authenticated user (existing store, hydrated app-wide) — used for the
+	// dynamic per-user video watermark.
+	const authUser = useAuthStore((s) => s.user);
 
 	// Native video ref
 	const videoRef = useRef<HTMLVideoElement>(null);
@@ -2413,7 +2418,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 			</a>
 
 			{/* Video Protection Component */}
-			<VideoProtection userName={undefined} userEmail={undefined} />
+			<VideoProtection userName={undefined} userEmail={authUser?.email || undefined} />
 
 			{/* Mobile Bottom Navigation Bar - Hidden (using inline controls instead) */}
 			{/* 

@@ -1,5 +1,6 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuthStore } from '../stores/authStore'
 
 interface Props {
   userName?: string
@@ -7,6 +8,9 @@ interface Props {
 }
 
 export default function VideoProtection({ userName, userEmail }: Props) {
+  const storeUser = useAuthStore((s) => s.user)
+  const [wmPos, setWmPos] = useState({ top: '88%', left: '88%' })
+
   useEffect(() => {
     // 1. Disable right-click on video area
     const preventContext = (e: MouseEvent) => {
@@ -59,7 +63,24 @@ export default function VideoProtection({ userName, userEmail }: Props) {
     }
   }, [])
 
-  const watermarkText = userName || userEmail || 'DeveWay'
+  // Anti screen-recording hardening: reposition the watermark every ~9s
+  // so a recording cannot simply be cropped to remove it.
+  useEffect(() => {
+    const move = () => {
+      const top = 10 + Math.random() * 75 // 10% – 85%
+      const left = 10 + Math.random() * 75 // 10% – 85%
+      setWmPos({ top: `${top}%`, left: `${left}%` })
+    }
+    const interval = setInterval(move, 9000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const email = userEmail || storeUser?.email || ''
+  const watermarkText = email
+    ? `DeveWay ${email}`
+    : userName
+      ? `DeveWay ${userName}`
+      : 'DeveWay'
 
   return (
     <div
@@ -74,25 +95,27 @@ export default function VideoProtection({ userName, userEmail }: Props) {
         overflow: 'hidden',
       }}
     >
-      {Array.from({ length: 20 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `${(i % 5) * 22 + 5}%`,
-            top: `${Math.floor(i / 5) * 25 + 10}%`,
-            color: 'rgba(255,255,255,0.06)',
-            fontSize: '14px',
-            fontWeight: 600,
-            transform: 'rotate(-30deg)',
-            whiteSpace: 'nowrap',
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
-        >
-          {watermarkText}
-        </div>
-      ))}
+      <div
+        data-wm="1"
+        dir="ltr"
+        style={{
+          position: 'absolute',
+          top: wmPos.top,
+          left: wmPos.left,
+          transition: 'top 1.2s ease, left 1.2s ease',
+          color: '#ffffff',
+          opacity: 0.4,
+          fontSize: '13px',
+          fontWeight: 600,
+          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+          whiteSpace: 'nowrap',
+          userSelect: 'none',
+          pointerEvents: 'none',
+          direction: 'ltr',
+        }}
+      >
+        {watermarkText}
+      </div>
     </div>
   )
 }
