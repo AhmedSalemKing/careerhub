@@ -381,6 +381,7 @@ model Course {
   cartItems    CartItem[]
   ratings      Rating[]
   bundles     BundleCourse[]
+  quizzes     Quiz[]
 
   @@index([status])
   @@index([isFeatured])
@@ -431,6 +432,7 @@ model Section {
   courseId String
   course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
+  quizzes  Quiz[]
 
   @@index([courseId])
   @@map("sections")
@@ -493,7 +495,7 @@ model Lesson {
   module       CourseModule?    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   section      Section?         @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   videoContent VideoContent?
-  quiz         Quiz?
+  quizzes      Quiz[]
   progress     LessonProgress[]
 
   @@index([moduleId])
@@ -525,71 +527,137 @@ model VideoContent {
 }
 
 model Quiz {
-  id            String   @id @default(cuid())
-  lessonId      String?  @unique
-  titleEn       String
-  titleAr       String
-  descriptionEn String?
-  descriptionAr String?
-  passingScore  Int      @default(70)
-  timeLimit     Int? // Time limit in minutes
-  maxAttempts   Int      @default(3)
-  sortOrder     Int      @default(0)
-  isPublished   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  courseId           String
+  course             Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  sectionId          String?
+  section            Section? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  lessonId           String?
+  lesson             Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
 
-  // Relations
-  lesson    Lesson?        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  questions QuizQuestion[]
-  attempts  QuizAttempt[]
+  title              String
+  titleAr            String?
+  description        String?
 
+  durationMinutes    Int      @default(30)
+  passingScore       Int      @default(60)
+  shuffleQuestions   Boolean  @default(false)
+  shuffleChoices     Boolean  @default(false)
+  allowRetake        Boolean  @default(true)
+  maxAttempts        Int      @default(1)
+  showResults        Boolean  @default(true)
+
+  status             String   @default("DRAFT")
+
+  questions          QuizQuestion[]
+  attempts           QuizAttempt[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([courseId])
   @@index([lessonId])
-  @@index([isPublished])
-  @@map("quizzes")
+  @@index([status])
+  @@map("quiz_tests")
 }
 
 model QuizQuestion {
-  id             String   @id @default(cuid())
-  quizId         String
-  questionTextEn String
-  questionTextAr String
-  questionType   String // MULTIPLE_CHOICE, TRUE_FALSE, TEXT
-  options        Json? // JSON array of options
-  correctAnswer  String
-  points         Int      @default(1)
-  order          Int
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  quizId               String
+  quiz                 Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-  // Relations
-  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  order                Int
+  type                 String
+  questionText         String
+  questionImage        String?
+  note                 String?
 
-  @@index([quizId])
-  @@index([order])
-  @@map("quiz_questions")
+  points               Int      @default(1)
+  allowMultipleAnswers Boolean  @default(false)
+
+  choices              QuizChoice[]
+  answers              QuizAnswer[]
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([quizId, order])
+  @@map("quiz_test_questions")
+}
+
+model QuizChoice {
+  id         String       @id @default(cuid())
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  text       String
+  isCorrect  Boolean      @default(false)
+  order      Int          @default(0)
+
+  @@index([questionId])
+  @@map("quiz_test_choices")
 }
 
 model QuizAttempt {
-  id          String   @id @default(cuid())
-  quizId      String
-  userId      String
-  score       Int
-  maxScore    Int
-  passed      Boolean
-  answers     Json // User's answers
-  startedAt   DateTime @default(now())
-  completedAt DateTime
-  attemptNum  Int
+  id               String   @id @default(cuid())
+  quizId           String
+  quiz             Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relations
-  quiz Quiz @relation(fields: [quizId], references: [id])
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startedAt        DateTime @default(now())
+  submittedAt      DateTime?
+  endsAt           DateTime
+  timeSpentSeconds Int?
+
+  status           String   @default("IN_PROGRESS")
+
+  autoScore        Float    @default(0)
+  manualScore      Float    @default(0)
+  totalScore       Float    @default(0)
+  maxScore         Float    @default(0)
+  percentage       Float    @default(0)
+  passed           Boolean  @default(false)
+
+  teacherNotes     String?
+
+  answers          QuizAnswer[]
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([quizId])
   @@index([userId])
-  @@index([passed])
-  @@map("quiz_attempts")
+  @@index([status])
+  @@index([userId, quizId])
+  @@map("quiz_test_attempts")
+}
+
+model QuizAnswer {
+  id                 String   @id @default(cuid())
+  attemptId          String
+  attempt            QuizAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId         String
+  question           QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  selectedChoiceIds  String[]
+  textAnswer         String?
+  fileUrl            String?
+  fileName           String?
+
+  autoGrade          Float?
+  manualGrade        Float?
+  feedback           String?
+  gradedAt           DateTime?
+  gradedBy           String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("quiz_test_answers")
 }
 
 model Enrollment {

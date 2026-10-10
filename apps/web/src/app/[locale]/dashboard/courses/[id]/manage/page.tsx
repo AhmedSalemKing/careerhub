@@ -6,14 +6,14 @@ import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   BookOpen, Users, Settings, Video, Plus, X, Upload, CheckCircle,
-  FileText, Image, File, Download, Eye, Trash2, Edit3
+  FileText, Image, File, Download, Eye, Trash2, Edit3, FileQuestion
 } from 'lucide-react'
 import { get, post, patch, del } from '../../../../../../lib/api'
 import { AuthGate } from '../../../../../components/AuthGate'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
-type Tab = 'content' | 'lectures' | 'students' | 'settings'
+type Tab = 'content' | 'lectures' | 'students' | 'settings' | 'quizzes'
 type MediaType = 'video' | 'file' | 'image' | null
 
 // ─── Upload Functions ──────────────────────────────────────────────────────
@@ -836,6 +836,7 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
 
 export default function ManageCoursePage() {
   const params = useParams()
+  const router = useRouter()
   const locale = useLocale()
   const courseId = params.id as string
   const queryClient = useQueryClient()
@@ -869,6 +870,7 @@ export default function ManageCoursePage() {
   const tabs: { key: Tab; label: string; icon: typeof BookOpen }[] = [
     { key: 'content', label: 'المحتوى', icon: BookOpen },
     { key: 'lectures', label: 'المحاضرات', icon: Video },
+    { key: 'quizzes', label: 'الاختبارات', icon: FileQuestion },
     { key: 'students', label: 'الطلاب', icon: Users },
     { key: 'settings', label: 'الإعدادات', icon: Settings },
   ]
@@ -925,7 +927,13 @@ export default function ManageCoursePage() {
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => {
+                if (tab.key === 'quizzes') {
+                  router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes`)
+                  return
+                }
+                setActiveTab(tab.key)
+              }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all ${
                 activeTab === tab.key
                   ? 'bg-primary text-white shadow-md'

@@ -56,6 +56,7 @@ import {
 	Star,
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
+import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import { useAuthStore } from "../../../../stores/authStore";
 
 	function LearnPageInner() {
@@ -85,7 +86,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 
 	// Authenticated user (existing store, hydrated app-wide) — used for the
 	// dynamic per-user video watermark.
-	const authUser = useAuthStore((s) => s.user);
+	const authUser = useAuthStore((s: any) => s.user);
 
 	// Email resolution for the watermark: auth store → persisted user
 	// (deveway_user) → JWT payload → /auth/me. Guarantees the email is
@@ -2137,6 +2138,8 @@ import { useAuthStore } from "../../../../stores/authStore";
 										</div>
 									</div>
 								)}
+
+								<QuizEntryCard lessonId={activeLesson?.id} />
 
 								{/* Download Materials Section */}
 								{hasFile && fileUrl && (

@@ -33,6 +33,7 @@ import { ConsultingModule } from './modules/consulting/consulting.module';
 import { LiveModule } from './modules/live/live.module';
 import { AuditModule } from './common/services/audit.module';
 import { CsrfModule } from './modules/csrf/csrf.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { CsrfModule } from './modules/csrf/csrf.module';
     LiveModule,
     AuditModule,
     CsrfModule,
+    QuizzesModule,
   ],
   controllers: [],
   providers: [
