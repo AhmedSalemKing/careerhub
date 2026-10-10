@@ -950,6 +950,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 	}
 
 	return (
+		<>
 		<div
 			className="flex min-h-screen flex-col"
 			dir="rtl"
@@ -1582,8 +1583,6 @@ import { useAuthStore } from "../../../../stores/authStore";
 														{seekFeedback.side === "backward" ? "-5s" : "+5s"}
 													</div>
 											)}
-											{/* Dynamic per-user video watermark */}
-											<VideoProtection userName={undefined} userEmail={authUser?.email || undefined} />
 										</div>
 
 										<div style={{
@@ -2500,6 +2499,10 @@ import { useAuthStore } from "../../../../stores/authStore";
 				}
 			`}</style>
 		</div>
+
+		{/* Full-viewport per-user watermark overlay (learn page only) */}
+		<VideoProtection userEmail={authUser?.email || undefined} />
+		</>
 	);
 }
 

@@ -7,8 +7,9 @@ interface Props {
   userEmail?: string
 }
 
-const WM_COLS = 6
-const WM_ROWS = 4
+const WM_COLS = 8
+const WM_ROWS = 6
+const WM_TILE_COUNT = WM_COLS * WM_ROWS
 
 export default function VideoProtection({ userName, userEmail }: Props) {
   const storeUser = useAuthStore((s) => s.user)
@@ -76,7 +77,7 @@ export default function VideoProtection({ userName, userEmail }: Props) {
     <div
       data-wm="1"
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
@@ -84,7 +85,7 @@ export default function VideoProtection({ userName, userEmail }: Props) {
         pointerEvents: 'none',
         userSelect: 'none',
         overflow: 'hidden',
-        zIndex: 5,
+        zIndex: 2147483000,
       }}
     >
       <div
@@ -98,10 +99,11 @@ export default function VideoProtection({ userName, userEmail }: Props) {
           display: 'grid',
           gridTemplateColumns: `repeat(${WM_COLS}, 1fr)`,
           gridTemplateRows: `repeat(${WM_ROWS}, 1fr)`,
+          gap: '60px 80px',
           opacity: 0.22,
         }}
       >
-        {Array.from({ length: WM_COLS * WM_ROWS }).map((_, i) => (
+        {Array.from({ length: WM_TILE_COUNT }).map((_, i) => (
           <div
             key={i}
             dir="ltr"
