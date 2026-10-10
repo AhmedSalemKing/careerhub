@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
 
 interface Props {
@@ -7,9 +7,11 @@ interface Props {
   userEmail?: string
 }
 
+const WM_COLS = 6
+const WM_ROWS = 4
+
 export default function VideoProtection({ userName, userEmail }: Props) {
   const storeUser = useAuthStore((s) => s.user)
-  const [wmPos, setWmPos] = useState({ top: '88%', left: '88%' })
 
   useEffect(() => {
     // 1. Disable right-click on video area
@@ -63,18 +65,6 @@ export default function VideoProtection({ userName, userEmail }: Props) {
     }
   }, [])
 
-  // Anti screen-recording hardening: reposition the watermark every ~9s
-  // so a recording cannot simply be cropped to remove it.
-  useEffect(() => {
-    const move = () => {
-      const top = 10 + Math.random() * 75 // 10% – 85%
-      const left = 10 + Math.random() * 75 // 10% – 85%
-      setWmPos({ top: `${top}%`, left: `${left}%` })
-    }
-    const interval = setInterval(move, 9000)
-    return () => clearInterval(interval)
-  }, [])
-
   const email = userEmail || storeUser?.email || ''
   const watermarkText = email
     ? `DeveWay ${email}`
@@ -84,37 +74,52 @@ export default function VideoProtection({ userName, userEmail }: Props) {
 
   return (
     <div
+      data-wm="1"
       style={{
-        position: 'fixed',
+        position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
         pointerEvents: 'none',
-        zIndex: 1000,
+        userSelect: 'none',
         overflow: 'hidden',
+        zIndex: 5,
       }}
     >
       <div
-        data-wm="1"
-        dir="ltr"
         style={{
           position: 'absolute',
-          top: wmPos.top,
-          left: wmPos.left,
-          transition: 'top 1.2s ease, left 1.2s ease',
-          color: '#ffffff',
-          opacity: 0.4,
-          fontSize: '13px',
-          fontWeight: 600,
-          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-          pointerEvents: 'none',
-          direction: 'ltr',
+          top: '-20%',
+          left: '-20%',
+          width: '140%',
+          height: '140%',
+          transform: 'rotate(-30deg)',
+          display: 'grid',
+          gridTemplateColumns: `repeat(${WM_COLS}, 1fr)`,
+          gridTemplateRows: `repeat(${WM_ROWS}, 1fr)`,
+          opacity: 0.22,
         }}
       >
-        {watermarkText}
+        {Array.from({ length: WM_COLS * WM_ROWS }).map((_, i) => (
+          <div
+            key={i}
+            dir="ltr"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontSize: '13px',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              userSelect: 'none',
+            }}
+          >
+            {watermarkText}
+          </div>
+        ))}
       </div>
     </div>
   )

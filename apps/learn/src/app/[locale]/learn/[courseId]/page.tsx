@@ -1581,11 +1581,13 @@ import { useAuthStore } from "../../../../stores/authStore";
 														}}>
 														{seekFeedback.side === "backward" ? "-5s" : "+5s"}
 													</div>
-												)}
-											</div>
+											)}
+											{/* Dynamic per-user video watermark */}
+											<VideoProtection userName={undefined} userEmail={authUser?.email || undefined} />
+										</div>
 
-											<div style={{
-												position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
+										<div style={{
+											position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
 												background: 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)',
 												pointerEvents: 'none',
 											}} />
@@ -2417,8 +2419,6 @@ import { useAuthStore } from "../../../../stores/authStore";
 				<Sparkles size={20} color="#fff" />
 			</a>
 
-			{/* Video Protection Component */}
-			<VideoProtection userName={undefined} userEmail={authUser?.email || undefined} />
 
 			{/* Mobile Bottom Navigation Bar - Hidden (using inline controls instead) */}
 			{/* 
