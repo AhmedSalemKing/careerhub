@@ -100,7 +100,28 @@ export default function HomePage() {
 
   // Enrolled courses for the logged-in user (featured carousel badges)
   const authUser = useAuthStore((s) => s.user)
+  const authToken = useAuthStore((s) => s.token)
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set())
+
+  // Ensure the auth store is populated before checking enrollment. The store is
+  // hydrated app-wide from the persisted user; if only a token is present (e.g.
+  // cross-domain login), refresh the user from /auth/me. No call when anonymous.
+  useEffect(() => {
+    if (authUser || !authToken) return
+    let cancelled = false
+    get('/auth/me')
+      .then((res: any) => {
+        const body = res?.data?.data ?? res?.data
+        const user = body?.user ?? body
+        if (!cancelled && user && (user.id || user.email)) {
+          useAuthStore.getState().setUser(user)
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [authUser, authToken])
 
   useEffect(() => {
     if (!authUser) {
