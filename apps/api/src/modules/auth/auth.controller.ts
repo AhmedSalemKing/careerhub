@@ -201,10 +201,6 @@ export class AuthController {
       if (error instanceof ForbiddenException) {
         throw error;
       }
-      // TEMP DIAGNOSTIC: include real error for admin debugging
-      if (loginDto.email === 'admin@deveway.com' || loginDto.email === 'supertest@deveway.com') {
-        throw new UnauthorizedException(`Login failed: ${error instanceof Error ? error.message : String(error)}`);
-      }
       throw new UnauthorizedException('Invalid credentials');
     }
   }

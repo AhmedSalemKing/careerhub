@@ -54,9 +54,9 @@ export class AuthService {
     const resolvedAccountType = accountType || 'STUDENT';
     const isPendingAccount = resolvedAccountType === 'INSTRUCTOR' || resolvedAccountType === 'CONSULTANT';
 
-    // Check if email already exists
-    const existing = await this.prisma.user.findUnique({
-      where: { email },
+    // Check if email already exists (case-insensitive so legacy mixed-case rows are caught)
+    const existing = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
     });
     if (existing) {
       // Check if banned - permanent block
@@ -165,11 +165,11 @@ export class AuthService {
 
     this.logger.log(`[LOGIN] attempt: ${email}`);
 
-    // Find user with profile
+    // Find user with profile (case-insensitive so legacy mixed-case emails still match)
     let user: any;
     try {
-      user = await this.prisma.user.findUnique({
-        where: { email },
+      user = await this.prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
         select: {
           id: true, email: true, password: true, role: true, isActive: true, deletedAt: true,
           provider: true,
@@ -313,8 +313,8 @@ export class AuthService {
   }
 
   async forgotPassword(email: string, ipAddress?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
       include: { profile: true },
     });
 
@@ -362,7 +362,7 @@ export class AuthService {
     const { email, token, newPassword } = resetPasswordDto;
 
     // Look up user first
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
 
     if (!user) {
       throw new BadRequestException('Reset link has expired or already been used.');
@@ -596,11 +596,11 @@ export class AuthService {
 
     this.logger.log(`[ADMIN-LOGIN] attempt: ${email}`);
 
-    // Find admin user
+    // Find admin user (case-insensitive email match)
     let user: any;
     try {
-      user = await this.prisma.user.findUnique({
-        where: { email },
+      user = await this.prisma.user.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
         include: { profile: true },
       });
     } catch (dbErr) {
