@@ -87,6 +87,59 @@ import { useAuthStore } from "../../../../stores/authStore";
 	// dynamic per-user video watermark.
 	const authUser = useAuthStore((s) => s.user);
 
+	// Email resolution for the watermark: auth store → persisted user
+	// (deveway_user) → JWT payload → /auth/me. Guarantees the email is
+	// available even before the store hydrates (e.g. cross-domain login).
+	const [fetchedEmail, setFetchedEmail] = useState<string | null>(null);
+	useEffect(() => {
+		if (authUser?.email || fetchedEmail) return;
+		let cancelled = false;
+		let resolved: string | null = null;
+
+		try {
+			let raw = localStorage.getItem("deveway_user");
+			if (!raw) {
+				const m = document.cookie.match(/deveway_user=([^;]+)/);
+				if (m) raw = decodeURIComponent(m[1]);
+			}
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (parsed?.email) resolved = parsed.email;
+			}
+		} catch {}
+
+		if (!resolved) {
+			try {
+				const token = getAuthToken();
+				if (token && token.split(".").length === 3) {
+					let b = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+					while (b.length % 4) b += "=";
+					const payload = JSON.parse(atob(b));
+					if (payload?.email) resolved = payload.email;
+				}
+			} catch {}
+		}
+
+		if (resolved) {
+			setFetchedEmail(resolved);
+			return;
+		}
+
+		get<any>("/auth/me")
+			.then((res: any) => {
+				const data = res?.data?.data ?? res?.data;
+				const user = data?.user ?? data;
+				if (!cancelled && user?.email) setFetchedEmail(user.email);
+			})
+			.catch(() => {});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [authUser?.email, fetchedEmail]);
+
+	const userEmail = authUser?.email || fetchedEmail || undefined;
+
 	// Native video ref
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const lastTapRef = useRef<{ time: number; x: number } | null>(null);
@@ -2501,7 +2554,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 		</div>
 
 		{/* Full-viewport per-user watermark overlay (learn page only) */}
-		<VideoProtection userEmail={authUser?.email || undefined} />
+		<VideoProtection userEmail={userEmail} />
 		</>
 	);
 }

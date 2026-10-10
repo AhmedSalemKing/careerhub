@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '../stores/authStore'
 
 interface Props {
@@ -7,12 +7,57 @@ interface Props {
   userEmail?: string
 }
 
-const WM_COLS = 8
-const WM_ROWS = 6
+const WM_COLS = 6
+const WM_ROWS = 5
 const WM_TILE_COUNT = WM_COLS * WM_ROWS
+
+const WM_TOKEN_KEYS = [
+  'deveway_token',
+  'careerhub_token',
+  'access_token',
+  'accessToken',
+  'token',
+]
+
+function decodeEmailFromToken(raw: string | null): string | undefined {
+  if (!raw || raw.split('.').length !== 3) return undefined
+  try {
+    let b = raw.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    while (b.length % 4) b += '='
+    const payload = JSON.parse(atob(b))
+    return typeof payload?.email === 'string' ? payload.email : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function readEmailFromStorage(): string | undefined {
+  if (typeof window === 'undefined') return undefined
+  try {
+    let raw: string | null = null
+    for (const key of WM_TOKEN_KEYS) {
+      raw = localStorage.getItem(key)
+      if (raw) break
+    }
+    if (!raw) {
+      const m = document.cookie.match(/deveway_token=([^;]+)/)
+      if (m) raw = decodeURIComponent(m[1])
+    }
+    return decodeEmailFromToken(raw)
+  } catch {
+    return undefined
+  }
+}
 
 export default function VideoProtection({ userName, userEmail }: Props) {
   const storeUser = useAuthStore((s) => s.user)
+  const [storageEmail, setStorageEmail] = useState<string | undefined>(undefined)
+
+  useEffect(() => {
+    if (userEmail || storeUser?.email || storageEmail) return
+    const decoded = readEmailFromStorage()
+    if (decoded) setStorageEmail(decoded)
+  }, [userEmail, storeUser?.email, storageEmail])
 
   useEffect(() => {
     // 1. Disable right-click on video area
@@ -66,7 +111,7 @@ export default function VideoProtection({ userName, userEmail }: Props) {
     }
   }, [])
 
-  const email = userEmail || storeUser?.email || ''
+  const email = userEmail || storeUser?.email || storageEmail || ''
   const watermarkText = email
     ? `DeveWay ${email}`
     : userName
@@ -99,8 +144,8 @@ export default function VideoProtection({ userName, userEmail }: Props) {
           display: 'grid',
           gridTemplateColumns: `repeat(${WM_COLS}, 1fr)`,
           gridTemplateRows: `repeat(${WM_ROWS}, 1fr)`,
-          gap: '60px 80px',
-          opacity: 0.22,
+          gap: '50px 70px',
+          opacity: 0.28,
         }}
       >
         {Array.from({ length: WM_TILE_COUNT }).map((_, i) => (
@@ -112,8 +157,9 @@ export default function VideoProtection({ userName, userEmail }: Props) {
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: 600,
+              fontSize: '15px',
+              fontWeight: 700,
+              letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
               textShadow: '0 1px 2px rgba(0,0,0,0.6)',
               userSelect: 'none',
