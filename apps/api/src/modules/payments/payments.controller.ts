@@ -44,6 +44,21 @@ export class PaymentsController {
     return this.paymentsService.verifyStripePayment(body.stripeSessionId || '', req.user.id)
   }
 
+  // Unified invoice/payment history for the authenticated student
+  @Get('my/invoices')
+  @UseGuards(JwtAuthGuard)
+  async getMyInvoices(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.paymentsService.getMyInvoices(
+      req.user.id,
+      parseInt(page || '1', 10),
+      parseInt(limit || '20', 10),
+    )
+  }
+
   // Stripe Webhook - NO AUTH
   @Post('webhook')
   async stripeWebhook(

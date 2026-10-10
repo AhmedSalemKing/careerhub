@@ -351,4 +351,122 @@ export class PaymentsService {
 
     return { success: true, message: 'Payment confirmed' }
   }
+
+  // Unified invoice/payment history across course purchases, consulting sessions and wallet top-ups
+  async getMyInvoices(userId: string, page = 1, limit = 20) {
+    const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
+    const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 20
+    const skip = (safePage - 1) * safeLimit
+
+    // Fetch all three sources in parallel
+    const [coursePayments, sessionPayments, walletTxns] = await Promise.all([
+      // 1) Course purchases via Payment table
+      this.prisma.payment.findMany({
+        where: { userId, status: { in: ['SUCCESS', 'COMPLETED'] } },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          course: { select: { id: true, titleAr: true, titleEn: true, thumbnail: true } },
+        },
+      }),
+
+      // 2) Consulting session payments (paid sessions)
+      this.prisma.consultingSession.findMany({
+        where: {
+          studentId: userId,
+          paymentStatus: 'PAID',
+          price: { gt: 0 },
+        },
+        orderBy: { updatedAt: 'desc' },
+        include: {
+          consultant: {
+            select: {
+              id: true,
+              profile: { select: { firstName: true, lastName: true } },
+            },
+          },
+        },
+      }),
+
+      // 3) Wallet top-ups (positive top-up transactions only)
+      this.prisma.walletTransaction.findMany({
+        where: { userId, type: 'TOPUP', amount: { gt: 0 } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    // Normalize into a single invoice shape
+    const invoices = [
+      ...coursePayments.map(p => ({
+        id: `course-${p.id}`,
+        type: 'COURSE' as const,
+        itemName: p.course?.titleAr || p.course?.titleEn || 'كورس',
+        itemId: p.course?.id ?? null,
+        itemThumbnail: p.course?.thumbnail ?? null,
+        amount: Number(p.amount),
+        currency: p.currency || 'SAR',
+        status: p.status,
+        date: p.createdAt,
+        reference: p.id,
+        metadata: { courseName: p.course?.titleAr || p.course?.titleEn },
+      })),
+
+      ...sessionPayments.map(s => ({
+        id: `session-${s.id}`,
+        type: 'SESSION' as const,
+        itemName: 'جلسة استشارية',
+        itemId: s.id,
+        itemThumbnail: null,
+        amount: Number(s.price),
+        currency: 'SAR',
+        status: 'PAID',
+        date: s.updatedAt,
+        reference: s.id,
+        metadata: {
+          consultantName: s.consultant?.profile
+            ? `${s.consultant.profile.firstName} ${s.consultant.profile.lastName}`
+            : 'مستشار',
+          scheduledAt: s.scheduledAt,
+          topic: s.topic,
+        },
+      })),
+
+      ...walletTxns.map(w => ({
+        id: `wallet-${w.id}`,
+        type: 'WALLET_TOPUP' as const,
+        itemName: 'شحن المحفظة',
+        itemId: null,
+        itemThumbnail: null,
+        amount: Number(w.amount),
+        currency: 'SAR',
+        status: 'PAID',
+        date: w.createdAt,
+        reference: w.id,
+        metadata: { method: w.description || 'شحن محفظة' },
+      })),
+    ]
+
+    // Sort all by date DESC
+    invoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    // Paginate
+    const total = invoices.length
+    const paginated = invoices.slice(skip, skip + safeLimit)
+
+    // Aggregate totals
+    const totalSpent = invoices.reduce((sum, inv) => sum + inv.amount, 0)
+
+    return {
+      items: paginated,
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit),
+      summary: {
+        totalSpent,
+        courseCount: coursePayments.length,
+        sessionCount: sessionPayments.length,
+        walletCount: walletTxns.length,
+      },
+    }
+  }
 }
