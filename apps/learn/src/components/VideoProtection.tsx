@@ -7,8 +7,8 @@ interface Props {
   userEmail?: string
 }
 
-const WM_COLS = 6
-const WM_ROWS = 5
+const WM_COLS = 7
+const WM_ROWS = 6
 const WM_TILE_COUNT = WM_COLS * WM_ROWS
 
 const WM_TOKEN_KEYS = [
@@ -144,8 +144,8 @@ export default function VideoProtection({ userName, userEmail }: Props) {
           display: 'grid',
           gridTemplateColumns: `repeat(${WM_COLS}, 1fr)`,
           gridTemplateRows: `repeat(${WM_ROWS}, 1fr)`,
-          gap: '50px 70px',
-          opacity: 0.28,
+          gap: '40px 55px',
+          opacity: 0.30,
         }}
       >
         {Array.from({ length: WM_TILE_COUNT }).map((_, i) => (
@@ -157,7 +157,7 @@ export default function VideoProtection({ userName, userEmail }: Props) {
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              fontSize: '15px',
+              fontSize: '17px',
               fontWeight: 700,
               letterSpacing: '0.01em',
               whiteSpace: 'nowrap',
