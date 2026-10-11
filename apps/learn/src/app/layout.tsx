@@ -114,11 +114,21 @@ export default async function RootLayout({
           </NextIntlClientProvider>
         </ThemeProvider>
         <Toaster
-          position={dir === 'rtl' ? 'top-left' : 'top-right'}
-          richColors
+          className="deveway-toast"
+          position="top-center"
+          dir={dir}
           toastOptions={{
-            style: { fontFamily: "'DM Sans', 'Segoe UI', Arial, sans-serif", direction: dir },
             duration: 4000,
+            className: 'deveway-toast',
+            style: {
+              fontFamily: 'var(--font-body)',
+              background: 'var(--card-bg)',
+              border: '1px solid rgba(16,185,129,0.4)',
+              boxShadow: '0 8px 32px rgba(16,185,129,0.18)',
+              color: 'var(--foreground)',
+              borderRadius: '14px',
+              padding: '12px 16px',
+            },
           }}
         />
       </body>

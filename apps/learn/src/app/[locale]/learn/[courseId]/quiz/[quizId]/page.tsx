@@ -22,6 +22,8 @@ export default function TakeQuizPage() {
   const locale = useLocale()
   const courseId = params.courseId as string
   const quizId = params.quizId as string
+  const search = useSearchParams()
+  const aidParam = search.get('aid')
   const qc = useQueryClient()
 
   const [attemptId, setAttemptId] = useState<string | null>(null)
@@ -33,23 +35,76 @@ export default function TakeQuizPage() {
   const [endsAt, setEndsAt] = useState<Date | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
 
-  const { data: startData, isLoading } = useQuery({
+  // Fresh start only when the URL carries no attempt id yet.
+  const { data: startData, isLoading: startLoading } = useQuery({
     queryKey: ['student-start-quiz', quizId],
     queryFn: async () => {
       const res = await get(`/quizzes/${quizId}/start`)
       return (res?.data as any)?.data ?? null
     },
-    enabled: !!quizId,
+    enabled: !!quizId && !aidParam,
     staleTime: 0,
   })
 
+  // When an attempt id is in the URL (back-navigation / refresh) verify its
+  // status before rendering anything. Cache-Control disables browser caching.
+  const { data: existingAttempt, isLoading: existingLoading } = useQuery({
+    queryKey: ['student-attempt-mine', aidParam],
+    queryFn: async () => {
+      const res = await get(`/quizzes/attempts/${aidParam}/mine`, {
+        headers: { 'Cache-Control': 'no-cache' },
+      })
+      return (res?.data as any)?.data ?? null
+    },
+    enabled: !!aidParam,
+    staleTime: 0,
+    retry: false,
+  })
+
+  const snapshot = startData ?? existingAttempt
+  const isLoading = !snapshot && (aidParam ? existingLoading : startLoading)
+  const isFinished = !!existingAttempt && existingAttempt.status !== 'IN_PROGRESS'
+
   useEffect(() => {
-    if (startData) {
-      setAttemptId(startData.attemptId)
-      setQuestions(startData.quiz.questions ?? [])
-      setEndsAt(new Date(startData.endsAt))
+    if (!startData) return
+    setAttemptId(startData.attemptId)
+    setQuestions(startData.quiz.questions ?? [])
+    setEndsAt(new Date(startData.endsAt))
+    if (!aidParam) {
+      router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}?aid=${startData.attemptId}`)
     }
-  }, [startData])
+  }, [startData, aidParam, router, locale, courseId, quizId])
+
+  useEffect(() => {
+    if (!aidParam || !existingAttempt) return
+    // Finished attempt: never render the questions again — send to results.
+    if (existingAttempt.status !== 'IN_PROGRESS') {
+      router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${aidParam}`)
+      return
+    }
+    setAttemptId(aidParam)
+    setQuestions(existingAttempt.questions ?? [])
+    setEndsAt(new Date(existingAttempt.endsAt))
+    const hydrated: Record<string, any> = {}
+    for (const q of existingAttempt.questions ?? []) {
+      if (q.answer) {
+        hydrated[q.id] = {
+          selectedChoiceIds: q.answer.selectedChoiceIds ?? [],
+          textAnswer: q.answer.textAnswer ?? undefined,
+          fileUrl: q.answer.fileUrl ?? undefined,
+          fileName: q.answer.fileName ?? undefined,
+        }
+      }
+    }
+    setAnswers(hydrated)
+  }, [aidParam, existingAttempt, router, locale, courseId, quizId])
+
+  // Browser Back/Forward must not restore a stale quiz view.
+  useEffect(() => {
+    const onPop = () => location.reload()
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   // Timer
   useEffect(() => {
@@ -243,7 +298,26 @@ export default function TakeQuizPage() {
     )
   }
 
-  if (!startData) {
+  if (isFinished) {
+    return (
+      <div className="min-h-screen p-6" dir="rtl">
+        <div className="mx-auto max-w-2xl rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-8 text-center">
+          <p className="text-lg font-bold text-foreground">انتهت هذه المحاولة</p>
+          <p className="mt-2 text-sm text-[color:var(--muted)]">
+            تم تسليم هذا الاختبار بالفعل ولا يمكن تعديل الإجابات.
+          </p>
+          <a
+            href={`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${aidParam}`}
+            className="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8] px-5 py-2.5 text-sm font-bold text-white hover:opacity-90 transition-opacity duration-150"
+          >
+            عرض النتيجة
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  if (!snapshot) {
     return (
       <div className="min-h-screen p-6" dir="rtl">
         <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
@@ -258,7 +332,7 @@ export default function TakeQuizPage() {
       <div className="sticky top-0 z-10 border-b border-[color:var(--border)] bg-[color:var(--surface)]">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div>
-            <h1 className="font-bold font-madinet text-foreground">{startData.quiz.titleAr || startData.quiz.title}</h1>
+            <h1 className="font-bold font-madinet text-foreground">{snapshot.quiz.titleAr || snapshot.quiz.title}</h1>
             <p className="text-xs text-[color:var(--muted)]">{questions.length} سؤال</p>
           </div>
           <div className="flex items-center gap-3">

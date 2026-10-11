@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import { CheckCircle2, XCircle, FileText, ExternalLink } from 'lucide-react'
+import { CheckCircle2, XCircle, FileText, ExternalLink, RotateCcw } from 'lucide-react'
 import { get } from '@/lib/api'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
@@ -22,18 +22,32 @@ export default function QuizResultPage() {
   const quizId = params.quizId as string
   const aid = search.get('aid')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['student-attempt-result', aid],
     queryFn: async () => {
       if (!aid) return null
-      const res = await get(`/quizzes/attempts/${aid}/mine`)
+      const res = await get(`/quizzes/attempts/${aid}/mine`, {
+        headers: { 'Cache-Control': 'no-cache' },
+      })
       return (res?.data as any)?.data ?? null
     },
     enabled: !!aid,
+    retry: false,
   })
 
   const attempt = data
   const finished = attempt?.status === 'GRADED' || attempt?.status === 'SUBMITTED'
+
+  useEffect(() => {
+    if (isLoading) return
+    if (!aid || isError || !data) {
+      router.replace(`/${locale}/learn/${courseId}`)
+      return
+    }
+    if (data.status !== 'GRADED' && data.status !== 'SUBMITTED') {
+      router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}`)
+    }
+  }, [isLoading, isError, data, aid, router, locale, courseId, quizId])
 
   if (isLoading) {
     return (
@@ -71,6 +85,49 @@ export default function QuizResultPage() {
             <p className={`mt-4 text-sm font-semibold ${attempt.scores.passed ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>
               {attempt.scores.passed ? 'تم اجتياز الاختبار' : 'لم يتم اجتياز الاختبار'}
             </p>
+          )}
+          {attempt.status === 'GRADED' && !attempt.scores.passed && (
+            <div
+              style={{
+                marginTop: '20px',
+                padding: '20px',
+                borderRadius: '14px',
+                background: 'rgba(239,68,68,0.06)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                textAlign: 'right',
+              }}
+            >
+              <p style={{ color: '#EF4444', fontWeight: 700, marginBottom: '6px' }}>لم تجتز الاختبار</p>
+              <p style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '14px' }}>
+                {attempt.attemptsRemaining === null
+                  ? `محاولاتك المتبقية: غير محدودة (${attempt.attemptCount} محاولة حتى الآن)`
+                  : attempt.attemptsRemaining > 0
+                    ? `المحاولات المتبقية: ${attempt.attemptsRemaining} من ${attempt.quiz.maxAttempts}`
+                    : 'لا توجد محاولات متبقية — تواصل مع المحاضر'}
+              </p>
+              {attempt.canRetake ? (
+                <a
+                  href={`/${locale}/learn/${courseId}/quiz/${quizId}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    background: '#5120C8',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  إعادة المحاولة
+                </a>
+              ) : (
+                <p style={{ color: 'var(--muted)', fontSize: '12px' }}>لا يمكن إعادة المحاولة — تواصل مع المحاضر</p>
+              )}
+            </div>
           )}
           {attempt.teacherNotes && (
             <p className="mt-4 rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-foreground">{attempt.teacherNotes}</p>

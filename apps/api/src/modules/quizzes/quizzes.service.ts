@@ -1059,7 +1059,7 @@ export class QuizzesService implements OnModuleInit {
     const attempt = await this.getOwnedAttempt(userId, attemptId);
 
     if (attempt.status !== 'IN_PROGRESS') {
-      throw new ConflictException('ATTEMPT_NOT_ACTIVE');
+      throw new ConflictException({ code: 'ATTEMPT_NOT_ACTIVE', status: attempt.status });
     }
 
     const graceEndsAt = new Date(new Date(attempt.endsAt).getTime() + GRACE_MS);
@@ -1156,7 +1156,7 @@ export class QuizzesService implements OnModuleInit {
     const attempt = await this.getOwnedAttempt(userId, attemptId);
 
     if (attempt.status !== 'IN_PROGRESS') {
-      return this.buildStudentResult(attempt, userId);
+      throw new ConflictException({ code: 'ATTEMPT_NOT_ACTIVE', status: attempt.status });
     }
 
     const expired = Date.now() > new Date(attempt.endsAt).getTime();
@@ -1238,11 +1238,24 @@ export class QuizzesService implements OnModuleInit {
     return this.buildStudentResult(attempt, userId);
   }
 
-  private buildStudentResult(attempt: any, _userId: string) {
+  private async buildStudentResult(attempt: any, userId: string) {
     const quiz = attempt.quiz;
     const showResults = quiz.showResults;
     const finished = attempt.status === 'GRADED' || attempt.status === 'SUBMITTED';
     const answerMap = new Map<string, any>((attempt.answers ?? []).map((a: any) => [a.questionId, a]));
+
+    const userAttempts = await this.prisma.quizAttempt.findMany({
+      where: { quizId: quiz.id, userId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true, percentage: true, passed: true },
+    });
+    const attemptCount = userAttempts.length;
+    const gradedAttempts = userAttempts.filter((a) => a.status === 'GRADED');
+    const bestAttempt = gradedAttempts.length
+      ? gradedAttempts.slice().sort((a, b) => b.percentage - a.percentage)[0]
+      : null;
+    const canRetake = this.canRetake(quiz, bestAttempt, attemptCount);
+    const attemptsRemaining = this.attemptsRemaining(quiz, attemptCount);
 
     return {
       id: attempt.id,
@@ -1252,6 +1265,9 @@ export class QuizzesService implements OnModuleInit {
       endsAt: attempt.endsAt,
       timeSpentSeconds: attempt.timeSpentSeconds,
       awaitingReview: attempt.status === 'SUBMITTED',
+      canRetake,
+      attemptsRemaining,
+      attemptCount,
       scores: {
         autoScore: attempt.autoScore,
         manualScore: attempt.manualScore,

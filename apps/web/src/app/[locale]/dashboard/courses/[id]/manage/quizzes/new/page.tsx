@@ -6,7 +6,6 @@ import { toast } from 'sonner'
 import { ArrowRight, Save } from 'lucide-react'
 import { get, post } from '@/lib/api'
 import ToggleSwitch from '@/components/quizzes/ToggleSwitch'
-import SegmentedControl from '@/components/quizzes/SegmentedControl'
 
 const inputCls =
   'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
@@ -161,7 +160,7 @@ export default function NewQuizPage() {
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className={labelCls}>المدة (دقيقة)</label>
                   <input className={inputCls} type="number" min={1} value={form.durationMinutes} onChange={(e) => set('durationMinutes', e.target.value)} />
@@ -169,10 +168,6 @@ export default function NewQuizPage() {
                 <div>
                   <label className={labelCls}>درجة النجاح (%)</label>
                   <input className={inputCls} type="number" min={0} max={100} value={form.passingScore} onChange={(e) => set('passingScore', e.target.value)} />
-                </div>
-                <div>
-                  <label className={labelCls}>عدد المحاولات</label>
-                  <input className={inputCls} type="number" min={1} value={form.maxAttempts} onChange={(e) => set('maxAttempts', e.target.value)} />
                 </div>
               </div>
             </div>
@@ -236,20 +231,6 @@ export default function NewQuizPage() {
 
         <div className="lg:col-span-1">
           <div className="sticky top-4 space-y-4">
-            <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-              <h2 className="mb-3 font-bold text-foreground">نوع التصحيح</h2>
-              <SegmentedControl
-                options={[
-                  { value: 'auto', label: 'تلقائي' },
-                  { value: 'manual', label: 'يدوي' },
-                ]}
-                value="auto"
-                onChange={() => {}}
-              />
-              <p className="mt-3 text-xs leading-5 text-[color:var(--muted)]">
-                يمكنك إضافة أسئلة اختيار من متعدد تُصحّح تلقائياً، وأسئلة مقالية أو رفع ملفات تُصحّح يدوياً.
-              </p>
-            </div>
             <button
               type="button"
               onClick={save}

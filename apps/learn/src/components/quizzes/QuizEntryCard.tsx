@@ -135,6 +135,15 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
                   أفضل نتيجة: {Math.round(best.percentage)}%
                 </span>
               )}
+              {isGraded && best && !best.passed && (
+                <span>
+                  {remaining === null || remaining === undefined
+                    ? `محاولاتك المتبقية: غير محدودة (${attemptCount} محاولة حتى الآن)`
+                    : remaining > 0
+                      ? `المحاولات المتبقية: ${remaining} من ${quiz.maxAttempts}`
+                      : 'لا توجد محاولات متبقية — تواصل مع المحاضر'}
+                </span>
+              )}
             </div>
           </div>
         </div>
