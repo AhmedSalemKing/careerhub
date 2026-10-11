@@ -280,7 +280,7 @@ export default function AdminCreateCoursePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: isDark ? '#0d0d0d' : '#f8fafc',
+      background: 'var(--background)',
       padding: '32px 16px',
       direction: isAr ? 'rtl' : 'ltr',
     }}>
@@ -296,11 +296,11 @@ export default function AdminCreateCoursePage() {
             }}>
               <BookOpen size={24} color="#5120c8" />
             </div>
-            <h1 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
+            <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
               {isAr ? 'إضافة كورس جديد' : 'Add New Course'}
             </h1>
           </div>
-          <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+          <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>
             {isAr ? 'أضف كورسا جديدا للمنصة' : 'Add a new course to the platform'}
           </p>
         </div>
