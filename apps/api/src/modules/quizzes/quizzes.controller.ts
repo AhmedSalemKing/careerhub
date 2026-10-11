@@ -39,6 +39,12 @@ export class QuizzesController {
     return { success: true, data };
   }
 
+  @Get(':id/meta')
+  async getQuizMeta(@Request() req: any, @Param('id') id: string) {
+    const data = await this.quizzesService.getStudentQuizMeta(req.user.sub, id);
+    return { success: true, data };
+  }
+
   @Post('attempts/:aid/answer')
   async saveAnswer(@Request() req: any, @Param('aid') aid: string, @Body() dto: SaveAnswerDto) {
     const data = await this.quizzesService.saveAnswer(req.user.sub, aid, dto);

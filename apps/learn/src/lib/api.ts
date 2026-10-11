@@ -66,7 +66,10 @@ api.interceptors.response.use(
         window.location.href = `/${locale}/login`
       }
     }
-    console.error('[API Error]', error.config?.url, error.response?.status, 'baseURL:', error.config?.baseURL)
+    // Only log unexpected errors; 401/403/404/409 are expected/handled states.
+    if (status && ![401, 403, 404, 409].includes(status)) {
+      console.error('[API Error]', error.config?.url, status, 'baseURL:', error.config?.baseURL)
+    }
     throw error
   }
 )

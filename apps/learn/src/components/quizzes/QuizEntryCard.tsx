@@ -48,7 +48,10 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
 
   if (!quiz) return null
 
-  const last = quiz.lastAttempt ?? null
+  const rawLast = quiz.lastAttempt ?? null
+  // An abandoned attempt is treated as if it never happened (it does not count
+  // against the retake cap), so it must not drive the card's label.
+  const last = rawLast && rawLast.status !== 'ABANDONED' ? rawLast : null
   const best = quiz.bestAttempt ?? null
   const attemptCount = quiz.attemptCount ?? 0
   const canRetake = quiz.canRetake ?? false

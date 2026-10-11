@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
@@ -34,16 +34,19 @@ export default function TakeQuizPage() {
   const [submitting, setSubmitting] = useState(false)
   const [endsAt, setEndsAt] = useState<Date | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [starting, setStarting] = useState(false)
+  const autoSubmittedRef = useRef(false)
 
-  // Fresh start only when the URL carries no attempt id yet.
-  const { data: startData, isLoading: startLoading } = useQuery({
-    queryKey: ['student-start-quiz', quizId],
+  // Read-only quiz metadata for the pre-start screen. This does NOT create an
+  // attempt — the attempt is only created when the student clicks "ابدأ الاختبار".
+  const { data: meta, isLoading: metaLoading } = useQuery({
+    queryKey: ['student-quiz-meta', quizId],
     queryFn: async () => {
-      const res = await get(`/quizzes/${quizId}/start`)
+      const res = await get(`/quizzes/${quizId}/meta`)
       return (res?.data as any)?.data ?? null
     },
     enabled: !!quizId && !aidParam,
-    staleTime: 0,
+    staleTime: 60_000,
   })
 
   // When an attempt id is in the URL (back-navigation / refresh) verify its
@@ -61,19 +64,11 @@ export default function TakeQuizPage() {
     retry: false,
   })
 
-  const snapshot = startData ?? existingAttempt
-  const isLoading = !snapshot && (aidParam ? existingLoading : startLoading)
+  const snapshot = existingAttempt
+  const quizInfo = existingAttempt?.quiz ?? meta
+  const showPreStart = !aidParam && !attemptId
+  const isLoading = !attemptId && (aidParam ? existingLoading : metaLoading)
   const isFinished = !!existingAttempt && existingAttempt.status !== 'IN_PROGRESS'
-
-  useEffect(() => {
-    if (!startData) return
-    setAttemptId(startData.attemptId)
-    setQuestions(startData.quiz.questions ?? [])
-    setEndsAt(new Date(startData.endsAt))
-    if (!aidParam) {
-      router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}?aid=${startData.attemptId}`)
-    }
-  }, [startData, aidParam, router, locale, courseId, quizId])
 
   useEffect(() => {
     if (!aidParam || !existingAttempt) return
@@ -115,8 +110,9 @@ export default function TakeQuizPage() {
       const diff = end - now
       if (diff <= 0) {
         setTimeLeft(0)
-        if (!submitting) {
-          toast.error('انتهى وقت الاختبار، سيتم التسليم تلقائياً')
+        if (!submitting && !autoSubmittedRef.current) {
+          autoSubmittedRef.current = true
+          toast.error('انتهى وقت الاختبار — جاري التسليم')
           handleSubmit(true)
         }
       } else {
@@ -261,6 +257,37 @@ export default function TakeQuizPage() {
     }
   }
 
+  const handleStart = async () => {
+    if (starting) return
+    setStarting(true)
+    try {
+      const res = await get(`/quizzes/${quizId}/start`)
+      const data = (res?.data as any)?.data ?? null
+      if (!data?.attemptId) throw new Error('NO_ATTEMPT')
+      setAttemptId(data.attemptId)
+      setQuestions(data.quiz?.questions ?? [])
+      setEndsAt(new Date(data.endsAt))
+      autoSubmittedRef.current = false
+      router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}?aid=${data.attemptId}`)
+    } catch (e: any) {
+      const code = e?.response?.data?.code
+      const reason = e?.response?.data?.reason
+      if (code === 'RETAKE_NOT_ALLOWED') {
+        toast.error(
+          reason === 'MAX_ATTEMPTS_REACHED'
+            ? 'لا يمكن إعادة المحاولة — استنفدت عدد المحاولات'
+            : reason === 'PASSED'
+              ? 'لقد اجتزت هذا الاختبار بالفعل'
+              : 'لا يمكن بدء الاختبار الآن',
+        )
+      } else {
+        toast.error('تعذر بدء الاختبار، حاول مرة أخرى')
+      }
+    } finally {
+      setStarting(false)
+    }
+  }
+
   const beforeUnload = (e: BeforeUnloadEvent) => {
     e.preventDefault()
     e.returnValue = ''
@@ -317,7 +344,59 @@ export default function TakeQuizPage() {
     )
   }
 
-  if (!snapshot) {
+  if (showPreStart) {
+    if (!quizInfo) {
+      return (
+        <div className="min-h-screen p-6" dir="rtl">
+          <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
+            لا يمكن عرض الاختبار الآن
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div
+        dir="rtl"
+        style={{
+          maxWidth: '560px',
+          margin: '80px auto',
+          padding: '32px',
+          background: 'var(--card-bg)',
+          borderRadius: '20px',
+          border: '1px solid var(--border)',
+          textAlign: 'center',
+        }}
+      >
+        <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>
+          {quizInfo.titleAr || quizInfo.title}
+        </h1>
+        <p style={{ color: 'var(--muted)', fontSize: '14px', marginBottom: '24px' }}>
+          {quizInfo.durationMinutes} دقيقة · {quizInfo.questions?.length ?? 0} سؤال · النجاح {quizInfo.passingScore}%
+        </p>
+        <button
+          type="button"
+          onClick={handleStart}
+          disabled={starting}
+          className="transition-opacity duration-150 hover:opacity-90"
+          style={{
+            padding: '12px 32px',
+            borderRadius: '12px',
+            background: '#5120C8',
+            color: '#fff',
+            border: 'none',
+            fontSize: '15px',
+            fontWeight: 700,
+            cursor: starting ? 'wait' : 'pointer',
+            boxShadow: '0 4px 20px rgba(81,32,200,0.4)',
+          }}
+        >
+          {starting ? 'جاري البدء...' : 'ابدأ الاختبار'}
+        </button>
+      </div>
+    )
+  }
+
+  if (!attemptId && !snapshot) {
     return (
       <div className="min-h-screen p-6" dir="rtl">
         <div className="mx-auto max-w-2xl text-center text-sm text-[color:var(--muted)]">
@@ -332,7 +411,7 @@ export default function TakeQuizPage() {
       <div className="sticky top-0 z-10 border-b border-[color:var(--border)] bg-[color:var(--surface)]">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div>
-            <h1 className="font-bold font-madinet text-foreground">{snapshot.quiz.titleAr || snapshot.quiz.title}</h1>
+            <h1 className="font-bold font-madinet text-foreground">{quizInfo?.titleAr || quizInfo?.title}</h1>
             <p className="text-xs text-[color:var(--muted)]">{questions.length} سؤال</p>
           </div>
           <div className="flex items-center gap-3">

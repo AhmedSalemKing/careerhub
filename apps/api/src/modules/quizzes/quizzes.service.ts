@@ -744,11 +744,18 @@ export class QuizzesService implements OnModuleInit {
     attemptCount: number,
   ): boolean {
     if (!quiz.allowRetake) return false;
+    if (quiz.unlimitedRetakes) {
+      if (!bestAttempt) return true;
+      if (bestAttempt.passed) return false;
+      if (bestAttempt.status !== 'GRADED') return false;
+      return bestAttempt.percentage < quiz.retakeThreshold;
+    }
+    // Hard cap applies before the no-bestAttempt shortcut so quizzes whose
+    // attempts are all SUBMITTED (manual review) cannot be retaken forever.
+    if (attemptCount >= quiz.maxAttempts) return false;
     if (!bestAttempt) return true;
     if (bestAttempt.passed) return false;
     if (bestAttempt.status !== 'GRADED') return false;
-    if (quiz.unlimitedRetakes) return bestAttempt.percentage < quiz.retakeThreshold;
-    if (attemptCount >= quiz.maxAttempts) return false;
     return bestAttempt.percentage < quiz.retakeThreshold;
   }
 
@@ -817,6 +824,29 @@ export class QuizzesService implements OnModuleInit {
       bestAttempt,
       lastAttempt,
     };
+  }
+
+  async getStudentQuizMeta(userId: string, quizId: string) {
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { id: quizId },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+          include: { choices: { orderBy: { order: 'asc' } } },
+        },
+      },
+    });
+    if (!quiz || quiz.status !== 'PUBLISHED') {
+      throw new NotFoundException('Quiz not found');
+    }
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { userId_courseId: { userId, courseId: quiz.courseId } },
+      select: { id: true },
+    });
+    if (!enrollment) {
+      throw new ForbiddenException('You must be enrolled in this course to take the quiz');
+    }
+    return this.toStudentSnapshot(quiz, quiz.shuffleQuestions, quiz.shuffleChoices);
   }
 
   async getStudentGrades(
@@ -984,35 +1014,53 @@ export class QuizzesService implements OnModuleInit {
         startedAt: true,
       },
     });
-    const attemptCount = userAttempts.length;
-
+    const now = Date.now();
     const inProgress = userAttempts.find((a) => a.status === 'IN_PROGRESS');
+
     if (inProgress) {
-      return {
-        attemptId: inProgress.id,
-        endsAt: inProgress.endsAt,
-        startedAt: inProgress.startedAt,
-        resume: true,
-        quiz: this.toStudentSnapshot(quiz, quiz.shuffleQuestions, quiz.shuffleChoices),
-      };
+      const endsAtMs = new Date(inProgress.endsAt).getTime();
+      if (endsAtMs + GRACE_MS >= now) {
+        // Still inside its window — resume the existing attempt.
+        return {
+          attemptId: inProgress.id,
+          endsAt: inProgress.endsAt,
+          startedAt: inProgress.startedAt,
+          resume: true,
+          quiz: this.toStudentSnapshot(quiz, quiz.shuffleQuestions, quiz.shuffleChoices),
+        };
+      }
+      // Stale attempt (tab closed without submitting) — abandon it so the
+      // student is not punished and may start a fresh attempt.
+      await this.prisma.quizAttempt.update({
+        where: { id: inProgress.id },
+        data: { status: 'ABANDONED' },
+      });
     }
 
-    const graded = userAttempts.filter((a) => a.status === 'GRADED');
+    // Abandoned attempts never count against the retake cap.
+    const activeAttempts = userAttempts.filter(
+      (a) => a.status !== 'ABANDONED' && a.id !== inProgress?.id,
+    );
+    const attemptCount = activeAttempts.length;
+    const graded = activeAttempts.filter((a) => a.status === 'GRADED');
     const bestAttempt = graded.length
       ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
       : null;
 
     if (!this.canRetake(quiz as any, bestAttempt as any, attemptCount)) {
-      const reason = !bestAttempt ? 'NOT_ALLOWED'
-        : bestAttempt.passed ? 'PASSED'
-        : bestAttempt.status === 'SUBMITTED' ? 'AWAITING_REVIEW'
-        : bestAttempt.percentage >= quiz.retakeThreshold ? 'ABOVE_THRESHOLD'
-        : attemptCount >= quiz.maxAttempts ? 'BELOW_MAX_ATTEMPTS'
-        : 'NOT_ALLOWED';
+      const reason = !bestAttempt
+        ? attemptCount >= quiz.maxAttempts
+          ? 'MAX_ATTEMPTS_REACHED'
+          : 'NOT_ALLOWED'
+        : bestAttempt.passed
+          ? 'PASSED'
+          : attemptCount >= quiz.maxAttempts
+            ? 'MAX_ATTEMPTS_REACHED'
+            : 'ABOVE_THRESHOLD';
       throw new ForbiddenException({ code: 'RETAKE_NOT_ALLOWED', reason });
     }
 
-    const endsAt = new Date(Date.now() + quiz.durationMinutes * 60 * 1000);
+    const endsAt = new Date(now + quiz.durationMinutes * 60 * 1000);
     const attempt = await this.prisma.quizAttempt.create({
       data: {
         quizId,
@@ -1155,6 +1203,12 @@ export class QuizzesService implements OnModuleInit {
   async submitQuiz(userId: string, attemptId: string) {
     const attempt = await this.getOwnedAttempt(userId, attemptId);
 
+    if (attempt.status === 'ABANDONED') {
+      throw new ConflictException({
+        code: 'ATTEMPT_ABANDONED',
+        message: 'This attempt was abandoned due to inactivity',
+      });
+    }
     if (attempt.status !== 'IN_PROGRESS') {
       throw new ConflictException({ code: 'ATTEMPT_NOT_ACTIVE', status: attempt.status });
     }
