@@ -1,16 +1,59 @@
 "use client";
 
-import { Lock, ShoppingCart, ArrowLeft, ShieldCheck, Clock, Award } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { get } from "../../lib/api";
+import { Lock, ShoppingCart, ArrowLeft, ShieldCheck, Clock, Award, Compass } from "lucide-react";
+
+interface CourseInfo {
+	id?: string;
+	price?: number;
+	titleAr?: string;
+	titleEn?: string;
+	slug?: string;
+	type?: string;
+}
 
 interface NotEnrolledPageProps {
 	courseId: string;
 	locale: string;
+	/** Optional pre-loaded course (avoids an extra fetch when the parent has it). */
+	course?: CourseInfo;
 }
 
-export default function NotEnrolledPage({ courseId, locale }: NotEnrolledPageProps) {
+export default function NotEnrolledPage({ courseId, locale, course }: NotEnrolledPageProps) {
 	const isAr = locale === "ar";
-	const mainUrl = process.env.NEXT_PUBLIC_MAIN_URL || "";
-	const checkoutUrl = `${mainUrl}/${locale}/checkout/${courseId}`;
+	const router = useRouter();
+	const [courseInfo, setCourseInfo] = useState<CourseInfo | undefined>(course);
+
+	useEffect(() => {
+		if (course || !courseId) return;
+		let active = true;
+		(async () => {
+			try {
+				const res = await get(`/courses/${courseId}`);
+				const payload = (res?.data as any)?.data;
+				const data = payload?.course ?? payload ?? null;
+				if (active && data) setCourseInfo(data);
+			} catch {
+				// Network/permission errors: fall back to courseId-only URL.
+			}
+		})();
+		return () => {
+			active = false;
+		};
+	}, [courseId, course]);
+
+	// Payment flow lives in THIS (learn) app — keep the URL relative (no domain).
+	const info = course ?? courseInfo;
+	const resolvedId = info?.id || courseId;
+	const paymentParams = new URLSearchParams({
+		courseId: resolvedId,
+		amount: String(info?.price ?? 0),
+		title: info?.titleAr || info?.titleEn || "",
+		type: info?.type || "recorded",
+		returnUrl: `/${locale}/courses/${info?.slug || resolvedId}`,
+	}).toString();
 
 	const badges = [
 		{ icon: ShieldCheck, label: isAr ? "دفع آمن" : "Secure payment", color: "var(--success)" },
@@ -43,17 +86,36 @@ export default function NotEnrolledPage({ courseId, locale }: NotEnrolledPagePro
 						: "You need to enroll in this course to access its content."}
 				</p>
 
-				<a
-					href={checkoutUrl}
+				<button
+					type="button"
+					onClick={() => router.push(`/${locale}/payment/enroll?${paymentParams}`)}
 					className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300"
 					style={{
 						background: "linear-gradient(135deg, var(--primary), #5b21b6)",
 						boxShadow: "var(--cta-shadow)",
+						border: "none",
+						cursor: "pointer",
 					}}>
 					<ShoppingCart className="h-5 w-5" />
 					<span>{isAr ? "اشترك الآن" : "Subscribe now"}</span>
 					<ArrowLeft className="h-5 w-5" />
-				</a>
+				</button>
+
+				<div className="mt-4">
+					<button
+						type="button"
+						onClick={() => router.push(`/${locale}/courses`)}
+						className="inline-flex items-center gap-2 text-sm font-medium transition-opacity hover:opacity-80"
+						style={{
+							color: "var(--muted)",
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+						}}>
+						<Compass className="h-4 w-4" />
+						<span>{isAr ? "تصفح كورسات أخرى" : "Browse other courses"}</span>
+					</button>
+				</div>
 
 				<div
 					className="mt-8 flex justify-center gap-6 text-xs"
