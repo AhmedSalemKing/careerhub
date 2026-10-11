@@ -246,6 +246,7 @@ export default function ReviewAttemptPage() {
                         min={0}
                         max={q.points}
                         value={grade?.manualGrade ?? '0'}
+                        onWheel={(e) => e.currentTarget.blur()}
                         onChange={(e) => setGrade(answer.id, 'manualGrade', e.target.value)}
                       />
                     </div>

@@ -61,9 +61,20 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
   const remaining = quiz.attemptsRemaining
 
   const quizHref = `/${locale}/learn/${courseId}/quiz/${quiz.id}`
-  const resultAttempt = last ?? best
-  const resultHref = resultAttempt ? `${quizHref}/result?aid=${resultAttempt.id}` : quizHref
   const isGraded = best?.status === 'GRADED'
+  // Prefer the student's most recent graded/submitted attempt, else fall back to
+  // their best graded attempt. Only link to an attempt that is actually viewable
+  // — an invalid/missing `aid` makes the result page redirect to the course page.
+  const viewAttempt =
+    last && (last.status === 'GRADED' || last.status === 'SUBMITTED')
+      ? last
+      : best && (best.status === 'GRADED' || best.status === 'SUBMITTED')
+        ? best
+        : null
+  const canShowResult = !!viewAttempt?.id
+  const resultHref = canShowResult
+    ? `${quizHref}/result?aid=${viewAttempt!.id}`
+    : quizHref
 
   let label = 'ابدأ الاختبار'
   let variant: 'primary' | 'secondary' | 'muted' = 'primary'
@@ -101,7 +112,7 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
     disabled = true
     Icon = XCircle
     helper = 'لا يمكن إعادة المحاولة — تواصل مع المحاضر'
-    secondaryHref = resultHref
+    secondaryHref = canShowResult ? resultHref : null
   }
 
   const btnStyle: React.CSSProperties =

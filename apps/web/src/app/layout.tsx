@@ -6,6 +6,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 import { Providers } from './components/Providers'
 import { LoadingProvider } from './components/PageLoader'
+import NumberInputGuard from './components/NumberInputGuard'
 import type { Locale } from '../i18n'
 
 const madinetAlBat = localFont({
@@ -135,6 +136,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       
       {/* Body uses CSS variables only */}
       <body className="min-h-screen text-foreground overflow-x-hidden max-w-[100vw]" suppressHydrationWarning>
+        <NumberInputGuard />
         <NextIntlClientProvider messages={messages}>
           <Providers locale={locale}>
             <LoadingProvider>

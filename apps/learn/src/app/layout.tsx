@@ -12,6 +12,7 @@ import { QueryProvider } from '../lib/query'
 import { LoadingProvider } from './components/PageLoader'
 import { TokenSync } from './components/TokenSync'
 import KeepAlivePing from './components/KeepAlivePing'
+import NumberInputGuard from './components/NumberInputGuard'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://devewayhub.vercel.app'),
@@ -97,6 +98,7 @@ export default async function RootLayout({
           `,
         }} />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <NumberInputGuard />
           <NextIntlClientProvider messages={messages}>
             <QueryProvider>
               <ToastProvider>
