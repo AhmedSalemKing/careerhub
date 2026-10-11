@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WalletService } from './wallet.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ActivityService } from '../../common/services/activity.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('WalletService', () => {
@@ -29,6 +30,7 @@ describe('WalletService', () => {
       providers: [
         WalletService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: ActivityService, useValue: { track: jest.fn() } },
       ],
     }).compile();
 

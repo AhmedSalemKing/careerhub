@@ -1098,6 +1098,12 @@ export class AdminController {
     return result;
   }
 
+  @Post('activity/backfill-recent')
+  async backfillRecentActivity(@Query('days') days = '7') {
+    const result = await this.adminService.backfillRecentActivity(+days || 7);
+    return result;
+  }
+
   @Post('run-migrations')
   @ApiOperation({ summary: 'Run pending database migrations (one-time admin tool)' })
   async runMigrations() {

@@ -2,11 +2,13 @@ import { Injectable, BadRequestException, NotFoundException, ForbiddenException 
 import { PrismaService } from '../../prisma/prisma.service';
 import Stripe from 'stripe';
 import { sendNotification } from '../../common/utils/notify.util';
+import { ActivityService } from '../../common/services/activity.service';
 
 @Injectable()
 export class WalletService {
   constructor(
     private prisma: PrismaService,
+    private readonly activityService: ActivityService,
   ) {}
 
   private getStripe(): Stripe {
@@ -132,6 +134,15 @@ export class WalletService {
         create: { userId, courseId },
         update: {},
       });
+
+      await this.activityService.track({
+        userId,
+        action: 'ENROLL_COURSE',
+        entity: 'Course',
+        entityId: courseId,
+        metadata: { courseTitle: course.titleAr || course.titleEn, price: 0, method: 'free' },
+      });
+
       return { success: true, message: 'تم الاشتراك مجاناً' };
     }
     
@@ -169,6 +180,22 @@ export class WalletService {
       where: { userId_courseId: { userId, courseId } },
       create: { userId, courseId, status: 'ACTIVE', progress: 0 },
       update: { status: 'ACTIVE' },
+    });
+
+    await this.activityService.track({
+      userId,
+      action: 'ENROLL_COURSE',
+      entity: 'Course',
+      entityId: courseId,
+      metadata: { courseTitle: course.titleAr || course.titleEn, price, method: 'wallet' },
+    });
+
+    await this.activityService.track({
+      userId,
+      action: 'PAYMENT_SUCCESS',
+      entity: 'Payment',
+      entityId: courseId,
+      metadata: { amount: price, type: 'course', courseTitle: course.titleAr || course.titleEn, method: 'wallet' },
     });
 
     await sendNotification(

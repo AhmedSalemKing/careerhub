@@ -1994,6 +1994,121 @@ export class AdminService {
     return { success: true, results: { ...results, registrations } };
   }
 
+  // ── Backfill recent activity (last N days) ──
+  async backfillRecentActivity(days = 7) {
+    const safeDays = Number.isFinite(days) && days > 0 ? Math.min(days, 365) : 7;
+    const since = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000);
+    const results: { since: string; enrollments: number; payments: number; walletPayments: number; errors: string[] } = {
+      since: since.toISOString(), enrollments: 0, payments: 0, walletPayments: 0, errors: [],
+    };
+
+    // Recent enrollments → ENROLL_COURSE
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { enrolledAt: { gte: since } },
+      include: { course: { select: { titleAr: true, titleEn: true } } },
+    });
+    for (const e of enrollments) {
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'ENROLL_COURSE', entityId: e.courseId, userId: e.userId, createdAt: { gte: since } },
+        });
+        if (!exists) {
+          await this.prisma.userActivity.create({
+            data: {
+              userId: e.userId,
+              action: 'ENROLL_COURSE',
+              entity: 'Course',
+              entityId: e.courseId,
+              metadata: { courseTitle: (e.course as any)?.titleAr || (e.course as any)?.titleEn || 'كورس' },
+              createdAt: e.enrolledAt ?? new Date(),
+            },
+          });
+          results.enrollments++;
+        }
+      } catch (err: any) {
+        results.errors.push(`enrollment ${e.courseId}: ${err?.message}`);
+      }
+    }
+
+    // Recent successful payments → PAYMENT_SUCCESS
+    const payments = await this.prisma.payment.findMany({
+      where: { status: { in: ['SUCCESS', 'COMPLETED'] }, createdAt: { gte: since } },
+      include: { course: { select: { titleAr: true, titleEn: true } } },
+    });
+    for (const p of payments) {
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: { action: 'PAYMENT_SUCCESS', entityId: p.id },
+        });
+        if (!exists) {
+          const courseTitle = (p.course as any) ? ((p.course as any).titleAr || (p.course as any).titleEn) : null;
+          await this.prisma.userActivity.create({
+            data: {
+              userId: p.userId,
+              action: 'PAYMENT_SUCCESS',
+              entity: 'Payment',
+              entityId: p.id,
+              metadata: { amount: p.amount, type: 'course', courseTitle, method: p.method, itemType: p.itemType },
+              createdAt: p.completedAt ?? p.createdAt,
+            },
+          });
+          results.payments++;
+        }
+      } catch (e: any) {
+        results.errors.push(`payment ${p.id}: ${e?.message}`);
+      }
+    }
+
+    // Recent wallet course purchases → PAYMENT_SUCCESS
+    const walletPayments = await this.prisma.walletTransaction.findMany({
+      where: { type: 'PAYMENT', status: 'SUCCESS', createdAt: { gte: since }, courseId: { not: null } },
+    });
+    const walletCourseIds = Array.from(new Set(walletPayments.map((w) => w.courseId).filter((id): id is string => !!id)));
+    const walletCourses = walletCourseIds.length
+      ? await this.prisma.course.findMany({
+          where: { id: { in: walletCourseIds } },
+          select: { id: true, titleAr: true, titleEn: true },
+        })
+      : [];
+    const walletCourseMap = new Map(walletCourses.map((c) => [c.id, c.titleAr || c.titleEn]));
+    for (const w of walletPayments) {
+      try {
+        const exists = await this.prisma.userActivity.findFirst({
+          where: {
+            action: 'PAYMENT_SUCCESS',
+            userId: w.userId,
+            metadata: { path: ['walletTxId'], equals: w.id },
+          },
+        });
+        if (!exists) {
+          await this.prisma.userActivity.create({
+            data: {
+              userId: w.userId,
+              action: 'PAYMENT_SUCCESS',
+              entity: 'Payment',
+              entityId: w.courseId ?? w.id,
+              metadata: {
+                amount: Math.abs(w.amount),
+                type: 'course',
+                courseId: w.courseId,
+                courseTitle: w.courseId ? walletCourseMap.get(w.courseId) ?? null : null,
+                method: 'wallet',
+                walletTxId: w.id,
+              },
+              createdAt: w.createdAt,
+            },
+          });
+          results.walletPayments++;
+        }
+      } catch (e: any) {
+        results.errors.push(`walletPayment ${w.id}: ${e?.message}`);
+      }
+    }
+
+    this.logger.log(`[BackfillRecent] since=${results.since} enrollments=${results.enrollments} payments=${results.payments} walletPayments=${results.walletPayments} errors=${results.errors.length}`);
+    return { success: true, results };
+  }
+
   // ── User activity timeline ──
   async getUserActivity(userId: string, filter: string = 'all') {
     try {

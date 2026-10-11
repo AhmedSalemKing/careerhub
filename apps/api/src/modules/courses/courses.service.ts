@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CertificatesService } from '../certificates/certificates.service';
+import { ActivityService } from '../../common/services/activity.service';
 import { Course, CourseStatus, User } from '@prisma/client';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class CoursesService {
   constructor(
     private prisma: PrismaService,
     private certificatesService: CertificatesService,
+    private readonly activityService: ActivityService,
   ) { }
 
   async getCourses(options: {
@@ -2025,7 +2027,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { instructorId: true, price: true }
+      select: { instructorId: true, price: true, titleAr: true, titleEn: true }
     })
     if (course?.price && parseFloat(course.price.toString()) > 0) {
       const instructorShare = parseFloat(course.price.toString()) * 0.8
@@ -2033,6 +2035,25 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${instructorShare} WHERE "id" = '${course.instructorId}'`
       ).catch(() => {})
     }
+
+    const amount = course?.price ? parseFloat(course.price.toString()) : 0
+    const courseTitle = course?.titleAr || course?.titleEn || 'كورس'
+
+    await this.activityService.track({
+      userId,
+      action: 'PAYMENT_SUCCESS',
+      entity: 'Payment',
+      entityId: paymentIntentId,
+      metadata: { amount, type: 'course', courseId, courseTitle, method: 'stripe' },
+    })
+
+    await this.activityService.track({
+      userId,
+      action: 'ENROLL_COURSE',
+      entity: 'Course',
+      entityId: courseId,
+      metadata: { courseId, courseTitle, price: amount, method: 'stripe' },
+    })
 
     return { success: true, data: enrollment }
   }
