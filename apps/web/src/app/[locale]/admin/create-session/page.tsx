@@ -175,7 +175,7 @@ export default function AdminCreateSessionPage() {
   }
 
   const labelStyle: React.CSSProperties = {
-    display: 'block', color: isDark ? '#94a3b8' : '#6b7280',
+    display: 'block', color: 'var(--muted)',
     fontSize: 13, fontWeight: 600, marginBottom: 8,
   }
 
@@ -250,7 +250,7 @@ export default function AdminCreateSessionPage() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <User size={18} color="#5120c8" />
-              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
                 {isAr ? 'معلومات الجلسة' : 'Session Information'}
               </h3>
             </div>
@@ -340,9 +340,9 @@ export default function AdminCreateSessionPage() {
                     onClick={() => set('duration', d)}
                     style={{
                       padding: '10px 4px', borderRadius: 10,
-                      border: `2px solid ${form.duration === d ? '#5120c8' : isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                      border: `2px solid ${form.duration === d ? '#5120c8' : 'var(--border)'}`,
                       background: form.duration === d ? 'rgba(81,32,200,0.1)' : 'transparent',
-                      color: form.duration === d ? '#5120c8' : isDark ? '#94a3b8' : '#6b7280',
+                      color: form.duration === d ? '#5120c8' : 'var(--muted)',
                       cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
                       width: '100%', textAlign: 'center',
                       transition: 'all 0.2s',
@@ -366,11 +366,11 @@ export default function AdminCreateSessionPage() {
                 padding: '12px 16px', borderRadius: '10px',
                 background: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9',
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                color: isDark ? '#fff' : '#0d0d0d',
+                color: 'var(--foreground)',
                 fontSize: '14px', fontWeight: '600',
                 opacity: 0.8, boxSizing: 'border-box',
               }}>
-                <span style={{ color: isDark ? 'rgba(255,255,255,0.5)' : '#64748b', fontSize: '13px' }}>
+                <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
                   {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
                 </span>
                 <span>
@@ -393,9 +393,9 @@ export default function AdminCreateSessionPage() {
                     onClick={() => set('meetingMethod', method.value)}
                     style={{
                       padding: '8px 4px', borderRadius: 12,
-                      border: `2px solid ${form.meetingMethod === method.value ? '#5120c8' : isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                      border: `2px solid ${form.meetingMethod === method.value ? '#5120c8' : 'var(--border)'}`,
                       background: form.meetingMethod === method.value ? 'rgba(81,32,200,0.1)' : 'transparent',
-                      color: form.meetingMethod === method.value ? '#5120c8' : isDark ? '#94a3b8' : '#6b7280',
+                      color: form.meetingMethod === method.value ? '#5120c8' : 'var(--muted)',
                       cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       width: '100%', textAlign: 'center',
@@ -432,7 +432,7 @@ export default function AdminCreateSessionPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <ImageIcon size={18} color="#5120c8" />
-              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
                 {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (optional)'}
               </h3>
             </div>
@@ -469,14 +469,14 @@ export default function AdminCreateSessionPage() {
                   </button>
                 </div>
               ) : imageUploading ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
                   <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
                   <span style={{ fontSize: 14 }}>{isAr ? 'جارٍ الرفع...' : 'Uploading...'}</span>
                 </div>
               ) : (
                 <>
                   <Upload size={32} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
-                  <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 14, margin: 0 }}>
+                  <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>
                     {isAr ? 'اضغط لإضافة صورة' : 'Click to add image'}
                   </p>
                 </>
@@ -513,8 +513,8 @@ export default function AdminCreateSessionPage() {
               onClick={() => router.back()}
               style={{
                 width: '100%', padding: '12px 4px', borderRadius: 12,
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
+                border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--foreground)',
                 fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 600, cursor: 'pointer',
                 textAlign: 'center',
               }}

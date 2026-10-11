@@ -266,7 +266,7 @@ export default function AdminCreateCoursePage() {
   }
 
   const labelStyle: React.CSSProperties = {
-    display: 'block', color: isDark ? '#94a3b8' : '#6b7280',
+    display: 'block', color: 'var(--muted)',
     fontSize: 13, fontWeight: 600, marginBottom: 8,
   }
 
@@ -324,7 +324,7 @@ export default function AdminCreateCoursePage() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <BookOpen size={18} color="#5120c8" />
-              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
                 {isAr ? 'المعلومات الأساسية' : 'Basic Information'}
               </h3>
             </div>
@@ -501,7 +501,7 @@ export default function AdminCreateCoursePage() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <ImageIcon size={18} color="#5120c8" />
-              <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
                 {isAr ? 'الوسائط' : 'Media'}
               </h3>
             </div>
@@ -526,14 +526,14 @@ export default function AdminCreateCoursePage() {
                     alt="thumbnail" 
                   />
                 ) : thumbUploading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
                     {isAr ? 'جارٍ الرفع...' : 'Uploading...'}
                   </div>
                 ) : (
                   <>
                     <Upload size={28} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
-                    <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 13, margin: 0 }}>
+                    <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>
                       {isAr ? 'اضغط لرفع صورة' : 'Click to upload image'}
                     </p>
                   </>
@@ -595,14 +595,14 @@ export default function AdminCreateCoursePage() {
                     </div>
                   </div>
                 ) : videoUploading ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: isDark ? '#94a3b8' : '#6b7280' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
                     <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #5120c8', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
                     {isAr ? `جارٍ الرفع... ${videoProgress}%` : `Uploading... ${videoProgress}%`}
                   </div>
                 ) : (
                   <>
                     <Video size={28} color={isDark ? '#94a3b8' : '#6b7280'} style={{ opacity: 0.5 }} />
-                    <p style={{ color: isDark ? '#94a3b8' : '#6b7280', fontSize: 13, margin: 0 }}>
+                    <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>
                       {isAr ? 'اضغط لرفع فيديو' : 'Click to upload video'}
                     </p>
                   </>
@@ -622,7 +622,7 @@ export default function AdminCreateCoursePage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Plus size={18} color="#5120c8" />
-                <h3 style={{ color: isDark ? '#fff' : '#0d0d0d', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
                   {isAr ? 'المحتوى' : 'Content'}
                 </h3>
               </div>
@@ -687,8 +687,8 @@ export default function AdminCreateCoursePage() {
                 padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
                 fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
                 borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
-                background: 'transparent', color: isDark ? '#f1f5f9' : '#0d0d0d',
+                border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--foreground)',
                 cursor: 'pointer', textAlign: 'center',
               }}
             >
@@ -704,8 +704,8 @@ export default function AdminCreateCoursePage() {
                 fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
                 borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
                 background: 'transparent',
-                border: `2px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#e5e7eb'}`,
-                color: isDark ? '#94a3b8' : '#6b7280',
+                border: '2px solid var(--border)',
+                color: 'var(--muted)',
                 cursor: 'pointer', textAlign: 'center',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
               }}
