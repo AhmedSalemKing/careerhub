@@ -73,8 +73,23 @@ async function bootstrap() {
       'http://localhost:3001',
     ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token', 'x-csrf-token'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-refresh-token',
+      'x-csrf-token',
+      'Cache-Control',
+      'Pragma',
+      'Expires',
+      'X-Requested-With',
+      'Accept',
+      'Origin',
+      'If-None-Match',
+      'If-Modified-Since',
+    ],
+    exposedHeaders: ['Content-Length', 'Content-Range', 'ETag'],
+    maxAge: 86400,
   });
 
   // Compression

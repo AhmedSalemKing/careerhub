@@ -50,13 +50,12 @@ export default function TakeQuizPage() {
   })
 
   // When an attempt id is in the URL (back-navigation / refresh) verify its
-  // status before rendering anything. Cache-Control disables browser caching.
+  // status before rendering anything. React Query's queryKey keyed on the aid
+  // is enough — no need to disable caching with request headers.
   const { data: existingAttempt, isLoading: existingLoading } = useQuery({
     queryKey: ['student-attempt-mine', aidParam],
     queryFn: async () => {
-      const res = await get(`/quizzes/attempts/${aidParam}/mine`, {
-        headers: { 'Cache-Control': 'no-cache' },
-      })
+      const res = await get(`/quizzes/attempts/${aidParam}/mine`)
       return (res?.data as any)?.data ?? null
     },
     enabled: !!aidParam,

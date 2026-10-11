@@ -23,13 +23,11 @@ export default function QuizResultPage() {
   const quizId = params.quizId as string
   const aid = search.get('aid')
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['student-attempt-result', aid],
     queryFn: async () => {
       if (!aid) return null
-      const res = await get(`/quizzes/attempts/${aid}/mine`, {
-        headers: { 'Cache-Control': 'no-cache' },
-      })
+      const res = await get(`/quizzes/attempts/${aid}/mine`)
       return (res?.data as any)?.data ?? null
     },
     enabled: !!aid,
@@ -38,17 +36,22 @@ export default function QuizResultPage() {
 
   const attempt = data
   const finished = attempt?.status === 'GRADED' || attempt?.status === 'SUBMITTED'
+  const errStatus = (error as any)?.response?.status
 
   useEffect(() => {
-    if (isLoading) return
-    if (!aid || isError || !data) {
+    if (!aid) return
+    // Wait until the query has settled before deciding anything.
+    if (isLoading || isFetching) return
+    // The attempt really doesn't exist / isn't ours → go back to the course.
+    if (errStatus === 404 || errStatus === 403) {
       router.replace(`/${locale}/learn/${courseId}`)
       return
     }
-    if (data.status !== 'GRADED' && data.status !== 'SUBMITTED') {
+    // Attempt exists but is still in progress → resume it.
+    if (data && data.status !== 'GRADED' && data.status !== 'SUBMITTED') {
       router.replace(`/${locale}/learn/${courseId}/quiz/${quizId}`)
     }
-  }, [isLoading, isError, data, aid, router, locale, courseId, quizId])
+  }, [aid, isLoading, isFetching, errStatus, data, router, locale, courseId, quizId])
 
   // Refresh quiz queries so navigating back to the lesson shows fresh state.
   useEffect(() => {
@@ -114,6 +117,22 @@ export default function QuizResultPage() {
         <div className="mx-auto max-w-4xl space-y-4">
           <div className="h-10 w-64 animate-pulse rounded-[10px] bg-[color:var(--surface-2)]" />
           <div className="h-40 animate-pulse rounded-[14px] bg-[color:var(--surface-2)]" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !attempt && errStatus !== 404 && errStatus !== 403) {
+    return (
+      <div className="min-h-screen p-6" dir="rtl">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-sm text-[color:var(--muted)]">تعذر تحميل النتيجة</p>
+          <button
+            onClick={() => refetch()}
+            className="mt-4 rounded-[10px] bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-150 hover:opacity-90"
+          >
+            إعادة المحاولة
+          </button>
         </div>
       </div>
     )
