@@ -4,7 +4,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { toast } from 'sonner'
-import { ArrowRight, Clock, Send, CheckCircle2, AlertCircle, FileText } from 'lucide-react'
+import { ArrowRight, Clock, Send, CheckCircle2, AlertCircle, FileText, Upload } from 'lucide-react'
 import { get, post } from '@/lib/api'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 
@@ -28,6 +28,7 @@ export default function TakeQuizPage() {
   const [questions, setQuestions] = useState<any[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
   const [autoSaving, setAutoSaving] = useState(false)
+  const [uploading, setUploading] = useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = useState(false)
   const [endsAt, setEndsAt] = useState<Date | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
@@ -72,18 +73,20 @@ export default function TakeQuizPage() {
     return () => clearInterval(id)
   }, [endsAt, submitting])
 
-  // Auto-save every 800ms for MCQ selection (debounced-ish behavior via effect)
+  const persistAnswer = async (questionId: string, payload: any) => {
+    if (!attemptId) return
+    await post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...payload })
+  }
+
+  // Auto-save every 800ms (debounced-ish behavior via effect)
   useEffect(() => {
     if (!attemptId) return
-    const mcqAnswers: Array<[string, any]> = Object.entries(answers).filter(([qid]) => {
-      const q = questions.find((x) => x.id === qid)
-      return q && q.type === 'MCQ'
-    })
-    if (mcqAnswers.length === 0) return
+    const entries = Object.entries(answers)
+    if (entries.length === 0) return
     setAutoSaving(true)
     const t = setTimeout(async () => {
       try {
-        for (const [questionId, ans] of mcqAnswers) {
+        for (const [questionId, ans] of entries) {
           await post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...ans })
         }
       } catch (e: any) {
@@ -93,7 +96,7 @@ export default function TakeQuizPage() {
       }
     }, 800)
     return () => clearTimeout(t)
-  }, [answers, attemptId, questions])
+  }, [answers, attemptId])
 
   const setMcq = (questionId: string, choiceId: string) => {
     const q = questions.find((x) => x.id === questionId)
@@ -118,11 +121,81 @@ export default function TakeQuizPage() {
     setAnswers((prev) => ({ ...prev, [questionId]: meta }))
   }
 
+  const onFileChange = async (questionId: string, file: File) => {
+    if (!attemptId) return
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('حجم الملف يجب أن يكون أقل من 20 ميجا')
+      return
+    }
+    setUploading((prev) => ({ ...prev, [questionId]: true }))
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = (await post('/upload/file', form)) as any
+      const d = res?.data?.data
+      const url: string | undefined = d?.url
+      const name: string = d?.fileName || file.name
+      if (!url) {
+        toast.error('فشل رفع الملف')
+        return
+      }
+      await persistAnswer(questionId, { fileUrl: url, fileName: name })
+      setFileMeta(questionId, { fileUrl: url, fileName: name })
+      toast.success(`تم رفع: ${name}`)
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message ?? 'فشل رفع الملف')
+    } finally {
+      setUploading((prev) => ({ ...prev, [questionId]: false }))
+    }
+  }
+
+  const removeFile = async (questionId: string) => {
+    setAnswers((prev) => {
+      const next = { ...prev }
+      delete next[questionId]
+      return next
+    })
+    try {
+      await persistAnswer(questionId, { selectedChoiceIds: [], textAnswer: null, fileUrl: null, fileName: null })
+    } catch {
+      // best effort — local state is what matters for submission blocking
+    }
+  }
+
+  const isAnsweredLocally = (q: any, a: any) => {
+    if (!a) return false
+    if (Array.isArray(a.selectedChoiceIds) && a.selectedChoiceIds.length > 0) return true
+    if (typeof a.textAnswer === 'string' && a.textAnswer.trim().length > 0) return true
+    if (typeof a.fileUrl === 'string' && a.fileUrl.length > 0) return true
+    return false
+  }
+
   const handleSubmit = async (auto = false) => {
     if (!attemptId) return
     if (!auto && submitting) return
+
+    if (!auto) {
+      const missingIdx: number[] = []
+      questions.forEach((q, i) => {
+        if (!isAnsweredLocally(q, answers[q.id])) missingIdx.push(i + 1)
+      })
+      if (missingIdx.length > 0) {
+        toast.warning(`لم تجب على ${missingIdx.length} سؤال: ${missingIdx.join('، ')}`)
+        const first = questions.find((q) => !isAnsweredLocally(q, answers[q.id]))
+        if (first) document.getElementById(`q-${first.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
+      for (const [questionId, ans] of Object.entries(answers)) {
+        try {
+          await post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...ans })
+        } catch {
+          // non-blocking — the submit endpoint revalidates
+        }
+      }
       await post(`/quizzes/attempts/${attemptId}/submit`)
       toast.success('تم تسليم الاختبار')
       router.push(`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${attemptId}`)
@@ -208,7 +281,7 @@ export default function TakeQuizPage() {
             const selected = new Set(ans?.selectedChoiceIds ?? [])
 
             return (
-              <div key={q.id} className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+              <div key={q.id} id={`q-${q.id}`} className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
                   <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
@@ -218,6 +291,20 @@ export default function TakeQuizPage() {
                 </div>
                 <p className="mt-3 text-sm font-semibold text-foreground">{q.questionText}</p>
                 {q.note && <p className="mt-1 text-xs text-[color:var(--muted)]">{q.note}</p>}
+                {q.questionImage && (
+                  <img
+                    src={q.questionImage}
+                    alt=""
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '400px',
+                      borderRadius: '12px',
+                      marginTop: '12px',
+                      border: '1px solid var(--border)',
+                      display: 'block',
+                    }}
+                  />
+                )}
 
                 {isMcq && (
                   <div className="mt-4 space-y-2">
@@ -258,14 +345,51 @@ export default function TakeQuizPage() {
                 )}
 
                 {q.type === 'FILE_UPLOAD' && (
-                  <div className="mt-3 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/60 p-4 text-sm text-[color:var(--muted)]">
-                    <p className="mb-2">ارفع ملف إجابتك من الصفحة الرسمية لاحقاً أو استخدم رابط ملف (اختياري الآن)</p>
-                    <input
-                      className={inputCls}
-                      value={ans?.fileUrl ?? ''}
-                      onChange={(e) => setFileMeta(q.id, { fileUrl: e.target.value, fileName: e.target.value.split('/').pop() ?? 'file' })}
-                      placeholder="https://..."
-                    />
+                  <div className="mt-3 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/60 p-4 text-sm">
+                    {ans?.fileUrl ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="flex min-w-0 items-center gap-2 text-foreground">
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span className="truncate">تم رفع: {ans.fileName || 'الملف'}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(q.id)}
+                          className="shrink-0 text-xs font-semibold text-[#ef4444] hover:opacity-80"
+                        >
+                          حذف الملف
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="mb-2 text-xs text-[color:var(--muted)]">
+                          ارفع ملف إجابتك (PDF، Word، أو صورة — أقل من 20 ميجا)
+                        </p>
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150">
+                          {uploading[q.id] ? (
+                            <>
+                              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              جارٍ الرفع...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4" />
+                              اختيار ملف
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            className="hidden"
+                            disabled={!!uploading[q.id]}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              if (f) onFileChange(q.id, f)
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

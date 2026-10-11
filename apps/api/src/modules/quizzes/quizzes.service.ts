@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
@@ -88,7 +89,8 @@ const CREATE_TABLES: string[] = [
     "gradedAt" TIMESTAMP(3),
     "gradedBy" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE ("attemptId", "questionId")
   )`,
 ];
 
@@ -109,6 +111,13 @@ const CREATE_INDEXES: string[] = [
 const MIGRATIONS: string[] = [
   `ALTER TABLE "quiz_tests" ADD COLUMN IF NOT EXISTS "retakeThreshold" INTEGER NOT NULL DEFAULT 50`,
   `ALTER TABLE "quiz_tests" ADD COLUMN IF NOT EXISTS "unlimitedRetakes" BOOLEAN NOT NULL DEFAULT false`,
+  // Backfill the unique constraint required by saveAnswer's `upsert`.
+  // Older deployments created quiz_test_answers via CREATE TABLE without it.
+  `DELETE FROM "quiz_test_answers" a USING "quiz_test_answers" b
+     WHERE a.ctid < b.ctid
+       AND a."attemptId" = b."attemptId"
+       AND a."questionId" = b."questionId"`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "quiz_test_answers_attemptId_questionId_key" ON "quiz_test_answers"("attemptId", "questionId")`,
 ];
 
 interface GradeOutcome {
@@ -1023,9 +1032,10 @@ export class QuizzesService implements OnModuleInit {
   }
 
   private async getOwnedAttempt(userId: string, attemptId: string) {
-    const attempt = await this.prisma.quizAttempt.findFirst({
-      where: { id: attemptId, userId },
+    const attempt = await this.prisma.quizAttempt.findUnique({
+      where: { id: attemptId },
       include: {
+        answers: true,
         quiz: {
           include: {
             questions: {
@@ -1039,6 +1049,9 @@ export class QuizzesService implements OnModuleInit {
     if (!attempt) {
       throw new NotFoundException('Attempt not found');
     }
+    if (attempt.userId !== userId) {
+      throw new ForbiddenException('Not your attempt');
+    }
     return attempt;
   }
 
@@ -1046,12 +1059,12 @@ export class QuizzesService implements OnModuleInit {
     const attempt = await this.getOwnedAttempt(userId, attemptId);
 
     if (attempt.status !== 'IN_PROGRESS') {
-      throw new ForbiddenException('Attempt is no longer in progress');
+      throw new ConflictException('ATTEMPT_NOT_ACTIVE');
     }
 
     const graceEndsAt = new Date(new Date(attempt.endsAt).getTime() + GRACE_MS);
     if (Date.now() > graceEndsAt.getTime()) {
-      throw new ForbiddenException('LATE');
+      throw new ForbiddenException({ code: 'LATE', message: 'LATE' });
     }
 
     const question = await this.prisma.quizQuestion.findFirst({
@@ -1115,7 +1128,11 @@ export class QuizzesService implements OnModuleInit {
         if (!answer) continue;
         const correctIds = q.choices.filter((c: any) => c.isCorrect).map((c: any) => c.id);
         const selected = answer.selectedChoiceIds ?? [];
-        const grade = this.arraysEqualIds(correctIds, selected) ? q.points : 0;
+        const isExactMatch =
+          correctIds.length > 0 &&
+          selected.length === correctIds.length &&
+          this.arraysEqualIds(correctIds, selected);
+        const grade = isExactMatch ? q.points : 0;
         autoByAnswer.set(answer.id, grade);
         autoScore += grade;
       } else if (!answer || answer.manualGrade == null) {
@@ -1129,7 +1146,7 @@ export class QuizzesService implements OnModuleInit {
     }
 
     const totalScore = autoScore + manualScore;
-    const percentage = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
     const passed = percentage >= quiz.passingScore;
 
     return { autoScore, manualScore, totalScore, maxScore, percentage, passed, needsManual, autoByAnswer };
@@ -1142,28 +1159,41 @@ export class QuizzesService implements OnModuleInit {
       return this.buildStudentResult(attempt, userId);
     }
 
+    const expired = Date.now() > new Date(attempt.endsAt).getTime();
+
     const submittedAt = new Date();
     const timeSpentSeconds = Math.max(
       0,
       Math.floor((submittedAt.getTime() - new Date(attempt.startedAt).getTime()) / 1000),
     );
 
+    const existingAnswers = await this.prisma.quizAnswer.findMany({ where: { attemptId: attempt.id } });
+
+    const isAnswered = (a: any) => {
+      if (!a) return false;
+      if (Array.isArray(a.selectedChoiceIds) && a.selectedChoiceIds.length > 0) return true;
+      if (typeof a.textAnswer === 'string' && a.textAnswer.trim().length > 0) return true;
+      if (typeof a.fileUrl === 'string' && a.fileUrl.length > 0) return true;
+      return false;
+    };
+
+    const answeredByQuestion = new Map(existingAnswers.map((a: any) => [a.questionId, a]));
+    const missing = attempt.quiz.questions
+      .filter((q: any) => !isAnswered(answeredByQuestion.get(q.id)))
+      .map((q: any) => q.id);
+
+    // Manual submits must answer every question. Auto (timeout) submits bypass so
+    // an expired attempt can still be finalized instead of being trapped.
+    if (!expired && missing.length > 0) {
+      throw new BadRequestException({
+        code: 'MISSING_ANSWERS',
+        missing,
+        message: 'MISSING_ANSWERS',
+      });
+    }
+
     let saved: any;
     await this.prisma.$transaction(async (tx) => {
-      const existingAnswers = await tx.quizAnswer.findMany({ where: { attemptId: attempt.id } });
-      const answered = new Set(existingAnswers.map((a: any) => a.questionId));
-      for (const q of attempt.quiz.questions) {
-        if (!answered.has(q.id)) {
-          await tx.quizAnswer.create({
-            data: {
-              attemptId: attempt.id,
-              questionId: q.id,
-              selectedChoiceIds: [],
-            },
-          });
-        }
-      }
-
       const freshAnswers = await tx.quizAnswer.findMany({ where: { attemptId: attempt.id } });
       const grade = this.computeGrading(attempt.quiz, freshAnswers);
       for (const [answerId, autoGrade] of grade.autoByAnswer) {
@@ -1187,6 +1217,7 @@ export class QuizzesService implements OnModuleInit {
           status: grade.needsManual ? 'SUBMITTED' : 'GRADED',
         },
         include: {
+          answers: true,
           quiz: {
             include: {
               questions: {

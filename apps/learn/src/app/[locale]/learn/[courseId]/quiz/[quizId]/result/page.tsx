@@ -93,6 +93,20 @@ export default function QuizResultPage() {
                   <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} نقطة</span>
                 </div>
                 <p className="mt-3 text-sm font-semibold text-foreground">{q.questionText}</p>
+                {q.questionImage && (
+                  <img
+                    src={q.questionImage}
+                    alt=""
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '400px',
+                      borderRadius: '12px',
+                      marginTop: '12px',
+                      border: '1px solid var(--border)',
+                      display: 'block',
+                    }}
+                  />
+                )}
 
                 {isMcq && finished && (
                   <div className="mt-3 space-y-2">
