@@ -1357,3 +1357,167 @@ a[href*="/courses"] img {
    END OF FILE
    DeveWay Dashboard Design System v4.0
    ══════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   FONT WEIGHT REFINEMENT — reserve bold for important titles
+   Do not edit component files. All rules below use CSS cascade.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Global default — body text stays regular */
+body {
+  font-weight: 400;
+}
+
+/* Headings — hierarchy preserved */
+h1, .h1 {
+  font-weight: 900;
+}
+h2, .h2 {
+  font-weight: 800;
+}
+h3, .h3 {
+  font-weight: 700;
+}
+h4, .h4 {
+  font-weight: 700;
+}
+
+/* Section titles that aren't semantic h1-h4 */
+[data-section-title] {
+  font-weight: 800;
+}
+
+/* Cards & content titles stay bold but not extreme */
+[data-card-title] {
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Buttons — out-rank the existing `button, [class*="btn"] {900 !important}`
+   ───────────────────────────────────────────────────────────── */
+
+/* Primary buttons keep 700 */
+button[data-variant="primary"],
+button.bg-primary,
+a.bg-primary,
+button.primary,
+.btn-primary,
+button.btn-primary,
+a.btn-primary,
+.btn-cta-primary,
+button.btn-cta-primary,
+a.btn-cta-primary,
+button.hero-cta-primary,
+a.hero-cta-primary {
+  font-weight: 700 !important;
+}
+
+/* All other buttons → 600 */
+button:not([data-variant="primary"]):not(.bg-primary):not(.primary):not(.btn-primary):not(.font-extrabold) {
+  font-weight: 600 !important;
+}
+
+/* Navigation links */
+nav a,
+.navbar a,
+.nav-link {
+  font-weight: 600 !important;
+}
+
+/* Tabs / pills */
+[role="tab"],
+.tab,
+.pill {
+  font-weight: 600 !important;
+}
+
+/* Form labels */
+label {
+  font-weight: 600 !important;
+}
+
+/* Badges / small tags */
+.badge,
+.tag,
+[data-badge] {
+  font-weight: 600 !important;
+}
+
+/* Table headers / cells */
+thead th,
+table th {
+  font-weight: 600 !important;
+}
+tbody td,
+table td {
+  font-weight: 400 !important;
+}
+
+/* Muted text — cascade only */
+.text-muted,
+[data-muted] {
+  font-weight: 400;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Utility class overrides for classes used in JSX
+   (!important required to beat existing 900/700 !important rules)
+   ───────────────────────────────────────────────────────────── */
+
+/* font-black on things that are NOT the hero H1 */
+.font-black:not(h1):not(.h1) {
+  font-weight: 800 !important;
+}
+
+/* font-extrabold on buttons → 700 (protected from the 600 sweep) */
+button.font-extrabold {
+  font-weight: 700 !important;
+}
+
+/* font-extrabold on nav / tabs / labels / badges → 600 */
+nav .font-extrabold,
+[role="tab"].font-extrabold,
+label.font-extrabold,
+.badge.font-extrabold {
+  font-weight: 600 !important;
+}
+
+/* font-bold on non-titles → 600
+   Keeps 700 on h1-h4 and primary CTAs (excluded below) */
+.font-bold:not(h1):not(h2):not(h3):not(h4):not(.h1):not(.h2):not(.h3):not(.h4):not(button.bg-primary):not(a.bg-primary):not(.bg-primary):not(.btn-primary):not(.btn-cta-primary):not(.hero-cta-primary) {
+  font-weight: 600 !important;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Arabic / RTL headings — out-rank the `[dir="rtl"] h1..h4 {700 !important}` cap
+   ───────────────────────────────────────────────────────────── */
+
+/* Arabic hero H1 → 900 */
+html[dir="rtl"] h1:first-of-type,
+[dir="rtl"] h1:first-of-type,
+html[lang^="ar"] h1:first-of-type,
+[lang^="ar"] h1:first-of-type {
+  font-weight: 900 !important;
+}
+
+/* Other Arabic headings → hierarchy */
+html[dir="rtl"] h2,
+[dir="rtl"] h2,
+html[lang^="ar"] h2,
+[lang^="ar"] h2,
+html[dir="rtl"] .h2 {
+  font-weight: 800 !important;
+}
+
+html[dir="rtl"] h3,
+[dir="rtl"] h3,
+html[lang^="ar"] h3,
+[lang^="ar"] h3,
+html[dir="rtl"] .h3,
+html[dir="rtl"] h4,
+[dir="rtl"] h4,
+html[lang^="ar"] h4,
+[lang^="ar"] h4,
+html[dir="rtl"] .h4 {
+  font-weight: 700 !important;
+}
