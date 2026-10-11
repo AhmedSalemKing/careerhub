@@ -220,11 +220,16 @@ export class PaymentsService {
       if (course?.instructorId && course?.price) {
         const price = parseFloat(course.price.toString())
         if (price > 0) {
-          const share = Math.round(price * 0.8 * 100) / 100
-          await this.prisma.$executeRawUnsafe(
-            `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
-          )
-          console.log('[ENROLL] Instructor earnings updated:', share)
+          try {
+            const share = Math.round(price * 0.8 * 100) / 100
+            await this.prisma.$executeRawUnsafe(
+              `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${share} WHERE "id" = '${course.instructorId}'`
+            )
+            console.log('[ENROLL] Instructor earnings updated:', share)
+          } catch (err: any) {
+            console.error('[ENROLL] Instructor earnings update failed (non-fatal):', err?.message)
+            // Do NOT re-throw — enrollment + tracking must still proceed.
+          }
         }
       }
       
