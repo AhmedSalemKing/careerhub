@@ -321,7 +321,7 @@ export function Navbar() {
       <header
         className="sticky top-0 z-40 w-full transition-all duration-200"
         style={{
-          background: '#050505',
+          background: 'var(--background)',
           backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
           borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
           boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
@@ -365,7 +365,7 @@ export function Navbar() {
                   className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
                   style={{
                     fontSize: '14px',
-                    fontWeight: 900,
+                    fontWeight: 700,
                     letterSpacing: '-0.01em',
                     fontFamily: NAV_FONT,
                     color: active ? '#5120c8' : 'var(--foreground)',
@@ -557,7 +557,7 @@ export function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
                     style={{
-                      fontWeight: 900,
+                      fontWeight: 700,
                       fontFamily: NAV_FONT,
                       color: active ? '#5120c8' : 'var(--foreground)',
                       background: active ? 'var(--surface-2)' : 'transparent',
