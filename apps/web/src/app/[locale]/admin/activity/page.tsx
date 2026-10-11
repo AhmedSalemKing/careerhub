@@ -176,12 +176,12 @@ export default function ActivityPage() {
 
   const tableBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
   const tableHover = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
-  const borderColor = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'
-  const surface = isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc'
-  const fg = isDark ? '#f1f5f9' : '#0d0d0d'
-  const muted = isDark ? 'rgba(255,255,255,0.4)' : '#64748b'
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'
-  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'
+  const borderColor = 'var(--border)'
+  const surface = 'var(--surface)'
+  const fg = 'var(--foreground)'
+  const muted = 'var(--muted)'
+  const inputBg = 'var(--surface-2)'
+  const inputBorder = 'var(--border)'
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px', color: fg }} dir={isAr ? 'rtl' : 'ltr'}>
@@ -413,7 +413,7 @@ export default function ActivityPage() {
         borderRadius: '16px', padding: '32px', textAlign: 'center', marginTop: '24px',
       }}>
         <Monitor size={28} style={{ color: 'rgba(81,32,200,0.3)', margin: '0 auto 8px', display: 'block' }} />
-        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: 0 }}>
+        <p style={{ color: 'var(--muted)', fontSize: '14px', margin: 0 }}>
           {isAr ? 'الخريطة التفاعلية المباشرة قريباً' : 'Live Interactive Map — Coming Soon'}
         </p>
       </div>

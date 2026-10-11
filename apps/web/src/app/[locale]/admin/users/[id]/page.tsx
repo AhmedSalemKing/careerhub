@@ -136,19 +136,19 @@ export default function UserDetailPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
         <button
           onClick={() => router.back()}
-          style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: 8, cursor: 'pointer', color: '#e0e0e0', display: 'flex' }}
+          style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 8, padding: 8, cursor: 'pointer', color: 'var(--foreground-2)', display: 'flex' }}
         >
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 24, color: '#fff', margin: 0 }}>
+          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 24, color: 'var(--foreground)', margin: 0 }}>
             {user?.profile?.firstName} {user?.profile?.lastName}
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{user?.email}</p>
+          <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{user?.email}</p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 12, overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12, overflowX: 'auto' }}>
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -160,7 +160,7 @@ export default function UserDetailPage() {
               padding: '10px 20px',
               fontSize: 14,
               fontWeight: 600,
-              color: activeTab === tab.key ? '#fff' : 'rgba(255,255,255,0.6)',
+              color: activeTab === tab.key ? '#fff' : 'var(--muted)',
               cursor: 'pointer',
               fontFamily: 'DM Sans, sans-serif',
               whiteSpace: 'nowrap',
@@ -176,16 +176,16 @@ export default function UserDetailPage() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
             {stats.map((stat, i) => (
-              <div key={i} style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
-                <p style={{ margin: '0 0 8px', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>{stat.label}</p>
+              <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: 20 }}>
+                <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>{stat.label}</p>
                 <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: stat.color, fontFamily: 'Plus Jakarta Sans, sans-serif' }}>{stat.value}</p>
               </div>
             ))}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 16 }}>
-            <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <User size={14} color="#A78BFA" />
                 {isAr ? 'معلومات الحساب' : 'Account Info'}
               </h3>
@@ -198,33 +198,33 @@ export default function UserDetailPage() {
                   const Icon = row.icon
                   return (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Icon size={14} color="rgba(255,255,255,0.4)" />
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif', flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 13, color: '#e0e0e0', fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>{String(row.value ?? '-')}</span>
+                      <Icon size={14} color="var(--muted)" />
+                      <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif', flex: 1 }}>{row.label}</span>
+                      <span style={{ fontSize: 13, color: 'var(--foreground-2)', fontFamily: 'DM Sans, sans-serif', fontWeight: 600 }}>{String(row.value ?? '-')}</span>
                     </div>
                   )
                 })}
               </div>
             </div>
 
-            <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Activity size={14} color="#A78BFA" />
                 {isAr ? 'النشاط الأخير' : 'Recent Activity'}
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 200, overflowY: 'auto' }}>
                 {activities.length === 0 ? (
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
+                  <p style={{ color: 'var(--muted)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
                     {isAr ? 'لا يوجد نشاط مسجل' : 'No activity recorded yet'}
                   </p>
                 ) : activities.slice(0, 5).map((act: any, i: number) => {
                   const Icon = getActivityIcon(act.action)
                   return (
-                    <div key={i} style={{ display: 'flex', gap: 10, padding: 8, background: 'rgba(255,255,255,0.04)', borderRadius: 8, alignItems: 'flex-start' }}>
+                    <div key={i} style={{ display: 'flex', gap: 10, padding: 8, background: 'var(--surface)', borderRadius: 8, alignItems: 'flex-start' }}>
                       <Icon size={14} color="#5120c8" style={{ marginTop: 2 }} />
                       <div style={{ flex: 1 }}>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: '#e0e0e0', fontFamily: 'DM Sans, sans-serif' }}>{act.action}</p>
-                        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'DM Sans, sans-serif' }}>{formatTimeAgo(act.createdAt, isAr)}</p>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: 'var(--foreground-2)', fontFamily: 'DM Sans, sans-serif' }}>{act.action}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>{formatTimeAgo(act.createdAt, isAr)}</p>
                       </div>
                     </div>
                   )
@@ -243,13 +243,13 @@ export default function UserDetailPage() {
                 key={filter.key}
                 onClick={() => setActivityFilter(filter.key)}
                 style={{
-                  background: activityFilter === filter.key ? '#5120c8' : 'rgba(255,255,255,0.06)',
+                  background: activityFilter === filter.key ? '#5120c8' : 'var(--surface-2)',
                   border: 'none',
                   borderRadius: 6,
                   padding: '6px 14px',
                   fontSize: 12,
                   fontWeight: 600,
-                  color: activityFilter === filter.key ? '#fff' : 'rgba(255,255,255,0.6)',
+                  color: activityFilter === filter.key ? '#fff' : 'var(--muted)',
                   cursor: 'pointer',
                   fontFamily: 'DM Sans, sans-serif',
                 }}
@@ -259,31 +259,31 @@ export default function UserDetailPage() {
             ))}
           </div>
 
-          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Activity size={14} color="#A78BFA" />
               {isAr ? 'سجل النشاط' : 'Activity Log'}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 500, overflowY: 'auto' }}>
               {activities.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
+                <p style={{ color: 'var(--muted)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
                   {isAr ? 'لا يوجد نشاط مسجل' : 'No activity recorded'}
                 </p>
               ) : activities.map((act: any, i: number) => {
                 const Icon = getActivityIcon(act.action)
                 return (
-                  <div key={i} style={{ display: 'flex', gap: 12, padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 10, alignItems: 'flex-start' }}>
+                  <div key={i} style={{ display: 'flex', gap: 12, padding: 12, background: 'var(--surface)', borderRadius: 10, alignItems: 'flex-start' }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(81,32,200,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon size={18} color="#5120c8" />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#e0e0e0', fontFamily: 'DM Sans, sans-serif' }}>{act.action}</p>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--foreground-2)', fontFamily: 'DM Sans, sans-serif' }}>{act.action}</p>
                       {act.entity && (
-                        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
+                        <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
                           {isAr ? 'على' : 'on'} {act.entity}
                         </p>
                       )}
-                      <p style={{ margin: '4px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'DM Sans, sans-serif' }}>
+                      <p style={{ margin: '4px 0 0', fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
                         {formatDate(act.createdAt, isAr)}
                       </p>
                     </div>
@@ -299,27 +299,27 @@ export default function UserDetailPage() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
             {enrollments.length === 0 ? (
-              <div style={{ gridColumn: '1 / -1', background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
-                <GraduationCap size={40} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>
+              <div style={{ gridColumn: '1 / -1', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
+                <GraduationCap size={40} color="var(--muted-foreground)" style={{ marginBottom: 12 }} />
+                <p style={{ color: 'var(--muted)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>
                   {isAr ? 'لا توجد كورسات مسجلة' : 'No enrolled courses'}
                 </p>
               </div>
             ) : enrollments.map((enroll: any, i: number) => (
-              <div key={i} style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden' }}>
+              <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
                 <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {enroll.course?.thumbnail ? (
                     <img src={enroll.course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <BookOpen size={32} color="rgba(255,255,255,0.3)" />
+                    <BookOpen size={32} color="var(--muted-foreground)" />
                   )}
                 </div>
                 <div style={{ padding: 16 }}>
-                  <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif' }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
                     {isAr ? enroll.course?.titleAr : enroll.course?.titleEn}
                   </h4>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontFamily: 'DM Sans, sans-serif' }}>
+                    <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
                       {formatDate(enroll.enrolledAt, isAr)}
                     </span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3', fontFamily: 'DM Sans, sans-serif' }}>
@@ -335,27 +335,27 @@ export default function UserDetailPage() {
 
       {activeTab === 'payments' && (
         <div>
-          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 20 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
               <DollarSign size={14} color="#A78BFA" />
               {isAr ? 'سجل المدفوعات' : 'Payment History'}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {payments.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
+                <p style={{ color: 'var(--muted)', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
                   {isAr ? 'لا توجد مدفوعات' : 'No payments'}
                 </p>
               ) : payments.map((p: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'rgba(255,255,255,0.04)', borderRadius: 10 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, background: 'var(--surface)', borderRadius: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: p.status === 'SUCCESS' || p.status === 'COMPLETED' ? 'rgba(43,191,163,0.2)' : 'rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <DollarSign size={18} color={p.status === 'SUCCESS' || p.status === 'COMPLETED' ? '#2BBFA3' : '#EF4444'} />
                     </div>
                     <div>
-                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#e0e0e0', fontFamily: 'DM Sans, sans-serif' }}>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--foreground-2)', fontFamily: 'DM Sans, sans-serif' }}>
                         {p.course?.titleEn || p.course?.titleAr || p.description || isAr ? 'دفع رسوم' : 'Payment'}
                       </p>
-                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'DM Sans, sans-serif' }}>
+                      <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
                         {formatDate(p.createdAt, isAr)}
                       </p>
                     </div>

@@ -17,9 +17,9 @@ const TABS = [
     fontSize: 'clamp(13px, 3vw, 15px)',
     padding: '10px 14px',
     borderRadius: '10px',
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    color: '#fff', outline: 'none',
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    color: 'var(--foreground)', outline: 'none',
   }
 
   const cardStyle: React.CSSProperties = {
@@ -28,8 +28,8 @@ const TABS = [
     padding: 'clamp(16px, 4vw, 24px)',
     borderRadius: '16px',
     marginBottom: '16px',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
   }
 
 export default function CMSSettingsPage() {
@@ -111,10 +111,10 @@ export default function CMSSettingsPage() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: '700', color: '#fff' }}>
+        <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: '700', color: 'var(--foreground)' }}>
           إعدادات المنصة
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'clamp(12px, 2.5vw, 14px)', marginTop: '4px' }}>
+        <p style={{ color: 'var(--muted)', fontSize: 'clamp(12px, 2.5vw, 14px)', marginTop: '4px' }}>
           تحكم في مظهر ومحتوى الموقع بالكامل
         </p>
       </div>
@@ -138,7 +138,7 @@ export default function CMSSettingsPage() {
                 padding: '10px 20px', borderRadius: '12px',
                 border: 'none', cursor: 'pointer',
                 background: isActive ? 'rgba(81,32,200,0.2)' : 'transparent',
-                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
+                color: isActive ? '#5120C8' : 'var(--muted)',
                 display: 'flex', alignItems: 'center', gap: '8px',
               }}
             >
@@ -213,7 +213,7 @@ export default function CMSSettingsPage() {
           {activeTab === 'testimonials' && (
             <div style={cardStyle}>
               <SectionTitle label="آراء المستخدمين" />
-              <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '13px', marginTop: '4px' }}>
+              <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '4px' }}>
                 أضف أو عدّل آراء المستخدمين التي تظهر في الصفحة الرئيسية
               </p>
               <div style={{ marginTop: '16px' }}>
@@ -222,12 +222,12 @@ export default function CMSSettingsPage() {
                     key={idx}
                     style={{
                       padding: '16px', borderRadius: '12px', marginBottom: '12px',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border)',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '12px' }}>#{idx + 1}</span>
+                      <span style={{ color: 'var(--muted-foreground)', fontSize: '12px' }}>#{idx + 1}</span>
                       <button
                         onClick={() => {
                           const items = [...(g('testimonials.items') as any[])]
@@ -287,8 +287,8 @@ export default function CMSSettingsPage() {
                   }}
                   style={{
                     width: '100%', padding: '12px', borderRadius: '10px',
-                    border: '1px dashed rgba(255,255,255,0.2)',
-                    background: 'transparent', color: '#fff',
+                    border: '1px dashed var(--border)',
+                    background: 'transparent', color: 'var(--foreground)',
                     fontSize: 'clamp(13px, 3vw, 15px)', cursor: 'pointer', marginTop: '8px',
                   }}
                 >
@@ -314,9 +314,9 @@ export default function CMSSettingsPage() {
                     style={{
                       width: '100%', maxWidth: '100%', boxSizing: 'border-box',
                       padding: '14px', marginTop: '12px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '12px', color: '#fff',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px', color: 'var(--foreground)',
                       fontSize: 'clamp(13px, 3vw, 15px)', resize: 'vertical',
                       fontFamily: 'inherit', lineHeight: '1.7',
                       outline: 'none',
@@ -332,7 +332,7 @@ export default function CMSSettingsPage() {
       <div style={{
         position: 'sticky', bottom: '0',
         width: '100%', marginTop: '32px', paddingTop: '16px',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderTop: '1px solid var(--border)',
       }}>
         <button
           onClick={handleSaveAll}
@@ -357,7 +357,7 @@ export default function CMSSettingsPage() {
 
 function SectionTitle({ label }: { label: string }) {
   return (
-    <p style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: '700', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.5px', marginBottom: '16px' }}>
+    <p style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: '700', color: 'var(--muted)', letterSpacing: '0.5px', marginBottom: '16px' }}>
       {label}
     </p>
   )
@@ -365,7 +365,7 @@ function SectionTitle({ label }: { label: string }) {
 
 function Label({ text }: { text: string }) {
   return (
-    <p style={{ display: 'block', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: '600', marginBottom: '6px', color: 'rgba(255,255,255,0.5)' }}>
+    <p style={{ display: 'block', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: '600', marginBottom: '6px', color: 'var(--muted)' }}>
       {text}
     </p>
   )

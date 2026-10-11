@@ -235,9 +235,9 @@ export default function AdminCoursesPage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px',
-                background: isActive ? 'rgba(81,32,200,0.15)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
-                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                background: isActive ? 'rgba(81,32,200,0.15)' : 'var(--surface)',
+                color: isActive ? '#5120C8' : 'var(--muted)',
+                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid var(--border)',
                 borderRadius: 10,
                 cursor: 'pointer',
                 fontSize: 13,
@@ -248,8 +248,8 @@ export default function AdminCoursesPage() {
             >
               {tab.label}
               <span style={{
-                background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
-                color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
+                background: isActive ? 'rgba(81,32,200,0.3)' : 'var(--surface-2)',
+                color: isActive ? '#A78BFA' : 'var(--muted)',
                 padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               }}>{tab.count}</span>
             </button>

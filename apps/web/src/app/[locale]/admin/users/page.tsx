@@ -24,10 +24,10 @@ type AdminUser = {
 const MODAL_INPUT = {
   width: '100%',
   padding: '9px 12px',
-  background: 'rgba(255,255,255,0.05)',
-  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
   borderRadius: 8,
-  color: '#fff',
+  color: 'var(--foreground)',
   fontSize: 13,
   fontFamily: 'DM Sans, sans-serif',
   outline: 'none',
@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-white">{isAr ? 'المستخدمون' : 'Users'}</h1>
+          <h1 className="text-xl font-bold text-foreground">{isAr ? 'المستخدمون' : 'Users'}</h1>
           <span className="text-sm text-gray-400">{total} {isAr ? 'مستخدم' : 'total'}</span>
         </div>
         <button
@@ -216,9 +216,9 @@ export default function AdminUsersPage() {
                 flexShrink: 0, whiteSpace: 'nowrap',
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px',
-                background: isActive ? 'rgba(81,32,200,0.15)' : 'rgba(255,255,255,0.04)',
-                color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
-                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                background: isActive ? 'rgba(81,32,200,0.15)' : 'var(--surface)',
+                color: isActive ? '#5120C8' : 'var(--muted)',
+                border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid var(--border)',
                 borderRadius: 10,
                 cursor: 'pointer',
                 fontSize: 13,
@@ -229,8 +229,8 @@ export default function AdminUsersPage() {
             >
               {isAr ? tab.labelAr : tab.labelEn}
               <span style={{
-                background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
-                color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
+                background: isActive ? 'rgba(81,32,200,0.3)' : 'var(--surface-2)',
+                color: isActive ? '#A78BFA' : 'var(--muted)',
                 padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               }}>{count}</span>
             </button>
@@ -241,14 +241,14 @@ export default function AdminUsersPage() {
       {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1 max-w-sm">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[color:var(--muted)]" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { setPage(1); setSearch(searchInput) } }}
             placeholder={isAr ? 'بحث...' : 'Search by name or email...'}
-            className="w-full pl-8 pr-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full pl-8 pr-3 py-2 bg-[color:var(--surface)] border border-[color:var(--border)] rounded-lg text-sm text-foreground placeholder-[color:var(--muted)] focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
         </div>
         <button
@@ -260,7 +260,7 @@ export default function AdminUsersPage() {
         {search && (
           <button
             onClick={() => { setSearchInput(''); setSearch(''); setPage(1) }}
-            className="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm rounded-lg transition-colors"
+            className="px-3 py-2 bg-[color:var(--surface)] hover:bg-[color:var(--surface-2)] text-[color:var(--muted)] text-sm rounded-lg transition-colors"
           >
             {isAr ? 'مسح' : 'Clear'}
           </button>
@@ -274,7 +274,7 @@ export default function AdminUsersPage() {
         <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: 12, border: '1px solid var(--border)' }}>
           <table style={{ minWidth: '700px', width: '100%', borderCollapse: 'collapse' }} className="text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-gray-400 text-left">
+              <tr className="border-b border-[color:var(--border)] text-[color:var(--muted)] text-left">
                 <th className="px-4 py-3 font-medium">{isAr ? 'الاسم / البريد' : 'Name / Email'}</th>
                 <th className="px-4 py-3 font-medium">{isAr ? 'الدور' : 'Role'}</th>
                 <th className="px-4 py-3 font-medium">{isAr ? 'النوع' : 'Type'}</th>
@@ -292,7 +292,7 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 users.map((u) => (
-                  <tr key={u.id} className="border-t border-gray-800 hover:bg-gray-800/40 transition-colors">
+                  <tr key={u.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-2)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -306,14 +306,14 @@ export default function AdminUsersPage() {
                           {u.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
                         </div>
                         <div>
-                          <p className="text-white font-medium flex items-center gap-1.5">
+                          <p className="text-foreground font-medium flex items-center gap-1.5">
                             {u.profile ? `${u.profile.firstName} ${u.profile.lastName}` : '—'}
                           </p>
-                          <p className="text-xs text-gray-400">{u.email}</p>
+                          <p className="text-xs text-[color:var(--muted)]">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-300">{u.role}</td>
+                    <td className="px-4 py-3 text-foreground">{u.role}</td>
 <td className="px-4 py-3">
                       <select
                         value={u.accountType}
@@ -323,7 +323,7 @@ export default function AdminUsersPage() {
                           u.accountType,
                           e.target.value
                         )}
-                        style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '4px 8px', background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: '#e0e0e0', fontSize: 12, cursor: 'pointer' }}
+                        style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '4px 8px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--foreground)', fontSize: 12, cursor: 'pointer' }}
                       >
                         <option value="STUDENT">{roleLabels.STUDENT}</option>
                         <option value="INSTRUCTOR">{roleLabels.INSTRUCTOR}</option>
@@ -336,7 +336,7 @@ export default function AdminUsersPage() {
                         {u.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 flex-wrap">
                         <a
@@ -383,21 +383,21 @@ export default function AdminUsersPage() {
       {/* Pagination */}
       {total > 20 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-400">
+          <span className="text-[color:var(--muted)]">
             {isAr ? `صفحة ${page} من ${Math.ceil(total / 20)}` : `Page ${page} of ${Math.ceil(total / 20)}`}
           </span>
           <div className="flex gap-2">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[color:var(--surface)] border border-[color:var(--border)] rounded-lg text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] disabled:opacity-40 transition-colors"
             >
               <ChevronLeft size={14} /> {isAr ? 'السابق' : 'Prev'}
             </button>
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={users.length < 20}
-              className="flex items-center gap-1 px-3 py-1.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-300 hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[color:var(--surface)] border border-[color:var(--border)] rounded-lg text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] disabled:opacity-40 transition-colors"
             >
               {isAr ? 'التالي' : 'Next'} <ChevronRight size={14} />
             </button>
@@ -408,11 +408,11 @@ export default function AdminUsersPage() {
       {/* Create User Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, position: 'relative' }}>
-            <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+          <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, position: 'relative' }}>
+            <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
               <X size={18} />
             </button>
-            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 18, color: '#fff', margin: '0 0 20px' }}>
+            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 18, color: 'var(--foreground)', margin: '0 0 20px' }}>
               {isAr ? 'إضافة مستخدم جديد' : 'Add New User'}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -482,9 +482,9 @@ export default function AdminUsersPage() {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#161929',
+              background: 'var(--card)',
               borderRadius: 20, padding: 32, maxWidth: 440, width: '100%',
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid var(--border)',
               boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
               direction: 'rtl',
             }}
@@ -498,12 +498,12 @@ export default function AdminUsersPage() {
               <Shield size={24} color="#f59e0b" />
             </div>
             
-            <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>
+            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>
               تأكيد تغيير الدور
             </h3>
             
-            <p style={{ color: '#6b7280', fontSize: 14, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
-              هل تريد تغيير دور <strong style={{ color: '#fff' }}>{confirmDialog.userName}</strong> من{' '}
+            <p style={{ color: 'var(--muted)', fontSize: 14, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
+              هل تريد تغيير دور <strong style={{ color: 'var(--foreground)' }}>{confirmDialog.userName}</strong> من{' '}
               <span style={{ color: '#5120c8', fontWeight: 600 }}>{roleLabels[confirmDialog.currentRole]}</span>{' '}
               إلى{' '}
               <span style={{ color: '#16a34a', fontWeight: 600 }}>{roleLabels[confirmDialog.newRole]}</span>
@@ -536,8 +536,8 @@ export default function AdminUsersPage() {
                 onClick={() => setConfirmDialog(null)}
                 style={{
                   flex: 1, padding: '12px', borderRadius: 12,
-                  background: 'transparent', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'transparent', color: 'var(--foreground)',
+                  border: '1px solid var(--border)',
                   cursor: 'pointer', fontSize: 15, fontWeight: 600,
                 }}
               >
