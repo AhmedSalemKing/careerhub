@@ -60,6 +60,8 @@ export default function QuizBuilderPage() {
     passingScore: '',
     maxAttempts: '',
     allowRetake: true,
+    retakeThreshold: '50',
+    unlimitedRetakes: false,
     showResults: true,
     shuffleQuestions: false,
     shuffleChoices: false,
@@ -92,6 +94,8 @@ export default function QuizBuilderPage() {
         passingScore: String(quiz.passingScore ?? 60),
         maxAttempts: String(quiz.maxAttempts ?? 1),
         allowRetake: quiz.allowRetake ?? true,
+        retakeThreshold: String(quiz.retakeThreshold ?? 50),
+        unlimitedRetakes: quiz.unlimitedRetakes ?? false,
         showResults: quiz.showResults ?? true,
         shuffleQuestions: quiz.shuffleQuestions ?? false,
         shuffleChoices: quiz.shuffleChoices ?? false,
@@ -104,6 +108,8 @@ export default function QuizBuilderPage() {
         passingScore: quiz.passingScore ?? 60,
         maxAttempts: quiz.maxAttempts ?? 1,
         allowRetake: quiz.allowRetake ?? true,
+        retakeThreshold: quiz.retakeThreshold ?? 50,
+        unlimitedRetakes: quiz.unlimitedRetakes ?? false,
         showResults: quiz.showResults ?? true,
         shuffleQuestions: quiz.shuffleQuestions ?? false,
         shuffleChoices: quiz.shuffleChoices ?? false,
@@ -123,6 +129,8 @@ export default function QuizBuilderPage() {
       passingScore: Math.min(100, Math.max(0, parseInt(settings.passingScore, 10) || 60)),
       maxAttempts: Math.max(1, parseInt(settings.maxAttempts, 10) || 1),
       allowRetake: settings.allowRetake,
+      retakeThreshold: Math.min(100, Math.max(0, parseInt(settings.retakeThreshold, 10) || 0)),
+      unlimitedRetakes: settings.unlimitedRetakes,
       showResults: settings.showResults,
       shuffleQuestions: settings.shuffleQuestions,
       shuffleChoices: settings.shuffleChoices,
@@ -331,6 +339,11 @@ export default function QuizBuilderPage() {
 
   const back = () => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes`)
   const setS = (key: keyof typeof settings, value: string | boolean) => setSettings((f) => ({ ...f, [key]: value }))
+
+  const retakeThresholdNum = Math.min(100, Math.max(0, parseInt(settings.retakeThreshold, 10) || 0))
+  const passingNum = Math.min(100, Math.max(0, parseInt(settings.passingScore, 10) || 60))
+  const thresholdInvalid = retakeThresholdNum > passingNum
+  const maxAttemptsNum = Math.max(1, parseInt(settings.maxAttempts, 10) || 1)
 
   const orderedQuestions = [...questions].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
@@ -715,6 +728,54 @@ export default function QuizBuilderPage() {
                 <ToggleSwitch checked={settings.allowRetake} onChange={(v) => setS('allowRetake', v)} label="السماح بالإعادة" />
                 <ToggleSwitch checked={settings.showResults} onChange={(v) => setS('showResults', v)} label="إظهار النتيجة بعد التسليم" />
               </div>
+
+              <details className="mt-4 rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/40 p-4">
+                <summary className="cursor-pointer text-sm font-bold text-foreground">سياسة إعادة المحاولة</summary>
+                <div className="mt-4 space-y-4">
+                  <ToggleSwitch
+                    checked={settings.unlimitedRetakes}
+                    onChange={(v) => setS('unlimitedRetakes', v)}
+                    label="محاولات غير محدودة"
+                  />
+
+                  {!settings.unlimitedRetakes && (
+                    <div>
+                      <label className={labelCls}>عدد المحاولات</label>
+                      <input
+                        className={inputCls}
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={settings.maxAttempts}
+                        onChange={(e) => setS('maxAttempts', e.target.value)}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelCls}>حد إعادة المحاولة — {retakeThresholdNum}%</label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={retakeThresholdNum}
+                      onChange={(e) => setS('retakeThreshold', e.target.value)}
+                      className="w-full accent-[color:var(--primary)]"
+                    />
+                    {thresholdInvalid && (
+                      <p className="mt-1 text-xs font-semibold text-[#ef4444]">
+                        حد إعادة المحاولة يجب ألا يتجاوز درجة النجاح ({passingNum}%).
+                      </p>
+                    )}
+                  </div>
+
+                  <p className="rounded-[10px] bg-[color:var(--surface)] p-3 text-xs leading-5 text-[color:var(--muted)]">
+                    {settings.unlimitedRetakes
+                      ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${retakeThresholdNum}%.`
+                      : `الطالب يقدّر يعيد المحاولة حتى ${maxAttemptsNum} مرة إذا كانت درجته أقل من ${retakeThresholdNum}%.`}
+                  </p>
+                </div>
+              </details>
             </div>
           </div>
         </div>

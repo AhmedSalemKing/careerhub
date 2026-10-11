@@ -28,8 +28,8 @@ export class QuizzesController {
   constructor(private readonly quizzesService: QuizzesService) {}
 
   @Get(['lesson/:lessonId/active'])
-  async getActiveQuiz(@Param('lessonId') lessonId: string) {
-    const data = await this.quizzesService.getActiveQuizForLesson(lessonId);
+  async getActiveQuiz(@Request() req: any, @Param('lessonId') lessonId: string) {
+    const data = await this.quizzesService.getActiveQuizForLesson(lessonId, req.user?.sub);
     return { success: true, data };
   }
 
@@ -54,6 +54,18 @@ export class QuizzesController {
   @Get('attempts/:aid/mine')
   async getMyAttempt(@Request() req: any, @Param('aid') aid: string) {
     const data = await this.quizzesService.getMyAttempt(req.user.sub, aid);
+    return { success: true, data };
+  }
+
+  @Get('grades/mine')
+  async getGradesMine(@Request() req: any, @Query('courseId') courseId?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+    const data = await this.quizzesService.getStudentGrades(req.user.sub, undefined, parseInt(page ?? '1', 10), parseInt(limit ?? '50', 10));
+    return { success: true, data };
+  }
+
+  @Get('grades/course/:courseId')
+  async getGradesByCourse(@Request() req: any, @Param('courseId') courseId: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+    const data = await this.quizzesService.getStudentGrades(req.user.sub, courseId, parseInt(page ?? '1', 10), parseInt(limit ?? '50', 10));
     return { success: true, data };
   }
 }

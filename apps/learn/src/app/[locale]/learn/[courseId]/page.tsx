@@ -1203,6 +1203,25 @@ import { useAuthStore } from "../../../../stores/authStore";
 							<span style={{ color: purple }}>{completedCount}</span> {t('of')}{" "}
 							<span>{totalLessons}</span> {t('lessonComplete')}
 						</p>
+
+						<a
+							href={`/${locale}/dashboard/grades`}
+							style={{
+								marginTop: '12px',
+								padding: '8px 12px',
+								background: 'rgba(255,255,255,0.04)',
+								borderRadius: '8px',
+								display: 'flex',
+								alignItems: 'center',
+								gap: '8px',
+								color: textPrimary,
+								fontSize: '0.82rem',
+								fontWeight: 600,
+								textDecoration: 'none',
+							}}>
+							<Award size={14} style={{ color: purple }} />
+							{isAr ? 'الدرجات' : 'Grades'}
+						</a>
 					</div>
 
 					{/* Lessons List - Grouped by sections */}

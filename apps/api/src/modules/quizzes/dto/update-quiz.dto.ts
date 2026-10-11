@@ -85,4 +85,18 @@ export class UpdateQuizDto {
   @IsOptional()
   @IsBoolean()
   showResults?: boolean;
+
+  @ApiPropertyOptional()
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  retakeThreshold?: number;
+
+  @ApiPropertyOptional()
+  @Transform(toBool)
+  @IsOptional()
+  @IsBoolean()
+  unlimitedRetakes?: boolean;
 }

@@ -544,6 +544,8 @@ model Quiz {
   shuffleQuestions   Boolean  @default(false)
   shuffleChoices     Boolean  @default(false)
   allowRetake        Boolean  @default(true)
+  retakeThreshold    Int      @default(50)
+  unlimitedRetakes   Boolean  @default(false)
   maxAttempts        Int      @default(1)
   showResults        Boolean  @default(true)
 

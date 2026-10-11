@@ -26,6 +26,8 @@ export default function NewQuizPage() {
     passingScore: '60',
     maxAttempts: '1',
     allowRetake: true,
+    retakeThreshold: '50',
+    unlimitedRetakes: false,
     showResults: true,
     shuffleQuestions: false,
     shuffleChoices: false,
@@ -74,6 +76,8 @@ export default function NewQuizPage() {
         passingScore: Math.min(100, Math.max(0, parseInt(form.passingScore, 10) || 60)),
         maxAttempts: Math.max(1, parseInt(form.maxAttempts, 10) || 1),
         allowRetake: form.allowRetake,
+        retakeThreshold: Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0)),
+        unlimitedRetakes: form.unlimitedRetakes,
         showResults: form.showResults,
         shuffleQuestions: form.shuffleQuestions,
         shuffleChoices: form.shuffleChoices,
@@ -181,6 +185,51 @@ export default function NewQuizPage() {
               <ToggleSwitch checked={form.shuffleChoices} onChange={(v) => set('shuffleChoices', v)} label="خلط ترتيب الخيارات" />
               <ToggleSwitch checked={form.allowRetake} onChange={(v) => set('allowRetake', v)} label="السماح بإعادة المحاولة" />
               <ToggleSwitch checked={form.showResults} onChange={(v) => set('showResults', v)} label="إظهار النتيجة والإجابات الصحيحة بعد التسليم" />
+            </div>
+          </div>
+
+          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-4 font-bold text-foreground">سياسة إعادة المحاولة</h2>
+            <div className="space-y-5">
+              <ToggleSwitch
+                checked={form.unlimitedRetakes}
+                onChange={(v) => set('unlimitedRetakes', v)}
+                label="محاولات غير محدودة"
+              />
+
+              {!form.unlimitedRetakes && (
+                <div>
+                  <label className={labelCls}>عدد المحاولات</label>
+                  <input
+                    className={inputCls}
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={form.maxAttempts}
+                    onChange={(e) => set('maxAttempts', e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className={labelCls}>
+                  حد إعادة المحاولة — {Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%
+                </label>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}
+                  onChange={(e) => set('retakeThreshold', e.target.value)}
+                  className="w-full accent-[color:var(--primary)]"
+                />
+              </div>
+
+              <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-xs leading-5 text-[color:var(--muted)]">
+                {form.unlimitedRetakes
+                  ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`
+                  : `الطالب يقدّر يعيد المحاولة حتى ${Math.max(1, parseInt(form.maxAttempts, 10) || 1)} مرة إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`}
+              </p>
             </div>
           </div>
         </div>

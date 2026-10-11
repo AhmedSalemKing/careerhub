@@ -77,6 +77,20 @@ export class CreateQuizDto {
   @Min(1)
   maxAttempts?: number;
 
+  @ApiPropertyOptional({ description: 'Minimum percentage below which a retake is allowed', default: 50 })
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  retakeThreshold?: number;
+
+  @ApiPropertyOptional({ default: false })
+  @Transform(toBool)
+  @IsOptional()
+  @IsBoolean()
+  unlimitedRetakes?: boolean;
+
   @ApiPropertyOptional({ default: true })
   @Transform(toBool)
   @IsBoolean()

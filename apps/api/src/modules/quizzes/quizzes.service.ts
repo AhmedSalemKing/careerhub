@@ -27,6 +27,8 @@ const CREATE_TABLES: string[] = [
     "shuffleQuestions" BOOLEAN NOT NULL DEFAULT false,
     "shuffleChoices" BOOLEAN NOT NULL DEFAULT false,
     "allowRetake" BOOLEAN NOT NULL DEFAULT true,
+    "retakeThreshold" INTEGER NOT NULL DEFAULT 50,
+    "unlimitedRetakes" BOOLEAN NOT NULL DEFAULT false,
     "maxAttempts" INTEGER NOT NULL DEFAULT 1,
     "showResults" BOOLEAN NOT NULL DEFAULT true,
     "status" TEXT NOT NULL DEFAULT 'DRAFT',
@@ -104,6 +106,11 @@ const CREATE_INDEXES: string[] = [
   `CREATE INDEX IF NOT EXISTS "quiz_test_answers_questionId_idx" ON "quiz_test_answers"("questionId")`,
 ];
 
+const MIGRATIONS: string[] = [
+  `ALTER TABLE "quiz_tests" ADD COLUMN IF NOT EXISTS "retakeThreshold" INTEGER NOT NULL DEFAULT 50`,
+  `ALTER TABLE "quiz_tests" ADD COLUMN IF NOT EXISTS "unlimitedRetakes" BOOLEAN NOT NULL DEFAULT false`,
+];
+
 interface GradeOutcome {
   autoScore: number;
   manualScore: number;
@@ -134,6 +141,13 @@ export class QuizzesService implements OnModuleInit {
         await this.prisma.$executeRawUnsafe(sql);
       } catch {
         // indexes are optional hardening
+      }
+    }
+    for (const sql of MIGRATIONS) {
+      try {
+        await this.prisma.$executeRawUnsafe(sql);
+      } catch (e) {
+        this.logger.warn(`Quiz column migration failed: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
     this.logger.log('Quiz tables ensured');
@@ -262,6 +276,8 @@ export class QuizzesService implements OnModuleInit {
         shuffleQuestions: dto.shuffleQuestions ?? false,
         shuffleChoices: dto.shuffleChoices ?? false,
         allowRetake: dto.allowRetake ?? true,
+        retakeThreshold: dto.retakeThreshold ?? 50,
+        unlimitedRetakes: dto.unlimitedRetakes ?? false,
         maxAttempts: dto.maxAttempts ?? 1,
         showResults: dto.showResults ?? true,
         status: 'DRAFT',
@@ -299,6 +315,8 @@ export class QuizzesService implements OnModuleInit {
     if (dto.shuffleQuestions !== undefined) data.shuffleQuestions = dto.shuffleQuestions;
     if (dto.shuffleChoices !== undefined) data.shuffleChoices = dto.shuffleChoices;
     if (dto.allowRetake !== undefined) data.allowRetake = dto.allowRetake;
+    if (dto.retakeThreshold !== undefined) data.retakeThreshold = dto.retakeThreshold;
+    if (dto.unlimitedRetakes !== undefined) data.unlimitedRetakes = dto.unlimitedRetakes;
     if (dto.maxAttempts !== undefined) data.maxAttempts = dto.maxAttempts;
     if (dto.showResults !== undefined) data.showResults = dto.showResults;
     if (dto.lessonId !== undefined) data.lessonId = dto.lessonId || null;
@@ -711,7 +729,29 @@ export class QuizzesService implements OnModuleInit {
   // Student endpoints
   // ---------------------------------------------------------------------------
 
-  async getActiveQuizForLesson(lessonId: string) {
+  private canRetake(
+    quiz: { allowRetake: boolean; maxAttempts: number; unlimitedRetakes: boolean; retakeThreshold: number },
+    bestAttempt: { passed: boolean; status: string; percentage: number } | null,
+    attemptCount: number,
+  ): boolean {
+    if (!quiz.allowRetake) return false;
+    if (!bestAttempt) return true;
+    if (bestAttempt.passed) return false;
+    if (bestAttempt.status !== 'GRADED') return false;
+    if (quiz.unlimitedRetakes) return bestAttempt.percentage < quiz.retakeThreshold;
+    if (attemptCount >= quiz.maxAttempts) return false;
+    return bestAttempt.percentage < quiz.retakeThreshold;
+  }
+
+  private attemptsRemaining(
+    quiz: { unlimitedRetakes: boolean; maxAttempts: number },
+    attemptCount: number,
+  ): number | null {
+    if (quiz.unlimitedRetakes) return null;
+    return Math.max(0, quiz.maxAttempts - attemptCount);
+  }
+
+  async getActiveQuizForLesson(lessonId: string, userId?: string) {
     const quiz = await this.prisma.quiz.findFirst({
       where: { lessonId, status: 'PUBLISHED' },
       select: {
@@ -721,11 +761,36 @@ export class QuizzesService implements OnModuleInit {
         durationMinutes: true,
         passingScore: true,
         allowRetake: true,
+        retakeThreshold: true,
+        unlimitedRetakes: true,
         maxAttempts: true,
         _count: { select: { questions: true } },
       },
     });
     if (!quiz) return null;
+
+    const attempts = userId
+      ? await this.prisma.quizAttempt.findMany({
+          where: { quizId: quiz.id, userId },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            status: true,
+            percentage: true,
+            passed: true,
+            startedAt: true,
+            submittedAt: true,
+          },
+        })
+      : [];
+
+    const attemptCount = attempts.length;
+    const graded = attempts.filter((a) => a.status === 'GRADED');
+    const bestAttempt = graded.length
+      ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
+      : null;
+    const lastAttempt = attempts[0] ?? null;
+
     return {
       id: quiz.id,
       title: quiz.title,
@@ -733,8 +798,110 @@ export class QuizzesService implements OnModuleInit {
       durationMinutes: quiz.durationMinutes,
       passingScore: quiz.passingScore,
       allowRetake: quiz.allowRetake,
+      retakeThreshold: quiz.retakeThreshold,
+      unlimitedRetakes: quiz.unlimitedRetakes,
       maxAttempts: quiz.maxAttempts,
       _count: quiz._count,
+      attemptCount,
+      attemptsRemaining: this.attemptsRemaining(quiz, attemptCount),
+      canRetake: this.canRetake(quiz, bestAttempt, attemptCount),
+      bestAttempt,
+      lastAttempt,
+    };
+  }
+
+  async getStudentGrades(
+    userId: string,
+    courseId?: string,
+    page = 1,
+    limit = 50,
+  ) {
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId, ...(courseId ? { courseId } : {}) },
+      select: { courseId: true },
+    });
+    const courseIds = enrollments.map((e) => e.courseId);
+
+    if (courseIds.length === 0) {
+      return {
+        summary: { total: 0, passed: 0, failed: 0, pending: 0, averageScore: 0 },
+        courses: [],
+      };
+    }
+
+    const quizzes = await this.prisma.quiz.findMany({
+      where: {
+        courseId: courseId ? courseId : { in: courseIds },
+        status: 'PUBLISHED',
+      },
+      include: {
+        course: { select: { id: true, titleEn: true, titleAr: true } },
+        lesson: { select: { id: true, title: true, titleAr: true } },
+        questions: { select: { id: true, points: true } },
+        attempts: {
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true, status: true, percentage: true, passed: true,
+            startedAt: true, submittedAt: true,
+          },
+        },
+      },
+    });
+
+    const items = quizzes.map((q) => {
+      const attemptCount = q.attempts.length;
+      const graded = q.attempts.filter((a) => a.status === 'GRADED');
+      const bestAttempt = graded.length
+        ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
+        : null;
+      const lastAttempt = q.attempts[0] ?? null;
+
+      return {
+        quizId: q.id,
+        quizTitle: q.title,
+        courseId: q.courseId,
+        courseTitle: q.course.titleAr ?? q.course.titleEn,
+        lessonTitle: q.lesson?.titleAr ?? q.lesson?.title ?? null,
+        passingScore: q.passingScore,
+        durationMinutes: q.durationMinutes,
+        attemptCount,
+        attemptsRemaining: this.attemptsRemaining(q as any, attemptCount),
+        canRetake: this.canRetake(q as any, bestAttempt as any, attemptCount),
+        bestAttempt,
+        lastAttempt,
+      };
+    });
+
+    const graded = items.filter((i) => i.bestAttempt);
+    const passed = graded.filter((i) => i.bestAttempt!.passed).length;
+    const failed = graded.length - passed;
+    const pending = items.filter((i) => i.lastAttempt?.status === 'SUBMITTED').length;
+    const avg = graded.length
+      ? graded.reduce((s, i) => s + (i.bestAttempt!.percentage ?? 0), 0) / graded.length
+      : 0;
+
+    const grouped: Record<string, { courseId: string; courseTitle: string; quizzes: any[] }> = {};
+    for (const it of items) {
+      if (!grouped[it.courseId]) {
+        grouped[it.courseId] = { courseId: it.courseId, courseTitle: it.courseTitle, quizzes: [] };
+      }
+      grouped[it.courseId].quizzes.push(it);
+    }
+
+    const allCourses = Object.values(grouped);
+    const start = (page - 1) * limit;
+    const paged = allCourses.slice(start, start + limit);
+
+    return {
+      summary: {
+        total: items.length,
+        passed,
+        failed,
+        pending,
+        averageScore: Math.round(avg),
+      },
+      courses: paged,
     };
   }
 
@@ -796,10 +963,21 @@ export class QuizzesService implements OnModuleInit {
       throw new ForbiddenException('You must be enrolled in this course to take the quiz');
     }
 
-    const inProgress = await this.prisma.quizAttempt.findFirst({
-      where: { userId, quizId, status: 'IN_PROGRESS' },
+    const userAttempts = await this.prisma.quizAttempt.findMany({
+      where: { quizId, userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        percentage: true,
+        passed: true,
+        endsAt: true,
+        startedAt: true,
+      },
     });
+    const attemptCount = userAttempts.length;
 
+    const inProgress = userAttempts.find((a) => a.status === 'IN_PROGRESS');
     if (inProgress) {
       return {
         attemptId: inProgress.id,
@@ -810,11 +988,19 @@ export class QuizzesService implements OnModuleInit {
       };
     }
 
-    const completedCount = await this.prisma.quizAttempt.count({
-      where: { userId, quizId, status: { in: ['SUBMITTED', 'GRADED'] } },
-    });
-    if (!quiz.allowRetake && completedCount >= quiz.maxAttempts) {
-      throw new ForbiddenException('Maximum number of attempts reached');
+    const graded = userAttempts.filter((a) => a.status === 'GRADED');
+    const bestAttempt = graded.length
+      ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
+      : null;
+
+    if (!this.canRetake(quiz as any, bestAttempt as any, attemptCount)) {
+      const reason = !bestAttempt ? 'NOT_ALLOWED'
+        : bestAttempt.passed ? 'PASSED'
+        : bestAttempt.status === 'SUBMITTED' ? 'AWAITING_REVIEW'
+        : bestAttempt.percentage >= quiz.retakeThreshold ? 'ABOVE_THRESHOLD'
+        : attemptCount >= quiz.maxAttempts ? 'BELOW_MAX_ATTEMPTS'
+        : 'NOT_ALLOWED';
+      throw new ForbiddenException({ code: 'RETAKE_NOT_ALLOWED', reason });
     }
 
     const endsAt = new Date(Date.now() + quiz.durationMinutes * 60 * 1000);
