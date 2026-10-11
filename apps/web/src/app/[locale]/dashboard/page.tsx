@@ -71,7 +71,7 @@ function InstructorOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+            fontSize: '1.4rem', fontWeight: 600, color: '#fff',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -83,7 +83,7 @@ function InstructorOverview() {
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'لوحة التحكم' : 'Dashboard'}
             </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:800, margin:'0 0 3px' }}>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:'0 0 3px' }}>
               {isAr ? `مرحباً، ${user?.profile?.firstName || 'المحاضر'}` : `Welcome, ${user?.profile?.firstName || 'Instructor'}`}
             </h1>
             <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
@@ -253,7 +253,7 @@ function InstructorOverview() {
                 </div>
                 <div style={{
                   padding:'3px 10px', borderRadius:'20px', fontSize:'0.7rem',
-                  fontWeight:600, flexShrink:0,
+                  fontWeight:500, flexShrink:0,
                   background: course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)',
                   border: `1px solid ${course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)'}`,
                   color: course.status === 'PUBLISHED' ? '#4ade80' : '#fbbf24',
@@ -459,7 +459,7 @@ function StudentOverview() {
           <button onClick={() => refetch()} style={{
             padding:'10px 22px', borderRadius:'10px',
             background:'#5120c8', color:'#fff',
-            border:'none', fontSize:'0.875rem', fontWeight:600, cursor:'pointer',
+            border:'none', fontSize:'0.875rem', fontWeight:500, cursor:'pointer',
           }}>
             {isAr ? 'إعادة المحاولة' : 'Retry'}
           </button>
@@ -496,7 +496,7 @@ function StudentOverview() {
             overflow:'hidden', flexShrink:0,
             background:'linear-gradient(135deg,#5120c8,#7c3aed)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:'1.4rem', fontWeight:700, color:'#fff',
+            fontSize:'1.4rem', fontWeight:600, color:'#fff',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -508,7 +508,7 @@ function StudentOverview() {
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'مرحبا بك' : 'Welcome back,'}
             </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:800, margin:'0 0 3px' }}>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:'0 0 3px' }}>
               {isAr
                 ? (user?.profile?.firstName || 'الطالب')
                 : (user?.profile?.firstName || 'Student')}
@@ -713,7 +713,7 @@ function StudentOverview() {
                     {/* Status badge */}
                     <div style={{
                       padding:'3px 8px', borderRadius:'20px', fontSize:'0.68rem',
-                      fontWeight:600, flexShrink:0,
+                      fontWeight:500, flexShrink:0,
                       background: progress >= 100
                         ? 'rgba(34,197,94,0.1)' : 'rgba(81,32,200,0.12)',
                       border: progress >= 100
@@ -868,7 +868,7 @@ function Stat({
       <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} shadow-md`}>
         {icon || <BookOpen className="h-5 w-5 text-white" />}
       </div>
-      <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{label}</p>
+      <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">{label}</p>
       <p className="text-2xl md:text-3xl font-extrabold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
         {value}
       </p>
@@ -934,7 +934,7 @@ function ConsultantOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#059669,#34d399)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 700, color: '#fff',
+            fontSize: '1.4rem', fontWeight: 600, color: '#fff',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -946,7 +946,7 @@ function ConsultantOverview() {
             <p style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 500, margin: '0 0 3px' }}>
               {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
             </p>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '0 0 3px' }}>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 3px' }}>
               {isAr
                 ? `مرحبا ${user?.profile?.firstName || 'المستشار'}`
                 : `Welcome, ${user?.profile?.firstName || 'Coach'}`}
@@ -1105,7 +1105,7 @@ function ConsultantOverview() {
                   width: '38px', height: '38px', borderRadius: '50%',
                   background: 'linear-gradient(135deg,#059669,#34d399)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '0.85rem', fontWeight: 700, flexShrink: 0,
+                  color: '#fff', fontSize: '0.85rem', fontWeight: 600, flexShrink: 0,
                 }}>
                   {session.user?.profile?.firstName?.[0] || '?'}
                 </div>
@@ -1127,7 +1127,7 @@ function ConsultantOverview() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <div style={{
                     padding: '3px 8px', borderRadius: '20px', fontSize: '0.65rem',
-                    fontWeight: 600,
+                    fontWeight: 500,
                     background: 'rgba(52,211,153,0.1)',
                     border: '1px solid rgba(52,211,153,0.3)',
                     color: '#34d399',
@@ -1138,7 +1138,7 @@ function ConsultantOverview() {
                     <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
                       style={{
                         padding: '4px 10px', borderRadius: '8px', fontSize: '0.68rem',
-                        fontWeight: 700, textDecoration: 'none',
+                        fontWeight: 600, textDecoration: 'none',
                         background: '#5120c8', color: '#ffffff',
                       }}>
                       {isAr ? 'انضم' : 'Join'}
@@ -1355,7 +1355,7 @@ export default function DashboardPage() {
             {roleCard.icon}
           </div>
           <div style={{flex:1}}>
-            <div style={{color:isAr?'#fff':'#0d0d0d',fontWeight:700,fontSize:15}}>{roleCard.title}</div>
+            <div style={{color:isAr?'#fff':'#0d0d0d',fontWeight:600,fontSize:15}}>{roleCard.title}</div>
             <div style={{color:'#6b7280',fontSize:13,marginTop:2}}>{roleCard.desc}</div>
           </div>
           <ChevronLeft size={18} color={roleCard.chevronColor}/>

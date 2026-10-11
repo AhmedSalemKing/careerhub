@@ -141,7 +141,7 @@ export default function UserDetailPage() {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 900, fontSize: 24, color: '#fff', margin: 0 }}>
+          <h1 style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', fontWeight: 700, fontSize: 24, color: '#fff', margin: 0 }}>
             {user?.profile?.firstName} {user?.profile?.lastName}
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{user?.email}</p>
@@ -185,7 +185,7 @@ export default function UserDetailPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 16 }}>
             <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <User size={14} color="#A78BFA" />
                 {isAr ? 'معلومات الحساب' : 'Account Info'}
               </h3>
@@ -208,7 +208,7 @@ export default function UserDetailPage() {
             </div>
 
             <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Activity size={14} color="#A78BFA" />
                 {isAr ? 'النشاط الأخير' : 'Recent Activity'}
               </h3>
@@ -260,7 +260,7 @@ export default function UserDetailPage() {
           </div>
 
           <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Activity size={14} color="#A78BFA" />
               {isAr ? 'سجل النشاط' : 'Activity Log'}
             </h3>
@@ -315,7 +315,7 @@ export default function UserDetailPage() {
                   )}
                 </div>
                 <div style={{ padding: 16 }}>
-                  <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif' }}>
+                  <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif' }}>
                     {isAr ? enroll.course?.titleAr : enroll.course?.titleEn}
                   </h4>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -336,7 +336,7 @@ export default function UserDetailPage() {
       {activeTab === 'payments' && (
         <div>
           <div style={{ background: '#0f0f1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20 }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
               <DollarSign size={14} color="#A78BFA" />
               {isAr ? 'سجل المدفوعات' : 'Payment History'}
             </h3>

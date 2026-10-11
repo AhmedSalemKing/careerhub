@@ -427,7 +427,7 @@ export default function HomePage() {
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F5A623 0%, #FCD34D 100%)', boxShadow: '0 4px 12px rgba(245,166,35,0.4)' }}>
                         <Sparkles className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold whitespace-nowrap tracking-wide">Interactive</span>
+                      <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Interactive</span>
                     </div>
                   </div>
                   
@@ -436,7 +436,7 @@ export default function HomePage() {
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #818CF8 100%)', boxShadow: '0 4px 12px rgba(167,139,250,0.4)' }}>
                         <Award className="h-4 w-4 text-white" />
                       </div>
-                      <span className="text-sm font-bold whitespace-nowrap tracking-wide">Certified</span>
+                      <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Certified</span>
                     </div>
                   </div>
                 </div>
@@ -500,7 +500,7 @@ export default function HomePage() {
               ].map(tab => (
                 <button key={tab.key} onClick={() => setCourseSort(tab.key)}
                   style={{
-                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
                     cursor: 'pointer', border: courseSort === tab.key ? 'none' : '1px solid var(--border)',
                     background: courseSort === tab.key ? 'var(--primary)' : 'transparent',
                     color: courseSort === tab.key ? '#fff' : 'var(--muted)',
@@ -558,7 +558,7 @@ export default function HomePage() {
                   <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs text-white flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
                 </div>
                 <div className="p-5">
-                  <h3 className="text-lg font-bold mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
+                  <h3 className="text-lg font-semibold mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
                   <div className="flex items-center gap-4 text-sm mb-4" style={{ color: 'var(--muted)' }}>
                     <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{course.students.toLocaleString()}</span></div>
                     <div className="flex items-center gap-1"><Star className="h-4 w-4" style={{ color: '#F5A623', fill: '#F5A623' }} /><span className="font-medium">{course.rating}</span></div>
@@ -578,7 +578,7 @@ export default function HomePage() {
                           border: '1px solid rgba(16,185,129,0.4)',
                           color: '#10B981',
                           fontSize: 13,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           textDecoration: 'none',
                         }}>
                         <CheckCircle2 size={14} />
@@ -594,7 +594,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-16">
-            <h3 className="text-xl font-bold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
+            <h3 className="text-xl font-semibold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((category, index) => (
                 <Link key={category.slug || index} href={`/${locale}/courses?categoryId=${category.id}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>

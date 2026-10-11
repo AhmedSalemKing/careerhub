@@ -251,7 +251,7 @@ export function CourseCard({
           padding: 4px 10px;
           border-radius: 20px;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 500;
           color: white;
           text-transform: uppercase;
           letter-spacing: 0.03em;
@@ -298,7 +298,7 @@ export function CourseCard({
 
         .cc-title {
           font-family: 'Plus Jakarta Sans', sans-serif;
-          font-weight: 700;
+          font-weight: 600;
           font-size: 15px;
           line-height: 1.45;
           color: var(--foreground);
@@ -361,7 +361,7 @@ export function CourseCard({
         /* ✅ UPDATED: Price with PingARLT Font */
         .cc-price {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           font-size: 20px !important;
           color: #5120c8;
           letter-spacing: -0.02em !important;
@@ -380,7 +380,7 @@ export function CourseCard({
           align-items: center;
           gap: 6px;
           font-size: 12px;
-          font-weight: 700;
+          font-weight: 600;
           color: #5120c8;
           opacity: 0;
           transform: translateX(-10px);

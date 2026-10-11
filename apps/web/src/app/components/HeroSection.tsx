@@ -120,7 +120,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-4 animate-fade-up stagger-3">
             <a
               href={`${MAIN_SITE_URL}/${locale}/register`}
-              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-bold text-white transition-all duration-200 hover:shadow-lg"
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-200 hover:shadow-lg"
               style={{
                 background: '#5120c8',
                 fontFamily: locale === 'ar' ? "'alfont_com_PingARLT-Black', sans-serif" : 'inherit',
@@ -135,7 +135,7 @@ export default function HomePage() {
             
             <Link
               href={`/${locale}/courses`}
-              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 border border-white/20 hover:bg-white/5"
+              className="inline-flex items-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 border border-white/20 hover:bg-white/5"
               style={{
                 color: '#F8F8FA',
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
@@ -192,7 +192,7 @@ export default function HomePage() {
             </div>
             <Link
               href={`/${locale}/courses`}
-              className="inline-flex items-center gap-2 text-sm font-semibold shrink-0 px-4 py-2 rounded-xl transition-all duration-200"
+              className="inline-flex items-center gap-2 text-sm font-medium shrink-0 px-4 py-2 rounded-xl transition-all duration-200"
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
@@ -246,7 +246,7 @@ export default function HomePage() {
 
                   {course.badge && (
                     <div
-                      className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white"
+                      className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-medium text-white"
                       style={{ background: course.badgeBg }}
                     >
                       {course.badge}
@@ -264,7 +264,7 @@ export default function HomePage() {
 
                 <div className="p-5">
                   <h3
-                    className="text-lg font-bold mb-3 line-clamp-2 transition-colors"
+                    className="text-lg font-semibold mb-3 line-clamp-2 transition-colors"
                     style={{ color: 'var(--foreground)' }}
                   >
                     {typeof course.title === 'string' ? course.title : ''}
@@ -303,7 +303,7 @@ export default function HomePage() {
 
           {/* Categories */}
           <div className="mt-16">
-            <h3 className="text-xl font-bold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>
+            <h3 className="text-xl font-semibold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>
               {locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}
             </h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -369,7 +369,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href={`${MAIN_SITE_URL}/${locale}/register`}
-              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-bold text-white transition-all duration-200 hover:shadow-lg"
+              className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-200 hover:shadow-lg"
               style={{
                 background: '#5120c8',
                 fontFamily: locale === 'ar' ? "'alfont_com_PingARLT-Black', sans-serif" : 'inherit',
@@ -383,7 +383,7 @@ export default function HomePage() {
             </a>
             <Link
               href={`/${locale}/courses`}
-              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200"
+              className="inline-flex items-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200"
               style={{
                 background: 'transparent',
                 border: '1.5px solid rgba(248,248,250,0.25)',

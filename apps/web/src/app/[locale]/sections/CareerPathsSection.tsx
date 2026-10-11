@@ -532,7 +532,7 @@ export function CareerPathsSection() {
         /* Path Title */
         .path-title {
           font-family: "Plus Jakarta Sans", sans-serif;
-          font-weight: 700;
+          font-weight: 600;
           font-size: 17px;
           color: var(--cp-fg);
           margin: 0 0 8px;
@@ -612,7 +612,7 @@ export function CareerPathsSection() {
           cursor: pointer;
           color: var(--path-color);
           font-size: 13px;
-          font-weight: 700;
+          font-weight: 600;
           font-family: "DM Sans", sans-serif;
           transition: all 0.2s ease;
         }

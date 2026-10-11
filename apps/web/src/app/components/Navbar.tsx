@@ -150,7 +150,7 @@ function UserDropdown({ locale }: { locale: string }) {
             />
           ) : (
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold select-none"
               style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
             >
               {initials}
@@ -188,7 +188,7 @@ function UserDropdown({ locale }: { locale: string }) {
             borderBottom: '1px solid var(--border)',
             marginBottom: '6px',
           }}>
-            <p style={{ fontWeight: '700', fontSize: '14px', color: 'var(--foreground)', margin: 0 }}>
+            <p style={{ fontWeight: '600', fontSize: '14px', color: 'var(--foreground)', margin: 0 }}>
               {user?.profile?.firstName ?? ''} {user?.profile?.lastName ?? ''}
             </p>
             <p style={{ fontSize: '12px', color: 'var(--muted)', margin: '2px 0 0' }}>
@@ -204,7 +204,7 @@ function UserDropdown({ locale }: { locale: string }) {
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '10px 14px', borderRadius: '10px',
               color: 'var(--foreground)', textDecoration: 'none',
-              fontSize: '14px', fontWeight: '600',
+              fontSize: '14px', fontWeight: '500',
               transition: 'background 0.15s ease',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
@@ -223,7 +223,7 @@ function UserDropdown({ locale }: { locale: string }) {
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '10px 14px', borderRadius: '10px',
                 color: '#5120c8', textDecoration: 'none',
-                fontSize: '14px', fontWeight: '700',
+                fontSize: '14px', fontWeight: '500',
                 transition: 'background 0.15s ease',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(81,32,200,0.08)' }}
@@ -243,7 +243,7 @@ function UserDropdown({ locale }: { locale: string }) {
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '10px 14px', borderRadius: '10px',
                 color: '#2BBFA3', textDecoration: 'none',
-                fontSize: '14px', fontWeight: '700',
+                fontSize: '14px', fontWeight: '500',
                 transition: 'background 0.15s ease',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(43,191,163,0.08)' }}
@@ -263,7 +263,7 @@ function UserDropdown({ locale }: { locale: string }) {
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '10px 14px', borderRadius: '10px',
                 color: '#f59e0b', textDecoration: 'none',
-                fontSize: '14px', fontWeight: '700',
+                fontSize: '14px', fontWeight: '500',
                 transition: 'background 0.15s ease',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.08)' }}
@@ -285,7 +285,7 @@ function UserDropdown({ locale }: { locale: string }) {
               padding: '10px 14px', borderRadius: '10px',
               color: '#ef4444', background: 'transparent',
               border: 'none', width: '100%', cursor: 'pointer',
-              fontSize: '14px', fontWeight: '600',
+              fontSize: '14px', fontWeight: '500',
               fontFamily: 'inherit',
               transition: 'background 0.15s ease',
             }}
@@ -406,7 +406,7 @@ export function Navbar() {
             />
             {/* ✅ تم تعديل اللون هنا ليكون ديناميكياً حسب الوضع */}
             <span
-              className="hidden sm:inline-block text-[22px] font-black tracking-tight transition-colors duration-200 hover:opacity-80 md:text-[24px]"
+              className="hidden sm:inline-block text-[22px] font-bold tracking-tight transition-colors duration-200 hover:opacity-80 md:text-[24px]"
               style={{ 
                 fontFamily: NAV_FONT, 
                 color: deveWayColor,  // ← اللون الديناميكي
@@ -435,7 +435,7 @@ export function Navbar() {
                   className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
                   style={{
                     fontSize: '14px',
-                    fontWeight: 900,
+                    fontWeight: 500,
                     letterSpacing: '-0.01em',
                     fontFamily: NAV_FONT,
                     color: active ? '#5120c8' : 'var(--foreground)',
@@ -466,7 +466,7 @@ export function Navbar() {
               className="px-[18px] py-[9px] rounded-xl transition-colors duration-150"
               style={{
                 fontSize: '14px',
-                fontWeight: 900,
+                fontWeight: 500,
                 letterSpacing: '-0.01em',
                 fontFamily: NAV_FONT,
                 color: 'var(--foreground)',
@@ -530,7 +530,7 @@ export function Navbar() {
                 >
                   <Wallet size={16} color="#5120c8" />
                   <span style={{
-                    fontSize: 11, fontWeight: 800, color: '#5120c8',
+                    fontSize: 11, fontWeight: 600, color: '#5120c8',
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
@@ -569,7 +569,7 @@ export function Navbar() {
                       />
                     ) : (
                       <div
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black"
+                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold"
                         style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
                       >
                         {initials || 'A'}
@@ -578,7 +578,7 @@ export function Navbar() {
                     {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
                   </div>
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
                       style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
                     >
                       Admin
@@ -592,7 +592,7 @@ export function Navbar() {
               <div className="hidden lg:flex items-center gap-2">
                 <Link
                   href={`/${locale}/login`}
-                  className="px-4 py-2 text-[13px] font-black rounded-xl transition-colors duration-150"
+                  className="px-4 py-2 text-[13px] font-medium rounded-xl transition-colors duration-150"
                   style={{
                     color: 'var(--muted)',
                     border: '1px solid var(--border)',
@@ -611,7 +611,7 @@ export function Navbar() {
                 </Link>
                 <Link
                   href={`/${locale}/register`}
-                  className="px-5 py-2 text-[13px] font-black rounded-xl transition-colors duration-150"
+                  className="px-5 py-2 text-[13px] font-semibold rounded-xl transition-colors duration-150"
                   style={{
                     background: '#5120c8',
                     color: '#ffffff',
@@ -679,7 +679,7 @@ export function Navbar() {
                     }}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
                     style={{
-                      fontWeight: 900,
+                      fontWeight: 500,
                       fontFamily: NAV_FONT,
                       color: active ? '#5120c8' : 'var(--foreground)',
                       background: active ? 'var(--surface-2)' : 'transparent',
@@ -696,7 +696,7 @@ export function Navbar() {
                 rel="noopener noreferrer"
                 onClick={() => setMobileOpen(false)}
                 className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
-                style={{ fontWeight: 900, fontFamily: NAV_FONT, color: 'var(--foreground)', letterSpacing: '-0.01em' }}
+                style={{ fontWeight: 500, fontFamily: NAV_FONT, color: 'var(--foreground)', letterSpacing: '-0.01em' }}
               >
                 {t('training')} <span className="text-xs opacity-30">↗</span>
               </a>
@@ -712,7 +712,7 @@ export function Navbar() {
               {mounted && isLoggedIn && (
                 <Link
                   href={`/${locale}/dashboard/ai-chat`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -723,7 +723,7 @@ export function Navbar() {
               {mounted && isLoggedIn && (
                 <Link
                   href={`/${locale}/dashboard/wallet`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Wallet className="h-3.5 w-3.5" />
@@ -746,7 +746,7 @@ export function Navbar() {
                       />
                     ) : (
                       <div
-                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
                         style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
                       >
                         {initials || '?'}
@@ -770,7 +770,7 @@ export function Navbar() {
                   <Link
                     href={user?.accountType === 'ADMIN' ? `/${locale}/admin` : `/${locale}/dashboard`}
                     onClick={() => setMobileOpen(false)}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-colors duration-150"
                     style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                   >
                     <LayoutDashboard className="h-4 w-4" />
@@ -784,7 +784,7 @@ export function Navbar() {
                       window.dispatchEvent(new Event('auth:updated'));
                       window.location.href = `/${locale}`;
                     }}
-                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-colors duration-150"
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
                   >
                     <LogOut className="h-4 w-4" />
@@ -796,7 +796,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/login`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
                   style={{ border: '1px solid var(--border)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                 >
                   {t('login')}
@@ -804,7 +804,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/register`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-semibold transition-colors duration-150"
                   style={{
                     background: '#5120c8',
                     color: '#ffffff',

@@ -122,7 +122,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
         >
           <Link 
             href={ctaHref} 
-            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-bold transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 hero-cta-primary"
+            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold transition-all duration-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-2 hero-cta-primary"
           >
             <span>{ctaPrimary}</span>
             <svg 
@@ -142,7 +142,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
 
           <a
             href="#features"
-            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold transition-all duration-200 rounded-xl hero-cta-secondary"
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-medium transition-all duration-200 rounded-xl hero-cta-secondary"
           >
             {t('cta_secondary')}
           </a>
@@ -362,7 +362,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
           color: #FFFFFF !important;
           border: none !important;
           font-family: "PingARLT", "Arial Black", sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 600 !important;
           box-shadow: 0 4px 14px var(--cta-primary-shadow);
         }
         .hero-cta-primary:hover {
@@ -376,7 +376,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
           color: var(--hero-fg) !important;
           border: 1.5px solid var(--cta-secondary-border) !important;
           font-family: "PingARLT", "Arial Black", sans-serif !important;
-          font-weight: 700 !important;
+          font-weight: 500 !important;
         }
         .hero-cta-secondary:hover {
           background-color: var(--cta-secondary-hover-bg) !important;

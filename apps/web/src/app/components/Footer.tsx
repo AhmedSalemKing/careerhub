@@ -26,7 +26,7 @@ export function Footer() {
             />
             <span style={{
               fontFamily: 'Plus Jakarta Sans, sans-serif',
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: 18,
               color: 'var(--foreground)',
               letterSpacing: '-0.02em',
@@ -38,7 +38,7 @@ export function Footer() {
         </div>
 
         <div>
-          <div className="text-sm font-semibold text-foreground">{tNav('careers')}</div>
+          <div className="text-sm font-medium text-foreground">{tNav('careers')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
               <Link className="footer-link" href="/careers">
@@ -49,7 +49,7 @@ export function Footer() {
         </div>
 
         <div>
-          <div className="text-sm font-semibold text-foreground">{tNav('training')}</div>
+          <div className="text-sm font-medium text-foreground">{tNav('training')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
               <a className="footer-link" href={TRAINING_URL} target="_blank" rel="noopener noreferrer">
@@ -70,7 +70,7 @@ export function Footer() {
         </div>
 
         <div>
-          <div className="text-sm font-semibold text-foreground">{tNav('coaches')}</div>
+          <div className="text-sm font-medium text-foreground">{tNav('coaches')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
               <Link className="footer-link" href="/coaching">

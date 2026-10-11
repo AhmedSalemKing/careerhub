@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14 }}
         >
           <UserPlus size={16} />
           {isAr ? 'إضافة مستخدم' : 'Add User'}
@@ -231,7 +231,7 @@ export default function AdminUsersPage() {
               <span style={{
                 background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
                 color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
-                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               }}>{count}</span>
             </button>
           )
@@ -412,7 +412,7 @@ export default function AdminUsersPage() {
             <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
               <X size={18} />
             </button>
-            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 800, fontSize: 18, color: '#fff', margin: '0 0 20px' }}>
+            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 18, color: '#fff', margin: '0 0 20px' }}>
               {isAr ? 'إضافة مستخدم جديد' : 'Add New User'}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -460,7 +460,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={handleCreateUser}
                 disabled={creating || !createForm.email || !createForm.password || !createForm.firstName}
-                style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
+                style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
               >
                 {creating ? '...' : (isAr ? 'إنشاء المستخدم' : 'Create User')}
               </button>
@@ -498,7 +498,7 @@ export default function AdminUsersPage() {
               <Shield size={24} color="#f59e0b" />
             </div>
             
-            <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
+            <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>
               تأكيد تغيير الدور
             </h3>
             
@@ -527,7 +527,7 @@ export default function AdminUsersPage() {
                   flex: 1, padding: '12px', borderRadius: 12,
                   background: confirmDialog.newRole === 'ADMIN' ? '#ef4444' : '#5120c8',
                   color: '#fff', border: 'none', cursor: 'pointer',
-                  fontSize: 15, fontWeight: 700,
+                  fontSize: 15, fontWeight: 600,
                 }}
               >
                 تأكيد التغيير

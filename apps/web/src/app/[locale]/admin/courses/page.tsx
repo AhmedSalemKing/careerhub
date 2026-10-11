@@ -250,7 +250,7 @@ export default function AdminCoursesPage() {
               <span style={{
                 background: isActive ? 'rgba(81,32,200,0.3)' : 'rgba(255,255,255,0.08)',
                 color: isActive ? '#A78BFA' : 'rgba(255,255,255,0.5)',
-                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 700,
+                padding: '2px 8px', borderRadius: 20, fontSize: 12, fontWeight: 500,
               }}>{tab.count}</span>
             </button>
           )

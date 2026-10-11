@@ -457,7 +457,7 @@ const [confirmModal, setConfirmModal] = useState<{
       <div style={{ padding: '28px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ marginBottom: 20 }}>
-            <h1 style={{ color: text, fontSize: 22, fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+            <h1 style={{ color: text, fontSize: 22, fontWeight: 700, margin: '0 0 4px', letterSpacing: '-0.02em' }}>
               {isAr ? 'المسار المهني' : 'Career Path'}
             </h1>
             <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
@@ -470,7 +470,7 @@ const [confirmModal, setConfirmModal] = useState<{
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 700,
+                fontSize: 13, fontWeight: 500,
                 color: activeTab === tab.key ? '#5120c8' : subtext,
                 borderBottom: `2px solid ${activeTab === tab.key ? '#5120c8' : 'transparent'}`,
                 transition: 'all 0.15s',
@@ -479,7 +479,7 @@ const [confirmModal, setConfirmModal] = useState<{
                 {tab.icon}
                 {isAr ? tab.labelAr : tab.labelEn}
                 {tab.key === 'paths' && myPathIds.size > 0 && (
-                  <span style={{ padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 800, background: '#5120c8', color: '#ffffff' }}>
+                  <span style={{ padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 600, background: '#5120c8', color: '#ffffff' }}>
                     {myPathIds.size}
                   </span>
                 )}
@@ -506,14 +506,14 @@ const [confirmModal, setConfirmModal] = useState<{
                   <BarChart3 size={18} color="#5120c8" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 2 }}>
+                  <div style={{ color: text, fontSize: 14, fontWeight: 500, marginBottom: 2 }}>
                     {isAr ? 'نتيجة الاختبار الذكي' : 'Smart Assessment Result'}
                   </div>
                   <div style={{ color: subtext, fontSize: 12 }}>
                     {isAr ? `المسار الأنسب: ${assessmentResults[0]?.titleAr} (${assessmentResults[0]?.normalized}%)` : `Best match: ${assessmentResults[0]?.titleEn} (${assessmentResults[0]?.normalized}%)`}
                   </div>
                 </div>
-                <button onClick={() => setActiveTab('assessment')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(81,32,200,0.3)', background: 'transparent', color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+                <button onClick={() => setActiveTab('assessment')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(81,32,200,0.3)', background: 'transparent', color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
                   <RefreshCw size={12} />
                   {isAr ? 'أعد الاختبار' : 'Retake'}
                 </button>
@@ -523,7 +523,7 @@ const [confirmModal, setConfirmModal] = useState<{
             {myPathIds.size > 0 && (
               <div style={{ marginBottom: 28 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'مساراتي المختارة' : 'My Selected Paths'}</h3>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'مساراتي المختارة' : 'My Selected Paths'}</h3>
                   <span style={{ color: subtext, fontSize: 12 }}>{myPathIds.size} / {MAX_PATHS} {isAr ? 'مسارات' : 'paths'}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -535,10 +535,10 @@ const [confirmModal, setConfirmModal] = useState<{
                           <IconComp size={18} color="#5120c8" />
                         </div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? path.titleAr : path.titleEn}</div>
+                          <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{isAr ? path.titleAr : path.titleEn}</div>
                           <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>{isAr ? 'مسار مهني' : 'Career path'}</div>
                         </div>
-                        <button onClick={() => setActiveTab('courses')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+                        <button onClick={() => setActiveTab('courses')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                           <BookOpen size={12} />
                           {isAr ? 'كورسات' : 'Courses'}
                         </button>
@@ -555,7 +555,7 @@ const [confirmModal, setConfirmModal] = useState<{
             {myPathIds.size === 0 && (
               <div style={{ padding: '28px 20px', borderRadius: 14, border: `1px dashed ${border}`, background: cardBg, textAlign: 'center', marginBottom: 24 }}>
                 <Target size={20} color={subtext} style={{ marginBottom: 8 }} />
-                <p style={{ color: text, fontSize: 14, fontWeight: 700, margin: 0 }}>
+                <p style={{ color: text, fontSize: 14, fontWeight: 500, margin: 0 }}>
                   {isAr ? 'لم تختر أي مسار مهني بعد' : 'No career path selected yet'}
                 </p>
                 <p style={{ color: subtext, fontSize: 12, margin: '4px 0 0' }}>
@@ -565,7 +565,7 @@ const [confirmModal, setConfirmModal] = useState<{
             )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'استكشف المسارات' : 'Explore Paths'}</h3>
+              <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'استكشف المسارات' : 'Explore Paths'}</h3>
               {myPathIds.size < MAX_PATHS && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: subtext, fontSize: 12 }}>
                   <Plus size={13} />
@@ -596,14 +596,14 @@ const [confirmModal, setConfirmModal] = useState<{
                       <div style={{ width: 36, height: 36, borderRadius: 9, background: isSelected ? 'rgba(81,32,200,0.12)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <IconComp size={16} color={isSelected ? '#5120c8' : subtext} />
                       </div>
-                      <h4 style={{ color: text, fontSize: 13, fontWeight: 800, margin: 0, lineHeight: 1.3 }}>{isAr ? path.titleAr : path.titleEn}</h4>
+                      <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: 0, lineHeight: 1.3 }}>{isAr ? path.titleAr : path.titleEn}</h4>
                     </div>
                     <p style={{ color: subtext, fontSize: 12, margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{isAr ? path.descriptionAr : path.descriptionEn}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
                         {isAr ? 'مسار مهني' : 'Career path'}
                       </span>
-                      <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: isSelected ? 'rgba(81,32,200,0.1)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), color: isSelected ? '#5120c8' : subtext, border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}` }}>
+                      <span style={{ padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500, background: isSelected ? 'rgba(81,32,200,0.1)' : (isDark ? 'rgba(255,255,255,0.05)' : '#f4f4f8'), color: isSelected ? '#5120c8' : subtext, border: `1px solid ${isSelected ? 'rgba(81,32,200,0.2)' : border}` }}>
                         {isSelected ? (isAr ? 'تم الاختيار' : 'Selected') : (isAr ? 'اختر' : 'Select')}
                       </span>
                     </div>
@@ -613,7 +613,7 @@ const [confirmModal, setConfirmModal] = useState<{
             </div>
             
             <div style={{ textAlign: 'center', marginTop: 20 }}>
-              <button onClick={() => router.push(`/${locale}/careers`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 13, fontWeight: 600 }}>
+              <button onClick={() => router.push(`/${locale}/careers`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 13, fontWeight: 500 }}>
                 {isAr ? `عرض جميع المسارات (${CAREER_PATHS.length}+)` : `View All Paths (${CAREER_PATHS.length}+)`}
                 <ChevronRight size={14} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
               </button>
@@ -628,12 +628,12 @@ const [confirmModal, setConfirmModal] = useState<{
                 <div style={{ padding: '20px', borderRadius: 14, marginBottom: 24, border: '1px solid rgba(22,163,74,0.2)', background: isDark ? 'rgba(22,163,74,0.06)' : 'rgba(22,163,74,0.03)', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <CheckCircle2 size={20} color="#16a34a" />
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? 'لديك نتيجة محفوظة' : 'You have a saved result'}</div>
+                    <div style={{ color: text, fontSize: 14, fontWeight: 500 }}>{isAr ? 'لديك نتيجة محفوظة' : 'You have a saved result'}</div>
                     <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>{isAr ? 'يمكنك إعادة الاختبار في أي وقت للحصول على نتيجة أحدث' : 'You can retake the assessment anytime for a newer result'}</div>
                   </div>
                 </div>
                 
-                <h3 style={{ color: text, fontSize: 15, fontWeight: 800, marginBottom: 16 }}>{isAr ? 'نتائج آخر اختبار' : 'Last Assessment Results'}</h3>
+                <h3 style={{ color: text, fontSize: 15, fontWeight: 600, marginBottom: 16 }}>{isAr ? 'نتائج آخر اختبار' : 'Last Assessment Results'}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
                   {allPaths.length === 0 && (
                     <p style={{ color: subtext, fontSize: 13, margin: '0 0 8px' }}>
@@ -646,15 +646,15 @@ const [confirmModal, setConfirmModal] = useState<{
                       const pathBusy = resolvedPathId ? busyPaths.has(resolvedPathId) : false
                       return (
                         <div key={idx} style={{ padding: '16px 20px', borderRadius: 12, border: `1.5px solid ${idx === 0 ? 'rgba(81,32,200,0.3)' : border}`, background: idx === 0 ? (isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.02)') : cardBg, display: 'flex', alignItems: 'center', gap: 14 }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 800 }}>{idx + 1}</div>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, background: idx === 0 ? '#5120c8' : (isDark ? 'rgba(255,255,255,0.06)' : '#f4f4f8'), display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? '#ffffff' : subtext, fontSize: 13, fontWeight: 600 }}>{idx + 1}</div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{isAr ? result.titleAr : result.titleEn}</div>
+                            <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{isAr ? result.titleAr : result.titleEn}</div>
                             <div style={{ marginTop: 6, height: 4, background: isDark ? 'rgba(255,255,255,0.06)' : '#f0f0f0', borderRadius: 2, overflow: 'hidden' }}>
                               <div style={{ width: `${result.normalized}%`, height: '100%', background: idx === 0 ? '#5120c8' : '#94a3b8', borderRadius: 2 }} />
                             </div>
                           </div>
                           <span style={{ color: idx === 0 ? '#5120c8' : subtext, fontSize: 14, fontWeight: 800 }}>{result.normalized}%</span>
-                          <button disabled={pathBusy} onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: pathAlreadyAdded || pathBusy ? 'default' : 'pointer', opacity: pathBusy ? 0.5 : 1, background: pathAlreadyAdded ? 'transparent' : '#5120c8', color: pathAlreadyAdded ? subtext : '#ffffff', border: `1px solid ${pathAlreadyAdded ? border : 'transparent'}`, fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <button disabled={pathBusy} onClick={() => handleAddAssessmentPath(result)} style={{ padding: '6px 12px', borderRadius: 8, cursor: pathAlreadyAdded || pathBusy ? 'default' : 'pointer', opacity: pathBusy ? 0.5 : 1, background: pathAlreadyAdded ? 'transparent' : '#5120c8', color: pathAlreadyAdded ? subtext : '#ffffff', border: `1px solid ${pathAlreadyAdded ? border : 'transparent'}`, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                             {pathAlreadyAdded ? <><CheckCircle2 size={11} />{isAr ? 'مضاف' : 'Added'}</> : <><Plus size={11} />{isAr ? 'أضف للمسار' : 'Add to Path'}</>}
                           </button>
                         </div>
@@ -663,7 +663,7 @@ const [confirmModal, setConfirmModal] = useState<{
                 </div>
                 
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => { localStorage.removeItem('assessmentResults'); setAssessmentResults([]); router.push(`/${locale}/dashboard/assessment`) }} style={{ flex: 1, padding: '13px', borderRadius: 12, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <button onClick={() => { localStorage.removeItem('assessmentResults'); setAssessmentResults([]); router.push(`/${locale}/dashboard/assessment`) }} style={{ flex: 1, padding: '13px', borderRadius: 12, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <RefreshCw size={15} />
                     {isAr ? 'إعادة الاختبار الذكي' : 'Retake Smart Assessment'}
                   </button>
@@ -674,11 +674,11 @@ const [confirmModal, setConfirmModal] = useState<{
                 <div style={{ width: 64, height: 64, borderRadius: 18, margin: '0 auto 20px', background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Sparkles size={26} color="#5120c8" />
                 </div>
-                <h2 style={{ color: text, fontSize: 22, fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>{isAr ? 'اكتشف مسارك المثالي' : 'Discover Your Ideal Path'}</h2>
+                <h2 style={{ color: text, fontSize: 22, fontWeight: 700, margin: '0 0 10px', letterSpacing: '-0.02em' }}>{isAr ? 'اكتشف مسارك المثالي' : 'Discover Your Ideal Path'}</h2>
                 <p style={{ color: subtext, fontSize: 14, margin: '0 0 28px', lineHeight: 1.75, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
                   {isAr ? '15 سؤال ذكي يحلل اهتماماتك ومهاراتك ليرشح لك المسار الأنسب بدقة' : '15 smart questions analyze your interests and skills to recommend the perfect path'}
                 </p>
-                <button onClick={() => router.push(`/${locale}/dashboard/assessment`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 14, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 700, boxShadow: '0 4px 16px rgba(81,32,200,0.3)' }}>
+                <button onClick={() => router.push(`/${locale}/dashboard/assessment`)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '14px 32px', borderRadius: 14, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 600, boxShadow: '0 4px 16px rgba(81,32,200,0.3)' }}>
                   <Sparkles size={16} />
                   {isAr ? 'ابدأ الاختبار الذكي' : 'Start Smart Assessment'}
                   <ChevronRight size={15} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
@@ -694,13 +694,13 @@ const [confirmModal, setConfirmModal] = useState<{
             {myPathIds.size === 0 ? (
               <div style={{ textAlign: 'center', padding: '60px 24px' }}>
                 <Target size={36} color={subtext} style={{ marginBottom: 12 }} />
-                <p style={{ color: text, fontSize: 15, fontWeight: 700, margin: '0 0 8px' }}>
+                <p style={{ color: text, fontSize: 15, fontWeight: 500, margin: '0 0 8px' }}>
                   {isAr ? 'يرجى اختيار مسار مهني أولاً' : 'Please select a career path first'}
                 </p>
                 <p style={{ color: subtext, fontSize: 13, margin: '0 0 24px' }}>
                   {isAr ? 'اختر مساراً مهنياً لعرض الكورسات المخصصة لك' : 'Choose a career path to see courses tailored to you'}
                 </p>
-                <button onClick={() => setActiveTab('paths')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 13, fontWeight: 700 }}>
+                <button onClick={() => setActiveTab('paths')} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 13, fontWeight: 600 }}>
                   <Target size={14} />
                   {isAr ? 'اختر مساراً' : 'Select a Path'}
                 </button>
@@ -708,7 +708,7 @@ const [confirmModal, setConfirmModal] = useState<{
             ) : (
               <div>
                 <div style={{ marginBottom: 20 }}>
-                  <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
+                  <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
                   <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
                     {myPathIds.size > 0
                       ? (isAr ? `بناء على ${myPathIds.size} مسار مختار` : `Based on ${myPathIds.size} selected path${myPathIds.size > 1 ? 's' : ''}`)
@@ -733,9 +733,9 @@ const [confirmModal, setConfirmModal] = useState<{
                           {course.thumbnail ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><BookOpen size={28} color={subtext} /></div>}
                         </div>
                         <div style={{ padding: '14px' }}>
-                          <h4 style={{ color: text, fontSize: 13, fontWeight: 700, margin: '0 0 6px', lineHeight: 1.4 }}>{course.title || (isAr ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr))}</h4>
+                          <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: '0 0 6px', lineHeight: 1.4 }}>{course.title || (isAr ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr))}</h4>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 800 }}>{course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</span>
+                            <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 700 }}>{course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</span>
                             <Award size={13} color={subtext} />
                           </div>
                         </div>
@@ -756,7 +756,7 @@ const [confirmModal, setConfirmModal] = useState<{
                         padding:'10px 22px', borderRadius:10,
                         background:'#5120c8', color:'#ffffff',
                         textDecoration:'none', cursor:'pointer',
-                        fontSize:13, fontWeight:700,
+                        fontSize:13, fontWeight:600,
                       }}>
                       {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
                     </a>
@@ -765,7 +765,7 @@ const [confirmModal, setConfirmModal] = useState<{
                 
                 {bundles.length > 0 && (
                   <div style={{ marginTop: 32 }}>
-                    <h4 style={{ color: text, fontSize: 14, fontWeight: 700, marginBottom: 12 }}>{isAr ? 'حزم الكورسات الداعمة' : 'Supporting Course Bundles'}</h4>
+                    <h4 style={{ color: text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>{isAr ? 'حزم الكورسات الداعمة' : 'Supporting Course Bundles'}</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {bundles.map((bundle: any) => (
                         <div key={bundle.id} style={{ padding: '16px 18px', borderRadius: 14, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -773,10 +773,10 @@ const [confirmModal, setConfirmModal] = useState<{
                             <Package size={18} color="#5120c8" />
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ color: text, fontSize: 14, fontWeight: 700 }}>{bundle.title}</div>
+                            <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{bundle.title}</div>
                             <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</div>
                           </div>
-                          <button onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{isAr ? 'عرض' : 'View'}</button>
+                          <button onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{isAr ? 'عرض' : 'View'}</button>
                         </div>
                       ))}
                     </div>
@@ -787,7 +787,7 @@ const [confirmModal, setConfirmModal] = useState<{
                   <a
                     href={learnUrl(`/${locale}/courses`)}
                     target="_blank" rel="noopener noreferrer"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '11px 24px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
                     <BookOpen size={14} />
                     {isAr ? 'استعرض جميع الكورسات' : 'Browse All Courses'}
                     <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />

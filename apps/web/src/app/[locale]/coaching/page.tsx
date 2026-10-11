@@ -119,7 +119,7 @@ export default function CoachingPage() {
             <Users size={12} color="#5120c8" />
             <span style={{ color: subtext, fontSize: 12, fontWeight: 600 }}>{consultants.length} {isAr ? 'مستشار متاح' : 'consultants available'}</span>
           </div>
-          <h1 style={{ color: text, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+          <h1 style={{ color: text, fontSize: 'clamp(26px,4vw,42px)', fontWeight: 700, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
             {isAr ? 'احجز استشارة مهنية' : 'Book a Professional Consultation'}
           </h1>
           <p style={{ color: subtext, fontSize: 14, margin: '0 0 24px', lineHeight: 1.7 }}>
@@ -166,11 +166,11 @@ export default function CoachingPage() {
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div style={{ padding: '12px 8px', textAlign: 'center', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)' }}>
-            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 900, margin: '0 0 2px' }}>{consultants.length}</p>
+            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 800, margin: '0 0 2px' }}>{consultants.length}</p>
             <p style={{ color: subtext, fontSize: 'clamp(10px, 2.5vw, 13px)', margin: 0 }}>{isAr ? 'مستشار' : 'consultants'}</p>
           </div>
           <div style={{ padding: '12px 8px', textAlign: 'center', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)' }}>
-            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 900, margin: '0 0 2px' }}>{raw.reduce((sum: number, c: any) => sum + (c._count?.consultantSessions || 0), 0)}</p>
+            <p style={{ color: '#5120c8', fontSize: 'clamp(18px, 5vw, 28px)', fontWeight: 800, margin: '0 0 2px' }}>{raw.reduce((sum: number, c: any) => sum + (c._count?.consultantSessions || 0), 0)}</p>
             <p style={{ color: subtext, fontSize: 'clamp(10px, 2.5vw, 13px)', margin: 0 }}>{isAr ? 'جلسة' : 'sessions'}</p>
           </div>
         </div>
@@ -182,8 +182,8 @@ export default function CoachingPage() {
         ) : consultants.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
             <Users size={44} color={subtext} style={{ marginBottom: 16, opacity: 0.4 }} />
-            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'لا يوجد مستشارون' : 'No consultants found'}</h3>
-            <button onClick={() => { setSearch(''); setActiveFilter('all') }} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            <h3 style={{ color: text, fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>{isAr ? 'لا يوجد مستشارون' : 'No consultants found'}</h3>
+            <button onClick={() => { setSearch(''); setActiveFilter('all') }} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               {isAr ? 'عرض الكل' : 'Show All'}
             </button>
           </div>
@@ -199,14 +199,14 @@ export default function CoachingPage() {
                   onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.boxShadow = 'var(--shadow-card-hover)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}>
                   <div style={{ height: 68, background: 'var(--surface)', position: 'relative', flexShrink: 0 }}>
-                    <div style={{ position: 'absolute', top: 8, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 700 }}>
+                    <div style={{ position: 'absolute', top: 8, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 20, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
                       <Calendar size={9} />{c._count?.consultantSessions || 0} {isAr ? 'جلسة' : 'sessions'}
                     </div>
                     <div style={{ position: 'absolute', bottom: -22, [isAr ? 'right' : 'left']: 18 }}>
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         {c.profile?.avatar
                           ? <img src={c.profile.avatar} alt="" style={{ width: 'clamp(40px, 10vw, 56px)', height: 'clamp(40px, 10vw, 56px)', borderRadius: 12, objectFit: 'cover', border: `3px solid ${cardBg}`, display: 'block' }} />
-                          : <div style={{ width: 'clamp(40px, 10vw, 56px)', height: 'clamp(40px, 10vw, 56px)', borderRadius: 12, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 800 }}>{getInitials(c)}</div>}
+                          : <div style={{ width: 'clamp(40px, 10vw, 56px)', height: 'clamp(40px, 10vw, 56px)', borderRadius: 12, background: '#5120c8', border: `3px solid ${cardBg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 600 }}>{getInitials(c)}</div>}
                         {c.isVerified && (
                           <div style={{ position: 'absolute', bottom: -4, left: -5, width: 20, height: 20, borderRadius: '50%', background: '#5120c8', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 6px rgba(81,32,200,0.5)' }}>
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -217,7 +217,7 @@ export default function CoachingPage() {
                   </div>
                   <div style={{ padding: '30px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div>
-                      <h3 style={{ color: text, fontSize: 'clamp(12px, 3vw, 15px)', fontWeight: 800, margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
+                      <h3 style={{ color: text, fontSize: 'clamp(12px, 3vw, 15px)', fontWeight: 600, margin: '0 0 1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.profile?.firstName} {c.profile?.lastName}</h3>
                       {c.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 'clamp(10px, 2.5vw, 13px)', fontWeight: 600, margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.profile.speciality}</p>}
                     </div>
                     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -243,7 +243,7 @@ export default function CoachingPage() {
                           onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = text }}>
                           {isAr ? 'التفاصيل' : 'Details'}
                         </button>
-                        <button onClick={() => setBookingConsultant(c)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        <button onClick={() => setBookingConsultant(c)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                           onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                           {isAr ? 'احجز' : 'Book'}<ChevronRight size={12} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
@@ -263,19 +263,19 @@ export default function CoachingPage() {
           <div onClick={() => setDetailConsultant(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 100, backdropFilter: 'blur(4px)' }} />
           <div style={{ position: 'fixed', top: 0, bottom: 0, [isAr ? 'right' : 'left']: 0, width: 'min(480px,100vw)', background: cardBg, zIndex: 101, display: 'flex', flexDirection: 'column', overflowY: 'auto', borderLeft: isAr ? 'none' : `1px solid ${border}`, borderRight: isAr ? `1px solid ${border}` : 'none' }}>
             <div style={{ padding: '18px 22px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: cardBg, zIndex: 10 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'ملف المستشار' : 'Consultant Profile'}</h3>
+              <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'ملف المستشار' : 'Consultant Profile'}</h3>
               <button onClick={() => setDetailConsultant(null)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
             </div>
             <div style={{ padding: '22px', flex: 1 }}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 18 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  {detailConsultant.profile?.avatar ? <img src={detailConsultant.profile.avatar} alt="" style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover' }} /> : <div style={{ width: 60, height: 60, borderRadius: 14, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 800 }}>{getInitials(detailConsultant)}</div>}
+                  {detailConsultant.profile?.avatar ? <img src={detailConsultant.profile.avatar} alt="" style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover' }} /> : <div style={{ width: 60, height: 60, borderRadius: 14, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20, fontWeight: 600 }}>{getInitials(detailConsultant)}</div>}
                   {detailConsultant.isVerified && <div style={{ position: 'absolute', bottom: -3, left: -5, width: 20, height: 20, borderRadius: '50%', background: '#5120c8', border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></div>}
                 </div>
                 <div>
-                  <h2 style={{ color: text, fontSize: 17, fontWeight: 900, margin: '0 0 2px' }}>{detailConsultant.profile?.firstName} {detailConsultant.profile?.lastName}</h2>
+                  <h2 style={{ color: text, fontSize: 17, fontWeight: 700, margin: '0 0 2px' }}>{detailConsultant.profile?.firstName} {detailConsultant.profile?.lastName}</h2>
                   {detailConsultant.profile?.speciality && <p style={{ color: '#5120c8', fontSize: 12, fontWeight: 600, margin: '0 0 3px' }}>{detailConsultant.profile.speciality}</p>}
-                  {detailConsultant.isVerified && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#16a34a', fontSize: 11, fontWeight: 700 }}><CheckCircle2 size={11} />{isAr ? 'مستشار موثق' : 'Verified'}</span>}
+                  {detailConsultant.isVerified && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: '#16a34a', fontSize: 11, fontWeight: 500 }}><CheckCircle2 size={11} />{isAr ? 'مستشار موثق' : 'Verified'}</span>}
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 18 }}>
@@ -285,15 +285,15 @@ export default function CoachingPage() {
                   { v: detailConsultant._count?.consultantSessions || 0, s: isAr ? 'جلسة' : 'sessions' },
                 ].map((s, i) => (
                   <div key={i} style={{ padding: '10px', borderRadius: 10, textAlign: 'center', border: `1px solid ${border}`, background: 'var(--surface)' }}>
-                    <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 900 }}>{s.v}</div>
+                    <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 800 }}>{s.v}</div>
                     <div style={{ color: subtext, fontSize: 10, marginTop: 1 }}>{s.s}</div>
                   </div>
                 ))}
               </div>
-              {detailConsultant.profile?.bio && <div style={{ marginBottom: 16 }}><h4 style={{ color: text, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{isAr ? 'نبذة مهنية' : 'About'}</h4><p style={{ color: subtext, fontSize: 12, lineHeight: 1.7, margin: 0 }}>{detailConsultant.profile.bio}</p></div>}
+              {detailConsultant.profile?.bio && <div style={{ marginBottom: 16 }}><h4 style={{ color: text, fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{isAr ? 'نبذة مهنية' : 'About'}</h4><p style={{ color: subtext, fontSize: 12, lineHeight: 1.7, margin: 0 }}>{detailConsultant.profile.bio}</p></div>}
               {detailConsultant.profile?.consultingAreas?.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <h4 style={{ color: text, fontSize: 12, fontWeight: 800, marginBottom: 8 }}>{isAr ? 'مجالات الاستشارات' : 'Consulting Areas'}</h4>
+                  <h4 style={{ color: text, fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{isAr ? 'مجالات الاستشارات' : 'Consulting Areas'}</h4>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                     {detailConsultant.profile.consultingAreas.map((a: string, i: number) => <span key={i} style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', color: '#5120c8' }}>{a}</span>)}
                   </div>
@@ -301,7 +301,7 @@ export default function CoachingPage() {
               )}
               {detailConsultant.profile?.qualifications?.length > 0 && (
                 <div style={{ marginBottom: 16 }}>
-                  <h4 style={{ color: text, fontSize: 12, fontWeight: 800, marginBottom: 8 }}>{isAr ? 'المؤهلات' : 'Qualifications'}</h4>
+                  <h4 style={{ color: text, fontSize: 12, fontWeight: 600, marginBottom: 8 }}>{isAr ? 'المؤهلات' : 'Qualifications'}</h4>
                   {detailConsultant.profile.qualifications.map((q: string, i: number) => <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginBottom: 6 }}><CheckCircle2 size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 1 }} /><span style={{ color: 'var(--foreground-2)', fontSize: 12 }}>{q}</span></div>)}
                 </div>
               )}
@@ -314,10 +314,10 @@ export default function CoachingPage() {
             </div>
             <div style={{ padding: '14px 22px', borderTop: `1px solid ${border}`, display: 'flex', gap: 8, alignItems: 'center', position: 'sticky', bottom: 0, background: cardBg }}>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? `${detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
+                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 700 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? `${detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>
               </div>
-              <button onClick={() => { setDetailConsultant(null); setBookingConsultant(detailConsultant) }} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <button onClick={() => { setDetailConsultant(null); setBookingConsultant(detailConsultant) }} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                 <Calendar size={14} />{isAr ? 'احجز الآن' : 'Book Now'}
               </button>
             </div>
@@ -381,7 +381,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
       <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(480px,calc(100vw - 24px))', maxHeight: '92vh', overflowY: 'auto', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.5)', zIndex: 201, direction: isAr ? 'rtl' : 'ltr' }}>
         <div style={{ padding: '18px 22px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: cardBg, borderRadius: '20px 20px 0 0', zIndex: 10 }}>
           <div>
-            <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'احجز جلسة' : 'Book Session'}</h3>
+            <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'احجز جلسة' : 'Book Session'}</h3>
             <p style={{ color: '#5120c8', fontSize: 11, margin: '2px 0 0', fontWeight: 600 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</p>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
@@ -391,7 +391,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
           {[{n:1,ar:'تفاصيل الجلسة',en:'Session Details'},{n:2,ar:'نوع الاجتماع',en:'Meeting Type'},{n:3,ar:'تأكيد',en:'Confirm'}].map((s,i) => (
             <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'auto', gap: 5 }}>
               <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: step >= s.n ? '#5120c8' : ('var(--surface)'), border: `2px solid ${step >= s.n ? '#5120c8' : border}` }}>
-                {step > s.n ? <CheckCircle2 size={12} color="#fff" /> : <span style={{ color: step === s.n ? '#fff' : subtext, fontSize: 10, fontWeight: 800 }}>{s.n}</span>}
+                {step > s.n ? <CheckCircle2 size={12} color="#fff" /> : <span style={{ color: step === s.n ? '#fff' : subtext, fontSize: 10, fontWeight: 600 }}>{s.n}</span>}
               </div>
               <span style={{ color: step === s.n ? text : subtext, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap' }}>{isAr ? s.ar : s.en}</span>
               {i < 2 && <div style={{ flex: 1, height: 1, background: step > s.n ? '#5120c8' : border }} />}
@@ -407,31 +407,31 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 { key: 'topic', label: isAr ? 'هدف الجلسة' : 'Session Goal', placeholder: isAr ? 'مثال: تطوير مسيرتي في البرمجة...' : 'e.g. Improve my programming career...', required: true },
               ].map(f => (
                 <div key={f.key}>
-                  <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{f.label} {f.required && '*'}</label>
+                  <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{f.label} {f.required && '*'}</label>
                   <input type="text" placeholder={f.placeholder} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                     style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${(form as any)[f.key] ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               ))}
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{isAr ? 'وصف إضافي (اختياري)' : 'Additional Details (optional)'}</label>
+                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{isAr ? 'وصف إضافي (اختياري)' : 'Additional Details (optional)'}</label>
                 <textarea rows={2} placeholder={isAr ? 'أضف أي تفاصيل...' : 'Add any details...'} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                   style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
               </div>
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 6, display: 'block' }}>{isAr ? 'التاريخ' : 'Date'} *</label>
+                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{isAr ? 'التاريخ' : 'Date'} *</label>
                 <input type="date" min={today} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value, time: '' }))}
                   style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${form.date ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }} />
               </div>
               {form.date && (
                 <div>
-                  <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 8, display: 'block' }}>{isAr ? 'الوقت' : 'Time'} *</label>
+                  <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 8, display: 'block' }}>{isAr ? 'الوقت' : 'Time'} *</label>
                   {slots.length === 0 ? (
                     <p style={{ color: '#d97706', fontSize: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
                       {isAr ? 'لا توجد مواعيد اليوم، اختر يوماً آخر' : 'No slots today, choose another date'}
                     </p>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : ('var(--surface)'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, locale)}</button>)}
+                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : ('var(--surface)'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 500 }}>{formatTimeSlot(t, locale)}</button>)}
                     </div>
                   )}
                 </div>
@@ -440,7 +440,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 <Clock size={12} color={subtext} />
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? `مدة الجلسة: ${consultant.profile?.sessionDuration || 60} دقيقة` : `Duration: ${consultant.profile?.sessionDuration || 60} min`}</span>
               </div>
-              <button disabled={!step1Ok} onClick={() => setStep(2)} style={{ width: '100%', padding: '12px', borderRadius: 11, background: step1Ok ? '#5120c8' : ('var(--surface)'), color: step1Ok ? '#ffffff' : subtext, border: 'none', cursor: step1Ok ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 700 }}>
+              <button disabled={!step1Ok} onClick={() => setStep(2)} style={{ width: '100%', padding: '12px', borderRadius: 11, background: step1Ok ? '#5120c8' : ('var(--surface)'), color: step1Ok ? '#ffffff' : subtext, border: 'none', cursor: step1Ok ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 600 }}>
                 {isAr ? 'التالي ' : 'Next '}
               </button>
             </div>
@@ -448,7 +448,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
 
           {step === 2 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <h4 style={{ color: text, fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>{isAr ? 'اختر طريقة الاجتماع' : 'Choose Meeting Type'}</h4>
+              <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>{isAr ? 'اختر طريقة الاجتماع' : 'Choose Meeting Type'}</h4>
               {[
                 { type: 'zoom', label: 'Zoom', desc: isAr ? 'اجتماع عبر Zoom  رابط سيُرسل بعد الدفع' : 'Via Zoom  link sent after payment', color: '#2D8CFF' },
                 { type: 'meet', label: 'Google Meet', desc: isAr ? 'اجتماع عبر Google Meet  رابط سيُرسل بعد الدفع' : 'Via Google Meet  link sent after payment', color: '#00897B' },
@@ -456,7 +456,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 <div key={m.type} onClick={() => setForm(p => ({ ...p, meetingType: m.type as 'zoom'|'meet' }))} style={{ padding: '15px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? 'var(--primary-subtle)' : cardBg, display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.15s' }}>
                   <div style={{ width: 40, height: 40, borderRadius: 10, background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Video size={18} color="white" /></div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ color: text, fontSize: 13, fontWeight: 800 }}>{m.label}</div>
+                    <div style={{ color: text, fontSize: 13, fontWeight: 600 }}>{m.label}</div>
                     <div style={{ color: subtext, fontSize: 11, marginTop: 1 }}>{m.desc}</div>
                   </div>
                   <div style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? '#5120c8' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -466,7 +466,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button onClick={() => setStep(1)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>
-                <button onClick={() => setStep(3)} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 700 }}>{isAr ? 'التالي ' : 'Next '}</button>
+                <button onClick={() => setStep(3)} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 600 }}>{isAr ? 'التالي ' : 'Next '}</button>
               </div>
             </div>
           )}
@@ -475,8 +475,8 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ padding: '14px', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {consultant.profile?.avatar ? <img src={consultant.profile.avatar} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} alt="" /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 13 }}>{consultant.profile?.firstName?.[0]}</div>}
-                  <div><div style={{ color: text, fontSize: 13, fontWeight: 700 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</div><div style={{ color: '#5120c8', fontSize: 11 }}>{consultant.profile?.speciality}</div></div>
+                  {consultant.profile?.avatar ? <img src={consultant.profile.avatar} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} alt="" /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: 13 }}>{consultant.profile?.firstName?.[0]}</div>}
+                  <div><div style={{ color: text, fontSize: 13, fontWeight: 600 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</div><div style={{ color: '#5120c8', fontSize: 11 }}>{consultant.profile?.speciality}</div></div>
                 </div>
                 <div style={{ height: 1, background: border }} />
                 {[
@@ -494,13 +494,13 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 ))}
                 <div style={{ height: 1, background: border }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: text, fontSize: 13, fontWeight: 700 }}>{isAr ? 'السعر' : 'Price'}</span>
-                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 900 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? `${consultant.hourlyRate || consultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</span>
+                  <span style={{ color: text, fontSize: 13, fontWeight: 500 }}>{isAr ? 'السعر' : 'Price'}</span>
+                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 700 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? `${consultant.hourlyRate || consultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => setStep(2)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>
-                <button onClick={handleBook} disabled={loading} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: loading ? 'wait' : 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 700, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <button onClick={handleBook} disabled={loading} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: loading ? 'wait' : 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 600, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   {loading ? (isAr ? 'جاري الحجز...' : 'Booking...') : <><CheckCircle2 size={14} />{isAr ? 'تأكيد الحجز' : 'Confirm'}</>}
                 </button>
               </div>

@@ -285,13 +285,13 @@ export function FeaturesSection() {
 
         .fx-pingarlt {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           letter-spacing: -0.02em !important;
         }
 
         .fx-pingarlt-bold {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           letter-spacing: 0.02em !important;
         }
 
@@ -371,7 +371,7 @@ export function FeaturesSection() {
 
         .fx-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           font-size: clamp(28px, 4.5vw, 42px) !important;
           letter-spacing: -0.03em !important;
           color: var(--fx-fg);
@@ -693,7 +693,7 @@ export function FeaturesSection() {
         /* ✅ العنوان - حجم مثالي */
         .feature-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           font-size: 14px !important; /* ← أصغر قليلاً */
           color: var(--fx-fg);
           margin: 0;
@@ -742,7 +742,7 @@ export function FeaturesSection() {
           border-radius: 9px;
           font-size: 9px; /* ← نص أصغر */
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           background: rgba(81,32,200,0.1);
           color: var(--fx-primary);
           border: 1px solid rgba(81,32,200,0.2);

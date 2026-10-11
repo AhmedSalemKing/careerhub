@@ -653,7 +653,7 @@ export function CoursesShowcase() {
           padding: 12px 24px;
           border-radius: 12px;
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
           text-decoration: none;
           font-family: "DM Sans", sans-serif;
           whiteSpace: nowrap;
@@ -770,7 +770,7 @@ export function CoursesShowcase() {
           right: 10px;
           color: #fff;
           font-size: 11px;
-          font-weight: 700;
+          font-weight: 500;
           padding: 3px 8px;
           border-radius: 6px;
           font-family: "DM Sans", sans-serif;
@@ -820,7 +820,7 @@ export function CoursesShowcase() {
 
         .cs-card-title {
           font-family: "Plus Jakarta Sans", sans-serif;
-          font-weight: 700;
+          font-weight: 600;
           font-size: 15px;
           color: var(--cs-fg);
           margin: 0 0 6px;
@@ -856,7 +856,7 @@ export function CoursesShowcase() {
         /* ✅✅✅ PRICE - PINGARLT FONT APPLIED ✅✅✅ */
         .cs-price {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 700 !important;
           font-size: 20px !important;
           color: var(--cs-primary);
           letter-spacing: -0.02em !important;
@@ -896,7 +896,7 @@ export function CoursesShowcase() {
           padding: 14px 36px;
           border-radius: 12px;
           font-size: 15px;
-          font-weight: 700;
+          font-weight: 500;
           text-decoration: none;
           font-family: "DM Sans", sans-serif;
           transition: background 0.25s ease, color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;

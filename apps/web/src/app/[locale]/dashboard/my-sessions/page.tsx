@@ -201,7 +201,7 @@ export default function MySessionsPage() {
         {soon && !isRescheduleReq && (
           <div style={{ padding: '8px 20px', background: 'rgba(81,32,200,0.1)', borderBottom: '1px solid rgba(81,32,200,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Video size={13} color="#5120c8" />
-            <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+            <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
               {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than 1 hour'}
             </span>
           </div>
@@ -210,19 +210,19 @@ export default function MySessionsPage() {
         {isRescheduleReq && (
           <div style={{ padding: '10px 20px', background: 'rgba(124,58,237,0.08)', borderBottom: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <AlertTriangle size={14} color="#7c3aed" />
-            <span style={{ color: '#7c3aed', fontSize: 12, fontWeight: 700, flex: 1 }}>
+            <span style={{ color: '#7c3aed', fontSize: 12, fontWeight: 500, flex: 1 }}>
               {isAr ? 'المستشار اقترح موعداً جديداً  هل توافق؟' : 'Consultant proposed a new time  do you approve?'}
               {session.proposedAt && (
-                <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: '#5120c8', fontWeight: 800 }}>
+                <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: '#5120c8', fontWeight: 600 }}>
                   {' '}{formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}
                 </span>
               )}
             </span>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+              <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                 {isAr ? 'موافقة' : 'Approve'}
               </button>
-              <button onClick={() => rejectRescheduleMutation.mutate(session.id)} disabled={rejectRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: '#dc2626', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+              <button onClick={() => rejectRescheduleMutation.mutate(session.id)} disabled={rejectRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: '#dc2626', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                 {isAr ? 'رفض' : 'Reject'}
               </button>
             </div>
@@ -243,12 +243,12 @@ export default function MySessionsPage() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               {other?.profile?.avatar
                 ? <img src={other.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5120c8', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{otherName?.[0] || '?'}</div>}
+                : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5120c8', fontSize: 16, fontWeight: 600, flexShrink: 0 }}>{otherName?.[0] || '?'}</div>}
               <div>
                 <div style={{ color: subtext, fontSize: 11, fontWeight: 600, marginBottom: 1 }}>
                   {roleLabel}
                 </div>
-                <div style={{ color: text, fontSize: 15, fontWeight: 800 }}>{otherName}</div>
+                <div style={{ color: text, fontSize: 15, fontWeight: 600 }}>{otherName}</div>
                 {other?.profile?.speciality && (
                   <div style={{ color: '#5120c8', fontSize: 11, fontWeight: 600 }}>{other.profile.speciality}</div>
                 )}
@@ -266,11 +266,11 @@ export default function MySessionsPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-              <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}30`, color: conf.color, fontSize: 11, fontWeight: 700 }}>
+              <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}30`, color: conf.color, fontSize: 11, fontWeight: 500 }}>
                 {isAr ? conf.ar : conf.en}
               </div>
               {isUpcoming && (
-                <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${isPaid ? 'rgba(22,163,74,0.2)' : 'rgba(245,158,11,0.2)'}`, color: isPaid ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
+                <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${isPaid ? 'rgba(22,163,74,0.2)' : 'rgba(245,158,11,0.2)'}`, color: isPaid ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
                   <DollarSign size={10} />
                   {isPaid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'غير مدفوعة' : 'Unpaid')}
                 </div>
@@ -306,7 +306,7 @@ export default function MySessionsPage() {
               <button onClick={() => { navigator.clipboard.writeText(session.meetingLink); setCopied(session.id); setTimeout(() => setCopied(''), 2000) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5120c8', flexShrink: 0 }}>
                 {copied === session.id ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
               </button>
-              <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 7, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+              <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 7, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>
                 <ExternalLink size={10} />{isAr ? 'انضم' : 'Join'}
               </a>
             </div>
@@ -314,7 +314,7 @@ export default function MySessionsPage() {
 
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
             {session.meetingLink && !linkExpired && isUpcoming && (
-              <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}>
+              <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 12, fontWeight: 600 }}>
                 <Video size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}
               </a>
             )}
@@ -322,7 +322,7 @@ export default function MySessionsPage() {
             {(session.price || 0) > 0 && !isPaid && isUpcoming && !isRescheduleReq && (
               <button onClick={() => paySession(session.id, session.price)}
                 disabled={payingId === session.id}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 700, opacity: payingId === session.id ? 0.7 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, opacity: payingId === session.id ? 0.7 : 1 }}>
                 <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`)}
               </button>
             )}
@@ -343,7 +343,7 @@ export default function MySessionsPage() {
                   padding: '9px 16px', borderRadius: 10,
                   background: 'rgba(22,163,74,0.1)', color: '#16a34a',
                   border: '1px solid rgba(22,163,74,0.3)',
-                  cursor: 'pointer', fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', fontSize: 12, fontWeight: 600,
                 }}>
                 <CheckCircle2 size={12} />
                 {isAr ? 'تأكيد الجلسة المجانية' : 'Confirm Free Session'}
@@ -363,7 +363,7 @@ export default function MySessionsPage() {
                   },
                 })
               }} disabled={completeMutation.isPending}
-                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: completeMutation.isPending ? 0.7 : 1 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: completeMutation.isPending ? 0.7 : 1 }}>
                 <CheckCircle2 size={12} />{isAr ? 'أكمل الجلسة' : 'Mark Complete'}
               </button>
             )}
@@ -401,7 +401,7 @@ export default function MySessionsPage() {
                 <User size={19} color="#5120c8" />
               </div>
               <div>
-                <h1 style={{ color: text, fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+                <h1 style={{ color: text, fontSize: 19, fontWeight: 700, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
                   {isAr ? 'جلساتي الاستشارية' : 'My Consulting Sessions'}
                 </h1>
                 <p style={{ color: subtext, fontSize: 11, margin: 0 }}>
@@ -413,7 +413,7 @@ export default function MySessionsPage() {
               <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                 <RefreshCw size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
-              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                 <Plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
               </button>
             </div>
@@ -425,7 +425,7 @@ export default function MySessionsPage() {
               { val: mySessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : s.bg, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: s.color, fontSize: 18, fontWeight: 900 }}>{s.val}</span>
+                <span style={{ color: s.color, fontSize: 18, fontWeight: 800 }}>{s.val}</span>
                 <span style={{ color: subtext, fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
               </div>
             ))}
@@ -433,7 +433,7 @@ export default function MySessionsPage() {
               <div style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: viewType === 'client' ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }} onClick={() => setViewType(v => v === 'client' ? 'my' : 'client')}>
                 <Users size={16} color={viewType === 'client' ? '#5120c8' : subtext} />
                 <div>
-                  <div style={{ color: viewType === 'client' ? '#5120c8' : text, fontSize: 18, fontWeight: 900 }}>{clientSessions.filter((s: any) => upcomingStatuses.includes(s.status)).length}</div>
+                  <div style={{ color: viewType === 'client' ? '#5120c8' : text, fontSize: 18, fontWeight: 800 }}>{clientSessions.filter((s: any) => upcomingStatuses.includes(s.status)).length}</div>
                   <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'جلسات العملاء' : 'Client Sessions'}</div>
                 </div>
               </div>
@@ -446,9 +446,9 @@ export default function MySessionsPage() {
               { key: 'completed' as const, ar: 'المكتملة', en: 'Completed', count: sessions.filter((s: any) => completedStatuses.includes(s.status)).length },
               { key: 'cancelled' as const, ar: 'الملغاة', en: 'Cancelled', count: sessions.filter((s: any) => cancelledStatuses.includes(s.status)).length },
             ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: activeTab === tab.key ? '#5120c8' : subtext, borderBottom: `2px solid ${activeTab === tab.key ? '#5120c8' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: activeTab === tab.key ? '#5120c8' : subtext, borderBottom: `2px solid ${activeTab === tab.key ? '#5120c8' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
                 {isAr ? tab.ar : tab.en}
-                {tab.count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 800, background: activeTab === tab.key ? '#5120c8' : 'rgba(107,114,128,0.15)', color: activeTab === tab.key ? '#ffffff' : subtext }}>{tab.count}</span>}
+                {tab.count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 600, background: activeTab === tab.key ? '#5120c8' : 'rgba(107,114,128,0.15)', color: activeTab === tab.key ? '#ffffff' : subtext }}>{tab.count}</span>}
               </button>
             ))}
           </div>
@@ -465,14 +465,14 @@ export default function MySessionsPage() {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '70px 24px' }}>
             <Calendar size={44} color={subtext} style={{ marginBottom: 14, opacity: 0.4 }} />
-            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
+            <h3 style={{ color: text, fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
             <p style={{ color: subtext, fontSize: 13, marginBottom: 20 }}>
               {activeTab === 'upcoming'
                 ? (isAr ? 'احجز جلستك الأولى' : 'Book your first session')
                 : (isAr ? 'لا توجد جلسات هنا' : 'No sessions here')}
             </p>
             {activeTab === 'upcoming' && (
-              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ padding: '11px 26px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ padding: '11px 26px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                 {isAr ? 'احجز جلسة' : 'Book a Session'}
               </button>
             )}
@@ -489,7 +489,7 @@ export default function MySessionsPage() {
           <div onClick={() => setRescheduleModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, backdropFilter: 'blur(4px)' }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(430px,calc(100vw - 24px))', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', zIndex: 201, padding: '22px', direction: isAr ? 'rtl' : 'ltr' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'طلب تغيير الموعد' : 'Request Reschedule'}</h3>
+              <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'طلب تغيير الموعد' : 'Request Reschedule'}</h3>
               <button onClick={() => setRescheduleModal(null)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
             </div>
             <p style={{ color: '#d97706', fontSize: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14 }}>
@@ -497,20 +497,20 @@ export default function MySessionsPage() {
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'التاريخ الجديد' : 'New Date'} *</label>
+                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 7, display: 'block' }}>{isAr ? 'التاريخ الجديد' : 'New Date'} *</label>
                 <input type="date" min={new Date().toISOString().split('T')[0]} value={newDate} onChange={e => setNewDate(e.target.value)}
                   style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${newDate ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'الوقت الجديد' : 'New Time'} *</label>
+                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 7, display: 'block' }}>{isAr ? 'الوقت الجديد' : 'New Time'} *</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
                   {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
                     .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
-                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t, isAr)}</button>)}
+                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 500 }}>{formatTimeSlot(t, isAr)}</button>)}
                 </div>
               </div>
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>
+                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 7, display: 'block' }}>{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>
                 <input type="text" placeholder={isAr ? 'مثال: ارتباط طارئ...' : 'e.g. Emergency...'} value={rescheduleReason} onChange={e => setRescheduleReason(e.target.value)}
                   style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
               </div>
@@ -518,7 +518,7 @@ export default function MySessionsPage() {
                 <button onClick={() => setRescheduleModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
                 <button disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
                   onClick={() => requestRescheduleMutation.mutate({ id: rescheduleModal.id, proposedAt: localDateTimeToISO(newDate, newTime), reason: rescheduleReason })}
-                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
+                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
                   {requestRescheduleMutation.isPending ? (isAr ? 'جاري الإرسال...' : 'Sending...') : (isAr ? 'إرسال الطلب' : 'Send Request')}
                 </button>
               </div>
@@ -532,14 +532,14 @@ export default function MySessionsPage() {
           <div onClick={() => setLinkModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, backdropFilter: 'blur(4px)' }} />
           <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(430px,calc(100vw - 24px))', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', zIndex: 201, padding: '22px', direction: isAr ? 'rtl' : 'ltr' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'إضافة رابط الاجتماع' : 'Add Meeting Link'}</h3>
+              <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'إضافة رابط الاجتماع' : 'Add Meeting Link'}</h3>
               <button onClick={() => setLinkModal(null)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
             </div>
             <p style={{ color: subtext, fontSize: 12, marginBottom: 12 }}>{isAr ? 'يُقبل فقط روابط Zoom أو Google Meet' : 'Only Zoom or Google Meet links accepted'}</p>
             <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
               {[{ label: 'Zoom', check: (v: string) => v.includes('zoom.us'), color: '#2D8CFF' }, { label: 'Google Meet', check: (v: string) => v.includes('meet.google.com'), color: '#00897B' }].map(m => (
                 <div key={m.label} style={{ flex: 1, padding: '9px', borderRadius: 9, textAlign: 'center', border: `1.5px solid ${m.check(linkValue) ? m.color : border}`, background: m.check(linkValue) ? `${m.color}15` : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), transition: 'all 0.15s' }}>
-                  <span style={{ color: m.check(linkValue) ? m.color : subtext, fontSize: 11, fontWeight: 700 }}>{m.label}</span>
+                  <span style={{ color: m.check(linkValue) ? m.color : subtext, fontSize: 11, fontWeight: 500 }}>{m.label}</span>
                 </div>
               ))}
             </div>
@@ -549,7 +549,7 @@ export default function MySessionsPage() {
               <button onClick={() => setLinkModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
               <button disabled={!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com')) || addLinkMutation.isPending}
                 onClick={() => addLinkMutation.mutate({ id: linkModal.id, link: linkValue })}
-                style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 12, fontWeight: 700, cursor: (!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com'))) ? 'not-allowed' : 'pointer', opacity: (!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com')) || addLinkMutation.isPending) ? 0.5 : 1 }}>
+                style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 12, fontWeight: 600, cursor: (!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com'))) ? 'not-allowed' : 'pointer', opacity: (!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com')) || addLinkMutation.isPending) ? 0.5 : 1 }}>
                 {addLinkMutation.isPending ? (isAr ? 'جاري الإضافة...' : 'Adding...') : (isAr ? 'إضافة الرابط' : 'Add Link')}
               </button>
             </div>

@@ -222,7 +222,7 @@ export function CTASection() {
           background: var(--cta-accent) !important;
           color: #FFFFFF !important;
           font-family: "PingARLT", "Arial Black", sans-serif !important;
-          font-weight: 900 !important;
+          font-weight: 600 !important;
           font-size: 15px !important;
           padding: 14px 32px !important;
           border-radius: 14px !important;
@@ -245,7 +245,7 @@ export function CTASection() {
           background: transparent !important;
           color: var(--cta-fg) !important;
           font-family: "PingARLT", "Arial Black", sans-serif !important;
-          font-weight: 700 !important;
+          font-weight: 500 !important;
           font-size: 15px !important;
           padding: 14px 28px !important;
           border-radius: 14px !important;

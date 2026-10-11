@@ -287,7 +287,7 @@ export function TestimonialsSection({ siteConfig }: { siteConfig?: Record<string
           align-items: center;
           justify-content: center;
           font-size: 16px;
-          font-weight: 700;
+          font-weight: 600;
           color: var(--ts-fg);
           font-family: "Plus Jakarta Sans", sans-serif;
           flex-shrink: 0;
@@ -295,7 +295,7 @@ export function TestimonialsSection({ siteConfig }: { siteConfig?: Record<string
 
         .ts-name {
           font-size: 14px;
-          font-weight: 700;
+          font-weight: 600;
           color: var(--ts-fg);
           font-family: "Plus Jakarta Sans", sans-serif;
           line-height: 1.3;
