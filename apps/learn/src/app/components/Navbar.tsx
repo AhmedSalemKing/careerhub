@@ -321,9 +321,9 @@ export function Navbar() {
       <header
         className="sticky top-0 z-40 w-full transition-all duration-200"
         style={{
-          background: 'var(--background)',
+          background: 'var(--navbar-bg)',
           backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
-          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
+          borderBottom: scrolled ? '1px solid var(--navbar-border)' : '1px solid transparent',
           boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
