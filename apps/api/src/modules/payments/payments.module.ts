@@ -5,9 +5,10 @@ import { StripeService } from './stripe.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuditModule } from '../../common/services/audit.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, NotificationsModule],
+  imports: [PrismaModule, AuthModule, NotificationsModule, AuditModule],
   controllers: [PaymentsController],
   providers: [PaymentsService, StripeService],
   exports: [PaymentsService, StripeService],

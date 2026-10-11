@@ -12,13 +12,17 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ActivityService } from '../../common/services/activity.service';
 import Stripe from 'stripe';
 
 @Controller('payment')
 export class PaymentController {
   private stripe: Stripe | null = null;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly activityService: ActivityService,
+  ) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (key && !key.includes('your-stripe')) {
       this.stripe = new Stripe(key, { apiVersion: '2024-11-20.acacia' as any });
@@ -205,6 +209,25 @@ export class PaymentController {
       update: {},
       create: { userId, courseId },
     });
+
+    // Activity tracking for admin feed
+    await this.activityService.track({
+      userId,
+      action: 'ENROLL_COURSE',
+      entityType: 'Course',
+      entityId: courseId,
+      metadata: { courseTitle },
+    });
+
+    if (amount > 0) {
+      await this.activityService.track({
+        userId,
+        action: 'PAYMENT_SUCCESS',
+        entityType: 'Payment',
+        entityId: txId,
+        metadata: { amount, type: 'course', courseTitle, method },
+      });
+    }
 
     // Notification
     await this.prisma.notification

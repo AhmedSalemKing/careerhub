@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
+import { ActivityService } from '../../common/services/activity.service'
 
 export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   tech: ['برمجة','تقنية','software','tech','engineering','هندسة','developer','مطور','web','mobile','fullstack','frontend','backend','python','javascript','react','node','java','php','flutter','تطوير','كود','code','programming','ويب','موبايل','api','database','قاعدة بيانات','devops','cloud','سحابة','aws','azure','docker','kubernetes','linux','network','شبكات','typescript','vue','angular','spring','laravel'],
@@ -12,7 +13,10 @@ export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
 
 @Injectable()
 export class ConsultingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly activityService: ActivityService,
+  ) {}
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
@@ -498,6 +502,17 @@ export class ConsultingService {
         where: { id: sessionId },
         data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
       })
+      await this.activityService.track({
+        userId,
+        action: 'PAYMENT_SUCCESS',
+        entityType: 'Session',
+        entityId: sessionId,
+        metadata: {
+          amount: price,
+          type: 'consultation',
+          consultantName: `${existingSession.consultant?.profile?.firstName || ''} ${existingSession.consultant?.profile?.lastName || ''}`.trim(),
+        },
+      })
       try {
         await this.prisma.notification.create({
           data: {
@@ -546,6 +561,18 @@ export class ConsultingService {
         status: 'CONFIRMED',
       },
       include: { consultant: { include: { profile: true } } }
+    })
+
+    await this.activityService.track({
+      userId,
+      action: 'PAYMENT_SUCCESS',
+      entityType: 'Session',
+      entityId: sessionId,
+      metadata: {
+        amount: price,
+        type: 'consultation',
+        consultantName: `${session.consultant?.profile?.firstName || ''} ${session.consultant?.profile?.lastName || ''}`.trim(),
+      },
     })
 
     if (price > 0) {

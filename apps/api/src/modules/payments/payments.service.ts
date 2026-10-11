@@ -1,12 +1,16 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
+import { ActivityService } from '../../common/services/activity.service'
 import Stripe from 'stripe'
 
 @Injectable()
 export class PaymentsService {
   private stripe: Stripe
 
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private readonly activityService: ActivityService,
+  ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
       apiVersion: '2024-06-20' as any,
     })
@@ -210,7 +214,7 @@ export class PaymentsService {
       // Get course price for earnings
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
-        select: { instructorId: true, price: true }
+        select: { instructorId: true, price: true, titleAr: true, titleEn: true }
       })
       
       if (course?.instructorId && course?.price) {
@@ -245,7 +249,29 @@ export class PaymentsService {
       } catch(pe: any) {
         console.error('[ENROLL] Payment record error (non-critical):', pe.message)
       }
-      
+
+      // Track activity for admin feed
+      const coursePrice = parseFloat(course?.price?.toString() || '0')
+      const courseTitle = course?.titleAr || course?.titleEn || 'Course'
+
+      await this.activityService.track({
+        userId,
+        action: 'ENROLL_COURSE',
+        entityType: 'Course',
+        entityId: courseId,
+        metadata: { courseTitle },
+      })
+
+      if (coursePrice > 0) {
+        await this.activityService.track({
+          userId,
+          action: 'PAYMENT_SUCCESS',
+          entityType: 'Payment',
+          entityId: courseId,
+          metadata: { amount: coursePrice, type: 'course', courseTitle, method: 'stripe' },
+        })
+      }
+
       console.log('[ENROLL] Complete!')
       return true
     } catch(e: any) {
@@ -273,6 +299,14 @@ export class PaymentsService {
         `UPDATE "users" SET "earningsBalance" = COALESCE("earningsBalance", 0) + ${amount} WHERE "id" = '${consultantId}'`
       ).catch(() => {})
     }
+
+    await this.activityService.track({
+      userId,
+      action: 'PAYMENT_SUCCESS',
+      entityType: 'Session',
+      entityId: sessionId,
+      metadata: { amount, type: 'consultation', consultantId },
+    })
 
     // Notify consultant
     try {
@@ -332,6 +366,14 @@ export class PaymentsService {
         paidAt: new Date(),
         status: 'CONFIRMED',
       },
+    })
+
+    await this.activityService.track({
+      userId,
+      action: 'PAYMENT_SUCCESS',
+      entityType: 'Session',
+      entityId: sessionId,
+      metadata: { amount: (stripeSession.amount_total || 0) / 100, type: 'consultation', consultantId: metadata.consultantId },
     })
 
     // Notify consultant
