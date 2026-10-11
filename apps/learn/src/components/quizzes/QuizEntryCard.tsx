@@ -42,6 +42,9 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
       return (res?.data as any)?.data ?? null
     },
     enabled: !!lessonId,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 
   const quiz: QuizSummary | null = data
@@ -58,7 +61,8 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
   const remaining = quiz.attemptsRemaining
 
   const quizHref = `/${locale}/learn/${courseId}/quiz/${quiz.id}`
-  const resultHref = best ? `${quizHref}/result?aid=${best.id}` : quizHref
+  const resultAttempt = last ?? best
+  const resultHref = resultAttempt ? `${quizHref}/result?aid=${resultAttempt.id}` : quizHref
   const isGraded = best?.status === 'GRADED'
 
   let label = 'ابدأ الاختبار'
@@ -66,6 +70,7 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
   let Icon = Play
   let disabled = false
   let helper: string | null = null
+  let secondaryHref: string | null = null
   let onClick: () => void = () => router.push(quizHref)
 
   if (attemptCount === 0) {
@@ -96,6 +101,7 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
     disabled = true
     Icon = XCircle
     helper = 'لا يمكن إعادة المحاولة — تواصل مع المحاضر'
+    secondaryHref = resultHref
   }
 
   const btnStyle: React.CSSProperties =
@@ -164,6 +170,14 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
           </button>
           {helper && (
             <span className="text-[11px] text-[color:var(--muted)]">{helper}</span>
+          )}
+          {secondaryHref && (
+            <a
+              href={secondaryHref}
+              className="text-[11px] font-semibold text-[#5120c8] hover:opacity-80 transition-opacity duration-150"
+            >
+              عرض نتيجتك
+            </a>
           )}
         </div>
       </div>

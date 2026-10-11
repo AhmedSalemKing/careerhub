@@ -1,9 +1,9 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import { CheckCircle2, XCircle, FileText, ExternalLink, RotateCcw } from 'lucide-react'
+import { CheckCircle2, XCircle, FileText, ExternalLink, RotateCcw, Target, BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
 import { get } from '@/lib/api'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
@@ -18,6 +18,7 @@ export default function QuizResultPage() {
   const router = useRouter()
   const search = useSearchParams()
   const locale = useLocale()
+  const qc = useQueryClient()
   const courseId = params.courseId as string
   const quizId = params.quizId as string
   const aid = search.get('aid')
@@ -49,6 +50,64 @@ export default function QuizResultPage() {
     }
   }, [isLoading, isError, data, aid, router, locale, courseId, quizId])
 
+  // Refresh quiz queries so navigating back to the lesson shows fresh state.
+  useEffect(() => {
+    qc.invalidateQueries({
+      predicate: (q) =>
+        Array.isArray(q.queryKey) && q.queryKey.some((k) => String(k).includes('quiz')),
+    })
+  }, [qc])
+
+  const stats = useMemo(() => {
+    const questions: any[] = attempt?.questions ?? []
+    if (questions.length === 0) return null
+    let correct = 0
+    let wrong = 0
+    let skipped = 0
+    const needsReview: number[] = []
+    const byType: Record<string, { total: number; correct: number; pending: number }> = {}
+
+    questions.forEach((q, idx) => {
+      const t = String(q?.type || '').toUpperCase()
+      if (!byType[t]) byType[t] = { total: 0, correct: 0, pending: 0 }
+      byType[t].total++
+
+      const a = q.answer
+      const isAnswered =
+        (Array.isArray(a?.selectedChoiceIds) && a.selectedChoiceIds.length > 0) ||
+        (typeof a?.textAnswer === 'string' && a.textAnswer.trim().length > 0) ||
+        (typeof a?.fileUrl === 'string' && a.fileUrl.length > 0)
+
+      if (!isAnswered) {
+        skipped++
+        needsReview.push(idx + 1)
+        return
+      }
+      if (t === 'MCQ') {
+        if (a?.autoGrade != null && a.autoGrade > 0) {
+          correct++
+          byType[t].correct++
+        } else {
+          wrong++
+          needsReview.push(idx + 1)
+        }
+      } else if (a?.manualGrade != null) {
+        if (a.manualGrade > 0) {
+          correct++
+          byType[t].correct++
+        } else {
+          wrong++
+          needsReview.push(idx + 1)
+        }
+      } else {
+        byType[t].pending++
+        needsReview.push(idx + 1)
+      }
+    })
+
+    return { total: questions.length, correct, wrong, skipped, needsReview, byType }
+  }, [attempt])
+
   if (isLoading) {
     return (
       <div className="min-h-screen p-6" dir="rtl">
@@ -69,6 +128,12 @@ export default function QuizResultPage() {
       </div>
     )
   }
+
+  const pct = Math.round(attempt.scores.percentage)
+  const isGradedStatus = attempt.status === 'GRADED'
+  const passed = isGradedStatus ? attempt.scores.passed : null
+  const circumference = 2 * Math.PI * 48
+  const ringColor = !isGradedStatus ? '#f59e0b' : passed ? '#10b981' : '#ef4444'
 
   return (
     <div className="min-h-screen bg-[color:var(--background)] text-foreground" dir="rtl">
@@ -133,6 +198,160 @@ export default function QuizResultPage() {
             <p className="mt-4 rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-foreground">{attempt.teacherNotes}</p>
           )}
         </div>
+
+        {stats && (
+          <div
+            style={{
+              marginTop: '24px',
+              background: 'var(--card-bg)',
+              border: '1px solid var(--border)',
+              borderRadius: '16px',
+              padding: '24px',
+            }}
+          >
+            <div className="flex items-center gap-2" style={{ marginBottom: '20px' }}>
+              <Target size={20} style={{ color: '#5120c8' }} />
+              <h2 style={{ fontWeight: 800, fontSize: '17px', color: 'var(--foreground)' }}>تحليل النتيجة</h2>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-8" style={{ marginBottom: '22px' }}>
+              <div style={{ position: 'relative', width: 120, height: 120 }}>
+                <svg width={120} height={120}>
+                  <circle cx={60} cy={60} r={48} fill="none" stroke="var(--surface-2)" strokeWidth={10} />
+                  <circle
+                    cx={60}
+                    cy={60}
+                    r={48}
+                    fill="none"
+                    stroke={ringColor}
+                    strokeWidth={10}
+                    strokeLinecap="round"
+                    strokeDasharray={`${(pct / 100) * circumference} ${circumference}`}
+                    transform="rotate(-90 60 60)"
+                  />
+                </svg>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: 'var(--foreground)' }}>{pct}%</span>
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>النسبة</span>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  className="flex items-center gap-2"
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '999px',
+                    fontWeight: 800,
+                    fontSize: '14px',
+                    background: !isGradedStatus ? 'rgba(245,158,11,0.12)' : passed ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                    color: !isGradedStatus ? '#f59e0b' : passed ? '#10b981' : '#ef4444',
+                  }}
+                >
+                  {!isGradedStatus ? <AlertCircle size={16} /> : passed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                  {!isGradedStatus ? 'بانتظار المراجعة' : passed ? 'نجحت' : 'لم تنجح'}
+                </div>
+                <p style={{ marginTop: 10, fontSize: 12, color: 'var(--muted)' }}>
+                  درجة النجاح: {attempt.quiz.passingScore}%
+                </p>
+              </div>
+            </div>
+
+            {attempt.status === 'SUBMITTED' && (
+              <div
+                className="flex items-start gap-2"
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  background: 'rgba(81,32,200,0.06)',
+                  border: '1px solid rgba(81,32,200,0.2)',
+                  marginBottom: '20px',
+                  fontSize: '13px',
+                  color: 'var(--foreground)',
+                }}
+              >
+                <AlertCircle size={16} style={{ color: '#5120c8', flexShrink: 0, marginTop: 2 }} />
+                <span>
+                  بعض الأسئلة تحتاج مراجعة يدوية. الإحصائيات أدناه تعرض الأسئلة التلقائية فقط — سيتم إشعارك عند اكتمال التصحيح.
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+              <BarChart3 size={16} style={{ color: '#5120c8' }} />
+              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>إحصائيات</h3>
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '10px',
+                marginBottom: '22px',
+              }}
+            >
+              {[
+                { label: 'إجمالي الأسئلة', value: stats.total, color: 'var(--foreground)' },
+                { label: 'صحيحة', value: stats.correct, color: '#10b981' },
+                { label: 'خاطئة', value: stats.wrong, color: '#ef4444' },
+                { label: 'بدون إجابة', value: stats.skipped, color: 'var(--muted)' },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '12px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+              <TrendingUp size={16} style={{ color: '#5120c8' }} />
+              <h3 style={{ fontWeight: 700, fontSize: '14px', color: 'var(--foreground)' }}>حسب نوع السؤال</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '22px' }}>
+              {Object.entries(stats.byType).map(([type, t]) => {
+                const typePct = t.total > 0 ? Math.round((t.correct / t.total) * 100) : 0
+                return (
+                  <div key={type} className="flex items-center justify-between gap-3" style={{ fontSize: '13px' }}>
+                    <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{TYPE_LABEL[type] ?? type}</span>
+                    <span style={{ color: 'var(--muted)' }}>
+                      {t.correct}/{t.total} صحيحة ({typePct}%)
+                      {t.pending > 0 && ` · ${t.pending} بانتظار المراجعة`}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div
+              style={{
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: '12px',
+                padding: '14px',
+              }}
+            >
+              <div className="flex items-center gap-2" style={{ marginBottom: '6px' }}>
+                <AlertCircle size={16} style={{ color: '#5120c8' }} />
+                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--foreground)' }}>توصيات</span>
+              </div>
+              {stats.needsReview.length > 0 ? (
+                <p style={{ fontSize: '13px', color: 'var(--muted)', lineHeight: 1.7 }}>
+                  راجع الأسئلة: {stats.needsReview.join('، ')}
+                </p>
+              ) : (
+                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>أداء ممتاز — لا توجد أسئلة تحتاج مراجعة.</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mt-6 space-y-5">
           {attempt.questions.map((q: any, index: number) => {

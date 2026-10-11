@@ -248,6 +248,16 @@ export default function TakeQuizPage() {
         }
       }
       await post(`/quizzes/attempts/${attemptId}/submit`)
+      // Refresh every quiz-related query so the lesson entry card reflects the
+      // new attempt state immediately (no 5-minute stale window).
+      await qc.invalidateQueries({ queryKey: ['lesson-quiz-active'] })
+      await qc.invalidateQueries({ queryKey: ['student-quiz-meta', quizId] })
+      await qc.invalidateQueries({ queryKey: ['student-attempt-mine'] })
+      await qc.invalidateQueries({ queryKey: ['student-attempt-result'] })
+      await qc.invalidateQueries({
+        predicate: (q) =>
+          Array.isArray(q.queryKey) && q.queryKey.some((k) => String(k).includes('quiz')),
+      })
       toast.success('تم تسليم الاختبار')
       router.push(`/${locale}/learn/${courseId}/quiz/${quizId}/result?aid=${attemptId}`)
     } catch (e: any) {

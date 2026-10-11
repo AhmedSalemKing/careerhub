@@ -796,16 +796,19 @@ export class QuizzesService implements OnModuleInit {
             passed: true,
             startedAt: true,
             submittedAt: true,
+            createdAt: true,
           },
         })
       : [];
 
-    const attemptCount = attempts.length;
-    const graded = attempts.filter((a) => a.status === 'GRADED');
+    // Abandoned attempts never count against the retake cap.
+    const activeAttempts = attempts.filter((a) => a.status !== 'ABANDONED');
+    const attemptCount = activeAttempts.length;
+    const graded = activeAttempts.filter((a) => a.status === 'GRADED');
     const bestAttempt = graded.length
       ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
       : null;
-    const lastAttempt = attempts[0] ?? null;
+    const lastAttempt = activeAttempts[0] ?? null;
 
     return {
       id: quiz.id,
@@ -846,7 +849,36 @@ export class QuizzesService implements OnModuleInit {
     if (!enrollment) {
       throw new ForbiddenException('You must be enrolled in this course to take the quiz');
     }
-    return this.toStudentSnapshot(quiz, quiz.shuffleQuestions, quiz.shuffleChoices);
+
+    const attempts = await this.prisma.quizAttempt.findMany({
+      where: { quizId, userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        percentage: true,
+        passed: true,
+        startedAt: true,
+        submittedAt: true,
+        createdAt: true,
+      },
+    });
+    const activeAttempts = attempts.filter((a) => a.status !== 'ABANDONED');
+    const attemptCount = activeAttempts.length;
+    const graded = activeAttempts.filter((a) => a.status === 'GRADED');
+    const bestAttempt = graded.length
+      ? graded.slice().sort((a, b) => b.percentage - a.percentage)[0]
+      : null;
+    const lastAttempt = activeAttempts[0] ?? null;
+
+    return {
+      ...this.toStudentSnapshot(quiz, quiz.shuffleQuestions, quiz.shuffleChoices),
+      attemptCount,
+      attemptsRemaining: this.attemptsRemaining(quiz, attemptCount),
+      canRetake: this.canRetake(quiz, bestAttempt, attemptCount),
+      bestAttempt,
+      lastAttempt,
+    };
   }
 
   async getStudentGrades(
@@ -1303,8 +1335,10 @@ export class QuizzesService implements OnModuleInit {
       orderBy: { createdAt: 'desc' },
       select: { id: true, status: true, percentage: true, passed: true },
     });
-    const attemptCount = userAttempts.length;
-    const gradedAttempts = userAttempts.filter((a) => a.status === 'GRADED');
+    // Abandoned attempts never count against the retake cap.
+    const activeAttempts = userAttempts.filter((a) => a.status !== 'ABANDONED');
+    const attemptCount = activeAttempts.length;
+    const gradedAttempts = activeAttempts.filter((a) => a.status === 'GRADED');
     const bestAttempt = gradedAttempts.length
       ? gradedAttempts.slice().sort((a, b) => b.percentage - a.percentage)[0]
       : null;
