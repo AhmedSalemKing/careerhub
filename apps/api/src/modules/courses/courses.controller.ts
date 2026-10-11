@@ -244,6 +244,7 @@ export class CoursesController {
   }
 
   @Get(':slug')
+  @UseGuards(OptionalJwtGuard)
   @ApiOperation({ summary: 'Get course by slug or ID' })
   @ApiResponse({ status: 200, description: 'Course retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Course not found' })
@@ -254,12 +255,15 @@ export class CoursesController {
     @Query('language') language?: string,
     @Request() req?: any,
   ) {
+    const viewer = req?.user
+      ? { id: req.user.sub || req.user.id, role: req.user.role }
+      : undefined;
     // Try by ID first (cuid format), then fall back to slug
     const isCuid = /^c[a-z0-9]{24,}$/.test(slug);
     let courseData: any;
     if (isCuid) {
       try {
-        courseData = await this.coursesService.getCourseById(slug);
+        courseData = await this.coursesService.getCourseById(slug, viewer);
       } catch {
         // fall through to slug lookup
       }
@@ -288,6 +292,7 @@ export class CoursesController {
   }
 
   @Get(':id/lessons')
+  @UseGuards(OptionalJwtGuard)
   @ApiOperation({ summary: 'Get course lessons' })
   @ApiResponse({ status: 200, description: 'Lessons retrieved successfully' })
   @ApiParam({ name: 'id', description: 'Course ID' })
@@ -295,8 +300,12 @@ export class CoursesController {
   async getCourseLessons(
     @Param('id') id: string,
     @Query('language') language?: string,
+    @Request() req?: any,
   ) {
-    const lessons = await this.coursesService.getCourseLessons(id, language || 'en');
+    const viewer = req?.user
+      ? { id: req.user.sub || req.user.id, role: req.user.role }
+      : undefined;
+    const lessons = await this.coursesService.getCourseLessons(id, language || 'en', viewer);
     return {
       success: true,
       data: { lessons },

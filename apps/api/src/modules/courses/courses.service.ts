@@ -767,7 +767,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     }
   }
 
-  async getCourseById(id: string) {
+  async getCourseById(id: string, viewer?: { id?: string; role?: string }) {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
@@ -800,7 +800,51 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       throw new NotFoundException('Course not found');
     }
 
-    return course;
+    const viewerId = viewer?.id;
+    const isOwner = !!viewerId && (course as any).instructorId === viewerId;
+    const isAdmin = viewer?.role === 'ADMIN';
+
+    let isEnrolled = false;
+    if (viewerId && !isOwner && !isAdmin) {
+      const enrollment = await this.prisma.enrollment.findFirst({
+        where: { userId: viewerId, courseId: id },
+        select: { id: true },
+      });
+      isEnrolled = !!enrollment;
+    }
+
+    if (isOwner || isAdmin || isEnrolled) {
+      return { ...(course as any), isEnrolled };
+    }
+
+    return {
+      ...(course as any),
+      isEnrolled: false,
+      sections: ((course as any).sections ?? []).map((section: any) => ({
+        ...section,
+        lessons: (Array.isArray(section.lessons) ? section.lessons : []).map(
+          (lesson: any) => this.toLessonPreview(lesson),
+        ),
+      })),
+    };
+  }
+
+  private toLessonPreview(lesson: any) {
+    return {
+      id: lesson.id,
+      moduleId: lesson.moduleId,
+      sectionId: lesson.sectionId,
+      title: lesson.title,
+      titleAr: lesson.titleAr,
+      description: lesson.description,
+      descriptionAr: lesson.descriptionAr,
+      type: lesson.type,
+      videoDuration: lesson.videoDuration,
+      isFree: lesson.isFree,
+      order: lesson.order,
+      isPublished: lesson.isPublished,
+      locked: !lesson.isFree,
+    };
   }
 
   async getCourseBySlug(slug: string, language: string = 'en') {
@@ -881,7 +925,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     };
   }
 
-  async getCourseLessons(courseId: string, language: string = 'en') {
+  async getCourseLessons(courseId: string, language: string = 'en', viewer?: { id?: string; role?: string }) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: {
@@ -900,6 +944,19 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       throw new NotFoundException('Course not found');
     }
 
+    const viewerId = viewer?.id;
+    const isOwner = !!viewerId && (course as any).instructorId === viewerId;
+    const isAdmin = viewer?.role === 'ADMIN';
+    let isEnrolled = false;
+    if (viewerId && !isOwner && !isAdmin) {
+      const enrollment = await this.prisma.enrollment.findFirst({
+        where: { userId: viewerId, courseId: courseId },
+        select: { id: true },
+      });
+      isEnrolled = !!enrollment;
+    }
+    const canViewContent = isOwner || isAdmin || isEnrolled;
+
     return (course as any).modules.map(module => ({
       id: module.id,
       title: language === 'ar' ? module.titleAr : module.titleEn,
@@ -909,8 +966,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         id: lesson.id,
         title: language === 'ar' ? lesson.titleAr : lesson.titleEn,
         description: language === 'ar' ? lesson.descriptionAr : lesson.descriptionEn,
-        content: language === 'ar' ? lesson.contentAr : lesson.contentEn,
-        videoUrl: lesson.videoUrl,
+        content: canViewContent
+          ? language === 'ar' ? lesson.contentAr : lesson.contentEn
+          : null,
+        videoUrl: canViewContent ? lesson.videoUrl : null,
         videoDuration: lesson.videoDuration,
         sortOrder: lesson.sortOrder,
         isPublished: lesson.isPublished,

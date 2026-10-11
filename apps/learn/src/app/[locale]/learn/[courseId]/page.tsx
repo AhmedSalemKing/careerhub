@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
+import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
 import { useAuthStore } from "../../../../stores/authStore";
 
 	function LearnPageInner() {
@@ -225,17 +226,22 @@ import { useAuthStore } from "../../../../stores/authStore";
 		},
 	});
 
-	const { data: enrollment, refetch: refetchEnrollment } = useQuery({
+	const {
+		data: enrollment,
+		isLoading: enrollmentLoading,
+		refetch: refetchEnrollment,
+	} = useQuery({
 		queryKey: ["learn-enrollment", courseId],
 		enabled: !!courseId && authChecked,
 		queryFn: async () => {
 			try {
 				const res = await get(`/courses/${courseId}/enrollment`);
-				return (
-					(res?.data as any)?.data?.enrollment ??
-					(res?.data as any)?.data ??
-					null
-				);
+				const payload = (res?.data as any)?.data;
+				// Backend returns { enrollment: <object|null> }. Do NOT fall back to
+				// the wrapper object — `{ enrollment: null }` is truthy and would
+				// wrongly mark a non-enrolled student as enrolled.
+				const e = payload?.enrollment ?? null;
+				return e && typeof e === "object" ? e : null;
 			} catch {
 				return null;
 			}
@@ -941,66 +947,8 @@ import { useAuthStore } from "../../../../stores/authStore";
 		);
 	}
 
-	if (!isEnrolled && enrollment === null) {
-		return (
-			<div
-				className="flex min-h-screen items-center justify-center p-6"
-				dir="rtl"
-				style={{ background: bg }}>
-				<div className="text-center max-w-lg">
-					<div className="relative mx-auto mb-8">
-						<div
-							className="h-28 w-28 rounded-3xl flex items-center justify-center mx-auto"
-							style={{
-								background: `${purple}15`,
-							}}>
-							<Lock className="h-14 w-14" style={{ color: purple }} />
-						</div>
-					</div>
-
-					<h2
-						className="text-3xl font-bold mb-4"
-						style={{ color: textPrimary }}>
-						الكورس مقيّد
-					</h2>
-					<p
-						className="mb-8 text-base leading-relaxed max-w-md mx-auto"
-						style={{ color: textSecondary }}>
-						يجب الاشتراك في هذا الكورس للوصول إلى المحتوى التعليمي المميز
-					</p>
-
-					<a
-						href={`${MAIN_URL}/${locale}/checkout/${courseId}`}
-						className="group inline-flex items-center gap-3 rounded-2xl px-8 py-4 font-bold text-white transition-all duration-300 hover:shadow-2xl"
-						style={{
-							background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
-							boxShadow: `0 10px 40px ${purple}40`,
-						}}>
-						<ShoppingCart className="h-5 w-5" />
-						<span>اشترك الآن</span>
-						<ArrowLeft className="h-5 w-5" />
-					</a>
-
-					{/* Trust badges */}
-					<div
-						className="mt-8 flex justify-center gap-6 text-xs"
-						style={{ color: textSecondary }}>
-						<div className="flex items-center gap-1.5">
-							<ShieldCheck className="h-4 w-4" style={{ color: green }} />
-							<span>دفع آمن</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<Clock className="h-4 w-4" style={{ color: blueColor }} />
-							<span>وصول فوري</span>
-						</div>
-						<div className="flex items-center gap-1.5">
-							<Award className="h-4 w-4" style={{ color: amberColor }} />
-							<span>شهادة معتمدة</span>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
+	if (!isEnrolled && !enrollmentLoading) {
+		return <NotEnrolledPage courseId={courseId} locale={locale} />;
 	}
 
 	return (
