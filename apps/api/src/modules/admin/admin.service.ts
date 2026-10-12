@@ -2136,46 +2136,46 @@ export class AdminService {
   // ── User financials ──
   async getUserFinancials(userId: string) {
     try {
-      const [user, enrollments, payments] = await Promise.all([
+      const [user, enrollments, payments, createdCourses] = await Promise.all([
         this.prisma.user.findUnique({
           where: { id: userId },
           include: { profile: true }
-        }),
+        }).catch(() => null),
         this.prisma.enrollment.findMany({
           where: { userId },
           include: { course: { select: { id: true, titleAr: true, titleEn: true, thumbnail: true, price: true } } },
-          take: 20,
-        }),
+          orderBy: { enrolledAt: 'desc' },
+          take: 50,
+        }).catch(() => []),
         this.prisma.payment.findMany({
           where: { userId },
           orderBy: { createdAt: 'desc' }
-        }),
-      ])
-      
-      const totalSpent = (payments || []).reduce((s: number, p: any) => s + (p.amount || 0), 0)
-      
-      let totalEarnings = 0
-      if (user?.accountType === 'INSTRUCTOR') {
-        const courses = await this.prisma.course.findMany({
+        }).catch(() => []),
+        this.prisma.course.findMany({
           where: { instructorId: userId },
-          select: { id: true }
-        }).catch(() => [])
-        
-        if (courses.length > 0) {
-          const earnings = await this.prisma.payment.aggregate({
-            where: { courseId: { in: courses.map(c => c.id) } },
-            _sum: { amount: true }
-          }).catch(() => ({ _sum: { amount: 0 } }))
-          totalEarnings = Number(earnings._sum?.amount) || 0
-        }
+          select: { id: true, titleAr: true, titleEn: true, thumbnail: true, price: true, status: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        }).catch(() => []),
+      ])
+
+      const totalSpent = (payments || []).reduce((s: number, p: any) => s + (p.amount || 0), 0)
+
+      let totalEarnings = 0
+      if (user?.accountType === 'INSTRUCTOR' && (createdCourses?.length ?? 0) > 0) {
+        const earnings = await this.prisma.payment.aggregate({
+          where: { courseId: { in: createdCourses.map((c: any) => c.id) } },
+          _sum: { amount: true }
+        }).catch(() => ({ _sum: { amount: 0 } }))
+        totalEarnings = Number(earnings._sum?.amount) || 0
       }
-      
+
       const walletTx = await this.prisma.walletTransaction.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 10,
       }).catch(() => [])
-      
+
       return {
         success: true,
         data: {
@@ -2185,8 +2185,10 @@ export class AdminService {
           paymentsCount: (payments || []).length,
           enrollmentsCount: (enrollments || []).length,
           enrollments: enrollments || [],
-          walletBalance: user?.walletBalance || 0,
+          createdCourses: createdCourses || [],
+          payments: payments || [],
           recentPayments: (payments || []).slice(0, 5),
+          walletBalance: user?.walletBalance || 0,
           walletTransactions: walletTx,
         }
       }

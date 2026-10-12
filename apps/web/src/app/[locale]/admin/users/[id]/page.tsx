@@ -106,14 +106,15 @@ export default function UserDetailPage() {
   })
 
   const user = userData?.user
-  const enrollments = financials?.enrollments || []
-  const payments = financials?.payments || []
+  const enrollments = financials?.enrollments || userData?.enrollments || []
+  const createdCourses = financials?.createdCourses || []
+  const payments = financials?.payments || financials?.recentPayments || []
   const activities = activityData || userData?.activities || []
 
   const totalPaid = payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
   const totalEarnings = financials?.totalEarnings || 0
   const walletBalance = financials?.walletBalance || 0
-  const coursesCount = enrollments.length
+  const coursesCount = enrollments.length + createdCourses.length
 
   const stats = [
     { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: formatCurrency(totalPaid, isAr), color: '#2BBFA3' },
@@ -298,37 +299,85 @@ export default function UserDetailPage() {
       {activeTab === 'courses' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-            {enrollments.length === 0 ? (
+            {enrollments.length === 0 && createdCourses.length === 0 ? (
               <div style={{ gridColumn: '1 / -1', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
                 <GraduationCap size={40} color="var(--muted-foreground)" style={{ marginBottom: 12 }} />
                 <p style={{ color: 'var(--muted)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>
-                  {isAr ? 'لا توجد كورسات مسجلة' : 'No enrolled courses'}
+                  {isAr ? 'لا توجد كورسات' : 'No courses'}
                 </p>
               </div>
-            ) : enrollments.map((enroll: any, i: number) => (
-              <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-                <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {enroll.course?.thumbnail ? (
-                    <img src={enroll.course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <BookOpen size={32} color="var(--muted-foreground)" />
-                  )}
-                </div>
-                <div style={{ padding: 16 }}>
-                  <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
-                    {isAr ? enroll.course?.titleAr : enroll.course?.titleEn}
-                  </h4>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
-                      {formatDate(enroll.enrolledAt, isAr)}
-                    </span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3', fontFamily: 'DM Sans, sans-serif' }}>
-                      {formatCurrency(enroll.course?.price || 0, isAr)}
-                    </span>
+            ) : (
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                {enrollments.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <GraduationCap size={14} color="#A78BFA" />
+                      {isAr ? 'الكورسات المسجلة' : 'Enrolled Courses'}
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                      {enrollments.map((enroll: any, i: number) => (
+                        <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+                          <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {enroll.course?.thumbnail ? (
+                              <img src={enroll.course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <BookOpen size={32} color="var(--muted-foreground)" />
+                            )}
+                          </div>
+                          <div style={{ padding: 16 }}>
+                            <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
+                              {isAr ? enroll.course?.titleAr : enroll.course?.titleEn}
+                            </h4>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
+                                {formatDate(enroll.enrolledAt, isAr)}
+                              </span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3', fontFamily: 'DM Sans, sans-serif' }}>
+                                {formatCurrency(enroll.course?.price || 0, isAr)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+                {createdCourses.length > 0 && (
+                  <div>
+                    <h3 style={{ margin: '0 0 16px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <BookOpen size={14} color="#A78BFA" />
+                      {isAr ? 'الكورسات المنشأة' : 'Created Courses'}
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+                      {createdCourses.map((course: any, i: number) => (
+                        <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
+                          <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {course.thumbnail ? (
+                              <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <BookOpen size={32} color="var(--muted-foreground)" />
+                            )}
+                          </div>
+                          <div style={{ padding: 16 }}>
+                            <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
+                              {isAr ? course.titleAr : course.titleEn}
+                            </h4>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>
+                                {course.status}
+                              </span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3', fontFamily: 'DM Sans, sans-serif' }}>
+                                {formatCurrency(course.price || 0, isAr)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
