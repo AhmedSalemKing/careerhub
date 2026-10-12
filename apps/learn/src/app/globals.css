@@ -35,6 +35,22 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'PingARLT-Medium';
+    src: url('/fonts/alfont_com_PingARLT-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'PingARLT-Light';
+    src: url('/fonts/alfont_com_PingARLT-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ══════════════════════════════════════
    DESIGN TOKENS — LIGHT MODE
    Pure White Theme • Clean & Minimal
@@ -118,6 +134,8 @@
     --font-display: "Plus Jakarta Sans", sans-serif;
     --font-body: 'PingARLT', 'Arial Black', 'sans-serif';
     --font-brand: "PingARLT", "Arial Black", sans-serif;
+    --font-medium: "PingARLT-Medium", "PingARLT", sans-serif;
+    --font-light: "PingARLT-Light", "PingARLT", sans-serif;
 
     /* ── Radius ── */
     --radius-sm: 8px;

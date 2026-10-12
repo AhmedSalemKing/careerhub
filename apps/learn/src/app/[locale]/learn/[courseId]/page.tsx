@@ -897,7 +897,7 @@ function MetaItem({
 						padding: '2px 7px', borderRadius: '10px',
 						background: isActive ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
 						border: `1px solid ${isActive ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.2)'}`,
-						color: '#f87171', fontSize: '0.68rem', fontWeight: 600,
+						color: '#f87171', fontSize: '0.68rem', fontWeight: 500,
 						whiteSpace: 'nowrap',
 					}}>
 					<span
@@ -924,7 +924,7 @@ function MetaItem({
 					style={{
 						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
 						background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.2)',
-						color: '#fbbf24', fontWeight: 600,
+						color: '#fbbf24', fontWeight: 500,
 					}}>
 					{isAr ? 'ملف' : 'PDF'}
 				</span>
@@ -937,7 +937,7 @@ function MetaItem({
 					style={{
 						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
 						background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
-						color: '#4ade80', fontWeight: 600,
+						color: '#4ade80', fontWeight: 500,
 					}}>
 					{isAr ? 'صورة' : 'Image'}
 				</span>
@@ -1005,7 +1005,7 @@ function MetaItem({
 						<GraduationCap className="h-8 w-8" style={{ color: purple }} />
 					</div>
 					<h3
-						className="text-lg font-semibold mb-2"
+						className="text-lg font-medium mb-2"
 						style={{ color: textPrimary }}>
 						{t('loading')}
 					</h3>
@@ -1089,8 +1089,8 @@ function MetaItem({
 										/>
 									</div>
 									<h2
-										className="font-semibold truncate text-sm lg:text-base"
-										style={{ color: textPrimary }}>
+										className="font-medium truncate text-sm lg:text-base"
+										style={{ color: textPrimary, fontFamily: "var(--font-medium)" }}>
 										{course?.titleAr || course?.titleEn || course?.title}
 									</h2>
 								</div>
@@ -1105,7 +1105,7 @@ function MetaItem({
 										}}>
 										<TrendingUp className="h-4 w-4" style={{ color: green }} />
 										<span
-											className="text-sm font-semibold"
+											className="text-sm font-medium"
 											style={{ color: green }}>
 											{progress}%
 										</span>
@@ -1125,7 +1125,7 @@ function MetaItem({
 											style={{ color: purple }}
 										/>
 										<span
-											className="text-sm font-semibold"
+											className="text-sm font-medium"
 											style={{ color: textPrimary }}>
 											{completedCount}/{totalLessons}
 										</span>
@@ -1217,6 +1217,7 @@ function MetaItem({
 										style={{
 											fontSize: 13,
 											fontWeight: 500,
+											fontFamily: "var(--font-medium)",
 											color: "var(--muted)",
 										}}>
 										{isAr ? "العودة للكورس" : "Back to course"}
@@ -1288,7 +1289,8 @@ function MetaItem({
 										<span
 											style={{
 												fontSize: 24,
-												fontWeight: 700,
+												fontWeight: 500,
+												fontFamily: "var(--font-medium)",
 												color: "var(--foreground)",
 											}}>
 											{progressPercent}%
@@ -1301,7 +1303,8 @@ function MetaItem({
 									<span
 										style={{
 											fontSize: 14,
-											fontWeight: 600,
+											fontWeight: 500,
+											fontFamily: "var(--font-medium)",
 											color: "var(--foreground)",
 										}}>
 										{progressPercent === 100
@@ -1340,6 +1343,8 @@ function MetaItem({
 										display: "flex",
 										justifyContent: "space-between",
 										fontSize: 12,
+										fontWeight: 300,
+										fontFamily: "var(--font-light)",
 										color: "var(--muted)",
 									}}>
 									<span>
@@ -1365,6 +1370,7 @@ function MetaItem({
 										color: "var(--foreground)",
 										fontSize: "0.82rem",
 										fontWeight: 500,
+										fontFamily: "var(--font-medium)",
 										textDecoration: "none",
 									}}>
 									<Award size={14} style={{ color: "var(--primary)" }} />
@@ -1395,7 +1401,8 @@ function MetaItem({
 							<h3
 								style={{
 									fontSize: 15,
-									fontWeight: 800,
+									fontWeight: 900,
+									fontFamily: "var(--font-brand)",
 									color: "var(--foreground)",
 									margin: 0,
 								}}>
@@ -1432,21 +1439,22 @@ function MetaItem({
 													background: openSections.has(section.id) ? 'rgba(81,32,200,0.2)' : 'rgba(255,255,255,0.06)',
 													color: openSections.has(section.id) ? '#a78bfa' : '#666680',
 													display: 'flex', alignItems: 'center', justifyContent: 'center',
-													fontSize: '0.68rem', fontWeight: 600, flexShrink: 0,
+													fontSize: '0.68rem', fontWeight: 500, flexShrink: 0,
 													transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
 												}}>
 												{sectionIndex + 1}
 											</span>
 											<span
 												style={{
-													fontSize: '0.82rem', fontWeight: 500,
+													fontSize: '13px', fontWeight: 500,
+													fontFamily: 'var(--font-medium)',
 													color: 'var(--foreground)',
 												}}>
 												{section.title || section.titleAr || `Section ${sectionIndex + 1}`}
 											</span>
 										</div>
 										<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-											<span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 400 }}>
+											<span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 300, fontFamily: 'var(--font-light)' }}>
 												{sectionLessons.length} {isAr ? 'دروس' : 'lessons'}
 											</span>
 											<ChevronDown
@@ -1522,6 +1530,7 @@ function MetaItem({
 															className="text-[13px] truncate leading-tight"
 															style={{
 																fontWeight: 500,
+																fontFamily: "var(--font-medium)",
 																color: isActive
 																	? "var(--primary)"
 																	: status === "locked"
@@ -1535,7 +1544,7 @@ function MetaItem({
 
 													<div
 														className="flex items-center gap-2 text-[11px]"
-														style={{ color: textSecondary }}>
+														style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
 														{lesson.duration && (
 															<span className="flex items-center gap-1">
 																<Clock size={10} />
@@ -1547,7 +1556,7 @@ function MetaItem({
 
 												{/* Lesson Number Badge */}
 												<div
-													className="flex items-center justify-center shrink-0 text-xs font-semibold"
+													className="flex items-center justify-center shrink-0 text-xs font-medium"
 													style={{
 														width: "22px",
 														height: "22px",
@@ -1609,7 +1618,8 @@ function MetaItem({
 							<h1
 								style={{
 									fontSize: 24,
-									fontWeight: 800,
+									fontWeight: 900,
+									fontFamily: "var(--font-brand)",
 									color: "var(--foreground)",
 									margin: "0 0 6px",
 								}}>
@@ -1621,6 +1631,8 @@ function MetaItem({
 								<p
 									style={{
 										fontSize: 13,
+										fontWeight: 300,
+										fontFamily: "var(--font-light)",
 										color: "var(--muted)",
 										margin: "0 0 14px",
 										lineHeight: 1.6,
@@ -1639,7 +1651,8 @@ function MetaItem({
 									flexWrap: "wrap",
 									alignItems: "center",
 									fontSize: 12,
-									fontWeight: 500,
+									fontWeight: 300,
+									fontFamily: "var(--font-light)",
 									color: "var(--muted)",
 								}}>
 								<span>
@@ -1694,7 +1707,8 @@ function MetaItem({
 											style={{
 												color: "#fff",
 												fontSize: 13,
-												fontWeight: 600,
+												fontWeight: 500,
+												fontFamily: "var(--font-medium)",
 												overflow: "hidden",
 												textOverflow: "ellipsis",
 												whiteSpace: "nowrap",
@@ -1702,7 +1716,7 @@ function MetaItem({
 											{currentLesson?.title || course?.titleAr}
 										</div>
 									</div>
-									<span style={{ color: "#6b7280", fontSize: 11 }}>
+									<span style={{ color: "#6b7280", fontSize: 11, fontWeight: 300, fontFamily: "var(--font-light)" }}>
 										{activeLessonIndex + 1}/{totalLessons}
 									</span>
 								</div>
@@ -1743,10 +1757,10 @@ function MetaItem({
 														border: 'none',
 														borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
 														color: activeTab === tab.id ? 'var(--primary)' : 'var(--muted)',
-														fontSize: 13, fontWeight: 600,
+														fontSize: 13, fontWeight: 500,
+														fontFamily: 'var(--font-medium)',
 														cursor: 'pointer',
 														transition: 'all 0.15s ease',
-														fontFamily: 'inherit',
 													}}>
 													{tab.icon}
 													{tab.label}
@@ -1849,7 +1863,9 @@ function MetaItem({
 																	style={{ color: redColor }}
 																/>
 															</div>
-															<h3 className="text-white font-bold text-lg mb-2">
+															<h3
+																className="text-white text-lg mb-2"
+																style={{ fontWeight: 500, fontFamily: "var(--font-medium)" }}>
 																خطأ في التشغيل
 															</h3>
 															<p className="text-white/60 text-sm mb-6">
@@ -1913,13 +1929,13 @@ function MetaItem({
 															padding: '6px 11px',
 															borderRadius: '9px',
 															fontSize: '12px',
-															fontWeight: 600,
+															fontWeight: 500,
 															cursor: 'pointer',
 															transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease',
 															background: playbackRate === speed ? '#5120C8' : 'transparent',
 															color: playbackRate === speed ? '#fff' : '#94a3b8',
 															boxShadow: playbackRate === speed ? '0 4px 12px rgba(81,32,200,0.35)' : 'none',
-															fontFamily: 'inherit',
+															fontFamily: 'var(--font-medium)',
 														}}
 													>
 														{speed === 1 ? '1x' : `${speed}x`}
@@ -1947,7 +1963,7 @@ function MetaItem({
 											<a href={fileUrl} target="_blank" rel="noopener noreferrer"
 												style={{
 													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
-													fontWeight: 600, background: '#5120c8', color: 'white',
+													fontWeight: 500, fontFamily: 'var(--font-medium)', background: '#5120c8', color: 'white',
 													textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px',
 												}}>
 												<Eye size={16} />
@@ -1956,7 +1972,7 @@ function MetaItem({
 											<a href={buildDownloadUrl(fileUrl, fileName)} download
 												style={{
 													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
-													fontWeight: 600, background: 'transparent', color: '#a78bfa',
+													fontWeight: 500, fontFamily: 'var(--font-medium)', background: 'transparent', color: '#a78bfa',
 													border: `1px solid #5120c8`, textDecoration: 'none',
 													display: 'flex', alignItems: 'center', gap: '6px',
 												}}>
@@ -1968,10 +1984,10 @@ function MetaItem({
 													onClick={() => setPdfReachedEnd(true)}
 													style={{
 														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
-														fontWeight: 600, background: 'rgba(34,197,94,0.15)', color: '#4ade80',
+														fontWeight: 500, fontFamily: 'var(--font-medium)', background: 'rgba(34,197,94,0.15)', color: '#4ade80',
 														border: '1px solid rgba(34,197,94,0.3)',
 														display: 'flex', alignItems: 'center', gap: '6px',
-														cursor: 'pointer', fontFamily: 'inherit',
+														cursor: 'pointer',
 													}}>
 													<CheckCircle2 size={16} />
 													{isAr ? 'وصلت إلى آخر صفحة' : 'I reached the last page'}
@@ -2056,7 +2072,7 @@ function MetaItem({
 													position: 'absolute', top: '16px', right: '16px',
 													display: 'flex', alignItems: 'center', gap: '6px',
 													background: '#ef4444', padding: '4px 12px',
-													borderRadius: '20px', color: '#fff', fontWeight: 600, fontSize: '0.8rem',
+													borderRadius: '20px', color: '#fff', fontWeight: 500, fontFamily: 'var(--font-medium)', fontSize: '0.8rem',
 												}}>
 													<span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }}/>
 													LIVE
@@ -2078,13 +2094,13 @@ function MetaItem({
 											</div>
 
 											{/* Title */}
-											<p style={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem', textAlign: 'center', padding: '0 2rem' }}>
+											<p style={{ color: '#fff', fontWeight: 500, fontFamily: 'var(--font-medium)', fontSize: '1.1rem', textAlign: 'center', padding: '0 2rem' }}>
 												{activeLesson?.title || (isAr ? t('liveLabel') : 'Live Session')}
 											</p>
 
 											{isLive ? (
 												<>
-													<p style={{ color: '#fca5a5', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
+													<p style={{ color: '#fca5a5', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
 														{isAr ? t('liveNow') : 'Stream is live — join before it ends'}
 													</p>
 													<a
@@ -2093,7 +2109,7 @@ function MetaItem({
 															display: 'inline-flex', alignItems: 'center', gap: '10px',
 															padding: '14px 32px', borderRadius: '10px',
 															background: '#ef4444', color: '#fff',
-															fontWeight: 700, fontSize: '1rem',
+															fontWeight: 500, fontFamily: 'var(--font-medium)', fontSize: '1rem',
 															textDecoration: 'none',
 															boxShadow: '0 0 20px rgba(239,68,68,0.5)',
 														}}>
@@ -2104,7 +2120,7 @@ function MetaItem({
 											) : (
 												<>
 													{activeLesson?.liveStartTime && (
-														<p style={{ color: '#c4b5fd', fontSize: '0.9rem' }}>
+														<p style={{ color: '#c4b5fd', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.9rem' }}>
 															{isAr ? 'موعد البث: ' : 'Scheduled: '}
 															{new Date(activeLesson.liveStartTime).toLocaleString(
 																isAr ? 'ar-SA' : 'en-US',
@@ -2119,12 +2135,12 @@ function MetaItem({
 															padding: '12px 28px', borderRadius: '10px',
 															background: 'rgba(81,32,200,0.3)',
 															border: '1px solid rgba(81,32,200,0.5)',
-															color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem',
+															color: '#c4b5fd', fontWeight: 500, fontFamily: 'var(--font-medium)', fontSize: '0.95rem',
 															textDecoration: 'none',
 														}}>
 															{isAr ? 'ادخل غرفة الانتظار' : 'Enter Waiting Room'}
 													</a>
-													<p style={{ color: '#6666aa', fontSize: '0.78rem', textAlign: 'center', maxWidth: '280px' }}>
+													<p style={{ color: '#6666aa', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.78rem', textAlign: 'center', maxWidth: '280px' }}>
 														{isAr
 															? 'سيتم إرسال إشعار فور بدء البث'
 															: 'You will be notified when stream starts'}
@@ -2150,13 +2166,13 @@ function MetaItem({
 												/>
 											</div>
 											<h3
-												className="text-xl font-bold mb-3"
-												style={{ color: textPrimary }}>
+												className="text-xl font-medium mb-3"
+												style={{ color: textPrimary, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
 												المحتوى قيد الترحيل
 											</h3>
 											<p
 												className="text-sm leading-relaxed"
-												style={{ color: textSecondary }}>
+												style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
 												هذا الملف لم يتم رفعه بعد على المنصة الجديدة. يرجى
 												التواصل مع المحاضر لإعادة رفع المحتوى.
 											</p>
@@ -2167,43 +2183,48 @@ function MetaItem({
 								{/* No Media State */}
 								{!isCurrentLive && !hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
 									<div
-										className="flex flex-col items-center justify-center"
 										style={{
 											width: "100%",
-											textAlign: "center",
 											padding: "80px 24px",
-											background: "transparent",
+											display: "flex",
+											flexDirection: "column",
+											alignItems: "center",
+											justifyContent: "center",
+											textAlign: "center",
+											background: "var(--surface)",
 										}}>
 										<div
 											style={{
-												width: 64,
-												height: 64,
-												borderRadius: 16,
+												width: "64px",
+												height: "64px",
+												borderRadius: "18px",
+												background: "rgba(81, 32, 200, 0.08)",
+												color: "rgba(81, 32, 200, 0.5)",
 												display: "flex",
 												alignItems: "center",
 												justifyContent: "center",
-												background: "rgba(81, 32, 200, 0.08)",
+												marginBottom: "16px",
 											}}>
-											<File
-												size={28}
-												style={{ color: "var(--primary)", opacity: 0.5 }}
-											/>
+											<File size={28} />
 										</div>
 										<p
 											style={{
-												marginTop: 12,
-												fontSize: 14,
-												fontWeight: 500,
+												fontSize: "14px",
+												fontWeight: 300,
+												fontFamily: "var(--font-light)",
 												color: "var(--muted)",
+												margin: 0,
 											}}>
 											لا يوجد وسائط لهذا الدرس
 										</p>
 										<p
 											style={{
-												marginTop: 6,
-												fontSize: 12,
-												fontWeight: 400,
+												fontSize: "12px",
+												fontWeight: 300,
+												fontFamily: "var(--font-light)",
 												color: "var(--muted)",
+												marginTop: "6px",
+												opacity: 0.7,
 											}}>
 											{isAr
 												? "اختر درساً آخر أو عد لاحقاً"
@@ -2214,6 +2235,8 @@ function MetaItem({
 												style={{
 													marginTop: 16,
 													fontSize: 13,
+													fontWeight: 300,
+													fontFamily: "var(--font-light)",
 													color: "var(--muted)",
 													maxWidth: 560,
 													lineHeight: 1.7,
@@ -2250,7 +2273,8 @@ function MetaItem({
 												: "rgba(255,255,255,0.03)",
 											color: prevLesson ? "#f1f5f9" : "#374151",
 											fontSize: 13,
-											fontWeight: 600,
+											fontWeight: 500,
+											fontFamily: "var(--font-medium)",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
@@ -2274,7 +2298,8 @@ function MetaItem({
 												: "rgba(255,255,255,0.03)",
 											color: canGoNext ? "#fff" : "#374151",
 											fontSize: 13,
-											fontWeight: 600,
+											fontWeight: 500,
+											fontFamily: "var(--font-medium)",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
@@ -2334,8 +2359,12 @@ function MetaItem({
 												)}
 											</div>
 											<h1
-												className="text-2xl lg:text-3xl font-bold leading-tight"
-												style={{ color: textPrimary }}>
+												className="text-2xl lg:text-3xl leading-tight"
+												style={{
+													fontWeight: 500,
+													fontFamily: "var(--font-medium)",
+													color: textPrimary,
+												}}>
 												{activeLesson.title || activeLesson.titleAr}
 											</h1>
 										</div>
@@ -2343,13 +2372,13 @@ function MetaItem({
 										{/* Meta Information */}
 										<div
 											className="flex items-center gap-4 flex-wrap text-sm"
-											style={{ color: textSecondary }}>
+											style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
 											{activeLesson.duration && (
 												<span
 													className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg"
 													style={{ background: `${borderColor}` }}>
 													<Clock className="h-4 w-4" />
-													<span className="font-medium">
+													<span>
 														{activeLesson.duration}
 													</span>
 												</span>
@@ -2359,7 +2388,7 @@ function MetaItem({
 												className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg"
 												style={{ background: `${borderColor}` }}>
 												<BookOpen className="h-4 w-4" />
-												<span className="font-medium">
+												<span>
 													الدرس{" "}
 													{activeLessonIndex >= 0 ? activeLessonIndex + 1 : 1}{" "}
 													من {totalLessons}
@@ -2422,6 +2451,8 @@ function MetaItem({
 										style={{
 											background: cardBg,
 											color: textSecondary,
+											fontWeight: 300,
+											fontFamily: "var(--font-light)",
 											border: `1px solid ${borderColor}`,
 											boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
 										}}>
@@ -2446,8 +2477,8 @@ function MetaItem({
 											border: `1.5px solid ${blueColor}15`,
 										}}>
 										<h3
-											className="text-base font-bold mb-4 flex items-center gap-2"
-											style={{ color: blueColor }}>
+											className="text-base mb-4 flex items-center gap-2"
+											style={{ color: blueColor, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
 											<Download className="h-5 w-5" />
 											تحميل المواد الدراسية
 										</h3>
@@ -2455,10 +2486,11 @@ function MetaItem({
 											<a
 												href={buildDownloadUrl(fileUrl, fileName)}
 												download={fileName}
-												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
+												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
 												style={{
 													background: '#5120c8',
 													color: '#ffffff',
+													fontFamily: "var(--font-medium)",
 													boxShadow: `0 4px 16px rgba(81,32,200,0.25)`,
 												}}>
 												<FileDown className="h-4 w-4 group-hover:animate-bounce" color="#ffffff" />
@@ -2468,10 +2500,11 @@ function MetaItem({
 												href={fileUrl}
 												target="_blank"
 												rel="noopener noreferrer"
-												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300"
+												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
 												style={{
 													background: "transparent",
 													color: '#5120c8',
+													fontFamily: "var(--font-medium)",
 													border: '1.5px solid rgba(81,32,200,0.25)',
 												}}>
 												<Eye className="h-4 w-4" />
@@ -2512,10 +2545,10 @@ function MetaItem({
 													background: "rgba(81,32,200,0.15)",
 													border: "1px solid rgba(81,32,200,0.3)",
 													color: "#a78bfa",
-													fontWeight: 600,
+													fontWeight: 500,
 													fontSize: "0.875rem",
 													cursor: "pointer",
-													fontFamily: "inherit",
+													fontFamily: "var(--font-medium)",
 												}}>
 												<Target size={16} />
 												{quizAttempted
@@ -2534,7 +2567,8 @@ function MetaItem({
 														background: "rgba(34,197,94,0.15)",
 														border: "1px solid rgba(34,197,94,0.3)",
 														color: "#4ade80",
-														fontWeight: 600,
+														fontWeight: 500,
+														fontFamily: "var(--font-medium)",
 														fontSize: "0.875rem",
 													}}>
 													<CheckCircle2 size={16} />
@@ -2551,6 +2585,8 @@ function MetaItem({
 														background: "rgba(255,255,255,0.04)",
 														border: "1px solid rgba(255,255,255,0.08)",
 														color: textSecondary,
+														fontWeight: 300,
+														fontFamily: "var(--font-light)",
 														fontSize: "0.8rem",
 													}}>
 													<Video size={15} />
@@ -2570,6 +2606,8 @@ function MetaItem({
 													background: "rgba(255,255,255,0.04)",
 													border: "1px solid rgba(255,255,255,0.08)",
 													color: textSecondary,
+													fontWeight: 300,
+													fontFamily: "var(--font-light)",
 													fontSize: "0.8rem",
 												}}>
 												<FileText size={15} />
@@ -2594,10 +2632,10 @@ function MetaItem({
 														? "1px solid rgba(34,197,94,0.3)"
 														: "1px solid rgba(81,32,200,0.3)",
 													color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
-													fontWeight: 600,
+													fontWeight: 500,
 													fontSize: "0.875rem",
 													cursor: isCurrentCompleted ? "default" : "pointer",
-													fontFamily: "inherit",
+													fontFamily: "var(--font-medium)",
 												}}>
 												{isCurrentCompleted ? (
 													<>
@@ -2645,7 +2683,8 @@ function MetaItem({
 														border: "1px solid rgba(255,255,255,0.1)",
 														color: textPrimary,
 														cursor: "pointer",
-														fontFamily: "inherit",
+														fontFamily: "var(--font-medium)",
+														fontWeight: 500,
 														fontSize: "0.85rem",
 														display: "flex",
 														alignItems: "center",
@@ -2677,9 +2716,9 @@ function MetaItem({
 														border: "none",
 														color: canGoNext ? "#fff" : "#6b7280",
 														cursor: canGoNext ? "pointer" : "not-allowed",
-														fontFamily: "inherit",
+														fontFamily: "var(--font-medium)",
 														fontSize: "0.85rem",
-														fontWeight: 600,
+														fontWeight: 500,
 														display: "flex",
 														alignItems: "center",
 														gap: "6px",
@@ -2802,13 +2841,13 @@ function MetaItem({
 								</div>
 
 								<h2
-									className="text-2xl lg:text-3xl font-bold mb-4"
-									style={{ color: textPrimary }}>
+									className="text-2xl lg:text-3xl font-medium mb-4"
+									style={{ color: textPrimary, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
 									اختر درساً للبدء
 								</h2>
 								<p
 									className="text-base mb-8 leading-relaxed"
-									style={{ color: textSecondary }}>
+									style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
 									اختر أي درس من القائمة الجانبية لبدء رحلتك التعليمية
 								</p>
 
@@ -2818,12 +2857,13 @@ function MetaItem({
 										if (first) goToLesson(first);
 									}}
 									className="
-                    group inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-bold 
+                    group inline-flex items-center gap-3 px-8 py-4 rounded-2xl text-white font-medium 
                     text-base transition-all duration-300
                   "
 									style={{
 										background: `linear-gradient(135deg, ${purple}, #5b21b6)`,
 										boxShadow: `0 8px 32px ${purple}40`,
+										fontFamily: "var(--font-medium)",
 									}}>
 									<Play className="h-5 w-5" />
 									<span>ابدأ من أول درس</span>
@@ -3045,7 +3085,7 @@ export default function LearnPage() {
 								style={{ background: "#7c3aed15" }}>
 								<GraduationCap className="h-8 w-8" style={{ color: "#7c3aed" }} />
 							</div>
-							<p className="text-sm font-medium" style={{ color: "#4b5563" }}>
+							<p className="text-sm font-medium" style={{ color: "#4b5563", fontFamily: "var(--font-medium)" }}>
 								{t('loadingLearn')}
 							</p>
 						</div>
