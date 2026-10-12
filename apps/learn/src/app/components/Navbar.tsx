@@ -14,6 +14,9 @@ import { useAuthStore } from '../../stores/authStore'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
 
+/* ═══ Cross-domain web app (notifications + wallet live there) ═══ */
+const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
+
 /* ═══ Shared font for nav + buttons ═══ */
 const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
 
@@ -454,8 +457,11 @@ export function Navbar() {
               </div>
 
               {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/notifications`}
+                <a
+                  href={`${WEB_URL}/${locale}/dashboard/notifications`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="الإشعارات"
                   aria-label="Notifications"
                   className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
                   style={{ color: 'var(--muted)' }}
@@ -468,12 +474,15 @@ export function Navbar() {
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
-                </Link>
+                </a>
               )}
 
               {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/wallet`}
+                <a
+                  href={`${WEB_URL}/${locale}/dashboard/wallet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="المحفظة"
                   className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl transition-colors duration-150"
                   style={{ background: 'rgba(81,32,200,0.10)', color: '#5120c8' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.18)' }}
@@ -483,7 +492,7 @@ export function Navbar() {
                   <span className="text-xs font-bold">
                     {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
                   </span>
-                </Link>
+                </a>
               )}
 
               <CartIcon />
@@ -655,8 +664,11 @@ export function Navbar() {
                 </a>
               )}
               {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/notifications`}
+                <a
+                  href={`${WEB_URL}/${locale}/dashboard/notifications`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="الإشعارات"
                   onClick={() => setMobileOpen(false)}
                   aria-label="Notifications"
                   className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
@@ -668,18 +680,21 @@ export function Navbar() {
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
-                </Link>
+                </a>
               )}
               {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/wallet`}
+                <a
+                  href={`${WEB_URL}/${locale}/dashboard/wallet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="المحفظة"
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Wallet className="h-3.5 w-3.5" />
                   {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
-                </Link>
+                </a>
               )}
               <CartIcon />
             </div>
