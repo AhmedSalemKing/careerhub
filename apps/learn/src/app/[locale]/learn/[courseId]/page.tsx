@@ -54,11 +54,36 @@ import {
 	GraduationCap,
 	Target,
 	Star,
+	BarChart3,
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
 import { useAuthStore } from "../../../../stores/authStore";
+
+// Small inline meta row item used by the course info card and lesson details.
+function MetaItem({
+	icon: Icon,
+	label,
+	color,
+}: {
+	icon: any;
+	label: any;
+	color?: string;
+}) {
+	return (
+		<div
+			style={{
+				display: "flex",
+				alignItems: "center",
+				gap: 5,
+				color: "var(--muted)",
+			}}>
+			<Icon size={14} style={{ color: color || "var(--muted)" }} />
+			<span>{label}</span>
+		</div>
+	);
+}
 
 	function LearnPageInner() {
 		const params = useParams();
@@ -1015,7 +1040,19 @@ import { useAuthStore } from "../../../../stores/authStore";
 		<div
 			className="flex min-h-screen flex-col"
 			dir="rtl"
-			style={{ background: bg }}>
+			style={
+				{
+					background: bg,
+					"--background": bg,
+					"--surface": sidebarBg,
+					"--surface-2": isDark ? "#2C2C2E" : "#F7F7F9",
+					"--border": borderColor,
+					"--foreground": textPrimary,
+					"--muted": textSecondary,
+					"--card": cardBg,
+					"--primary": purple,
+				} as React.CSSProperties
+			}>
 			{/* ✨ Premium Header */}
 			<header
 				className="shrink-0 sticky top-0 z-50 backdrop-blur-xl"
@@ -1148,88 +1185,223 @@ import { useAuthStore } from "../../../../stores/authStore";
 				</div>
 			</header>
 
-			{/* Responsive Body */}
-			<div
-				className="flex flex-1"
-				style={{
-					flexDirection: isMobile ? "column" : "row",
-					overflow: isMobile ? "auto" : "hidden",
-					height: isMobile ? "auto" : "calc(100vh - 88px)",
-				}}>
-				{/* ✨ Modern Sidebar */}
+			{/* Responsive Body — 3-column grid (RTL: sidebar is first column / visual right) */}
+			<div className="learn-layout">
+				{/* RIGHT SIDEBAR: progress card + course content tree */}
 				<aside
-					className="overflow-y-auto"
-					style={{
-						width: isMobile ? "100%" : "340px",
-						height: isMobile ? "auto" : "100%",
-						background: sidebarBg,
-						borderLeft: isMobile ? "none" : `1px solid ${borderColor}`,
-						borderTop: isMobile ? `1px solid ${borderColor}` : "none",
-						order: isMobile ? 1 : 0,
-					}}>
-					{/* Sidebar Header */}
-					<div
-						className="px-5 py-5 sticky top-0 z-10"
-						style={{
-							background: sidebarBg,
-							borderBottom: `1px solid ${borderColor}`,
-						}}>
-						<div className="flex items-center justify-between mb-4">
-							<div className="flex items-center gap-2">
-								<Target className="h-4 w-4" style={{ color: purple }} />
-								<span
-									className="text-sm font-bold tracking-wide"
-									style={{ color: textPrimary }}>
-									{t('courseContent')}
-								</span>
-							</div>
+					className="learn-col-right"
+					style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+					{/* Progress card */}
+					{(() => {
+						const progressPercent = progress;
+						const circumference = 2 * Math.PI * 45;
+						const strokeDashoffset =
+							circumference - (progressPercent / 100) * circumference;
+						return (
 							<div
-								className="px-3 py-1 rounded-lg text-xs font-bold"
 								style={{
-									background: `linear-gradient(135deg, ${purple}, ${purpleColor})`,
-									color: '#ffffff',
+									padding: 24,
+									borderRadius: 20,
+									background: "var(--card)",
+									border: "1px solid var(--border)",
 								}}>
-								{progress}%
+								{/* Header with back link */}
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+										marginBottom: 20,
+									}}>
+									<span
+										style={{
+											fontSize: 13,
+											fontWeight: 600,
+											color: "var(--muted)",
+										}}>
+										{isAr ? "العودة للكورس" : "Back to course"}
+									</span>
+									<button
+										onClick={() =>
+											router.push(`/${locale}/courses/${courseId}`)
+										}
+										title={isAr ? "العودة للكورس" : "Back to course"}
+										style={{
+											width: 32,
+											height: 32,
+											borderRadius: 8,
+											background: "transparent",
+											border: "none",
+											color: "var(--primary)",
+											cursor: "pointer",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+										}}>
+										<ArrowLeft size={18} />
+									</button>
+								</div>
+
+								{/* Circular progress */}
+								<div
+									style={{
+										position: "relative",
+										width: 120,
+										height: 120,
+										margin: "0 auto 20px",
+									}}>
+									<svg
+										width="120"
+										height="120"
+										viewBox="0 0 120 120"
+										style={{ transform: "rotate(-90deg)" }}>
+										<circle
+											cx="60"
+											cy="60"
+											r="45"
+											stroke="var(--surface-2)"
+											strokeWidth="8"
+											fill="none"
+										/>
+										<circle
+											cx="60"
+											cy="60"
+											r="45"
+											stroke="var(--primary)"
+											strokeWidth="8"
+											fill="none"
+											strokeDasharray={circumference}
+											strokeDashoffset={strokeDashoffset}
+											strokeLinecap="round"
+											style={{ transition: "stroke-dashoffset 0.6s ease" }}
+										/>
+									</svg>
+									<div
+										style={{
+											position: "absolute",
+											inset: 0,
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											flexDirection: "column",
+										}}>
+										<span
+											style={{
+												fontSize: 24,
+												fontWeight: 800,
+												color: "var(--foreground)",
+											}}>
+											{progressPercent}%
+										</span>
+									</div>
+								</div>
+
+								{/* Label */}
+								<div style={{ textAlign: "center", marginBottom: 12 }}>
+									<span
+										style={{
+											fontSize: 14,
+											fontWeight: 700,
+											color: "var(--foreground)",
+										}}>
+										{progressPercent === 100
+											? isAr
+												? "تم إكمال الكورس"
+												: "Course completed"
+											: isAr
+												? "قيد التقدم"
+												: "In progress"}
+									</span>
+								</div>
+
+								{/* Linear progress bar */}
+								<div
+									style={{
+										height: 6,
+										borderRadius: 99,
+										background: "var(--surface-2)",
+										overflow: "hidden",
+										marginBottom: 8,
+									}}>
+									<div
+										style={{
+											height: "100%",
+											width: `${progressPercent}%`,
+											background: "var(--primary)",
+											borderRadius: 99,
+											transition: "width 0.6s ease",
+										}}
+									/>
+								</div>
+
+								{/* Lessons count */}
+								<div
+									style={{
+										display: "flex",
+										justifyContent: "space-between",
+										fontSize: 12,
+										color: "var(--muted)",
+									}}>
+									<span>
+										{totalLessons} {isAr ? "درس" : "lessons"}
+									</span>
+									<span>
+										{completedCount} {isAr ? "من" : "of"} {totalLessons}{" "}
+										{isAr ? "درس" : "lessons"}
+									</span>
+								</div>
+
+								{/* Grades link (preserved) */}
+								<a
+									href={`/${locale}/dashboard/grades`}
+									style={{
+										marginTop: 16,
+										padding: "8px 12px",
+										background: "var(--surface-2)",
+										borderRadius: 10,
+										display: "flex",
+										alignItems: "center",
+										gap: 8,
+										color: "var(--foreground)",
+										fontSize: "0.82rem",
+										fontWeight: 600,
+										textDecoration: "none",
+									}}>
+									<Award size={14} style={{ color: "var(--primary)" }} />
+									{isAr ? "الدرجات" : "Grades"}
+								</a>
 							</div>
-						</div>
+						);
+					})()}
 
-						{/* Mini Progress */}
+					{/* Course content tree card */}
+					<div
+						className="learn-tree-card"
+						style={{
+							padding: 16,
+							borderRadius: 20,
+							background: "var(--card)",
+							border: "1px solid var(--border)",
+						}}>
 						<div
-							className="relative h-1.5 rounded-full overflow-hidden mb-3"
-							style={{ background: borderColor }}>
-							<div
-								className="h-full rounded-full transition-all duration-500 ease-out"
-								style={{
-									width: `${progress}%`,
-									background: `linear-gradient(90deg, ${purple}, ${purpleColor})`,
-								}}
-							/>
-						</div>
-
-						<p className="text-xs font-medium" style={{ color: textSecondary }}>
-							<span style={{ color: purple }}>{completedCount}</span> {t('of')}{" "}
-							<span>{totalLessons}</span> {t('lessonComplete')}
-						</p>
-
-						<a
-							href={`/${locale}/dashboard/grades`}
 							style={{
-								marginTop: '12px',
-								padding: '8px 12px',
-								background: 'rgba(255,255,255,0.04)',
-								borderRadius: '8px',
-								display: 'flex',
-								alignItems: 'center',
-								gap: '8px',
-								color: textPrimary,
-								fontSize: '0.82rem',
-								fontWeight: 600,
-								textDecoration: 'none',
+								display: "flex",
+								alignItems: "center",
+								gap: 8,
+								margin: "0 0 16px",
+								padding: "0 8px",
 							}}>
-							<Award size={14} style={{ color: purple }} />
-							{isAr ? 'الدرجات' : 'Grades'}
-						</a>
-					</div>
+							<Target size={16} style={{ color: "var(--primary)" }} />
+							<h3
+								style={{
+									fontSize: 15,
+									fontWeight: 800,
+									color: "var(--foreground)",
+									margin: 0,
+								}}>
+								{isAr ? "محتوى الكورس" : "Course content"}
+							</h3>
+						</div>
 
 					{/* Lessons List - Grouped by sections */}
 					<div className="px-3 pb-4 space-y-1">
@@ -1310,11 +1482,11 @@ import { useAuthStore } from "../../../../stores/authStore";
 													alignItems: "center",
 													gap: "12px",
 													padding: "10px 14px",
-													borderRadius: "12px",
+													borderRadius: "8px",
 													border: "none",
-													background: isActive ? `${purple}10` : "transparent",
+													background: isActive ? "rgba(81,32,200,0.08)" : "transparent",
 													borderRight: isActive
-														? `3px solid ${purple}`
+														? `3px solid var(--primary)`
 														: "3px solid transparent",
 													marginBottom: "2px",
 												}}>
@@ -1414,14 +1586,100 @@ import { useAuthStore } from "../../../../stores/authStore";
 							);
 						})}
 					</div>
+					</div>
 				</aside>
 
-				{/* Main Content Area - Video & Lesson Info */}
+				{/* Main Content Area - Course info, Video & Lesson Info */}
 				<main
-					className="flex-1 overflow-auto flex flex-col"
-					style={{
-						order: isMobile ? 0 : 1,
-					}}>
+					className="learn-col-main"
+					style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+					{/* Course info card */}
+					<div
+						style={{
+							padding: 24,
+							borderRadius: 20,
+							background:
+								"linear-gradient(135deg, rgba(81,32,200,0.08), rgba(139,92,246,0.04))",
+							border: "1px solid var(--border)",
+							display: "flex",
+							gap: 24,
+							alignItems: "center",
+						}}>
+						{!!getSafeUrl(course?.thumbnail) && (
+							<div
+								style={{
+									width: 140,
+									height: 100,
+									flexShrink: 0,
+									borderRadius: 16,
+									overflow: "hidden",
+									background: "var(--surface-2)",
+								}}>
+								<img
+									src={getSafeUrl(course?.thumbnail)}
+									alt=""
+									style={{
+										width: "100%",
+										height: "100%",
+										objectFit: "cover",
+									}}
+								/>
+							</div>
+						)}
+
+						<div style={{ flex: 1, minWidth: 0 }}>
+							<h1
+								style={{
+									fontSize: 24,
+									fontWeight: 800,
+									color: "var(--foreground)",
+									margin: "0 0 6px",
+								}}>
+								{course?.titleAr || course?.titleEn || course?.title}
+							</h1>
+							{(course?.descriptionAr ||
+								course?.descriptionEn ||
+								course?.description) && (
+								<p
+									style={{
+										fontSize: 13,
+										color: "var(--muted)",
+										margin: "0 0 14px",
+										lineHeight: 1.6,
+									}}>
+									{course?.descriptionAr ||
+										course?.descriptionEn ||
+										course?.description}
+								</p>
+							)}
+
+							{/* Meta row */}
+							<div
+								style={{
+									display: "flex",
+									gap: 16,
+									flexWrap: "wrap",
+									fontSize: 12,
+								}}>
+								<MetaItem
+									icon={BarChart3}
+									label={course?.level || (isAr ? "مبتدئ" : "Beginner")}
+								/>
+								<MetaItem
+									icon={Clock}
+									label={`${course?.duration || 30} ${isAr ? "ساعة" : "hours"}`}
+								/>
+								{course?.rating && (
+									<MetaItem icon={Star} label={course.rating} color="#F5A623" />
+								)}
+								<MetaItem
+									icon={FileText}
+									label={`${totalLessons} ${isAr ? "درس" : "lessons"}`}
+								/>
+							</div>
+						</div>
+					</div>
+
 					{activeLessonId && activeLesson ? (
 						<>
 							{/* Mobile Compact Header */}
@@ -1469,66 +1727,47 @@ import { useAuthStore } from "../../../../stores/authStore";
 							{/* Media Viewer Container */}
 							<div
 								className="w-full relative"
-								style={{ background: "transparent" }}>
+								style={{
+									background: "var(--card)",
+									border: "1px solid var(--border)",
+									borderRadius: 20,
+									overflow: "hidden",
+									boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
+								}}>
 
-								{/* TAB BUTTONS — only when 2+ content types */}
+								{/* TAB BUTTONS — underline style, only when 2+ content types */}
 								{tabCount > 1 && (
 									<div style={{
-										display: 'flex', gap: '8px', flexWrap: 'wrap',
-										padding: '16px 16px 12px',
-										borderBottom: `1px solid ${borderColor}`,
+										display: 'flex', gap: 4, flexWrap: 'wrap',
+										borderBottom: '1px solid var(--border)',
+										padding: '0 16px',
 									}}>
-										{!!videoUrl && (
-											<button
-												onClick={() => setActiveTab('video')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													border: activeTab === 'video' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
-													background: activeTab === 'video' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
-													color: activeTab === 'video' ? '#fff' : '#94a3b8',
-													boxShadow: activeTab === 'video' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
-												}}>
-												<Video size={14} />
-												{isAr ? 'الفيديو' : 'Video'}
-											</button>
-										)}
-										{!!fileUrl && (
-											<button
-												onClick={() => setActiveTab('file')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													border: activeTab === 'file' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
-													background: activeTab === 'file' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
-													color: activeTab === 'file' ? '#fff' : '#94a3b8',
-													boxShadow: activeTab === 'file' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
-												}}>
-												<FileText size={14} />
-												{isAr ? 'ملف PDF' : 'PDF File'}
-											</button>
-										)}
-										{!!activeLesson?.imageUrl && (
-											<button
-												onClick={() => setActiveTab('image')}
-												style={{
-													display: 'flex', alignItems: 'center', gap: '6px',
-													padding: '8px 16px', borderRadius: '8px',
-													border: activeTab === 'image' ? '1px solid transparent' : '1px solid rgba(255,255,255,0.05)',
-													background: activeTab === 'image' ? 'linear-gradient(135deg, #5120C8, #6D3DF5)' : 'transparent',
-													color: activeTab === 'image' ? '#fff' : '#94a3b8',
-													boxShadow: activeTab === 'image' ? '0 8px 20px rgba(81,32,200,0.3)' : 'none',
-													cursor: 'pointer', fontSize: '13px', fontWeight: 600,
-													transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease', fontFamily: 'inherit',
-												}}>
-												<Image size={14} />
-												{isAr ? 'الصورة' : 'Image'}
-											</button>
-										)}
+										{([
+											{ id: 'video', show: !!videoUrl, icon: <Video size={14} />, label: isAr ? 'الفيديو' : 'Video' },
+											{ id: 'file', show: !!fileUrl, icon: <FileText size={14} />, label: isAr ? 'ملف PDF' : 'PDF File' },
+											{ id: 'image', show: !!activeLesson?.imageUrl, icon: <Image size={14} />, label: isAr ? 'الصورة' : 'Image' },
+										] as { id: 'video' | 'file' | 'image'; show: boolean; icon: any; label: string }[])
+											.filter((tab) => tab.show)
+											.map((tab) => (
+												<button
+													key={tab.id}
+													onClick={() => setActiveTab(tab.id)}
+													style={{
+														display: 'flex', alignItems: 'center', gap: 6,
+														padding: '12px 16px',
+														background: 'transparent',
+														border: 'none',
+														borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+														color: activeTab === tab.id ? 'var(--primary)' : 'var(--muted)',
+														fontSize: 13, fontWeight: 600,
+														cursor: 'pointer',
+														transition: 'all 0.15s ease',
+														fontFamily: 'inherit',
+													}}>
+													{tab.icon}
+													{tab.label}
+												</button>
+											))}
 									</div>
 								)}
 
@@ -2038,10 +2277,12 @@ import { useAuthStore } from "../../../../stores/authStore";
 
 							{/* Lesson Information Section */}
 							<div
-								className="flex-1 p-6 lg:p-8"
+								className="p-6 lg:p-8"
 								style={{
-									borderTop: `1px solid ${borderColor}`,
-									background: bg,
+									background: "var(--card)",
+									border: "1px solid var(--border)",
+									borderRadius: 20,
+									boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
 								}}>
 								{/* Lesson Title & Status */}
 								<div className="flex items-start justify-between gap-6 mb-6">
@@ -2230,12 +2471,20 @@ import { useAuthStore } from "../../../../stores/authStore";
 								{isEnrolled && (
 									<div
 										style={{
+											position: "sticky",
+											bottom: 12,
+											zIndex: 10,
 											marginTop: "1.5rem",
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "space-between",
 											flexWrap: "wrap",
 											gap: "1rem",
+											padding: "14px 18px",
+											borderRadius: 16,
+											background: "var(--card)",
+											border: "1px solid var(--border)",
+											boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
 										}}>
 										{requiresQuiz && quizHref ? (
 											<button
@@ -2570,6 +2819,13 @@ import { useAuthStore } from "../../../../stores/authStore";
 						</div>
 					)}
 				</main>
+
+				{/* LEFT SIDEBAR (RTL: last column) — reserved for future content */}
+				<aside
+					className="learn-col-left"
+					style={{ display: "flex", flexDirection: "column", gap: 20 }}
+					aria-hidden="true"
+				/>
 			</div>
 
 			{/* Floating AI Assistant Button */}
@@ -2653,6 +2909,53 @@ import { useAuthStore } from "../../../../stores/authStore";
 				@keyframes spin {
 					to {
 						transform: rotate(360deg);
+					}
+				}
+
+				/* 3-column learning layout (RTL: sidebar is first DOM column) */
+				.learn-layout {
+					display: grid;
+					grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+					gap: 24px;
+					max-width: 1600px;
+					margin: 0 auto;
+					padding: 24px 20px;
+					width: 100%;
+					align-items: start;
+				}
+
+				.learn-col-right,
+				.learn-col-main,
+				.learn-col-left {
+					min-width: 0;
+				}
+
+				@media (max-width: 1280px) {
+					.learn-layout {
+						grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+					}
+					.learn-col-main {
+						order: 1;
+					}
+					.learn-col-right {
+						order: 2;
+					}
+					.learn-col-left {
+						display: none;
+					}
+				}
+
+				@media (max-width: 1024px) {
+					.learn-layout {
+						grid-template-columns: 1fr;
+						padding: 16px 12px;
+						gap: 16px;
+					}
+					.learn-col-main {
+						order: 1;
+					}
+					.learn-col-right {
+						order: 2;
 					}
 				}
 
