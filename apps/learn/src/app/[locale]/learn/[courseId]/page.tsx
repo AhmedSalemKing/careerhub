@@ -1401,8 +1401,8 @@ function MetaItem({
 							<h3
 								style={{
 									fontSize: 15,
-									fontWeight: 500,
-									fontFamily: "var(--font-medium)",
+									fontWeight: 900,
+									fontFamily: "var(--font-brand)",
 									color: "var(--foreground)",
 									margin: 0,
 								}}>
@@ -1446,8 +1446,8 @@ function MetaItem({
 											</span>
 											<span
 												style={{
-													fontSize: '13px', fontWeight: 500,
-													fontFamily: 'var(--font-medium)',
+													fontSize: '13px', fontWeight: 900,
+													fontFamily: 'var(--font-brand)',
 													color: 'var(--foreground)',
 												}}>
 												{section.title || section.titleAr || `Section ${sectionIndex + 1}`}
