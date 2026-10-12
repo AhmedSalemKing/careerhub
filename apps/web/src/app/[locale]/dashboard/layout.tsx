@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../../stores/authStore'
@@ -24,7 +24,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
   const locale = useLocale()
-  const router = useRouter()
   const queryClient = useQueryClient()
   const isAr = locale === 'ar'
 
@@ -125,10 +124,9 @@ return [
 
     if (user.status === 'PENDING' || user.status === 'BANNED' || user.status === 'REJECTED') {
       const error = user.status === 'PENDING' ? 'pending_approval' : 'account_rejected'
-      logout()
-      router.replace(`/${locale}/login?error=${error}`)
+      logout(`/${locale}/login?error=${error}`)
     }
-  }, [mounted, user, locale, logout, router])
+  }, [mounted, user, locale, logout])
 
   // Full-screen mode for AI chat
   const isAiChat = pathname?.includes('ai-chat')
@@ -161,11 +159,7 @@ return [
   }
 
   function handleLogout() {
-    localStorage.removeItem('deveway_token')
-    localStorage.removeItem('deveway_refresh')
-    localStorage.removeItem('deveway_user')
-    window.dispatchEvent(new Event('auth:updated'))
-    router.replace(`/${locale}/login`)
+    logout()
   }
 
   return (

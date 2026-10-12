@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { api } from '../../../lib/api'
+import { logout as authLogout } from '../../../lib/auth'
 import BottomDock from '../../../components/BottomDock'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -83,11 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ]
 
   function handleLogout() {
-    localStorage.removeItem('deveway_token')
-    localStorage.removeItem('deveway_refresh')
-    localStorage.removeItem('deveway_user')
-    window.dispatchEvent(new Event('auth:updated'))
-    router.replace(`/${locale}/login`)
+    void authLogout()
   }
 
   return (

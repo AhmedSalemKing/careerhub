@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthStorage } from './auth'
 
 const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
 
@@ -58,9 +59,7 @@ api.interceptors.response.use(
         if (newRefresh) localStorage.setItem('deveway_refresh', newRefresh)
         return api(originalRequest)
       } catch {
-        localStorage.removeItem('deveway_token')
-        localStorage.removeItem('deveway_refresh')
-        localStorage.removeItem('deveway_user')
+        clearAuthStorage()
         const seg = window.location.pathname.split('/')[1]
         const locale = seg === 'en' ? 'en' : 'ar'
         window.location.href = `/${locale}/login`

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { XCircle, RefreshCw, Mail } from 'lucide-react'
+import { clearAuthStorage } from '../../../lib/auth'
 
 export default function RejectedPage() {
   const router = useRouter()
@@ -13,10 +14,7 @@ export default function RejectedPage() {
       if (userData.rejectedReason) setReason(userData.rejectedReason)
     } catch(e) {}
     
-    localStorage.removeItem('careerhub_token')
-    localStorage.removeItem('careerhub_user')
-    localStorage.removeItem('deveway_token')
-    localStorage.removeItem('deveway_user')
+    clearAuthStorage()
   }, [])
 
   return (

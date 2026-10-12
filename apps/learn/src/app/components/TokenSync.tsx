@@ -31,7 +31,9 @@ export function TokenSync() {
       document.cookie.match(/careerhub_token=([^;]+)/)?.[1]
 
     if (!token) {
-      // 3. Redirect to main site login with return URL
+      // 3. Redirect to main site login with return URL.
+      // Skip on the logout bridge, which clears storage and navigates itself.
+      if (pathname?.includes('/logout')) return
       const returnUrl = encodeURIComponent(window.location.href)
       const mainSiteUrl =
         process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway-teal.vercel.app'

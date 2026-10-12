@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { clearAuthStorage } from './auth'
 
 // ✅ FIXED: دالة تحديد baseURL محسنة تماماً
 const getBaseURL = () => {
@@ -110,12 +111,7 @@ api.interceptors.response.use(
       
       // Clear auth data
       const clearAuth = () => {
-        localStorage.removeItem('careerhub_token')
-        localStorage.removeItem('careerhub_user')
-        localStorage.removeItem('deveway_token')
-        localStorage.removeItem('deveway_user')
-        document.cookie = 'careerhub_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict'
+        clearAuthStorage()
       }
 
       // Check specific error codes

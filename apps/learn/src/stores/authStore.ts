@@ -15,7 +15,7 @@ type AuthState = {
   setUser: (user: AuthUser | null) => void
   setToken: (token: string | null) => void
   hydrate: () => void
-  logout: () => void
+  logout: (redirectTo?: string) => void
   updateUser: (partial: Partial<AuthUser>) => void
 }
 
@@ -38,8 +38,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const user = getUser<AuthUser>()
     set({ token, user, isLoading: false })
   },
-  logout: () => {
-    hardLogout()
+  logout: (redirectTo?: string) => {
+    void hardLogout(redirectTo)
     set({ user: null, token: null })
   },
   updateUser: (partial) => {

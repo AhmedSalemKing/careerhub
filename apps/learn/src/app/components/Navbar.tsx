@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
+import { clearAuthStorage } from '../../lib/auth'
 
 /* ═══ Cross-domain web app (notifications + wallet live there) ═══ */
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
@@ -105,8 +106,6 @@ function UserDropdown({ locale }: { locale: string }) {
   const handleLogout = () => {
     logout()
     setOpen(false)
-    window.dispatchEvent(new Event('auth:updated'))
-    window.location.href = `/${locale}`
   }
 
   const isRtl = locale === 'ar'
@@ -246,6 +245,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [sessionValid, setSessionValid] = useState<null | boolean>(null)
   const { user, token, hydrate } = useAuthStore()
 
   useEffect(() => {
@@ -276,7 +276,48 @@ export function Navbar() {
     }
   }, [])
 
-  const isLoggedIn = mounted && !!token
+  // Validate the stored session against the server on mount.
+  // If the token is stale/invalid, clear learn storage so the navbar
+  // stops showing a logged-in state for a revoked session.
+  useEffect(() => {
+    let cancelled = false
+    async function validateSession() {
+      const stored =
+        localStorage.getItem('deveway_token') ||
+        localStorage.getItem('careerhub_token')
+      if (!stored) {
+        if (!cancelled) setSessionValid(false)
+        return
+      }
+      try {
+        const res = await api.get('/auth/me')
+        if (cancelled) return
+        const body = (res as any)?.data?.data ?? (res as any)?.data
+        const me = body?.user ?? body
+        if (me && (me.id || me.email)) {
+          useAuthStore.getState().setUser(me)
+        }
+        setSessionValid(true)
+      } catch (err: any) {
+        if (cancelled) return
+        const status = err?.response?.status
+        if (status === 401 || status === 403) {
+          clearAuthStorage()
+          useAuthStore.getState().hydrate()
+          setSessionValid(false)
+        } else {
+          // Network / server error: keep the optimistic state.
+          setSessionValid((prev) => prev ?? true)
+        }
+      }
+    }
+    validateSession()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const isLoggedIn = mounted && sessionValid === true && !!token
   const isAr = locale === 'ar'
   const currentTheme = resolvedTheme || 'dark'
 
@@ -504,7 +545,7 @@ export function Navbar() {
             )}
 
             {/* Auth buttons (desktop) - Tall & Narrow Design */}
-            {!mounted ? (
+            {!mounted || sessionValid === null ? (
               <div className="h-9 w-[160px] hidden lg:block" />
             ) : isLoggedIn ? (
               <div className="hidden lg:block">
@@ -744,8 +785,6 @@ export function Navbar() {
                       const { logout } = useAuthStore.getState()
                       logout()
                       setMobileOpen(false)
-                      window.dispatchEvent(new Event('auth:updated'))
-                      window.location.href = `/${locale}`
                     }}
                     className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-colors duration-150"
                     style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}

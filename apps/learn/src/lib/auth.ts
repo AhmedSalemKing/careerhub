@@ -2,6 +2,21 @@ export const TOKEN_KEY = 'deveway_token'
 export const REFRESH_KEY = 'deveway_refresh'
 export const USER_KEY = 'deveway_user'
 
+export const AUTH_STORAGE_KEYS = [
+  'deveway_token',
+  'deveway_refresh',
+  'deveway_user',
+  'careerhub_token',
+  'careerhub_refresh',
+  'careerhub_user',
+  'token',
+  'accessToken',
+  'access_token',
+  'auth_token',
+  'userName',
+  'user_avatar',
+]
+
 // ─── Cookie helpers (browser-only) ────────────────────────────────────────────
 function cookieDomain(): string {
   if (typeof window === 'undefined') return ''
@@ -90,13 +105,36 @@ export function isAuthenticated() {
   return !!getToken()
 }
 
-export function logout() {
-  removeToken()
-  removeRefreshToken()
-  removeUser()
-  if (typeof window !== 'undefined') {
-    const seg = window.location.pathname.split('/')[1]
-    const locale = seg === 'en' ? 'en' : 'ar'
-    window.location.href = `/${locale}/login`
+export function clearAuthStorage() {
+  if (typeof window === 'undefined') return
+  AUTH_STORAGE_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k) } catch {}
+  })
+  try {
+    document.cookie = 'access_token=; Max-Age=0; path=/'
+    document.cookie = 'refresh_token=; Max-Age=0; path=/'
+    removeToken()
+    removeRefreshToken()
+    removeUser()
+  } catch {}
+}
+
+export async function logout(redirectTo?: string) {
+  if (typeof window === 'undefined') return
+
+  // Step 1: Revoke the server session FIRST (while the token is still stored).
+  try {
+    const { api } = await import('./api')
+    await api.post('/auth/logout', {}, { withCredentials: true })
+  } catch (err) {
+    console.error('[logout] API call failed:', err)
   }
+
+  // Step 2: Clear ALL auth keys from learn localStorage + cookies.
+  clearAuthStorage()
+
+  // Step 3: Redirect back into the learn app.
+  const seg = window.location.pathname.split('/')[1]
+  const locale = seg === 'en' ? 'en' : 'ar'
+  window.location.href = redirectTo || `/${locale}`
 }

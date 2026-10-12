@@ -21,7 +21,7 @@ type AuthState = {
   setToken: (token: string | null) => void
   setRefreshToken: (token: string | null) => void
   hydrate: () => void
-  logout: () => void
+  logout: (redirectTo?: string) => void
   updateUser: (partial: Partial<AuthUser>) => void
 }
 
@@ -56,9 +56,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try { refreshToken = localStorage.getItem('deveway_refresh') } catch {}
     set({ token, user, refreshToken, isLoading: false, isAuthenticated: !!user || !!token })
   },
-  logout: () => {
-    hardLogout()
-    try { localStorage.removeItem('deveway_refresh') } catch {}
+  logout: (redirectTo?: string) => {
+    void hardLogout(redirectTo)
     set({ user: null, token: null, refreshToken: null, isAuthenticated: false })
   },
   updateUser: (partial) => {
