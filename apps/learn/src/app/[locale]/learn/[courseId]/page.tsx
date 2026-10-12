@@ -1105,7 +1105,7 @@ function MetaItem({
 										}}>
 										<TrendingUp className="h-4 w-4" style={{ color: green }} />
 										<span
-											className="text-sm font-bold"
+											className="text-sm font-semibold"
 											style={{ color: green }}>
 											{progress}%
 										</span>
@@ -1216,7 +1216,7 @@ function MetaItem({
 									<span
 										style={{
 											fontSize: 13,
-											fontWeight: 600,
+											fontWeight: 500,
 											color: "var(--muted)",
 										}}>
 										{isAr ? "العودة للكورس" : "Back to course"}
@@ -1288,7 +1288,7 @@ function MetaItem({
 										<span
 											style={{
 												fontSize: 24,
-												fontWeight: 800,
+												fontWeight: 700,
 												color: "var(--foreground)",
 											}}>
 											{progressPercent}%
@@ -1301,7 +1301,7 @@ function MetaItem({
 									<span
 										style={{
 											fontSize: 14,
-											fontWeight: 700,
+											fontWeight: 600,
 											color: "var(--foreground)",
 										}}>
 										{progressPercent === 100
@@ -1364,7 +1364,7 @@ function MetaItem({
 										gap: 8,
 										color: "var(--foreground)",
 										fontSize: "0.82rem",
-										fontWeight: 600,
+										fontWeight: 500,
 										textDecoration: "none",
 									}}>
 									<Award size={14} style={{ color: "var(--primary)" }} />
@@ -1432,21 +1432,21 @@ function MetaItem({
 													background: openSections.has(section.id) ? 'rgba(81,32,200,0.2)' : 'rgba(255,255,255,0.06)',
 													color: openSections.has(section.id) ? '#a78bfa' : '#666680',
 													display: 'flex', alignItems: 'center', justifyContent: 'center',
-													fontSize: '0.68rem', fontWeight: 700, flexShrink: 0,
+													fontSize: '0.68rem', fontWeight: 600, flexShrink: 0,
 													transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
 												}}>
 												{sectionIndex + 1}
 											</span>
 											<span
 												style={{
-													fontSize: '0.82rem', fontWeight: 600,
-													color: textPrimary,
+													fontSize: '0.82rem', fontWeight: 500,
+													color: 'var(--foreground)',
 												}}>
 												{section.title || section.titleAr || `Section ${sectionIndex + 1}`}
 											</span>
 										</div>
 										<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-											<span style={{ fontSize: '0.7rem', color: '#666680' }}>
+											<span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 400 }}>
 												{sectionLessons.length} {isAr ? 'دروس' : 'lessons'}
 											</span>
 											<ChevronDown
@@ -1519,13 +1519,14 @@ function MetaItem({
 												<div className="flex-1 min-w-0">
 													<div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
 														<h3
-															className="text-[13px] font-semibold truncate leading-tight"
+															className="text-[13px] truncate leading-tight"
 															style={{
+																fontWeight: 500,
 																color: isActive
-																	? purple
+																	? "var(--primary)"
 																	: status === "locked"
-																		? textSecondary
-																		: textPrimary,
+																		? "var(--muted)"
+																		: "var(--foreground)",
 															}}>
 															{lesson.title || lesson.titleAr}
 														</h3>
@@ -1541,24 +1542,12 @@ function MetaItem({
 																{lesson.duration} د
 															</span>
 														)}
-
-														{lesson.isFree && (
-															<span
-																className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium"
-																style={{
-																	background: `${teal}10`,
-																	color: teal,
-																}}>
-																<Gift size={10} />
-																مجاني
-															</span>
-														)}
 													</div>
 												</div>
 
 												{/* Lesson Number Badge */}
 												<div
-													className="flex items-center justify-center shrink-0 text-xs font-bold"
+													className="flex items-center justify-center shrink-0 text-xs font-semibold"
 													style={{
 														width: "22px",
 														height: "22px",
@@ -1568,17 +1557,6 @@ function MetaItem({
 													}}>
 													{globalIdx + 1}
 												</div>
-
-												{/* Active indicator glow */}
-												{isActive && (
-													<div
-														className="absolute inset-0 rounded-[12px] pointer-events-none"
-														style={{
-															background: `linear-gradient(135deg, ${purple}05, transparent)`,
-															boxShadow: `inset 0 0 20px ${purple}08`,
-														}}
-													/>
-												)}
 											</button>
 										);
 									})}
@@ -1657,25 +1635,31 @@ function MetaItem({
 							<div
 								style={{
 									display: "flex",
-									gap: 16,
+									gap: 8,
 									flexWrap: "wrap",
+									alignItems: "center",
 									fontSize: 12,
+									fontWeight: 500,
+									color: "var(--muted)",
 								}}>
-								<MetaItem
-									icon={BarChart3}
-									label={course?.level || (isAr ? "مبتدئ" : "Beginner")}
-								/>
-								<MetaItem
-									icon={Clock}
-									label={`${course?.duration || 30} ${isAr ? "ساعة" : "hours"}`}
-								/>
-								{course?.rating && (
-									<MetaItem icon={Star} label={course.rating} color="#F5A623" />
-								)}
-								<MetaItem
-									icon={FileText}
-									label={`${totalLessons} ${isAr ? "درس" : "lessons"}`}
-								/>
+								<span>
+									{course?.level
+										? String(course.level).charAt(0).toUpperCase() +
+											String(course.level).slice(1).toLowerCase()
+										: isAr
+											? "مبتدئ"
+											: "Beginner"}
+								</span>
+								<span>·</span>
+								<span>{`${course?.duration || 30} ${isAr ? "ساعة" : "hours"}`}</span>
+								{course?.rating ? (
+									<>
+										<span>·</span>
+										<span>{course.rating}</span>
+									</>
+								) : null}
+								<span>·</span>
+								<span>{`${totalLessons} ${isAr ? "درس" : "lessons"}`}</span>
 							</div>
 						</div>
 					</div>
@@ -2072,7 +2056,7 @@ function MetaItem({
 													position: 'absolute', top: '16px', right: '16px',
 													display: 'flex', alignItems: 'center', gap: '6px',
 													background: '#ef4444', padding: '4px 12px',
-													borderRadius: '20px', color: '#fff', fontWeight: 700, fontSize: '0.8rem',
+													borderRadius: '20px', color: '#fff', fontWeight: 600, fontSize: '0.8rem',
 												}}>
 													<span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }}/>
 													LIVE
@@ -2183,30 +2167,60 @@ function MetaItem({
 								{/* No Media State */}
 								{!isCurrentLive && !hasVideo && !hasFile && !hasImage && !hasLocalUrl && (
 									<div
-										className="h-[450px] flex items-center justify-center"
-										style={{ background: sidebarBg }}>
-										<div className="text-center">
-											<div
-												className="mx-auto mb-4 h-20 w-20 rounded-3xl flex items-center justify-center"
-												style={{ background: `${purple}10` }}>
-												<File
-													className="h-10 w-10"
-													style={{ color: `${purple}40` }}
-												/>
-											</div>
-											<p
-												className="text-base font-semibold mb-2"
-												style={{ color: textPrimary }}>
-												لا يوجد وسائط لهذا الدرس
-											</p>
-											{activeLesson.description && (
-												<p
-													className="text-sm mt-4 max-w-lg mx-auto leading-relaxed px-6"
-													style={{ color: textSecondary }}>
-													{activeLesson.description}
-												</p>
-											)}
+										className="flex flex-col items-center justify-center"
+										style={{
+											width: "100%",
+											textAlign: "center",
+											padding: "80px 24px",
+											background: "transparent",
+										}}>
+										<div
+											style={{
+												width: 64,
+												height: 64,
+												borderRadius: 16,
+												display: "flex",
+												alignItems: "center",
+												justifyContent: "center",
+												background: "rgba(81, 32, 200, 0.08)",
+											}}>
+											<File
+												size={28}
+												style={{ color: "var(--primary)", opacity: 0.5 }}
+											/>
 										</div>
+										<p
+											style={{
+												marginTop: 12,
+												fontSize: 14,
+												fontWeight: 500,
+												color: "var(--muted)",
+											}}>
+											لا يوجد وسائط لهذا الدرس
+										</p>
+										<p
+											style={{
+												marginTop: 6,
+												fontSize: 12,
+												fontWeight: 400,
+												color: "var(--muted)",
+											}}>
+											{isAr
+												? "اختر درساً آخر أو عد لاحقاً"
+												: "Choose another lesson or come back later"}
+										</p>
+										{activeLesson.description && (
+											<p
+												style={{
+													marginTop: 16,
+													fontSize: 13,
+													color: "var(--muted)",
+													maxWidth: 560,
+													lineHeight: 1.7,
+												}}>
+												{activeLesson.description}
+											</p>
+										)}
 									</div>
 								)}
 							</div>
