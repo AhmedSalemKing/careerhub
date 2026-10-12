@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { Target, GraduationCap, Users, ChevronRight, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { TRAINING_URL } from '../../../lib/constants'
 
 /* ════════════════════════════════════════
@@ -13,35 +13,26 @@ import { TRAINING_URL } from '../../../lib/constants'
 const FEATURES = [
   {
     id: 1,
-    icon: <Target size={22} />,
-    iconBg: 'linear-gradient(135deg, #5120c8, #7C3AED)',
     titleKey: 'career_title' as const,
     descKey: 'career_desc' as const,
     ctaKey: 'career_cta' as const,
     href: '/dashboard/assessment',
-    color: '#5120c8',
     isExternal: false,
   },
   {
     id: 2,
-    icon: <GraduationCap size={22} />,
-    iconBg: 'linear-gradient(135deg, #0D9488, #2DD4BF)',
     titleKey: 'training_title' as const,
     descKey: 'training_desc' as const,
     ctaKey: 'training_cta' as const,
     href: TRAINING_URL,
-    color: '#0D9488',
     isExternal: true,
   },
   {
     id: 3,
-    icon: <Users size={22} />,
-    iconBg: 'linear-gradient(135deg, #D97706, #FBBF24)',
     titleKey: 'coaching_title' as const,
     descKey: 'coaching_desc' as const,
     ctaKey: 'coaching_cta' as const,
     href: '/dashboard/coaching',
-    color: '#D97706',
     isExternal: false,
   },
 ]
@@ -96,38 +87,26 @@ export function FeaturesSection() {
 
   const screenImage = isDark ? '/Screen/Light.png' : '/Screen/Dark.png'
 
-  const renderFeatureCard = (feature: typeof FEATURES[number]) => {
+  const renderFeatureCard = (feature: typeof FEATURES[number], positionClass: string) => {
+    const className = `fx-card ${positionClass} ${show ? 'fx-card-show' : ''}`
+
     const content = (
       <>
-        <div className="feature-icon" style={{ background: feature.iconBg }}>
-          {feature.icon}
-        </div>
-
-        <div className="feature-text">
-          <div className="feature-text-header">
-            <h3 className="feature-title fx-pingarlt">{t(feature.titleKey)}</h3>
-            <span className="feature-arrow"><ChevronRight size={14} /></span>
-          </div>
-          <p className="feature-desc">{t(feature.descKey)}</p>
-        </div>
-
-        <div className="feature-cta fx-pingarlt-bold">
+        <h3 className="fx-card-title">{t(feature.titleKey)}</h3>
+        <p className="fx-card-desc">{t(feature.descKey)}</p>
+        <span className="fx-card-cta">
           {t(feature.ctaKey)}
-          {feature.isExternal && (
-            <svg className="w-3 h-3 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          )}
-        </div>
+          <span className="fx-card-arrow" aria-hidden="true">←</span>
+        </span>
       </>
     )
 
     return feature.isExternal ? (
-      <a href={feature.href} target="_blank" rel="noopener noreferrer" className="feature-card">
+      <a href={feature.href} target="_blank" rel="noopener noreferrer" className={className}>
         {content}
       </a>
     ) : (
-      <Link href={feature.href} className="feature-card">
+      <Link href={feature.href} className={className}>
         {content}
       </Link>
     )
@@ -141,18 +120,12 @@ export function FeaturesSection() {
       <div className="fx-glow fx-glow-2" />
       <div className="fx-blur fx-blur-1" />
       <div className="fx-blur fx-blur-2" />
-      <div className="fx-grid-pattern" />
 
       {/* ═══ Container ═══ */}
       <div className="fx-container">
 
         {/* ── Header ── */}
         <div className={`fx-header ${show ? 'fx-visible' : ''}`}>
-          <span className="fx-badge">
-            <Sparkles className="w-3 h-3" />
-            {t('badge')}
-          </span>
-
           <h2 className="fx-title fx-pingarlt">
             {t('title')}
           </h2>
@@ -165,10 +138,17 @@ export function FeaturesSection() {
         {/* ── Main Content: Centered Phone with Cards Left / Right / Below ── */}
         <div className="fx-main">
 
+          {/* ═══ SVG CONNECTORS ═══ */}
+          <svg className="fx-connectors" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M 260 200 Q 400 200 500 350" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
+            <path d="M 940 200 Q 800 200 700 350" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
+            <path d="M 600 620 L 600 700" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
+            <circle cx="600" cy="620" r="4" fill="#A78BFA" />
+            <circle cx="600" cy="700" r="4" fill="#A78BFA" />
+          </svg>
+
           {/* ═══ LEFT CARD ═══ */}
-          <div className={`fx-card fx-card-left ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0s' }}>
-            {renderFeatureCard(FEATURES[0])}
-          </div>
+          {renderFeatureCard(FEATURES[0], 'fx-card-left')}
 
           {/* ═══ CENTER: PHONE MOCKUP ═══ */}
           <div className={`fx-phone-wrapper ${show ? 'fx-phone-show' : ''}`}>
@@ -211,14 +191,10 @@ export function FeaturesSection() {
           </div>
 
           {/* ═══ RIGHT CARD ═══ */}
-          <div className={`fx-card fx-card-right ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0.18s' }}>
-            {renderFeatureCard(FEATURES[1])}
-          </div>
+          {renderFeatureCard(FEATURES[1], 'fx-card-right')}
 
           {/* ═══ BOTTOM CARD ═══ */}
-          <div className={`fx-card fx-card-bottom ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0.36s' }}>
-            {renderFeatureCard(FEATURES[2])}
-          </div>
+          {renderFeatureCard(FEATURES[2], 'fx-card-bottom')}
         </div>
       </div>
 
@@ -272,7 +248,7 @@ export function FeaturesSection() {
           --fx-glow-color: rgba(81,32,200,0.12);
 
           position: relative;
-          padding: 90px 24px;
+          padding: 60px 24px 80px;
           background: linear-gradient(180deg, #0B0B12 0%, #0F0B1A 100%);
           color: var(--fx-fg);
           overflow: hidden;
@@ -316,23 +292,6 @@ export function FeaturesSection() {
           transform: translateY(0);
         }
 
-        .fx-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 16px;
-          border-radius: 100px;
-          background: rgba(81,32,200,0.1);
-          border: 1px solid rgba(81,32,200,0.18);
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--fx-primary);
-          letter-spacing: 0.07em;
-          text-transform: uppercase;
-          margin-bottom: 16px;
-          font-family: "DM Sans", sans-serif;
-        }
-
         .fx-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 700 !important;
@@ -363,92 +322,35 @@ export function FeaturesSection() {
           grid-template-areas:
             "left phone right"
             ".    bottom .";
-          gap: 32px 48px;
+          gap: 40px 60px;
           align-items: center;
-          direction: ltr; /* keep physical left/right mapping for connector lines */
-          max-width: 1200px;
+          justify-items: center;
+          direction: ltr; /* keep physical left/right mapping so connectors line up */
+          max-width: 1180px;
           margin: 0 auto;
-          padding: 60px 24px;
+          padding: 40px 24px 60px;
         }
 
         /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
-        [dir="rtl"] .feature-card,
+        [dir="rtl"] .fx-card,
         [dir="rtl"] .fx-header {
           direction: rtl;
         }
 
         /* ── Card positions around the phone ── */
-        .fx-card-left { grid-area: left; align-self: start; }
-        .fx-card-right { grid-area: right; align-self: start; }
-        .fx-card-bottom {
-          grid-area: bottom;
-          justify-self: center;
+        .fx-card-left   { grid-area: left;   justify-self: end;   max-width: 340px; }
+        .fx-card-right  { grid-area: right;  justify-self: start; max-width: 340px; }
+        .fx-card-bottom { grid-area: bottom; justify-self: center; max-width: 460px; }
+        .fx-phone-wrapper { grid-area: phone; justify-self: center; }
+
+        /* ── Curved dotted purple connectors (SVG overlay) ── */
+        .fx-connectors {
+          position: absolute;
+          inset: 0;
           width: 100%;
-          max-width: 520px;
-          margin-top: -20px;
-        }
-
-        /* ── Card wrapper reveal animation (kept separate from .feature-card hover) ── */
-        .fx-card {
-          position: relative;
-          opacity: 0;
-          transform: translateY(24px);
-          animation: fxCardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-          animation-play-state: paused;
-        }
-
-        .fx-card.fx-card-show {
-          animation-play-state: running;
-        }
-
-        @keyframes fxCardReveal {
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── Dotted purple connection lines (phone <-> cards) ── */
-        .fx-card-left::after,
-        .fx-card-right::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          width: 60px;
-          height: 1px;
-          background-image: linear-gradient(to right, #a78bfa 50%, transparent 50%);
-          background-size: 8px 1px;
-          background-repeat: repeat-x;
-          opacity: 0.5;
+          height: 100%;
           pointer-events: none;
-        }
-
-        .fx-card-left::after { right: -60px; }
-        .fx-card-right::after { left: -60px; }
-
-        .fx-card-bottom::before {
-          content: '';
-          position: absolute;
-          top: -40px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 1px;
-          height: 40px;
-          background-image: linear-gradient(to bottom, #a78bfa 50%, transparent 50%);
-          background-size: 1px 8px;
-          background-repeat: repeat-y;
-          opacity: 0.5;
-          pointer-events: none;
-        }
-
-        .fx-card-bottom::after {
-          content: '';
-          position: absolute;
-          top: -44px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #a78bfa;
-          pointer-events: none;
+          z-index: 0;
         }
 
         /* Tablet & Mobile (<968px): stack everything vertically */
@@ -460,25 +362,22 @@ export function FeaturesSection() {
               "phone"
               "right"
               "bottom";
-            gap: 28px;
-            padding: 40px 20px;
+            gap: 24px;
+            padding: 32px 20px 48px;
           }
 
-          .fx-card-bottom {
-            margin-top: 0;
-            max-width: 100%;
+          .fx-card-left,
+          .fx-card-right {
+            justify-self: center;
           }
 
-          .fx-card-left::after,
-          .fx-card-right::after,
-          .fx-card-bottom::before,
-          .fx-card-bottom::after {
-            display: none;
-          }
+          .fx-card-bottom { max-width: 100%; }
+
+          .fx-connectors { display: none; }
         }
 
         @media (max-width: 480px) {
-          .features-section { padding: 60px 16px; }
+          .features-section { padding: 48px 16px 64px; }
         }
 
         /* ========================================
@@ -512,18 +411,16 @@ export function FeaturesSection() {
         }
 
         .phone-frame {
-          width: 260px;
-          height: 520px;
-          background: linear-gradient(145deg, #1a1a1e, #0d0d10);
-          border-radius: 44px;
-          padding: 10px;
+          width: 340px;
+          height: 700px;
+          background: #1a1a1a;
+          border-radius: 48px;
+          padding: 12px;
           position: relative;
           z-index: 2;
           box-shadow:
-            0 25px 80px rgba(0,0,0,0.55),
-            0 10px 30px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.08),
-            inset 0 -1px 0 rgba(0,0,0,0.3);
+            0 20px 60px rgba(81, 32, 200, 0.18),
+            0 10px 30px rgba(0, 0, 0, 0.12);
         }
 
         :root:not(.dark) .phone-frame {
@@ -588,7 +485,7 @@ export function FeaturesSection() {
         .phone-screen {
           width: 100%;
           height: 100%;
-          border-radius: 36px;
+          border-radius: 38px;
           overflow: hidden;
           background: #000;
           position: relative;
@@ -599,7 +496,7 @@ export function FeaturesSection() {
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          border-radius: 36px;
+          border-radius: 38px;
           display: block;
         }
 
@@ -644,162 +541,105 @@ export function FeaturesSection() {
         /* Strong soft shadow underneath the phone (visible on light bg) */
         .phone-shadow {
           position: absolute;
-          bottom: -20px;
+          bottom: -30px;
           left: 50%;
           transform: translateX(-50%);
-          width: 70%;
+          width: 80%;
           height: 60px;
           background: radial-gradient(
             ellipse at center,
-            rgba(81, 32, 200, 0.25) 0%,
-            rgba(81, 32, 200, 0.08) 40%,
-            transparent 70%
+            rgba(81, 32, 200, 0.28) 0%,
+            rgba(81, 32, 200, 0.1) 40%,
+            transparent 75%
           );
-          filter: blur(20px);
+          filter: blur(24px);
           pointer-events: none;
           z-index: 1;
         }
 
         /* ========================================
-           ✅ FEATURE CARDS - أعرض أفقيًا + أقصر عموديًا
+           FEATURE CARDS (compact, no icons)
            ======================================== */
 
-        /* ✅ الكارد الرئيسي - أعرض + أقصر */
-        .feature-card {
+        .fx-card {
           position: relative;
-          display: flex;
-          align-items: center;
-          gap: 20px; /* ← مسافة أفقية متوازنة */
-          padding: 12px 28px; /* ← padding عمودي أقل (12px) + أفقي واسع (28px) */
-          border-radius: 20px; /* ← زوايا أكثر نعومة */
-          background: var(--fx-card-bg);
-          border: 1.5px solid var(--fx-card-border);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
-          box-shadow: 0 4px 20px rgba(81, 32, 200, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+          z-index: 1;
+          display: block;
+          width: 100%;
+          padding: 28px 26px 24px;
+          border-radius: 24px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          box-shadow:
+            0 8px 32px rgba(81, 32, 200, 0.06),
+            0 2px 8px rgba(0, 0, 0, 0.03);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           text-decoration: none;
           color: var(--fx-fg);
-          overflow: hidden;
-          transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-          cursor: pointer;
-          min-height: unset; /* ← إزالة الحد الأدنى للارتفاع */
-          height: auto; /* ← ارتفاع تلقائي حسب المحتوى */
-        }
-
-        .feature-card:hover {
-          transform: scale(1.02) translateY(-2px); /* ← تصغير التكبير قليلاً */
-          border-color: rgba(81,32,200,0.35);
-          box-shadow: 0 10px 35px rgba(0,0,0,0.18);
-        }
-
-        :root:not(.dark) .feature-card:hover {
-          box-shadow: 0 10px 35px rgba(27,35,64,0.12);
-        }
-
-        /* ✅ الأيقونة - حجم مضبوط ومتناسق */
-        .feature-icon {
-          width: 40px; /* ← أصغر قليلاً */
-          height: 40px;
-          min-width: 40px;
-          border-radius: 11px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          box-shadow: 0 3px 12px rgba(0,0,0,0.2);
-          transition: transform 0.35s ease;
-          flex-shrink: 0; ← منع الضغط */
-        }
-
-        .feature-card:hover .feature-icon {
-          transform: scale(1.08) rotate(-4deg);
-        }
-
-        .feature-text {
-          flex: 1;
-          min-width: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 2px; /* ← مسافة صغيرة جداً بين العنوان والوصف */
-        }
-
-        .feature-text-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          margin-bottom: 0;
-        }
-
-        /* ✅ العنوان - حجم مثالي */
-        .feature-title {
-          font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 700 !important;
-          font-size: 14px !important; /* ← أصغر قليلاً */
-          color: var(--fx-fg);
-          margin: 0;
-          line-height: 1.2;
-          letter-spacing: -0.01em;
-          white-space: nowrap; /* ← منع كسر السطر للحفاظ على سطر واحد */
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .feature-arrow {
-          display: flex;
-          align-items: center;
-          color: var(--fx-primary);
           opacity: 0;
-          transform: translateX(-8px);
-          transition: all 0.3s ease;
-          flex-shrink: 0;
+          transform: translateY(16px);
+          transition:
+            opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.25s ease,
+            background-color 0.35s ease,
+            border-color 0.35s ease;
         }
 
-        [dir="rtl"] .feature-arrow {
-          transform: translateX(8px);
-        }
-
-        .feature-card:hover .feature-arrow {
+        .fx-card.fx-card-show {
           opacity: 1;
-          transform: translateX(0);
+          transform: translateY(0);
         }
 
-        /* ✅ الوصف - أصغر وأكثر ضغطاً */
-        .feature-desc {
-          font-size: 11px; /* ← أصغر */
-          color: var(--fx-muted);
-          line-height: 1.3; /* ← أقصر */
-          margin: 0;
-          font-family: "DM Sans", sans-serif;
-          white-space: nowrap; /* ← سطر واحد فقط */
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 100%;
+        .fx-card:hover {
+          transform: translateY(-3px);
+          box-shadow:
+            0 12px 44px rgba(81, 32, 200, 0.1),
+            0 4px 12px rgba(0, 0, 0, 0.04);
         }
 
-        /* ✅ زر CTA - أنحف وأكثر أناقة */
-        .feature-cta {
-          padding: 5px 13px; /* ← أنحف عمودياً */
-          border-radius: 999px;
-          font-size: 9px; /* ← نص أصغر */
-          font-family: 'PingARLT', 'Arial Black', sans-serif !important;
-          font-weight: 700 !important;
-          background: rgba(81,32,200,0.1);
-          color: var(--fx-primary);
-          border: 1px solid rgba(81,32,200,0.2);
-          white-space: nowrap;
-          transition: all 0.3s ease;
+        :root:not(.dark) .fx-card {
+          background: rgba(255, 255, 255, 0.72);
+          border-color: rgba(81, 32, 200, 0.08);
+        }
+
+        .fx-card-title {
+          font-family: 'PingARLT', 'Arial Black', sans-serif;
+          font-size: 22px;
+          font-weight: 800;
+          color: #5120C8;
+          margin: 0 0 8px;
+          line-height: 1.25;
+          letter-spacing: -0.01em;
+        }
+
+        .fx-card-desc {
+          font-size: 14px;
+          line-height: 1.6;
+          color: var(--muted);
+          margin: 0 0 16px;
+        }
+
+        .fx-card-cta {
           display: inline-flex;
           align-items: center;
-          gap: 4px;
-          flex-shrink: 0; /* ← منع الضغط */
-          height: fit-content;
+          gap: 6px;
+          font-size: 14px;
+          font-weight: 700;
+          color: #5120C8;
+          transition: gap 0.2s ease;
         }
 
-        .feature-card:hover .feature-cta {
-          background: var(--fx-primary);
-          color: #fff;
-          border-color: var(--fx-primary);
+        .fx-card-arrow {
+          display: inline-block;
+          font-size: 15px;
+          line-height: 1;
+          transition: transform 0.2s ease;
+        }
+
+        .fx-card:hover .fx-card-arrow {
+          transform: translateX(-3px); /* RTL: arrow points left */
         }
 
         /* ========================================
@@ -830,59 +670,15 @@ export function FeaturesSection() {
         .fx-blur {
           position: absolute;
           border-radius: 50%;
-          filter: blur(100px);
-          opacity: 0.25;
+          filter: blur(120px);
+          opacity: 0.35;
           pointer-events: none;
           z-index: 0;
         }
 
-        .fx-blur-1 {
-          top: 10%;
-          left: -10%;
-          width: 400px;
-          height: 400px;
-          background: #A78BFA;
-        }
+        .fx-blur-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #DDD6FE; }
+        .fx-blur-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #EDE9FE; }
 
-        .fx-blur-2 {
-          bottom: 10%;
-          right: -10%;
-          width: 500px;
-          height: 500px;
-          background: #C4B5FD;
-        }
-
-        .fx-grid-pattern {
-          position: absolute;
-          inset: 0;
-          background-size: 50px 50px;
-          background-image:
-            linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
-          mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, black 0%, transparent 100%);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        :root:not(.dark) .fx-grid-pattern {
-          background-image:
-            linear-gradient(to right, rgba(27,35,64,0.04) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(27,35,64,0.04) 1px, transparent 1px);
-        }
-
-        .features-section *,
-        .features-section *::before,
-        .features-section *::after {
-          transition-property: background-color, border-color, color, box-shadow;
-          transition-duration: 0.35s ease;
-        }
-
-        .feature-card,
-        .feature-icon,
-        .feature-cta,
-        .feature-arrow {
-          transition-property: all;
-        }
       `}</style>
     </section>
   )
