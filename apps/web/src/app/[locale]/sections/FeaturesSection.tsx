@@ -138,15 +138,6 @@ export function FeaturesSection() {
         {/* ── Main Content: Centered Phone with Cards Left / Right / Below ── */}
         <div className="fx-main">
 
-          {/* ═══ SVG CONNECTORS ═══ */}
-          <svg className="fx-connectors" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M 260 200 Q 400 200 500 350" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
-            <path d="M 940 200 Q 800 200 700 350" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
-            <path d="M 600 620 L 600 700" fill="none" stroke="#C4B5FD" strokeWidth="1.5" strokeDasharray="4 6" opacity="0.7" />
-            <circle cx="600" cy="620" r="4" fill="#A78BFA" />
-            <circle cx="600" cy="700" r="4" fill="#A78BFA" />
-          </svg>
-
           {/* ═══ LEFT CARD ═══ */}
           {renderFeatureCard(FEATURES[0], 'fx-card-left')}
 
@@ -248,7 +239,7 @@ export function FeaturesSection() {
           --fx-glow-color: rgba(81,32,200,0.12);
 
           position: relative;
-          padding: 60px 24px 80px;
+          padding: 48px 24px 72px;
           background: linear-gradient(180deg, #0B0B12 0%, #0F0B1A 100%);
           color: var(--fx-fg);
           overflow: hidden;
@@ -322,13 +313,13 @@ export function FeaturesSection() {
           grid-template-areas:
             "left phone right"
             ".    bottom .";
-          gap: 40px 60px;
+          gap: 32px 40px;
           align-items: center;
           justify-items: center;
           direction: ltr; /* keep physical left/right mapping so connectors line up */
-          max-width: 1180px;
+          max-width: 1080px;
           margin: 0 auto;
-          padding: 40px 24px 60px;
+          padding: 32px 24px 48px;
         }
 
         /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
@@ -338,19 +329,66 @@ export function FeaturesSection() {
         }
 
         /* ── Card positions around the phone ── */
-        .fx-card-left   { grid-area: left;   justify-self: end;   max-width: 340px; }
-        .fx-card-right  { grid-area: right;  justify-self: start; max-width: 340px; }
-        .fx-card-bottom { grid-area: bottom; justify-self: center; max-width: 460px; }
+        .fx-card-left   { grid-area: left;   justify-self: end;   max-width: 280px; }
+        .fx-card-right  { grid-area: right;  justify-self: start; max-width: 280px; }
+        .fx-card-bottom { grid-area: bottom; justify-self: center; max-width: 380px; }
         .fx-phone-wrapper { grid-area: phone; justify-self: center; }
 
-        /* ── Curved dotted purple connectors (SVG overlay) ── */
-        .fx-connectors {
+        /* ── Curved dotted purple connectors (card pseudo-elements) ── */
+        .fx-card-left::after {
+          content: '';
           position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
+          top: 50%;
+          right: -52px;
+          width: 52px;
+          height: 60px;
+          border-top: 1.5px dashed #C4B5FD;
+          border-right: 1.5px dashed #C4B5FD;
+          border-top-right-radius: 100%;
+          transform: translateY(-100%);
+          opacity: 0.7;
           pointer-events: none;
-          z-index: 0;
+        }
+
+        .fx-card-right::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: -52px;
+          width: 52px;
+          height: 60px;
+          border-top: 1.5px dashed #C4B5FD;
+          border-left: 1.5px dashed #C4B5FD;
+          border-top-left-radius: 100%;
+          transform: translateY(-100%);
+          opacity: 0.7;
+          pointer-events: none;
+        }
+
+        .fx-card-bottom::before {
+          content: '';
+          position: absolute;
+          top: -36px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 0;
+          height: 36px;
+          border-left: 1.5px dashed #C4B5FD;
+          opacity: 0.7;
+          pointer-events: none;
+        }
+
+        .fx-card-bottom::after {
+          content: '';
+          position: absolute;
+          top: -40px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #A78BFA;
+          pointer-events: none;
         }
 
         /* Tablet & Mobile (<968px): stack everything vertically */
@@ -373,11 +411,17 @@ export function FeaturesSection() {
 
           .fx-card-bottom { max-width: 100%; }
 
-          .fx-connectors { display: none; }
+          .fx-card-left::after,
+          .fx-card-right::after,
+          .fx-card-bottom::before,
+          .fx-card-bottom::after {
+            display: none;
+          }
         }
 
         @media (max-width: 480px) {
           .features-section { padding: 48px 16px 64px; }
+          .phone-frame { width: 250px; height: 520px; }
         }
 
         /* ========================================
@@ -411,16 +455,16 @@ export function FeaturesSection() {
         }
 
         .phone-frame {
-          width: 340px;
-          height: 700px;
+          width: 300px;
+          height: 620px;
           background: #1a1a1a;
-          border-radius: 48px;
-          padding: 12px;
+          border-radius: 44px;
+          padding: 10px;
           position: relative;
           z-index: 2;
           box-shadow:
-            0 20px 60px rgba(81, 32, 200, 0.18),
-            0 10px 30px rgba(0, 0, 0, 0.12);
+            0 18px 50px rgba(81, 32, 200, 0.16),
+            0 8px 24px rgba(0, 0, 0, 0.1);
         }
 
         :root:not(.dark) .phone-frame {
@@ -485,7 +529,7 @@ export function FeaturesSection() {
         .phone-screen {
           width: 100%;
           height: 100%;
-          border-radius: 38px;
+          border-radius: 34px;
           overflow: hidden;
           background: #000;
           position: relative;
@@ -496,7 +540,7 @@ export function FeaturesSection() {
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          border-radius: 38px;
+          border-radius: 34px;
           display: block;
         }
 
@@ -541,18 +585,18 @@ export function FeaturesSection() {
         /* Strong soft shadow underneath the phone (visible on light bg) */
         .phone-shadow {
           position: absolute;
-          bottom: -30px;
+          bottom: -24px;
           left: 50%;
           transform: translateX(-50%);
-          width: 80%;
-          height: 60px;
+          width: 85%;
+          height: 44px;
           background: radial-gradient(
             ellipse at center,
-            rgba(81, 32, 200, 0.28) 0%,
-            rgba(81, 32, 200, 0.1) 40%,
+            rgba(81, 32, 200, 0.32) 0%,
+            rgba(81, 32, 200, 0.12) 40%,
             transparent 75%
           );
-          filter: blur(24px);
+          filter: blur(18px);
           pointer-events: none;
           z-index: 1;
         }
@@ -566,8 +610,8 @@ export function FeaturesSection() {
           z-index: 1;
           display: block;
           width: 100%;
-          padding: 28px 26px 24px;
-          border-radius: 24px;
+          padding: 22px 22px 20px;
+          border-radius: 20px;
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.06);
           box-shadow:
@@ -606,26 +650,26 @@ export function FeaturesSection() {
 
         .fx-card-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif;
-          font-size: 22px;
+          font-size: 19px;
           font-weight: 800;
           color: #5120C8;
-          margin: 0 0 8px;
+          margin: 0 0 6px;
           line-height: 1.25;
           letter-spacing: -0.01em;
         }
 
         .fx-card-desc {
-          font-size: 14px;
-          line-height: 1.6;
+          font-size: 13px;
+          line-height: 1.55;
           color: var(--muted);
-          margin: 0 0 16px;
+          margin: 0 0 12px;
         }
 
         .fx-card-cta {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 700;
           color: #5120C8;
           transition: gap 0.2s ease;
