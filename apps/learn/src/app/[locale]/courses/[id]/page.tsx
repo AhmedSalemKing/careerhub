@@ -58,7 +58,10 @@ export default function CourseDetailPage({
 	const t = useTranslations("course");
 	const router = useRouter();
 	const [openSection, setOpenSection] = useState<string | null>(null);
-	const [isEnrolled, setIsEnrolled] = useState(false);
+	const [enrollmentStatus, setEnrollmentStatus] = useState<
+		"loading" | "enrolled" | "not-enrolled"
+	>("loading");
+	const isEnrolled = enrollmentStatus === "enrolled";
 	const [enrolling, setEnrolling] = useState(false);
 
 	const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -92,7 +95,9 @@ export default function CourseDetailPage({
 			localStorage.getItem("deveway_token") ||
 			localStorage.getItem("careerhub_token") ||
 			document.cookie.match(/deveway_token=([^;]+)/)?.[1];
-		setHasUser(!!token);
+		const has = !!token;
+		setHasUser(has);
+		if (!has) setEnrollmentStatus("not-enrolled");
 	}, []);
 
 	const { data: course, isLoading } = useQuery({
@@ -126,22 +131,21 @@ export default function CourseDetailPage({
 		enabled: !!hasUser && !!courseId,
 		retry: 1,
 		retryDelay: 2000,
-		staleTime: 30000,
+		staleTime: 5 * 60 * 1000,
 	});
 
 	useEffect(() => {
-		if (enrollmentData !== undefined && enrollmentData !== null) {
-			const enrolled = !!(
-				enrollmentData?.enrolled === true ||
-				enrollmentData?.enrollment?.id ||
-				enrollmentData?.id ||
-				enrollmentData?.courseId ||
-				(Array.isArray(enrollmentData) && enrollmentData.length > 0) ||
-				enrollmentData?.status === "ACTIVE" ||
-				enrollmentData?.status === "active"
-			);
-			setIsEnrolled(enrolled);
-		}
+		if (enrollmentData === undefined) return;
+		const enrolled = !!(
+			enrollmentData?.enrolled === true ||
+			enrollmentData?.enrollment?.id ||
+			enrollmentData?.id ||
+			enrollmentData?.courseId ||
+			(Array.isArray(enrollmentData) && enrollmentData.length > 0) ||
+			enrollmentData?.status === "ACTIVE" ||
+			enrollmentData?.status === "active"
+		);
+		setEnrollmentStatus(enrolled ? "enrolled" : "not-enrolled");
 	}, [enrollmentData]);
 
 	// Sync completed lesson IDs from enrollment data into local state
@@ -193,6 +197,7 @@ export default function CourseDetailPage({
 	const isFree = price === 0;
 
 	const handleEnroll = async () => {
+		if (enrollmentStatus === "loading") return;
 		if (!hasUser) {
 			const MAIN = process.env.NEXT_PUBLIC_MAIN_URL || "";
 			router.push(
@@ -205,7 +210,7 @@ export default function CourseDetailPage({
 			setEnrolling(true);
 			try {
 				await post(`/courses/${courseId}/enroll`, {});
-				setIsEnrolled(true);
+				setEnrollmentStatus("enrolled");
 				refetchEnrollment();
 				if (isLive) {
 					router.push(`/${locale}/live/${courseId}`);
@@ -230,6 +235,7 @@ export default function CourseDetailPage({
 	};
 
 	const navigateToLearn = (lessonId?: string) => {
+		if (enrollmentStatus === "loading") return;
 		if (isEnrolled) {
 			const learnPath = `/${locale}/learn/${courseId}${lessonId ? `?lesson=${lessonId}` : ""}`;
 			router.push(learnPath);
@@ -1424,6 +1430,19 @@ export default function CourseDetailPage({
 										)}
 									</div>
 								</>
+							) : enrollmentStatus === "loading" ? (
+								<button
+									disabled
+									className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all"
+									style={{
+										background: "rgba(148,163,184,0.15)",
+										color: textSecondary,
+										cursor: "wait",
+										border: `1px solid ${borderColor}`,
+									}}>
+									<Loader2 size={20} className="animate-spin" />
+									{isAr ? "جارٍ التحقق..." : "Checking enrollment..."}
+								</button>
 							) : (
 								<button
 									onClick={handleEnroll}
