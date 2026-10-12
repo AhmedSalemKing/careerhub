@@ -1619,8 +1619,8 @@ function MetaItem({
 							<h1
 								style={{
 									fontSize: 24,
-									fontWeight: 900,
-									fontFamily: "var(--font-brand)",
+									fontWeight: 500,
+									fontFamily: "var(--font-medium)",
 									color: "var(--foreground)",
 									margin: "0 0 6px",
 								}}>
@@ -1727,6 +1727,8 @@ function MetaItem({
 							<div
 								className="w-full relative"
 								style={{
+									width: "100%",
+									maxWidth: "100%",
 									background: "var(--card)",
 									border: "1px solid var(--border)",
 									borderRadius: 20,
@@ -2186,6 +2188,7 @@ function MetaItem({
 									<div
 										style={{
 											width: "100%",
+											maxWidth: "100%",
 											padding: "80px 24px",
 											display: "flex",
 											flexDirection: "column",
