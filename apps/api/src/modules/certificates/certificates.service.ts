@@ -99,7 +99,7 @@ export class CertificatesService {
 
     // 4. Verify enrollment, certificate eligibility, and course completion
     const enrollment = await this.prisma.enrollment.findFirst({
-      where: { userId, courseId, status: 'ACTIVE' },
+      where: { userId, courseId, status: { in: ['ACTIVE', 'COMPLETED'] } },
     })
     if (!enrollment) throw new ForbiddenException('Not enrolled')
 
@@ -131,6 +131,29 @@ export class CertificatesService {
 
     if (totalLessons === 0 || completedLessons < totalLessons) {
       throw new ForbiddenException('Course not completed yet')
+    }
+
+    // 4b. Quiz gate: every published quiz that has questions must be passed
+    // before a certificate can be issued (skipped for admin bypass).
+    if (!bypassEnrollment) {
+      const quizzes = await this.prisma.quiz.findMany({
+        where: { courseId, status: 'PUBLISHED', questions: { some: {} } },
+        select: { id: true, passingScore: true },
+      })
+      for (const quiz of quizzes) {
+        const bestAttempt = await this.prisma.quizAttempt.findFirst({
+          where: { userId, quizId: quiz.id, status: 'GRADED' },
+          orderBy: { percentage: 'desc' },
+        })
+        const passed =
+          !!bestAttempt &&
+          (bestAttempt.passed || bestAttempt.percentage >= quiz.passingScore)
+        if (!passed) {
+          throw new ForbiddenException(
+            'All course quizzes must be passed before the certificate is issued',
+          )
+        }
+      }
     }
 
     // 5. Generate unique serial number (our verifyCode)

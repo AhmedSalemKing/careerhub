@@ -1590,14 +1590,15 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     const enrollment = await this.prisma.enrollment.findUnique({
       where: { userId_courseId: { userId, courseId } },
     }).catch(() => null);
-    if (!enrollment) return { completed: false };
+    if (!enrollment) return { completed: false, quizzesPassed: false };
+    const quizzesPassed = await this.hasPassedAllQuizzes(userId, courseId).catch(() => false);
     if (enrollment.progress >= 100) {
       const cert = await this.prisma.certificate.findUnique({
         where: { userId_courseId: { userId, courseId } },
       }).catch(() => null);
-      return { completed: true, certificateUrl: cert?.certificateUrl ?? null };
+      return { completed: true, certificateUrl: cert?.certificateUrl ?? null, quizzesPassed };
     }
-    return { completed: false, progress: enrollment.progress };
+    return { completed: false, progress: enrollment.progress, quizzesPassed };
   }
 
   async globalSearch(q: string) {
@@ -1735,6 +1736,55 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { success: true, data: updated };
   }
 
+  async areAllLessonsCompleted(userId: string, courseId: string): Promise<boolean> {
+    const [totalLessons, completedLessons] = await Promise.all([
+      this.prisma.lesson.count({
+        where: {
+          isPublished: true,
+          OR: [{ section: { courseId } }, { module: { courseId } }],
+        },
+      }),
+      this.prisma.lessonProgress.count({
+        where: {
+          userId,
+          status: 'COMPLETED',
+          lesson: {
+            OR: [{ section: { courseId } }, { module: { courseId } }],
+          },
+        },
+      }),
+    ]);
+    return totalLessons > 0 && completedLessons >= totalLessons;
+  }
+
+  // A student passes the course quizzes only when every PUBLISHED quiz that has
+  // questions has a graded attempt whose percentage reaches the passing score.
+  async hasPassedAllQuizzes(userId: string, courseId: string): Promise<boolean> {
+    const quizzes = await this.prisma.quiz.findMany({
+      where: {
+        courseId,
+        status: 'PUBLISHED',
+        questions: { some: {} },
+      },
+      select: { id: true, passingScore: true },
+    });
+
+    if (quizzes.length === 0) return true;
+
+    for (const quiz of quizzes) {
+      const bestAttempt = await this.prisma.quizAttempt.findFirst({
+        where: { userId, quizId: quiz.id, status: 'GRADED' },
+        orderBy: { percentage: 'desc' },
+      });
+      const passed =
+        !!bestAttempt &&
+        (bestAttempt.passed || bestAttempt.percentage >= quiz.passingScore);
+      if (!passed) return false;
+    }
+
+    return true;
+  }
+
   async markLessonComplete(userId: string, courseId: string, lessonId: string) {
     // Verify enrollment
     const enrollment = await this.prisma.enrollment.findUnique({
@@ -1806,14 +1856,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     });
 
-    // Auto Certificate Generation - only if instructor has enabled certificates and marked course complete
+    // Auto Certificate Generation - only if instructor has enabled certificates,
+    // marked the course complete, AND the student has passed all course quizzes.
+    let allQuizzesPassed = true;
     if (isCourseComplete) {
+      allQuizzesPassed = await this.hasPassedAllQuizzes(userId, courseId);
       const course = await this.prisma.course.findUnique({
         where: { id: courseId },
         select: { certificateEnabled: true, isCompleted: true },
       })
 
-      if (course?.certificateEnabled && course?.isCompleted) {
+      if (course?.certificateEnabled && course?.isCompleted && allQuizzesPassed) {
         this.certificatesService
           .generateCertificate(userId, courseId)
           .then((cert) => {
@@ -1826,8 +1879,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
           })
       } else {
         this.logger.log(
-          `[Certificate] Skipped: course ${courseId} not yet completed by instructor ` +
-          `(certificateEnabled=${course?.certificateEnabled}, isCompleted=${course?.isCompleted})`
+          `[Certificate] Skipped: course ${courseId} ` +
+          `(certificateEnabled=${course?.certificateEnabled}, isCompleted=${course?.isCompleted}, allQuizzesPassed=${allQuizzesPassed})`
         )
       }
     }
@@ -1840,6 +1893,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         totalLessons: totalCount,
         progress: progressPercent,
         isCourseComplete,
+        quizzesPassed: allQuizzesPassed,
       },
     };
   }

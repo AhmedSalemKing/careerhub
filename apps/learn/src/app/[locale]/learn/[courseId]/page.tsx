@@ -164,6 +164,9 @@ import { useAuthStore } from "../../../../stores/authStore";
 	}>({ side: "forward", visible: false });
 	const speeds = [0.75, 1, 1.25, 1.5, 2];
 	const [activeTab, setActiveTab] = useState<'video' | 'file' | 'image'>('video');
+	// PDF gating: the embedded viewer is cross-origin, so page position cannot be
+	// observed. The student explicitly confirms reaching the last page instead.
+	const [pdfReachedEnd, setPdfReachedEnd] = useState(false);
 
 	// Theme detection
 	useEffect(() => {
@@ -318,6 +321,28 @@ import { useAuthStore } from "../../../../stores/authStore";
 	const activeLesson = currentLesson;
 	const activeLessonId = currentLesson?.id ?? null;
 
+	// Quiz attached to the active lesson. Shares its react-query cache key with
+	// QuizEntryCard so no extra network request is made.
+	const { data: activeQuiz } = useQuery({
+		queryKey: ["lesson-quiz-active", activeLessonId],
+		queryFn: async () => {
+			if (!activeLessonId) return null;
+			const res = await get(`/quizzes/lesson/${activeLessonId}/active`);
+			return (res?.data as any)?.data ?? null;
+		},
+		enabled: !!activeLessonId,
+		staleTime: 0,
+		refetchOnMount: "always",
+		refetchOnWindowFocus: true,
+	});
+	const hasQuiz = !!activeQuiz;
+	const quizPassed = activeQuiz?.bestAttempt?.passed === true;
+	const quizAttempted = (activeQuiz?.attemptCount ?? 0) > 0;
+	const requiresQuiz = hasQuiz && !quizPassed;
+	const quizHref = activeQuiz?.id
+		? `/${locale}/learn/${courseId}/quiz/${activeQuiz.id}`
+		: null;
+
 	const goToLesson = useCallback(
 		(lesson: any) => {
 			if (!lesson?.id) return;
@@ -337,6 +362,9 @@ import { useAuthStore } from "../../../../stores/authStore";
 		activeLessonIndex < allLessonsFlat.length - 1
 			? allLessonsFlat[activeLessonIndex + 1]
 			: null;
+
+	// The "next" affordance is blocked while the active lesson's quiz is pending.
+	const canGoNext = !!nextLesson && !requiresQuiz;
 
 	// Sequential lock: lesson N unlocked only when lesson N-1 is completed
 	const isLessonUnlocked = useCallback(
@@ -465,6 +493,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 	useEffect(() => {
 		setIsLoadingMedia(true);
 		setVideoError(null);
+		setPdfReachedEnd(false);
 	}, [activeLessonId]);
 
 	// Reset active tab when lesson changes
@@ -640,6 +669,18 @@ import { useAuthStore } from "../../../../stores/authStore";
 
 	const handleMarkComplete = async (): Promise<void> => {
 		if (!activeLessonId || markingComplete) return;
+		// A lesson that carries an unattempted/unpassed quiz must not be completed
+		// (or advance) until the quiz is passed — doing so would unlock the next
+		// lesson and bypass the quiz gate.
+		if (requiresQuiz && quizHref) {
+			toast.error(
+				isAr
+					? 'يجب اجتياز اختبار الدرس أولاً'
+					: 'You must pass the lesson quiz first',
+			);
+			router.push(quizHref);
+			return;
+		}
 		const token = getAuthToken()
 		if (!token) {
 			toast.error(isAr ? 'يجب تسجيل الدخول اولا' : 'Authentication required')
@@ -680,12 +721,19 @@ import { useAuthStore } from "../../../../stores/authStore";
 			}
 
 			const progress: number = payload?.data?.progress ?? 0;
+			const quizzesPassed: boolean = payload?.data?.quizzesPassed ?? true;
 			const isCourseComplete: boolean = payload?.data?.isCourseComplete ?? progress >= 100;
 
 			// Update local completed lessons state
 			// (already done above via setLocalCompleted)
 
-			if (isCourseComplete) {
+			if (isCourseComplete && !quizzesPassed) {
+				toast.success(
+					isAr
+						? 'أكملت جميع الدروس. اجتز الاختبارات المتبقية للحصول على الشهادة'
+						: 'All lessons completed. Pass the remaining quizzes to get your certificate',
+				);
+			} else if (isCourseComplete) {
 				setIsCourseComplete(true);
 				toast.success(
 					isAr
@@ -738,6 +786,17 @@ import { useAuthStore } from "../../../../stores/authStore";
 	};
 
 	const goToNextLesson = () => {
+		if (!canGoNext) {
+			if (requiresQuiz && quizHref) {
+				toast.error(
+					isAr
+						? 'يجب اجتياز اختبار الدرس أولاً'
+						: 'You must pass the lesson quiz first',
+				);
+				router.push(quizHref);
+			}
+			return;
+		}
 		if (nextLesson) goToLesson(nextLesson);
 	};
 	const goToPrevLesson = () => {
@@ -1523,6 +1582,7 @@ import { useAuthStore } from "../../../../stores/authStore";
 														setVideoError("فشل تحميل الفيديو");
 													}}
 													onEnded={() => {
+														if (requiresQuiz) return;
 														if (!isCurrentCompleted) handleMarkComplete();
 														else if (nextLesson) goToLesson(nextLesson);
 													}}
@@ -1680,6 +1740,20 @@ import { useAuthStore } from "../../../../stores/authStore";
 												<Download size={16} />
 												{isAr ? 'تحميل' : 'Download'}
 											</a>
+											{!pdfReachedEnd && (
+												<button
+													onClick={() => setPdfReachedEnd(true)}
+													style={{
+														padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
+														fontWeight: 600, background: 'rgba(34,197,94,0.15)', color: '#4ade80',
+														border: '1px solid rgba(34,197,94,0.3)',
+														display: 'flex', alignItems: 'center', gap: '6px',
+														cursor: 'pointer', fontFamily: 'inherit',
+													}}>
+													<CheckCircle2 size={16} />
+													{isAr ? 'وصلت إلى آخر صفحة' : 'I reached the last page'}
+												</button>
+											)}
 										</div>
 									</div>
 								)}
@@ -1934,25 +2008,25 @@ import { useAuthStore } from "../../../../stores/authStore";
 									</button>
 
 									<button
-										onClick={() => nextLesson && goToLesson(nextLesson)}
-										disabled={!nextLesson}
+										onClick={() => canGoNext && nextLesson && goToLesson(nextLesson)}
+										disabled={!canGoNext}
 										style={{
 											flex: 1,
 											padding: "10px 16px",
 											borderRadius: 10,
 											border: "none",
-											cursor: nextLesson ? "pointer" : "not-allowed",
-											background: nextLesson
+											cursor: canGoNext ? "pointer" : "not-allowed",
+											background: canGoNext
 												? "#5120c8"
 												: "rgba(255,255,255,0.03)",
-											color: nextLesson ? "#fff" : "#374151",
+											color: canGoNext ? "#fff" : "#374151",
 											fontSize: 13,
 											fontWeight: 600,
 											display: "flex",
 											alignItems: "center",
 											justifyContent: "center",
 											gap: 6,
-											boxShadow: nextLesson
+											boxShadow: canGoNext
 												? "0 2px 8px rgba(81,32,200,0.3)"
 												: "none",
 										}}>
@@ -2163,58 +2237,139 @@ import { useAuthStore } from "../../../../stores/authStore";
 											flexWrap: "wrap",
 											gap: "1rem",
 										}}>
-										<button
-											onClick={handleMarkComplete}
-											disabled={isCurrentCompleted || markingComplete}
-											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "8px",
-												padding: "10px 20px",
-												borderRadius: "10px",
-												background: isCurrentCompleted
-													? "rgba(34,197,94,0.15)"
-													: "rgba(81,32,200,0.15)",
-												border: isCurrentCompleted
-													? "1px solid rgba(34,197,94,0.3)"
-													: "1px solid rgba(81,32,200,0.3)",
-												color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
-												fontWeight: 600,
-												fontSize: "0.875rem",
-												cursor: isCurrentCompleted ? "default" : "pointer",
-												fontFamily: "inherit",
-											}}>
-											{isCurrentCompleted ? (
-												<>
-													<svg
-														width="16"
-														height="16"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														strokeWidth="2.5"
-														strokeLinecap="round">
-														<polyline points="20 6 9 17 4 12" />
-													</svg>
+										{requiresQuiz && quizHref ? (
+											<button
+												onClick={() => router.push(quizHref)}
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "8px",
+													padding: "10px 20px",
+													borderRadius: "10px",
+													background: "rgba(81,32,200,0.15)",
+													border: "1px solid rgba(81,32,200,0.3)",
+													color: "#a78bfa",
+													fontWeight: 600,
+													fontSize: "0.875rem",
+													cursor: "pointer",
+													fontFamily: "inherit",
+												}}>
+												<Target size={16} />
+												{quizAttempted
+													? isAr ? "أعد الاختبار" : "Retake Quiz"
+													: isAr ? "ابدأ الاختبار" : "Start Quiz"}
+											</button>
+										) : mediaType === "video" ? (
+											isCurrentCompleted ? (
+												<span
+													style={{
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "8px",
+														padding: "10px 20px",
+														borderRadius: "10px",
+														background: "rgba(34,197,94,0.15)",
+														border: "1px solid rgba(34,197,94,0.3)",
+														color: "#4ade80",
+														fontWeight: 600,
+														fontSize: "0.875rem",
+													}}>
+													<CheckCircle2 size={16} />
 													{isAr ? t('completed') : "Completed"}
-												</>
+												</span>
 											) : (
-												<>
-													<svg
-														width="16"
-														height="16"
-														viewBox="0 0 24 24"
-														fill="none"
-														stroke="currentColor"
-														strokeWidth="2"
-														strokeLinecap="round">
-														<circle cx="12" cy="12" r="10" />
-														<polyline points="12 8 12 12 14 14" />
-													</svg>
-													{isAr ? t('markComplete') : "Mark as Complete"}
-												</>
-											)}
-										</button>
+												<span
+													style={{
+														display: "inline-flex",
+														alignItems: "center",
+														gap: "8px",
+														padding: "10px 16px",
+														borderRadius: "10px",
+														background: "rgba(255,255,255,0.04)",
+														border: "1px solid rgba(255,255,255,0.08)",
+														color: textSecondary,
+														fontSize: "0.8rem",
+													}}>
+													<Video size={15} />
+													{isAr
+														? "يكتمل الدرس تلقائياً عند انتهاء الفيديو"
+														: "Completes automatically when the video ends"}
+												</span>
+											)
+										) : mediaType === "file" && !pdfReachedEnd ? (
+											<span
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "8px",
+													padding: "10px 16px",
+													borderRadius: "10px",
+													background: "rgba(255,255,255,0.04)",
+													border: "1px solid rgba(255,255,255,0.08)",
+													color: textSecondary,
+													fontSize: "0.8rem",
+												}}>
+												<FileText size={15} />
+												{isAr
+													? "انتقل إلى آخر صفحة ثم اضغط زر التالي"
+													: "Reach the last page to unlock Next"}
+											</span>
+										) : (
+											<button
+												onClick={handleMarkComplete}
+												disabled={isCurrentCompleted || markingComplete}
+												style={{
+													display: "inline-flex",
+													alignItems: "center",
+													gap: "8px",
+													padding: "10px 20px",
+													borderRadius: "10px",
+													background: isCurrentCompleted
+														? "rgba(34,197,94,0.15)"
+														: "rgba(81,32,200,0.15)",
+													border: isCurrentCompleted
+														? "1px solid rgba(34,197,94,0.3)"
+														: "1px solid rgba(81,32,200,0.3)",
+													color: isCurrentCompleted ? "#4ade80" : "#a78bfa",
+													fontWeight: 600,
+													fontSize: "0.875rem",
+													cursor: isCurrentCompleted ? "default" : "pointer",
+													fontFamily: "inherit",
+												}}>
+												{isCurrentCompleted ? (
+													<>
+														<svg
+															width="16"
+															height="16"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2.5"
+															strokeLinecap="round">
+															<polyline points="20 6 9 17 4 12" />
+														</svg>
+														{isAr ? t('completed') : "Completed"}
+													</>
+												) : (
+													<>
+														<svg
+															width="16"
+															height="16"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+															strokeLinecap="round">
+															<circle cx="12" cy="12" r="10" />
+															<polyline points="12 8 12 12 14 14" />
+														</svg>
+														{mediaType === "file"
+															? isAr ? "الدرس التالي" : "Next Lesson"
+															: isAr ? t('markComplete') : "Mark as Complete"}
+													</>
+												)}
+											</button>
+										)}
 
 										<div style={{ display: "flex", gap: "8px" }}>
 											{prevLesson && (
@@ -2248,14 +2403,17 @@ import { useAuthStore } from "../../../../stores/authStore";
 											)}
 											{nextLesson && (
 												<button
-													onClick={() => goToLesson(nextLesson)}
+													onClick={() => canGoNext && goToLesson(nextLesson)}
+													disabled={!canGoNext}
 													style={{
 														padding: "10px 16px",
 														borderRadius: "10px",
-														background: "#5120c8",
+														background: canGoNext
+															? "#5120c8"
+															: "rgba(255,255,255,0.05)",
 														border: "none",
-														color: "#fff",
-														cursor: "pointer",
+														color: canGoNext ? "#fff" : "#6b7280",
+														cursor: canGoNext ? "pointer" : "not-allowed",
 														fontFamily: "inherit",
 														fontSize: "0.85rem",
 														fontWeight: 600,

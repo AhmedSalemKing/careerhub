@@ -134,6 +134,21 @@ export default function CourseDetailPage({
 		staleTime: 5 * 60 * 1000,
 	});
 
+	// Course quiz grades — used to explain why a certificate is (not) available.
+	const { data: courseGrades } = useQuery({
+		queryKey: ["course-grades", courseId],
+		queryFn: async () => {
+			try {
+				const res = await get(`/quizzes/grades/course/${courseId}`);
+				return (res?.data as any)?.data ?? res?.data ?? null;
+			} catch (err) {
+				return null;
+			}
+		},
+		enabled: !!hasUser && !!courseId,
+		staleTime: 30 * 1000,
+	});
+
 	useEffect(() => {
 		if (enrollmentData === undefined) return;
 		const enrolled = !!(
@@ -375,6 +390,13 @@ export default function CourseDetailPage({
 	const isContentComplete = totalLessons > 0 && completedCount >= totalLessons;
 	const isCourseComplete = isContentComplete && course?.isCompleted === true && course?.certificateEnabled !== false;
 	const awaitingCourseCompletion = isContentComplete && !course?.isCompleted;
+	const quizTotal = courseGrades?.summary?.total ?? 0;
+	const quizPassed = courseGrades?.summary?.passed ?? 0;
+	const hasQuizzes = quizTotal > 0;
+	const allQuizzesPassed = hasQuizzes && quizPassed >= quizTotal;
+	// All lessons done but at least one quiz still pending — the certificate is
+	// gated behind quiz success, so this is a distinct (non-"in development") state.
+	const quizzesPending = isContentComplete && hasQuizzes && !allQuizzesPassed;
 	const progressPercent = totalLessons > 0
 		? Math.min(100, Math.round((completedCount / totalLessons) * 100))
 		: 0;
@@ -1373,6 +1395,61 @@ export default function CourseDetailPage({
 															: `${(course?.expectedLessons ?? 0) - totalLessons} more lessons coming soon`}
 													</p>
 												)}
+											</div>
+										) : quizzesPending ? (
+											<div
+												style={{
+													padding: "1rem",
+													borderRadius: "10px",
+													background: "rgba(59,130,246,0.08)",
+													border: "1px solid rgba(59,130,246,0.2)",
+													textAlign: "center",
+												}}>
+												<div
+													style={{
+														display: "flex",
+														alignItems: "center",
+														justifyContent: "center",
+														gap: "8px",
+														marginBottom: "6px",
+													}}>
+													<Target size={16} color="#3b82f6" strokeWidth={2} />
+													<span
+														style={{
+															color: "#3b82f6",
+															fontWeight: 700,
+															fontSize: "0.875rem",
+														}}>
+														{isAr ? "أكملت كل الدروس" : "All lessons completed"}
+													</span>
+												</div>
+												<p
+													style={{
+														color: textSecondary,
+														fontSize: "0.78rem",
+														margin: 0,
+														lineHeight: 1.6,
+													}}>
+													{isAr
+														? `يجب اجتياز جميع اختبارات الكورس للحصول على الشهادة (${quizPassed}/${quizTotal}).`
+														: `Pass all course quizzes to unlock your certificate (${quizPassed}/${quizTotal}).`}
+												</p>
+												<button
+													onClick={() => router.push(`/${locale}/learn/${courseId}`)}
+													style={{
+														marginTop: "10px",
+														padding: "8px 18px",
+														borderRadius: "8px",
+														border: "none",
+														cursor: "pointer",
+														background: "rgba(59,130,246,0.9)",
+														color: "#fff",
+														fontWeight: 600,
+														fontSize: "0.8rem",
+														fontFamily: "inherit",
+													}}>
+													{isAr ? "اذهب إلى الاختبارات" : "Go to quizzes"}
+												</button>
 											</div>
 										) : (
 											<>
