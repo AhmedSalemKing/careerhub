@@ -8,6 +8,7 @@ import { BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, 
 import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
+import { learnUrl } from '../../../lib/constants'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -518,7 +519,7 @@ function StudentOverview() {
             </p>
           </div>
         </div>
-        <a href={`/${locale}/courses`} style={{
+        <a href={learnUrl(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
           display:'inline-flex', alignItems:'center', gap:'8px',
           padding:'11px 22px', borderRadius:'10px',
           background:'#5120c8', color:'#fff',
@@ -649,7 +650,8 @@ function StudentOverview() {
                 : (course?.titleEn || course?.title)
               return (
                 <a key={enrollment.id || courseId}
-                  href={`/${locale}/learn/${courseId}`}
+                  href={learnUrl(`/${locale}/courses/${courseId}`)}
+                  target="_blank" rel="noopener noreferrer"
                   style={{ textDecoration:'none', display:'block' }}>
                   <div style={{
                     display:'flex', alignItems:'center', gap:'12px',
@@ -793,7 +795,8 @@ function StudentOverview() {
             },
             {
               labelAr:'استعرض الكورسات', labelEn:'Browse Courses',
-              href:`/${locale}/courses`,
+              href: learnUrl(`/${locale}/courses`),
+              external: true,
               color:'#5120c8', bg:'rgba(81,32,200,0.1)',
               icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -811,7 +814,7 @@ function StudentOverview() {
               </svg>,
             },
           ].map((action: any, i: number) => (
-            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
+            <a key={i} href={action.href} target={action.external ? '_blank' : undefined} rel={action.external ? 'noopener noreferrer' : undefined} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
               <div style={{
                 display:'flex', alignItems:'center', gap:'12px',
                 padding:'9px 10px', borderRadius:'10px', marginBottom:'4px',

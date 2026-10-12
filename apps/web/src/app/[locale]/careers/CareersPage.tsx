@@ -9,7 +9,7 @@ import ConfirmModal from '@/components/ConfirmModal'
 import {
   Search, Code2, Palette, TrendingUp, BarChart3, Shield, Settings,
   Briefcase, Package, ChevronRight, Clock, Star, DollarSign,
-  Flame, Zap, Sparkles, ArrowLeft, Users, BookOpen, Globe, Megaphone, Rocket, Brain,
+  Flame, Zap, Sparkles, ArrowLeft, BookOpen, Globe, Megaphone, Rocket, Brain,
   X, CheckCircle2
 } from 'lucide-react'
 import { CAREER_PATHS } from '@/lib/career-paths'
@@ -751,17 +751,6 @@ export default function CareersPage() {
                 }}>
                 <ChevronRight size={15} style={{ transform: isAr?'rotate(180deg)':'none' }} />
                 {isAr ? 'ابدأ هذا المسار' : 'Start This Path'}
-              </button>
-              <button
-                onClick={() => router.push(`/${locale}/coaching`)}
-                style={{
-                  padding:'13px 18px', borderRadius:12, cursor:'pointer',
-                  border:`1px solid ${border}`, background:'transparent',
-                  color:subtext, fontSize:13, fontWeight:600,
-                  display:'flex', alignItems:'center', gap:5,
-                }}>
-                <Users size={14} />
-                {isAr ? 'تدريب' : 'Coaching'}
               </button>
             </div>
           </div>

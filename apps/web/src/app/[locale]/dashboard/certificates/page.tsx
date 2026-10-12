@@ -4,6 +4,7 @@ import { useAuthStore } from '../../../../stores/authStore'
 import { useLocale } from 'next-intl'
 import { useEffect } from 'react'
 import { formatCertDate } from '../../../../lib/time'
+import { learnUrl } from '../../../../lib/constants'
 
 export default function CertificatesPage() {
   const locale = useLocale()
@@ -188,7 +189,7 @@ export default function CertificatesPage() {
               ? 'أكمل أي كورس للحصول على شهادتك الأولى'
               : 'Complete any course to earn your first certificate'}
           </p>
-          <a href={`/${locale}/courses`}
+          <a href={learnUrl(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer"
             style={{
               padding: '10px 24px', borderRadius: '10px',
               background: '#5120c8', color: '#fff',

@@ -138,7 +138,12 @@ const [confirmModal, setConfirmModal] = useState<{
   // Server is source of truth — cache is for instant display only
   const fetchMyPaths = useCallback(async () => {
     const token = getToken()
-    if (!token) return
+    if (!token) {
+      // No authenticated user: never show paths cached from a previous session/user
+      setMyPathIds(new Set())
+      try { localStorage.removeItem(PATHS_CACHE_KEY) } catch {}
+      return
+    }
     const seq = ++fetchSeqRef.current
     try {
       const res = await fetch(`${apiUrl}/career/paths/my`, {
