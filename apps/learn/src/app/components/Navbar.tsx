@@ -8,9 +8,10 @@ import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { CartIcon } from './CartIcon'
 import { SearchBar } from './SearchBar'
-// import { NotificationBell } from './NotificationBell' // Uncomment if component exists
-import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen, Bell, Wallet, ArrowUpRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
+import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
 
 /* ═══ Shared font for nav + buttons ═══ */
@@ -304,6 +305,37 @@ export function Navbar() {
 
   const isActive = (href: string) => pathname === href
 
+  /* ═══ Header badges: unread notifications + wallet balance ═══ */
+  const { data: unreadCount = 0 } = useQuery<number>({
+    queryKey: ['navbar-notifications-unread'],
+    enabled: isLoggedIn,
+    queryFn: async () => {
+      try {
+        const res = await api.get('/notifications')
+        const d = (res?.data as any)?.data
+        const list = Array.isArray(d) ? d : (d?.notifications ?? [])
+        return Array.isArray(list) ? list.filter((n: any) => !n.isRead).length : 0
+      } catch {
+        return 0
+      }
+    },
+    refetchInterval: 60000,
+  })
+
+  const { data: wallet } = useQuery<any>({
+    queryKey: ['navbar-wallet'],
+    enabled: isLoggedIn,
+    queryFn: async () => {
+      try {
+        const res = await api.get('/wallet')
+        return (res?.data as any)?.data ?? null
+      } catch {
+        return null
+      }
+    },
+    refetchInterval: 60000,
+  })
+
   return (
     <>
       <style jsx>{`
@@ -365,7 +397,7 @@ export function Navbar() {
                   className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
                   style={{
                     fontSize: '14px',
-                    fontWeight: 700,
+                    fontWeight: 500,
                     letterSpacing: '-0.01em',
                     fontFamily: NAV_FONT,
                     color: active ? '#5120c8' : 'var(--foreground)',
@@ -387,7 +419,7 @@ export function Navbar() {
                 >
                   {l.label}
                   {l.external && (
-                    <span className="inline-block ml-1 text-[10px] opacity-35">↗</span>
+                    <ArrowUpRight className="inline-block ml-1 h-3 w-3 opacity-35" />
                   )}
                 </Link>
               )
@@ -421,7 +453,39 @@ export function Navbar() {
                 )}
               </div>
 
-              {/* <NotificationBell /> */}
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/notifications`}
+                  aria-label="Notifications"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
+                  style={{ color: 'var(--muted)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/wallet`}
+                  className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl transition-colors duration-150"
+                  style={{ background: 'rgba(81,32,200,0.10)', color: '#5120c8' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.18)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.10)' }}
+                >
+                  <Wallet className="h-4 w-4" />
+                  <span className="text-xs font-bold">
+                    {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
+                  </span>
+                </Link>
+              )}
+
               <CartIcon />
             </div>
 
@@ -557,7 +621,7 @@ export function Navbar() {
                     onClick={() => setMobileOpen(false)}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
                     style={{
-                      fontWeight: 700,
+                      fontWeight: 500,
                       fontFamily: NAV_FONT,
                       color: active ? '#5120c8' : 'var(--foreground)',
                       background: active ? 'var(--surface-2)' : 'transparent',
@@ -565,7 +629,7 @@ export function Navbar() {
                     }}
                   >
                     {l.label}
-                    {l.external && <span className="text-xs opacity-30 ml-1">↗</span>}
+                    {l.external && <ArrowUpRight className="inline-block h-3 w-3 opacity-30 ml-1" />}
                   </Link>
                 )
               })}
@@ -590,7 +654,33 @@ export function Navbar() {
                   AI
                 </a>
               )}
-              {/* <NotificationBell /> */}
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/notifications`}
+                  onClick={() => setMobileOpen(false)}
+                  aria-label="Notifications"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
+                  style={{ background: 'var(--surface-2)', color: 'var(--muted)' }}
+                >
+                  <Bell className="h-[18px] w-[18px]" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+              {mounted && isLoggedIn && (
+                <Link
+                  href={`/${locale}/dashboard/wallet`}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
+                >
+                  <Wallet className="h-3.5 w-3.5" />
+                  {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
+                </Link>
+              )}
               <CartIcon />
             </div>
 

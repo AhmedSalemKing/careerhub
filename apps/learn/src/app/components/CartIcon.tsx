@@ -31,7 +31,7 @@ export function CartIcon() {
   return (
     <a
       href={`${MAIN_URL}/${locale}/checkout`}
-      className="relative inline-flex items-center justify-center h-9 w-9 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+      className="relative inline-flex items-center justify-center h-9 w-9 rounded-xl text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] transition-colors"
       aria-label="Cart"
     >
       <ShoppingCart className="h-5 w-5" />
