@@ -1,4 +1,4 @@
-import { LEARN_URL } from './constants'
+import { learnUrlWithToken } from './learn-link'
 
 export type CareerTrack = 
   'frontend' | 'backend' | 'fullstack' | 'mobile' | 'devops' |
@@ -507,7 +507,7 @@ export function calculateResults(questions: Question[], answers: Record<string, 
         titleAr: meta?.titleAr || track,
         titleEn: meta?.titleEn || track,
         icon: meta?.icon || 'code',
-        learnUrl: `${LEARN_URL}/${locale}/courses?category=${meta?.category || 'tech'}`,
+        learnUrl: learnUrlWithToken(`/${locale}/courses?category=${meta?.category || 'tech'}`),
       }
     })
     .sort((a, b) => b.score - a.score)

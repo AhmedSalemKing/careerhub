@@ -250,13 +250,17 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    // Read the stored user + token into the store immediately on mount.
     hydrate()
 
     // Sync auth state across tabs
     const syncAuth = () => hydrate()
     window.addEventListener('storage', syncAuth)
     window.addEventListener('auth:updated', syncAuth)
-    
+
     // Periodic sync for reliability
     const timers = [
       setTimeout(syncAuth, 1000),
@@ -264,16 +268,18 @@ export function Navbar() {
       setTimeout(syncAuth, 3000),
     ]
 
-    const onScroll = () => setScrolled(window.scrollY > 8)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-
     return () => {
       window.removeEventListener('storage', syncAuth)
       window.removeEventListener('auth:updated', syncAuth)
-      window.removeEventListener('scroll', onScroll)
       timers.forEach(clearTimeout)
     }
+  }, [])
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   const isLoggedIn = mounted && !!token

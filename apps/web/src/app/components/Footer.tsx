@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
-import { TRAINING_URL } from '../../lib/constants'
+import { learnUrlWithToken } from '../../lib/learn-link'
 import { useAuthStore } from '../../stores/authStore'
 
 export function Footer() {
@@ -52,14 +52,14 @@ export function Footer() {
           <div className="text-sm font-medium text-foreground">{tNav('training')}</div>
           <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
             <li>
-              <a className="footer-link" href={TRAINING_URL} target="_blank" rel="noopener noreferrer">
+              <a className="footer-link" href={learnUrlWithToken('/')} target="_blank" rel="noopener noreferrer">
                 {t('all_courses')}
               </a>
             </li>
             <li>
               <a
                 className="footer-link"
-                href={`${TRAINING_URL}/my-courses`}
+                href={learnUrlWithToken('/my-courses')}
                 target="_blank"
                 rel="noopener noreferrer"
               >

@@ -4,6 +4,7 @@ import { useLocale } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { learnUrlWithToken } from "../../../../lib/learn-link";
 import {
 	BookOpen,
 	Play,
@@ -47,8 +48,6 @@ function getStatusConfig(status: string) {
 			return { label: status, ar: status, color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: AlertCircle };
 	}
 }
-
-const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app';
 
 export default function MyCoursesPage() {
 	const locale = useLocale();
@@ -255,7 +254,7 @@ export default function MyCoursesPage() {
 								? (isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge')
 								: (isAr ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start your learning journey')}
 						</p>
-						<a href={isInstructor ? `/${locale}/dashboard/create-course` : `${LEARN_URL}/${locale}/courses`} target="_blank" rel="noopener noreferrer" style={{
+						<a href={isInstructor ? `/${locale}/dashboard/create-course` : learnUrlWithToken(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
 							padding:'10px 24px', borderRadius:'10px',
 							background:'#5120c8', color:'#fff',
 							textDecoration:'none', fontWeight:600, fontSize:'0.875rem',
@@ -479,7 +478,7 @@ export default function MyCoursesPage() {
 													</button>
 												</>
 											) : (
-												<a href={`${LEARN_URL}/${locale}/courses/${course.id}`}
+												<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
 													target="_blank" rel="noopener noreferrer"
 													style={{
 														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',

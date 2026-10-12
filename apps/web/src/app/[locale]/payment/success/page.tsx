@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, Video, Radio, MapPin, Calendar, ArrowRight, Loader2 } from 'lucide-react'
 import api from '@/lib/api'
+import { learnUrlWithToken } from '@/lib/learn-link'
 
 export default function PaymentSuccessPage() {
   const locale = useLocale()
@@ -44,15 +45,13 @@ export default function PaymentSuccessPage() {
   const text = 'var(--foreground)'
   const subtext = 'var(--muted)'
 
-  const learnBase = 'https://devewayhub.vercel.app'
-
   const getRedirectUrl = () => {
     if (type === 'consulting') {
       return `/${locale}/dashboard/my-sessions`
     }
-    if (courseType === 'live') return `${learnBase}/${locale}/live/${courseId}`
-    if (courseType === 'offline') return `${learnBase}/${locale}/courses/${courseId}`
-    return `${learnBase}/${locale}/learn/${courseId}`
+    if (courseType === 'live') return learnUrlWithToken(`/${locale}/live/${courseId}`)
+    if (courseType === 'offline') return learnUrlWithToken(`/${locale}/courses/${courseId}`)
+    return learnUrlWithToken(`/${locale}/learn/${courseId}`)
   }
 
   const getTypeConfig = () => {

@@ -13,7 +13,8 @@ import Image from 'next/image'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
-import { TRAINING_URL } from '../../lib/constants'
+import { LEARN_URL } from '../../lib/constants'
+import { learnUrlWithToken } from '../../lib/learn-link'
 
 /* ════════════════════════════════════════
    SCROLL TO SECTION UTILITY
@@ -350,7 +351,7 @@ export function Navbar() {
 
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
-  const isLearnRelative = TRAINING_URL.startsWith('/')
+  const isLearnRelative = LEARN_URL.startsWith('/')
 
   // ← تحديد لون DeveWay بناءً على الوضع
   const deveWayColor = mounted 
@@ -460,7 +461,7 @@ export function Navbar() {
               )
             })}
             <a
-              href={`${TRAINING_URL}/${locale}`}
+              href={learnUrlWithToken(`/${locale}`)}
               target={isLearnRelative ? '_self' : '_blank'}
               rel="noopener noreferrer"
               className="px-[18px] py-[9px] rounded-xl transition-colors duration-150"
@@ -691,7 +692,7 @@ export function Navbar() {
                 )
               })}
               <a
-                href={`${TRAINING_URL}/${locale}`}
+                href={learnUrlWithToken(`/${locale}`)}
                 target={isLearnRelative ? '_self' : '_blank'}
                 rel="noopener noreferrer"
                 onClick={() => setMobileOpen(false)}

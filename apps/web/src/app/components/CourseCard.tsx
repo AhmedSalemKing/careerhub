@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { TRAINING_URL } from '../../lib/constants'
+import { learnUrlWithToken } from '../../lib/learn-link'
 import { useState, useRef } from 'react'
 import { Clock, Signal, ExternalLink, Play, BookOpen } from 'lucide-react'
 import VerifiedBadge from '../../components/VerifiedBadge'
@@ -83,7 +83,7 @@ export function CourseCard({
   return (
     <a
       ref={cardRef}
-      href={`${TRAINING_URL}/${locale}/courses/${course.id}`}
+      href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
       target="_blank"
       rel="noopener noreferrer"
       data-testid="course-card"

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Search, X, BookOpen, User, ArrowLeft } from 'lucide-react'
-import { learnUrl } from '../../lib/constants'
+import { learnUrlWithToken } from '../../lib/learn-link'
 import { getMediaUrl } from '../../lib/media'
 
 interface SearchResult {
@@ -226,7 +226,7 @@ export function SearchBar() {
                     {results!.courses.map(course => (
                       <a
                         key={course.id}
-                        href={learnUrl(`/${locale}/courses/${course.id}`)}
+                        href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setOpen(false)}

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { Sparkles } from 'lucide-react'
-import { TRAINING_URL } from '../../../lib/constants'
+import { learnUrlWithToken } from '../../../lib/learn-link'
 
 /* ════════════════════════════════════════
    DATA
@@ -24,7 +24,7 @@ const FEATURES = [
     titleKey: 'training_title' as const,
     descKey: 'training_desc' as const,
     ctaKey: 'training_cta' as const,
-    href: TRAINING_URL,
+    href: learnUrlWithToken('/'),
     isExternal: true,
   },
   {

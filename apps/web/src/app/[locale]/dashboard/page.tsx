@@ -8,7 +8,7 @@ import { BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, 
 import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
-import { learnUrl } from '../../../lib/constants'
+import { learnUrlWithToken } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -519,7 +519,7 @@ function StudentOverview() {
             </p>
           </div>
         </div>
-        <a href={learnUrl(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
+        <a href={learnUrlWithToken(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
           display:'inline-flex', alignItems:'center', gap:'8px',
           padding:'11px 22px', borderRadius:'10px',
           background:'#5120c8', color:'#fff',
@@ -650,7 +650,7 @@ function StudentOverview() {
                 : (course?.titleEn || course?.title)
               return (
                 <a key={enrollment.id || courseId}
-                  href={learnUrl(`/${locale}/courses/${courseId}`)}
+                  href={learnUrlWithToken(`/${locale}/courses/${courseId}`)}
                   target="_blank" rel="noopener noreferrer"
                   style={{ textDecoration:'none', display:'block' }}>
                   <div style={{
@@ -795,7 +795,7 @@ function StudentOverview() {
             },
             {
               labelAr:'استعرض الكورسات', labelEn:'Browse Courses',
-              href: learnUrl(`/${locale}/courses`),
+              href: learnUrlWithToken(`/${locale}/courses`),
               external: true,
               color:'#5120c8', bg:'rgba(81,32,200,0.1)',
               icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '../../lib/api'
-import { learnUrl } from '../../lib/constants'
+import { learnUrlWithToken } from '../../lib/learn-link'
 
 /* ════════════════════════════════════════
    INTERFACES
@@ -394,7 +394,7 @@ export function CoursesShowcase() {
           </div>
 
           <a
-            href={learnUrl(`/${locale}/courses`)}
+            href={learnUrlWithToken(`/${locale}/courses`)}
             target="_blank"
             rel="noopener noreferrer"
             className="cs-header-btn"
@@ -471,7 +471,7 @@ export function CoursesShowcase() {
               return (
                 <a
                   key={`${course.id}-${idx}`}
-                  href={learnUrl(`/${locale}/courses/${course.id}`)}
+                  href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="cs-card"
@@ -571,7 +571,7 @@ export function CoursesShowcase() {
       {/* ═══ Bottom CTA ═══ */}
       <div className="cs-bottom-cta">
         <a
-          href={learnUrl(`/${locale}`)}
+          href={learnUrlWithToken(`/${locale}`)}
           target="_blank"
           rel="noopener noreferrer"
           className="cs-cta-btn"

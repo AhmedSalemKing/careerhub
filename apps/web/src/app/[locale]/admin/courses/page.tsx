@@ -9,7 +9,7 @@ import {
   PlusCircle, ExternalLink, BookOpen, Eye,
 } from 'lucide-react'
 
-const LEARN_URL = process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app'
+import { learnUrlWithToken } from '../../../../lib/learn-link'
 
 type AdminCourse = {
   id: string
@@ -412,7 +412,7 @@ export default function AdminCoursesPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => window.open(`${LEARN_URL}/${locale}/courses/${c.id}`, '_blank', 'noopener,noreferrer')}
+                          onClick={() => window.open(learnUrlWithToken(`/${locale}/courses/${c.id}`), '_blank', 'noopener,noreferrer')}
                           className="p-1.5 rounded-lg transition-colors"
                           style={{
                             background: 'var(--surface-2)',
