@@ -240,7 +240,8 @@ export function FeaturesSection() {
 
           position: relative;
           padding: 40px 24px 56px;
-          background: linear-gradient(180deg, #0B0B12 0%, #0F0B1A 100%);
+          /* DARK MODE (default) — deeper dark purple gradient */
+          background: linear-gradient(180deg, #0B0618 0%, #150A2E 50%, #0B0618 100%);
           color: var(--fx-fg);
           overflow: hidden;
           border-top: 1px solid var(--fx-border);
@@ -721,8 +722,11 @@ export function FeaturesSection() {
           z-index: 0;
         }
 
-        .fx-blur-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #DDD6FE; }
-        .fx-blur-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #EDE9FE; }
+        .fx-blur-1 { top: -10%; left: -10%; width: 500px; height: 500px; background: #5120C8; opacity: 0.18; }
+        .fx-blur-2 { bottom: -10%; right: -10%; width: 600px; height: 600px; background: #7C3AED; opacity: 0.15; }
+
+        :root:not(.dark) .fx-blur-1 { background: #DDD6FE; opacity: 0.35; }
+        :root:not(.dark) .fx-blur-2 { background: #EDE9FE; opacity: 0.35; }
 
       `}</style>
     </section>
