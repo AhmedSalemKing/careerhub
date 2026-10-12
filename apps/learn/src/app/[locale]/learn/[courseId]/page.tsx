@@ -897,7 +897,7 @@ function MetaItem({
 						padding: '2px 7px', borderRadius: '10px',
 						background: isActive ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
 						border: `1px solid ${isActive ? 'rgba(239,68,68,0.4)' : 'rgba(239,68,68,0.2)'}`,
-						color: '#f87171', fontSize: '0.68rem', fontWeight: 500,
+						color: '#f87171', fontSize: '0.68rem', fontWeight: 500, fontFamily: 'var(--font-medium)',
 						whiteSpace: 'nowrap',
 					}}>
 					<span
@@ -924,7 +924,7 @@ function MetaItem({
 					style={{
 						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
 						background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.2)',
-						color: '#fbbf24', fontWeight: 500,
+						color: '#fbbf24', fontWeight: 500, fontFamily: 'var(--font-medium)',
 					}}>
 					{isAr ? 'ملف' : 'PDF'}
 				</span>
@@ -937,7 +937,7 @@ function MetaItem({
 					style={{
 						padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
 						background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
-						color: '#4ade80', fontWeight: 500,
+						color: '#4ade80', fontWeight: 500, fontFamily: 'var(--font-medium)',
 					}}>
 					{isAr ? 'صورة' : 'Image'}
 				</span>
@@ -949,7 +949,7 @@ function MetaItem({
 				style={{
 					padding: '2px 7px', borderRadius: '10px', fontSize: '0.68rem',
 					background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-					color: '#9999aa', fontWeight: 500,
+					color: '#9999aa', fontWeight: 500, fontFamily: 'var(--font-medium)',
 				}}>
 				{isAr ? 'فيديو' : 'Video'}
 			</span>
@@ -1401,8 +1401,8 @@ function MetaItem({
 							<h3
 								style={{
 									fontSize: 15,
-									fontWeight: 900,
-									fontFamily: "var(--font-brand)",
+									fontWeight: 500,
+									fontFamily: "var(--font-medium)",
 									color: "var(--foreground)",
 									margin: 0,
 								}}>
@@ -1439,7 +1439,7 @@ function MetaItem({
 													background: openSections.has(section.id) ? 'rgba(81,32,200,0.2)' : 'rgba(255,255,255,0.06)',
 													color: openSections.has(section.id) ? '#a78bfa' : '#666680',
 													display: 'flex', alignItems: 'center', justifyContent: 'center',
-													fontSize: '0.68rem', fontWeight: 500, flexShrink: 0,
+													fontSize: '0.68rem', fontWeight: 500, fontFamily: 'var(--font-medium)', flexShrink: 0,
 													transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease',
 												}}>
 												{sectionIndex + 1}
@@ -1454,7 +1454,7 @@ function MetaItem({
 											</span>
 										</div>
 										<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-											<span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 300, fontFamily: 'var(--font-light)' }}>
+											<span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 500, fontFamily: 'var(--font-medium)' }}>
 												{sectionLessons.length} {isAr ? 'دروس' : 'lessons'}
 											</span>
 											<ChevronDown
@@ -1544,7 +1544,7 @@ function MetaItem({
 
 													<div
 														className="flex items-center gap-2 text-[11px]"
-														style={{ color: textSecondary, fontWeight: 300, fontFamily: "var(--font-light)" }}>
+														style={{ color: textSecondary, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
 														{lesson.duration && (
 															<span className="flex items-center gap-1">
 																<Clock size={10} />
@@ -1563,6 +1563,7 @@ function MetaItem({
 														borderRadius: "7px",
 														background: isActive ? purple : `${borderColor}`,
 														color: isActive ? "#fff" : textSecondary,
+														fontFamily: "var(--font-medium)",
 													}}>
 													{globalIdx + 1}
 												</div>
