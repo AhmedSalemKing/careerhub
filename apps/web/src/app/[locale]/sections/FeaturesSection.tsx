@@ -239,7 +239,7 @@ export function FeaturesSection() {
           --fx-glow-color: rgba(81,32,200,0.12);
 
           position: relative;
-          padding: 48px 24px 72px;
+          padding: 40px 24px 56px;
           background: linear-gradient(180deg, #0B0B12 0%, #0F0B1A 100%);
           color: var(--fx-fg);
           overflow: hidden;
@@ -313,13 +313,13 @@ export function FeaturesSection() {
           grid-template-areas:
             "left phone right"
             ".    bottom .";
-          gap: 32px 40px;
+          gap: 24px 32px;
           align-items: center;
           justify-items: center;
           direction: ltr; /* keep physical left/right mapping so connectors line up */
-          max-width: 1080px;
+          max-width: 1000px;
           margin: 0 auto;
-          padding: 32px 24px 48px;
+          padding: 24px 24px 40px;
         }
 
         /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
@@ -329,9 +329,9 @@ export function FeaturesSection() {
         }
 
         /* ── Card positions around the phone ── */
-        .fx-card-left   { grid-area: left;   justify-self: end;   max-width: 280px; }
-        .fx-card-right  { grid-area: right;  justify-self: start; max-width: 280px; }
-        .fx-card-bottom { grid-area: bottom; justify-self: center; max-width: 380px; }
+        .fx-card-left   { grid-area: left;   justify-self: end;   max-width: 320px; min-width: 280px; }
+        .fx-card-right  { grid-area: right;  justify-self: start; max-width: 320px; min-width: 280px; }
+        .fx-card-bottom { grid-area: bottom; justify-self: center; max-width: 420px; }
         .fx-phone-wrapper { grid-area: phone; justify-self: center; }
 
         /* ── Curved dotted purple connectors (card pseudo-elements) ── */
@@ -339,9 +339,9 @@ export function FeaturesSection() {
           content: '';
           position: absolute;
           top: 50%;
-          right: -52px;
-          width: 52px;
-          height: 60px;
+          right: -42px;
+          width: 42px;
+          height: 50px;
           border-top: 1.5px dashed #C4B5FD;
           border-right: 1.5px dashed #C4B5FD;
           border-top-right-radius: 100%;
@@ -354,9 +354,9 @@ export function FeaturesSection() {
           content: '';
           position: absolute;
           top: 50%;
-          left: -52px;
-          width: 52px;
-          height: 60px;
+          left: -42px;
+          width: 42px;
+          height: 50px;
           border-top: 1.5px dashed #C4B5FD;
           border-left: 1.5px dashed #C4B5FD;
           border-top-left-radius: 100%;
@@ -368,11 +368,11 @@ export function FeaturesSection() {
         .fx-card-bottom::before {
           content: '';
           position: absolute;
-          top: -36px;
+          top: -28px;
           left: 50%;
           transform: translateX(-50%);
           width: 0;
-          height: 36px;
+          height: 28px;
           border-left: 1.5px dashed #C4B5FD;
           opacity: 0.7;
           pointer-events: none;
@@ -381,7 +381,7 @@ export function FeaturesSection() {
         .fx-card-bottom::after {
           content: '';
           position: absolute;
-          top: -40px;
+          top: -32px;
           left: 50%;
           transform: translateX(-50%);
           width: 6px;
@@ -407,6 +407,7 @@ export function FeaturesSection() {
           .fx-card-left,
           .fx-card-right {
             justify-self: center;
+            min-width: 0;
           }
 
           .fx-card-bottom { max-width: 100%; }
@@ -420,8 +421,8 @@ export function FeaturesSection() {
         }
 
         @media (max-width: 480px) {
-          .features-section { padding: 48px 16px 64px; }
-          .phone-frame { width: 250px; height: 520px; }
+          .features-section { padding: 40px 16px 56px; }
+          .phone-frame { width: 200px; height: 410px; }
         }
 
         /* ========================================
@@ -455,16 +456,16 @@ export function FeaturesSection() {
         }
 
         .phone-frame {
-          width: 300px;
-          height: 620px;
+          width: 250px;
+          height: 510px;
           background: #1a1a1a;
-          border-radius: 44px;
-          padding: 10px;
+          border-radius: 40px;
+          padding: 8px;
           position: relative;
           z-index: 2;
           box-shadow:
-            0 18px 50px rgba(81, 32, 200, 0.16),
-            0 8px 24px rgba(0, 0, 0, 0.1);
+            0 14px 40px rgba(81, 32, 200, 0.16),
+            0 6px 18px rgba(0, 0, 0, 0.1);
         }
 
         :root:not(.dark) .phone-frame {
@@ -529,7 +530,7 @@ export function FeaturesSection() {
         .phone-screen {
           width: 100%;
           height: 100%;
-          border-radius: 34px;
+          border-radius: 30px;
           overflow: hidden;
           background: #000;
           position: relative;
@@ -540,7 +541,7 @@ export function FeaturesSection() {
           height: 100%;
           object-fit: cover;
           object-position: top center;
-          border-radius: 34px;
+          border-radius: 30px;
           display: block;
         }
 
@@ -585,18 +586,18 @@ export function FeaturesSection() {
         /* Strong soft shadow underneath the phone (visible on light bg) */
         .phone-shadow {
           position: absolute;
-          bottom: -24px;
+          bottom: -18px;
           left: 50%;
           transform: translateX(-50%);
-          width: 85%;
-          height: 44px;
+          width: 80%;
+          height: 36px;
           background: radial-gradient(
             ellipse at center,
-            rgba(81, 32, 200, 0.32) 0%,
-            rgba(81, 32, 200, 0.12) 40%,
+            rgba(81, 32, 200, 0.28) 0%,
+            rgba(81, 32, 200, 0.1) 40%,
             transparent 75%
           );
-          filter: blur(18px);
+          filter: blur(16px);
           pointer-events: none;
           z-index: 1;
         }
@@ -610,8 +611,8 @@ export function FeaturesSection() {
           z-index: 1;
           display: block;
           width: 100%;
-          padding: 22px 22px 20px;
-          border-radius: 20px;
+          padding: 20px 22px 18px;
+          border-radius: 18px;
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.06);
           box-shadow:
@@ -650,19 +651,19 @@ export function FeaturesSection() {
 
         .fx-card-title {
           font-family: 'PingARLT', 'Arial Black', sans-serif;
-          font-size: 19px;
+          font-size: 18px;
           font-weight: 800;
           color: #5120C8;
           margin: 0 0 6px;
-          line-height: 1.25;
+          line-height: 1.3;
           letter-spacing: -0.01em;
         }
 
         .fx-card-desc {
           font-size: 13px;
-          line-height: 1.55;
+          line-height: 1.6;
           color: var(--muted);
-          margin: 0 0 12px;
+          margin: 0 0 10px;
         }
 
         .fx-card-cta {
