@@ -96,12 +96,51 @@ export function FeaturesSection() {
 
   const screenImage = isDark ? '/Screen/Light.png' : '/Screen/Dark.png'
 
+  const renderFeatureCard = (feature: typeof FEATURES[number]) => {
+    const content = (
+      <>
+        <div className="feature-icon" style={{ background: feature.iconBg }}>
+          {feature.icon}
+        </div>
+
+        <div className="feature-text">
+          <div className="feature-text-header">
+            <h3 className="feature-title fx-pingarlt">{t(feature.titleKey)}</h3>
+            <span className="feature-arrow"><ChevronRight size={14} /></span>
+          </div>
+          <p className="feature-desc">{t(feature.descKey)}</p>
+        </div>
+
+        <div className="feature-cta fx-pingarlt-bold">
+          {t(feature.ctaKey)}
+          {feature.isExternal && (
+            <svg className="w-3 h-3 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          )}
+        </div>
+      </>
+    )
+
+    return feature.isExternal ? (
+      <a href={feature.href} target="_blank" rel="noopener noreferrer" className="feature-card">
+        {content}
+      </a>
+    ) : (
+      <Link href={feature.href} className="feature-card">
+        {content}
+      </Link>
+    )
+  }
+
   return (
     <section id="features" ref={ref} className="features-section">
       
       {/* ═══ Background Effects ═══ */}
       <div className="fx-glow fx-glow-1" />
       <div className="fx-glow fx-glow-2" />
+      <div className="fx-blur fx-blur-1" />
+      <div className="fx-blur fx-blur-2" />
       <div className="fx-grid-pattern" />
 
       {/* ═══ Container ═══ */}
@@ -123,10 +162,15 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        {/* ── Main Content: Phone + Cards ── */}
+        {/* ── Main Content: Centered Phone with Cards Left / Right / Below ── */}
         <div className="fx-main">
 
-          {/* ═══ LEFT: PHONE MOCKUP ═══ */}
+          {/* ═══ LEFT CARD ═══ */}
+          <div className={`fx-card fx-card-left ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0s' }}>
+            {renderFeatureCard(FEATURES[0])}
+          </div>
+
+          {/* ═══ CENTER: PHONE MOCKUP ═══ */}
           <div className={`fx-phone-wrapper ${show ? 'fx-phone-show' : ''}`}>
             <div className="phone-float">
               
@@ -161,101 +205,19 @@ export function FeaturesSection() {
                 <div className="home-indicator" />
               </div>
 
+              <div className="phone-shadow" />
               <div className="phone-glow" />
             </div>
           </div>
 
-          {/* ═══ RIGHT: FEATURE CARDS ═══ */}
-          <div className="fx-cards-stack">
+          {/* ═══ RIGHT CARD ═══ */}
+          <div className={`fx-card fx-card-right ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0.18s' }}>
+            {renderFeatureCard(FEATURES[1])}
+          </div>
 
-            {FEATURES.map((feature, index) => {
-              if (feature.isExternal) {
-                return (
-                  <div
-                    key={feature.id}
-                    className={`feature-card-wrapper ${show ? 'fx-card-show' : ''}`}
-                    style={{ animationDelay: `${index * 0.18}s` }}
-                  >
-                    <a
-                      href={feature.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="feature-card"
-                    >
-                      
-                      <div
-                        className="feature-icon"
-                        style={{ background: feature.iconBg }}
-                      >
-                        {feature.icon}
-                      </div>
-
-                      <div className="feature-text">
-                        <div className="feature-text-header">
-                          <h3 className="feature-title fx-pingarlt">
-                            {t(feature.titleKey)}
-                          </h3>
-                          <span className="feature-arrow">
-                            <ChevronRight size={14} />
-                          </span>
-                        </div>
-                        
-                        <p className="feature-desc">
-                          {t(feature.descKey)}
-                        </p>
-                      </div>
-
-                      <div className="feature-cta fx-pingarlt-bold">
-                        {t(feature.ctaKey)}
-                        <svg className="w-3 h-3 mr-1 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
-                      </div>
-
-                    </a>
-                  </div>
-                )
-              }
-
-              return (
-                <div
-                  key={feature.id}
-                  className={`feature-card-wrapper ${show ? 'fx-card-show' : ''}`}
-                  style={{ animationDelay: `${index * 0.18}s` }}
-                >
-                  <Link href={feature.href} className="feature-card">
-                    
-                    <div
-                      className="feature-icon"
-                      style={{ background: feature.iconBg }}
-                    >
-                      {feature.icon}
-                    </div>
-
-                    <div className="feature-text">
-                      <div className="feature-text-header">
-                        <h3 className="feature-title fx-pingarlt">
-                          {t(feature.titleKey)}
-                        </h3>
-                        <span className="feature-arrow">
-                          <ChevronRight size={14} />
-                        </span>
-                      </div>
-                      
-                      <p className="feature-desc">
-                        {t(feature.descKey)}
-                      </p>
-                    </div>
-
-                    <div className="feature-cta fx-pingarlt-bold">
-                      {t(feature.ctaKey)}
-                    </div>
-
-                  </Link>
-                </div>
-              )
-            })}
-
+          {/* ═══ BOTTOM CARD ═══ */}
+          <div className={`fx-card fx-card-bottom ${show ? 'fx-card-show' : ''}`} style={{ animationDelay: '0.36s' }}>
+            {renderFeatureCard(FEATURES[2])}
           </div>
         </div>
       </div>
@@ -311,7 +273,7 @@ export function FeaturesSection() {
 
           position: relative;
           padding: 90px 24px;
-          background: var(--fx-bg);
+          background: linear-gradient(180deg, #0B0B12 0%, #0F0B1A 100%);
           color: var(--fx-fg);
           overflow: hidden;
           border-top: 1px solid var(--fx-border);
@@ -323,9 +285,11 @@ export function FeaturesSection() {
           --fx-fg: #09090B;
           --fx-muted: #6B7280;
           --fx-border: rgba(0,0,0,0.06);
-          --fx-card-bg: rgba(0,0,0,0.02);
-          --fx-card-border: rgba(0,0,0,0.08);
+          --fx-card-bg: rgba(255,255,255,0.75);
+          --fx-card-border: rgba(81,32,200,0.08);
           --fx-glow-color: rgba(81,32,200,0.08);
+
+          background: linear-gradient(180deg, #FAFAFF 0%, #F3F0FF 100%);
         }
 
         .fx-container {
@@ -389,57 +353,132 @@ export function FeaturesSection() {
         }
 
         /* ========================================
-           LAYOUT - Desktop: Grid with Fixed Direction | Mobile: Flex with Order
-           ✅ تم التعديل: الكاردز تأخذ مساحة أكبر أفقياً
+           LAYOUT - Centered phone with side cards + bottom card
            ======================================== */
 
         .fx-main {
+          position: relative;
           display: grid;
-          grid-template-columns: 1fr 1.4fr; /* ← الكاردز أعرض بكثير (1.4fr بدلاً من 300px) */
+          grid-template-columns: 1fr auto 1fr;
+          grid-template-areas:
+            "left phone right"
+            ".    bottom .";
+          gap: 32px 48px;
           align-items: center;
-          gap: 56px; /* ← مسافة أكبر للتناسق */
-          direction: ltr;
+          direction: ltr; /* keep physical left/right mapping for connector lines */
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 60px 24px;
         }
 
         /* ← في RTL: نرجع اتجاه النص للعربي داخل الكاردز والهيدر */
-        [dir="rtl"] .fx-cards-stack,
+        [dir="rtl"] .feature-card,
         [dir="rtl"] .fx-header {
           direction: rtl;
         }
 
-        /* Tablet & Mobile Medium (480px - 900px): Phone on LEFT, Cards on RIGHT */
-        @media (max-width: 900px) {
+        /* ── Card positions around the phone ── */
+        .fx-card-left { grid-area: left; align-self: start; }
+        .fx-card-right { grid-area: right; align-self: start; }
+        .fx-card-bottom {
+          grid-area: bottom;
+          justify-self: center;
+          width: 100%;
+          max-width: 520px;
+          margin-top: -20px;
+        }
+
+        /* ── Card wrapper reveal animation (kept separate from .feature-card hover) ── */
+        .fx-card {
+          position: relative;
+          opacity: 0;
+          transform: translateY(24px);
+          animation: fxCardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation-play-state: paused;
+        }
+
+        .fx-card.fx-card-show {
+          animation-play-state: running;
+        }
+
+        @keyframes fxCardReveal {
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Dotted purple connection lines (phone <-> cards) ── */
+        .fx-card-left::after,
+        .fx-card-right::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          width: 60px;
+          height: 1px;
+          background-image: linear-gradient(to right, #a78bfa 50%, transparent 50%);
+          background-size: 8px 1px;
+          background-repeat: repeat-x;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+
+        .fx-card-left::after { right: -60px; }
+        .fx-card-right::after { left: -60px; }
+
+        .fx-card-bottom::before {
+          content: '';
+          position: absolute;
+          top: -40px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 1px;
+          height: 40px;
+          background-image: linear-gradient(to bottom, #a78bfa 50%, transparent 50%);
+          background-size: 1px 8px;
+          background-repeat: repeat-y;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+
+        .fx-card-bottom::after {
+          content: '';
+          position: absolute;
+          top: -44px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #a78bfa;
+          pointer-events: none;
+        }
+
+        /* Tablet & Mobile (<968px): stack everything vertically */
+        @media (max-width: 968px) {
           .fx-main {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 24px;
-            direction: rtl;
+            grid-template-columns: 1fr;
+            grid-template-areas:
+              "left"
+              "phone"
+              "right"
+              "bottom";
+            gap: 28px;
+            padding: 40px 20px;
           }
-          
-          .fx-cards-stack { 
-            order: 1;
-            flex: 1;
-            min-width: 0;
+
+          .fx-card-bottom {
+            margin-top: 0;
+            max-width: 100%;
           }
-          
-          .fx-phone-wrapper { 
-            order: 2;
-            flex: 0 0 auto;
-            transform: scale(0.75);
+
+          .fx-card-left::after,
+          .fx-card-right::after,
+          .fx-card-bottom::before,
+          .fx-card-bottom::after {
+            display: none;
           }
         }
 
-        /* Mobile Small (<480px): Back to Column Layout */
         @media (max-width: 480px) {
           .features-section { padding: 60px 16px; }
-          .fx-main {
-            flex-direction: column;
-            gap: 40px;
-          }
-          .fx-phone-wrapper { 
-            transform: scale(1);
-          }
         }
 
         /* ========================================
@@ -449,6 +488,8 @@ export function FeaturesSection() {
         .fx-phone-wrapper {
           display: flex;
           justify-content: center;
+          position: relative;
+          z-index: 2;
           opacity: 0;
           transform: scale(0.75) translateY(50px);
           transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
@@ -477,6 +518,7 @@ export function FeaturesSection() {
           border-radius: 44px;
           padding: 10px;
           position: relative;
+          z-index: 2;
           box-shadow:
             0 25px 80px rgba(0,0,0,0.55),
             0 10px 30px rgba(0,0,0,0.35),
@@ -599,30 +641,28 @@ export function FeaturesSection() {
           z-index: -1;
         }
 
+        /* Strong soft shadow underneath the phone (visible on light bg) */
+        .phone-shadow {
+          position: absolute;
+          bottom: -20px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 70%;
+          height: 60px;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(81, 32, 200, 0.25) 0%,
+            rgba(81, 32, 200, 0.08) 40%,
+            transparent 70%
+          );
+          filter: blur(20px);
+          pointer-events: none;
+          z-index: 1;
+        }
+
         /* ========================================
            ✅ FEATURE CARDS - أعرض أفقيًا + أقصر عموديًا
            ======================================== */
-
-        .fx-cards-stack {
-          display: flex;
-          flex-direction: column;
-          gap: 10px; /* ← مسافة أصغر بين الكاردز للتكثيف الرأسي */
-        }
-
-        .feature-card-wrapper {
-          opacity: 0;
-          transform: translateX(40px) translateY(8px);
-          animation: cardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-          animation-play-state: paused;
-        }
-
-        .feature-card-wrapper.fx-card-show {
-          animation-play-state: running;
-        }
-
-        @keyframes cardReveal {
-          to { opacity: 1; transform: translateX(0) translateY(0); }
-        }
 
         /* ✅ الكارد الرئيسي - أعرض + أقصر */
         .feature-card {
@@ -631,11 +671,12 @@ export function FeaturesSection() {
           align-items: center;
           gap: 20px; /* ← مسافة أفقية متوازنة */
           padding: 12px 28px; /* ← padding عمودي أقل (12px) + أفقي واسع (28px) */
-          border-radius: 16px; /* ← زوايا أكثر نعومة */
+          border-radius: 20px; /* ← زوايا أكثر نعومة */
           background: var(--fx-card-bg);
           border: 1.5px solid var(--fx-card-border);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
+          box-shadow: 0 4px 20px rgba(81, 32, 200, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
           text-decoration: none;
           color: var(--fx-fg);
           overflow: hidden;
@@ -739,7 +780,7 @@ export function FeaturesSection() {
         /* ✅ زر CTA - أنحف وأكثر أناقة */
         .feature-cta {
           padding: 5px 13px; /* ← أنحف عمودياً */
-          border-radius: 9px;
+          border-radius: 999px;
           font-size: 9px; /* ← نص أصغر */
           font-family: 'PingARLT', 'Arial Black', sans-serif !important;
           font-weight: 700 !important;
@@ -783,6 +824,32 @@ export function FeaturesSection() {
           width: 350px; height: 350px;
           background: rgba(43, 191, 163, 0.07);
           bottom: -100px; left: -80px;
+        }
+
+        /* Soft purple blur circles */
+        .fx-blur {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          opacity: 0.25;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .fx-blur-1 {
+          top: 10%;
+          left: -10%;
+          width: 400px;
+          height: 400px;
+          background: #A78BFA;
+        }
+
+        .fx-blur-2 {
+          bottom: 10%;
+          right: -10%;
+          width: 500px;
+          height: 500px;
+          background: #C4B5FD;
         }
 
         .fx-grid-pattern {
