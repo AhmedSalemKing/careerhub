@@ -129,7 +129,6 @@ function UserDropdown({ locale }: { locale: string }) {
     logout()
     setOpen(false)
     window.dispatchEvent(new Event('auth:updated'))
-    window.location.href = `/${locale}`
   }
 
   const isRtl = locale === 'ar'
@@ -783,7 +782,6 @@ export function Navbar() {
                       logout();
                       setMobileOpen(false);
                       window.dispatchEvent(new Event('auth:updated'));
-                      window.location.href = `/${locale}`;
                     }}
                     className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
