@@ -95,8 +95,21 @@ export function logout() {
   removeRefreshToken()
   removeUser()
   if (typeof window !== 'undefined') {
+    // Legacy copies written by the login/register pages and read by the API client
+    ;['careerhub_token', 'careerhub_refresh', 'careerhub_user', 'token'].forEach((k) => {
+      try { localStorage.removeItem(k) } catch {}
+    })
+    try {
+      document.cookie = 'careerhub_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+    } catch {}
+
     const seg = window.location.pathname.split('/')[1]
     const locale = seg === 'en' ? 'en' : 'ar'
-    window.location.href = `/${locale}/login`
+    // Go through the learn app's logout route so its session is cleared too;
+    // it redirects back to web login afterwards.
+    const learnUrl = (process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app').replace(/\/+$/, '')
+    const back = `${window.location.origin}/${locale}/login`
+    window.location.href = `${learnUrl}/${locale}/logout?return=${encodeURIComponent(back)}`
   }
 }
