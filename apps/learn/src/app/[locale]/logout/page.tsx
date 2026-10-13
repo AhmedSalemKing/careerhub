@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 
-// Auth keys the learn app (and the web token bridge) can leave behind
 const AUTH_KEYS = [
   'deveway_token', 'deveway_refresh', 'deveway_user',
   'careerhub_token', 'careerhub_refresh', 'careerhub_user',
@@ -10,34 +9,31 @@ const AUTH_KEYS = [
   'refreshToken', 'userName', 'user_name', 'user_avatar',
 ]
 
-// Only redirect back to the web app or this app (prevents open redirects)
+const ALLOWED_RETURN_HOSTS = [
+  'deveway-teal.vercel.app',
+  'devewayhub.vercel.app',
+  'deveway.com',
+  'www.deveway.com',
+]
+
 function isAllowedReturn(url: string): boolean {
-  let origin: string
-  try { origin = new URL(url).origin } catch { return false }
-  const allowed = [
-    window.location.origin,
-    process.env.NEXT_PUBLIC_MAIN_URL,
-    process.env.NEXT_PUBLIC_WEB_URL,
-    'https://deveway-teal.vercel.app',
-  ]
-  return allowed.some((u) => {
-    if (!u) return false
-    try { return new URL(u).origin === origin } catch { return false }
-  })
+  try {
+    const u = new URL(url)
+    return ALLOWED_RETURN_HOSTS.includes(u.hostname)
+  } catch {
+    return false
+  }
 }
 
-/**
- * Cross-app logout bridge. The web app sends the user here on logout so the
- * learn origin's session is cleared too, then this page returns to `?return=`.
- */
 export default function LogoutPage() {
   useEffect(() => {
+    // 1) Clear all auth keys
     AUTH_KEYS.forEach((k) => {
       try { localStorage.removeItem(k) } catch {}
       try { sessionStorage.removeItem(k) } catch {}
     })
 
-    // Clear auth-looking cookies on this origin (host-only, path=/)
+    // 2) Clear any auth-looking non-httpOnly cookies
     try {
       document.cookie.split(';').forEach((c) => {
         const name = c.split('=')[0].trim()
@@ -47,26 +43,59 @@ export default function LogoutPage() {
       })
     } catch {}
 
-    const seg = window.location.pathname.split('/')[1]
-    const locale = seg === 'en' ? 'en' : 'ar'
-    let returnUrl = ''
-    try { returnUrl = new URLSearchParams(window.location.search).get('return') || '' } catch {}
-    const dest = returnUrl && isAllowedReturn(returnUrl) ? returnUrl : `/${locale}`
+    // 3) Zap any IndexedDB / caches that could hold auth
+    try { if ('caches' in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k)))
+    } } catch {}
 
-    const t = setTimeout(() => { window.location.replace(dest) }, 100)
+    // 4) Determine destination — from ?return= if whitelisted, else web login
+    const params = new URLSearchParams(window.location.search)
+    const returnUrl = params.get('return')
+    const locale = window.location.pathname.split('/')[1] || 'ar'
+
+    const dest = returnUrl && isAllowedReturn(returnUrl)
+      ? returnUrl
+      : `https://deveway-teal.vercel.app/${locale}/login`
+
+    // 5) Hard replace AFTER a tiny delay to let state clear
+    const t = setTimeout(() => {
+      // location.replace avoids adding this page to browser history
+      window.location.replace(dest)
+    }, 250)
+
     return () => clearTimeout(t)
   }, [])
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'var(--background)', color: 'var(--foreground)',
-      fontFamily: 'inherit',
-    }}>
-      <p style={{ fontSize: '0.95rem', opacity: 0.7 }}>
-        جارٍ تسجيل الخروج...
-      </p>
+    <div
+      dir="rtl"
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--background, #0d0d12)',
+        color: 'var(--foreground, #f5f5f7)',
+        fontFamily: 'inherit',
+      }}
+    >
+      <div style={{ textAlign: 'center' }}>
+        <div
+          style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            border: '3px solid rgba(81,32,200,0.2)',
+            borderTopColor: '#5120c8',
+            margin: '0 auto 1rem',
+            animation: 'dv-spin 0.8s linear infinite',
+          }}
+        />
+        <p style={{ fontSize: '0.95rem', opacity: 0.75, margin: 0 }}>
+          جارٍ تسجيل الخروج...
+        </p>
+        <style>{`@keyframes dv-spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
     </div>
   )
 }
