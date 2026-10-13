@@ -99,9 +99,19 @@ export function logout() {
     ;['careerhub_token', 'careerhub_refresh', 'careerhub_user', 'token'].forEach((k) => {
       try { localStorage.removeItem(k) } catch {}
     })
+    // Clear auth cookies. These are written by the login / register / google
+    // pages with varying attributes (SameSite=Lax vs SameSite=None; Secure), so
+    // clear every known name with both attribute sets to guarantee removal.
     try {
-      document.cookie = 'careerhub_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
-      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/'
+      const cookieNames = [
+        'careerhub_token', 'careerhub_refresh', 'careerhub_user',
+        'deveway_token', 'deveway_refresh', 'deveway_user',
+        'access_token', 'token',
+      ]
+      cookieNames.forEach((name) => {
+        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`
+        document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=None; Secure`
+      })
     } catch {}
 
     const seg = window.location.pathname.split('/')[1]

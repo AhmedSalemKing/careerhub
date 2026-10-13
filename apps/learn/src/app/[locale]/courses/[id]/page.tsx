@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { get, post } from "../../../../lib/api";
+import { webLoginUrl } from "../../../../lib/constants";
 import { getMediaUrl, getCourseTitle } from "../../../../lib/media";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -214,10 +215,7 @@ export default function CourseDetailPage({
 	const handleEnroll = async () => {
 		if (enrollmentStatus === "loading") return;
 		if (!hasUser) {
-			const MAIN = process.env.NEXT_PUBLIC_MAIN_URL || "";
-			router.push(
-				`/${locale}/auth/login?redirect=${encodeURIComponent(window.location.pathname)}`,
-			);
+			window.location.href = webLoginUrl(locale, window.location.pathname);
 			return;
 		}
 
@@ -262,7 +260,7 @@ export default function CourseDetailPage({
 	const handleGetCertificate = async (): Promise<void> => {
 		const token = getAuthToken();
 		if (!token) {
-			router.push(`/${locale}/login`);
+			window.location.href = webLoginUrl(locale, window.location.pathname);
 			return;
 		}
 

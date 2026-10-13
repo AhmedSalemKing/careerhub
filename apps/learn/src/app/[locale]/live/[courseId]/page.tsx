@@ -7,6 +7,7 @@ import {
   LogOut, Hand, MessageSquare, Send, X, Wifi, WifiOff, Square
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../hooks/useLiveSocket'
+import { webLoginUrl } from '../../../../lib/constants'
 import toast from 'react-hot-toast'
 import { io } from 'socket.io-client'
 
@@ -311,7 +312,7 @@ export default function LiveViewerPage() {
       localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
 
     if (!t) {
-      router.push(`/${locale}/auth/login?returnUrl=/${locale}/live/${courseId}`)
+      window.location.href = webLoginUrl(locale, `/${locale}/live/${courseId}`)
       return
     }
 

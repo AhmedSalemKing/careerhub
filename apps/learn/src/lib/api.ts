@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { webLoginUrl } from './constants'
 
 const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
 
@@ -63,7 +64,7 @@ api.interceptors.response.use(
         localStorage.removeItem('deveway_user')
         const seg = window.location.pathname.split('/')[1]
         const locale = seg === 'en' ? 'en' : 'ar'
-        window.location.href = `/${locale}/login`
+        window.location.href = webLoginUrl(locale, window.location.pathname + window.location.search)
       }
     }
     // Only log unexpected errors; 401/403/404/409 are expected/handled states.

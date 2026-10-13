@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, ArrowRight, Video, Radio, MapPin } from 'lucide-react'
+import { webLoginUrl } from '../../../../lib/constants'
 
 const API = 'https://deve-way.onrender.com/api'
 
@@ -42,7 +43,7 @@ export default function EnrollPaymentPage() {
 
   const handleProceed = async () => {
     if (!token) {
-      router.push(`/${locale}/auth/login`)
+      window.location.href = webLoginUrl(locale, window.location.pathname + window.location.search)
       return
     }
     setLoading(true)

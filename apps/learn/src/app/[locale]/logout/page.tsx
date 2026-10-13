@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { webLoginUrl } from '../../../lib/constants'
 
 const AUTH_KEYS = [
   'deveway_token', 'deveway_refresh', 'deveway_user',
@@ -55,7 +56,7 @@ export default function LogoutPage() {
 
     const dest = returnUrl && isAllowedReturn(returnUrl)
       ? returnUrl
-      : `https://deveway-teal.vercel.app/${locale}/login`
+      : webLoginUrl(locale)
 
     // 5) Navigate away immediately. Every clear above is synchronous, so there is
     // nothing to wait for. Doing this synchronously (instead of a 250ms timer

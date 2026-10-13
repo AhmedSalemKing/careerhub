@@ -12,6 +12,7 @@ import {
   DollarSign, Navigation
 } from 'lucide-react'
 import { formatDate, formatTimeOnly } from '../../../lib/time'
+import { webLoginUrl } from '../../../lib/constants'
 
 const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
 
@@ -568,7 +569,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
   const handleJoinLive = async () => {
     if (!token) {
-      router.push(`/${locale}/auth/login?returnUrl=/${locale}/courses`)
+      window.location.href = webLoginUrl(locale, `/${locale}/courses`)
       return
     }
 
@@ -733,7 +734,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
             {isScheduled && (
               <button onClick={() => {
-                if (!token) { router.push(`/${locale}/login`); return }
+                if (!token) { window.location.href = webLoginUrl(locale, `/${locale}/courses`); return }
                 if (price > 0 && !isPaid) {
                   handleJoinLive()
                 } else {
@@ -763,7 +764,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
 
   const handleBookSeat = async () => {
     if (!token) {
-      router.push(`/${locale}/auth/login`)
+      window.location.href = webLoginUrl(locale, `/${locale}/courses`)
       return
     }
 

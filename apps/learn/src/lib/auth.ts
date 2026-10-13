@@ -1,3 +1,5 @@
+import { webLoginUrl } from './constants'
+
 export const TOKEN_KEY = 'deveway_token'
 export const REFRESH_KEY = 'deveway_refresh'
 export const USER_KEY = 'deveway_user'
@@ -97,6 +99,6 @@ export function logout() {
   if (typeof window !== 'undefined') {
     const seg = window.location.pathname.split('/')[1]
     const locale = seg === 'en' ? 'en' : 'ar'
-    window.location.href = `/${locale}/login`
+    window.location.href = webLoginUrl(locale)
   }
 }

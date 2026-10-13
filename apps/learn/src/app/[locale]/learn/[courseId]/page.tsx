@@ -13,6 +13,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ErrorBoundary } from "../../../../components/ErrorBoundary";
 import { get, post } from "../../../../lib/api";
+import { webLoginUrl } from "../../../../lib/constants";
 import { toast, Toaster } from "react-hot-toast";
 import {
 	Lock,
@@ -223,8 +224,7 @@ function MetaItem({
 			localStorage.getItem("deveway_token") ||
 			document.cookie.match(/deveway_token=([^;]+)/)?.[1];
 		if (!token) {
-			const MAIN = process.env.NEXT_PUBLIC_MAIN_URL || "";
-			window.location.href = `${MAIN}/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+			window.location.href = webLoginUrl(locale, window.location.pathname);
 			return;
 		}
 		if (!localStorage.getItem("deveway_token")) {
@@ -709,7 +709,7 @@ function MetaItem({
 		const token = getAuthToken()
 		if (!token) {
 			toast.error(isAr ? 'يجب تسجيل الدخول اولا' : 'Authentication required')
-			router.push(`/${locale}/login`)
+			window.location.href = webLoginUrl(locale, window.location.pathname)
 			return
 		}
 
