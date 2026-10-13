@@ -106,10 +106,19 @@ export function logout() {
 
     const seg = window.location.pathname.split('/')[1]
     const locale = seg === 'en' ? 'en' : 'ar'
-    // Go through the learn app's logout route so its session is cleared too;
-    // it redirects back to web login afterwards.
+    // Learn's session lives on a different origin, so the only reliable way to
+    // clear it is a full top-level navigation to its /logout route. An iframe
+    // cannot be used: Learn sends `X-Frame-Options: DENY` (so the frame never
+    // loads), and browsers partition third-party iframe storage anyway.
+    // Learn clears its storage, then redirects back to `return` (web login).
     const learnUrl = (process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app').replace(/\/+$/, '')
     const back = `${window.location.origin}/${locale}/login`
-    window.location.href = `${learnUrl}/${locale}/logout?return=${encodeURIComponent(back)}`
+    const logoutUrl = `${learnUrl}/${locale}/logout?return=${encodeURIComponent(back)}`
+    // replace() so the still-authenticated page isn't kept in session history.
+    try {
+      window.location.replace(logoutUrl)
+    } catch {
+      window.location.href = logoutUrl
+    }
   }
 }

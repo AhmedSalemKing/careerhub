@@ -57,13 +57,18 @@ export default function LogoutPage() {
       ? returnUrl
       : `https://deveway-teal.vercel.app/${locale}/login`
 
-    // 5) Hard replace AFTER a tiny delay to let state clear
-    const t = setTimeout(() => {
-      // location.replace avoids adding this page to browser history
-      window.location.replace(dest)
-    }, 250)
-
-    return () => clearTimeout(t)
+    // 5) Navigate away immediately. Every clear above is synchronous, so there is
+    // nothing to wait for. Doing this synchronously (instead of a 250ms timer
+    // whose cleanup could cancel it before it fires) guarantees the redirect runs.
+    const go = () => {
+      try {
+        // location.replace avoids adding this page to browser history
+        window.location.replace(dest)
+      } catch {
+        window.location.href = dest
+      }
+    }
+    go()
   }, [])
 
   return (
