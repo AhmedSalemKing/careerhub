@@ -19,6 +19,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { get, post, patch, del } from '@/lib/api'
+import { getUploadErrorMessage } from '@/lib/upload-error'
 import ToggleSwitch from '@/components/quizzes/ToggleSwitch'
 import SegmentedControl from '@/components/quizzes/SegmentedControl'
 import StatusBadge from '@/components/quizzes/StatusBadge'
@@ -240,7 +241,7 @@ export default function QuizBuilderPage() {
       // Hide auto "تم الحفظ" toast from other flows; simply return url
       setQForm((f) => ({ ...f, questionImage: url }))
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'فشل رفع الصورة')
+      toast.error(getUploadErrorMessage(e, { kind: 'image', isAr: true, maxMB: 10 }))
     } finally {
       setUploadingImg(false)
     }

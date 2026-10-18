@@ -9,6 +9,7 @@ import {
   FileText, Image, File, Download, Eye, Trash2, Edit3, FileQuestion
 } from 'lucide-react'
 import { get, post, patch, del } from '../../../../../../lib/api'
+import { getUploadErrorMessage } from '../../../../../../lib/upload-error'
 import { AuthGate } from '../../../../../components/AuthGate'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -45,19 +46,21 @@ async function uploadMedia(
             type: type
           })
         } catch {
-          reject(new Error(`فشل رفع ${type}: استجابة غير صالحة`))
+          reject(new Error('استجابة غير صالحة من الخادم'))
         }
       } else {
-        let errorMsg = `فشل رفع ${type}`
+        let errorMsg = ''
         try {
           const errData = JSON.parse(xhr.responseText)
-          errorMsg = errData?.message || errData?.error || errorMsg
+          errorMsg = errData?.message || errData?.error || ''
         } catch {}
-        reject(new Error(errorMsg))
+        const uploadErr: Error & { status?: number } = new Error(errorMsg || `فشل رفع ${type}`)
+        uploadErr.status = xhr.status
+        reject(uploadErr)
       }
     }
     
-    xhr.onerror = () => reject(new Error('فشل الاتصال بالسيرفر'))
+    xhr.onerror = () => reject(new Error('تعذر الاتصال بالخادم، تحقق من اتصالك'))
     xhr.open('POST', `${API_URL}/upload/${type}`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
@@ -151,7 +154,7 @@ function AddLectureModal({
       set('videoUrl', result.url)
     } catch (err) {
       console.error('Video upload error:', err)
-      setError(err instanceof Error ? err.message : 'فشل رفع الفيديو')
+      setError(getUploadErrorMessage(err, { kind: 'video', isAr: true, maxMB: 500 }))
     } finally {
       setUploading(false)
       setUploadType(null)
@@ -170,7 +173,7 @@ function AddLectureModal({
       set('fileName', result.name)
     } catch (err) {
       console.error('File upload error:', err)
-      setError(err instanceof Error ? err.message : 'فشل رفع الملف')
+      setError(getUploadErrorMessage(err, { kind: 'file', isAr: true, maxMB: 50 }))
     } finally {
       setUploading(false)
       setUploadType(null)
@@ -188,7 +191,7 @@ function AddLectureModal({
       set('imageUrl', result.url)
     } catch (err) {
       console.error('Image upload error:', err)
-      setError(err instanceof Error ? err.message : 'فشل رفع الصورة')
+      setError(getUploadErrorMessage(err, { kind: 'image', isAr: true, maxMB: 10 }))
     } finally {
       setUploading(false)
       setUploadType(null)

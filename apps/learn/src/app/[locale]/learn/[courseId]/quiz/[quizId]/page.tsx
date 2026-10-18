@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { toast } from 'sonner'
 import { ArrowRight, Clock, Send, CheckCircle2, AlertCircle, FileText, Upload } from 'lucide-react'
 import { get, post } from '@/lib/api'
+import { getUploadErrorMessage } from '@/lib/upload-error'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 
 const inputCls = 'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
@@ -186,14 +187,14 @@ export default function TakeQuizPage() {
       const url: string | undefined = d?.url
       const name: string = d?.fileName || file.name
       if (!url) {
-        toast.error('فشل رفع الملف')
+        toast.error(getUploadErrorMessage(new Error('استجابة غير صالحة من الخادم'), { kind: 'file', isAr: locale === 'ar', maxMB: 50 }))
         return
       }
       await persistAnswer(questionId, { fileUrl: url, fileName: name })
       setFileMeta(questionId, { fileUrl: url, fileName: name })
       toast.success(`تم رفع: ${name}`)
     } catch (e: any) {
-      toast.error(e?.response?.data?.message ?? 'فشل رفع الملف')
+      toast.error(getUploadErrorMessage(e, { kind: 'file', isAr: locale === 'ar', maxMB: 50 }))
     } finally {
       setUploading((prev) => ({ ...prev, [questionId]: false }))
     }

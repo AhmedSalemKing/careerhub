@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
+import { getUploadErrorMessage } from '../../../../lib/upload-error'
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
 import {
@@ -343,11 +344,16 @@ export default function CreateCoursePage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
       })
-      if (!res.ok) throw new Error('Upload failed')
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        const err: Error & { status?: number } = new Error(body?.message || 'Upload failed')
+        err.status = res.status
+        throw err
+      }
       const data = await res.json()
       setForm(f => ({ ...f, thumbnail: data.data.url }))
-    } catch {
-      setError(isAr ? 'فشل رفع الصورة' : 'Failed to upload image')
+    } catch (err) {
+      setError(getUploadErrorMessage(err, { kind: 'image', isAr, maxMB: 10 }))
     } finally {
       setThumbUploading(false)
     }

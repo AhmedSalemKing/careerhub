@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { get, patch, post } from '../../../../lib/api'
+import { getUploadErrorMessage } from '../../../../lib/upload-error'
 import { getMediaUrl } from '../../../../lib/media'
 import api from '../../../../lib/api'
 import { useAuthStore } from '../../../../stores/authStore'
@@ -65,6 +66,7 @@ function VerificationSection({ user }: { user: any }) {
       else setBackImage(url)
     } catch(e) {
       console.error('Upload failed:', e)
+      notify.error(getUploadErrorMessage(e, { kind: 'image', isAr, maxMB: 10 }))
     } finally {
       setUploading(null)
     }
@@ -214,8 +216,14 @@ export default function SettingsPage() {
       if (avatarFile) {
         const formData = new FormData()
         formData.append('file', avatarFile)
-        const uploadRes = await api.post('/upload/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-        avatarUrl = uploadRes.data?.data?.url || uploadRes.data?.url
+        try {
+          const uploadRes = await api.post('/upload/image', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+          avatarUrl = uploadRes.data?.data?.url || uploadRes.data?.url
+        } catch (uploadErr) {
+          const err: any = new Error(getUploadErrorMessage(uploadErr, { kind: 'image', isAr, maxMB: 10 }))
+          err.isUploadError = true
+          throw err
+        }
       }
       const body: any = { 
         firstName: profileForm.firstName,
@@ -253,7 +261,11 @@ export default function SettingsPage() {
       notify.success(isAr ? 'تم حفظ التغييرات بنجاح' : 'Changes saved successfully')
     },
     onError: (err: any) => {
-      notify.error(err?.response?.data?.message || (isAr ? 'فشل حفظ التغييرات' : 'Failed to save changes'))
+      notify.error(
+        err?.isUploadError
+          ? err.message
+          : (err?.response?.data?.message || (isAr ? 'فشل حفظ التغييرات' : 'Failed to save changes'))
+      )
     }
   })
 

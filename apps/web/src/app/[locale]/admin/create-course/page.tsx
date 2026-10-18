@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
+import { getUploadErrorMessage } from '../../../../lib/upload-error'
 import Toast from '../../../components/Toast'
 import {
   BookOpen,
@@ -31,7 +32,12 @@ async function uploadImageFile(file: File): Promise<string> {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   })
-  if (!res.ok) throw new Error('Image upload failed')
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    const err: Error & { status?: number } = new Error(body?.message || 'Image upload failed')
+    err.status = res.status
+    throw err
+  }
   const data = await res.json()
   return data.data.url as string
 }
@@ -49,14 +55,25 @@ async function uploadVideoFile(
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
     }
     xhr.onload = () => {
-      try {
-        const data = JSON.parse(xhr.responseText)
-        resolve(data.data.url as string)
-      } catch {
-        reject(new Error('Invalid response'))
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          resolve(data.data.url as string)
+        } catch {
+          reject(new Error('Invalid response'))
+        }
+      } else {
+        let msg = ''
+        try {
+          const body = JSON.parse(xhr.responseText)
+          msg = body?.message || body?.error || ''
+        } catch {}
+        const err: Error & { status?: number } = new Error(msg || 'Video upload failed')
+        err.status = xhr.status
+        reject(err)
       }
     }
-    xhr.onerror = () => reject(new Error('Upload failed'))
+    xhr.onerror = () => reject(new Error('تعذر الاتصال بالخادم، تحقق من اتصالك'))
     xhr.open('POST', `${API_URL}/upload/video`)
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
@@ -176,8 +193,8 @@ export default function AdminCreateCoursePage() {
     try {
       const url = await uploadImageFile(file)
       set('thumbnail', url)
-    } catch {
-      setError(isAr ? 'فشل رفع الصورة' : 'Image upload failed')
+    } catch (err) {
+      setError(getUploadErrorMessage(err, { kind: 'image', isAr, maxMB: 10 }))
     } finally {
       setThumbUploading(false)
     }
@@ -189,8 +206,8 @@ export default function AdminCreateCoursePage() {
     try {
       const url = await uploadVideoFile(file, setVideoProgress)
       set('previewVideo', url)
-    } catch {
-      setError(isAr ? 'فشل رفع الفيديو' : 'Video upload failed')
+    } catch (err) {
+      setError(getUploadErrorMessage(err, { kind: 'video', isAr, maxMB: 500 }))
     } finally {
       setVideoUploading(false)
     }

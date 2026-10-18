@@ -4,7 +4,9 @@ import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '../../../lib/api'
+import { getUploadErrorMessage } from '../../../lib/upload-error'
 import { useAuthStore } from '../../../stores/authStore'
+import { toast } from 'sonner'
 import { Camera, CheckCircle2, Upload, Loader2, X, GraduationCap, User, Briefcase, PartyPopper, Clock } from 'lucide-react'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -273,19 +275,21 @@ export default function RegisterPage() {
         method: 'POST',
         body: formData,
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => null)
       const url = data?.data?.url || data?.url
-      if (url) {
+      if (res.ok && url) {
         setStep2((prev) => ({ ...prev, cvUrl: url }))
         setCvFileName(data.data?.fileName || file.name)
         console.log('[CV Upload] Success:', url)
       } else {
         console.error('[CV Upload] No URL in response:', data)
-        setCvError(ar ? 'فشل رفع السيرة الذاتية - حاول مرة أخرى' : 'CV upload failed — please try again')
+        const err: Error & { status?: number } = new Error(data?.message || 'CV upload failed')
+        err.status = res.status
+        setCvError(getUploadErrorMessage(err, { kind: 'file', isAr: ar, maxMB: 5 }))
       }
     } catch (e) {
       console.error('[CV Upload] Failed:', e)
-      setCvError(ar ? 'فشل رفع السيرة الذاتية - حاول مرة أخرى' : 'CV upload failed — please try again')
+      setCvError(getUploadErrorMessage(e, { kind: 'file', isAr: ar, maxMB: 5 }))
     } finally {
       setCvUploading(false)
     }
@@ -396,10 +400,18 @@ export default function RegisterPage() {
         fd.append('file', avatarFile)
         try {
           const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/upload/image`, { method: 'POST', body: fd })
+          if (!uploadRes.ok) {
+            const body = await uploadRes.json().catch(() => null)
+            const err: Error & { status?: number } = new Error(body?.message || 'Upload failed')
+            err.status = uploadRes.status
+            throw err
+          }
           const uploadData = await uploadRes.json()
           const avatarUrl = uploadData?.data?.url || uploadData?.url
           if (avatarUrl) payload.avatar = avatarUrl
-        } catch {}
+        } catch (e) {
+          toast.error(getUploadErrorMessage(e, { kind: 'image', isAr: ar, maxMB: 10 }))
+        }
       }
       const res = await api.post('/auth/register', payload)
       const data = res.data.data ?? res.data
