@@ -32,13 +32,14 @@ export class CoursesService {
     search?: string;
     language: string;
     type?: string;
+    sort?: string;
     userId?: string;
   }) {
-    const { page, limit, careerPath, categoryId, level, search, language, type, userId } = options;
+    const { page, limit, careerPath, categoryId, level, search, language, type, sort, userId } = options;
     const effectiveLimit = limit || 100;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
-    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${categoryId || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}`;
+    const cacheKey = `courses:${safePage}:${effectiveLimit}:${careerPath || ''}:${categoryId || ''}:${level || ''}:${search || ''}:${language}:${type || ''}:${userId || 'anon'}:${sort || ''}`;
     const cached = this.cache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
@@ -153,11 +154,13 @@ export class CoursesService {
             }
           },
         },
-        orderBy: [
-          { isFeatured: 'desc' },
-          { enrollments: { _count: 'desc' } },
-          { createdAt: 'desc' },
-        ],
+        orderBy: sort === 'newest'
+          ? [{ createdAt: 'desc' }]
+          : [
+              { isFeatured: 'desc' },
+              { enrollments: { _count: 'desc' } },
+              { createdAt: 'desc' },
+            ],
         skip,
         take: effectiveLimit,
       }),

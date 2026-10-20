@@ -198,16 +198,17 @@ export default function HomePage() {
   }, [])
 
   const [apiCategories, setApiCategories] = useState<any[]>([])
+  const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
   useEffect(() => {
-    get('/courses?limit=6&language=' + locale)
+    get('/courses?limit=6&language=' + locale + (courseSort === 'newest' ? '&sort=newest' : ''))
       .then((res) => {
         const d = (res as any)?.data?.data ?? (res as any)?.data
         const courses = d?.courses ?? (Array.isArray(d) ? d : [])
         setApiCourses(courses.slice(0, 6))
       })
       .catch(() => setApiCourses([]))
-  }, [locale])
+  }, [locale, courseSort])
 
   useEffect(() => {
     get('/courses/categories?language=' + locale)
@@ -235,8 +236,6 @@ export default function HomePage() {
         color: '#5120c8',
       }))
     : []
-
-  const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
   const featuredCourses = apiCourses.map((c: any) => ({
     id: c.id,

@@ -50,6 +50,7 @@ export class CoursesController {
   @ApiQuery({ name: 'level', required: false, description: 'Filter by level' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'type', required: false, description: 'Filter by type: recorded, live, offline' })
+  @ApiQuery({ name: 'sort', required: false, enum: ['popular', 'newest'], description: 'Sort order: popular (default) or newest' })
   @ApiQuery({ name: 'language', required: false, enum: ['en', 'ar'], description: 'Response language' })
   async getCourses(
     @Query('page') page?: number,
@@ -60,6 +61,7 @@ export class CoursesController {
     @Query('search') search?: string,
     @Query('language') language?: string,
     @Query('type') type?: string,
+    @Query('sort') sort?: string,
     @Request() req?: any,
   ) {
     const userId = req?.user?.id
@@ -74,6 +76,7 @@ export class CoursesController {
       search,
       language: language || 'en',
       type,
+      sort,
       userId,
     });
 
