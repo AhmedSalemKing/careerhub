@@ -449,7 +449,16 @@ function MetaItem({
 	const buildDownloadUrl = (url: string | undefined, name: string): string => {
 		if (!url) return "#";
 		if (url.includes("cloudinary.com") && url.includes("/upload/")) {
-			return url.replace("/upload/", "/upload/fl_attachment/");
+			// Cloudinary raw uploads are extension-less (`.../fl_attachment/v.../file_xyz`),
+			// so the browser saves them without a .pdf suffix. Embedding the original
+			// filename in the fl_attachment flag forces a readable name + extension.
+			const safeName = (name || "document.pdf")
+				.replace(/\s+/g, "_")
+				.replace(/[()]/g, "");
+			if (url.includes("/fl_attachment/")) {
+				return url.replace("/fl_attachment/", `/fl_attachment:${safeName}/`);
+			}
+			return url.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
 		}
 		return url;
 	};
@@ -970,10 +979,13 @@ function MetaItem({
 			!hasVideo && !hasFile &&
 			getSafeUrl(activeLesson?.imageUrl)
 		);
+	// Mixed lessons carry video + file + image at once: mediaType resolves to
+	// "video" (video wins), which used to blank out effectiveImageUrl and leave
+	// the "الصورة" tab empty. Always prefer the dedicated imageUrl field and
+	// only fall back to the image-as-video case for pure image lessons.
 	const effectiveImageUrl =
-		mediaType === "image"
-			? getSafeUrl(activeLesson?.imageUrl) || getSafeUrl(activeLesson?.videoUrl)
-			: imageUrl;
+		getSafeUrl(activeLesson?.imageUrl) ||
+		(mediaType === "image" ? getSafeUrl(activeLesson?.videoUrl) : "");
 
 	// Colors - Professional Educational Platform Design
 	const isDark = theme === "dark";
@@ -2012,7 +2024,8 @@ function MetaItem({
 										}}>
 											<img
 												src={effectiveImageUrl}
-												alt={activeLesson?.title || activeLesson?.titleAr || 'Lesson image'}
+												alt="lesson image"
+												className="max-w-full"
 												style={{
 													maxWidth: '100%', maxHeight: '600px',
 													objectFit: 'contain', borderRadius: '8px',
