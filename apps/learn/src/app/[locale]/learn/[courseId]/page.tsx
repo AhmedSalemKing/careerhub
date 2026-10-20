@@ -362,7 +362,6 @@ function MetaItem({
 	});
 	const hasQuiz = !!activeQuiz;
 	const quizPassed = activeQuiz?.bestAttempt?.passed === true;
-	const quizAttempted = (activeQuiz?.attemptCount ?? 0) > 0;
 	const requiresQuiz = hasQuiz && !quizPassed;
 	const quizHref = activeQuiz?.id
 		? `/${locale}/learn/${courseId}/quiz/${activeQuiz.id}`
@@ -445,6 +444,13 @@ function MetaItem({
 	const imageUrl: string | undefined =
 		getSafeUrl(activeLesson?.imageUrl) || undefined;
 	const fileName: string = activeLesson?.fileName || "document.pdf";
+
+	// Cloudinary serves raw files with `Content-Disposition: attachment`, so a
+	// plain view link downloads instead of previewing. `fl_inline` forces inline
+	// delivery so "فتح في تبويب جديد" actually opens in the browser tab.
+	const inlineUrl: string | undefined = fileUrl
+		? fileUrl.replace('/raw/upload/', '/raw/upload/fl_inline/')
+		: undefined;
 
 	// Cloudinary raw uploads are public but extension-less, and the
 	// `fl_attachment:<name>.pdf` transformation is rejected with HTTP 400 (the
@@ -1986,7 +1992,7 @@ function MetaItem({
 											/>
 										</div>
 										<div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-											<a href={fileUrl} target="_blank" rel="noopener noreferrer"
+											<a href={inlineUrl} target="_blank" rel="noopener noreferrer"
 												style={{
 													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
 													fontWeight: 500, fontFamily: 'var(--font-medium)', background: '#5120c8', color: 'white',
@@ -2051,16 +2057,18 @@ function MetaItem({
 												<ZoomIn size={14} />
 												{isAr ? 'تكبير' : 'Zoom'}
 											</a>
-											<a href={effectiveImageUrl} download
+											<button
+												type="button"
+												onClick={() => handleDownload(effectiveImageUrl, activeLesson?.imageFileName || 'image.jpg')}
 												style={{
 													padding: '6px 14px', borderRadius: '6px', fontSize: '12px',
 													background: 'transparent', color: '#a78bfa',
 													border: `1px solid ${borderColor}`, textDecoration: 'none',
-													display: 'flex', alignItems: 'center', gap: '6px',
+													display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
 												}}>
 												<Download size={14} />
 												{isAr ? 'تحميل' : 'Download'}
-											</a>
+											</button>
 										</div>
 									</div>
 								)}
@@ -2524,7 +2532,7 @@ function MetaItem({
 												<span style={{ color: '#ffffff' }}>تحميل {fileName}</span>
 											</button>
 											<a
-												href={fileUrl}
+												href={inlineUrl}
 												target="_blank"
 												rel="noopener noreferrer"
 												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
@@ -2560,29 +2568,7 @@ function MetaItem({
 											border: "1px solid var(--border)",
 											boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
 										}}>
-										{requiresQuiz && quizHref ? (
-											<button
-												onClick={() => router.push(quizHref)}
-												style={{
-													display: "inline-flex",
-													alignItems: "center",
-													gap: "8px",
-													padding: "10px 20px",
-													borderRadius: "10px",
-													background: "rgba(81,32,200,0.15)",
-													border: "1px solid rgba(81,32,200,0.3)",
-													color: "#a78bfa",
-													fontWeight: 500,
-													fontSize: "0.875rem",
-													cursor: "pointer",
-													fontFamily: "var(--font-medium)",
-												}}>
-												<Target size={16} />
-												{quizAttempted
-													? isAr ? "أعد الاختبار" : "Retake Quiz"
-													: isAr ? "ابدأ الاختبار" : "Start Quiz"}
-											</button>
-										) : mediaType === "video" ? (
+										{mediaType === "video" ? (
 											isCurrentCompleted ? (
 												<span
 													style={{
