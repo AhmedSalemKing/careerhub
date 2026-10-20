@@ -46,7 +46,6 @@ import {
 	ExternalLink,
 	ZoomIn,
 	Eye,
-	FileDown,
 	Volume2,
 	VolumeX,
 	Pause,
@@ -2506,54 +2505,6 @@ function MetaItem({
 								)}
 
 								<QuizEntryCard lessonId={activeLesson?.id} />
-
-								{/* Download Materials Section */}
-								{hasFile && fileUrl && (
-									<div
-										className="mb-6 p-5 rounded-2xl"
-										style={{
-											background: `${blueColor}06`,
-											border: `1.5px solid ${blueColor}15`,
-										}}>
-										<h3
-											className="text-base mb-4 flex items-center gap-2"
-											style={{ color: blueColor, fontWeight: 500, fontFamily: "var(--font-medium)" }}>
-											<Download className="h-5 w-5" />
-											تحميل المواد الدراسية
-										</h3>
-										<div className="flex flex-wrap gap-3">
-											<button
-												type="button"
-												onClick={() => handleDownload(fileUrl, fileName)}
-												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
-												style={{
-													background: '#5120c8',
-													color: '#ffffff',
-													fontFamily: "var(--font-medium)",
-													border: 'none',
-													cursor: 'pointer',
-													boxShadow: `0 4px 16px rgba(81,32,200,0.25)`,
-												}}>
-												<FileDown className="h-4 w-4 group-hover:animate-bounce" color="#ffffff" />
-												<span style={{ color: '#ffffff' }}>تحميل {fileName}</span>
-											</button>
-											<a
-												href={googleViewerTabUrl}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
-												style={{
-													background: "transparent",
-													color: '#5120c8',
-													fontFamily: "var(--font-medium)",
-													border: '1.5px solid rgba(81,32,200,0.25)',
-												}}>
-												<Eye className="h-4 w-4" />
-												<span>عرض</span>
-											</a>
-										</div>
-									</div>
-								)}
 
 								{/* Mark Complete & Navigation */}
 								{isEnrolled && (
