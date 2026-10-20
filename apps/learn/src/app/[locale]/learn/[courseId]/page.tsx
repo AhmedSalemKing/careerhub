@@ -446,21 +446,27 @@ function MetaItem({
 		getSafeUrl(activeLesson?.imageUrl) || undefined;
 	const fileName: string = activeLesson?.fileName || "document.pdf";
 
-	const buildDownloadUrl = (url: string | undefined, name: string): string => {
-		if (!url) return "#";
-		if (url.includes("cloudinary.com") && url.includes("/upload/")) {
-			// Cloudinary raw uploads are extension-less (`.../fl_attachment/v.../file_xyz`),
-			// so the browser saves them without a .pdf suffix. Embedding the original
-			// filename in the fl_attachment flag forces a readable name + extension.
-			const safeName = (name || "document.pdf")
-				.replace(/\s+/g, "_")
-				.replace(/[()]/g, "");
-			if (url.includes("/fl_attachment/")) {
-				return url.replace("/fl_attachment/", `/fl_attachment:${safeName}/`);
-			}
-			return url.replace("/upload/", `/upload/fl_attachment:${safeName}/`);
+	// Cloudinary raw uploads are public but extension-less, and the
+	// `fl_attachment:<name>.pdf` transformation is rejected with HTTP 400 (the
+	// ".pdf" is parsed as a format extension). Fetch the plain URL and save the
+	// blob under the original fileName instead.
+	const handleDownload = async (url: string | undefined, name: string) => {
+		if (!url) return;
+		try {
+			const response = await fetch(url);
+			if (!response.ok) throw new Error(`HTTP ${response.status}`);
+			const blob = await response.blob();
+			const blobUrl = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = blobUrl;
+			a.download = name || 'file';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			URL.revokeObjectURL(blobUrl);
+		} catch {
+			window.open(url, '_blank');
 		}
-		return url;
 	};
 
 	const isCurrentLive =
@@ -530,13 +536,18 @@ function MetaItem({
 		setPdfReachedEnd(false);
 	}, [activeLessonId]);
 
-	// Reset active tab when lesson changes
+	// Default the active tab when the lesson changes. This runs once per lesson
+	// (guarded by a ref) so it cannot override the user's tab choice on a mixed
+	// lesson — previously it re-asserted 'video' and the image tab snapped back.
+	const tabLessonRef = useRef<string | null>(null);
 	useEffect(() => {
 		if (!activeLesson) return;
+		if (tabLessonRef.current === activeLessonId) return;
+		tabLessonRef.current = activeLessonId;
 		if (activeLesson.videoUrl) setActiveTab('video');
 		else if (activeLesson.fileUrl) setActiveTab('file');
 		else if (activeLesson.imageUrl) setActiveTab('image');
-	}, [activeLessonId]);
+	}, [activeLessonId, activeLesson]);
 
 	// Apply playback speed to video element
 	useEffect(() => {
@@ -1984,16 +1995,16 @@ function MetaItem({
 												<Eye size={16} />
 												{isAr ? 'فتح في تبويب جديد' : 'Open in new tab'}
 											</a>
-											<a href={buildDownloadUrl(fileUrl, fileName)} download
+											<button type="button" onClick={() => handleDownload(fileUrl, fileName)}
 												style={{
 													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
 													fontWeight: 500, fontFamily: 'var(--font-medium)', background: 'transparent', color: '#a78bfa',
 													border: `1px solid #5120c8`, textDecoration: 'none',
-													display: 'flex', alignItems: 'center', gap: '6px',
+													display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
 												}}>
 												<Download size={16} />
 												{isAr ? 'تحميل' : 'Download'}
-											</a>
+											</button>
 											{!pdfReachedEnd && (
 												<button
 													onClick={() => setPdfReachedEnd(true)}
@@ -2012,8 +2023,9 @@ function MetaItem({
 									</div>
 								)}
 
-								{/* IMAGE TAB */}
-								{(activeTab === 'image' || (!videoUrl && !fileUrl)) && !!effectiveImageUrl && (
+								{/* IMAGE TAB — shown whenever an image URL resolves, so mixed
+								    lessons (video + file + image) render it too. */}
+								{activeTab === 'image' && !!effectiveImageUrl && (
 									<div style={{ padding: '16px' }}>
 										<div style={{
 											width: '100%', display: 'flex', alignItems: 'center',
@@ -2025,11 +2037,7 @@ function MetaItem({
 											<img
 												src={effectiveImageUrl}
 												alt="lesson image"
-												className="max-w-full"
-												style={{
-													maxWidth: '100%', maxHeight: '600px',
-													objectFit: 'contain', borderRadius: '8px',
-												}}
+												className="max-w-full rounded-lg"
 											/>
 										</div>
 										<div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
@@ -2500,19 +2508,21 @@ function MetaItem({
 											تحميل المواد الدراسية
 										</h3>
 										<div className="flex flex-wrap gap-3">
-											<a
-												href={buildDownloadUrl(fileUrl, fileName)}
-												download={fileName}
+											<button
+												type="button"
+												onClick={() => handleDownload(fileUrl, fileName)}
 												className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
 												style={{
 													background: '#5120c8',
 													color: '#ffffff',
 													fontFamily: "var(--font-medium)",
+													border: 'none',
+													cursor: 'pointer',
 													boxShadow: `0 4px 16px rgba(81,32,200,0.25)`,
 												}}>
 												<FileDown className="h-4 w-4 group-hover:animate-bounce" color="#ffffff" />
 												<span style={{ color: '#ffffff' }}>تحميل {fileName}</span>
-											</a>
+											</button>
 											<a
 												href={fileUrl}
 												target="_blank"
