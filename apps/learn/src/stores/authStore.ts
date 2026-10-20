@@ -24,6 +24,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   isLoading: true,
   setUser: (user) => {
+    // Same user (by id) → nothing to do. Prevents redundant notifications when
+    // several auth/me callers resolve with the same user object.
+    if (get().user?.id && get().user?.id === user?.id) return
     set({ user })
     if (user) setUser(user)
     else removeUser()
@@ -36,6 +39,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hydrate: () => {
     const token = getToken()
     const user = getUser<AuthUser>()
+    // Idempotent: skip the state write when nothing actually changed. Without
+    // this guard every hydrate() call produced a brand-new state object, which
+    // notified all store subscribers and re-rendered the whole layout subtree
+    // (Navbar + Footer) on each call — Navbar alone calls hydrate() 4x on mount.
+    // getUser() deserializes fresh from localStorage each time, so compare by
+    // value (id) rather than reference.
+    const current = get()
+    const sameUser =
+      current.user === user ||
+      (current.user != null && user != null && current.user.id === user.id)
+    if (current.token === token && sameUser && current.isLoading === false) {
+      return
+    }
     set({ token, user, isLoading: false })
   },
   logout: () => {

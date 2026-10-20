@@ -14,18 +14,26 @@ export function useAuth() {
   const { toast } = useToast()
   const locale = useLocale() as 'ar' | 'en'
   const t = useTranslations('auth')
-  const store = useAuthStore()
+  // Subscribe to individual fields so this hook does not re-render on every
+  // unrelated auth-store write, and so the effect below has stable deps.
+  const storeUser = useAuthStore((s) => s.user)
+  const stoken = useAuthStore((s) => s.token)
+  const isLoading = useAuthStore((s) => s.isLoading)
+  const setStoreUser = useAuthStore((s) => s.setUser)
+  const setStoreToken = useAuthStore((s) => s.setToken)
+  const setStoreRefreshToken = useAuthStore((s) => s.setRefreshToken)
+  const storeLogout = useAuthStore((s) => s.logout)
   const prevRoleRef = useRef<string | null>(null)
 
   const meQuery = useQuery({
     queryKey: ['auth', 'me'],
-    enabled: !!store.token,
+    enabled: !!stoken,
     refetchInterval: 30 * 1000, // 30 seconds - keeps role in sync with DB
     queryFn: async () => {
       const res = await api.get<ApiResponse<AuthUser>>('/auth/me')
       const user = res.data.data
       if (user) {
-        store.setUser(user)
+        setStoreUser(user)
         localStorage.setItem('deveway_user', JSON.stringify(user))
       }
       return user ?? null
@@ -35,9 +43,9 @@ export function useAuth() {
   // Detect role changes and notify user
   useEffect(() => {
     if (!meQuery.data) return
-    
-    const prevRole = prevRoleRef.current || store.user?.accountType
-    
+
+    const prevRole = prevRoleRef.current || storeUser?.accountType
+
     if (meQuery.data.accountType && prevRole && meQuery.data.accountType !== prevRole) {
       const roleNames: Record<string, string> = {
         STUDENT: 'طالب',
@@ -45,38 +53,36 @@ export function useAuth() {
         CONSULTANT: 'مستشار',
         ADMIN: 'مدير',
       }
-      
-      console.log(`[Auth] Role changed from ${prevRole} to ${meQuery.data.accountType}`)
-      
+
       // Update store
-      store.setUser(meQuery.data)
+      setStoreUser(meQuery.data)
       localStorage.setItem('deveway_user', JSON.stringify({
         ...meQuery.data,
-        accessToken: store.token,
+        accessToken: stoken,
       }))
-      
+
       // Show notification
       toast({
         variant: 'success',
         description: `تم تحديث دورك إلى ${roleNames[meQuery.data.accountType] || meQuery.data.accountType}`,
       })
-      
+
       // Dispatch event for other listeners
       window.dispatchEvent(new CustomEvent('role:changed', { detail: { role: meQuery.data.accountType } }))
     }
-    
+
     // Always sync latest data
-    if (meQuery.data.accountType !== store.user?.accountType || 
-        meQuery.data.isVerified !== store.user?.isVerified) {
-      store.setUser(meQuery.data)
+    if (meQuery.data.accountType !== storeUser?.accountType ||
+        meQuery.data.isVerified !== storeUser?.isVerified) {
+      setStoreUser(meQuery.data)
       localStorage.setItem('deveway_user', JSON.stringify({
         ...meQuery.data,
-        accessToken: store.token,
+        accessToken: stoken,
       }))
     }
-    
-    prevRoleRef.current = meQuery.data.accountType
-  }, [meQuery.data, store, toast])
+
+    prevRoleRef.current = meQuery.data.accountType ?? null
+  }, [meQuery.data, storeUser, stoken, setStoreUser, toast])
 
   const login = useMutation({
     mutationFn: async (payload: { email: string; password: string }) => {
@@ -90,17 +96,17 @@ export function useAuth() {
 
       // ── SAVE TO ALL STORAGE BEFORE REDIRECT ──
       if (token) {
-        store.setToken(token)
+        setStoreToken(token)
         setToken(token)
         localStorage.setItem('deveway_token', token)
       }
       if (refreshToken) {
-        store.setRefreshToken(refreshToken)
+        setStoreRefreshToken(refreshToken)
         setRefreshToken(refreshToken)
         localStorage.setItem('deveway_refresh', refreshToken)
       }
       if (user) {
-        store.setUser(user)
+        setStoreUser(user)
         setUser(user)
         localStorage.setItem('deveway_user', JSON.stringify(user))
 
@@ -167,17 +173,17 @@ export function useAuth() {
       const user = data.data?.user
 
       if (token) {
-        store.setToken(token)
+        setStoreToken(token)
         setToken(token)
         localStorage.setItem('deveway_token', token)
       }
       if (refreshToken) {
-        store.setRefreshToken(refreshToken)
+        setStoreRefreshToken(refreshToken)
         setRefreshToken(refreshToken)
         localStorage.setItem('deveway_refresh', refreshToken)
       }
       if (user) {
-        store.setUser(user)
+        setStoreUser(user)
         setUser(user)
         localStorage.setItem('deveway_user', JSON.stringify(user))
       }
@@ -215,15 +221,15 @@ export function useAuth() {
   })
 
   const doLogout = () => {
-    store.logout()
+    storeLogout()
     window.dispatchEvent(new Event('auth:updated'))
   }
 
   return {
-    user: store.user,
-    token: store.token,
-    isLoading: store.isLoading || meQuery.isLoading,
-    isAuthenticated: !!store.token,
+    user: storeUser,
+    token: stoken,
+    isLoading: isLoading || meQuery.isLoading,
+    isAuthenticated: !!stoken,
     meQuery,
     login,
     register,

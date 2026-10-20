@@ -34,12 +34,10 @@ export function useLiveSocket(
       socket.on('connect', () => {
         setConnected(true)
         socket.emit('join-room', { courseId, userName, role, avatar })
-        console.log('[Socket] Connected, joined room:', courseId)
       })
 
       socket.on('disconnect', () => {
         setConnected(false)
-        console.log('[Socket] Disconnected')
       })
 
       socket.on('viewer-count', ({ count }: { count: number }) => {
@@ -68,14 +66,12 @@ export function useLiveSocket(
 
       // Viewers get notified when instructor starts
       socket.on('stream-started', (data: any) => {
-        console.log('[Socket] Stream started:', data)
         setStreamStarted(true)
         setStreamEnded(false)
       })
 
       // Everyone gets notified when stream ends
       socket.on('stream-ended', (data: any) => {
-        console.log('[Socket] Stream ended:', data)
         setStreamEnded(true)
         setStreamStarted(false)
       })
@@ -114,12 +110,10 @@ export function useLiveSocket(
 
   const broadcastLiveStarted = useCallback((channelName: string, appId: string, lessonId?: string) => {
     socketRef.current?.emit('live-started', { courseId, channelName, appId, lessonId })
-    console.log('[Socket] Broadcasted live-started', lessonId ? `lesson:${lessonId}` : '')
   }, [courseId])
 
   const broadcastLiveEnded = useCallback(() => {
     socketRef.current?.emit('live-ended', { courseId })
-    console.log('[Socket] Broadcasted live-ended')
   }, [courseId])
 
   return {

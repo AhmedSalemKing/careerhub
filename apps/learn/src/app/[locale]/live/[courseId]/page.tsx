@@ -7,6 +7,7 @@ import {
   LogOut, Hand, MessageSquare, Send, X, Wifi, WifiOff, Square
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../hooks/useLiveSocket'
+import { syncAuthUser } from '../../../../lib/auth-sync'
 import { webLoginUrl } from '../../../../lib/constants'
 import toast from 'react-hot-toast'
 import { io } from 'socket.io-client'
@@ -63,18 +64,18 @@ export default function LiveViewerPage() {
          localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
       : ''
     if (t) {
-      fetch(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${t}` }
-      }).then(r => r.json()).then(data => {
-        const profile = data?.data?.profile || data?.profile
-        if (profile) {
-          const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
-          setUserName(name)
-          setUserAvatar(profile.avatar || '')
-          localStorage.setItem('userName', name)
-          localStorage.setItem('user_avatar', profile.avatar || '')
-        }
-      }).catch(() => {})
+      syncAuthUser()
+        .then((user: any) => {
+          const profile = user?.profile
+          if (profile) {
+            const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
+            setUserName(name)
+            setUserAvatar(profile.avatar || '')
+            localStorage.setItem('userName', name)
+            localStorage.setItem('user_avatar', profile.avatar || '')
+          }
+        })
+        .catch(() => {})
     }
   }, [])
 
@@ -228,7 +229,7 @@ export default function LiveViewerPage() {
           }
         }
       } catch (ae) {
-        console.warn('[Live] AudioContext resume:', ae)
+        console.error('[Live] AudioContext resume:', ae)
       }
 
       client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
@@ -240,7 +241,7 @@ export default function LiveViewerPage() {
           if (overlay) overlay.style.display = 'none'
         }
         if (mediaType === 'audio') {
-          try { await user.audioTrack?.play() } catch (ae) { console.warn('[Live] Audio play:', ae) }
+          try { await user.audioTrack?.play() } catch (ae) { console.error('[Live] Audio play:', ae) }
         }
       })
 
@@ -287,7 +288,6 @@ export default function LiveViewerPage() {
   // When socket detects stream started, re-check status and mark ready
   useEffect(() => {
     if (hookStreamStarted && !streamReady) {
-      console.log('[Live] Instructor started stream, checking status...')
       setStreamEnded(false)
       setTokenData(null)
       checkStreamStatus(userToken)

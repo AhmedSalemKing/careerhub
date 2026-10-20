@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { useQueryClient } from '@tanstack/react-query'
@@ -36,9 +36,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [])
 
   const accountType = user?.accountType || 'STUDENT'
-
-  // Debug: log accountType to verify
-  console.log('[LAYOUT] user accountType:', user?.accountType, '| resolved:', accountType)
 
   const dockItems = useMemo(() => {
     if (accountType === 'ADMIN') return [
@@ -99,9 +96,15 @@ return [
     })
   }, [queryClient])
 
-  // Fetch fresh user data from /auth/me and update store if accountType changed
+  // Fetch fresh user data from /auth/me once per mount and update the store if
+  // accountType changed. Guarded by a ref: the previous version depended on
+  // `user` and wrote `setUserStore({ ...user, ...freshUser })` — a brand-new
+  // user object — which re-ran this effect, refetching /auth/me in a loop
+  // (the 6x-per-load symptom).
+  const refreshedMeRef = useRef(false)
   useEffect(() => {
-    if (!user) return
+    if (!user || refreshedMeRef.current) return
+    refreshedMeRef.current = true
     const fetchMe = async () => {
       try {
         const res = await get('/auth/me')
@@ -109,7 +112,6 @@ return [
         if (freshUser && freshUser.accountType) {
           // Update store if accountType is missing or changed
           if (!user.accountType || freshUser.accountType !== user.accountType) {
-            console.log('[LAYOUT] Updating user from /auth/me:', { old: user.accountType, new: freshUser.accountType })
             setUserStore({ ...user, ...freshUser })
           }
         }
@@ -118,7 +120,9 @@ return [
       }
     }
     fetchMe()
-  }, [user, setUserStore])
+    // Intentionally runs once per mount; `user` is read as the initial snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setUserStore])
 
   useEffect(() => {
     if (!mounted || !user) return

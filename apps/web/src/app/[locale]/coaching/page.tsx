@@ -356,11 +356,8 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
   const handleBook = async () => {
     setLoading(true)
     try {
-      // Debug: log token existence
       const token = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
-      console.log('[Booking] token exists:', !!token)
       const scheduledAt = localDateTimeToISO(form.date, form.time)
-      console.log('[Booking] payload:', { consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, scheduledAt })
 
       const res = await fetch('https://deve-way.onrender.com/api/consulting/sessions/book', {
         method: 'POST',
@@ -369,7 +366,6 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Failed')
-      console.log('[Booking] success:', data)
     } catch(e: any) { console.error('[Booking] error:', e.message) }
     setLoading(false)
     onSuccess()

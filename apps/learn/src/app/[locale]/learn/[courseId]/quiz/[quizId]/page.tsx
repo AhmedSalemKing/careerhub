@@ -441,6 +441,15 @@ export default function TakeQuizPage() {
           {questions.map((q, index) => {
             const ans = answers[q.id]
             const isMcq = q.type === 'MCQ'
+            // `allowMultipleAnswers` is the API's single/multi discriminator.
+            // Fall back to a two-or-more correct-answers heuristic for older
+            // payloads that predate the field.
+            const isMultiple =
+              q.allowMultipleAnswers === true ||
+              (q.allowMultipleAnswers == null &&
+                Array.isArray(q.choices) &&
+                q.choices.length > 0 &&
+                q.choices.filter((c: any) => c.isCorrect === true).length > 1)
             const selected = new Set(ans?.selectedChoiceIds ?? [])
 
             return (
@@ -471,12 +480,19 @@ export default function TakeQuizPage() {
 
                 {isMcq && (
                   <div className="mt-4 space-y-2">
+                    {isMultiple && (
+                      <p className="mb-2 text-sm text-yellow-600">
+                        (يمكن اختيار أكثر من إجابة صحيحة)
+                      </p>
+                    )}
                     {(q.choices ?? []).map((c: any) => {
                       const checked = selected.has(c.id)
                       return (
                         <button
                           key={c.id}
                           type="button"
+                          role={isMultiple ? 'checkbox' : 'radio'}
+                          aria-checked={checked}
                           onClick={() => setMcq(q.id, c.id)}
                           className={`flex w-full items-center gap-2 rounded-[10px] border px-3 py-2.5 text-right text-sm transition-colors duration-150 ${
                             checked
@@ -485,11 +501,28 @@ export default function TakeQuizPage() {
                           }`}
                         >
                           <span
-                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
+                              isMultiple ? 'rounded-[4px]' : 'rounded-full'
+                            } ${
                               checked ? 'border-[#5120c8] bg-[#5120c8]' : 'border-[color:var(--border)]'
                             }`}
                           >
-                            {checked && <span className="h-2 w-2 rounded-full bg-white" />}
+                            {checked &&
+                              (isMultiple ? (
+                                <svg
+                                  viewBox="0 0 16 16"
+                                  className="h-3 w-3"
+                                  fill="none"
+                                  stroke="#fff"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="3.5 8.5 6.5 11.5 12.5 5" />
+                                </svg>
+                              ) : (
+                                <span className="h-2 w-2 rounded-full bg-white" />
+                              ))}
                           </span>
                           <span>{c.text}</span>
                         </button>

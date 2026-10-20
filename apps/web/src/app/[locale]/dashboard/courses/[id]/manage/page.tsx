@@ -36,7 +36,6 @@ async function uploadMedia(
     }
     
     xhr.onload = () => {
-      console.log(`${type} upload response:`, xhr.status, xhr.responseText)
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText)
@@ -255,9 +254,7 @@ function AddLectureModal({
         }
         if (form.imageUrl) payload.imageUrl = form.imageUrl
       }
-      
-      console.log('Saving lesson with payload:', payload)
-      
+
       await post(`/courses/sections/${form.sectionId}/lessons`, payload)
       onSaved()
       onClose()

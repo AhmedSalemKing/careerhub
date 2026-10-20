@@ -230,7 +230,7 @@ export default function MyCoursesPage() {
       const u = getUser<{ accountType?: string }>()
       if (u?.accountType) setAccountType(u.accountType)
     } catch (e) {
-      console.log('Error getting user account type:', e)
+      console.error('Error getting user account type:', e)
     }
   }, [])
 
@@ -250,49 +250,40 @@ export default function MyCoursesPage() {
     enabled: accountType === 'STUDENT',
     
     queryFn: async () => {
-      console.log('[MyCourses] Fetching enrolled courses...')
-      
       try {
         const res: any = await get('/courses/my-courses')
-        console.log('[MyCourses] Response:', res?.status, res?.data)
-        
+
         const data: any = res?.data
-        
+
         // Format 1: { data: { enrollments: [...] } }
         if (data?.data?.enrollments && Array.isArray(data.data.enrollments)) {
-          console.log('[MyCourses] Found enrollments in data.data.enrollments:', data.data.enrollments.length)
           return data.data.enrollments
         }
-        
+
         // Format 2: { data: [...] }
         if (data?.data && Array.isArray(data.data)) {
-          console.log('[MyCourses] Found array in data.data:', data.data.length)
           return data.data
         }
-        
+
         // Format 3: { enrollments: [...] }
         if (data?.enrollments && Array.isArray(data.enrollments)) {
-          console.log('[MyCourses] Found enrollments:', data.enrollments.length)
           return data.enrollments
         }
-        
+
         // Format 4: Array at root
         if (Array.isArray(data)) {
-          console.log('[MyCourses] Found root array:', data.length)
           return data
         }
-        
+
         // Format 5: Single object
         if (data && typeof data === 'object' && !Array.isArray(data)) {
           if (data.courseId || data.course) {
-            console.log('[MyCourses] Single enrollment object')
             return [data]
           }
         }
-        
-        console.warn('[MyCourses] Unexpected response format:', data)
+
         return []
-        
+
       } catch (error) {
         console.error('[MyCourses] Fetch error:', error)
         throw error

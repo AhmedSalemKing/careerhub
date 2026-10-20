@@ -13,6 +13,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { ErrorBoundary } from "../../../../components/ErrorBoundary";
 import { get, post } from "../../../../lib/api";
+import { syncAuthUser } from "../../../../lib/auth-sync";
 import { webLoginUrl } from "../../../../lib/constants";
 import { toast, Toaster } from "react-hot-toast";
 import {
@@ -152,10 +153,8 @@ function MetaItem({
 			return;
 		}
 
-		get<any>("/auth/me")
-			.then((res: any) => {
-				const data = res?.data?.data ?? res?.data;
-				const user = data?.user ?? data;
+		syncAuthUser()
+			.then((user) => {
 				if (!cancelled && user?.email) setFetchedEmail(user.email);
 			})
 			.catch(() => {});
@@ -620,40 +619,33 @@ function MetaItem({
 				})
 
 				socket.on('connect', () => {
-					console.log('[LearnSocket] Connected, joining room:', courseId)
 					socket.emit('join-room', { courseId, userName: '', role: 'viewer' })
 				})
 
 				socket.on('stream-started', (data: any) => {
-					console.log('[LearnSocket] Stream started:', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
 				socket.on('live-started', (data: any) => {
-					console.log('[LearnSocket] Live started (direct):', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
 				socket.on('liveStarted', (data: any) => {
-					console.log('[LearnSocket] Live started (camelCase):', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
 				socket.on('lesson-live', (data: any) => {
-					console.log('[LearnSocket] Lesson live:', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
 				socket.on('stream-ended', (data: any) => {
-					console.log('[LearnSocket] Stream ended:', data)
 					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
 				})
 
 				socket.on('disconnect', () => {
-					console.log('[LearnSocket] Disconnected')
 				})
 			} catch (e) {
-				console.warn('[LearnSocket] Socket error:', e)
+				console.error('[LearnSocket] Socket error:', e)
 			}
 		}
 
@@ -767,7 +759,6 @@ function MetaItem({
 			);
 
 			const payload = await res.json();
-			console.log('[Lesson] Mark complete response:', payload);
 
 			if (!res.ok) {
 				const msg = payload?.message || (isAr ? 'فشل تسجيل اتمام الدرس' : 'Failed to complete lesson');
@@ -808,7 +799,6 @@ function MetaItem({
 							},
 						});
 						const certPayload = await certRes.json();
-						console.log('[Certificate] Auto-generation result:', certPayload);
 
 						if (certPayload?.success || certPayload?.data?.id) {
 							toast.success(
@@ -816,7 +806,8 @@ function MetaItem({
 							);
 						}
 					} catch (certErr: any) {
-						console.warn('[Certificate] Auto-trigger failed (non-fatal):', certErr.message);
+						// Non-fatal: certificate auto-trigger failure shouldn't block progress.
+						console.error('[Certificate] Auto-trigger failed (non-fatal):', certErr.message);
 					}
 				}, 2000);
 			} else {

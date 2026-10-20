@@ -121,7 +121,6 @@ const [confirmModal, setConfirmModal] = useState<{
       .then(data => {
         const arr = data?.data?.careerPaths ?? data?.data ?? data ?? []
         const paths = Array.isArray(arr) ? arr : []
-        console.log('[CareerPath] allPaths loaded:', paths.length, paths[0])
         setAllPaths(paths)
       })
       .catch(() => {})
@@ -271,9 +270,7 @@ const [confirmModal, setConfirmModal] = useState<{
   }, [myPathIds, allPaths, allCourses])
 
   const removePath = async (pathId: string) => {
-    console.log('[removePath] called with', pathId, 'current count:', myPathIds.size)
     if (!isPathIdSelected(pathId)) {
-      console.warn('[removePath] path not selected, aborting', pathId)
       return
     }
     if (busyPaths.has(pathId)) return
@@ -315,7 +312,6 @@ const [confirmModal, setConfirmModal] = useState<{
         console.error('[removePath] API returned', res.status, body)
         throw new Error(`API ${res.status}`)
       }
-      console.log('[removePath] API success for', pathId)
     } catch (e: any) {
       // 3. Rollback only on a real API failure
       console.error('[removePath] API error:', e.message)
@@ -394,7 +390,6 @@ const [confirmModal, setConfirmModal] = useState<{
 
   const getPathIdForResult = (field: any): string | null => {
     if (allPaths.length === 0) {
-      console.warn('[GetPathId] allPaths not loaded yet')
       return null
     }
 
@@ -429,17 +424,12 @@ const [confirmModal, setConfirmModal] = useState<{
       return false
     })
 
-    console.log('[GetPathId] slug:', fieldSlug, '| titleAr:', fieldTitleAr,
-      '| allPaths:', allPaths.length,
-      '| matched:', matched?.id, matched?.slug, matched?.jobTitlesAr?.[0])
-
     return matched?.id ?? null
   }
 
   const handleAddAssessmentPath = async (field: any) => {
     const pathId = getPathIdForResult(field)
     if (!pathId) {
-      console.warn('[AddPath] No DB path found for field:', field.titleAr, field.track)
       return
     }
     await addPath(pathId)

@@ -25,9 +25,6 @@ export default function CertificatesPage() {
             ''
           : '')
 
-      console.log('[Certificates] User:', user?.id, user?.email)
-      console.log('[Certificates] Token exists:', !!token)
-
       const res = await fetch('https://deve-way.onrender.com/api/certificates/my', {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -41,10 +38,8 @@ export default function CertificatesPage() {
       }
 
       const json = await res.json()
-      console.log('[Certificates] API response:', JSON.stringify(json).slice(0, 300))
 
       const certs = json?.data ?? json?.certificates ?? json ?? []
-      console.log('[Certificates] Parsed certificates count:', certs.length)
       return certs
     },
     enabled: !!user?.id,

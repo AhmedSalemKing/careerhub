@@ -21,7 +21,7 @@ export function CartIcon() {
         const items = d?.items ?? d
         return Array.isArray(items) ? items.length : 0
       } catch (e) {
-        console.warn('[Cart] API unavailable, skipping cart fetch', e);
+        console.error('[Cart] API unavailable, skipping cart fetch', e);
         return 0
       }
     },

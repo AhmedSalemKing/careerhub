@@ -6,10 +6,7 @@ import type { Locale } from '../../i18n'
 import { ToastProvider } from '../../lib/toast'
 import { useAuthStore } from '../../stores/authStore'
 import { createQueryClient } from '../../lib/query-client'
-import { api } from '../../lib/api'
-import type { AuthUser } from '../../stores/authStore'
-
-type ApiResponse<T> = { data?: T }
+import { syncAuthUser } from '../../lib/auth-sync'
 
 export function Providers({ children }: { children: React.ReactNode; locale: Locale }) {
   const [queryClient] = useState(() => createQueryClient())
@@ -21,24 +18,10 @@ export function Providers({ children }: { children: React.ReactNode; locale: Loc
     hydrated.current = true
     hydrate()
 
-    // After hydrating, fetch /auth/me to refresh user data.
-    // This enables cross-domain auth: if the token came from a cookie
-    // (set on another port/subdomain), the user object is fetched fresh.
-    const token = typeof window !== 'undefined'
-      ? (localStorage.getItem('deveway_token') ?? document.cookie.match(/deveway_token=([^;]+)/)?.[1])
-      : null
-
-    if (token) {
-      api
-        .get<ApiResponse<{ user: AuthUser }>>('/auth/me')
-        .then((res) => {
-          const user = res.data?.data?.user
-          if (user) useAuthStore.getState().setUser(user)
-        })
-        .catch(() => {
-          // Silently ignore — token might be expired; interceptor handles redirect
-        })
-    }
+    // After hydrating, refresh the user from /auth/me (cross-domain cookie
+    // logins). syncAuthUser() is single-flight, so this shares one request
+    // with the other callers instead of firing its own.
+    syncAuthUser()
   }, [hydrate])
 
   return (

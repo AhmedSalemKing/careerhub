@@ -79,7 +79,6 @@ async function getSiteConfig() {
     const json = await res.json()
     // API wraps responses: { success: true, data: {...} }
     const data = json?.data ?? json
-    console.log('[LANDING] siteConfig keys:', Object.keys(data || {}))
     return data
   } catch {
     return {}

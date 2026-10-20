@@ -283,7 +283,7 @@ export default function AiChatPage() {
               }
             } 
             catch (error: unknown) {
-              console.warn('Skipping malformed JSON chunk:', error)
+              console.error('Skipping malformed JSON chunk:', error)
               continue
             }
           }

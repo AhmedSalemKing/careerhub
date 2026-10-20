@@ -399,7 +399,6 @@ export default function CourseDetailPage({
 		? Math.min(100, Math.round((completedCount / totalLessons) * 100))
 		: 0;
 
-	console.log('[Certificate] total:', totalLessons, '| completed:', completedCount, '| isContentComplete:', isContentComplete, '| course.isCompleted:', course?.isCompleted, '| isCourseComplete:', isCourseComplete);
 	const MAIN_URL = process.env.NEXT_PUBLIC_MAIN_URL || "";
 
 	const typeBadge = isLive

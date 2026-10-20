@@ -130,7 +130,6 @@ const RegisterForm: React.FC = () => {
     e.preventDefault();
     
     if (!validateForm()) {
-      console.log('❌ Form validation failed:', errors);
       return;
     }
 
@@ -138,8 +137,6 @@ const RegisterForm: React.FC = () => {
     setErrors({});
 
     try {
-      console.log('📤 Sending registration request:', formData);
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/register`, {
         method: 'POST',
         headers: {
@@ -150,14 +147,11 @@ const RegisterForm: React.FC = () => {
 
       const data = await response.json();
 
-      console.log('📥 Registration response:', data);
-
       if (response.ok && data.success) {
         setSuccess(true);
         // Store access token in memory
         if (data.data.accessToken) {
           localStorage.setItem('accessToken', data.data.accessToken);
-          console.log('✅ Access token stored');
         }
       } else {
         // Handle backend validation errors

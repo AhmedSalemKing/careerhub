@@ -81,7 +81,6 @@ export default function CMSSettingsPage() {
         const val = g(key)
         if (val !== undefined && val !== null) payload[key] = val
       }
-      console.log('[CMS] Sending payload:', JSON.stringify(payload, null, 2))
       await api.patch('/admin/cms-settings', payload)
       applySiteSettings({ siteName: g('brand.siteName', 'DeveWay') })
       // Tell Next.js to revalidate cached pages on Vercel

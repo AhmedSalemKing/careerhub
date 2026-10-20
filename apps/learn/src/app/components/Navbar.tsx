@@ -243,7 +243,13 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { user, token, hydrate } = useAuthStore()
+  // Select individual fields instead of the whole store. Subscribing to the
+  // entire store object re-rendered the Navbar on *any* auth-store write
+  // (including the no-op hydrates below), which cascaded into the layout
+  // subtree. `hydrate` is a stable action reference from zustand.
+  const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  const hydrate = useAuthStore((s) => s.hydrate)
 
   useEffect(() => {
     setMounted(true)
@@ -251,6 +257,7 @@ export function Navbar() {
 
   useEffect(() => {
     // Read the stored user + token into the store immediately on mount.
+    // hydrate() is idempotent, so the follow-up syncs below are cheap no-ops.
     hydrate()
 
     // Sync auth state across tabs
@@ -258,19 +265,11 @@ export function Navbar() {
     window.addEventListener('storage', syncAuth)
     window.addEventListener('auth:updated', syncAuth)
 
-    // Periodic sync for reliability
-    const timers = [
-      setTimeout(syncAuth, 1000),
-      setTimeout(syncAuth, 2000),
-      setTimeout(syncAuth, 3000),
-    ]
-
     return () => {
       window.removeEventListener('storage', syncAuth)
       window.removeEventListener('auth:updated', syncAuth)
-      timers.forEach(clearTimeout)
     }
-  }, [])
+  }, [hydrate])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)

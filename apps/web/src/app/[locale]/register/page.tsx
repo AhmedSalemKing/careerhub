@@ -280,7 +280,6 @@ export default function RegisterPage() {
       if (res.ok && url) {
         setStep2((prev) => ({ ...prev, cvUrl: url }))
         setCvFileName(data.data?.fileName || file.name)
-        console.log('[CV Upload] Success:', url)
       } else {
         console.error('[CV Upload] No URL in response:', data)
         const err: Error & { status?: number } = new Error(data?.message || 'CV upload failed')
@@ -470,7 +469,6 @@ export default function RegisterPage() {
       router.push(`/${locale}/dashboard`)
       return
     } catch (err: unknown) {
-      console.log('[Register] Error details:', (err as any)?.response?.data)
       const msg = (err as any).response?.data?.message || (ar ? 'حدث خطأ' : 'An error occurred')
       setError(Array.isArray(msg) ? msg.join(', ') : msg)
     } finally {

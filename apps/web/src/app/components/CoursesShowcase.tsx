@@ -79,15 +79,9 @@ export function CoursesShowcase() {
   // ── Fetch real courses ──
   useEffect(() => {
     let mounted = true
-    
-    console.log('[CoursesShowcase] Starting fetch...')
-    
+
     api.get('/courses?status=PUBLISHED&limit=10')
       .then((res) => {
-        console.log('[CoursesShowcase] ✅ Response received:')
-        console.log('[CoursesShowcase] - Status:', res.status)
-        console.log('[CoursesShowcase] - Data:', res.data)
-        
         if (!mounted) return
         
         let arr: Course[] = []
@@ -104,8 +98,6 @@ export function CoursesShowcase() {
         else if (res.data?.data && Array.isArray(res.data.data)) {
           arr = res.data.data
         }
-        
-        console.log(`[CoursesShowcase] 📊 Loaded ${arr.length} courses`)
         
         setCourses(arr)
         setError(null)

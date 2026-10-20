@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Play, Users, BookOpen, Star, Clock, ArrowRight,
   Award, Globe, Code, Palette,
@@ -12,14 +12,9 @@ import {
 import { CareerPathsSection } from '../components/CareerPathsSection'
 import { Button } from '../components/ui/button'
 import { get } from '../../lib/api'
+import { syncAuthUser } from '../../lib/auth-sync'
 import { useAuthStore } from '../../stores/authStore'
 
-const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
-const API_BASE = (() => {
-  const envUrl = process.env.NEXT_PUBLIC_API_URL
-  const url = (envUrl && envUrl.trim()) ? envUrl : PRODUCTION_API_URL
-  return url.replace(/\/+$/, '')
-})()
 const MAIN_SITE_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
   return (envUrl && envUrl.trim()) ? envUrl : 'https://deveway-teal.vercel.app'
@@ -31,58 +26,19 @@ function thumbUrl(path?: string | null): string | null {
   return path.startsWith('/') ? path : `/${path}`
 }
 
-// Auth hook for checking user authentication status
+// Auth state comes from the shared auth store (hydrated app-wide from
+// persisted storage + the single-flight /auth/me refresh in lib/auth-sync).
+// The previous local implementation duplicated the store and read a different
+// token key ('auth_token'), causing an extra /auth/me request per load.
 function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const checkAuth = useCallback(async () => {
-    try {
-      // Check for token in localStorage or cookies
-      const token = typeof window !== 'undefined' 
-        ? localStorage.getItem('auth_token') || document.cookie.includes('auth_token=') 
-        : false
-      
-      if (token) {
-        // Verify token with API (optional - for extra security)
-        try {
-          const response = await fetch(`${API_BASE}/auth/me`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          })
-          
-          if (response.ok) {
-            setIsAuthenticated(true)
-          } else {
-            // Token invalid, clear it
-            localStorage.removeItem('auth_token')
-            setIsAuthenticated(false)
-          }
-        } catch (error) {
-          // If API check fails, assume authenticated if token exists
-          setIsAuthenticated(true)
-        }
-      } else {
-        setIsAuthenticated(false)
-      }
-    } catch (error) {
-      console.error('Auth check error:', error)
-      setIsAuthenticated(false)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+  const user = useAuthStore((s) => s.user)
+  const token = useAuthStore((s) => s.token)
+  const isLoading = useAuthStore((s) => s.isLoading)
 
   return {
-    isAuthenticated,
+    isAuthenticated: !!token,
     isLoading,
-    checkAuth
+    user,
   }
 }
 
@@ -105,19 +61,15 @@ export default function HomePage() {
 
   // Ensure the auth store is populated before checking enrollment. The store is
   // hydrated app-wide from the persisted user; if only a token is present (e.g.
-  // cross-domain login), refresh the user from /auth/me. No call when anonymous.
+  // cross-domain login), refresh the user via the single-flight helper so this
+  // page does not add another duplicate /auth/me request.
   useEffect(() => {
     if (authUser || !authToken) return
     let cancelled = false
-    get('/auth/me')
-      .then((res: any) => {
-        const body = res?.data?.data ?? res?.data
-        const user = body?.user ?? body
-        if (!cancelled && user && (user.id || user.email)) {
-          useAuthStore.getState().setUser(user)
-        }
-      })
-      .catch(() => {})
+    syncAuthUser().then((user) => {
+      if (cancelled || !user) return
+      if (user.id || user.email) useAuthStore.getState().setUser(user)
+    })
     return () => {
       cancelled = true
     }

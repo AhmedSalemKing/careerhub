@@ -68,7 +68,6 @@ const LoginForm: React.FC = () => {
     e.preventDefault();
 
     if (!validateForm()) {
-      console.log('❌ Form validation failed:', errors);
       return;
     }
 
@@ -76,8 +75,6 @@ const LoginForm: React.FC = () => {
     setErrors({});
 
     try {
-      console.log('📤 Sending login request:', { email: formData.email });
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/login`, {
         method: 'POST',
         headers: {
@@ -89,15 +86,11 @@ const LoginForm: React.FC = () => {
 
       const data = await response.json();
 
-      console.log('📥 Login response:', data);
-
       if (response.ok && data.success) {
         setSuccess(true);
         // Store access token in memory
         if (data.data.accessToken) {
           localStorage.setItem('accessToken', data.data.accessToken);
-          console.log('✅ Access token stored');
-          console.log('✅ User logged in:', data.data.user.email);
         }
       } else {
         // Handle backend errors
@@ -121,11 +114,8 @@ const LoginForm: React.FC = () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
-        console.log('❌ No access token found');
         return;
       }
-
-      console.log('📤 Sending logout request');
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/logout`, {
         method: 'POST',
@@ -136,10 +126,8 @@ const LoginForm: React.FC = () => {
         credentials: 'include',
       });
 
-      if (response.ok) {
-        console.log('✅ Logout successful');
-      } else {
-        console.log('❌ Logout failed');
+      if (!response.ok) {
+        console.error('❌ Logout failed');
       }
     } catch (error) {
       console.error('❌ Logout error:', error);
@@ -153,8 +141,6 @@ const LoginForm: React.FC = () => {
 
   const handleRefreshToken = async () => {
     try {
-      console.log('📤 Sending refresh token request');
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -165,16 +151,12 @@ const LoginForm: React.FC = () => {
 
       const data = await response.json();
 
-      console.log('📥 Refresh response:', data);
-
       if (response.ok && data.success) {
         // Update access token in memory
         if (data.data.accessToken) {
           localStorage.setItem('accessToken', data.data.accessToken);
-          console.log('✅ Access token refreshed');
         }
       } else {
-        console.log('❌ Token refresh failed');
         // Clear invalid token
         localStorage.removeItem('accessToken');
         setSuccess(false);
@@ -190,11 +172,8 @@ const LoginForm: React.FC = () => {
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
-        console.log('❌ No access token found');
         return;
       }
-
-      console.log('📤 Sending get current user request');
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'}/auth/me`, {
         method: 'GET',
@@ -206,12 +185,8 @@ const LoginForm: React.FC = () => {
 
       const data = await response.json();
 
-      console.log('📥 Current user response:', data);
-
-      if (response.ok && data.success) {
-        console.log('✅ Current user:', data.data.user);
-      } else {
-        console.log('❌ Failed to get current user');
+      if (!response.ok || !data.success) {
+        console.error('❌ Failed to get current user');
       }
     } catch (error) {
       console.error('❌ Get current user error:', error);

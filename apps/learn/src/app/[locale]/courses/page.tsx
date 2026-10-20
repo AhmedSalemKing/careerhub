@@ -143,16 +143,10 @@ export default function CoursesPage() {
       setError(null)
       try {
         const params: any = { limit: 500, type: activeTab }
-        console.log('[Fetch] params:', params)
         const res = await api.get('/courses', { params })
         if (!mounted) return
         const data = res?.data?.data?.courses ?? res?.data?.data ?? res?.data?.courses ?? []
-        console.log('[Fetch] returned:', Array.isArray(data) ? data.length : '?', 'courses')
-        if (Array.isArray(data)) {
-          console.log('[Categories] sample:', data.slice(0, 3).map((c: any) => ({ id: c.id, category: c.category, categoryId: c.categoryId, title: c.titleEn || c.titleAr })))
-        }
         setCourses(Array.isArray(data) ? data : [])
-        console.log('[ALL CATEGORIES]', [...new Set((Array.isArray(data) ? data : []).map((c: any) => c.category))].filter(Boolean))
       } catch (e: any) {
         console.error('[Fetch] error:', e)
         if (mounted) setError(e?.message || 'Failed to load')
@@ -177,8 +171,6 @@ export default function CoursesPage() {
 
   // Client-side filters
   const sortedCourses = useMemo(() => {
-    console.log('[DEBUG] courses sample:', courses.slice(0, 5).map((c: any) => ({ title: c.titleEn || c.titleAr, category: c.category, categoryId: c.categoryId })))
-    console.log('[DEBUG] selectedMainCat:', selectedMainCat)
     let result = courses.filter((c: any) => {
       if (search) {
         const q = search.toLowerCase()
@@ -198,9 +190,6 @@ export default function CoursesPage() {
         result = result.filter(course => {
           const cat = (course.category || '').toLowerCase()
           const matches = mainCat.categoryNames.some(name => cat.includes(name.toLowerCase()))
-          if (!matches) {
-            console.log('[FILTERED OUT]', course.titleEn || course.titleAr, 'category:', course.category, 'categoryId:', course.categoryId)
-          }
           return matches || (mainCat.id === 'programming' && !course.category)
         })
       }
@@ -478,8 +467,6 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const price = parseFloat(course.price || 0)
   const isEnrolled = course.isEnrolled === true
 
-  console.log('[RecordedCard]', course.id, 'isEnrolled:', course.isEnrolled)
-
   return (
     <div className="course-card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}
@@ -555,8 +542,6 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
   const isLive = course.liveStatus === 'live'
   const isScheduled = course.liveStatus === 'scheduled'
   const isEnrolled = course.isEnrolled === true
-
-  console.log('[LiveCard]', course.id, 'isEnrolled:', course.isEnrolled)
 
   const isPaid = isEnrolled
 
