@@ -423,6 +423,19 @@ export default function AdminCoursesPage() {
                           <Eye size={16} />
                         </button>
 
+                        <button
+                          onClick={() => router.push(`/${locale}/admin/courses/${c.id}/manage`)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors"
+                          style={{
+                            background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
+                            color: isDark ? '#a78bfa' : '#5120c8',
+                            border: isDark ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(81,32,200,0.2)',
+                          }}
+                          title={isAr ? 'إدارة المحتوى' : 'Manage Content'}
+                        >
+                          <BookOpen size={12} /> {isAr ? 'إدارة المحتوى' : 'Manage Content'}
+                        </button>
+
                         {c.status !== 'PUBLISHED' && (
                           <button
                             onClick={() => approve(c.id)}

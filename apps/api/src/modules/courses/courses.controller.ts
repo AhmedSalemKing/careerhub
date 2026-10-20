@@ -26,6 +26,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 
+const isAdminUser = (user: any): boolean =>
+  ['ADMIN', 'SUPER_ADMIN'].includes(user?.accountType ?? user?.role);
+
 @ApiTags('Courses')
 @Controller('courses')
 export class CoursesController {
@@ -514,7 +517,7 @@ export class CoursesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get full course details for instructor' })
   async getInstructorCourseDetails(@Param('id') id: string, @Request() req: any) {
-    return this.coursesService.getInstructorCourseDetails(id, req.user.id);
+    return this.coursesService.getInstructorCourseDetails(id, req.user.id, isAdminUser(req.user));
   }
 
   @Post('instructor/:id/sections')
@@ -526,7 +529,7 @@ export class CoursesController {
     @Request() req: any,
     @Body() body: { title: string },
   ) {
-    return this.coursesService.addSection(id, req.user.id, body.title);
+    return this.coursesService.addSection(id, req.user.id, body.title, isAdminUser(req.user));
   }
 
   @Post('sections/:sectionId/lessons')
@@ -538,7 +541,7 @@ export class CoursesController {
     @Request() req: any,
     @Body() body: any,
   ) {
-    return this.coursesService.addLesson(sectionId, req.user.id, body);
+    return this.coursesService.addLesson(sectionId, req.user.id, body, isAdminUser(req.user));
   }
 
   @Get(':courseId/live-lessons')

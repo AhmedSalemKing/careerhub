@@ -1527,8 +1527,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { success: true, data: updated };
   }
 
-  async addSection(courseId: string, instructorId: string, title: string) {
-    const course = await this.prisma.course.findFirst({ where: { id: courseId, instructorId } });
+  async addSection(courseId: string, instructorId: string, title: string, isAdmin = false) {
+    const course = await this.prisma.course.findFirst({ where: isAdmin ? { id: courseId } : { id: courseId, instructorId } });
     if (!course) throw new NotFoundException('Course not found or not yours');
 
     const count = await this.prisma.section.count({ where: { courseId } });
@@ -1538,14 +1538,14 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { success: true, data: section };
   }
 
-  async addLesson(sectionId: string, userId: string, dto: any) {
+  async addLesson(sectionId: string, userId: string, dto: any, isAdmin = false) {
     // Verify section belongs to a course owned by the user
     const section = await this.prisma.section.findUnique({
       where: { id: sectionId },
       include: { course: { select: { instructorId: true } } },
     });
     if (!section) throw new NotFoundException('Section not found');
-    if (section.course.instructorId !== userId) {
+    if (!isAdmin && section.course.instructorId !== userId) {
       throw new ForbiddenException('You do not own this course');
     }
 
@@ -1633,9 +1633,9 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { courses: courses.map(c => ({ ...c, title: c.titleEn })), consultants };
   }
 
-  async getInstructorCourseDetails(id: string, instructorId: string) {
+  async getInstructorCourseDetails(id: string, instructorId: string, isAdmin = false) {
     const course = await this.prisma.course.findFirst({
-      where: { id, instructorId },
+      where: isAdmin ? { id } : { id, instructorId },
       include: {
         sections: {
           include: { lessons: { orderBy: { order: 'asc' } } },
@@ -1724,9 +1724,9 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     }
   }
 
-  async updateSection(sectionId: string, instructorId: string, title: string) {
+  async updateSection(sectionId: string, instructorId: string, title: string, isAdmin = false) {
     const section = await this.prisma.section.findFirst({
-      where: { id: sectionId, course: { instructorId } },
+      where: isAdmin ? { id: sectionId } : { id: sectionId, course: { instructorId } },
     });
     if (!section) throw new NotFoundException('Section not found');
     const updated = await this.prisma.section.update({
@@ -1931,9 +1931,9 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return { timeSpent: lessonProgress.timeSpent };
   }
 
-  async deleteLesson(lessonId: string, instructorId: string) {
+  async deleteLesson(lessonId: string, instructorId: string, isAdmin = false) {
     const lesson = await this.prisma.lesson.findFirst({
-      where: { id: lessonId, section: { course: { instructorId } } },
+      where: isAdmin ? { id: lessonId } : { id: lessonId, section: { course: { instructorId } } },
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     await this.prisma.lesson.delete({ where: { id: lessonId } });
