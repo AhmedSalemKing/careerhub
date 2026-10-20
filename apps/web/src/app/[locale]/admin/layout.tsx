@@ -24,6 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const router = useRouter()
   const [authorized, setAuthorized] = useState<boolean | null>(null)
+  const [ready, setReady] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const isAr = locale === 'ar'
@@ -43,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const u = JSON.parse(raw)
         if (u?.accountType === 'ADMIN' || u?.accountType === 'SUPER_ADMIN') {
           setAuthorized(true)
+          setReady(true)
         } else {
           setAuthorized(false)
         }
@@ -61,6 +63,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setDrawerOpen(false)
   }, [pathname])
+
+  if (!ready) return null
 
   if (authorized === null) {
     return (
