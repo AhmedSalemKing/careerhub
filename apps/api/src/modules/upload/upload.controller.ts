@@ -25,6 +25,7 @@ import { createReadStream } from 'fs';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiConsumes, ApiQuery } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
 import { CloudinaryService } from './cloudinary.service';
+import { BunnyStreamService } from './bunny-stream.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -41,6 +42,7 @@ export class UploadController {
   constructor(
     private readonly uploadService: UploadService,
     private readonly cloudinaryService: CloudinaryService,
+    private readonly bunnyStreamService: BunnyStreamService,
   ) { }
 
   @Public()
@@ -212,10 +214,23 @@ export class UploadController {
     },
   }))
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Upload video — saved to Cloudinary' })
+  @ApiOperation({ summary: 'Upload video — saved to Bunny.net Stream (HLS)' })
   @ApiResponse({ status: 201, description: 'Video uploaded successfully' })
   async uploadVideo(@UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No video file provided');
+
+    // Videos go to Bunny.net Stream, which transcodes them and returns an HLS
+    // (.m3u8) playback URL. If Bunny is not configured we fall back to the
+    // previous Cloudinary behaviour so existing deployments keep working.
+    if (this.bunnyStreamService.isAvailable) {
+      const result = await this.bunnyStreamService.uploadVideo(file);
+      return {
+        success: true,
+        message: 'Video uploaded successfully',
+        data: { url: result.url, fileName: file.originalname, size: file.size, mimeType: file.mimetype },
+      };
+    }
+
     const result = await this.cloudinaryService.uploadFile(file, 'videos', 'video');
     return {
       success: true,

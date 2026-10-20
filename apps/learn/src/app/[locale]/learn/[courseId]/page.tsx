@@ -61,6 +61,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
 import { useAuthStore } from "../../../../stores/authStore";
+import Hls from "hls.js";
 
 // Small inline meta row item used by the course info card and lesson details.
 function MetaItem({
@@ -589,6 +590,44 @@ function MetaItem({
 		if (videoRef.current) videoRef.current.playbackRate = playbackRate;
 	}, [playbackRate, activeLessonId]);
 
+	// HLS (.m3u8) playback support. Bunny.net Stream and other HLS sources are
+	// played through hls.js, while regular progressive URLs keep using the
+	// native <video src> behaviour untouched. Safari plays HLS natively, so we
+	// only attach hls.js where MediaSource is required.
+	useEffect(() => {
+		const video = videoRef.current;
+		if (!video || !videoUrl) return;
+		const isHls = /\.m3u8(\?|#|$)/i.test(videoUrl);
+		if (!isHls) return;
+
+		if (video.canPlayType("application/vnd.apple.mpegurl")) {
+			// Native HLS (Safari / iOS): let the element load the manifest itself.
+			video.src = videoUrl;
+			return;
+		}
+
+		if (!Hls.isSupported()) return;
+
+		const hls = new Hls({ enableWorker: true });
+		hls.loadSource(videoUrl);
+		hls.attachMedia(video);
+		hls.on(Hls.Events.MANIFEST_PARSED, () => {
+			setIsLoadingMedia(false);
+			setVideoReady(true);
+		});
+		hls.on(Hls.Events.ERROR, (_event, data) => {
+			if (data?.fatal) {
+				setIsLoadingMedia(false);
+				setVideoReady(true);
+				setVideoError("فشل تحميل الفيديو");
+			}
+		});
+
+		return () => {
+			hls.destroy();
+		};
+	}, [videoUrl, activeLessonId]);
+
 	// Keyboard shortcuts
 	useEffect(() => {
 		const handleKeys = (e: KeyboardEvent) => {
@@ -878,7 +917,7 @@ function MetaItem({
 	// Detect media type — URL-based checks take priority over type field to handle
 	// cases where images are stored in videoUrl (Cloudinary /image/upload/ URLs)
 	const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|svg|bmp)(\?.*)?$/i;
-	const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv)(\?.*)?$/i;
+	const VIDEO_EXTS = /\.(mp4|webm|ogg|mov|avi|mkv|m3u8)(\?.*)?$/i;
 	const PDF_EXT = /\.pdf(\?.*)?$/i;
 	const getMediaType = (lesson: any): "video" | "file" | "image" | "none" => {
 		if (!lesson) return "none";
@@ -1848,7 +1887,11 @@ function MetaItem({
 												<video
 													ref={videoRef}
 													key={currentLesson?.id || "no-lesson"}
-													src={videoUrl}
+													src={
+														videoUrl && !/\.m3u8(\?|#|$)/i.test(videoUrl)
+															? videoUrl
+															: undefined
+													}
 													controls
 													autoPlay
 													className="absolute top-0 left-0 w-full h-full object-contain"
