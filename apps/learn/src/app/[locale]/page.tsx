@@ -201,6 +201,7 @@ export default function HomePage() {
   const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
   useEffect(() => {
+    setApiCourses([])
     get('/courses?limit=6&language=' + locale + (courseSort === 'newest' ? '&sort=newest' : ''))
       .then((res) => {
         const d = (res as any)?.data?.data ?? (res as any)?.data
