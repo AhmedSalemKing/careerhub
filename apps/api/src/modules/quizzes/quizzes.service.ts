@@ -166,9 +166,9 @@ export class QuizzesService implements OnModuleInit {
   // Instructor helpers
   // ---------------------------------------------------------------------------
 
-  private async ensureOwnsCourse(instructorId: string, courseId: string) {
+  private async ensureOwnsCourse(instructorId: string, courseId: string, isAdmin = false) {
     const course = await this.prisma.course.findFirst({
-      where: { id: courseId, instructorId },
+      where: isAdmin ? { id: courseId } : { id: courseId, instructorId },
       select: { id: true },
     });
     if (!course) {
@@ -177,9 +177,9 @@ export class QuizzesService implements OnModuleInit {
     return course;
   }
 
-  private async getOwnedQuiz(instructorId: string, quizId: string) {
+  private async getOwnedQuiz(instructorId: string, quizId: string, isAdmin = false) {
     const quiz = await this.prisma.quiz.findFirst({
-      where: { id: quizId, course: { instructorId } },
+      where: isAdmin ? { id: quizId } : { id: quizId, course: { instructorId } },
       include: {
         course: { select: { id: true, instructorId: true } },
         lesson: { select: { id: true, title: true, titleAr: true } },
@@ -262,8 +262,8 @@ export class QuizzesService implements OnModuleInit {
   // Instructor endpoints
   // ---------------------------------------------------------------------------
 
-  async createQuiz(instructorId: string, dto: any) {
-    await this.ensureOwnsCourse(instructorId, dto.courseId);
+  async createQuiz(instructorId: string, dto: any, isAdmin = false) {
+    await this.ensureOwnsCourse(instructorId, dto.courseId, isAdmin);
 
     if (dto.lessonId) {
       await this.ensureLessonInCourse(dto.lessonId, dto.courseId);
@@ -295,8 +295,8 @@ export class QuizzesService implements OnModuleInit {
     return quiz;
   }
 
-  async getQuizForInstructor(quizId: string, instructorId: string) {
-    const quiz = await this.getOwnedQuiz(instructorId, quizId);
+  async getQuizForInstructor(quizId: string, instructorId: string, isAdmin = false) {
+    const quiz = await this.getOwnedQuiz(instructorId, quizId, isAdmin);
     const questions = await this.prisma.quizQuestion.findMany({
       where: { quizId },
       orderBy: { order: 'asc' },
@@ -305,8 +305,8 @@ export class QuizzesService implements OnModuleInit {
     return { ...quiz, questions };
   }
 
-  async updateQuiz(quizId: string, instructorId: string, dto: any) {
-    const quiz = await this.getOwnedQuiz(instructorId, quizId);
+  async updateQuiz(quizId: string, instructorId: string, dto: any, isAdmin = false) {
+    const quiz = await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     if (dto.sectionId !== undefined && dto.sectionId) {
       await this.ensureSectionInCourse(dto.sectionId, quiz.courseId);
@@ -337,14 +337,14 @@ export class QuizzesService implements OnModuleInit {
     });
   }
 
-  async deleteQuiz(quizId: string, instructorId: string) {
-    const quiz = await this.getOwnedQuiz(instructorId, quizId);
+  async deleteQuiz(quizId: string, instructorId: string, isAdmin = false) {
+    const quiz = await this.getOwnedQuiz(instructorId, quizId, isAdmin);
     await this.prisma.quiz.delete({ where: { id: quiz.id } });
     return { success: true };
   }
 
-  async listQuizzesByCourse(courseId: string, instructorId: string) {
-    await this.ensureOwnsCourse(instructorId, courseId);
+  async listQuizzesByCourse(courseId: string, instructorId: string, isAdmin = false) {
+    await this.ensureOwnsCourse(instructorId, courseId, isAdmin);
     const quizzes = await this.prisma.quiz.findMany({
       where: { courseId },
       orderBy: { createdAt: 'desc' },
@@ -365,8 +365,8 @@ export class QuizzesService implements OnModuleInit {
     }));
   }
 
-  async addQuestion(quizId: string, instructorId: string, dto: any) {
-    const quiz = await this.getOwnedQuiz(instructorId, quizId);
+  async addQuestion(quizId: string, instructorId: string, dto: any, isAdmin = false) {
+    const quiz = await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     if (dto.type === MCQ) {
       this.validateMcq({
@@ -408,8 +408,8 @@ export class QuizzesService implements OnModuleInit {
     return question;
   }
 
-  async updateQuestion(quizId: string, questionId: string, instructorId: string, dto: any) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async updateQuestion(quizId: string, questionId: string, instructorId: string, dto: any, isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     const existing = await this.prisma.quizQuestion.findFirst({
       where: { id: questionId, quizId },
@@ -467,8 +467,8 @@ export class QuizzesService implements OnModuleInit {
     });
   }
 
-  async deleteQuestion(quizId: string, questionId: string, instructorId: string) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async deleteQuestion(quizId: string, questionId: string, instructorId: string, isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     const existing = await this.prisma.quizQuestion.findFirst({
       where: { id: questionId, quizId },
@@ -498,8 +498,8 @@ export class QuizzesService implements OnModuleInit {
     return { success: true };
   }
 
-  async reorderQuestions(quizId: string, instructorId: string, ids: string[]) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async reorderQuestions(quizId: string, instructorId: string, ids: string[], isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     const existing = await this.prisma.quizQuestion.findMany({
       where: { quizId },
@@ -523,8 +523,8 @@ export class QuizzesService implements OnModuleInit {
     return { success: true };
   }
 
-  async publishQuiz(quizId: string, instructorId: string) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async publishQuiz(quizId: string, instructorId: string, isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
     await this.validateQuizReady(quizId);
     return this.prisma.quiz.update({
       where: { id: quizId },
@@ -532,16 +532,16 @@ export class QuizzesService implements OnModuleInit {
     });
   }
 
-  async unpublishQuiz(quizId: string, instructorId: string) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async unpublishQuiz(quizId: string, instructorId: string, isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
     return this.prisma.quiz.update({
       where: { id: quizId },
       data: { status: 'DRAFT' },
     });
   }
 
-  async listAttempts(quizId: string, instructorId: string, page: number, limit: number, status?: string) {
-    await this.getOwnedQuiz(instructorId, quizId);
+  async listAttempts(quizId: string, instructorId: string, page: number, limit: number, status?: string, isAdmin = false) {
+    await this.getOwnedQuiz(instructorId, quizId, isAdmin);
 
     const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
     const safeLimit = Number.isFinite(limit) && limit > 0 ? Math.min(Math.floor(limit), 100) : 20;
@@ -588,9 +588,11 @@ export class QuizzesService implements OnModuleInit {
     };
   }
 
-  async getAttemptForInstructor(attemptId: string, instructorId: string) {
+  async getAttemptForInstructor(attemptId: string, instructorId: string, isAdmin = false) {
     const attempt = await this.prisma.quizAttempt.findFirst({
-      where: { id: attemptId, quiz: { course: { instructorId } } },
+      where: isAdmin
+        ? { id: attemptId }
+        : { id: attemptId, quiz: { course: { instructorId } } },
       include: {
         user: {
           select: {
@@ -667,9 +669,11 @@ export class QuizzesService implements OnModuleInit {
     };
   }
 
-  async gradeAttempt(attemptId: string, instructorId: string, dto: any) {
+  async gradeAttempt(attemptId: string, instructorId: string, dto: any, isAdmin = false) {
     const attempt = await this.prisma.quizAttempt.findFirst({
-      where: { id: attemptId, quiz: { course: { instructorId } } },
+      where: isAdmin
+        ? { id: attemptId }
+        : { id: attemptId, quiz: { course: { instructorId } } },
       include: {
         answers: true,
         quiz: {
@@ -731,7 +735,7 @@ export class QuizzesService implements OnModuleInit {
       });
     });
 
-    return this.getAttemptForInstructor(attemptId, instructorId);
+    return this.getAttemptForInstructor(attemptId, instructorId, isAdmin);
   }
 
   // ---------------------------------------------------------------------------

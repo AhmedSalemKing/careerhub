@@ -21,6 +21,9 @@ import { ReorderQuestionsDto } from './dto/reorder-questions.dto';
 import { SaveAnswerDto } from './dto/save-answer.dto';
 import { GradeAttemptDto } from './dto/grade-attempt.dto';
 
+const isAdminUser = (user: any): boolean =>
+  ['ADMIN', 'SUPER_ADMIN'].includes(user?.accountType ?? user?.role);
+
 @ApiTags('quizzes-student')
 @Controller('quizzes')
 @UseGuards(JwtAuthGuard)
@@ -84,31 +87,31 @@ export class QuizzesInstructorController {
 
   @Post()
   async createQuiz(@Request() req: any, @Body() dto: CreateQuizDto) {
-    const data = await this.quizzesService.createQuiz(req.user.sub, dto);
+    const data = await this.quizzesService.createQuiz(req.user.sub, dto, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Get()
   async listQuizzes(@Request() req: any, @Query('courseId') courseId: string) {
-    const data = await this.quizzesService.listQuizzesByCourse(courseId, req.user.sub);
+    const data = await this.quizzesService.listQuizzesByCourse(courseId, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Get(':id')
   async getQuiz(@Request() req: any, @Param('id') id: string) {
-    const data = await this.quizzesService.getQuizForInstructor(id, req.user.sub);
+    const data = await this.quizzesService.getQuizForInstructor(id, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Patch(':id')
   async updateQuiz(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateQuizDto) {
-    const data = await this.quizzesService.updateQuiz(id, req.user.sub, dto);
+    const data = await this.quizzesService.updateQuiz(id, req.user.sub, dto, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Delete(':id')
   async deleteQuiz(@Request() req: any, @Param('id') id: string) {
-    const data = await this.quizzesService.deleteQuiz(id, req.user.sub);
+    const data = await this.quizzesService.deleteQuiz(id, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
@@ -118,7 +121,7 @@ export class QuizzesInstructorController {
     @Param('id') id: string,
     @Body() dto: CreateQuestionDto,
   ) {
-    const data = await this.quizzesService.addQuestion(id, req.user.sub, dto);
+    const data = await this.quizzesService.addQuestion(id, req.user.sub, dto, isAdminUser(req.user));
     return { success: true, data };
   }
 
@@ -129,7 +132,7 @@ export class QuizzesInstructorController {
     @Param('questionId') questionId: string,
     @Body() dto: UpdateQuestionDto,
   ) {
-    const data = await this.quizzesService.updateQuestion(id, questionId, req.user.sub, dto);
+    const data = await this.quizzesService.updateQuestion(id, questionId, req.user.sub, dto, isAdminUser(req.user));
     return { success: true, data };
   }
 
@@ -139,7 +142,7 @@ export class QuizzesInstructorController {
     @Param('id') id: string,
     @Param('questionId') questionId: string,
   ) {
-    const data = await this.quizzesService.deleteQuestion(id, questionId, req.user.sub);
+    const data = await this.quizzesService.deleteQuestion(id, questionId, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
@@ -149,19 +152,19 @@ export class QuizzesInstructorController {
     @Param('id') id: string,
     @Body() dto: ReorderQuestionsDto,
   ) {
-    const data = await this.quizzesService.reorderQuestions(id, req.user.sub, dto.order);
+    const data = await this.quizzesService.reorderQuestions(id, req.user.sub, dto.order, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Post(':id/publish')
   async publishQuiz(@Request() req: any, @Param('id') id: string) {
-    const data = await this.quizzesService.publishQuiz(id, req.user.sub);
+    const data = await this.quizzesService.publishQuiz(id, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Post(':id/unpublish')
   async unpublishQuiz(@Request() req: any, @Param('id') id: string) {
-    const data = await this.quizzesService.unpublishQuiz(id, req.user.sub);
+    const data = await this.quizzesService.unpublishQuiz(id, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
@@ -179,19 +182,20 @@ export class QuizzesInstructorController {
       parseInt(page ?? '1', 10),
       parseInt(limit ?? '20', 10),
       status,
+      isAdminUser(req.user),
     );
     return { success: true, data };
   }
 
   @Get('attempts/:aid')
   async getAttempt(@Request() req: any, @Param('aid') aid: string) {
-    const data = await this.quizzesService.getAttemptForInstructor(aid, req.user.sub);
+    const data = await this.quizzesService.getAttemptForInstructor(aid, req.user.sub, isAdminUser(req.user));
     return { success: true, data };
   }
 
   @Post('attempts/:aid/grade')
   async gradeAttempt(@Request() req: any, @Param('aid') aid: string, @Body() dto: GradeAttemptDto) {
-    const data = await this.quizzesService.gradeAttempt(aid, req.user.sub, dto);
+    const data = await this.quizzesService.gradeAttempt(aid, req.user.sub, dto, isAdminUser(req.user));
     return { success: true, data };
   }
 }
