@@ -445,11 +445,17 @@ function MetaItem({
 		getSafeUrl(activeLesson?.imageUrl) || undefined;
 	const fileName: string = activeLesson?.fileName || "document.pdf";
 
-	// Cloudinary serves raw files with `Content-Disposition: attachment`, so a
-	// plain view link downloads instead of previewing. `fl_inline` forces inline
-	// delivery so "فتح في تبويب جديد" actually opens in the browser tab.
-	const inlineUrl: string | undefined = fileUrl
-		? fileUrl.replace('/raw/upload/', '/raw/upload/fl_inline/')
+	// Cloudinary raw resources always carry `Content-Disposition: attachment`
+	// (even with `fl_inline`), so browsers can neither embed them in an iframe
+	// nor open them inline — they auto-download instead. Route the PDF through
+	// the Google Docs Viewer, which fetches the file server-side and serves a
+	// renderable, embeddable document.
+	const googleViewerUrl: string | undefined = fileUrl
+		? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`
+		: undefined;
+
+	const googleViewerTabUrl: string | undefined = fileUrl
+		? `https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}`
 		: undefined;
 
 	// Cloudinary raw uploads are public but extension-less, and the
@@ -1986,13 +1992,13 @@ function MetaItem({
 											overflow: 'hidden', border: `1px solid ${borderColor}`,
 										}}>
 											<iframe
-												src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileUrl)}&embedded=true`}
+												src={googleViewerUrl}
 												style={{ width: '100%', height: '100%', border: 'none' }}
 												title="PDF Viewer"
 											/>
 										</div>
 										<div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-											<a href={inlineUrl} target="_blank" rel="noopener noreferrer"
+											<a href={googleViewerTabUrl} target="_blank" rel="noopener noreferrer"
 												style={{
 													padding: '8px 20px', borderRadius: '8px', fontSize: '13px',
 													fontWeight: 500, fontFamily: 'var(--font-medium)', background: '#5120c8', color: 'white',
@@ -2532,7 +2538,7 @@ function MetaItem({
 												<span style={{ color: '#ffffff' }}>تحميل {fileName}</span>
 											</button>
 											<a
-												href={inlineUrl}
+												href={googleViewerTabUrl}
 												target="_blank"
 												rel="noopener noreferrer"
 												className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300"
