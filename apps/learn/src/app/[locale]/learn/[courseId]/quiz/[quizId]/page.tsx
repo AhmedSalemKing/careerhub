@@ -240,12 +240,19 @@ export default function TakeQuizPage() {
 
     setSubmitting(true)
     try {
-      for (const [questionId, ans] of Object.entries(answers)) {
-        try {
-          await post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...ans })
-        } catch {
-          // non-blocking — the submit endpoint revalidates
-        }
+      // Persist any pending answers in parallel (the auto-save effect already
+      // covers most of them, so this is normally a no-op). Firing them
+      // concurrently — instead of one sequential round-trip per question —
+      // keeps submission quick for long quizzes.
+      const entries = Object.entries(answers)
+      if (entries.length > 0) {
+        await Promise.all(
+          entries.map(([questionId, ans]) =>
+            post(`/quizzes/attempts/${attemptId}/answer`, { questionId, ...ans }).catch(() => {
+              // non-blocking — the submit endpoint revalidates
+            }),
+          ),
+        )
       }
       await post(`/quizzes/attempts/${attemptId}/submit`)
       // Refresh every quiz-related query so the lesson entry card reflects the

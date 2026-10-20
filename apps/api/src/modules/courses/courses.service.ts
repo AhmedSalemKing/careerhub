@@ -1788,6 +1788,25 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return true;
   }
 
+  // A lesson that carries a published quiz can only be completed once the
+  // student has a graded attempt that reaches that quiz's passing score.
+  private async lessonQuizPassed(userId: string, lessonId: string): Promise<boolean> {
+    const quiz = await this.prisma.quiz.findFirst({
+      where: { lessonId, status: 'PUBLISHED', questions: { some: {} } },
+      select: { id: true, passingScore: true },
+    });
+    if (!quiz) return true;
+
+    const bestAttempt = await this.prisma.quizAttempt.findFirst({
+      where: { userId, quizId: quiz.id, status: 'GRADED' },
+      orderBy: { percentage: 'desc' },
+    });
+    return (
+      !!bestAttempt &&
+      (bestAttempt.passed || bestAttempt.percentage >= quiz.passingScore)
+    );
+  }
+
   async markLessonComplete(userId: string, courseId: string, lessonId: string) {
     // Verify enrollment
     const enrollment = await this.prisma.enrollment.findUnique({
@@ -1796,6 +1815,15 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     if (!enrollment) {
       throw new ForbiddenException('You must be enrolled in this course to complete lessons.');
+    }
+
+    // A lesson with an unattempted/unpassed quiz must not be completed — doing
+    // so would advance course progress and bypass the quiz requirement.
+    const quizPassed = await this.lessonQuizPassed(userId, lessonId);
+    if (!quizPassed) {
+      throw new BadRequestException(
+        'يجب اجتياز اختبار الدرس أولاً',
+      );
     }
 
     // Upsert LessonProgress record
@@ -1838,16 +1866,51 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       }),
     ]);
 
-    const progressPercent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+    // Published quizzes (with questions) also count as completion items so a
+    // student cannot reach 100% without passing them. The just-completed lesson
+    // has already been verified to have a passed quiz (or no quiz at all).
+    const publishedQuizzes = await this.prisma.quiz.findMany({
+      where: { courseId, status: 'PUBLISHED', questions: { some: {} } },
+      select: { id: true, passingScore: true },
+    });
+
+    let passedQuizCount = 0;
+    if (publishedQuizzes.length > 0) {
+      const attempts = await this.prisma.quizAttempt.findMany({
+        where: {
+          userId,
+          quizId: { in: publishedQuizzes.map((q) => q.id) },
+          status: 'GRADED',
+        },
+        select: { quizId: true, passed: true, percentage: true },
+      });
+      const bestByQuiz = new Map<string, { passed: boolean; percentage: number }>();
+      for (const a of attempts) {
+        const prev = bestByQuiz.get(a.quizId);
+        if (!prev || a.percentage > prev.percentage) {
+          bestByQuiz.set(a.quizId, { passed: a.passed, percentage: a.percentage });
+        }
+      }
+      passedQuizCount = publishedQuizzes.filter((q) => {
+        const best = bestByQuiz.get(q.id);
+        return !!best && (best.passed || best.percentage >= q.passingScore);
+      }).length;
+    }
+
+    const totalItems = totalCount + publishedQuizzes.length;
+    const completedItems = completedCount + passedQuizCount;
+
+    const progressPercent =
+      totalItems === 0 ? 0 : Math.round((completedItems / totalItems) * 100);
     const isCourseComplete = progressPercent >= 100;
 
     this.logger.log(
-      `[Lesson] Returning progress: ${progressPercent}% | isCourseComplete: ${isCourseComplete} | completed: ${completedCount}/${totalCount}`
+      `[Lesson] Returning progress: ${progressPercent}% | isCourseComplete: ${isCourseComplete} | completed: lessons ${completedCount}/${totalCount}, quizzes ${passedQuizCount}/${publishedQuizzes.length}`
     );
 
     this.logger.log(
       `[Progress] userId=${userId} courseId=${courseId} ` +
-      `completed=${completedCount}/${totalCount} (${progressPercent}%)`
+      `completed=${completedItems}/${totalItems} (${progressPercent}%)`
     );
 
     // Update enrollment progress
@@ -1861,7 +1924,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     // Auto Certificate Generation - only if instructor has enabled certificates,
     // marked the course complete, AND the student has passed all course quizzes.
-    let allQuizzesPassed = true;
+    let allQuizzesPassed = passedQuizCount === publishedQuizzes.length;
     if (isCourseComplete) {
       allQuizzesPassed = await this.hasPassedAllQuizzes(userId, courseId);
       const course = await this.prisma.course.findUnique({

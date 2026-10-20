@@ -191,6 +191,26 @@ function MetaItem({
 	// PDF gating: the embedded viewer is cross-origin, so page position cannot be
 	// observed. The student explicitly confirms reaching the last page instead.
 	const [pdfReachedEnd, setPdfReachedEnd] = useState(false);
+	// Tracks, per lesson id, whether the student has watched that lesson's video
+	// to (near) the end. Persisted so the quiz gate survives reloads.
+	const [videoWatched, setVideoWatched] = useState<Record<string, boolean>>(() => {
+		try {
+			return JSON.parse(localStorage.getItem("dw_video_watched") || "{}");
+		} catch {
+			return {};
+		}
+	});
+
+	const markVideoWatched = (lessonId: string) => {
+		setVideoWatched((prev) => {
+			if (prev[lessonId]) return prev;
+			const next = { ...prev, [lessonId]: true };
+			try {
+				localStorage.setItem("dw_video_watched", JSON.stringify(next));
+			} catch {}
+			return next;
+		});
+	};
 
 	// Theme detection
 	useEffect(() => {
@@ -364,6 +384,11 @@ function MetaItem({
 	const quizHref = activeQuiz?.id
 		? `/${locale}/learn/${courseId}/quiz/${activeQuiz.id}`
 		: null;
+
+	// The quiz may only be started once the lesson's video has been watched to
+	// (near) the end. Lessons without a video are never locked.
+	const canStartQuiz =
+		!activeLesson?.videoUrl || !!videoWatched[activeLesson?.id ?? ""];
 
 	const goToLesson = useCallback(
 		(lesson: any) => {
@@ -1847,9 +1872,20 @@ function MetaItem({
 														setVideoError("فشل تحميل الفيديو");
 													}}
 													onEnded={() => {
+														if (activeLesson?.id) markVideoWatched(activeLesson.id);
 														if (requiresQuiz) return;
 														if (!isCurrentCompleted) handleMarkComplete();
 														else if (nextLesson) goToLesson(nextLesson);
+													}}
+													onTimeUpdate={(e) => {
+														const el = e.currentTarget;
+														if (
+															activeLesson?.id &&
+															el.duration > 0 &&
+															el.duration - el.currentTime <= 5
+														) {
+															markVideoWatched(activeLesson.id);
+														}
 													}}
 												/>
 
@@ -2495,7 +2531,15 @@ function MetaItem({
 									</div>
 								)}
 
-								<QuizEntryCard lessonId={activeLesson?.id} />
+								<QuizEntryCard
+									lessonId={activeLesson?.id}
+									locked={!canStartQuiz}
+									lockHint={
+										isAr
+											? "يجب مشاهدة الفيديو أولاً"
+											: "Watch the video first"
+									}
+								/>
 
 								{/* Mark Complete & Navigation */}
 								{isEnrolled && (

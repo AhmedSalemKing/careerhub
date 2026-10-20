@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas'
 import * as QRCode from 'qrcode'
@@ -149,8 +149,8 @@ export class CertificatesService {
           !!bestAttempt &&
           (bestAttempt.passed || bestAttempt.percentage >= quiz.passingScore)
         if (!passed) {
-          throw new ForbiddenException(
-            'All course quizzes must be passed before the certificate is issued',
+          throw new BadRequestException(
+            'يجب إتمام جميع الاختبارات للحصول على الشهادة',
           )
         }
       }

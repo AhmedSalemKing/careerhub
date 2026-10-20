@@ -1286,9 +1286,19 @@ export class QuizzesService implements OnModuleInit {
     await this.prisma.$transaction(async (tx) => {
       const freshAnswers = await tx.quizAnswer.findMany({ where: { attemptId: attempt.id } });
       const grade = this.computeGrading(attempt.quiz, freshAnswers);
+
+      // Batch the auto-grade writes: MCQs are all-or-nothing (0 or full points),
+      // so answers can be grouped by their grade and written with one updateMany
+      // per distinct value instead of one round-trip per answer.
+      const idsByGrade = new Map<number, string[]>();
       for (const [answerId, autoGrade] of grade.autoByAnswer) {
-        await tx.quizAnswer.update({
-          where: { id: answerId },
+        const ids = idsByGrade.get(autoGrade) ?? [];
+        ids.push(answerId);
+        idsByGrade.set(autoGrade, ids);
+      }
+      for (const [autoGrade, ids] of idsByGrade) {
+        await tx.quizAnswer.updateMany({
+          where: { id: { in: ids } },
           data: { autoGrade },
         });
       }
@@ -1306,19 +1316,13 @@ export class QuizzesService implements OnModuleInit {
           passed: grade.passed,
           status: grade.needsManual ? 'SUBMITTED' : 'GRADED',
         },
-        include: {
-          answers: true,
-          quiz: {
-            include: {
-              questions: {
-                orderBy: { order: 'asc' },
-                include: { choices: { orderBy: { order: 'asc' } } },
-              },
-            },
-          },
-        },
       });
     });
+
+    // Rebuild the result payload outside the transaction so the write lock is
+    // released before the (read-heavy) result assembly runs.
+    saved.quiz = attempt.quiz;
+    saved.answers = await this.prisma.quizAnswer.findMany({ where: { attemptId: attempt.id } });
 
     return this.buildStudentResult(saved, userId);
   }

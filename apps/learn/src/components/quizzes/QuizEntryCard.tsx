@@ -28,7 +28,17 @@ interface QuizSummary {
   _count: { questions: number }
 }
 
-export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }) {
+export default function QuizEntryCard({
+  lessonId,
+  locked = false,
+  lockHint,
+}: {
+  lessonId?: string | null
+  /** When true, the quiz cannot be started yet (e.g. the lesson video is unwatched). */
+  locked?: boolean
+  /** Short explanation shown under the button while locked. */
+  lockHint?: string
+}) {
   const params = useParams()
   const router = useRouter()
   const locale = useLocale()
@@ -113,6 +123,14 @@ export default function QuizEntryCard({ lessonId }: { lessonId?: string | null }
     Icon = XCircle
     helper = 'لا يمكن إعادة المحاولة — تواصل مع المحاضر'
     secondaryHref = canShowResult ? resultHref : null
+  }
+
+  // The video gate applies only to actions that would START a quiz. Viewing an
+  // already-submitted/graded result stays available while locked.
+  const startsQuiz = !disabled && onClick !== undefined && label !== 'عرض النتيجة'
+  if (locked && startsQuiz) {
+    disabled = true
+    helper = lockHint ?? 'يجب مشاهدة الفيديو أولاً'
   }
 
   const btnStyle: React.CSSProperties =
