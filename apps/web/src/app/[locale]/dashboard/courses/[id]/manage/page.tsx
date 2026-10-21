@@ -11,7 +11,6 @@ import {
 import { get, post, patch, del } from '../../../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../../../lib/upload-error'
 import {
-  LIVE_RECORDING_SUPPORTED,
   liveRecordingUnavailableNote,
   isLiveStatus,
   formatLiveDateTimeShort,
@@ -115,8 +114,11 @@ function AddLectureModal({
   const locale = useLocale()
   const [liveDate, setLiveDate] = useState('')
   const [liveDuration, setLiveDuration] = useState(60)
-  const [saveRecording, setSaveRecording] = useState(false)
-  const [autoPublish, setAutoPublish] = useState(false)
+  // The recording preferences are ON by default: they only store the
+  // instructor's choice for when Agora Cloud Recording is integrated. The
+  // "not available yet" notice below stays informational.
+  const [saveRecording, setSaveRecording] = useState(true)
+  const [autoPublish, setAutoPublish] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [saving, setSaving] = useState(false)
@@ -251,10 +253,10 @@ function AddLectureModal({
       if (lessonType === 'LIVE') {
         payload.liveDate = liveDate
         payload.liveDuration = liveDuration
-        // Cloud recording is not integrated — never send a promise of a
-        // recording the platform cannot produce.
-        payload.saveRecording = false
-        payload.autoPublish = false
+        // The recording preferences are sent as the instructor set them — the
+        // recording feature itself is still being built.
+        payload.saveRecording = saveRecording
+        payload.autoPublish = autoPublish
       } else {
         if (form.videoUrl) payload.videoUrl = form.videoUrl
         if (form.fileUrl) {
@@ -695,26 +697,26 @@ function AddLectureModal({
                   <label key={toggle.key}
                     style={{ display: 'flex', alignItems: 'center',
                       justifyContent: 'space-between',
-                      cursor: LIVE_RECORDING_SUPPORTED ? 'pointer' : 'not-allowed',
-                      opacity: LIVE_RECORDING_SUPPORTED ? 1 : 0.55 }}>
+                      cursor: 'pointer',
+                      opacity: 1 }}>
                     <span style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>
                       {toggle.labelAr}
                     </span>
                     <div
-                      onClick={() => { if (LIVE_RECORDING_SUPPORTED) toggle.set(!toggle.value) }}
+                      onClick={() => toggle.set(!toggle.value)}
                       style={{
                         width: '44px', height: '24px',
                         borderRadius: '12px',
-                        background: LIVE_RECORDING_SUPPORTED && toggle.value ? '#5120c8' : 'rgba(255,255,255,0.1)',
+                        background: toggle.value ? '#5120c8' : 'rgba(255,255,255,0.1)',
                         position: 'relative',
-                        cursor: LIVE_RECORDING_SUPPORTED ? 'pointer' : 'not-allowed',
+                        cursor: 'pointer',
                         transition: 'background 0.2s',
                       }}
                     >
                       <div style={{
                         position: 'absolute',
                         top: '3px',
-                        left: LIVE_RECORDING_SUPPORTED && toggle.value ? '22px' : '3px',
+                        left: toggle.value ? '22px' : '3px',
                         width: '18px', height: '18px',
                         borderRadius: '50%', background: '#fff',
                         transition: 'left 0.2s',
@@ -722,12 +724,10 @@ function AddLectureModal({
                     </div>
                   </label>
                 ))}
-                {!LIVE_RECORDING_SUPPORTED && (
-                  <p style={{ color: 'var(--muted)', fontSize: '0.8rem',
-                    margin: 0, lineHeight: 1.6 }}>
-                    {liveRecordingUnavailableNote(locale)}
-                  </p>
-                )}
+                <p style={{ color: 'var(--muted)', fontSize: '0.8rem',
+                  margin: 0, lineHeight: 1.6 }}>
+                  {liveRecordingUnavailableNote(locale)}
+                </p>
               </div>
 
               <div style={{

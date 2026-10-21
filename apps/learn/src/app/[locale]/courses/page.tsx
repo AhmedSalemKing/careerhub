@@ -9,7 +9,7 @@ import {
   Video, Radio, MapPin, Search, X, Clock, Users,
   Calendar, Play, ChevronRight, Wifi, WifiOff,
   Star, BookOpen, Lock, CheckCircle2, AlertCircle,
-  DollarSign, Navigation
+  DollarSign, Navigation, Square
 } from 'lucide-react'
 import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
@@ -541,6 +541,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
   const price = parseFloat(course.price || 0)
   const isLive = course.liveStatus === 'live'
   const isScheduled = course.liveStatus === 'scheduled'
+  const isEnded = course.liveStatus === 'ended'
   const isEnrolled = course.isEnrolled === true
 
   const isPaid = isEnrolled
@@ -646,6 +647,16 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             {isUpcoming
               ? tl('startsIn', { hours: hoursUntil, minutes: minutesUntil })
               : tl('scheduledLabel')}
+          </span>
+        </div>
+      )}
+
+      {/* The stream is over: an honest "ended" banner and no join button. */}
+      {isEnded && (
+        <div style={{ padding: '10px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Square size={13} color='var(--muted-foreground)' />
+          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 600 }}>
+            {isAr ? 'انتهى البث' : 'Stream ended'}
           </span>
         </div>
       )}

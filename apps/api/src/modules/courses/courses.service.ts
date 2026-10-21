@@ -1441,7 +1441,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       if (dto.liveStartTime) courseData.liveStartTime = parseClientDateTime(dto.liveStartTime);
       if (dto.liveEndTime) courseData.liveEndTime = parseClientDateTime(dto.liveEndTime);
       if (dto.liveStatus) courseData.liveStatus = dto.liveStatus;
-      if (dto.autoPublishRecording !== undefined) courseData.autoPublishRecording = dto.autoPublishRecording;
+      // `Course` has no dedicated `saveRecording` column and the Prisma schema
+      // must not change, so the course-level "keep the recording" intent is
+      // folded into the existing `autoPublishRecording` flag: the recording
+      // pipeline only runs when the instructor asked for the recording to be
+      // kept. The two toggles stay independent in the UI; the stored flag
+      // carries their combined intent.
+      if (dto.saveRecording !== undefined || dto.autoPublishRecording !== undefined) {
+        const wantsRecording = dto.saveRecording !== undefined ? !!dto.saveRecording : true;
+        const wantsAutoPublish = dto.autoPublishRecording !== undefined ? !!dto.autoPublishRecording : true;
+        courseData.autoPublishRecording = wantsRecording || wantsAutoPublish;
+      }
       if (dto.autoDeleteAfterLive !== undefined) courseData.autoDeleteAfterLive = dto.autoDeleteAfterLive;
       if (dto.locationName) courseData.locationName = dto.locationName;
       if (dto.locationAddress) courseData.locationAddress = dto.locationAddress;
@@ -1503,6 +1513,15 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     const course = await this.prisma.course.findFirst({ where: { id, instructorId } });
     if (!course) throw new NotFoundException('Course not found or not yours');
 
+    // Same as in createCourse: the schema has no `saveRecording` column, so the
+    // course-level recording intent lives in `autoPublishRecording`.
+    let recordingIntent: boolean | undefined;
+    if (dto.saveRecording !== undefined || dto.autoPublishRecording !== undefined) {
+      const wantsRecording = dto.saveRecording !== undefined ? !!dto.saveRecording : true;
+      const wantsAutoPublish = dto.autoPublishRecording !== undefined ? !!dto.autoPublishRecording : true;
+      recordingIntent = wantsRecording || wantsAutoPublish;
+    }
+
     const updated = await this.prisma.course.update({
       where: { id },
       data: {
@@ -1519,7 +1538,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.liveStartTime && { liveStartTime: parseClientDateTime(dto.liveStartTime) }),
         ...(dto.liveEndTime && { liveEndTime: parseClientDateTime(dto.liveEndTime) }),
         ...(dto.liveStatus !== undefined && { liveStatus: dto.liveStatus }),
-        ...(dto.autoPublishRecording !== undefined && { autoPublishRecording: dto.autoPublishRecording }),
+        ...(recordingIntent !== undefined && { autoPublishRecording: recordingIntent }),
         ...(dto.autoDeleteAfterLive !== undefined && { autoDeleteAfterLive: dto.autoDeleteAfterLive }),
         ...(dto.locationName !== undefined && { locationName: dto.locationName }),
         ...(dto.locationAddress !== undefined && { locationAddress: dto.locationAddress }),
@@ -1574,10 +1593,16 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         sectionId,
         liveStartTime: isLive && dto.liveDate ? parseClientDateTime(dto.liveDate) : null,
         liveStatus: isLive && dto.liveDate ? 'scheduled' : null,
-        // NOTE: Agora Cloud Recording is not integrated, so a live lesson never
-        // produces a recording file. The flag is stored for compatibility with
-        // existing rows but the UI must not promise a recording.
-        content: isLive ? { liveDuration: dto.liveDuration || 60, saveRecording: false, autoPublish: false } : undefined,
+        // Recording preferences for the live lesson. Agora Cloud Recording is
+        // not integrated yet, so no file is produced today — the flags store
+        // the instructor's choice for when the feature ships.
+        content: isLive
+          ? {
+              liveDuration: dto.liveDuration || 60,
+              saveRecording: dto.saveRecording ?? true,
+              autoPublish: dto.autoPublish ?? true,
+            }
+          : undefined,
       },
     });
     return { success: true, data: lesson };

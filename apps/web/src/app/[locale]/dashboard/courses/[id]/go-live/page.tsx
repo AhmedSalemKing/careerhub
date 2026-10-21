@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -53,6 +53,13 @@ export default function GoLivePage() {
   const [prepStage, setPrepStage] = useState<PrepStage>('camera')
   const [prepNote, setPrepNote] = useState('')
   const [previewActive, setPreviewActive] = useState(false)
+  // State of the background server warm-up. 'failed' means the API could not
+  // be reached — the page shows a retry button instead of a blank screen.
+  const [serverState, setServerState] = useState<'idle' | 'connecting' | 'ready' | 'failed'>('idle')
+  const [serverError, setServerError] = useState('')
+  // Bumping this re-runs only the background warm-up (the camera is left
+  // untouched), so a retry never re-asks for the camera permission.
+  const [warmUpAttempt, setWarmUpAttempt] = useState(0)
   // The channel/appId of the session that just went live. It is announced to
   // the room as soon as the shared (hook) socket is connected — the page does
   // not open a socket of its own.
@@ -101,6 +108,28 @@ export default function GoLivePage() {
 
   const courseTitle = course?.titleAr || course?.titleEn || course?.title || ''
   const liveLink = learnUrlWithToken(`/${locale}/live/${courseId}`)
+
+  // Does the instructor want a recording of this session? For a lesson live the
+  // preference lives in the lesson content, for a course live it is the
+  // course-level recording flag.
+  const recordingRequested = useMemo(() => {
+    if (lessonId) {
+      const sections = (course?.sections ?? []) as {
+        lessons?: {
+          id?: string
+          content?: { saveRecording?: boolean } | null
+        }[]
+      }[]
+      const lessons = sections.flatMap((s) => s?.lessons ?? [])
+      const lesson = lessons.find((l) => l?.id === lessonId)
+      const content = lesson?.content
+      if (content && typeof content === 'object' && 'saveRecording' in content) {
+        return content.saveRecording !== false
+      }
+      return true
+    }
+    return course?.autoPublishRecording !== false
+  }, [course, lessonId])
 
   useEffect(() => {
     if (liveStarted) {
@@ -164,39 +193,21 @@ export default function GoLivePage() {
     }
   }
 
+  // Step 1 — the camera, and nothing else. getUserMedia is purely local, so
+  // the instructor sees themselves instantly even when the API is cold. No
+  // network call is involved and the Go Live button is released as soon as
+  // the camera attempt settles.
   useEffect(() => {
     let cancelled = false
-
-    const warmUpServer = async () => {
-      // A state-free GET: it never marks the course live, it only wakes the
-      // backend and pre-validates access so the later POST /live/start is fast.
-      try {
-        // The token itself is only a warm-up (the real one is issued by
-        // POST /live/start for the final channel) — what matters here is that
-        // the request wakes a cold API so the actual start is fast.
-        await get(`/live/token/${courseId}`)
-      } catch (e: any) {
-        const status = e?.response?.status
-        if (!cancelled && status === 403) {
-          setPrepNote(isAr
-            ? 'انتهى البث المباشر لهذه الجلسة مسبقاً'
-            : 'This live session has already ended')
-        }
-        // Warming is best-effort — the start flow re-issues the request.
-      } finally {
-        if (!cancelled) setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
-      }
-    }
 
     ;(async () => {
       setPrepStage('camera')
       setCameraReady(false)
-      await startPreview() // 1) local camera FIRST — no API call involved
+      await startPreview()
       if (cancelled) { stopPreview(); return }
       setCameraReady(true)
-      setPrepStage('server') // 2) camera is visible now, touch the API in the background
-      await warmUpServer()
-      if (cancelled) stopPreview()
+      // Only move forward: the warm-up may already have finished.
+      setPrepStage(prev => (prev === 'camera' ? 'server' : prev))
     })()
 
     return () => {
@@ -205,6 +216,44 @@ export default function GoLivePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
+
+  // Step 2 — the server warm-up, in the background. It never blocks the
+  // preview and never blocks the Go Live button: a failure only produces a
+  // retry button, the start flow re-issues the request anyway.
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      setServerState('connecting')
+      setServerError('')
+      try {
+        // The token itself is only a warm-up (the real one is issued by
+        // POST /live/start for the final channel) — what matters here is that
+        // the request wakes a cold API so the actual start is fast.
+        await get(`/live/token/${courseId}`)
+        if (cancelled) return
+        setServerState('ready')
+        setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
+      } catch (e: any) {
+        if (cancelled) return
+        const status = e?.response?.status
+        setServerState('failed')
+        setServerError(
+          status === 403
+            ? (isAr
+                ? 'انتهى البث المباشر لهذه الجلسة مسبقاً'
+                : 'This live session has already ended')
+            : (isAr
+                ? 'تعذر الاتصال بالخادم — يمكنك إعادة المحاولة'
+                : 'Could not reach the server — you can retry'),
+        )
+        setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
+      }
+    })()
+
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId, warmUpAttempt])
 
   // Announce the live start on the SHARED socket (the one useLiveSocket owns).
   // The hook connects it as soon as `liveStarted` becomes true and joins the
@@ -224,16 +273,19 @@ export default function GoLivePage() {
     ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
     : !cameraReady
       ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
-      : (isAr ? 'ابدأ البث المباشر' : 'Go Live')
+      : (isAr ? 'ابدأ البث' : 'Go Live')
 
   // Small status line under the video so the instructor always knows what the
   // page is doing, without the camera preview being covered by an overlay.
-  const prepStatus = !cameraReady
-    ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
-    : prepStage === 'server' || prepStage === 'connecting'
-      ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
-      : (isAr ? 'جاهز للبدء' : 'Ready to go live')
-  const prepStatusDone = cameraReady && prepStage === 'ready'
+  //   "جارٍ تحضير الكاميرا..." → "جارٍ الاتصال بالخادم..." → "جاهز للبث"
+  const prepStatus = starting
+    ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+    : !cameraReady
+      ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
+      : serverState === 'connecting'
+        ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+        : (isAr ? 'جاهز للبث' : 'Ready to go live')
+  const prepStatusDone = cameraReady && serverState === 'ready'
 
   const handleStartLive = async () => {
     setStarting(true)
@@ -294,6 +346,7 @@ export default function GoLivePage() {
       // sockets in the same room meant the room was registered twice.
       setLiveStarted(true)
       setPendingStart({ channelName: data.channelName, appId: data.appId })
+      setServerState('ready')
 
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
@@ -304,6 +357,7 @@ export default function GoLivePage() {
       clientRef.current = null
       void startPreview()
       setPrepStage('ready')
+      setServerState('ready')
     } finally {
       setStarting(false)
       setPrepStage(prev => (prev === 'connecting' ? 'ready' : prev))
@@ -410,7 +464,18 @@ export default function GoLivePage() {
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
       await post(`/live/end/${courseId}`, {})
-      toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
+      if (recordingRequested) {
+        // Agora Cloud Recording is not integrated yet, so no recording file was
+        // produced. Say so plainly instead of implying a recording exists.
+        toast(
+          isAr
+            ? 'انتهى البث — ميزة حفظ التسجيل قيد التطوير وستُفعَّل قريباً'
+            : 'Stream ended — saving the recording is still in development and will be enabled soon',
+          { icon: '🎥' },
+        )
+      } else {
+        toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
+      }
       router.push(`/${locale}/dashboard/my-courses`)
     } catch(e: any) {
       toast.error(e.message || 'Error')
@@ -731,6 +796,20 @@ export default function GoLivePage() {
             {prepNote && (
               <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: 12, lineHeight: 1.6 }}>
                 {prepNote}
+              </div>
+            )}
+
+            {/* The background server warm-up failed — offer a retry instead of
+                leaving the instructor with a dead page. */}
+            {serverState === 'failed' && serverError && (
+              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.3)', color: '#fca5a5', fontSize: 12, lineHeight: 1.6, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ flex: 1, minWidth: 160 }}>{serverError}</span>
+                <button
+                  onClick={() => setWarmUpAttempt(a => a + 1)}
+                  style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(220,38,38,0.2)', border: '1px solid rgba(220,38,38,0.4)', color: '#fecaca', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
+                >
+                  {isAr ? 'إعادة المحاولة' : 'Retry'}
+                </button>
               </div>
             )}
 

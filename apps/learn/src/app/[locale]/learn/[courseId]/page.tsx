@@ -682,6 +682,20 @@ function MetaItem({
 		let cancelled = false
 		let socket: any = null
 
+		// Named handlers: the cleanup below detaches them with the SAME
+		// reference it attached them with — `socket.off` only removes a
+		// listener when the reference matches.
+		const invalidate = () => {
+			qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
+		}
+		const handleConnect = () => {
+			socket?.emit('join-room', { courseId, userName: '', role: 'viewer' })
+		}
+		const handleDisconnect = () => {
+			// Nothing to do here: the course query is refreshed by the
+			// stream events below.
+		}
+
 		const connectSocket = async () => {
 			try {
 				const { io } = await import('socket.io-client')
@@ -693,32 +707,13 @@ function MetaItem({
 					reconnectionDelay: 1000,
 				})
 
-				socket.on('connect', () => {
-					socket.emit('join-room', { courseId, userName: '', role: 'viewer' })
-				})
-
-				socket.on('stream-started', (data: any) => {
-					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
-				})
-
-				socket.on('live-started', (data: any) => {
-					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
-				})
-
-				socket.on('liveStarted', (data: any) => {
-					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
-				})
-
-				socket.on('lesson-live', (data: any) => {
-					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
-				})
-
-				socket.on('stream-ended', (data: any) => {
-					qc.invalidateQueries({ queryKey: ['learn-course', courseId] })
-				})
-
-				socket.on('disconnect', () => {
-				})
+				socket.on('connect', handleConnect)
+				socket.on('stream-started', invalidate)
+				socket.on('live-started', invalidate)
+				socket.on('liveStarted', invalidate)
+				socket.on('lesson-live', invalidate)
+				socket.on('stream-ended', invalidate)
+				socket.on('disconnect', handleDisconnect)
 			} catch (e) {
 				console.error('[LearnSocket] Socket error:', e)
 			}
@@ -729,6 +724,13 @@ function MetaItem({
 		return () => {
 			cancelled = true
 			if (socket) {
+				socket.off('connect', handleConnect)
+				socket.off('stream-started', invalidate)
+				socket.off('live-started', invalidate)
+				socket.off('liveStarted', invalidate)
+				socket.off('lesson-live', invalidate)
+				socket.off('stream-ended', invalidate)
+				socket.off('disconnect', handleDisconnect)
 				socket.emit('leave-room', { courseId })
 				socket.disconnect()
 			}

@@ -1,3 +1,34 @@
+/**
+ * Timezone-aware formatters.
+ *
+ * Two rules every date/time display follows:
+ *
+ * 1. Force the Gregorian calendar. `toLocaleDateString('ar')` / `'ar-SA'`
+ *    resolve to the Islamic (Hijri) calendar in most browsers, so a schedule
+ *    shown to an instructor/student was in the wrong calendar. The locale is
+ *    pinned to `ar-EG-u-ca-gregory` / `en-US-u-ca-gregory` so it can never fall
+ *    back to the Hijri calendar.
+ *
+ * 2. Render in the browser's own timezone. The values are stored as UTC
+ *    instants, so the only correct wall-clock time for a viewer is the one in
+ *    their timezone. `Intl.DateTimeFormat().resolvedOptions().timeZone` is the
+ *    browser's zone — a student abroad sees their local time, an instructor in
+ *    Cairo sees Cairo time. Hardcoding a single zone would shift every date
+ *    for everyone else.
+ */
+
+/**
+ * The browser's own timezone. Falls back to 'UTC' when the runtime does not
+ * expose one (some server/embedded engines return undefined).
+ */
+export function browserTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+  } catch {
+    return 'UTC'
+  }
+}
+
 export function localDateTimeToISO(date: string, time: string): string {
   const [year, month, day] = date.split('-').map(Number)
   const [hours, minutes] = time.split(':').map(Number)
@@ -10,21 +41,21 @@ export function formatDate(date: string | Date, locale = 'en'): string {
   return d.toLocaleDateString(loc, {
     year: 'numeric', month: 'long', day: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
-    timeZone: 'Africa/Cairo', calendar: 'gregory',
+    timeZone: browserTimeZone(), calendar: 'gregory',
   })
 }
 
 export function formatTimeOnly(date: string | Date, locale = 'en'): string {
   return new Date(date).toLocaleTimeString(
     locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
-    { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Cairo', calendar: 'gregory' }
+    { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: browserTimeZone(), calendar: 'gregory' }
   )
 }
 
 export function formatDateOnly(date: string | Date, locale = 'en'): string {
   return new Date(date).toLocaleDateString(
     locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
-    { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Cairo', calendar: 'gregory' }
+    { year: 'numeric', month: 'long', day: 'numeric', timeZone: browserTimeZone(), calendar: 'gregory' }
   )
 }
 

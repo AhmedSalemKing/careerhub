@@ -333,7 +333,9 @@ export default function MyCoursesPage() {
 												border: '1px solid rgba(239,68,68,0.4)',
 												color: '#f87171',
 											}}>
-												{isAr ? 'بث مباشر' : 'Live'}
+												{course.liveStatus === 'ended'
+													? (isAr ? 'انتهى البث' : 'Ended')
+													: (isAr ? 'بث مباشر' : 'Live')}
 											</div>
 										)}
 

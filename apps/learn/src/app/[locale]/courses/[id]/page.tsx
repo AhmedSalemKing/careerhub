@@ -398,6 +398,13 @@ export default function CourseDetailPage({
 		: t("instructor");
 	const sections = course.sections ?? course.modules ?? [];
 	const allLessonsFlat = sections.flatMap((section: any) => section.lessons || []);
+	// A recorded lesson of this live session — the recording pipeline creates
+	// one once it ships. The guest preview payload does not carry the video
+	// URL, so the player only appears for people who can access the content.
+	const recordedLesson =
+		isLive && liveEnded
+			? (allLessonsFlat.find((l: any) => l?.videoUrl) ?? null)
+			: null;
 	const totalLessons = allLessonsFlat.length;
 	const completedCount = completedLessonIds.length;
 	const completedLessons = completedCount || Math.round((courseProgress / 100) * totalLessons);
@@ -1207,6 +1214,78 @@ export default function CourseDetailPage({
 														: (isAr ? `يبدأ البث بعد ${liveCountdown.minutes} دقيقة` : `Live starts in ${liveCountdown.minutes}m`)
 												: (isAr ? "البث مجدول" : "Live session scheduled")}
 										</button>
+									) : isLive && liveEnded ? (
+										<div className="space-y-3">
+											{/* The stream is over: the "join" button does NOT exist here — it
+											    belongs to the LIVE state only. What is shown instead is the
+											    recorded session (when a recording lesson exists) and an
+											    honest note. */}
+											<div
+												className="flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base"
+												style={{
+													background: "rgba(148,163,184,0.10)",
+													border: "1px solid rgba(148,163,184,0.28)",
+													color: textSecondary,
+												}}>
+											<Radio size={22} strokeWidth={2.5} />
+											{isAr ? "انتهى البث" : "Stream ended"}
+											</div>
+
+											{recordedLesson && (
+											<div
+												className="rounded-xl overflow-hidden"
+												style={{
+													border: `1px solid ${borderColor}`,
+													background: "#000",
+												}}>
+											<video
+												src={getMediaUrl(recordedLesson.videoUrl) ?? undefined}
+												controls
+												playsInline
+												className="w-full"
+												style={{ aspectRatio: "16/9", display: "block" }}
+											/>
+											<div
+												className="px-3 py-2 text-xs font-medium"
+												style={{
+													color: textPrimary,
+													background: cardBg,
+												}}>
+											{recordedLesson.title ||
+												recordedLesson.titleAr ||
+												recordedLesson.titleEn ||
+												(isAr ? "تسجيل البث المباشر" : "Live session recording")}
+											</div>
+											</div>
+											)}
+
+											{!recordedLesson && (
+											<div
+												className="flex items-start gap-2 p-3 rounded-xl text-xs leading-relaxed"
+												style={{
+													background: "rgba(148,163,184,0.08)",
+													border: "1px solid rgba(148,163,184,0.2)",
+													color: textSecondary,
+												}}>
+												<Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+												<span>
+													{isAr
+														? "انتهى البث المباشر. التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً"
+														: "The live stream has ended. Auto-recording is not available yet — it will be added soon."}
+												</span>
+											</div>
+											)}
+
+											<button
+												onClick={() => navigateToLearn()}
+												className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm text-white transition-all"
+												style={{
+													background: "linear-gradient(135deg, #5120c8, #7c3aed)",
+												}}>
+											<PlayCircle size={18} strokeWidth={2.5} />
+											{isAr ? "عرض محتوى الكورس" : "View course content"}
+											</button>
+										</div>
 									) : (
 										<button
 											onClick={() => (isLive && liveNow) ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}
@@ -1222,22 +1301,10 @@ export default function CourseDetailPage({
 													: "0 4px 24px rgba(22,163,74,0.35)",
 											}}>
 											{isLive ? (
-												liveNow ? (
-													<>
-														<Radio size={22} strokeWidth={2.5} />
-														{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
-													</>
-												) : liveEnded ? (
-													<>
-														<PlayCircle size={22} strokeWidth={2.5} />
-														{isAr ? "انتهى البث — اذهب للمحتوى" : "Stream ended — go to content"}
-													</>
-												) : (
-													<>
-														<Radio size={22} strokeWidth={2.5} />
-														{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
-													</>
-												)
+												<>
+													<Radio size={22} strokeWidth={2.5} />
+													{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
+												</>
 											) : isOffline ? (
 											<>
 												<MapPin size={22} strokeWidth={2.5} />
@@ -1261,25 +1328,6 @@ export default function CourseDetailPage({
 										</span>
 									</div>
 
-									{/* The stream is over: no join button, and an honest note that
-									    no recording file was produced (Agora Cloud Recording is
-									    not integrated yet). */}
-									{isLive && liveEnded && (
-										<div
-											className="flex items-start gap-2 mt-3 p-3 rounded-xl text-xs leading-relaxed"
-											style={{
-												background: "rgba(148,163,184,0.08)",
-												border: "1px solid rgba(148,163,184,0.2)",
-												color: textSecondary,
-											}}>
-											<Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-											<span>
-												{isAr
-													? "انتهى البث المباشر. التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً"
-													: "The live stream has ended. Auto-recording is not available yet — it will be added soon."}
-											</span>
-										</div>
-									)}
 
 									{/* Progress Tracker & Certificate Button */}
 									<div

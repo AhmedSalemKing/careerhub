@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { SOCKET_URL } from '../lib/constants'
 
+const MAX_COMMENTS = 100
+const MAX_QUESTIONS = 50
+
 export function useLiveSocket(
   courseId: string,
   userName: string,
@@ -8,18 +11,115 @@ export function useLiveSocket(
   avatar = ''
 ) {
   const socketRef = useRef<any>(null)
-  // The display name can arrive late (after the auth sync). Keeping it in a ref
-  // lets the socket join the room with the final name without recreating the
-  // connection — recreating it is what used to leave an orphaned socket behind
-  // and made every comment appear twice.
+
+  // The identity can arrive late (after the auth sync) and the socket must
+  // NOT be recreated for it: recreating it re-registers every listener and can
+  // leave an orphaned socket behind — which is what made every comment appear
+  // twice. The values therefore live in refs and are read at emit time.
   const userNameRef = useRef(userName)
   userNameRef.current = userName
+  const roleRef = useRef(role)
+  roleRef.current = role
+  const avatarRef = useRef(avatar)
+  avatarRef.current = avatar
+  const courseIdRef = useRef(courseId)
+  courseIdRef.current = courseId
+
+  // Ids of the comments/questions that were already rendered. The Set makes
+  // the dedupe O(1) and independent of the currently rendered window.
+  const seenCommentIdsRef = useRef<Set<string>>(new Set())
+  const seenQuestionIdsRef = useRef<Set<string>>(new Set())
+
   const [connected, setConnected] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
   const [comments, setComments] = useState<any[]>([])
   const [questions, setQuestions] = useState<any[]>([])
   const [streamStarted, setStreamStarted] = useState(false)
   const [streamEnded, setStreamEnded] = useState(false)
+
+  // ── Socket handlers ─────────────────────────────────────────────────────
+  // Every handler is a stable useCallback, so the effect below can detach the
+  // exact same function reference it attached — `socket.off(event, fn)` only
+  // removes a listener when the reference matches.
+  const handleConnect = useCallback(() => {
+    setConnected(true)
+    socketRef.current?.emit('join-room', {
+      courseId: courseIdRef.current,
+      userName: userNameRef.current,
+      role: roleRef.current,
+      avatar: avatarRef.current,
+    })
+  }, [])
+
+  const handleDisconnect = useCallback(() => {
+    setConnected(false)
+  }, [])
+
+  const handleViewerCount = useCallback(({ count }: { count: number }) => {
+    setViewerCount(typeof count === 'number' ? count : 0)
+  }, [])
+
+  const handleNewComment = useCallback((comment: any) => {
+    if (!comment) return
+    const id = typeof comment.id === 'string' ? comment.id : null
+    if (id) {
+      const seen = seenCommentIdsRef.current
+      // Already rendered → skip. This is what guarantees a comment is shown
+      // EXACTLY once even when the server delivers it twice.
+      if (seen.has(id)) return
+      seen.add(id)
+    }
+    setComments(prev => {
+      const next = [...prev, comment].slice(-MAX_COMMENTS)
+      // The window trimmed: drop the ids that scrolled out so the set cannot
+      // grow without bound.
+      if (prev.length >= MAX_COMMENTS) {
+        seenCommentIdsRef.current = new Set(next.map(c => c?.id).filter(Boolean))
+      }
+      return next
+    })
+  }, [])
+
+  const handleNewQuestion = useCallback((question: any) => {
+    if (!question) return
+    const id = typeof question.id === 'string' ? question.id : null
+    if (id) {
+      const seen = seenQuestionIdsRef.current
+      if (seen.has(id)) return
+      seen.add(id)
+    }
+    setQuestions(prev => {
+      const next = [question, ...prev].slice(0, MAX_QUESTIONS)
+      if (prev.length >= MAX_QUESTIONS) {
+        seenQuestionIdsRef.current = new Set(next.map(q => q?.id).filter(Boolean))
+      }
+      return next
+    })
+  }, [])
+
+  const handleQuestionApproved = useCallback(({ questionId }: any) => {
+    setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, approved: true } : q))
+  }, [])
+
+  const handleQuestionAnswered = useCallback(({ questionId }: any) => {
+    setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, answered: true } : q))
+  }, [])
+
+  const handleQuestionDismissed = useCallback(({ questionId }: any) => {
+    setQuestions(prev => prev.filter(q => q.id !== questionId))
+  }, [])
+
+  // Viewers get notified when the instructor starts
+  const handleStreamStarted = useCallback(() => {
+    setStreamStarted(true)
+    setStreamEnded(false)
+  }, [])
+
+  // Everyone gets notified when the stream ends
+  const handleStreamEnded = useCallback(() => {
+    setStreamEnded(true)
+    setStreamStarted(false)
+  }, [])
 
   useEffect(() => {
     if (!courseId) return
@@ -43,78 +143,60 @@ export function useLiveSocket(
       })
       socketRef.current = socket
 
-      socket.on('connect', () => {
-        setConnected(true)
-        socket.emit('join-room', { courseId, userName: userNameRef.current, role, avatar })
-      })
-
-      socket.on('disconnect', () => {
-        setConnected(false)
-      })
-
-      socket.on('viewer-count', ({ count }: { count: number }) => {
-        setViewerCount(count)
-      })
-
-      socket.on('new-comment', (comment: any) => {
-        // Guard against the same comment being delivered twice (e.g. a
-        // duplicated socket or a server retry): a comment is identified by its
-        // id, so an id that is already in the list is ignored.
-        setComments(prev => {
-          if (comment?.id && prev.some(c => c?.id === comment.id)) return prev
-          return [...prev, comment].slice(-100)
-        })
-      })
-
-      socket.on('new-question', (question: any) => {
-        setQuestions(prev => {
-          if (question?.id && prev.some(q => q?.id === question.id)) return prev
-          return [question, ...prev].slice(0, 50)
-        })
-      })
-
-      socket.on('question-approved', ({ questionId }: any) => {
-        setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, approved: true } : q))
-      })
-
-      socket.on('question-answered', ({ questionId }: any) => {
-        setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, answered: true } : q))
-      })
-
-      socket.on('question-dismissed', ({ questionId }: any) => {
-        setQuestions(prev => prev.filter(q => q.id !== questionId))
-      })
-
-      // Viewers get notified when instructor starts
-      socket.on('stream-started', (data: any) => {
-        setStreamStarted(true)
-        setStreamEnded(false)
-      })
-
-      // Everyone gets notified when stream ends
-      socket.on('stream-ended', (data: any) => {
-        setStreamEnded(true)
-        setStreamStarted(false)
-      })
+      // Each event is subscribed EXACTLY ONCE, with a stable handler
+      // reference. No other page/component subscribes to these events for the
+      // same session.
+      socket.on('connect', handleConnect)
+      socket.on('disconnect', handleDisconnect)
+      socket.on('viewer-count', handleViewerCount)
+      socket.on('new-comment', handleNewComment)
+      socket.on('new-question', handleNewQuestion)
+      socket.on('question-approved', handleQuestionApproved)
+      socket.on('question-answered', handleQuestionAnswered)
+      socket.on('question-dismissed', handleQuestionDismissed)
+      socket.on('stream-started', handleStreamStarted)
+      socket.on('stream-ended', handleStreamEnded)
     }
 
     connect()
 
     return () => {
       cancelled = true
+      const own = socket
+      if (own) {
+        // Detach every listener with the SAME reference used to attach it.
+        own.off('connect', handleConnect)
+        own.off('disconnect', handleDisconnect)
+        own.off('viewer-count', handleViewerCount)
+        own.off('new-comment', handleNewComment)
+        own.off('new-question', handleNewQuestion)
+        own.off('question-approved', handleQuestionApproved)
+        own.off('question-answered', handleQuestionAnswered)
+        own.off('question-dismissed', handleQuestionDismissed)
+        own.off('stream-started', handleStreamStarted)
+        own.off('stream-ended', handleStreamEnded)
+        try { own.emit('leave-room', { courseId }) } catch {}
+        own.disconnect()
+      }
+      socket = null
       // Only clear the shared ref if it still points at THIS effect's socket —
       // a newer effect run may already own it.
-      if (socketRef.current === socket) socketRef.current = null
-      if (socket) {
-        try { socket.emit('leave-room', { courseId }) } catch {}
-        socket.disconnect()
-        socket = null
-      }
+      if (socketRef.current === own) socketRef.current = null
     }
-    // `userName` is intentionally NOT a dependency: the socket (and therefore
-    // every listener) is created exactly once per course/role. The display
-    // name is refreshed through the effect below.
-  }, [courseId, role])
+  }, [
+    courseId,
+    role,
+    handleConnect,
+    handleDisconnect,
+    handleViewerCount,
+    handleNewComment,
+    handleNewQuestion,
+    handleQuestionApproved,
+    handleQuestionAnswered,
+    handleQuestionDismissed,
+    handleStreamStarted,
+    handleStreamEnded,
+  ])
 
   // When the display name arrives (after the auth sync) re-join the room with
   // it instead of reconnecting — reconnecting would re-register every listener.

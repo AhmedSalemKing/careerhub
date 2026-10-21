@@ -9,15 +9,20 @@
  *    pinned to `ar-EG-u-ca-gregory` / `en-US-u-ca-gregory` so it can never fall
  *    back to the Hijri calendar.
  *
- * 2. Force the timezone. The schedule is stored as a UTC instant and the app is
- *    used across the world (the API host runs in UTC). Rendering with the
- *    browser's ambient timezone shifted the wall-clock time by up to 3 hours
- *    (Egypt is UTC+3 during DST). Live dates are therefore always rendered in
- *    `Africa/Cairo`, the platform's canonical schedule timezone, which is also
- *    what the backend uses when it parses the value the instructor typed.
+ * 2. Render in the browser's own timezone. The schedule is stored as a UTC
+ *    instant, so the only correct wall-clock time for a viewer is the one in
+ *    their own timezone — the platform is Arabic but students are not all in
+ *    the same country. `Intl.DateTimeFormat().resolvedOptions().timeZone` is
+ *    the browser's zone; hardcoding one zone would shift every date for
+ *    everybody else.
+ *
+ * The wall-clock time the instructor TYPES is resolved server-side against
+ * Africa/Cairo (the platform's canonical schedule timezone) so the stored
+ * instant matches what was chosen; from that instant on, every client renders
+ * it in its own timezone.
  */
 
-export const LIVE_TIME_ZONE = 'Africa/Cairo'
+import { browserTimeZone } from './time'
 
 const AR_LOCALE = 'ar-EG-u-ca-gregory'
 const EN_LOCALE = 'en-US-u-ca-gregory'
@@ -50,7 +55,7 @@ export function isLiveStatus(status: unknown, expected: 'scheduled' | 'live' | '
 }
 
 function opts(locale: string, extra: Intl.DateTimeFormatOptions = {}): Intl.DateTimeFormatOptions {
-  return { ...extra, timeZone: LIVE_TIME_ZONE, calendar: 'gregory' }
+  return { ...extra, timeZone: browserTimeZone(), calendar: 'gregory' }
 }
 
 function localeOf(locale?: string): string {
@@ -63,7 +68,7 @@ function toDate(value: string | number | Date | null | undefined): Date | null {
   return isNaN(d.getTime()) ? null : d
 }
 
-/** "الأربعاء، 21 أكتوبر 2026 20:00" — full schedule date + time (Cairo). */
+/** "الأربعاء، 21 أكتوبر 2026 20:00" — full schedule date + time. */
 export function formatLiveDateTime(value: string | number | Date | null | undefined, locale = 'en'): string {
   const d = toDate(value)
   if (!d) return '—'
@@ -78,7 +83,7 @@ export function formatLiveDateTime(value: string | number | Date | null | undefi
   }))
 }
 
-/** "الأربعاء، 21 أكتوبر 2026" — date only (Cairo, Gregorian). */
+/** "الأربعاء، 21 أكتوبر 2026" — date only. */
 export function formatLiveDate(value: string | number | Date | null | undefined, locale = 'en'): string {
   const d = toDate(value)
   if (!d) return '—'
@@ -90,7 +95,7 @@ export function formatLiveDate(value: string | number | Date | null | undefined,
   }))
 }
 
-/** "21 أكتوبر 2026" — compact date (Cairo, Gregorian). */
+/** "21 أكتوبر 2026" — compact date. */
 export function formatLiveDateShort(value: string | number | Date | null | undefined, locale = 'en'): string {
   const d = toDate(value)
   if (!d) return '—'
@@ -101,7 +106,7 @@ export function formatLiveDateShort(value: string | number | Date | null | undef
   }))
 }
 
-/** "08:00 م" — wall-clock time of the session (Cairo). */
+/** "08:00 م" — wall-clock time of the session. */
 export function formatLiveTime(value: string | number | Date | null | undefined, locale = 'en'): string {
   const d = toDate(value)
   if (!d) return '—'
