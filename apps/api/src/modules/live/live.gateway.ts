@@ -28,12 +28,26 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const room = this.rooms.get(meta.courseId)
       if (room) {
         room.delete(client.id)
-        const count = room.size
+        const count = this.countViewers(meta.courseId)
         this.server.to(meta.courseId).emit('viewer-count', { count })
         console.log(`[Gateway] ${client.id} left ${meta.courseId}, viewers: ${count}`)
       }
     }
     this.socketMeta.delete(client.id)
+  }
+
+  // Number of actual audience members in a room. The instructor (role
+  // 'instructor') is excluded so the badge never counts the broadcaster as a
+  // viewer, and only sockets that joined the room are counted (not page opens
+  // that never established a session).
+  private countViewers(courseId: string): number {
+    const room = this.rooms.get(courseId)
+    if (!room) return 0
+    let count = 0
+    for (const socketId of room) {
+      if (this.socketMeta.get(socketId)?.role !== 'instructor') count++
+    }
+    return count
   }
 
   @SubscribeMessage('join-room')
@@ -56,7 +70,7 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!this.rooms.has(courseId)) this.rooms.set(courseId, new Set())
     this.rooms.get(courseId)!.add(client.id)
 
-    const count = this.rooms.get(courseId)!.size
+    const count = this.countViewers(courseId)
     // Broadcast updated count to ALL in room
     this.server.to(courseId).emit('viewer-count', { count })
 
@@ -73,7 +87,7 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(data.courseId)
     this.rooms.get(data.courseId)?.delete(client.id)
     this.socketMeta.delete(client.id)
-    const count = this.rooms.get(data.courseId)?.size || 0
+    const count = this.countViewers(data.courseId)
     this.server.to(data.courseId).emit('viewer-count', { count })
     return { event: 'left', data: { count } }
   }

@@ -68,6 +68,9 @@ export default function LiveViewerPage() {
   const joiningRef = useRef(false)
   // True only once the video track is actually playing (we're watching).
   const watchingRef = useRef(false)
+  // Last Agora-connected viewer count read from the API (Course.liveViewerCount),
+  // used so the socket room size can never override it with an inflated number.
+  const dbViewerCountRef = useRef(0)
 
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
@@ -148,11 +151,21 @@ export default function LiveViewerPage() {
     try {
       const courseRes = await fetch(`${API}/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(8000),
+        // The status must never be served from cache: the instructor can go live
+        // at any moment and a stale "scheduled" response would leave the student
+        // stuck on "البث لم يبدأ بعد".
+        cache: 'no-store'
       })
       if (!courseRes.ok) throw new Error('Course not found')
       const courseData = await courseRes.json()
-      const course = courseData?.data || courseData
+      // The API wraps the payload as { success, data: { course } }, so unwrap
+      // both layers. Falling back to courseData.data / courseData keeps this
+      // compatible with any response shape that returns the course directly.
+      const course =
+        courseData?.data?.course ||
+        courseData?.data ||
+        courseData
 
       if (course?.liveStatus === 'ended' || course?.liveStatus === 'ENDED') {
         clearTimeout(loadingTimeoutRef.current)
@@ -164,6 +177,15 @@ export default function LiveViewerPage() {
 
       const isEnrolled = course?.isEnrolled === true
       const price = parseFloat(course?.price || '0')
+
+      // The authoritative "watching now" number is Course.liveViewerCount, which
+      // the students themselves increment/decrement on a successful Agora join
+      // (see PATCH /live/viewers/:courseId). Prefer it over the socket room size,
+      // which also counts the instructor and idle page opens.
+      if (typeof course?.liveViewerCount === 'number') {
+        dbViewerCountRef.current = course.liveViewerCount
+        setViewerCount(course.liveViewerCount)
+      }
 
       if (!isEnrolled && price > 0) {
         const payRes = await fetch(`${API}/payments/checkout/course/${courseId}`, {
@@ -222,7 +244,8 @@ export default function LiveViewerPage() {
         try {
           const liveLessonsRes = await fetch(`${API}/courses/${courseId}/live-lessons`, {
             headers: { Authorization: `Bearer ${userToken}` },
-            signal: AbortSignal.timeout(6000)
+            signal: AbortSignal.timeout(6000),
+            cache: 'no-store'
           })
           if (liveLessonsRes.ok) {
             const lld = await liveLessonsRes.json()
@@ -280,7 +303,8 @@ export default function LiveViewerPage() {
         : `${API}/live/token/${courseId}`
       const tokenRes = await fetch(tokenEndpoint, {
         headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000)
+        signal: AbortSignal.timeout(8000),
+        cache: 'no-store'
       })
 
       if (tokenRes.status === 403) {
@@ -537,8 +561,14 @@ export default function LiveViewerPage() {
   }, [socketComments])
 
   useEffect(() => {
-    if (socketViewerCount > 0) {
+    // The socket room size is only a hint. The Agora-accurate number is
+    // Course.liveViewerCount (dbViewerCountRef), so never let the socket count
+    // drive the badge higher than the real figure; and never drop to 0 just
+    // because the room momentarily reports nobody.
+    if (socketViewerCount > 0 && socketViewerCount > dbViewerCountRef.current) {
       setViewerCount(socketViewerCount)
+    } else if (dbViewerCountRef.current > 0) {
+      setViewerCount(dbViewerCountRef.current)
     }
   }, [socketViewerCount])
 
