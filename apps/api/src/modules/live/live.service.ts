@@ -4,6 +4,15 @@ import { AgoraService } from './agora.service'
 
 @Injectable()
 export class LiveService {
+  /**
+   * Agora Cloud Recording is NOT integrated: there is no call that starts a
+   * cloud recording, none that stops it and none that reads the resulting
+   * m3u8/mp4 URL, so no recording file can ever be produced by a live session.
+   * Until that integration exists the API (and the UI) must say so plainly
+   * instead of promising a recording that will never appear.
+   */
+  readonly recordingSupported = false;
+
   constructor(
     private prisma: PrismaService,
     private agora: AgoraService,
@@ -107,6 +116,12 @@ export class LiveService {
 
     await this.prisma.course.update({ where: { id: courseId }, data: updateData })
 
+    // Agora Cloud Recording is not integrated (see `recordingSupported`), so
+    // there is no URL to retrieve and no Lesson to create from a recording.
+    // Never tell students a recording exists when one was never produced —
+    // the pending autoPublishRecording flag is intentionally ignored here.
+    const recordingAvailable = false
+
     const enrollments = await this.prisma.enrollment.findMany({
       where: { courseId },
       select: { userId: true }
@@ -118,15 +133,24 @@ export class LiveService {
           userId: e.userId,
           titleEn: 'Live Stream Ended',
           titleAr: 'انتهى البث المباشر',
-          contentEn: `${course.titleEn} - ${course.autoPublishRecording ? 'Recording is now available' : 'Thank you for joining'}`,
-          contentAr: `${course.titleAr || course.titleEn} - ${course.autoPublishRecording ? 'التسجيل متاح الآن' : 'شكراً لمشاركتك'}`,
+          contentEn: `${course.titleEn} - Thank you for joining`,
+          contentAr: `${course.titleAr || course.titleEn} - شكراً لمشاركتك`,
           type: 'LIVE_ENDED',
           isRead: false,
         }
       }).catch(() => {})
     }
 
-    return { success: true, data: { autoDelete: course.autoDeleteAfterLive, autoPublish: course.autoPublishRecording } }
+    return {
+      success: true,
+      data: {
+        autoDelete: course.autoDeleteAfterLive,
+        recordingSupported: this.recordingSupported,
+        recordingAvailable,
+        messageAr: 'التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً',
+        messageEn: 'Auto-recording is not available yet — it will be added soon',
+      },
+    }
   }
 
   async getLiveCourses(status?: string) {

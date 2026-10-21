@@ -385,7 +385,7 @@ export default function WalletPage() {
                       {tx.description || (tx.type === 'TOPUP' ? (isAr ? 'شحن رصيد' : 'Top Up') : (isAr ? 'دفع مشتريات' : 'Purchase Payment'))}
                     </div>
                     <div style={{ color: textSecondary, fontSize: 12 }}>
-                      {new Date(tx.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(tx.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
                   <div style={{

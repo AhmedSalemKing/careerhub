@@ -451,7 +451,7 @@ export default function AdminOverviewPage() {
 											className="hidden sm:block text-[10px]"
 											style={{ color: "var(--muted)" }}>
 											{new Date(u.createdAt).toLocaleDateString(
-												isAr ? "ar-SA" : "en-US",
+												isAr ? "ar-EG-u-ca-gregory" : "en-US",
 											)}
 										</span>
 									</div>

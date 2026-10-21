@@ -6,24 +6,25 @@ export function localDateTimeToISO(date: string, time: string): string {
 
 export function formatDate(date: string | Date, locale = 'en'): string {
   const d = new Date(date)
-  const loc = locale === 'ar' ? 'ar-EG' : 'en-US'
+  const loc = locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory'
   return d.toLocaleDateString(loc, {
     year: 'numeric', month: 'long', day: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: 'Africa/Cairo', calendar: 'gregory',
   })
 }
 
 export function formatTimeOnly(date: string | Date, locale = 'en'): string {
   return new Date(date).toLocaleTimeString(
-    locale === 'ar' ? 'ar-EG' : 'en-US',
-    { hour: 'numeric', minute: '2-digit', hour12: true }
+    locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+    { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Cairo', calendar: 'gregory' }
   )
 }
 
 export function formatDateOnly(date: string | Date, locale = 'en'): string {
   return new Date(date).toLocaleDateString(
-    locale === 'ar' ? 'ar-EG' : 'en-US',
-    { year: 'numeric', month: 'long', day: 'numeric' }
+    locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+    { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Cairo', calendar: 'gregory' }
   )
 }
 

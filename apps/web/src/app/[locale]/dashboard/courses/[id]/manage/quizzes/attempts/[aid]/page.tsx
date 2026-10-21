@@ -109,7 +109,7 @@ export default function ReviewAttemptPage() {
   }
 
   const name = `${attempt.student?.profile?.firstName ?? ''} ${attempt.student?.profile?.lastName ?? ''}`.trim() || attempt.student?.email || '—'
-  const startDate = attempt.startedAt ? new Date(attempt.startedAt).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+  const startDate = attempt.startedAt ? new Date(attempt.startedAt).toLocaleString('ar-EG-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
 
   const setGrade = (answerId: string, key: keyof GradeDraft, value: string) =>
     setGrades((g) => ({ ...g, [answerId]: { ...(g[answerId] ?? { manualGrade: '0', feedback: '' }), [key]: value } }))

@@ -10,6 +10,12 @@ import {
 } from 'lucide-react'
 import { get, post, patch, del } from '../../../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../../../lib/upload-error'
+import {
+  LIVE_RECORDING_SUPPORTED,
+  liveRecordingUnavailableNote,
+  isLiveStatus,
+  formatLiveDateTimeShort,
+} from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -106,9 +112,10 @@ function AddLectureModal({
   })
   
   const [lessonType, setLessonType] = useState<'VIDEO' | 'LIVE'>('VIDEO')
+  const locale = useLocale()
   const [liveDate, setLiveDate] = useState('')
   const [liveDuration, setLiveDuration] = useState(60)
-  const [saveRecording, setSaveRecording] = useState(true)
+  const [saveRecording, setSaveRecording] = useState(false)
   const [autoPublish, setAutoPublish] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -244,8 +251,10 @@ function AddLectureModal({
       if (lessonType === 'LIVE') {
         payload.liveDate = liveDate
         payload.liveDuration = liveDuration
-        payload.saveRecording = saveRecording
-        payload.autoPublish = autoPublish
+        // Cloud recording is not integrated — never send a promise of a
+        // recording the platform cannot produce.
+        payload.saveRecording = false
+        payload.autoPublish = false
       } else {
         if (form.videoUrl) payload.videoUrl = form.videoUrl
         if (form.fileUrl) {
@@ -685,24 +694,27 @@ function AddLectureModal({
                 ].map(toggle => (
                   <label key={toggle.key}
                     style={{ display: 'flex', alignItems: 'center',
-                      justifyContent: 'space-between', cursor: 'pointer' }}>
+                      justifyContent: 'space-between',
+                      cursor: LIVE_RECORDING_SUPPORTED ? 'pointer' : 'not-allowed',
+                      opacity: LIVE_RECORDING_SUPPORTED ? 1 : 0.55 }}>
                     <span style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>
                       {toggle.labelAr}
                     </span>
                     <div
-                      onClick={() => toggle.set(!toggle.value)}
+                      onClick={() => { if (LIVE_RECORDING_SUPPORTED) toggle.set(!toggle.value) }}
                       style={{
                         width: '44px', height: '24px',
                         borderRadius: '12px',
-                        background: toggle.value ? '#5120c8' : 'rgba(255,255,255,0.1)',
-                        position: 'relative', cursor: 'pointer',
+                        background: LIVE_RECORDING_SUPPORTED && toggle.value ? '#5120c8' : 'rgba(255,255,255,0.1)',
+                        position: 'relative',
+                        cursor: LIVE_RECORDING_SUPPORTED ? 'pointer' : 'not-allowed',
                         transition: 'background 0.2s',
                       }}
                     >
                       <div style={{
                         position: 'absolute',
                         top: '3px',
-                        left: toggle.value ? '22px' : '3px',
+                        left: LIVE_RECORDING_SUPPORTED && toggle.value ? '22px' : '3px',
                         width: '18px', height: '18px',
                         borderRadius: '50%', background: '#fff',
                         transition: 'left 0.2s',
@@ -710,6 +722,12 @@ function AddLectureModal({
                     </div>
                   </label>
                 ))}
+                {!LIVE_RECORDING_SUPPORTED && (
+                  <p style={{ color: 'var(--muted)', fontSize: '0.8rem',
+                    margin: 0, lineHeight: 1.6 }}>
+                    {liveRecordingUnavailableNote(locale)}
+                  </p>
+                )}
               </div>
 
               <div style={{
@@ -999,10 +1017,11 @@ export default function ManageCoursePage() {
                             }}>
                               <span style={{
                                 width: '5px', height: '5px', borderRadius: '50%',
-                                background: lesson.liveStatus === 'LIVE' ? '#ef4444' : '#f87171',
+                                background: isLiveStatus(lesson.liveStatus, 'live') ? '#ef4444' : '#f87171',
                               }}/>
-                              {lesson.liveStatus === 'LIVE' ? 'جار البث' :
-                               lesson.liveStartTime ? new Date(lesson.liveStartTime).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
+                              {isLiveStatus(lesson.liveStatus, 'live') ? 'جار البث' :
+                               isLiveStatus(lesson.liveStatus, 'ended') ? 'انتهى البث' :
+                               lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : 'بث مباشر'}
                             </span>
                           )}
                           {lesson.videoUrl && (
@@ -1128,10 +1147,11 @@ export default function ManageCoursePage() {
                               }}>
                                 <span style={{
                                   width: '5px', height: '5px', borderRadius: '50%',
-                                  background: lesson.liveStatus === 'LIVE' ? '#ef4444' : '#f87171',
+                                  background: isLiveStatus(lesson.liveStatus, 'live') ? '#ef4444' : '#f87171',
                                 }}/>
-                                {lesson.liveStatus === 'LIVE' ? 'جار البث الآن' :
-                                 lesson.liveStartTime ? new Date(lesson.liveStartTime).toLocaleString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : 'بث مباشر'}
+                                {isLiveStatus(lesson.liveStatus, 'live') ? 'جار البث الآن' :
+                                 isLiveStatus(lesson.liveStatus, 'ended') ? 'انتهى البث' :
+                                 lesson.liveStartTime ? formatLiveDateTimeShort(lesson.liveStartTime, locale) : 'بث مباشر'}
                               </span>
                             )}
                             {lesson.videoUrl && (
@@ -1155,8 +1175,8 @@ export default function ManageCoursePage() {
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
                         )}
-                        {(lesson.type === 'LIVE') && lesson.liveStatus !== 'ENDED' && (
-                          <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={lesson.liveStatus === 'LIVE'} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
+                        {(lesson.type === 'LIVE') && !isLiveStatus(lesson.liveStatus, 'ended') && (
+                          <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={isLiveStatus(lesson.liveStatus, 'live')} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
                         )}
                       </div>
                     ))}

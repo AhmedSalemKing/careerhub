@@ -280,8 +280,8 @@ export default function AdminSessionsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="text-xs" style={{ color: 'var(--foreground)' }}>
-                          <div>{date.toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { day: 'numeric', month: 'short' })}</div>
-                          <div style={{ color: 'var(--muted)' }}>{date.toLocaleTimeString(isAr ? 'ar-SA' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div>{date.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { day: 'numeric', month: 'short' })}</div>
+                          <div style={{ color: 'var(--muted)' }}>{date.toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">

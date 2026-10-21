@@ -1121,7 +1121,7 @@ function ConsultantOverview() {
                   <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', margin: 0 }}>
                     {session.scheduledAt
                       ? new Date(session.scheduledAt).toLocaleDateString(
-                          isAr ? 'ar-SA' : 'en-US',
+                          isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
                           { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
                         )
                       : (isAr ? 'تاريخ غير محدد' : 'Date TBD')}

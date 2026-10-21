@@ -89,13 +89,13 @@ export default function SchedulePage() {
                   borderRadius: 12, padding: '10px 14px', textAlign: 'center', flexShrink: 0,
                 }}>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>
-                    {date.toLocaleDateString('ar-SA', { month: 'short' })}
+                    {date.toLocaleDateString('ar-EG-u-ca-gregory', { month: 'short' })}
                   </div>
                   <div style={{ color: '#fff', fontSize: 24, fontWeight: 800, lineHeight: 1 }}>
                     {date.getDate()}
                   </div>
                   <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11 }}>
-                    {date.toLocaleDateString('ar-SA', { weekday: 'short' })}
+                    {date.toLocaleDateString('ar-EG-u-ca-gregory', { weekday: 'short' })}
                   </div>
                 </div>
                 
@@ -115,7 +115,7 @@ export default function SchedulePage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#6b7280', fontSize: 13 }}>
                       <Clock size={13}/>
-                      {date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                      {date.toLocaleTimeString('ar-EG-u-ca-gregory', { hour: '2-digit', minute: '2-digit' })}
                       {session.duration && `  ${session.duration} دقيقة`}
                     </div>
                     {session.meetingMethod && (

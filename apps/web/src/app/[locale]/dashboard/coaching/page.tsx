@@ -98,7 +98,7 @@ export default function DashboardCoachingPage() {
                   <div>
                     <p className="font-medium text-foreground text-sm">{name}</p>
                     <p className="text-xs text-[color:var(--muted)] mt-0.5">
-                      {new Date(s.scheduledAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {new Date(s.scheduledAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                       {s.topic ? ` — ${s.topic}` : ''}
                     </p>
                   </div>

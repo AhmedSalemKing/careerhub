@@ -336,7 +336,7 @@ export default function AdminUsersPage() {
                         {u.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">{new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 flex-wrap">
                         <a

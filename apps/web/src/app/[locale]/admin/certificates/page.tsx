@@ -47,7 +47,7 @@ export default function AdminCertificatesPage() {
     cert.course?.titleAr ?? cert.course?.titleEn ?? '-'
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' })
+    new Date(d).toLocaleDateString('ar-EG-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' })
 
   return (
     <AuthGate>

@@ -86,7 +86,7 @@ function formatCurrency(amount: number, isAr: boolean) {
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+  return new Date(date).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

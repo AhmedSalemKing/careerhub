@@ -11,7 +11,7 @@ import {
   Star, BookOpen, Lock, CheckCircle2, AlertCircle,
   DollarSign, Navigation
 } from 'lucide-react'
-import { formatDate, formatTimeOnly } from '../../../lib/time'
+import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
@@ -688,9 +688,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <Calendar size={12} color='var(--muted-foreground)' />
               <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
-                {formatDate(liveDate, locale)}
-                {'  '}
-                {formatTimeOnly(liveDate)}
+                {formatLiveDateTime(liveDate, locale)}
               </span>
             </div>
           )}
@@ -820,9 +818,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Calendar size={12} color='var(--muted-foreground)' />
             <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
-              {formatDate(offlineDate, locale)}
-              {'  '}
-              {formatTimeOnly(offlineDate)}
+              {formatLiveDateTime(offlineDate, locale)}
             </span>
           </div>
         )}

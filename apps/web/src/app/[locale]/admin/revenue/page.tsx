@@ -234,7 +234,7 @@ export default function AdminRevenuePage() {
                           </span>
                         </td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
+                          {new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
                         </td>
                       </tr>
                     )
@@ -304,7 +304,7 @@ export default function AdminRevenuePage() {
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{s.topic || '—'}</td>
                         <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price))}</td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(s.scheduledAt || s.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
+                          {new Date(s.scheduledAt || s.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
                         </td>
                       </tr>
                     )

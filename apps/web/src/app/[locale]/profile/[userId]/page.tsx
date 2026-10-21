@@ -87,7 +87,7 @@ export default function PublicProfilePage() {
               <a href={p.linkedinUrl} target="_blank" rel="noopener noreferrer" style={{ color:'#a78bfa', fontSize:'0.8rem', textDecoration:'none' }}>{p.linkedinUrl.replace(/https?:\/\//, '')}</a>
             )}
             <span style={{ color:'#666680', fontSize:'0.8rem' }}>
-              {isAr ? `انضم ${new Date(profile.joinedAt).toLocaleDateString('ar-SA', { year:'numeric', month:'long' })}` : `Joined ${new Date(profile.joinedAt).toLocaleDateString('en-US', { year:'numeric', month:'long' })}`}
+              {isAr ? `انضم ${new Date(profile.joinedAt).toLocaleDateString('ar-EG-u-ca-gregory', { year:'numeric', month:'long' })}` : `Joined ${new Date(profile.joinedAt).toLocaleDateString('en-US', { year:'numeric', month:'long' })}`}
             </span>
           </div>
         </div>

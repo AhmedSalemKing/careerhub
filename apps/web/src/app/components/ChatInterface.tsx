@@ -18,7 +18,9 @@ export type ChatMessage = {
 function formatArabicTime(iso: string) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat('ar-SA', { hour: '2-digit', minute: '2-digit' }).format(d)
+  // 'ar-EG-u-ca-gregory' pins the Gregorian calendar so the chat timestamps can
+  // never fall back to the Hijri calendar.
+  return new Intl.DateTimeFormat('ar-EG-u-ca-gregory', { hour: '2-digit', minute: '2-digit', calendar: 'gregory' }).format(d)
 }
 
 export function ChatInterface({
@@ -170,7 +172,7 @@ export function ChatInterface({
                       className="mt-2 text-[11px]"
                       style={{ color: isUser ? 'rgba(255,255,255,0.7)' : mutedColor }}
                     >
-                      {locale === 'ar' ? formatArabicTime(m.createdAt) : new Date(m.createdAt).toLocaleTimeString()}
+                      {locale === 'ar' ? formatArabicTime(m.createdAt) : new Date(m.createdAt).toLocaleTimeString('en-US-u-ca-gregory', { calendar: 'gregory' })}
                     </div>
                   </div>
                 </div>

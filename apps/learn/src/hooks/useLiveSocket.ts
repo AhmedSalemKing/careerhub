@@ -9,6 +9,12 @@ export function useLiveSocket(
   avatar = ''
 ) {
   const socketRef = useRef<any>(null)
+  // The display name can arrive late (after the auth sync). Keeping it in a ref
+  // lets the socket join the room with the final name without recreating the
+  // connection — recreating it is what used to leave an orphaned socket behind
+  // and made every comment appear twice.
+  const userNameRef = useRef(userName)
+  userNameRef.current = userName
   const [connected, setConnected] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
   const [comments, setComments] = useState<any[]>([])
@@ -19,10 +25,17 @@ export function useLiveSocket(
   useEffect(() => {
     if (!courseId) return
 
-    let socket: any
+    // Guard against the async connect() racing this effect's cleanup: if the
+    // effect re-runs (or unmounts) while the dynamic import is still pending,
+    // the cleanup below must still kill the socket that connect() is about to
+    // create — otherwise an orphaned socket keeps its listeners alive and
+    // every comment is appended twice.
+    let cancelled = false
+    let socket: any = null
 
     const connect = async () => {
       const { io } = await import('socket.io-client')
+      if (cancelled) return
       socket = io(`${SOCKET_URL}/live`, {
         transports: ['websocket', 'polling'],
         reconnection: true,
@@ -33,7 +46,7 @@ export function useLiveSocket(
 
       socket.on('connect', () => {
         setConnected(true)
-        socket.emit('join-room', { courseId, userName, role, avatar })
+        socket.emit('join-room', { courseId, userName: userNameRef.current, role, avatar })
       })
 
       socket.on('disconnect', () => {
@@ -45,11 +58,20 @@ export function useLiveSocket(
       })
 
       socket.on('new-comment', (comment: any) => {
-        setComments(prev => [...prev, comment].slice(-100))
+        // Guard against the same comment being delivered twice (e.g. a
+        // duplicated socket or a server retry): a comment is identified by its
+        // id, so an id that is already in the list is ignored.
+        setComments(prev => {
+          if (comment?.id && prev.some(c => c?.id === comment.id)) return prev
+          return [...prev, comment].slice(-100)
+        })
       })
 
       socket.on('new-question', (question: any) => {
-        setQuestions(prev => [question, ...prev].slice(0, 50))
+        setQuestions(prev => {
+          if (question?.id && prev.some(q => q?.id === question.id)) return prev
+          return [question, ...prev].slice(0, 50)
+        })
       })
 
       socket.on('question-approved', ({ questionId }: any) => {
@@ -80,13 +102,30 @@ export function useLiveSocket(
     connect()
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.emit('leave-room', { courseId })
-        socketRef.current.disconnect()
-        socketRef.current = null
+      cancelled = true
+      // Only clear the shared ref if it still points at THIS effect's socket —
+      // a newer effect run may already own it.
+      if (socketRef.current === socket) socketRef.current = null
+      if (socket) {
+        try { socket.emit('leave-room', { courseId }) } catch {}
+        socket.disconnect()
+        socket = null
       }
     }
-  }, [courseId, userName, role])
+    // `userName` is intentionally NOT a dependency: the socket (and therefore
+    // every listener) is created exactly once per course/role. The display
+    // name is refreshed through the effect below.
+  }, [courseId, role])
+
+  // When the display name arrives (after the auth sync) re-join the room with
+  // it instead of reconnecting — reconnecting would re-register every listener.
+  useEffect(() => {
+    const socket = socketRef.current
+    if (!socket || !courseId) return
+    if (socket.connected) {
+      socket.emit('join-room', { courseId, userName, role, avatar })
+    }
+  }, [userName, avatar, courseId, role])
 
   const sendComment = useCallback((text: string) => {
     socketRef.current?.emit('send-comment', { courseId, text, userName, avatar })

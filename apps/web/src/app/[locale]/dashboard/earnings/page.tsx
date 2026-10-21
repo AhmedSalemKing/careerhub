@@ -203,7 +203,7 @@ export default function EarningsPage() {
                     <td className="p-4 text-sm text-gray-300">{session.sessionName || '—'}</td>
                     <td className="p-4 text-center text-sm text-gray-400 max-w-[120px]">
                       {session.date
-                        ? new Date(session.date).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+                        ? new Date(session.date).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
                             year: 'numeric', month: 'short', day: 'numeric'
                           })
                         : '—'}

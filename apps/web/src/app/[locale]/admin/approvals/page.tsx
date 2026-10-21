@@ -223,7 +223,7 @@ export default function ApprovalsPage() {
                         </span>
                         <span className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
                           <Clock className="h-3 w-3" />
-                          {new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
+                          {new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
                         </span>
                       </div>
                     </div>
@@ -439,7 +439,7 @@ export default function ApprovalsPage() {
                   )}
 
                   <p className="text-xs text-[color:var(--muted)] mb-4">
-                    {isAr ? 'تاريخ الطلب:' : 'Request date:'} {new Date(course.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US')}
+                    {isAr ? 'تاريخ الطلب:' : 'Request date:'} {new Date(course.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
                   </p>
 
                   <div className="flex gap-3">

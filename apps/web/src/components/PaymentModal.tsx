@@ -114,9 +114,9 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
               {session.sessionName || session.topic}
             </div>
             <div style={{ color: subtext, fontSize: 12 }}>
-              {new Date(session.scheduledAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {new Date(session.scheduledAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
               {'  '}
-              {new Date(session.scheduledAt).toLocaleTimeString(isAr ? 'ar-EG' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(session.scheduledAt).toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
           <div style={{ color: '#5120c8', fontSize: 22, fontWeight: 900, flexShrink: 0 }}>

@@ -172,7 +172,7 @@ export default function VerifyCertificatePage() {
                     <div>
                       <p className="text-xs font-semibold text-[var(--muted)]">{isAr ? '+++++ +++++++' : 'Issue Date'}</p>
                       <p className="text-sm font-bold text-foreground">
-                        {new Date(cert.issuedAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', {
+                        {new Date(cert.issuedAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
                           year: 'numeric',
                           month: 'long',
                           day: 'numeric',

@@ -61,6 +61,12 @@ import VideoProtection from "../../../../components/VideoProtection";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
 import { useAuthStore } from "../../../../stores/authStore";
+import {
+	normalizeLiveStatus,
+	isLiveStatus,
+	formatLiveDateTime,
+	formatLiveDateTimeShort,
+} from "../../../../lib/live";
 import Hls from "hls.js";
 
 // Small inline meta row item used by the course info card and lesson details.
@@ -670,11 +676,16 @@ function MetaItem({
 	useEffect(() => {
 		if (!courseId || !authChecked) return;
 
+		// The dynamic import is async, so the effect cleanup can run before
+		// `socket` is assigned — without this flag an orphaned socket keeps
+		// its listeners alive (duplicate query invalidations).
+		let cancelled = false
 		let socket: any = null
 
 		const connectSocket = async () => {
 			try {
 				const { io } = await import('socket.io-client')
+				if (cancelled) return
 				socket = io('https://api.deveways.com/live', {
 					transports: ['websocket', 'polling'],
 					reconnection: true,
@@ -716,6 +727,7 @@ function MetaItem({
 		connectSocket()
 
 		return () => {
+			cancelled = true
 			if (socket) {
 				socket.emit('leave-room', { courseId })
 				socket.disconnect()
@@ -728,7 +740,7 @@ function MetaItem({
 		if (!activeLessonId || !courseId || !authChecked) return;
 		const active = allLessonsFlat.find((l: any) => l.id === activeLessonId);
 		const isLiveType = active?.type === 'LIVE' || active?.lessonType === 'LIVE' || active?.isLive;
-		if (!isLiveType || active?.liveStatus === 'LIVE') return;
+		if (!isLiveType || isLiveStatus(active?.liveStatus, 'live')) return;
 
 		const interval = setInterval(() => {
 			qc.invalidateQueries({ queryKey: ["learn-course", courseId] });
@@ -968,12 +980,10 @@ function MetaItem({
 		const isLiveLesson = type === 'LIVE' || lesson?.isLive === true;
 
 		if (isLiveLesson) {
-			const isActive = lesson?.liveStatus === 'LIVE';
+			const isActive = isLiveStatus(lesson?.liveStatus, 'live');
+			const isEnded = isLiveStatus(lesson?.liveStatus, 'ended');
 			const scheduled = lesson?.liveStartTime
-				? new Date(lesson.liveStartTime).toLocaleString(
-						isAr ? 'ar-SA' : 'en-US',
-						{ month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
-					)
+				? formatLiveDateTimeShort(lesson.liveStartTime, locale)
 				: null;
 
 			return (
@@ -995,7 +1005,9 @@ function MetaItem({
 					/>
 					{isActive
 						? (isAr ? t('liveNowLabel') : 'Live Now')
-						: scheduled || (isAr ? t('liveLabel') : 'Live')}
+						: isEnded
+							? (isAr ? 'انتهى البث' : 'Ended')
+							: scheduled || (isAr ? t('liveLabel') : 'Live')}
 				</span>
 			);
 		}
@@ -2150,7 +2162,9 @@ function MetaItem({
 
 								{/* Live Lesson UI */}
 								{isCurrentLive && (() => {
-									const isLive = activeLesson?.liveStatus === 'LIVE'
+									const lessonLiveState = normalizeLiveStatus(activeLesson?.liveStatus)
+									const isLive = lessonLiveState === 'live'
+									const isEnded = lessonLiveState === 'ended'
 									const liveUrl = `/${locale}/live/${courseId}?lessonId=${activeLesson?.id}`
 									return (
 										<div
@@ -2224,15 +2238,29 @@ function MetaItem({
 															{isAr ? 'انضم للبث المباشر الآن' : 'Join Live Stream Now'}
 													</a>
 												</>
+											) : isEnded ? (
+												<>
+													<p style={{ color: '#94a3b8', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.88rem', textAlign: 'center', maxWidth: '320px' }}>
+														{isAr ? 'انتهى البث المباشر' : 'The live stream has ended'}
+													</p>
+													{activeLesson?.liveStartTime && (
+														<p style={{ color: '#6666aa', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.8rem' }}>
+															{isAr ? 'أُقيم في: ' : 'Held: '}
+															{formatLiveDateTime(activeLesson.liveStartTime, locale)}
+														</p>
+													)}
+													<p style={{ color: '#6666aa', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.78rem', textAlign: 'center', maxWidth: '280px' }}>
+														{isAr
+															? 'التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً'
+															: 'Auto-recording is not available yet — it will be added soon'}
+													</p>
+												</>
 											) : (
 												<>
 													{activeLesson?.liveStartTime && (
 														<p style={{ color: '#c4b5fd', fontWeight: 300, fontFamily: 'var(--font-light)', fontSize: '0.9rem' }}>
 															{isAr ? 'موعد البث: ' : 'Scheduled: '}
-															{new Date(activeLesson.liveStartTime).toLocaleString(
-																isAr ? 'ar-SA' : 'en-US',
-																{ weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
-															)}
+															{formatLiveDateTime(activeLesson.liveStartTime, locale)}
 														</p>
 													)}
 													<a

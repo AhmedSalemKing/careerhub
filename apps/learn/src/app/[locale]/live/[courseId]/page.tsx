@@ -11,7 +11,6 @@ import { syncAuthUser } from '../../../../lib/auth-sync'
 import { webLoginUrl } from '../../../../lib/constants'
 import { patch } from '../../../../lib/api'
 import toast from 'react-hot-toast'
-import { io } from 'socket.io-client'
 
 export default function LiveViewerPage() {
   const locale = useLocale()
@@ -67,7 +66,6 @@ export default function LiveViewerPage() {
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
-  const socketRef = useRef<any>(null)
   const loadingTimeoutRef = useRef<any>(null)
   const pollRef = useRef<any>(null)
   const connectTimeoutRef = useRef<any>(null)

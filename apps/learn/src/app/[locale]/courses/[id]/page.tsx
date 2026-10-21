@@ -3,6 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { get, post } from "../../../../lib/api";
 import { webLoginUrl } from "../../../../lib/constants";
 import { getMediaUrl, getCourseTitle } from "../../../../lib/media";
+import {
+	normalizeLiveStatus,
+	formatLiveDateTime,
+	liveCountdownParts,
+} from "../../../../lib/live";
 import { useLocale, useTranslations } from "next-intl";
 import {
 	Play,
@@ -43,6 +48,7 @@ import {
 	MapPin,
 	Calendar,
 	MapPinned,
+	Info,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -209,6 +215,16 @@ export default function CourseDetailPage({
 	const isOffline = courseType === "offline";
 	const isRecorded = courseType === "recorded" || (!isLive && !isOffline);
 
+	// Live STATUS (separate from the course type). The DB has historically mixed
+	// 'LIVE'/'live'/'SCHEDULED' casings, so compare through normalizeLiveStatus.
+	// The join CTA must follow the actual status: a finished stream must never
+	// keep showing "Join Live Stream".
+	const liveState = normalizeLiveStatus(course?.liveStatus);
+	const liveNow = liveState === "live";
+	const liveScheduled = liveState === "scheduled";
+	const liveEnded = liveState === "ended";
+	const liveCountdown = liveScheduled ? liveCountdownParts(course?.liveStartTime) : null;
+
 	const price = parseFloat(course?.price || 0);
 	const isFree = price === 0;
 
@@ -225,7 +241,7 @@ export default function CourseDetailPage({
 				await post(`/courses/${courseId}/enroll`, {});
 				setEnrollmentStatus("enrolled");
 				refetchEnrollment();
-				if (isLive) {
+				if (isLive && liveNow) {
 					router.push(`/${locale}/live/${courseId}`);
 				} else {
 					router.refresh();
@@ -539,7 +555,7 @@ export default function CourseDetailPage({
 									background: isDark ? "#000" : "#e2e8f0",
 									boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
 								}}
-								onClick={() => isLive ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}>
+								onClick={() => (isLive && liveNow) ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}>
 								{previewVideo ? (
 									<video
 										src={previewVideo}
@@ -585,9 +601,17 @@ export default function CourseDetailPage({
 											? "ابدأ التعلم الآن"
 											: "Start Learning Now"
 										: isLive
-											? isAr
-												? "انضم للبث المباشر"
-												: "Join Live Stream"
+											? liveEnded
+												? isAr
+													? "انتهى البث"
+													: "Stream Ended"
+												: liveNow
+													? isAr
+														? "انضم للبث المباشر"
+														: "Join Live Stream"
+													: isAr
+														? "سجل الآن ليصلك البث"
+														: "Enroll to attend the live session"
 											: isOffline
 												? isAr
 													? "احجز مقعدك"
@@ -636,17 +660,7 @@ export default function CourseDetailPage({
 												<p
 													className="text-base"
 													style={{ color: textSecondary }}>
-													{new Date(course.liveStartTime).toLocaleString(
-														isAr ? "ar-SA" : "en-US",
-														{
-															weekday: "long",
-															year: "numeric",
-															month: "long",
-															day: "numeric",
-															hour: "2-digit",
-															minute: "2-digit",
-														},
-													)}
+													{formatLiveDateTime(course.liveStartTime, locale)}
 												</p>
 											</div>
 										</div>
@@ -663,45 +677,37 @@ export default function CourseDetailPage({
 												<p
 													className="text-base"
 													style={{ color: textSecondary }}>
-													{new Date(course.liveEndTime).toLocaleString(
-														isAr ? "ar-SA" : "en-US",
-														{
-															weekday: "long",
-															year: "numeric",
-															month: "long",
-															day: "numeric",
-															hour: "2-digit",
-															minute: "2-digit",
-														},
-													)}
+													{formatLiveDateTime(course.liveEndTime, locale)}
 												</p>
 											</div>
 										</div>
 									)}
-									{course.liveStatus && (
+									{liveState && (
 										<div className="flex items-center gap-2">
 											<span
 												className="w-2 h-2 rounded-full"
 												style={{
 													background:
-														course.liveStatus === "LIVE"
+														liveNow
 															? "#dc2626"
-															: "#94a3b8",
+															: liveScheduled
+																? "#f59e0b"
+																: "#94a3b8",
 												}}
 											/>
 											<span
 												className="text-sm font-medium"
 												style={{
 													color:
-														course.liveStatus === "LIVE"
+														liveNow
 															? "#dc2626"
 															: textSecondary,
 												}}>
-												{course.liveStatus === "LIVE"
+												{liveNow
 													? isAr
 														? "مباشر الآن!"
 														: "Live Now!"
-													: course.liveStatus === "SCHEDULED"
+													: liveScheduled
 														? isAr
 															? "مجدول"
 															: "Scheduled"
@@ -709,6 +715,23 @@ export default function CourseDetailPage({
 															? "انتهى"
 															: "Ended"}
 											</span>
+											{liveScheduled && liveCountdown?.isUpcoming && (
+												<span
+													className="text-xs"
+													style={{ color: textSecondary }}>
+													{liveCountdown.days > 0
+														? isAr
+															? `يبدأ بعد ${liveCountdown.days} يوم`
+															: `Starts in ${liveCountdown.days}d`
+														: liveCountdown.hours > 0
+															? isAr
+																? `يبدأ بعد ${liveCountdown.hours} ساعة ${liveCountdown.minutes} دقيقة`
+																: `Starts in ${liveCountdown.hours}h ${liveCountdown.minutes}m`
+															: isAr
+																? `يبدأ بعد ${liveCountdown.minutes} دقيقة`
+																: `Starts in ${liveCountdown.minutes}m`}
+												</span>
+											)}
 										</div>
 									)}
 								</div>
@@ -785,17 +808,7 @@ export default function CourseDetailPage({
 												<p
 													className="text-base"
 													style={{ color: textSecondary }}>
-													{new Date(course.liveStartTime).toLocaleString(
-														isAr ? "ar-SA" : "en-US",
-														{
-															weekday: "long",
-															year: "numeric",
-															month: "long",
-															day: "numeric",
-															hour: "2-digit",
-															minute: "2-digit",
-														},
-													)}
+													{formatLiveDateTime(course.liveStartTime, locale)}
 												</p>
 											</div>
 										</div>
@@ -1174,25 +1187,58 @@ export default function CourseDetailPage({
 
 							{isEnrolled ? (
 								<>
-									<button
-										onClick={() => isLive ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}
-										className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all"
-										style={{
-											background: isLive
-												? "linear-gradient(135deg, #dc2626, #b91c1c)"
-												: isOffline
-													? "linear-gradient(135deg, #16a34a, #15803d)"
-													: "linear-gradient(135deg, #16a34a, #15803d)",
-											boxShadow: isLive
-												? "0 4px 24px rgba(220,38,38,0.35)"
-												: "0 4px 24px rgba(22,163,74,0.35)",
-										}}>
-										{isLive ? (
-											<>
-												<Radio size={22} strokeWidth={2.5} />
-												{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
-											</>
-										) : isOffline ? (
+									{isLive && liveScheduled ? (
+										// Scheduled but not started yet: show an honest disabled
+										// button with the countdown instead of a dead join link.
+										<button
+											disabled
+											className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base transition-all disabled:cursor-not-allowed"
+											style={{
+												background: "rgba(245,158,11,0.12)",
+												border: "1px solid rgba(245,158,11,0.35)",
+												color: "#f59e0b",
+											}}>
+											<Clock size={22} strokeWidth={2.5} />
+											{liveCountdown && liveCountdown.isUpcoming
+												? liveCountdown.days > 0
+													? (isAr ? `يبدأ البث بعد ${liveCountdown.days} يوم` : `Live starts in ${liveCountdown.days}d`)
+													: liveCountdown.hours > 0
+														? (isAr ? `يبدأ البث بعد ${liveCountdown.hours} ساعة ${liveCountdown.minutes} دقيقة` : `Live starts in ${liveCountdown.hours}h ${liveCountdown.minutes}m`)
+														: (isAr ? `يبدأ البث بعد ${liveCountdown.minutes} دقيقة` : `Live starts in ${liveCountdown.minutes}m`)
+												: (isAr ? "البث مجدول" : "Live session scheduled")}
+										</button>
+									) : (
+										<button
+											onClick={() => (isLive && liveNow) ? router.push(`/${locale}/live/${courseId}`) : navigateToLearn()}
+											className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base text-white transition-all"
+											style={{
+												background: isLive && liveNow
+													? "linear-gradient(135deg, #dc2626, #b91c1c)"
+													: isOffline
+														? "linear-gradient(135deg, #16a34a, #15803d)"
+														: "linear-gradient(135deg, #16a34a, #15803d)",
+												boxShadow: isLive && liveNow
+													? "0 4px 24px rgba(220,38,38,0.35)"
+													: "0 4px 24px rgba(22,163,74,0.35)",
+											}}>
+											{isLive ? (
+												liveNow ? (
+													<>
+														<Radio size={22} strokeWidth={2.5} />
+														{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
+													</>
+												) : liveEnded ? (
+													<>
+														<PlayCircle size={22} strokeWidth={2.5} />
+														{isAr ? "انتهى البث — اذهب للمحتوى" : "Stream ended — go to content"}
+													</>
+												) : (
+													<>
+														<Radio size={22} strokeWidth={2.5} />
+														{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
+													</>
+												)
+											) : isOffline ? (
 											<>
 												<MapPin size={22} strokeWidth={2.5} />
 												{isAr ? "عرض التفاصيل" : "View Details"}
@@ -1204,6 +1250,7 @@ export default function CourseDetailPage({
 											</>
 										)}
 									</button>
+									)}
 
 									<div
 										className="flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium"
@@ -1213,6 +1260,26 @@ export default function CourseDetailPage({
 											{isAr ? "تم الاشتراك بنجاح" : "Enrolled successfully"}
 										</span>
 									</div>
+
+									{/* The stream is over: no join button, and an honest note that
+									    no recording file was produced (Agora Cloud Recording is
+									    not integrated yet). */}
+									{isLive && liveEnded && (
+										<div
+											className="flex items-start gap-2 mt-3 p-3 rounded-xl text-xs leading-relaxed"
+											style={{
+												background: "rgba(148,163,184,0.08)",
+												border: "1px solid rgba(148,163,184,0.2)",
+												color: textSecondary,
+											}}>
+											<Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+											<span>
+												{isAr
+													? "انتهى البث المباشر. التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً"
+													: "The live stream has ended. Auto-recording is not available yet — it will be added soon."}
+											</span>
+										</div>
+									)}
 
 									{/* Progress Tracker & Certificate Button */}
 									<div
@@ -1542,7 +1609,11 @@ export default function CourseDetailPage({
 									) : isLive ? (
 										<>
 											<Radio size={20} />
-											{isAr ? "انضم للبث المباشر" : "Join Live Stream"}
+											{liveEnded
+												? (isAr ? "اشترك للوصول للمحتوى" : "Enroll to access content")
+												: liveNow
+													? (isAr ? "انضم للبث المباشر" : "Join Live Stream")
+													: (isAr ? "اشترك ليصلك البث" : "Enroll to attend the live session")}
 										</>
 									) : isOffline ? (
 										<>

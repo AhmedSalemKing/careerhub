@@ -10,13 +10,12 @@ import {
   Radio, Users, Copy, Check, Mic, MicOff,
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
-  UserCheck, UserX, Send, Wifi, WifiOff
+  UserCheck, UserX, Send, Wifi, WifiOff, Info
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
-import { SOCKET_URL } from '../../../../../../lib/constants'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
+import { LIVE_RECORDING_SUPPORTED, liveRecordingUnavailableNote, formatLiveTime } from '../../../../../../lib/live'
 import toast from 'react-hot-toast'
-import { io } from 'socket.io-client'
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -45,6 +44,23 @@ export default function GoLivePage() {
   const [newComment, setNewComment] = useState('')
   const [pipPos, setPipPos] = useState({ x: 16, y: 16 })
   const [showEndConfirm, setShowEndConfirm] = useState(false)
+  // ── Preparation progress (Issue 1) ──────────────────────────────────────
+  //  camera     -> getUserMedia running; no API call has been made yet
+  //  server     -> camera preview is on screen, Agora token fetching in background
+  //  ready      -> preview live + token warmed up, safe to go live
+  //  connecting -> user pressed Go Live (POST /live/start + Agora join)
+  type PrepStage = 'camera' | 'server' | 'ready' | 'connecting'
+  const [prepStage, setPrepStage] = useState<PrepStage>('camera')
+  const [prepNote, setPrepNote] = useState('')
+  const [previewActive, setPreviewActive] = useState(false)
+  // The channel/appId of the session that just went live. It is announced to
+  // the room as soon as the shared (hook) socket is connected — the page does
+  // not open a socket of its own.
+  const [pendingStart, setPendingStart] = useState<{ channelName: string; appId: string } | null>(null)
+  // True once the camera attempt settled (successfully or not). The Go Live
+  // button is enabled as soon as this is true: waiting for the server would
+  // block the instructor on a cold API, which is exactly what we avoid.
+  const [cameraReady, setCameraReady] = useState(false)
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -62,16 +78,18 @@ export default function GoLivePage() {
     approveQuestion,
     answerQuestion,
     dismissQuestion,
+    broadcastLiveStarted,
     broadcastLiveEnded,
   } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
 
   const localVideoRef = useRef<HTMLDivElement>(null)
+  const previewVideoRef = useRef<HTMLVideoElement>(null)
+  const previewStreamRef = useRef<MediaStream | null>(null)
   const pipVideoRef = useRef<HTMLDivElement>(null)
   const clientRef = useRef<any>(null)
   const localTracksRef = useRef<any[]>([])
   const screenTrackRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
-  const socketRef = useRef<any>(null)
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -107,8 +125,119 @@ export default function GoLivePage() {
       : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
   }
 
+  // ── Camera-first preparation (Issue 1) ──────────────────────────────────
+  // getUserMedia is purely local, so the instructor sees themselves instantly
+  // even when the Render API is cold. The network is only touched AFTER the
+  // preview is on screen, and never blocks it.
+  const stopPreview = () => {
+    previewStreamRef.current?.getTracks().forEach(t => t.stop())
+    previewStreamRef.current = null
+    if (previewVideoRef.current) previewVideoRef.current.srcObject = null
+    setPreviewActive(false)
+  }
+
+  const startPreview = async (): Promise<boolean> => {
+    if (previewStreamRef.current) return true
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true,
+      })
+      previewStreamRef.current = stream
+      stream.getVideoTracks().forEach(t => (t.enabled = camOn))
+      stream.getAudioTracks().forEach(t => (t.enabled = micOn))
+      if (previewVideoRef.current) {
+        previewVideoRef.current.srcObject = stream
+        previewVideoRef.current.muted = true
+        previewVideoRef.current.play?.().catch(() => {})
+      }
+      setPreviewActive(true)
+      return true
+    } catch (e: any) {
+      const name = e?.name || ''
+      setPrepNote(
+        name === 'NotAllowedError' || name === 'SecurityError'
+          ? (isAr ? 'لم يتم منح إذن الكاميرا/الميكروفون — سيخبرك المتصفح عند بدء البث' : 'Camera/mic permission denied — your browser will ask again when the stream starts')
+          : (isAr ? 'تعذر فتح الكاميرا — تحقق من توصيلها ثم أعد المحاولة' : 'Could not open the camera — check that it is connected and try again'),
+      )
+      return false
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const warmUpServer = async () => {
+      // A state-free GET: it never marks the course live, it only wakes the
+      // backend and pre-validates access so the later POST /live/start is fast.
+      try {
+        // The token itself is only a warm-up (the real one is issued by
+        // POST /live/start for the final channel) — what matters here is that
+        // the request wakes a cold API so the actual start is fast.
+        await get(`/live/token/${courseId}`)
+      } catch (e: any) {
+        const status = e?.response?.status
+        if (!cancelled && status === 403) {
+          setPrepNote(isAr
+            ? 'انتهى البث المباشر لهذه الجلسة مسبقاً'
+            : 'This live session has already ended')
+        }
+        // Warming is best-effort — the start flow re-issues the request.
+      } finally {
+        if (!cancelled) setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
+      }
+    }
+
+    ;(async () => {
+      setPrepStage('camera')
+      setCameraReady(false)
+      await startPreview() // 1) local camera FIRST — no API call involved
+      if (cancelled) { stopPreview(); return }
+      setCameraReady(true)
+      setPrepStage('server') // 2) camera is visible now, touch the API in the background
+      await warmUpServer()
+      if (cancelled) stopPreview()
+    })()
+
+    return () => {
+      cancelled = true
+      stopPreview()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId])
+
+  // Announce the live start on the SHARED socket (the one useLiveSocket owns).
+  // The hook connects it as soon as `liveStarted` becomes true and joins the
+  // room in its 'connect' handler, so waiting for `connected` guarantees the
+  // announcement is not dropped. Exactly one socket serves the room for this
+  // page — the page never registers a listener of its own.
+  useEffect(() => {
+    if (!pendingStart || !connected) return
+    broadcastLiveStarted(pendingStart.channelName, pendingStart.appId)
+    setPendingStart(null)
+  }, [pendingStart, connected, broadcastLiveStarted])
+
+  // The button label mirrors the preparation progress:
+  //   camera → "جارٍ تحضير الكاميرا..."
+  //   server → "جارٍ الاتصال بالخادم..."
+  const prepLabel = starting
+    ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+    : !cameraReady
+      ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
+      : (isAr ? 'ابدأ البث المباشر' : 'Go Live')
+
+  // Small status line under the video so the instructor always knows what the
+  // page is doing, without the camera preview being covered by an overlay.
+  const prepStatus = !cameraReady
+    ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
+    : prepStage === 'server' || prepStage === 'connecting'
+      ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+      : (isAr ? 'جاهز للبدء' : 'Ready to go live')
+  const prepStatusDone = cameraReady && prepStage === 'ready'
+
   const handleStartLive = async () => {
     setStarting(true)
+    setPrepStage('connecting')
     try {
       // Always go through the shared axios client: it resolves the correct API
       // host (env var, else https://api.deveways.com/api) and attaches the JWT
@@ -142,62 +271,59 @@ export default function GoLivePage() {
 
       await client.join(data.appId, data.channelName, data.token, 1)
 
+      // Hand the camera over to Agora: releasing the getUserMedia handle first
+      // avoids two open handles fighting over the same device (black preview).
+      // If the SDK then fails, handleEndLive-style cleanup restores it below.
+      stopPreview()
+
       const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
       localTracksRef.current = [micTrack, camTrack]
+      setMicOn(true)
+      setCamOn(true)
 
       if (localVideoRef.current) camTrack.play(localVideoRef.current)
 
       await client.publish([micTrack, camTrack])
 
-      // Connect socket as instructor
-      const { io } = await import('socket.io-client')
-      const socket = io(`${SOCKET_URL}/live`, {
-        transports: ['websocket', 'polling']
-      })
-      socketRef.current = socket
-
       // Mark live first so the useLiveSocket hook connects its own socket, then
-      // announce on this socket once it is joined to the room. Emitting before the
-      // socket exists (or before it joins the room) silently drops the event, which
-      // is why viewers never received "stream-started".
+      // announce on THAT socket once it has joined the room. Emitting before the
+      // socket exists (or before it joins the room) silently drops the event,
+      // which is why viewers never received "stream-started".
+      //
+      // The page must NOT open a second socket of its own: two instructor
+      // sockets in the same room meant the room was registered twice.
       setLiveStarted(true)
-
-      socket.on('connect', () => {
-        socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
-        // Broadcast to all viewers that live has started
-        socket.emit('live-started', {
-          courseId,
-          channelName: data.channelName,
-          appId: data.appId,
-        })
-      })
-
-      // If the socket connected before this handler was attached, announce now.
-      if (socket.connected) {
-        socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
-        socket.emit('live-started', {
-          courseId,
-          channelName: data.channelName,
-          appId: data.appId,
-        })
-      }
+      setPendingStart({ channelName: data.channelName, appId: data.appId })
 
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
       toast.error(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
+      // Leave the instructor with a working preview instead of a black box,
+      // and report that the server is reachable again.
+      try { clientRef.current?.leave() } catch {}
+      clientRef.current = null
+      void startPreview()
+      setPrepStage('ready')
     } finally {
       setStarting(false)
+      setPrepStage(prev => (prev === 'connecting' ? 'ready' : prev))
     }
   }
 
   const toggleMic = async () => {
     const micTrack = localTracksRef.current[0]
-    if (micTrack) { await micTrack.setEnabled(!micOn); setMicOn(m => !m) }
+    if (micTrack) { await micTrack.setEnabled(!micOn); setMicOn(m => !m); return }
+    // Pre-live: toggle the preview stream's audio track directly
+    previewStreamRef.current?.getAudioTracks().forEach(t => (t.enabled = !micOn))
+    if (previewStreamRef.current) setMicOn(m => !m)
   }
 
   const toggleCam = async () => {
     const camTrack = localTracksRef.current[1]
-    if (camTrack) { await camTrack.setEnabled(!camOn); setCamOn(c => !c) }
+    if (camTrack) { await camTrack.setEnabled(!camOn); setCamOn(c => !c); return }
+    // Pre-live: toggle the preview stream's video track directly
+    previewStreamRef.current?.getVideoTracks().forEach(t => (t.enabled = !camOn))
+    if (previewStreamRef.current) setCamOn(c => !c)
   }
 
   useEffect(() => {
@@ -283,7 +409,6 @@ export default function GoLivePage() {
       localTracksRef.current.forEach(t => { t.stop(); t.close() })
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
-      if (socketRef.current) socketRef.current.disconnect()
       await post(`/live/end/${courseId}`, {})
       toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
       router.push(`/${locale}/dashboard/my-courses`)
@@ -325,7 +450,7 @@ export default function GoLivePage() {
         </>
       )}
 
-      <div style={{ minHeight: '100vh', background: '#0a0a0a', direction: isAr ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', direction: isAr ? 'rtl' : 'ltr', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
         <style>{`
           @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
           @keyframes spin{to{transform:rotate(360deg)}}
@@ -383,7 +508,7 @@ export default function GoLivePage() {
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', gap: 0, overflow: 'hidden' }}>
 
           {/* LEFT: Video + Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: 16, overflow: 'auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: 16, overflow: 'auto', minWidth: 0 }}>
 
             {/* Lesson banner */}
             {lessonId && (
@@ -407,12 +532,77 @@ export default function GoLivePage() {
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#000', border: `1px solid ${border}`, aspectRatio: '16/9' }}>
               <div ref={localVideoRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
 
+              {/* Camera preview before going live (fast path: getUserMedia only, no network) */}
               {!liveStarted && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Radio size={28} color="#dc2626" />
-                  </div>
-                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'الكاميرا غير مفعلة' : 'Camera not active'}</p>
+                <video
+                  ref={previewVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+                />
+              )}
+
+              {!liveStarted && !previewActive && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, pointerEvents: 'none' }}>
+                  {prepStage === 'camera' && (
+                    <>
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.15)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />
+                      </div>
+                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'جارٍ تجهيز الكاميرا…' : 'Preparing camera…'}</p>
+                    </>
+                  )}
+                  {prepStage === 'server' && (
+                    <>
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Radio size={28} color="#dc2626" />
+                      </div>
+                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'جارٍ الاتصال بالخادم…' : 'Connecting to the server…'}</p>
+                    </>
+                  )}
+                  {prepStage === 'ready' && (
+                    <>
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Radio size={28} color="#dc2626" />
+                      </div>
+                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'الكاميرا غير مفعلة' : 'Camera not active'}</p>
+                    </>
+                  )}
+                  {prepStage === 'connecting' && (
+                    <>
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.15)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />
+                      </div>
+                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'جارٍ الاتصال بالبث…' : 'Connecting to the stream…'}</p>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Preparation status line — never covers the camera preview */}
+              {!liveStarted && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: 12,
+                  [isAr ? 'right' : 'left']: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 12px',
+                  borderRadius: 20,
+                  background: 'rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  pointerEvents: 'none',
+                  zIndex: 5,
+                }}>
+                  {prepStatusDone
+                    ? <CheckCircle2 size={13} color="#16a34a" />
+                    : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
+                  <span style={{ color: prepStatusDone ? '#86efac' : subtext, fontSize: 11, fontWeight: 700 }}>
+                    {prepStatus}
+                  </span>
                 </div>
               )}
 
@@ -494,8 +684,8 @@ export default function GoLivePage() {
                 <>
                   <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                     {[
-                      { icon: micOn ? Mic : MicOff, label: isAr?'ميكروفون':'Mic', on: micOn, onClick: () => setMicOn(m => !m) },
-                      { icon: camOn ? Video : VideoOff, label: isAr?'كاميرا':'Camera', on: camOn, onClick: () => setCamOn(c => !c) },
+                      { icon: micOn ? Mic : MicOff, label: isAr?'ميكروفون':'Mic', on: micOn, onClick: toggleMic },
+                      { icon: camOn ? Video : VideoOff, label: isAr?'كاميرا':'Camera', on: camOn, onClick: toggleCam },
                     ].map((btn, i) => (
                       <button key={i} onClick={btn.onClick} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: btn.on ? 'rgba(255,255,255,0.06)' : 'rgba(220,38,38,0.15)', border: `1px solid ${btn.on ? border : 'rgba(220,38,38,0.3)'}`, cursor: 'pointer', color: btn.on ? text : '#dc2626', fontSize: 12, fontWeight: 600 }}>
                         <btn.icon size={14} />
@@ -503,25 +693,54 @@ export default function GoLivePage() {
                       </button>
                     ))}
                   </div>
-                  <button onClick={handleStartLive} disabled={starting} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting?'wait':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting?0.7:1 }}>
+                  <button onClick={handleStartLive} disabled={starting || !cameraReady} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady?'wait':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady?0.7:1 }}>
                     {starting
-                      ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{isAr?'جاري التحضير...':'Preparing...'}</>
-                      : <><Play size={18} />{isAr?'ابدأ البث المباشر':'Go Live'}</>}
+                      ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{prepLabel}</>
+                      : <><Play size={18} />{prepLabel}</>}
                   </button>
                 </>
               )}
             </div>
 
-            {/* Share link */}
-            <div style={{ padding: '14px 16px', background: cardBg, borderRadius: 12, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ flex: 1 }}>
+            {/* Share link — the link carries a long JWT, so the container must
+                never be allowed to overflow (Issue 3). */}
+            <div style={{ padding: '14px 16px', background: cardBg, borderRadius: 12, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, maxWidth: '100%', overflow: 'hidden', overflowWrap: 'break-word', wordBreak: 'break-all' }}>
+              <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                 <div style={{ color: subtext, fontSize: 10, fontWeight: 700, marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAr?'رابط الجلسة للمشاركة':'Share Link'}</div>
-                <div style={{ color: text, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{liveLink}</div>
+                <div
+                  dir="ltr"
+                  title={liveLink}
+                  style={{
+                    color: text,
+                    fontSize: 12,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    overflowWrap: 'break-word',
+                    wordBreak: 'break-all',
+                  }}
+                >{liveLink}</div>
               </div>
               <button onClick={() => { navigator.clipboard.writeText(liveLink); setCopied(true); setTimeout(()=>setCopied(false),2000); toast.success(isAr?'تم نسخ الرابط':'Link copied!') }} style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: copied?'#16a34a':subtext, flexShrink: 0 }}>
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </button>
             </div>
+
+            {/* Camera/server preparation note (Issue 1) */}
+            {prepNote && (
+              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b', fontSize: 12, lineHeight: 1.6 }}>
+                {prepNote}
+              </div>
+            )}
+
+            {/* Recording availability (Issue 4) — honest notice, no fake checkbox */}
+            {!LIVE_RECORDING_SUPPORTED && (
+              <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)', color: subtext, fontSize: 12, lineHeight: 1.6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>{liveRecordingUnavailableNote(locale)}</span>
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Questions & Comments Panel */}
@@ -568,7 +787,7 @@ export default function GoLivePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                               <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800, flexShrink: 0 }}>{q.userName[0]}</div>
                               <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
-                              <span style={{ color: subtext, fontSize: 10, marginRight: isAr?0:'auto', marginLeft: isAr?'auto':0 }}>{new Date(q.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                              <span style={{ color: subtext, fontSize: 10, marginRight: isAr?0:'auto', marginLeft: isAr?'auto':0 }}>{formatLiveTime(q.timestamp, locale)}</span>
                             </div>
                             <p style={{ color: text, fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>{q.text}</p>
                             <div style={{ display: 'flex', gap: 6 }}>

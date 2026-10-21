@@ -10,6 +10,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { ActivityService } from '../../common/services/activity.service';
 import { Course, CourseStatus, User } from '@prisma/client';
+import { parseClientDateTime } from '../../common/utils/client-datetime.util';
 
 @Injectable()
 export class CoursesService {
@@ -1435,8 +1436,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       };
 
       if (dto.type) courseData.type = dto.type;
-      if (dto.liveStartTime) courseData.liveStartTime = new Date(dto.liveStartTime);
-      if (dto.liveEndTime) courseData.liveEndTime = new Date(dto.liveEndTime);
+      // Live schedules arrive as naive local strings — resolve them against
+      // Africa/Cairo so the stored UTC instant matches the chosen wall time.
+      if (dto.liveStartTime) courseData.liveStartTime = parseClientDateTime(dto.liveStartTime);
+      if (dto.liveEndTime) courseData.liveEndTime = parseClientDateTime(dto.liveEndTime);
       if (dto.liveStatus) courseData.liveStatus = dto.liveStatus;
       if (dto.autoPublishRecording !== undefined) courseData.autoPublishRecording = dto.autoPublishRecording;
       if (dto.autoDeleteAfterLive !== undefined) courseData.autoDeleteAfterLive = dto.autoDeleteAfterLive;
@@ -1513,8 +1516,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.thumbnail !== undefined && { thumbnail: dto.thumbnail }),
         ...(dto.previewVideo !== undefined && { previewVideo: dto.previewVideo }),
         ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.liveStartTime && { liveStartTime: new Date(dto.liveStartTime) }),
-        ...(dto.liveEndTime && { liveEndTime: new Date(dto.liveEndTime) }),
+        ...(dto.liveStartTime && { liveStartTime: parseClientDateTime(dto.liveStartTime) }),
+        ...(dto.liveEndTime && { liveEndTime: parseClientDateTime(dto.liveEndTime) }),
         ...(dto.liveStatus !== undefined && { liveStatus: dto.liveStatus }),
         ...(dto.autoPublishRecording !== undefined && { autoPublishRecording: dto.autoPublishRecording }),
         ...(dto.autoDeleteAfterLive !== undefined && { autoDeleteAfterLive: dto.autoDeleteAfterLive }),
@@ -1569,9 +1572,12 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         isFree: dto.isFree || false,
         order: dto.order ?? count,
         sectionId,
-        liveStartTime: isLive && dto.liveDate ? new Date(dto.liveDate) : null,
-        liveStatus: isLive && dto.liveDate ? 'SCHEDULED' : null,
-        content: isLive ? { liveDuration: dto.liveDuration || 60, saveRecording: dto.saveRecording ?? true, autoPublish: dto.autoPublish ?? false } : undefined,
+        liveStartTime: isLive && dto.liveDate ? parseClientDateTime(dto.liveDate) : null,
+        liveStatus: isLive && dto.liveDate ? 'scheduled' : null,
+        // NOTE: Agora Cloud Recording is not integrated, so a live lesson never
+        // produces a recording file. The flag is stored for compatibility with
+        // existing rows but the UI must not promise a recording.
+        content: isLive ? { liveDuration: dto.liveDuration || 60, saveRecording: false, autoPublish: false } : undefined,
       },
     });
     return { success: true, data: lesson };

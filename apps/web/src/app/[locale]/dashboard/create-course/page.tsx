@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
+import { LIVE_RECORDING_SUPPORTED, liveRecordingUnavailableNote } from '../../../../lib/live'
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
 import {
@@ -261,7 +262,9 @@ export default function CreateCoursePage() {
     liveDuration: 60,
     autoPublishRecording: false,
     autoDeleteAfterLive: false,
-    saveRecording: true,
+    // Recording is not backed by Agora Cloud Recording yet (see lib/live.ts),
+    // so it must default to off — never promise a recording that won't exist.
+    saveRecording: false,
     locationName: '',
     locationAddress: '',
     locationLat: null as number | null,
@@ -381,7 +384,9 @@ export default function CreateCoursePage() {
 
       if (form.type === 'live') {
         payload.liveStartTime = `${form.liveDate}T${form.liveTime}:00`
-        payload.autoPublishRecording = form.autoPublishRecording
+        // Cloud recording is not integrated — never claim these will happen.
+        payload.autoPublishRecording = false
+        payload.saveRecording = false
         payload.autoDeleteAfterLive = form.autoDeleteAfterLive
         payload.liveStatus = 'scheduled'
       }
@@ -730,22 +735,35 @@ export default function CreateCoursePage() {
 
               <div className="space-y-2">
                 {[
-                  { key: 'saveRecording', ar: 'حفظ التسجيل بعد الانتهاء', en: 'Save recording after live ends', color: '#5120c8' },
-                  { key: 'autoPublishRecording', ar: 'نشر التسجيل تلقائياً', en: 'Auto-publish recording', color: '#16a34a' },
-                  { key: 'autoDeleteAfterLive', ar: 'حذف الكورس بعد انتهاء البث', en: 'Delete course after live ends', color: '#dc2626' },
+                  // Auto-recording is not backed by Agora Cloud Recording yet, so
+                  // the two recording options are shown disabled with an honest
+                  // note instead of silently doing nothing after the stream ends.
+                  { key: 'saveRecording', ar: 'حفظ التسجيل بعد الانتهاء', en: 'Save recording after live ends', color: '#5120c8', disabled: !LIVE_RECORDING_SUPPORTED },
+                  { key: 'autoPublishRecording', ar: 'نشر التسجيل تلقائياً', en: 'Auto-publish recording', color: '#16a34a', disabled: !LIVE_RECORDING_SUPPORTED },
+                  { key: 'autoDeleteAfterLive', ar: 'حذف الكورس بعد انتهاء البث', en: 'Delete course after live ends', color: '#dc2626', disabled: false },
                 ].map(t => (
-                  <div key={t.key} onClick={() => set(t.key, !(form as any)[t.key])}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
-                      (form as any)[t.key]
-                        ? 'border-[color] bg-[color]/5'
-                        : 'border-[color:var(--border)] bg-[color:var(--surface-2)]'
+                  <div key={t.key}
+                    onClick={() => { if (!t.disabled) set(t.key, !(form as any)[t.key]) }}
+                    className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                      t.disabled
+                        ? 'border-[color:var(--border)] bg-[color:var(--surface-2)] opacity-60 cursor-not-allowed'
+                        : (form as any)[t.key]
+                          ? 'border-[color] bg-[color]/5 cursor-pointer'
+                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] cursor-pointer'
                     }`.replace('[color]', t.color)}>
                     <span className="text-sm font-medium text-foreground">{isAr ? t.ar : t.en}</span>
-                    {(form as any)[t.key]
+                    {(form as any)[t.key] && !t.disabled
                       ? <ToggleRight size={24} color={t.color} />
                       : <ToggleLeft size={24} color="var(--muted)" />}
                   </div>
                 ))}
+                {!LIVE_RECORDING_SUPPORTED && (
+                  <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3">
+                    <p className="text-xs text-[color:var(--muted)] leading-relaxed">
+                      {liveRecordingUnavailableNote(locale)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-xl bg-red-500/5 border border-red-500/20 p-4 flex gap-3">
@@ -876,8 +894,8 @@ export default function CreateCoursePage() {
                   <>
                     <Row label={isAr ? 'تاريخ البث' : 'Live Date'} value={`${form.liveDate} ${form.liveTime}`} />
                     <Row label={isAr ? 'المدة' : 'Duration'} value={`${form.liveDuration} ${isAr ? 'دقيقة' : 'min'}`} />
-                    <Row label={isAr ? 'حفظ التسجيل' : 'Save Recording'} value={form.saveRecording ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا' : 'No')} />
-                    <Row label={isAr ? 'نشر تلقائي' : 'Auto Publish'} value={form.autoPublishRecording ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا' : 'No')} />
+                    <Row label={isAr ? 'حفظ التسجيل' : 'Save Recording'} value={LIVE_RECORDING_SUPPORTED ? (form.saveRecording ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا' : 'No')) : (isAr ? 'غير متوفر' : 'Not available')} />
+                    <Row label={isAr ? 'نشر تلقائي' : 'Auto Publish'} value={LIVE_RECORDING_SUPPORTED ? (form.autoPublishRecording ? (isAr ? 'نعم' : 'Yes') : (isAr ? 'لا' : 'No')) : (isAr ? 'غير متوفر' : 'Not available')} />
                   </>
                 )}
                 {form.type === 'offline' && (

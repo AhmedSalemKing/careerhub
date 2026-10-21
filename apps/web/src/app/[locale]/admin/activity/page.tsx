@@ -22,7 +22,7 @@ function timeAgo(dateStr: string, isAr: boolean): string {
 
 function fmtDateTime(dateStr: string, isAr: boolean): string {
   const d = new Date(dateStr)
-  return d.toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+  return d.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
@@ -71,7 +71,7 @@ function getDetails(act: any, isAr: boolean): string {
           paymentParts.push(`${prefix} ${meta.consultantName}`)
         }
         if (meta.sessionDate) {
-          paymentParts.push(new Date(meta.sessionDate).toLocaleDateString(isAr ? 'ar-SA' : 'en-US'))
+          paymentParts.push(new Date(meta.sessionDate).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US'))
         }
       } else if (meta.type === 'course' && meta.courseTitle) {
         const prefix = isAr ? 'كورس' : 'Course'
@@ -369,7 +369,7 @@ export default function ActivityPage() {
                         {timeAgo(act.createdAt, isAr)}
                       </div>
                       <div style={{ fontSize: '10px', color: muted, opacity: 0.6, marginTop: '2px' }}>
-                        {new Date(act.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-US', {
+                        {new Date(act.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
                           day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                         })}
                       </div>
