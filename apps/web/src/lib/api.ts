@@ -9,10 +9,10 @@ const getBaseURL = () => {
     return envUrl.replace(/\/+$/, '')
   }
 
-  // ✅ FIXED: في المتصفح، استخدم localhost:3001 وليس /api
-  // لأن /api سيطلب من Next.js نفسه وليس من backend منفصل!
-  // (Browser and server share the same fallback.)
-  return 'http://localhost:3001/api'
+  // No env var — fall back to the production API. Never use a localhost address
+  // in a browser build: a relative /api would hit the Next.js server itself and
+  // a localhost URL is unreachable for every real visitor.
+  return 'https://api.deveways.com/api'
 }
 
 export const api = axios.create({

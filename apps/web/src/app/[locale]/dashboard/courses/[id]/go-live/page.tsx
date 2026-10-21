@@ -13,6 +13,7 @@ import {
   UserCheck, UserX, Send, Wifi, WifiOff
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
+import { SOCKET_URL } from '../../../../../../lib/constants'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import toast from 'react-hot-toast'
 import { io } from 'socket.io-client'
@@ -109,30 +110,21 @@ export default function GoLivePage() {
   const handleStartLive = async () => {
     setStarting(true)
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
-      const token = localStorage.getItem('deveway_token') || localStorage.getItem('token') || ''
+      // Always go through the shared axios client: it resolves the correct API
+      // host (env var, else https://api.deveways.com/api) and attaches the JWT
+      // from the auth interceptor, so the request is never sent unauthenticated
+      // to a stale host.
       let data: any
 
       if (lessonId) {
         // Lesson-based live — call lesson-start first
-        const res = await fetch(`${apiBase}/live/lesson-start/${lessonId}`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        })
-        data = await res.json()
-        if (!res.ok) throw new Error(data?.message || (isAr ? 'فشل بدء درس البث' : 'Lesson start failed'))
-        data = data?.data ?? data
+        const res = await post(`/live/lesson-start/${lessonId}`, {})
+        data = res.data?.data ?? res.data
         if (!data?.token) {
           // Fallback: the lesson-start response may not contain a token,
           // so try the regular start endpoint with lessonId context
-          const res2 = await fetch(`${apiBase}/live/start/${courseId}`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lessonId }),
-          })
-          const data2 = await res2.json()
-          if (!res2.ok) throw new Error(data2?.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
-          data = data2?.data ?? data2
+          const res2 = await post(`/live/start/${courseId}`, { lessonId })
+          data = res2.data?.data ?? res2.data
           if (!data?.token) throw new Error('No stream token')
         }
       } else {
@@ -159,7 +151,7 @@ export default function GoLivePage() {
 
       // Connect socket as instructor
       const { io } = await import('socket.io-client')
-      const socket = io('https://deve-way.onrender.com/live', {
+      const socket = io(`${SOCKET_URL}/live`, {
         transports: ['websocket', 'polling']
       })
       socketRef.current = socket

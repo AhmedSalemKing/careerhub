@@ -737,7 +737,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => {
-                const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api').replace(/\/api$/, '')
+                const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api').replace(/\/api$/, '')
                 window.location.href = `${apiUrl}/api/auth/google`
               }}
               style={{

@@ -25,7 +25,17 @@ export const MAIN_URL =
   process.env.NEXT_PUBLIC_MAIN_URL || 'https://deveway.com'
 
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || ''
+  process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 
-export const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || API_URL
+/**
+ * Socket.io host. The gateway lives at the ROOT of the API origin (namespace
+ * `/live`), NOT under `/api` — so strip any trailing `/api` segment.
+ * Falls back to the production origin.
+ */
+export const SOCKET_URL = (() => {
+  const explicit = process.env.NEXT_PUBLIC_SOCKET_URL
+  const raw = (explicit && explicit.trim())
+    ? explicit.trim()
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api')
+  return raw.replace(/\/+$/, '').replace(/\/api$/, '')
+})()

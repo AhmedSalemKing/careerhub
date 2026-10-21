@@ -5,7 +5,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const isAr = locale === 'ar'
 
   try {
-    const API = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
     const res = await fetch(`${API}/coaching/coaches/${encodeURIComponent(id)}`, {
       next: { revalidate: 3600 },
       signal: AbortSignal.timeout(5000),

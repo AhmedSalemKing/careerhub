@@ -57,7 +57,7 @@ export default function CheckoutPage() {
     setLoading(true)
     setError("")
     try {
-      const res = await fetch(`https://deve-way.onrender.com/api/payments/checkout/course/${courseId}`, {
+      const res = await fetch(`https://api.deveways.com/api/payments/checkout/course/${courseId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ locale })

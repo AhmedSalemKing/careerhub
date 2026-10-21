@@ -117,13 +117,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             body { background-color: inherit; min-height: 100vh; }
           `}} />
         
-        <link rel="preconnect" href="https://deve-way.onrender.com" />
-        <link rel="dns-prefetch" href="https://deve-way.onrender.com" />
+        <link rel="preconnect" href="https://api.deveways.com" />
+        <link rel="dns-prefetch" href="https://api.deveways.com" />
         <meta name="theme-color" content="#5120C8" />
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             function ping() {
-              fetch('https://deve-way.onrender.com/api/health', { 
+              fetch('https://api.deveways.com/api/health', { 
                 method: 'GET',
                 signal: AbortSignal.timeout(5000)
               }).catch(() => {});

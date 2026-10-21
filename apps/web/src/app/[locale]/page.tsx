@@ -7,7 +7,7 @@ import { CTASection } from './sections/CTASection'
 import { CoursesShowcase } from '../components/CoursesShowcase'
 import { HashScrollHandler } from '../components/HashScrollHandler'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params

@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { LEARN_URL } from '../lib/constants'
 
 const BASE_URL = 'https://www.deveways.com'
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 const locales = ['ar', 'en']
 
 async function safeFetch(url: string): Promise<any[]> {

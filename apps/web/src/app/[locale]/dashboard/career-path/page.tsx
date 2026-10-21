@@ -95,7 +95,7 @@ const [confirmModal, setConfirmModal] = useState<{
   const text = isDark ? '#f1f5f9' : '#0d0d0d'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
   const getToken = () =>
     typeof window !== 'undefined'
       ? localStorage.getItem('deveway_token')
@@ -191,7 +191,7 @@ const [confirmModal, setConfirmModal] = useState<{
 
   useEffect(() => {
     setBundlesLoading(true)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
     fetch(`${apiUrl}/courses/bundles`, {
       headers: { 'Content-Type': 'application/json' },
     })

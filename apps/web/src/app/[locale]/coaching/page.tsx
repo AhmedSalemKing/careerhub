@@ -11,7 +11,7 @@ import {
   Code2, Palette, TrendingUp, BarChart3, Shield, Star
 } from 'lucide-react'
 
-const API = 'https://deve-way.onrender.com/api'
+const API = 'https://api.deveways.com/api'
 
 const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   tech: ['برمجة','تقنية','software','tech','engineering','هندسة','developer','مطور','web','mobile','fullstack','frontend','backend','python','javascript','react','node','java','php','flutter','تطوير','كود','code','programming','ويب','موبايل','api','database','devops','cloud','سحابة','aws','azure','docker','linux','network','شبكات','typescript','vue','angular'],
@@ -359,7 +359,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
       const token = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
       const scheduledAt = localDateTimeToISO(form.date, form.time)
 
-      const res = await fetch('https://deve-way.onrender.com/api/consulting/sessions/book', {
+      const res = await fetch('https://api.deveways.com/api/consulting/sessions/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, description: form.description, scheduledAt, meetingType: form.meetingType, duration: consultant.profile?.sessionDuration || 60 })

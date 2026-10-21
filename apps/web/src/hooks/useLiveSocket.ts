@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-
-const SOCKET_URL = 'https://deve-way.onrender.com'
+import { SOCKET_URL } from '../lib/constants'
 
 export function useLiveSocket(
   courseId: string,

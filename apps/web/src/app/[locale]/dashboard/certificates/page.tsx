@@ -25,7 +25,7 @@ export default function CertificatesPage() {
             ''
           : '')
 
-      const res = await fetch('https://deve-way.onrender.com/api/certificates/my', {
+      const res = await fetch('https://api.deveways.com/api/certificates/my', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

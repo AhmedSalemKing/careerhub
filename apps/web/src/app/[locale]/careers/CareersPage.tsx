@@ -56,7 +56,7 @@ export default function CareersPage() {
   const [noticeVisible, setNoticeVisible] = useState(false)
   const noticeTimer = useRef<any>(null)
   
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
   const getToken = () =>
     typeof window !== 'undefined'
       ? localStorage.getItem('deveway_token') || localStorage.getItem('token') || sessionStorage.getItem('token') || ''

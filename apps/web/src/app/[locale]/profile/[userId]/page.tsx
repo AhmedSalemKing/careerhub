@@ -12,7 +12,7 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 
   useEffect(() => {
     fetch(`${apiBase}/users/profile/${userId}`)
