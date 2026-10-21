@@ -51,6 +51,9 @@ export default function LiveViewerPage() {
   //  ended      -> stream finished
   const [liveState, setLiveState] = useState<'loading' | 'waiting' | 'connecting' | 'failed' | 'watching' | 'ended'>('loading')
   const [connectError, setConnectError] = useState('')
+  // Explicit "is the instructor live right now?" flag derived from the API
+  // (Course.liveStatus or any Lesson.liveStatus === 'live').
+  const [isLive, setIsLive] = useState(false)
 
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const commentsEndRef = useRef<HTMLDivElement>(null)
@@ -123,8 +126,9 @@ export default function LiveViewerPage() {
 
   // Check stream status: enrollment + token fetch (no Agora init).
   // `silent` is used by the background poll so it doesn't flash the loading UI.
-  const checkStreamStatus = async (userToken: string, silent = false) => {
-    if (!userToken) return
+  // Returns true when the stream is live (and a token was obtained / join started).
+  const checkStreamStatus = async (userToken: string, silent = false): Promise<boolean> => {
+    if (!userToken) return false
     if (!silent) {
       setLoading(true)
       setLiveState('loading')
@@ -155,7 +159,7 @@ export default function LiveViewerPage() {
         setLiveState('ended')
         setError('ended')
         setLoading(false)
-        return
+        return false
       }
 
       const isEnrolled = course?.isEnrolled === true
@@ -176,7 +180,7 @@ export default function LiveViewerPage() {
           setLiveState('failed')
           setLoading(false)
         }
-        return
+        return false
       }
 
       if (!isEnrolled && price === 0) {
@@ -191,50 +195,85 @@ export default function LiveViewerPage() {
       //   * lesson-level live  -> Lesson.liveStatus === 'live' (lessonId in the URL)
       // Only then do we fetch a token and attempt to connect. Before that we show
       // the explicit "waiting" state instead of an endless spinner.
-      // Enrolled viewers receive full lesson objects from /courses/:id, so lesson
-      // liveStatus is available here without any API change.
+      // The instructor's go-live action writes one of these to the DB:
+      //   * course flow (/live/start)        -> Course.liveStatus = 'live'
+      //   * lesson flow (/live/lesson-start) -> Lesson.liveStatus = 'live'
+      // so we treat the stream as live when EITHER the course or any lesson is live.
+      const isLiveValue = (v: any) => typeof v === 'string' && v.toLowerCase() === 'live'
       const lessons = (course?.sections || []).flatMap((s: any) => s?.lessons || [])
       const targetLesson = lessonId
         ? lessons.find((l: any) => l?.id === lessonId || l?.lessonId === lessonId)
         : null
 
-      const isLiveValue = (v: any) => v === 'live' || v === 'LIVE'
       const courseLive = isLiveValue(course?.liveStatus)
-      // Live if the course is live OR any lesson is live (a lesson-based stream
-      // never flips the course status, and vice versa), so the student connects
-      // regardless of which flow the instructor used or whether lessonId is set.
       const targetLessonLive = isLiveValue(targetLesson?.liveStatus)
-      const liveNow = courseLive || targetLessonLive || lessons.some((l: any) => isLiveValue(l?.liveStatus))
+      let anyLessonLive = lessons.some((l: any) => isLiveValue(l?.liveStatus))
+      let liveLesson: any = targetLessonLive
+        ? targetLesson
+        : (lessons.find((l: any) => isLiveValue(l?.liveStatus)) || null)
+
+      // The course payload only carries full lesson objects for enrolled viewers.
+      // When it does not (e.g. the enrollment row is still settling right after
+      // signup, or sections are stripped for non-enrolled viewers), fall back to
+      // the dedicated /courses/:id/live-lessons endpoint, which always returns the
+      // live lessons (with their liveStatus + agoraChannelName) for this course.
+      // This is what makes the background poll reliably detect the lesson flow.
+      if (!courseLive && !anyLessonLive) {
+        try {
+          const liveLessonsRes = await fetch(`${API}/courses/${courseId}/live-lessons`, {
+            headers: { Authorization: `Bearer ${userToken}` },
+            signal: AbortSignal.timeout(6000)
+          })
+          if (liveLessonsRes.ok) {
+            const lld = await liveLessonsRes.json()
+            const liveLessonList: any[] = (lld?.data ?? lld ?? []) || []
+            const liveNowLessons = Array.isArray(liveLessonList)
+              ? liveLessonList.filter((l: any) => isLiveValue(l?.liveStatus))
+              : []
+            if (liveNowLessons.length > 0) {
+              anyLessonLive = true
+              liveLesson = lessonId
+                ? (liveNowLessons.find((l: any) => l?.id === lessonId || l?.lessonId === lessonId) || liveNowLessons[0])
+                : liveNowLessons[0]
+            }
+          }
+        } catch {
+          // A failed probe must not break the flow — fall through to "waiting".
+        }
+      }
+
+      // Single source of truth for the page: is the stream live right now?
+      const liveNow = courseLive || anyLessonLive
+      setIsLive(liveNow)
 
       if (!liveNow) {
         clearTimeout(loadingTimeoutRef.current)
         setStreamReady(false)
         setTokenData(null)
         setLoading(false)
-        setJoined(false)
-        // Only move to "waiting" when we're not mid-join.
-        if (!joinedRef.current && !joiningRef.current) {
+        // Always return to (or stay in) "waiting" when the stream is not live and
+        // we are not currently watching. This lets the poll recover the page even
+        // after a previous failed connect attempt, and never overwrites "watching".
+        if (!watchingRef.current) {
+          setJoined(false)
           setLiveState('waiting')
         }
-        return
+        return false
       }
 
       // Already connected for this live session — nothing more to do.
       if (joinedRef.current) {
         clearTimeout(loadingTimeoutRef.current)
         setLoading(false)
-        return
+        return true
       }
 
       // Pick the token endpoint that matches the live source so the student joins
       // the same Agora channel the instructor published to:
       //   * lesson flow  -> Lesson.agoraChannelName (set by /live/lesson-start)
       //   * course flow   -> Course.agoraChannelName (set by /live/start)
-      // When the URL has no lessonId but a lesson is live, use that lesson so the
-      // student still joins the correct lesson channel.
-      const liveLesson = targetLessonLive
-        ? targetLesson
-        : (lessons.find((l: any) => isLiveValue(l?.liveStatus)) || null)
+      // Prefer the lesson channel whenever a lesson is live and the course itself
+      // is not, so a lesson-based stream is never joined on the course channel.
       const useLessonChannel = !!liveLesson && !courseLive
       const tokenEndpoint = useLessonChannel
         ? `${API}/live/lesson-token/${liveLesson.id}`
@@ -249,7 +288,7 @@ export default function LiveViewerPage() {
         setLiveState('ended')
         setError('ended')
         setLoading(false)
-        return
+        return false
       }
 
       if (!tokenRes.ok) {
@@ -258,7 +297,7 @@ export default function LiveViewerPage() {
         setJoined(true)
         setConnectError(tl('failedToConnect'))
         setLiveState('failed')
-        return
+        return true
       }
 
       const data = await tokenRes.json()
@@ -270,7 +309,7 @@ export default function LiveViewerPage() {
         setJoined(true)
         setConnectError(tl('failedToConnect'))
         setLiveState('failed')
-        return
+        return true
       }
 
       clearTimeout(loadingTimeoutRef.current)
@@ -280,6 +319,7 @@ export default function LiveViewerPage() {
       setJoined(true)
       // Stream is live and we hold a token: auto-connect (no manual click needed).
       void handleJoinStream(td)
+      return true
     } catch (e: any) {
       clearTimeout(loadingTimeoutRef.current)
       console.error('[Live] Check error:', e.message)
@@ -291,6 +331,7 @@ export default function LiveViewerPage() {
       setConnectError(msg)
       setLiveState('failed')
       setLoading(false)
+      return false
     }
   }
 
@@ -305,9 +346,9 @@ export default function LiveViewerPage() {
     setConnectError('')
     setLiveState('connecting')
 
-    // Fail the connection attempt after 30s instead of spinning forever. The
-    // cap applies until we are actually watching (video track playing), so a live
-    // stream that never publishes video still surfaces the retry button.
+    // Fail the connection attempt after 15s instead of spinning for 30s. The cap
+    // applies until we are actually watching (video track playing), so a live
+    // stream that never publishes video still surfaces the retry button quickly.
     clearTimeout(connectTimeoutRef.current)
     connectTimeoutRef.current = setTimeout(() => {
       if (!watchingRef.current) {
@@ -318,11 +359,26 @@ export default function LiveViewerPage() {
         try { clientRef.current?.leave() } catch {}
         clientRef.current = null
       }
-    }, 30000)
+    }, 15000)
 
     try {
-      const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
+      const AgoraRTCModule: any = await import('agora-rtc-sdk-ng')
+      const AgoraRTC = AgoraRTCModule.default
       AgoraRTC.setLogLevel(4)
+
+      // Route Agora through nearby edge servers. The default US edge nodes
+      // (e.g. *.edge.sd-rtn.com in the 104.x/23.x ranges) are far from the
+      // Middle East, which caused multi-second WebSocket handshakes and failed
+      // connections. ASIA/INDIA are the closest regions to MENA and act as the
+      // fast path, with GLOBAL appended so the SDK can still fall back.
+      try {
+        const AREAS = AgoraRTCModule.AREAS
+        AgoraRTC.setArea({
+          areaCode: [AREAS?.ASIA ?? 'ASIA', AREAS?.INDIA ?? 'INDIA', AREAS?.GLOBAL ?? 'GLOBAL'],
+        })
+      } catch (areaErr) {
+        console.warn('[Live] AgoraRTC.setArea unsupported:', areaErr)
+      }
 
       const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
       await client.setClientRole('audience')
@@ -415,7 +471,8 @@ export default function LiveViewerPage() {
     }
   }
 
-  // Manual retry from the failed state.
+  // Manual retry from the failed state. Resets state immediately and reconnects
+  // right away (within ~2s) instead of waiting for the next poll cycle.
   const handleRetry = async () => {
     clearTimeout(connectTimeoutRef.current)
     joinedRef.current = false
@@ -426,33 +483,48 @@ export default function LiveViewerPage() {
     setHasVideo(false)
     setConnectError('')
     setLiveState('connecting')
-    await checkStreamStatus(userToken || token, false)
+
+    // Fast path: we already hold a non-expired token/channel, so a token refresh
+    // is not needed — retry the Agora join directly and without delay.
+    if (tokenData?.token && tokenData?.appId && tokenData?.channelName) {
+      void handleJoinStream(tokenData)
+      return
+    }
+
+    // Otherwise re-probe the session, comparing against the last known liveness so
+    // we only pay for a fresh status check when something actually changed.
+    const stillLive = await checkStreamStatus(userToken || token, false)
+    if (!stillLive) {
+      // Stream is no longer live — reflect that immediately.
+      setLiveState('waiting')
+    }
   }
 
-  // When socket detects the stream started, re-check immediately and auto-connect
-  // (no manual refresh or button click required).
+  // When the socket detects the stream started, re-check immediately and
+  // auto-connect (no manual refresh or button click required).
   useEffect(() => {
-    if (hookStreamStarted && !streamReady) {
-      setStreamEnded(false)
-      setTokenData(null)
-      joinedRef.current = false
-      watchingRef.current = false
-      checkStreamStatus(userToken || token)
-    }
+    if (!hookStreamStarted || watchingRef.current) return
+    setStreamEnded(false)
+    setTokenData(null)
+    joinedRef.current = false
+    watchingRef.current = false
+    checkStreamStatus(userToken || token)
   }, [hookStreamStarted])
 
-  // Poll the session status every 15s while the stream has not started yet, so the
-  // student is auto-connected as soon as the instructor goes live. Polling stops
-  // once we are connected or the stream ends.
+  // Poll the session status while we are not yet watching, so the student is
+  // auto-connected as soon as the instructor goes live. Polling also keeps
+  // running from `connecting`/`failed` so a status change (or a transient
+  // connection failure) is recovered without a manual reload. Stops once we are
+  // actually watching or the stream has ended.
   useEffect(() => {
-    if (liveState !== 'waiting') return
+    if (liveState === 'watching' || liveState === 'ended') return
     const t = userToken || token
     if (!t) return
 
     pollRef.current = setInterval(() => {
-      if (joinedRef.current || joiningRef.current) return
+      if (watchingRef.current || joiningRef.current) return
       checkStreamStatus(t, true)
-    }, 15000)
+    }, 5000)
 
     return () => {
       clearInterval(pollRef.current)
@@ -607,8 +679,8 @@ export default function LiveViewerPage() {
       {/* TOP BAR */}
       <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', animation: 'livePulse 1.5s infinite' }} />
-          <span style={{ color: '#dc2626', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive || hasVideo ? '#dc2626' : '#6b7280', animation: isLive || hasVideo ? 'livePulse 1.5s infinite' : 'none' }} />
+          <span style={{ color: isLive || hasVideo ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
         </div>
            {viewerCount > 0 && (
              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -672,7 +744,7 @@ export default function LiveViewerPage() {
                  </>
                )}
 
-               {/* CONNECTING — stream is live, Agora join in progress (30s cap) */}
+               {/* CONNECTING — stream is live, Agora join in progress (15s cap) */}
                {liveState === 'connecting' && (
                  <>
                    <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />

@@ -237,7 +237,7 @@
     "questionSent": "Question sent to instructor",
     "streamNotStartedTitle": "The stream hasn't started yet",
     "streamNotStartedDesc": "You'll connect automatically once the instructor goes live — no need to reload the page.",
-    "connectionMayTakeAMoment": "This may take a moment...",
+    "connectionMayTakeAMoment": "Connecting to the stream... this may take a few seconds",
     "connectingToStream": "Connecting to stream...",
     "streamEndedTitle": "Live Stream Has Ended",
     "streamEndedDesc": "This live stream has ended. Check the course later for the recording.",
