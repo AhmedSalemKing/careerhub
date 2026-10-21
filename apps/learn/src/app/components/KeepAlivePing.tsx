@@ -6,7 +6,7 @@ export default function KeepAlivePing() {
   useEffect(() => {
     // Keep Render warm - ping on mount and every 5 minutes
     const ping = () => {
-      fetch('https://deve-way.onrender.com/api/health', {
+      fetch('https://api.deveways.com/api/health', {
         signal: AbortSignal.timeout(5000)
       }).catch(() => {})
     }

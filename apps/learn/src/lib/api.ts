@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { webLoginUrl } from './constants'
 
-const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+const PRODUCTION_API_URL = 'https://api.deveways.com'
 
 const getBaseURL = (): string => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL

@@ -345,7 +345,7 @@ export default function CourseDetailPage({
 	const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
 
 	const apiBase =
-		(process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api").replace(/\/api\/api/, "/api");
+		(process.env.NEXT_PUBLIC_API_URL || "https://api.deveways.com/api").replace(/\/api\/api/, "/api");
 
 	const getAuthToken = (): string => {
 		if (typeof window === "undefined") return "";

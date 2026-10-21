@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 const BASE_URL = 'https://devewayhub.vercel.app'
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://deve-way.onrender.com/api'
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
 const locales = ['ar', 'en']
 
 async function fetchCourses() {

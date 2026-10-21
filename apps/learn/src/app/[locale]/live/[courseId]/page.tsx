@@ -9,6 +9,7 @@ import {
 import { useLiveSocket } from '../../../../hooks/useLiveSocket'
 import { syncAuthUser } from '../../../../lib/auth-sync'
 import { webLoginUrl } from '../../../../lib/constants'
+import { patch } from '../../../../lib/api'
 import toast from 'react-hot-toast'
 import { io } from 'socket.io-client'
 
@@ -20,7 +21,15 @@ export default function LiveViewerPage() {
   const params = useParams()
   const courseId = params.courseId as string
 
-  const API = 'https://deve-way.onrender.com/api'
+  // Base API URL (includes the /api prefix). Derived from the same configuration
+  // as the central axios client so every request hits https://api.deveways.com/api
+  // instead of the retired onrender host.
+  const API = (() => {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL
+    const base = (envUrl && envUrl.trim()) ? envUrl.trim() : 'https://api.deveways.com'
+    const cleaned = base.replace(/\/+$/, '')
+    return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
+  })()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -471,11 +480,9 @@ export default function LiveViewerPage() {
       joinedRef.current = true
       joiningRef.current = false
 
-      fetch(`${API}/live/viewers/${courseId}`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ delta: 1 })
-      }).catch(() => {})
+      // Route through the central authenticated client so the JWT is attached by
+      // the shared interceptor and the request targets the configured API host.
+      patch(`/live/viewers/${courseId}`, { delta: 1 }).catch(() => {})
 
     } catch (e: any) {
       console.error('[Live] Join failed:', e.message)
@@ -594,11 +601,7 @@ export default function LiveViewerPage() {
       watchingRef.current = false
       joinedRef.current = false
       if (token) {
-        fetch(`${API}/live/viewers/${courseId}`, {
-          method: 'PATCH',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ delta: -1 })
-        }).catch(() => {})
+        patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
       }
       clientRef.current?.leave().catch(() => {})
     }
@@ -632,11 +635,7 @@ export default function LiveViewerPage() {
   const handleLeave = async () => {
     if (clientRef.current) await clientRef.current.leave().catch(() => {})
     if (token) {
-      fetch(`${API}/live/viewers/${courseId}`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ delta: -1 })
-      }).catch(() => {})
+      patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
     }
     router.back()
   }

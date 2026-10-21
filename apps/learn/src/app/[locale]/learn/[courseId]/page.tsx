@@ -436,7 +436,7 @@ function MetaItem({
 
 	// ✅ FIXED: Safe URL construction - handles relative and absolute URLs
 	const apiBase =
-		process.env.NEXT_PUBLIC_API_URL || "https://deve-way.onrender.com/api";
+		process.env.NEXT_PUBLIC_API_URL || "https://api.deveways.com/api";
 
 	const getSafeUrl = (url: string | null | undefined): string => {
 		if (!url || typeof url !== 'string') return "";
@@ -675,7 +675,7 @@ function MetaItem({
 		const connectSocket = async () => {
 			try {
 				const { io } = await import('socket.io-client')
-				socket = io('https://deve-way.onrender.com/live', {
+				socket = io('https://api.deveways.com/live', {
 					transports: ['websocket', 'polling'],
 					reconnection: true,
 					reconnectionAttempts: 5,

@@ -14,7 +14,7 @@ import {
 import { formatDate, formatTimeOnly } from '../../../lib/time'
 import { webLoginUrl } from '../../../lib/constants'
 
-const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 
 const API_BASE = (() => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL
@@ -88,7 +88,7 @@ function getTitle(c: any, locale: string) {
 // Helper function to redirect to Stripe Checkout
 const redirectToCheckout = async (courseId: string, locale: string, token: string) => {
   try {
-    const res = await fetch(`https://deve-way.onrender.com/api/payments/checkout/course/${courseId}`, {
+    const res = await fetch(`https://api.deveways.com/api/payments/checkout/course/${courseId}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,

@@ -1,4 +1,4 @@
-export const PRODUCTION_API_URL = 'https://deve-way.onrender.com/api'
+export const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 export const PRODUCTION_MAIN_URL = 'https://deveway-teal.vercel.app'
 export const PRODUCTION_LEARN_URL = typeof window !== 'undefined' ? window.location.origin : 'https://deveway-teal.vercel.app'
 

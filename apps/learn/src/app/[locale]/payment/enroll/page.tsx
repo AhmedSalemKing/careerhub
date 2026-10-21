@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle2, ArrowRight, Video, Radio, MapPin } from 'lucide-react'
 import { webLoginUrl } from '../../../../lib/constants'
 
-const API = 'https://deve-way.onrender.com/api'
+const API = 'https://api.deveways.com/api'
 
 export default function EnrollPaymentPage() {
   const locale = useLocale()

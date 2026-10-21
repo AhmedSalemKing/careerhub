@@ -61,8 +61,8 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link rel="preconnect" href="https://deve-way.onrender.com" />
-        <link rel="dns-prefetch" href="https://deve-way.onrender.com" />
+        <link rel="preconnect" href="https://api.deveways.com" />
+        <link rel="dns-prefetch" href="https://api.deveways.com" />
         <meta name="theme-color" content="#5120C8" />
         <script
           dangerouslySetInnerHTML={{
