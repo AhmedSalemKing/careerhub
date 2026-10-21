@@ -61,7 +61,6 @@ export default function GoLivePage() {
     approveQuestion,
     answerQuestion,
     dismissQuestion,
-    broadcastLiveStarted,
     broadcastLiveEnded,
   } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
 
@@ -164,14 +163,33 @@ export default function GoLivePage() {
         transports: ['websocket', 'polling']
       })
       socketRef.current = socket
+
+      // Mark live first so the useLiveSocket hook connects its own socket, then
+      // announce on this socket once it is joined to the room. Emitting before the
+      // socket exists (or before it joins the room) silently drops the event, which
+      // is why viewers never received "stream-started".
+      setLiveStarted(true)
+
       socket.on('connect', () => {
         socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
+        // Broadcast to all viewers that live has started
+        socket.emit('live-started', {
+          courseId,
+          channelName: data.channelName,
+          appId: data.appId,
+        })
       })
 
-      // Broadcast to all viewers that live has started
-      broadcastLiveStarted(data.channelName, data.appId, lessonId || undefined)
+      // If the socket connected before this handler was attached, announce now.
+      if (socket.connected) {
+        socket.emit('join-room', { courseId, userName: instructorName, role: 'instructor' })
+        socket.emit('live-started', {
+          courseId,
+          channelName: data.channelName,
+          appId: data.appId,
+        })
+      }
 
-      setLiveStarted(true)
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
       toast.error(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))

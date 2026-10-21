@@ -201,6 +201,9 @@ export default function HomePage() {
     createdAt: c.createdAt,
     enrollmentCount: c._count?.enrollments || 0,
     thumbnail: c.thumbnail,
+    // Kept so the card can route live sessions to /live/[id] and show a live badge.
+    type: c.type,
+    liveStatus: c.liveStatus,
   }))
 
   const sortedCourses = [...featuredCourses].sort((a, b) => {
@@ -211,6 +214,11 @@ export default function HomePage() {
   })
 
   const maxEnrollment = Math.max(...featuredCourses.map(c => c.enrollmentCount), 0)
+
+  // A course is a live session when the backend marks it as type "live" (it also
+  // carries liveStatus: scheduled | live | ended).
+  const isLiveCourse = (c: any) => c?.type === 'live'
+  const isLiveNow = (c: any) => c?.liveStatus === 'live'
 
   // Handler for Start Free button
   const handleStartFreeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -507,6 +515,15 @@ export default function HomePage() {
                   {courseSort === 'newest' && index === 0 && (
                     <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: 'var(--primary)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
                   )}
+                  {isLiveNow(course) && (
+                    <div
+                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-semibold text-white flex items-center gap-1.5"
+                      style={{ background: '#dc2626', animation: 'livePulse 1.5s infinite', zIndex: 2 }}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+                      {locale === 'ar' ? 'مباشر الآن' : 'LIVE NOW'}
+                    </div>
+                  )}
                   <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs text-white flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
                 </div>
                 <div className="p-5">
@@ -519,7 +536,7 @@ export default function HomePage() {
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.price}<span className="text-sm font-normal ml-1" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? 'ر.س' : 'SAR'}</span></div>
                     {enrolledIds.has(course.id) ? (
                       <Link
-                        href={`/${locale}/learn/${course.id}`}
+                        href={isLiveCourse(course) ? `/${locale}/live/${course.id}` : `/${locale}/learn/${course.id}`}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -642,6 +659,7 @@ export default function HomePage() {
       <style>{`
         @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
         @keyframes floatBadge { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
+        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
         .animate-float { animation: float 6s ease-in-out infinite; }
         .animate-float-badge { animation: floatBadge 7s ease-in-out infinite; }
         .animate-float-badge-reverse { animation: floatBadge 5s ease-in-out infinite reverse; }

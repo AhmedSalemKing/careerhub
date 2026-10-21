@@ -659,6 +659,10 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(220,38,38,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Radio size={18} color="#fff" />
               </div>
+              <div style={{ position: 'absolute', top: 6, [isAr ? 'right' : 'left']: 6, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 20, background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700 }} className="live-dot">
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />
+                {isAr ? 'مباشر الآن' : 'LIVE NOW'}
+              </div>
             </div>
           )}
         </div>

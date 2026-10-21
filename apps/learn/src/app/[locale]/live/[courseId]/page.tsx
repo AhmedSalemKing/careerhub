@@ -191,17 +191,20 @@ export default function LiveViewerPage() {
       //   * lesson-level live  -> Lesson.liveStatus === 'live' (lessonId in the URL)
       // Only then do we fetch a token and attempt to connect. Before that we show
       // the explicit "waiting" state instead of an endless spinner.
-      // Enrolled viewers receive full lesson objects from /courses/:id, so the
-      // lesson's liveStatus is available here without any API change.
-      const lesson = lessonId
-        ? (course?.sections || [])
-            .flatMap((s: any) => s?.lessons || [])
-            .find((l: any) => l?.id === lessonId || l?.lessonId === lessonId)
+      // Enrolled viewers receive full lesson objects from /courses/:id, so lesson
+      // liveStatus is available here without any API change.
+      const lessons = (course?.sections || []).flatMap((s: any) => s?.lessons || [])
+      const targetLesson = lessonId
+        ? lessons.find((l: any) => l?.id === lessonId || l?.lessonId === lessonId)
         : null
 
-      const courseLive = course?.liveStatus === 'live' || course?.liveStatus === 'LIVE'
-      const lessonLive = lesson?.liveStatus === 'live' || lesson?.liveStatus === 'LIVE'
-      const liveNow = lessonId ? (lessonLive || (lesson ? false : courseLive)) : courseLive
+      const isLiveValue = (v: any) => v === 'live' || v === 'LIVE'
+      const courseLive = isLiveValue(course?.liveStatus)
+      // Live if the course is live OR any lesson is live (a lesson-based stream
+      // never flips the course status, and vice versa), so the student connects
+      // regardless of which flow the instructor used or whether lessonId is set.
+      const targetLessonLive = isLiveValue(targetLesson?.liveStatus)
+      const liveNow = courseLive || targetLessonLive || lessons.some((l: any) => isLiveValue(l?.liveStatus))
 
       if (!liveNow) {
         clearTimeout(loadingTimeoutRef.current)
@@ -223,8 +226,18 @@ export default function LiveViewerPage() {
         return
       }
 
-      const tokenEndpoint = lessonId
-        ? `${API}/live/lesson-token/${lessonId}`
+      // Pick the token endpoint that matches the live source so the student joins
+      // the same Agora channel the instructor published to:
+      //   * lesson flow  -> Lesson.agoraChannelName (set by /live/lesson-start)
+      //   * course flow   -> Course.agoraChannelName (set by /live/start)
+      // When the URL has no lessonId but a lesson is live, use that lesson so the
+      // student still joins the correct lesson channel.
+      const liveLesson = targetLessonLive
+        ? targetLesson
+        : (lessons.find((l: any) => isLiveValue(l?.liveStatus)) || null)
+      const useLessonChannel = !!liveLesson && !courseLive
+      const tokenEndpoint = useLessonChannel
+        ? `${API}/live/lesson-token/${liveLesson.id}`
         : `${API}/live/token/${courseId}`
       const tokenRes = await fetch(tokenEndpoint, {
         headers: { Authorization: `Bearer ${userToken}` },
