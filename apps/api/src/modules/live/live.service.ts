@@ -183,19 +183,10 @@ export class LiveService {
     const isAdmin = accountType === 'ADMIN' || accountType === 'SUPER_ADMIN'
     if (!isOwner && !isAdmin) throw new ForbiddenException('Not authorized')
 
-    // The label arrives in the instructor's language, so both spellings of the
-    // lesson title are filled in.
-    const label = (title || '').trim()
-    const isArabic = /[؀-ۿ]/.test(label)
-    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
-    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
-
-    // Bunny.net Stream — identical path as POST /upload/video. The service
-    // hands back the full HLS playlist URL, which is what the lesson and the
-    // player need (the bare Bunny GUID is useless on its own).
-    const { videoId, videoUrl } = await this.bunny.uploadVideo(file, {
-      title: label || 'Live Session Recording',
-    })
+    // Bunny.net Stream — identical path as POST /upload/video. uploadVideo()
+    // returns the full HLS playlist URL (`videoUrl`); the bare video id is not
+    // playable, so this is what the lesson and the player need.
+    const { videoId, videoUrl } = await this.bunny.uploadVideo(file)
 
     // The recording has to live in the curriculum, otherwise the student
     // pages never find it. A live course usually has no section yet, so one
@@ -209,6 +200,13 @@ export class LiveService {
         data: { courseId, title: 'Live Recording', order: 0 },
       })
     }
+
+    // The label arrives in the instructor's language, so both spellings of the
+    // lesson title are filled in.
+    const label = (title || '').trim()
+    const isArabic = /[؀-ۿ]/.test(label)
+    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
+    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
 
     // A retry must not pile up recordings: the previous one is replaced.
     const previous = await this.prisma.lesson.findFirst({
@@ -241,8 +239,6 @@ export class LiveService {
           },
         })
 
-    console.log('[Live] Recording saved — lessonId:', lesson.id, 'url:', lesson.videoUrl)
-
     await this.prisma.course.update({
       where: { id: courseId },
       data: {
@@ -257,19 +253,6 @@ export class LiveService {
       success: true,
       data: { lessonId: lesson.id, videoId, url: videoUrl, sectionId: section.id },
     }
-  }
-
-  /**
-   * Minimal live-state read for the gateway. The 'live-started' broadcast only
-   * reaches sockets that are in the room at that moment, so a late-joining
-   * viewer has to be told separately whether the stream is already running.
-   * Selecting two columns keeps that check cheap.
-   */
-  async getCourseStatus(courseId: string) {
-    return this.prisma.course.findUnique({
-      where: { id: courseId },
-      select: { liveStatus: true, agoraChannelName: true },
-    })
   }
 
   async getLiveCourses(status?: string) {

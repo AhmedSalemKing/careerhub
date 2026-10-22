@@ -3,7 +3,6 @@ import {
   OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
-import { LiveService } from './live.service'
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
@@ -18,8 +17,6 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private rooms = new Map<string, Set<string>>()
   // socketId -> { courseId, userName, role, avatar }
   private socketMeta = new Map<string, any>()
-
-  constructor(private readonly liveService: LiveService) {}
 
   handleConnection(client: Socket) {
     console.log(`[Gateway] Connected: ${client.id}`)
@@ -54,7 +51,7 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join-room')
-  async handleJoinRoom(
+  handleJoinRoom(
     @MessageBody() data: { courseId: string; userName: string; role: string; avatar?: string },
     @ConnectedSocket() client: Socket,
   ) {
@@ -67,7 +64,7 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.leave(prevMeta.courseId)
     }
 
-    await client.join(courseId)
+    client.join(courseId)
     this.socketMeta.set(client.id, { courseId, userName, role, avatar })
 
     if (!this.rooms.has(courseId)) this.rooms.set(courseId, new Set())
@@ -78,29 +75,6 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(courseId).emit('viewer-count', { count })
 
     console.log(`[Gateway] ${userName} (${role}) joined ${courseId}, viewers: ${count}`)
-
-    // 'live-started' is a one-shot broadcast: it only reaches sockets that were
-    // already in the room at the moment the instructor went live. A student who
-    // opens the page afterwards used to receive nothing and sat on "البث لم يبدأ
-    // بعد" until the 5s poll happened to catch up (and forever when the join
-    // itself failed). Tell every late-joining viewer that the stream is already
-    // running so the client can start the Agora join immediately.
-    if (role !== 'instructor') {
-      try {
-        const status = await this.liveService.getCourseStatus(courseId)
-        if (String(status?.liveStatus ?? '').toLowerCase() === 'live') {
-          client.emit('stream-started', {
-            courseId,
-            channelName: status?.agoraChannelName || '',
-            lateJoin: true,
-            timestamp: new Date().toISOString(),
-          })
-        }
-      } catch (e) {
-        // A failed lookup must never break the room join.
-        console.error('[Gateway] Live status lookup failed:', e)
-      }
-    }
 
     return { event: 'joined', data: { count, courseId } }
   }

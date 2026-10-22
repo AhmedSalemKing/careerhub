@@ -1,19 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-// The socket must live on the same deployment as the REST calls. It used to be
-// hardcoded here while every fetch followed NEXT_PUBLIC_API_URL, so a stale env
-// var let the socket connect to the healthy API while the status and token
-// requests 404'd on another host — the exact split that showed "2 viewers"
-// together with "Course not found" on the student live page. Deriving both from
-// one variable makes that impossible.
-const SOCKET_URL = (() => {
-  const explicit = process.env.NEXT_PUBLIC_SOCKET_URL
-  const raw = (explicit && explicit.trim())
-    ? explicit.trim()
-    : (process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api')
-  // socket.io connects to the origin, not to the REST prefix.
-  return raw.replace(/\/+$/, '').replace(/\/api$/, '')
-})()
+const SOCKET_URL = 'https://api.deveways.com'
 
 const MAX_COMMENTS = 100
 const MAX_QUESTIONS = 50
@@ -152,13 +139,8 @@ export function useLiveSocket(
       socket = io(`${SOCKET_URL}/live`, {
         transports: ['websocket', 'polling'],
         reconnection: true,
-        // The API sleeps on Render's free tier: the first connection can take
-        // 10-30s to wake it up, so keep retrying long enough for that instead
-        // of giving up on the room after a few short attempts.
-        reconnectionAttempts: 10,
-        reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
-        timeout: 30000,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
       })
       socketRef.current = socket
 

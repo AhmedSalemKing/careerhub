@@ -11,38 +11,12 @@ import {
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
   UserCheck, UserX, Send, Wifi, WifiOff, Info,
-  AlertTriangle, Upload, RotateCcw, User, MonitorOff
+  AlertTriangle, Upload
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import { LIVE_RECORDING_SUPPORTED, liveRecordingNote, formatLiveTime } from '../../../../../../lib/live'
 import toast from 'react-hot-toast'
-
-/**
- * An aborted request is intentional cleanup — the page navigated away, the
- * component unmounted, or the browser cancelled a pending device request — not
- * a real failure. Every catch that reports an error returns early on it so the
- * instructor never sees an error they cannot act on.
- */
-function isAbortError(error: any): boolean {
-  return error?.name === 'AbortError'
-}
-
-/**
- * The Agora SDK has no cancellation signal: `client.join()` keeps retrying its
- * gateway handshake and can stay pending forever on a sleeping server. This cap
- * turns that hang into a real, retryable error instead of an endless
- * "جارٍ الاتصال بالبث…" overlay.
- */
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(message)), ms)
-    promise.then(
-      (value) => { clearTimeout(timer); resolve(value) },
-      (error) => { clearTimeout(timer); reject(error) },
-    )
-  })
-}
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -95,12 +69,9 @@ export default function GoLivePage() {
   // not open a socket of its own.
   const [pendingStart, setPendingStart] = useState<{ channelName: string; appId: string } | null>(null)
   // True once the camera attempt settled (successfully or not). The Go Live
-  // button is released as soon as this is true: waiting for the server would
+  // button is enabled as soon as this is true: waiting for the server would
   // block the instructor on a cold API, which is exactly what we avoid.
   const [cameraReady, setCameraReady] = useState(false)
-  // True when getUserMedia failed. This is a warning only: the instructor can
-  // still go live audio-only, and the retry button stays available.
-  const [cameraError, setCameraError] = useState(false)
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -120,19 +91,7 @@ export default function GoLivePage() {
     dismissQuestion,
     broadcastLiveStarted,
     broadcastLiveEnded,
-  // The socket is opened from the moment the page mounts instead of when the
-  // stream starts: its 'connect' event is the fastest reliable signal that a
-  // cold API is awake, and that is what clears the "connecting to server"
-  // state. Joining the room early is harmless — the gateway excludes the
-  // instructor from the viewer count and nothing is announced until
-  // 'live-started' is emitted.
-  } = useLiveSocket(courseId, instructorName, 'instructor', instructorAvatar)
-
-  // Mirror of the hook's `connected` flag for callbacks that outlive the render
-  // they were created in: the warm-up promise settles long after it was
-  // created, so a captured `connected` would be stale.
-  const socketConnectedRef = useRef(false)
-  useEffect(() => { socketConnectedRef.current = connected }, [connected])
+  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
 
   const localVideoRef = useRef<HTMLDivElement>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -293,8 +252,6 @@ export default function GoLivePage() {
         setRecordingState('error')
       }, 6000)
     } catch (e: any) {
-      // An aborted start is cleanup, not a recording failure.
-      if (isAbortError(e)) return
       console.error('[Recording] could not start', e?.message)
       setRecordingState('error')
     }
@@ -356,8 +313,6 @@ export default function GoLivePage() {
         router.push(`/${locale}/dashboard/my-courses`)
       }, 2000)
     } catch (e: any) {
-      // An aborted upload is cleanup (the tab is leaving), not a failure.
-      if (isAbortError(e)) return
       console.error('[Recording] upload failed', e?.message)
       setRecordingState('error')
       toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
@@ -426,17 +381,9 @@ export default function GoLivePage() {
         previewVideoRef.current.play?.().catch(() => {})
       }
       setPreviewActive(true)
-      // A successful (re)try clears the previous camera failure.
-      setCameraError(false)
-      setPrepNote('')
       return true
     } catch (e: any) {
-      // An aborted device request is cleanup, not a camera failure.
-      if (isAbortError(e)) return false
       const name = e?.name || ''
-      console.error('[Camera] init failed:', e)
-      // Warning only: starting without a camera falls back to audio-only.
-      setCameraError(true)
       setPrepNote(
         name === 'NotAllowedError' || name === 'SecurityError'
           ? (isAr ? 'لم يتم منح إذن الكاميرا/الميكروفون — سيخبرك المتصفح عند بدء البث' : 'Camera/mic permission denied — your browser will ask again when the stream starts')
@@ -456,7 +403,6 @@ export default function GoLivePage() {
     ;(async () => {
       setPrepStage('camera')
       setCameraReady(false)
-      setCameraError(false)
       await startPreview()
       if (cancelled) { stopPreview(); return }
       setCameraReady(true)
@@ -470,26 +416,6 @@ export default function GoLivePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
-
-  // A camera failure blocks "Go Live", so the instructor needs a way to try
-  // again without reloading the page (the permission might just have been
-  // granted, or the device plugged back in).
-  const handleRetryCamera = async () => {
-    setCameraError(false)
-    setPrepNote('')
-    setPrepStage('camera')
-    const ok = await startPreview()
-    setCameraReady(true)
-    if (ok) {
-      setPrepStage(prev => (
-        prev === 'camera' ? (serverState === 'ready' || connected ? 'ready' : 'server') : prev
-      ))
-    } else {
-      // Do not leave a spinner over a black preview: the overlay then says the
-      // camera is not active.
-      setPrepStage('ready')
-    }
-  }
 
   // Step 2 — the server warm-up, in the background. It never blocks the
   // preview and never blocks the Go Live button: a failure only produces a
@@ -509,21 +435,8 @@ export default function GoLivePage() {
         setServerState('ready')
         setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
       } catch (e: any) {
-        // An aborted warm-up is cleanup, not a server failure.
-        if (isAbortError(e)) return
         if (cancelled) return
         const status = e?.response?.status
-        // No HTTP status means the request never reached the API (timeout,
-        // network drop). If the live socket is connected, the API is
-        // demonstrably awake — a stale probe failure is not an outage, and
-        // showing the red banner here is exactly the false alarm the socket
-        // signal exists to prevent.
-        if (!status && socketConnectedRef.current) {
-          setServerState('ready')
-          setServerError('')
-          setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
-          return
-        }
         setServerState('failed')
         setServerError(
           status === 403
@@ -542,25 +455,11 @@ export default function GoLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, warmUpAttempt])
 
-  // The live socket connects to the very same API host. A connected socket
-  // therefore means the server is awake, so the "connecting to server" state is
-  // cleared the moment the socket is up instead of waiting for a cold-start
-  // warm-up request — which can take minutes because the shared client retries
-  // timeouts twice. A 'failed' warm-up is left alone: it is a real answer from
-  // the server (auth, permissions) and the instructor must see it.
-  useEffect(() => {
-    if (!connected) return
-    if (serverState !== 'connecting') return
-    setServerState('ready')
-    setServerError('')
-    setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
-  }, [connected, serverState])
-
   // Announce the live start on the SHARED socket (the one useLiveSocket owns).
-  // The hook joins the room in its 'connect' handler, so waiting for
-  // `connected` guarantees the announcement is not dropped. Exactly one socket
-  // serves the room for this page — the page never registers a listener of its
-  // own.
+  // The hook connects it as soon as `liveStarted` becomes true and joins the
+  // room in its 'connect' handler, so waiting for `connected` guarantees the
+  // announcement is not dropped. Exactly one socket serves the room for this
+  // page — the page never registers a listener of its own.
   useEffect(() => {
     if (!pendingStart || !connected) return
     broadcastLiveStarted(pendingStart.channelName, pendingStart.appId)
@@ -581,16 +480,12 @@ export default function GoLivePage() {
   //   "جارٍ تحضير الكاميرا..." → "جارٍ الاتصال بالخادم..." → "جاهز للبث"
   const prepStatus = starting
     ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
-    : cameraError
-      ? (isAr ? 'تعذر فتح الكاميرا' : 'Camera unavailable')
-      : !cameraReady
-        ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
-        : serverState === 'connecting'
-          ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
-          : (isAr ? 'جاهز للبث' : 'Ready to go live')
-  // The camera warning stays visible (informational) even though "Go Live" is
-  // still available: the stream would simply be audio-only.
-  const prepStatusDone = cameraReady && !cameraError && serverState === 'ready'
+    : !cameraReady
+      ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
+      : serverState === 'connecting'
+        ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+        : (isAr ? 'جاهز للبث' : 'Ready to go live')
+  const prepStatusDone = cameraReady && serverState === 'ready'
 
   const handleStartLive = async () => {
     setStarting(true)
@@ -626,52 +521,25 @@ export default function GoLivePage() {
       await client.setClientRole('host')
       clientRef.current = client
 
-      // Bounded: a sleeping or blocked gateway must not leave the page on
-      // "جارٍ الاتصال بالبث…" forever. Agora walks several edge/gateway
-      // fallbacks when the nearest node refuses the WebSocket, which can take
-      // over a minute, so the cap matches the student page's 90s window —
-      // otherwise a join that would have succeeded is reported as a failure.
-      await withTimeout(
-        client.join(data.appId, data.channelName, data.token, 1),
-        90000,
-        isAr
-          ? 'انتهت مهلة الاتصال بخادم البث — حاول مرة أخرى'
-          : 'The streaming server did not respond — please try again',
-      )
+      await client.join(data.appId, data.channelName, data.token, 1)
 
       // Hand the camera over to Agora: releasing the getUserMedia handle first
       // avoids two open handles fighting over the same device (black preview).
       // If the SDK then fails, handleEndLive-style cleanup restores it below.
       stopPreview()
 
-      // Microphone first, camera best-effort: a missing camera (no device,
-      // denied permission, failed preview) must not stop the lecture. Asking
-      // Agora for both at once throws when either is unavailable, so fall back
-      // to an audio-only track.
-      let micTrack: any
-      let camTrack: any = null
-      try {
-        const tracks = await AgoraRTC.createMicrophoneAndCameraTracks()
-        micTrack = tracks[0]
-        camTrack = tracks[1]
-      } catch (e) {
-        if (isAbortError(e)) throw e
-        console.warn('[Live] no camera available — streaming audio only', e)
-        micTrack = await AgoraRTC.createMicrophoneAudioTrack()
-        setCameraError(true)
-      }
-      const published = camTrack ? [micTrack, camTrack] : [micTrack]
+      const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
       localTracksRef.current = [micTrack, camTrack]
       setMicOn(true)
-      setCamOn(!!camTrack)
+      setCamOn(true)
 
-      if (camTrack && localVideoRef.current) camTrack.play(localVideoRef.current)
+      if (localVideoRef.current) camTrack.play(localVideoRef.current)
 
-      await client.publish(published)
+      await client.publish([micTrack, camTrack])
 
       // The recording runs on the very same tracks that are being published,
       // so what is saved is what the students saw.
-      startRecording(published)
+      startRecording([micTrack, camTrack])
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
       // announce on THAT socket once it has joined the room. Emitting before the
@@ -686,8 +554,6 @@ export default function GoLivePage() {
 
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
-      // An aborted start is cleanup, not a failure to go live.
-      if (isAbortError(e)) return
       toast.error(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
       // Leave the instructor with a working preview instead of a black box,
       // and report that the server is reachable again.
@@ -737,92 +603,55 @@ export default function GoLivePage() {
     }
   }, [screenSharing, liveStarted])
 
-  // Tears the screen share down and, when the page is still live, puts the
-  // camera back on air. Shared by the toolbar button and by the browser's own
-  // "Stop sharing" bar, so both paths leave the same state behind.
-  const stopScreenShare = async (silent = false) => {
-    const track = screenTrackRef.current
-    // Null the ref first: stopping the track fires 'track-ended' again, and the
-    // handler must not re-enter this function.
-    screenTrackRef.current = null
-    if (track) {
-      try { await clientRef.current?.unpublish(track) } catch { /* already gone */ }
-      try { track.stop() } catch { /* already stopped */ }
-      try { track.close() } catch { /* already closed */ }
-    }
-    // Republish the camera only when the session is still running: during the
-    // end-of-stream cleanup the client is about to leave anyway.
-    const camTrack = localTracksRef.current[1]
-    if (camTrack && clientRef.current && liveStarted && !streamEnded) {
-      try {
-        await clientRef.current.publish(camTrack)
-      } catch (e) {
-        console.warn('[ScreenShare] the camera could not be republished', e)
-      }
-    }
-    setScreenSharing(false)
-    if (!silent) toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
-  }
-
   const toggleScreenShare = async () => {
     if (!clientRef.current || !liveStarted) return
-    if (screenSharing) {
-      await stopScreenShare()
-      return
-    }
     try {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
-      let screenTrack: any
-      try {
-        screenTrack = await AgoraRTC.createScreenVideoTrack({
-          encoderConfig: '1080p_1',
-        }, 'disable')
-      } catch(e: any) {
-        // A dismissed picker or an aborted share is a user choice, not a
-        // failure: no error toast for it.
-        if (isAbortError(e)) return
-        if (e.message?.includes('Permission denied') || e.message?.includes('cancel')) {
-          toast.error(isAr ? 'تم إلغاء مشاركة الشاشة' : 'Screen sharing cancelled')
-        } else {
-          toast.error(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+      if (screenSharing) {
+        // Stop screen share
+        if (screenTrackRef.current) {
+          await clientRef.current.unpublish(screenTrackRef.current)
+          screenTrackRef.current.stop()
+          screenTrackRef.current.close()
+          screenTrackRef.current = null
         }
-        return
+        const camTrack = localTracksRef.current[1]
+        if (camTrack) await clientRef.current.publish(camTrack)
+        setScreenSharing(false)
+        toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
+      } else {
+        // Start screen share
+        let screenTrack: any
+        try {
+          screenTrack = await AgoraRTC.createScreenVideoTrack({
+            encoderConfig: '1080p_1',
+          }, 'disable')
+        } catch(e: any) {
+          if (e.message?.includes('Permission denied') || e.message?.includes('cancel')) {
+            toast.error(isAr ? 'تم إلغاء مشاركة الشاشة' : 'Screen sharing cancelled')
+          } else {
+            toast.error(isAr ? 'فشل مشاركة الشاشة' : 'Screen share failed')
+          }
+          return
+        }
+        const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack
+        screenTrackRef.current = track
+
+        const camTrack = localTracksRef.current[1]
+        if (camTrack) await clientRef.current.unpublish(camTrack)
+
+        await clientRef.current.publish(track)
+
+        // Play screen in main immediately (avoids flash)
+        if (localVideoRef.current) track.play(localVideoRef.current)
+
+        // Set state — useEffect will handle PiP camera placement
+        // after React renders the PiP container
+        setScreenSharing(true)
+        toast.success(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
       }
-      const track = Array.isArray(screenTrack) ? screenTrack[0] : screenTrack
-      screenTrackRef.current = track
-
-      const camTrack = localTracksRef.current[1]
-      if (camTrack) await clientRef.current.unpublish(camTrack)
-
-      await clientRef.current.publish(track)
-
-      // The browser's own "Stop sharing" bar does not touch React state, so
-      // clean up from the track event instead of leaving a dead share on air.
-      if (typeof track.on === 'function') {
-        track.on('track-ended', () => {
-          if (!screenTrackRef.current) return
-          void stopScreenShare()
-        })
-      }
-
-      // Play screen in main immediately (avoids flash)
-      if (localVideoRef.current) track.play(localVideoRef.current)
-
-      // Set state — useEffect will handle PiP camera placement
-      // after React renders the PiP container
-      setScreenSharing(true)
-      toast.success(isAr ? 'جاري مشاركة الشاشة' : 'Screen sharing started')
     } catch(e: any) {
-      // An aborted publish is cleanup, not a share failure.
-      if (isAbortError(e)) return
       console.error('[ScreenShare]', e.message)
-      const failed = screenTrackRef.current
-      screenTrackRef.current = null
-      if (failed) {
-        try { failed.stop() } catch { /* already stopped */ }
-        try { failed.close() } catch { /* already closed */ }
-      }
-      setScreenSharing(false)
       toast.error(isAr ? 'حدث خطأ' : 'Error')
     }
   }
@@ -837,21 +666,13 @@ export default function GoLivePage() {
       await new Promise(r => setTimeout(r, 500))
 
       // The recorder is stopped before the tracks are released: the last
-      // chunk still needs the live tracks to be alive.
-      const wasRecording = !!mediaRecorderRef.current
-      const recording = wasRecording ? await stopRecording() : null
+      // chunk still needs the live tracks to be alive. stopRecording() also
+      // returns a file that was captured before the recorder went inactive,
+      // so a session is still saved when the watchdog stopped it early.
+      const recording = await stopRecording()
 
-      // Audio-only sessions have no camera track, so skip the empty slot.
-      localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
-      // Stop sharing explicitly: the share badge and the PiP must disappear
-      // with the stream, and unpublishing keeps the client state consistent.
-      if (screenTrackRef.current) {
-        try { await clientRef.current?.unpublish(screenTrackRef.current) } catch { /* already gone */ }
-        try { screenTrackRef.current.stop() } catch { /* already stopped */ }
-        try { screenTrackRef.current.close() } catch { /* already closed */ }
-        screenTrackRef.current = null
-        setScreenSharing(false)
-      }
+      localTracksRef.current.forEach(t => { t.stop(); t.close() })
+      if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
       await post(`/live/end/${courseId}`, {})
 
@@ -1012,22 +833,6 @@ export default function GoLivePage() {
             <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', background: '#000', border: `1px solid ${border}`, aspectRatio: '16/9' }}>
               <div ref={localVideoRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
 
-              {/* After going live the camera box can be empty: an audio-only
-                  session (no camera track at all) or a camera the instructor
-                  turned off. Show who is broadcasting instead of a black hole. */}
-              {liveStarted && !streamEnded && !camOn && !screenSharing && (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#0f1115', pointerEvents: 'none' }}>
-                  <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <User size={40} color="#94a3b8" />
-                  </div>
-                  <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 700 }}>
-                    {cameraError
-                      ? (isAr ? 'لا توجد كاميرا — بث صوتي فقط' : 'No camera — audio only')
-                      : (isAr ? 'الكاميرا متوقفة' : 'Camera is off')}
-                  </span>
-                </div>
-              )}
-
               {/* Camera preview before going live (fast path: getUserMedia only, no network) */}
               {!liveStarted && (
                 <video
@@ -1059,16 +864,10 @@ export default function GoLivePage() {
                   )}
                   {prepStage === 'ready' && (
                     <>
-                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: cameraError ? 'rgba(148,163,184,0.12)' : 'rgba(220,38,38,0.15)', border: `1px solid ${cameraError ? 'rgba(148,163,184,0.25)' : 'rgba(220,38,38,0.3)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {cameraError
-                          ? <User size={30} color="#94a3b8" />
-                          : <Radio size={28} color="#dc2626" />}
+                      <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Radio size={28} color="#dc2626" />
                       </div>
-                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
-                        {cameraError
-                          ? (isAr ? 'لا توجد كاميرا — يمكنك البث بالصوت فقط' : 'No camera — you can still stream audio only')
-                          : (isAr ? 'الكاميرا غير مفعلة' : 'Camera not active')}
-                      </p>
+                      <p style={{ color: subtext, fontSize: 13, margin: 0 }}>{isAr ? 'الكاميرا غير مفعلة' : 'Camera not active'}</p>
                     </>
                   )}
                   {prepStage === 'connecting' && (
@@ -1101,10 +900,8 @@ export default function GoLivePage() {
                 }}>
                   {prepStatusDone
                     ? <CheckCircle2 size={13} color="#16a34a" />
-                    : cameraError
-                      ? <AlertTriangle size={13} color="#f59e0b" />
-                      : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
-                  <span style={{ color: prepStatusDone ? '#86efac' : cameraError ? '#f59e0b' : subtext, fontSize: 11, fontWeight: 700 }}>
+                    : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
+                  <span style={{ color: prepStatusDone ? '#86efac' : subtext, fontSize: 11, fontWeight: 700 }}>
                     {prepStatus}
                   </span>
                 </div>
@@ -1191,8 +988,8 @@ export default function GoLivePage() {
                   <button onClick={toggleCam} title={camOn ? (isAr?'إيقاف الكاميرا':'Stop Camera') : (isAr?'تشغيل الكاميرا':'Start Camera')} style={{ width: 44, height: 44, borderRadius: '50%', background: camOn ? 'rgba(255,255,255,0.08)' : '#dc2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
                     {camOn ? <Video size={18} /> : <VideoOff size={18} />}
                   </button>
-                  <button onClick={toggleScreenShare} title={screenSharing ? (isAr?'إيقاف المشاركة':'Stop Sharing') : (isAr?'مشاركة الشاشة':'Screen Share')} style={{ width: 44, height: 44, borderRadius: '50%', background: screenSharing ? '#5120c8' : 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
-                    {screenSharing ? <MonitorOff size={18} /> : <MonitorUp size={18} />}
+                  <button onClick={toggleScreenShare} title={isAr?'مشاركة الشاشة':'Screen Share'} style={{ width: 44, height: 44, borderRadius: '50%', background: screenSharing ? '#5120c8' : 'rgba(255,255,255,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.15s' }}>
+                    <MonitorUp size={18} />
                   </button>
                   <div style={{ width: 1, height: 32, background: border }} />
                   <button onClick={() => setShowEndConfirm(true)} disabled={ending || streamEnded} style={{ height: 44, paddingInline: 20, borderRadius: 22, background: '#dc2626', border: 'none', cursor: ending||streamEnded?'not-allowed':'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: 13, fontWeight: 800, opacity: ending||streamEnded?0.7:1 }}>
@@ -1213,17 +1010,7 @@ export default function GoLivePage() {
                       </button>
                     ))}
                   </div>
-                  {cameraError && (
-                    <button
-                      onClick={handleRetryCamera}
-                      disabled={starting}
-                      title={isAr ? 'إعادة محاولة فتح الكاميرا' : 'Try opening the camera again'}
-                      style={{ height: 48, paddingInline: 16, borderRadius: 14, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', cursor: starting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b', fontSize: 13, fontWeight: 700, opacity: starting ? 0.7 : 1 }}>
-                      <RotateCcw size={15} />
-                      {isAr ? 'إعادة محاولة الكاميرا' : 'Retry camera'}
-                    </button>
-                  )}
-                  <button onClick={handleStartLive} disabled={starting || !cameraReady} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady?'not-allowed':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady?0.5:1 }}>
+                  <button onClick={handleStartLive} disabled={starting || !cameraReady} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady?'wait':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady?0.7:1 }}>
                     {starting
                       ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{prepLabel}</>
                       : <><Play size={18} />{prepLabel}</>}
