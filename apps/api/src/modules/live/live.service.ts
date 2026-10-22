@@ -170,6 +170,7 @@ export class LiveService {
     file: Express.Multer.File,
     title?: string,
     accountType?: string,
+    append = false,
   ) {
     if (!courseId) throw new BadRequestException('courseId is required')
     if (!file || !file.buffer || file.buffer.length === 0) {
@@ -205,14 +206,46 @@ export class LiveService {
     // lesson title are filled in.
     const label = (title || '').trim()
     const isArabic = /[؀-ۿ]/.test(label)
-    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
-    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
+    let lessonTitle = label && !isArabic ? label : 'Live Session Recording'
+    let lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
+
+    // The recording switches between the camera and the screen share while the
+    // stream runs. Every finished segment is uploaded with append=true and kept
+    // as its own lesson; the final upload (and a retry of it) replaces the
+    // previous recording so repeated attempts do not pile up.
+    let order = 0
+    let liveStillRunning = false
+    if (append) {
+      const [lastLesson, segmentCount, liveLessons] = await Promise.all([
+        this.prisma.lesson.findFirst({
+          where: { sectionId: section.id },
+          orderBy: { order: 'desc' },
+          select: { order: true },
+        }),
+        this.prisma.lesson.count({
+          where: { sectionId: section.id, recordingUrl: { not: null } },
+        }),
+        // A course live and a lesson live are two different flows; either one
+        // means the session has not ended yet.
+        this.prisma.lesson.count({
+          where: { section: { courseId }, liveStatus: 'live' },
+        }),
+      ])
+      order = (lastLesson?.order ?? -1) + 1
+      liveStillRunning = course.liveStatus === 'live' || liveLessons > 0
+      if (segmentCount > 0) {
+        lessonTitle = `${lessonTitle} (${segmentCount + 1})`
+        lessonTitleAr = `${lessonTitleAr} (${segmentCount + 1})`
+      }
+    }
 
     // A retry must not pile up recordings: the previous one is replaced.
-    const previous = await this.prisma.lesson.findFirst({
-      where: { sectionId: section.id, recordingUrl: { not: null } },
-      orderBy: { createdAt: 'desc' },
-    })
+    const previous = append
+      ? null
+      : await this.prisma.lesson.findFirst({
+          where: { sectionId: section.id, recordingUrl: { not: null } },
+          orderBy: { createdAt: 'desc' },
+        })
 
     const lesson = previous
       ? await this.prisma.lesson.update({
@@ -234,7 +267,7 @@ export class LiveService {
             type: 'VIDEO',
             videoUrl: videoUrl,
             recordingUrl: videoUrl,
-            order: 0,
+            order,
             isPublished: true,
           },
         })
@@ -244,8 +277,12 @@ export class LiveService {
       data: {
         recordingUrl: videoUrl,
         // A live course is finished once its recording is in; a regular
-        // course keeps its own status.
-        ...(course.type === 'live' ? { liveStatus: 'ended' } : {}),
+        // course keeps its own status. An intermediate segment of a session
+        // that is still running must never mark it ended — the viewer page
+        // refuses to join a course whose liveStatus is 'ended'.
+        ...(course.type === 'live' && !liveStillRunning
+          ? { liveStatus: 'ended' }
+          : {}),
       },
     })
 

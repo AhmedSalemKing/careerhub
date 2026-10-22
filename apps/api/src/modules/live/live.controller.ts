@@ -57,8 +57,16 @@ export class LiveController {
     @Body('courseId') courseId: string,
     @Body('title') title: string,
     @Request() req: any,
+    @Body('append') append?: string,
   ) {
-    return this.liveService.saveRecording(req.user.id, courseId, file, title, req.user.accountType)
+    return this.liveService.saveRecording(
+      req.user.id,
+      courseId,
+      file,
+      title,
+      req.user.accountType,
+      append === 'true',
+    )
   }
 
   @Get('courses')
