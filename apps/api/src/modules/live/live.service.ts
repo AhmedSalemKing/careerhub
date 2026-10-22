@@ -183,8 +183,19 @@ export class LiveService {
     const isAdmin = accountType === 'ADMIN' || accountType === 'SUPER_ADMIN'
     if (!isOwner && !isAdmin) throw new ForbiddenException('Not authorized')
 
-    // Bunny.net Stream — identical path as POST /upload/video.
-    const { url, videoId } = await this.bunny.uploadVideo(file)
+    // The label arrives in the instructor's language, so both spellings of the
+    // lesson title are filled in.
+    const label = (title || '').trim()
+    const isArabic = /[؀-ۿ]/.test(label)
+    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
+    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
+
+    // Bunny.net Stream — identical path as POST /upload/video. The service
+    // hands back the full HLS playlist URL, which is what the lesson and the
+    // player need (the bare Bunny GUID is useless on its own).
+    const { videoId, videoUrl } = await this.bunny.uploadVideo(file, {
+      title: label || 'Live Session Recording',
+    })
 
     // The recording has to live in the curriculum, otherwise the student
     // pages never find it. A live course usually has no section yet, so one
@@ -199,13 +210,6 @@ export class LiveService {
       })
     }
 
-    // The label arrives in the instructor's language, so both spellings of the
-    // lesson title are filled in.
-    const label = (title || '').trim()
-    const isArabic = /[؀-ۿ]/.test(label)
-    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
-    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
-
     // A retry must not pile up recordings: the previous one is replaced.
     const previous = await this.prisma.lesson.findFirst({
       where: { sectionId: section.id, recordingUrl: { not: null } },
@@ -219,8 +223,8 @@ export class LiveService {
             title: lessonTitle,
             titleAr: lessonTitleAr,
             type: 'VIDEO',
-            videoUrl: url,
-            recordingUrl: url,
+            videoUrl: videoUrl,
+            recordingUrl: videoUrl,
             isPublished: true,
           },
         })
@@ -230,17 +234,19 @@ export class LiveService {
             title: lessonTitle,
             titleAr: lessonTitleAr,
             type: 'VIDEO',
-            videoUrl: url,
-            recordingUrl: url,
+            videoUrl: videoUrl,
+            recordingUrl: videoUrl,
             order: 0,
             isPublished: true,
           },
         })
 
+    console.log('[Live] Recording saved — lessonId:', lesson.id, 'url:', lesson.videoUrl)
+
     await this.prisma.course.update({
       where: { id: courseId },
       data: {
-        recordingUrl: url,
+        recordingUrl: videoUrl,
         // A live course is finished once its recording is in; a regular
         // course keeps its own status.
         ...(course.type === 'live' ? { liveStatus: 'ended' } : {}),
@@ -249,7 +255,7 @@ export class LiveService {
 
     return {
       success: true,
-      data: { lessonId: lesson.id, videoId, url, sectionId: section.id },
+      data: { lessonId: lesson.id, videoId, url: videoUrl, sectionId: section.id },
     }
   }
 

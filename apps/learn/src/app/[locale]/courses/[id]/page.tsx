@@ -54,6 +54,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
 import LiveCourseDetail from "../../../../components/live/LiveCourseDetail";
+import LiveRecordingPlayer from "../../../../components/live/LiveRecordingPlayer";
 
 export default function CourseDetailPage({
 	params,
@@ -1255,12 +1256,9 @@ export default function CourseDetailPage({
 													border: `1px solid ${borderColor}`,
 													background: "#000",
 												}}>
-											<video
-												src={getMediaUrl(recordedLesson.videoUrl) ?? undefined}
-												controls
-												playsInline
-												className="w-full"
-												style={{ aspectRatio: "16/9", display: "block" }}
+											<LiveRecordingPlayer
+												src={getMediaUrl(recordedLesson.videoUrl)}
+												poster={thumb}
 											/>
 											<div
 												className="px-3 py-2 text-xs font-medium"

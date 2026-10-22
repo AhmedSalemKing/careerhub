@@ -227,7 +227,17 @@ export class UploadController {
       return {
         success: true,
         message: 'Video uploaded successfully',
-        data: { url: result.url, fileName: file.originalname, size: file.size, mimeType: file.mimetype },
+        data: {
+          // `url` stays the full HLS playlist URL — the clients that were
+          // written before Bunny only know that field.
+          url: result.videoUrl,
+          videoUrl: result.videoUrl,
+          videoId: result.videoId,
+          thumbnailUrl: result.thumbnailUrl,
+          fileName: file.originalname,
+          size: file.size,
+          mimeType: file.mimetype,
+        },
       };
     }
 
