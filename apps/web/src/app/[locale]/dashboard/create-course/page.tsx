@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
-import { liveRecordingUnavailableNote } from '../../../../lib/live'
+import { liveRecordingNote } from '../../../../lib/live'
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
 import {
@@ -765,7 +765,7 @@ export default function CreateCoursePage() {
                 ))}
                 <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3">
                   <p className="text-xs text-[color:var(--muted)] leading-relaxed">
-                    {liveRecordingUnavailableNote(locale)}
+                    {liveRecordingNote(locale)}
                   </p>
                 </div>
               </div>

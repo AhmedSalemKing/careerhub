@@ -36,9 +36,10 @@ import {
 	formatLiveDateLong,
 	formatLiveTimeShort,
 	liveCountdownParts,
-	liveRecordingUnavailableNote,
+	liveRecordingNote,
 	normalizeLiveStatus,
 } from "../../lib/live";
+import LiveRecordingPlayer from "./LiveRecordingPlayer";
 
 export interface LiveCourseDetailProps {
 	course: any;
@@ -214,14 +215,7 @@ export default function LiveCourseDetail({
 						boxShadow: "0 8px 40px rgba(0,0,0,0.14)",
 					}}>
 					{hasRecording && recordingUrl ? (
-						<video
-							src={recordingUrl}
-							poster={thumb || undefined}
-							controls
-							playsInline
-							className="w-full"
-							style={{ aspectRatio: "16/9", display: "block" }}
-						/>
+						<LiveRecordingPlayer src={recordingUrl} poster={thumb} />
 					) : (
 						<div
 							className="flex flex-col items-center justify-center text-center gap-4 px-6"
@@ -280,7 +274,7 @@ export default function LiveCourseDetail({
 									<p
 										className="text-sm max-w-md"
 										style={{ color: textSecondary }}>
-										{liveRecordingUnavailableNote(locale)}
+										{liveRecordingNote(locale)}
 									</p>
 								</>
 							) : (

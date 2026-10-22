@@ -1,21 +1,21 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { AgoraService } from './agora.service'
+import { BunnyStreamService } from '../upload/bunny-stream.service'
 
 @Injectable()
 export class LiveService {
   /**
-   * Agora Cloud Recording is NOT integrated: there is no call that starts a
-   * cloud recording, none that stops it and none that reads the resulting
-   * m3u8/mp4 URL, so no recording file can ever be produced by a live session.
-   * Until that integration exists the API (and the UI) must say so plainly
-   * instead of promising a recording that will never appear.
+   * The recording is produced by the instructor's browser (MediaRecorder) and
+   * uploaded to this API, which stores it on Bunny.net Stream and turns it
+   * into a Lesson. Agora Cloud Recording is not used and is not needed.
    */
-  readonly recordingSupported = false;
+  readonly recordingSupported = true;
 
   constructor(
     private prisma: PrismaService,
     private agora: AgoraService,
+    private bunny: BunnyStreamService,
   ) {}
 
   async getAgoraToken(courseId: string, userId: string) {
@@ -116,11 +116,14 @@ export class LiveService {
 
     await this.prisma.course.update({ where: { id: courseId }, data: updateData })
 
-    // Agora Cloud Recording is not integrated (see `recordingSupported`), so
-    // there is no URL to retrieve and no Lesson to create from a recording.
-    // Never tell students a recording exists when one was never produced —
-    // the pending autoPublishRecording flag is intentionally ignored here.
-    const recordingAvailable = false
+    // The recording is produced in the instructor's browser and uploaded right
+    // after the stream ended, so at this exact moment there is nothing to
+    // watch yet. The message says so instead of pretending the recording is
+    // already there — and it never promises a recording that does not exist.
+    const recordingAvailable = !!(await this.prisma.lesson.findFirst({
+      where: { section: { courseId }, recordingUrl: { not: null } },
+      select: { id: true },
+    }))
 
     const enrollments = await this.prisma.enrollment.findMany({
       where: { courseId },
@@ -147,9 +150,106 @@ export class LiveService {
         autoDelete: course.autoDeleteAfterLive,
         recordingSupported: this.recordingSupported,
         recordingAvailable,
-        messageAr: 'التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً',
-        messageEn: 'Auto-recording is not available yet — it will be added soon',
+        messageAr: 'يُحفظ التسجيل من متصفح المحاضر ويظهر للمشتركين بعد انتهاء الرفع',
+        messageEn: 'The recording is captured in the instructor browser and appears once the upload finishes',
       },
+    }
+  }
+
+  /**
+   * Stores the recording the instructor's browser produced with MediaRecorder.
+   *
+   * The file goes to Bunny.net Stream through `BunnyStreamService` — the very
+   * same service the regular video upload uses — and the returned HLS URL is
+   * attached to a Lesson so the students find the recording in the course
+   * page like any other video.
+   */
+  async saveRecording(
+    userId: string,
+    courseId: string,
+    file: Express.Multer.File,
+    title?: string,
+    accountType?: string,
+  ) {
+    if (!courseId) throw new BadRequestException('courseId is required')
+    if (!file || !file.buffer || file.buffer.length === 0) {
+      throw new BadRequestException('No recording file provided')
+    }
+
+    const course = await this.prisma.course.findUnique({ where: { id: courseId } })
+    if (!course) throw new NotFoundException('Course not found')
+
+    const isOwner = course.instructorId === userId
+    const isAdmin = accountType === 'ADMIN' || accountType === 'SUPER_ADMIN'
+    if (!isOwner && !isAdmin) throw new ForbiddenException('Not authorized')
+
+    // Bunny.net Stream — identical path as POST /upload/video.
+    const { url, videoId } = await this.bunny.uploadVideo(file)
+
+    // The recording has to live in the curriculum, otherwise the student
+    // pages never find it. A live course usually has no section yet, so one
+    // is created for the recording.
+    let section = await this.prisma.section.findFirst({
+      where: { courseId },
+      orderBy: { order: 'asc' },
+    })
+    if (!section) {
+      section = await this.prisma.section.create({
+        data: { courseId, title: 'Live Recording', order: 0 },
+      })
+    }
+
+    // The label arrives in the instructor's language, so both spellings of the
+    // lesson title are filled in.
+    const label = (title || '').trim()
+    const isArabic = /[؀-ۿ]/.test(label)
+    const lessonTitle = label && !isArabic ? label : 'Live Session Recording'
+    const lessonTitleAr = label && isArabic ? label : 'تسجيل البث المباشر'
+
+    // A retry must not pile up recordings: the previous one is replaced.
+    const previous = await this.prisma.lesson.findFirst({
+      where: { sectionId: section.id, recordingUrl: { not: null } },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const lesson = previous
+      ? await this.prisma.lesson.update({
+          where: { id: previous.id },
+          data: {
+            title: lessonTitle,
+            titleAr: lessonTitleAr,
+            type: 'VIDEO',
+            videoUrl: url,
+            recordingUrl: url,
+            isPublished: true,
+          },
+        })
+      : await this.prisma.lesson.create({
+          data: {
+            sectionId: section.id,
+            title: lessonTitle,
+            titleAr: lessonTitleAr,
+            type: 'VIDEO',
+            videoUrl: url,
+            recordingUrl: url,
+            order: 0,
+            isPublished: true,
+          },
+        })
+
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: {
+        recordingUrl: url,
+        // A live course is finished once its recording is in; a regular
+        // course keeps its own status.
+        ...(course.type === 'live' ? { liveStatus: 'ended' } : {}),
+      },
+    })
+
+    return {
+      success: true,
+      data: { lessonId: lesson.id, videoId, url, sectionId: section.id },
     }
   }
 

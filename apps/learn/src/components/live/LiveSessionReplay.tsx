@@ -27,9 +27,10 @@ import { getCourseTitle, getMediaUrl } from "../../lib/media";
 import {
 	formatLiveDateLong,
 	formatLiveTimeShort,
-	liveRecordingUnavailableNote,
+	liveRecordingNote,
 } from "../../lib/live";
 import VideoProtection from "../VideoProtection";
+import LiveRecordingPlayer from "./LiveRecordingPlayer";
 
 export interface LiveSessionReplayProps {
 	course: any;
@@ -123,14 +124,7 @@ export default function LiveSessionReplay({
 							border: `1px solid ${borderColor}`,
 							boxShadow: "0 8px 40px rgba(0,0,0,0.14)",
 						}}>
-						<video
-							src={recordingUrl}
-							poster={thumb || undefined}
-							controls
-							playsInline
-							className="w-full"
-							style={{ aspectRatio: "16/9", display: "block" }}
-						/>
+						<LiveRecordingPlayer src={recordingUrl} poster={thumb} />
 					</div>
 				) : (
 					<div
@@ -147,7 +141,7 @@ export default function LiveSessionReplay({
 							{isAr ? "التسجيل غير متاح لهذا البث" : "No recording for this session"}
 						</p>
 						<p className="text-sm max-w-md" style={{ color: textSecondary }}>
-							{liveRecordingUnavailableNote(locale)}
+							{liveRecordingNote(locale)}
 						</p>
 					</div>
 				)}

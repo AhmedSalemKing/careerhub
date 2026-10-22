@@ -11,7 +11,7 @@ import {
 import { get, post, patch, del } from '../../../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../../../lib/upload-error'
 import {
-  liveRecordingUnavailableNote,
+  liveRecordingNote,
   isLiveStatus,
   formatLiveDateTimeShort,
 } from '../../../../../../lib/live'
@@ -726,7 +726,7 @@ function AddLectureModal({
                 ))}
                 <p style={{ color: 'var(--muted)', fontSize: '0.8rem',
                   margin: 0, lineHeight: 1.6 }}>
-                  {liveRecordingUnavailableNote(locale)}
+                  {liveRecordingNote(locale)}
                 </p>
               </div>
 

@@ -28,17 +28,19 @@ const AR_LOCALE = 'ar-EG-u-ca-gregory'
 const EN_LOCALE = 'en-US-u-ca-gregory'
 
 /**
- * Agora Cloud Recording is not integrated in the API (no start/stop/URL
- * retrieval calls exist), so a live session never produces a recording file.
- * Keep this `false` and be honest in the UI instead of silently failing.
+ * The recording is produced in the instructor's browser with MediaRecorder and
+ * uploaded to the platform when the stream ends, so the feature is available.
+ * A session can still have no recording: the instructor may have declined it,
+ * the browser may not support MediaRecorder, or the upload may still be on its
+ * way — the note says exactly that instead of promising a file.
  */
-export const LIVE_RECORDING_SUPPORTED = false
+export const LIVE_RECORDING_SUPPORTED = true
 
-export const LIVE_RECORDING_UNAVAILABLE_NOTE_AR = 'التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً'
-export const LIVE_RECORDING_UNAVAILABLE_NOTE_EN = 'Auto-recording is not available yet — it will be added soon'
+export const LIVE_RECORDING_NOTE_AR = 'يُحفظ التسجيل من متصفح المحاضر بعد انتهاء البث، وقد لا يكون متاحاً بعد'
+export const LIVE_RECORDING_NOTE_EN = 'The recording is saved from the instructor browser after the stream ends, so it may not be available yet'
 
-export function liveRecordingUnavailableNote(locale: string): string {
-  return locale === 'ar' ? LIVE_RECORDING_UNAVAILABLE_NOTE_AR : LIVE_RECORDING_UNAVAILABLE_NOTE_EN
+export function liveRecordingNote(locale: string): string {
+  return locale === 'ar' ? LIVE_RECORDING_NOTE_AR : LIVE_RECORDING_NOTE_EN
 }
 
 /** 'scheduled' | 'live' | 'ended' — never null (null means "regular recorded course"). */
