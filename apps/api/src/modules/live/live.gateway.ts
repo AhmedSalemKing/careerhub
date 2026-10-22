@@ -3,6 +3,7 @@ import {
   OnGatewayConnection, OnGatewayDisconnect, MessageBody, ConnectedSocket
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+import { LiveService } from './live.service'
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
@@ -12,6 +13,8 @@ import { Server, Socket } from 'socket.io'
 export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server
+
+  constructor(private readonly liveService: LiveService) {}
 
   // roomId -> Set of socket IDs
   private rooms = new Map<string, Set<string>>()
@@ -51,7 +54,7 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join-room')
-  handleJoinRoom(
+  async handleJoinRoom(
     @MessageBody() data: { courseId: string; userName: string; role: string; avatar?: string },
     @ConnectedSocket() client: Socket,
   ) {
@@ -75,6 +78,31 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.to(courseId).emit('viewer-count', { count })
 
     console.log(`[Gateway] ${userName} (${role}) joined ${courseId}, viewers: ${count}`)
+
+    // Catch-up for a viewer who opened the page after the instructor went
+    // live: the 'live-started' broadcast happened before this socket existed,
+    // so it was never delivered and the student had to wait for a timeout.
+    // Only the joining socket is notified, and only when the session really
+    // is live. No token is sent: the student page reacts by re-probing the
+    // status through the REST API, which re-checks enrollment and issues a
+    // fresh token for that student. The socket room is not an auth boundary.
+    if (role !== 'instructor') {
+      try {
+        const session = await this.liveService.getCourseStatus(courseId)
+        if (session?.liveStatus?.toLowerCase() === 'live') {
+          client.emit('stream-started', {
+            courseId,
+            channelName: session.agoraChannelName || courseId,
+            lateJoin: true,
+            timestamp: new Date().toISOString(),
+          })
+        }
+      } catch (e: any) {
+        // A failed lookup must never stop a student from joining the room;
+        // the status poll still recovers the session.
+        console.error(`[Gateway] Late-join check failed for ${courseId}:`, e?.message)
+      }
+    }
 
     return { event: 'joined', data: { count, courseId } }
   }

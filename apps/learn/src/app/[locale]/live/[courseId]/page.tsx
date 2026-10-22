@@ -566,16 +566,20 @@ export default function LiveViewerPage() {
   }, [socketComments])
 
   useEffect(() => {
-    // The socket room size is only a hint. The Agora-accurate number is
-    // Course.liveViewerCount (dbViewerCountRef), so never let the socket count
-    // drive the badge higher than the real figure; and never drop to 0 just
-    // because the room momentarily reports nobody.
-    if (socketViewerCount > 0 && socketViewerCount > dbViewerCountRef.current) {
+    // The socket room is the live audience: the gateway excludes the
+    // instructor and broadcasts a new count on every join AND disconnect.
+    // Course.liveViewerCount is only a hint — it is incremented on every join
+    // attempt (including retries) and can miss the matching decrement, so it
+    // drifts upward. Using it as a floor made the badge grow and never drop,
+    // which is why it showed the wrong number. The DB value is used only as a
+    // placeholder until the socket delivers the real count.
+    if (!connected) return
+    if (socketViewerCount > 0) {
       setViewerCount(socketViewerCount)
     } else if (dbViewerCountRef.current > 0) {
       setViewerCount(dbViewerCountRef.current)
     }
-  }, [socketViewerCount])
+  }, [socketViewerCount, connected])
 
   // On mount: check stream status (does NOT init Agora — only on user click)
   useEffect(() => {

@@ -255,6 +255,47 @@ export class LiveService {
     }
   }
 
+  /**
+   * Read-only snapshot used by the socket gateway to answer a late joiner:
+   * "is this course live right now, and on which Agora channel?".
+   *
+   * Both live flows are covered — course-level (`/live/start` writes
+   * Course.liveStatus + Course.agoraChannelName) and lesson-level
+   * (`/live/lesson-start` writes Lesson.liveStatus + Lesson.agoraChannelName).
+   */
+  async getCourseStatus(courseId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: {
+        liveStatus: true,
+        agoraChannelName: true,
+        sections: {
+          select: {
+            lessons: {
+              where: { liveStatus: 'live' },
+              select: { id: true, agoraChannelName: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    })
+    if (!course) return null
+
+    const liveLesson = course.sections.flatMap((s) => s.lessons)[0]
+    if (liveLesson) {
+      return {
+        liveStatus: 'live',
+        agoraChannelName: liveLesson.agoraChannelName || `lesson_${liveLesson.id}`,
+      }
+    }
+
+    return {
+      liveStatus: course.liveStatus,
+      agoraChannelName: course.agoraChannelName,
+    }
+  }
+
   async getLiveCourses(status?: string) {
     const where: any = { type: 'live' }
     if (status) where.liveStatus = status
