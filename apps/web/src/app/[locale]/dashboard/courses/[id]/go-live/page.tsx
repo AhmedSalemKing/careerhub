@@ -82,9 +82,8 @@ export default function GoLivePage() {
   // button is released as soon as this is true: waiting for the server would
   // block the instructor on a cold API, which is exactly what we avoid.
   const [cameraReady, setCameraReady] = useState(false)
-  // True when getUserMedia failed. The page always publishes mic + camera, so
-  // without a camera there is nothing to stream: this blocks "Go Live" until
-  // the retry succeeds.
+  // True when getUserMedia failed. This is a warning only: the instructor can
+  // still go live audio-only, and the retry button stays available.
   const [cameraError, setCameraError] = useState(false)
 
   const { data: me } = useQuery({
@@ -414,8 +413,7 @@ export default function GoLivePage() {
       if (isAbortError(e)) return false
       const name = e?.name || ''
       console.error('[Camera] init failed:', e)
-      // Must block the stream: the page always publishes mic + camera, so
-      // without a camera there is nothing to publish.
+      // Warning only: starting without a camera falls back to audio-only.
       setCameraError(true)
       setPrepNote(
         name === 'NotAllowedError' || name === 'SecurityError'
@@ -557,20 +555,11 @@ export default function GoLivePage() {
         : serverState === 'connecting'
           ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
           : (isAr ? 'جاهز للبث' : 'Ready to go live')
-  // Never claim the page is ready while the camera is unavailable: "Go Live"
-  // is blocked in that state.
+  // The camera warning stays visible (informational) even though "Go Live" is
+  // still available: the stream would simply be audio-only.
   const prepStatusDone = cameraReady && !cameraError && serverState === 'ready'
 
   const handleStartLive = async () => {
-    // Without a camera there is nothing to publish (the page always sends mic
-    // and camera), so refuse the attempt instead of failing halfway through
-    // with a raw SDK error.
-    if (cameraError) {
-      toast.error(isAr
-        ? 'تعذر فتح الكاميرا — أعد المحاولة أولاً'
-        : 'The camera is unavailable — retry it first')
-      return
-    }
     setStarting(true)
     setPrepStage('connecting')
     try {
@@ -611,18 +600,34 @@ export default function GoLivePage() {
       // If the SDK then fails, handleEndLive-style cleanup restores it below.
       stopPreview()
 
-      const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
+      // Microphone first, camera best-effort: a missing camera (no device,
+      // denied permission, failed preview) must not stop the lecture. Asking
+      // Agora for both at once throws when either is unavailable, so fall back
+      // to an audio-only track.
+      let micTrack: any
+      let camTrack: any = null
+      try {
+        const tracks = await AgoraRTC.createMicrophoneAndCameraTracks()
+        micTrack = tracks[0]
+        camTrack = tracks[1]
+      } catch (e) {
+        if (isAbortError(e)) throw e
+        console.warn('[Live] no camera available — streaming audio only', e)
+        micTrack = await AgoraRTC.createMicrophoneAudioTrack()
+        setCameraError(true)
+      }
+      const published = camTrack ? [micTrack, camTrack] : [micTrack]
       localTracksRef.current = [micTrack, camTrack]
       setMicOn(true)
-      setCamOn(true)
+      setCamOn(!!camTrack)
 
-      if (localVideoRef.current) camTrack.play(localVideoRef.current)
+      if (camTrack && localVideoRef.current) camTrack.play(localVideoRef.current)
 
-      await client.publish([micTrack, camTrack])
+      await client.publish(published)
 
       // The recording runs on the very same tracks that are being published,
       // so what is saved is what the students saw.
-      startRecording([micTrack, camTrack])
+      startRecording(published)
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
       // announce on THAT socket once it has joined the room. Emitting before the
@@ -755,7 +760,8 @@ export default function GoLivePage() {
       const wasRecording = !!mediaRecorderRef.current
       const recording = wasRecording ? await stopRecording() : null
 
-      localTracksRef.current.forEach(t => { t.stop(); t.close() })
+      // Audio-only sessions have no camera track, so skip the empty slot.
+      localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
       await post(`/live/end/${courseId}`, {})
@@ -985,9 +991,9 @@ export default function GoLivePage() {
                   {prepStatusDone
                     ? <CheckCircle2 size={13} color="#16a34a" />
                     : cameraError
-                      ? <AlertTriangle size={13} color="#f87171" />
+                      ? <AlertTriangle size={13} color="#f59e0b" />
                       : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
-                  <span style={{ color: prepStatusDone ? '#86efac' : cameraError ? '#f87171' : subtext, fontSize: 11, fontWeight: 700 }}>
+                  <span style={{ color: prepStatusDone ? '#86efac' : cameraError ? '#f59e0b' : subtext, fontSize: 11, fontWeight: 700 }}>
                     {prepStatus}
                   </span>
                 </div>
@@ -1106,7 +1112,7 @@ export default function GoLivePage() {
                       {isAr ? 'إعادة محاولة الكاميرا' : 'Retry camera'}
                     </button>
                   )}
-                  <button onClick={handleStartLive} disabled={starting || !cameraReady || cameraError} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady||cameraError?'not-allowed':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady||cameraError?0.5:1 }}>
+                  <button onClick={handleStartLive} disabled={starting || !cameraReady} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady?'not-allowed':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady?0.5:1 }}>
                     {starting
                       ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{prepLabel}</>
                       : <><Play size={18} />{prepLabel}</>}
