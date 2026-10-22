@@ -199,10 +199,11 @@ export default function GoLivePage() {
     return null
   }
 
-  // Starts the local recording on the given tracks. The recording follows
-  // what the students actually see: screen share when it is active, otherwise
-  // the camera, and a black canvas when there is no video at all (broken or
-  // missing camera) so the saved file is still a valid video container.
+  // Starts the local recording on the given tracks. Recording is a separate,
+  // fire-and-forget system: it captures whatever the stream started with
+  // (mic + camera, or mic only) and nothing else can restart or stop it. A
+  // black canvas track is added when there is no video at all so the saved
+  // file is still a valid video container.
   const startRecording = (tracks: any[]) => {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
@@ -246,9 +247,10 @@ export default function GoLivePage() {
       recorder.ondataavailable = (e: BlobEvent) => {
         if (e.data && e.data.size > 0) recordingChunksRef.current.push(e.data)
       }
+      // A recorder failure is silent: the live stream must keep going and the
+      // instructor must not see a blocking error mid-session.
       recorder.onerror = () => {
-        console.error('[Recording] recorder failed')
-        setRecordingState('error')
+        console.error('[Recording] recorder failed — recording stopped silently')
       }
       // The file is assembled whenever the recorder stops — no matter if the
       // stream ended or the watchdog gave up.
@@ -271,18 +273,17 @@ export default function GoLivePage() {
       setRecordingState('recording')
 
       // Watchdog: a recorder that produces no data is not recording anything.
-      // Better to say so than to upload an empty file and call it a recording.
+      // It stops the recorder silently — the final upload reports the truth
+      // (no file) instead of interrupting the live with an error.
       clearTimeout(recordingWatchdogRef.current)
       recordingWatchdogRef.current = setTimeout(() => {
         if (mediaRecorderRef.current !== recorder) return
         if (recordingChunksRef.current.length > 0) return
-        console.warn('[Recording] the recorder produced no data')
+        console.warn('[Recording] the recorder produced no data — stopping silently')
         try { recorder.stop() } catch { /* already stopped */ }
-        setRecordingState('error')
       }, 6000)
     } catch (e: any) {
-      console.error('[Recording] could not start', e?.message)
-      setRecordingState('error')
+      console.error('[Recording] could not start (ignored):', e?.message)
     }
   }
 
@@ -346,39 +347,6 @@ export default function GoLivePage() {
       setRecordingState('error')
       toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
     }
-  }
-
-  // Uploads a recording segment that was finished while the stream kept
-  // running (screen share switched on or off). Every segment becomes its own
-  // recorded entry — the chunks are deliberately not merged.
-  //
-  // This upload is strictly best-effort: a failure is logged only. It must
-  // never set recordingState (which drives the "recording could not be saved"
-  // UI) nor show a toast, because the session is still live and the final
-  // upload is the only one that reports success/failure to the instructor.
-  const uploadSegment = async (blob: Blob | null) => {
-    if (!blob || !blob.size) return
-    try {
-      const extension = (blob.type || recordingMimeRef.current).includes('mp4') ? 'mp4' : 'webm'
-      const formData = new FormData()
-      formData.append('file', blob, `live-recording-${courseId}-${Date.now()}.${extension}`)
-      formData.append('courseId', courseId)
-      formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
-      // The stream is still running: this segment must become its own recording
-      // and must not mark the live as ended.
-      formData.append('append', 'true')
-      await post('/live/save-recording', formData, { timeout: 0 })
-    } catch (e: any) {
-      console.error('[Recording] segment upload failed (ignored):', e?.message)
-    }
-  }
-
-  // Stops the running segment (if any) and hands back its file. Returns null
-  // when no recorder is running so an old file is never uploaded twice.
-  const flushRecordingSegment = async (): Promise<Blob | null> => {
-    const recorder = mediaRecorderRef.current
-    if (!recorder || recorder.state === 'inactive') return null
-    return stopRecording()
   }
 
   // A tab that is closed mid-upload loses the recording, so the browser is
@@ -590,29 +558,46 @@ export default function GoLivePage() {
       // If the SDK then fails, handleEndLive-style cleanup restores it below.
       stopPreview()
 
-      let micTrack: any
+      // Each source is optional: a broken camera must not cancel the lecture
+      // and a missing microphone must not either. The stream starts as long as
+      // at least one of them works (Facebook/Instagram Live behaviour).
+      let micTrack: any = null
       let camTrack: any = null
       try {
-        const tracks = await AgoraRTC.createMicrophoneAndCameraTracks()
-        micTrack = tracks[0]
-        camTrack = tracks[1]
-      } catch (e) {
-        // The camera is unavailable (denied, missing, or held by another app).
-        // That must not cancel the lecture: continue with the microphone only.
         micTrack = await AgoraRTC.createMicrophoneAudioTrack()
+      } catch (e: any) {
+        console.warn('[Live] microphone unavailable:', e?.message)
       }
-      const tracksToPublish = camTrack ? [micTrack, camTrack] : [micTrack]
+      try {
+        camTrack = await AgoraRTC.createCameraVideoTrack()
+      } catch (e: any) {
+        console.warn('[Live] camera unavailable:', e?.message)
+      }
 
+      if (!micTrack && !camTrack) {
+        throw new Error(
+          isAr
+            ? 'تعذر الوصول للميكروفون والكاميرا'
+            : 'Could not access the microphone or the camera',
+        )
+      }
+
+      const tracksToPublish = [micTrack, camTrack].filter(Boolean)
+
+      // Positions are fixed: 0 = mic, 1 = camera, so the toggle buttons keep
+      // working even when one of the two is missing.
       localTracksRef.current = [micTrack, camTrack]
-      setMicOn(true)
+      setMicOn(!!micTrack)
       setCamOn(!!camTrack)
 
       if (localVideoRef.current && camTrack) camTrack.play(localVideoRef.current)
 
       await client.publish(tracksToPublish)
 
-      // The recording runs on the very same tracks that are being published,
-      // so what is saved is what the students saw.
+      // Recording is an independent, fire-and-forget background process. It
+      // captures the tracks the stream started with (mic + camera, or mic
+      // only). Screen share is never part of the recording and never restarts
+      // it. A recording failure cannot affect the live stream.
       startRecording(tracksToPublish)
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
@@ -677,16 +662,17 @@ export default function GoLivePage() {
     }
   }, [screenSharing, liveStarted])
 
+  // Screen share is a pure Agora publish. It is completely independent of the
+  // recorder: switching it on or off never starts, stops, flushes or uploads a
+  // recording. The recording keeps capturing the tracks the stream started
+  // with (mic + camera, or mic only) for the whole session.
   const toggleScreenShare = async () => {
     if (!clientRef.current || !liveStarted) return
     try {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       if (screenSharing) {
-        // Stop screen share — the current recording segment captures the
-        // screen, so it is finished (and uploaded) before the track dies.
-        const segment = await flushRecordingSegment()
-        void uploadSegment(segment)
-
+        // Stop screen share and restore the camera as the published video.
+        const camTrack = localTracksRef.current[1]
         try {
           if (screenTrackRef.current) {
             await clientRef.current.unpublish(screenTrackRef.current)
@@ -694,17 +680,16 @@ export default function GoLivePage() {
             screenTrackRef.current.close()
             screenTrackRef.current = null
           }
-          const camTrack = localTracksRef.current[1]
-          if (camTrack) await clientRef.current.publish(camTrack)
         } finally {
-          // Back to what the students see now: camera (or mic only / black).
-          // Runs even if unpublishing the screen failed, so the session keeps
-          // being recorded.
-          const originalTracks = localTracksRef.current.filter(Boolean)
-          if (originalTracks.length) startRecording(originalTracks)
+          // Runs even if unpublishing the screen failed, so the students keep
+          // a video feed whenever a camera exists.
+          if (camTrack) {
+            try { await clientRef.current.publish(camTrack) } catch (e: any) {
+              console.error('[ScreenShare] could not restore camera', e?.message)
+            }
+          }
+          setScreenSharing(false)
         }
-
-        setScreenSharing(false)
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
         // Start screen share
@@ -726,18 +711,21 @@ export default function GoLivePage() {
 
         const camTrack = localTracksRef.current[1]
         if (camTrack) await clientRef.current.unpublish(camTrack)
-
-        await clientRef.current.publish(track)
+        try {
+          await clientRef.current.publish(track)
+        } catch (e: any) {
+          // Publishing the screen failed: put the camera back so the stream
+          // does not lose its video feed, then clean the screen track up.
+          screenTrackRef.current = null
+          try { track.stop(); track.close() } catch {}
+          if (camTrack) {
+            try { await clientRef.current.publish(camTrack) } catch {}
+          }
+          throw e
+        }
 
         // Play screen in main immediately (avoids flash)
         if (localVideoRef.current) track.play(localVideoRef.current)
-
-        // The recording follows the screen from now on: finish the camera
-        // segment, then record mic + screen. The mic is always index 0.
-        const segment = await flushRecordingSegment()
-        void uploadSegment(segment)
-        const micT = localTracksRef.current?.[0]
-        if (micT) startRecording([micT, track])
 
         // Set state — useEffect will handle PiP camera placement
         // after React renders the PiP container
@@ -759,15 +747,26 @@ export default function GoLivePage() {
       // Wait a moment for socket to send
       await new Promise(r => setTimeout(r, 500))
 
-      // The recorder is stopped before the tracks are released: the last
-      // chunk still needs the live tracks to be alive. stopRecording() also
-      // returns a file that was captured before the recorder went inactive,
-      // so a session is still saved when the watchdog stopped it early.
-      const recording = await stopRecording()
+      // The stream and the recording are independent systems. Leaving Agora
+      // must not stop the recorder, and a recorder/upload problem must not
+      // block the stream from ending.
+      try {
+        if (clientRef.current) await clientRef.current.leave()
+      } catch (e: any) {
+        console.error('[Live] leave failed:', e?.message)
+      }
+
+      // Stop the recorder while its source tracks are still alive so the last
+      // chunk is not lost, then release the tracks.
+      let recording: Blob | null = null
+      try {
+        recording = await stopRecording()
+      } catch (e: any) {
+        console.error('[Recording] stop failed:', e?.message)
+      }
 
       localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
-      if (clientRef.current) await clientRef.current.leave()
       await post(`/live/end/${courseId}`, {})
 
       if (recordingRequested && recording) {
