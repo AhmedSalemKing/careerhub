@@ -118,6 +118,9 @@ export default function GoLivePage() {
   const recordingWatchdogRef = useRef<any>(null)
   // Resolver of the "the recorder stopped" promise.
   const recordingStoppedRef = useRef<((blob: Blob | null) => void) | null>(null)
+  // Black canvas track that gives an audio-only session a video container.
+  // It is stopped together with the recorder so the canvas stops capturing.
+  const blankVideoTrackRef = useRef<MediaStreamTrack | null>(null)
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'uploading' | 'done' | 'error'>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   // Whether there is a file that can be uploaded again after a failure.
@@ -196,9 +199,10 @@ export default function GoLivePage() {
     return null
   }
 
-  // Starts the local recording on the tracks that are actually being
-  // published. The screen-share track is not recorded: the recording follows
-  // the camera + microphone, which is what a lecture session needs.
+  // Starts the local recording on the given tracks. The recording follows
+  // what the students actually see: screen share when it is active, otherwise
+  // the camera, and a black canvas when there is no video at all (broken or
+  // missing camera) so the saved file is still a valid video container.
   const startRecording = (tracks: any[]) => {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
@@ -214,6 +218,29 @@ export default function GoLivePage() {
         return
       }
       const stream = new MediaStream(nativeTracks)
+      // Audio-only sessions still get a video track: most players reject a
+      // webm without one. A static black canvas at 1 fps is enough.
+      if (!nativeTracks.some(t => t.kind === 'video')) {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = 1280
+          canvas.height = 720
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.fillStyle = '#000'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+          }
+          const blankStream = canvas.captureStream(1)
+          const blankVideoTrack = blankStream.getVideoTracks()[0]
+          if (blankVideoTrack) {
+            blankVideoTrackRef.current?.stop()
+            blankVideoTrackRef.current = blankVideoTrack
+            stream.addTrack(blankVideoTrack)
+          }
+        } catch {
+          /* no canvas capture support — record audio only */
+        }
+      }
       const recorder = new MediaRecorder(stream, { mimeType })
       recordingChunksRef.current = []
       recorder.ondataavailable = (e: BlobEvent) => {
@@ -228,6 +255,8 @@ export default function GoLivePage() {
       recorder.onstop = () => {
         const blob = new Blob(recordingChunksRef.current, { type: recordingMimeRef.current })
         recordingBlobRef.current = blob.size > 0 ? blob : null
+        blankVideoTrackRef.current?.stop()
+        blankVideoTrackRef.current = null
         setHasRecordingFile(!!recordingBlobRef.current)
         mediaRecorderRef.current = null
         const resolve = recordingStoppedRef.current
@@ -317,6 +346,35 @@ export default function GoLivePage() {
       setRecordingState('error')
       toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
     }
+  }
+
+  // Uploads a recording segment that was finished while the stream kept
+  // running (screen share switched on or off). Every segment becomes its own
+  // recorded entry — the chunks are deliberately not merged.
+  const uploadSegment = async (blob: Blob | null) => {
+    if (!blob || !blob.size) return
+    const extension = (blob.type || recordingMimeRef.current).includes('mp4') ? 'mp4' : 'webm'
+    const formData = new FormData()
+    formData.append('file', blob, `live-recording-${courseId}-${Date.now()}.${extension}`)
+    formData.append('courseId', courseId)
+    formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
+    // The stream is still running: this segment must become its own recording
+    // and must not mark the live as ended.
+    formData.append('append', 'true')
+    try {
+      await post('/live/save-recording', formData, { timeout: 0 })
+    } catch (e: any) {
+      console.error('[Recording] segment upload failed', e?.message)
+      toast.error(isAr ? 'تعذر رفع جزء من التسجيل' : 'A part of the recording could not be saved')
+    }
+  }
+
+  // Stops the running segment (if any) and hands back its file. Returns null
+  // when no recorder is running so an old file is never uploaded twice.
+  const flushRecordingSegment = async (): Promise<Blob | null> => {
+    const recorder = mediaRecorderRef.current
+    if (!recorder || recorder.state === 'inactive') return null
+    return stopRecording()
   }
 
   // A tab that is closed mid-upload loses the recording, so the browser is
@@ -620,15 +678,28 @@ export default function GoLivePage() {
     try {
       const AgoraRTC = (await import('agora-rtc-sdk-ng')).default
       if (screenSharing) {
-        // Stop screen share
-        if (screenTrackRef.current) {
-          await clientRef.current.unpublish(screenTrackRef.current)
-          screenTrackRef.current.stop()
-          screenTrackRef.current.close()
-          screenTrackRef.current = null
+        // Stop screen share — the current recording segment captures the
+        // screen, so it is finished (and uploaded) before the track dies.
+        const segment = await flushRecordingSegment()
+        void uploadSegment(segment)
+
+        try {
+          if (screenTrackRef.current) {
+            await clientRef.current.unpublish(screenTrackRef.current)
+            screenTrackRef.current.stop()
+            screenTrackRef.current.close()
+            screenTrackRef.current = null
+          }
+          const camTrack = localTracksRef.current[1]
+          if (camTrack) await clientRef.current.publish(camTrack)
+        } finally {
+          // Back to what the students see now: camera (or mic only / black).
+          // Runs even if unpublishing the screen failed, so the session keeps
+          // being recorded.
+          const originalTracks = localTracksRef.current.filter(Boolean)
+          if (originalTracks.length) startRecording(originalTracks)
         }
-        const camTrack = localTracksRef.current[1]
-        if (camTrack) await clientRef.current.publish(camTrack)
+
         setScreenSharing(false)
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
       } else {
@@ -656,6 +727,13 @@ export default function GoLivePage() {
 
         // Play screen in main immediately (avoids flash)
         if (localVideoRef.current) track.play(localVideoRef.current)
+
+        // The recording follows the screen from now on: finish the camera
+        // segment, then record mic + screen. The mic is always index 0.
+        const segment = await flushRecordingSegment()
+        void uploadSegment(segment)
+        const micT = localTracksRef.current?.[0]
+        if (micT) startRecording([micT, track])
 
         // Set state — useEffect will handle PiP camera placement
         // after React renders the PiP container
