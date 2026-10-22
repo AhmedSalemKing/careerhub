@@ -11,12 +11,22 @@ import {
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
   UserCheck, UserX, Send, Wifi, WifiOff, Info,
-  AlertTriangle, Upload
+  AlertTriangle, Upload, RotateCcw
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import { LIVE_RECORDING_SUPPORTED, liveRecordingNote, formatLiveTime } from '../../../../../../lib/live'
 import toast from 'react-hot-toast'
+
+/**
+ * An aborted request is intentional cleanup — the page navigated away, the
+ * component unmounted, or the browser cancelled a pending device request — not
+ * a real failure. Every catch that reports an error returns early on it so the
+ * instructor never sees an error they cannot act on.
+ */
+function isAbortError(error: any): boolean {
+  return error?.name === 'AbortError'
+}
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -69,9 +79,13 @@ export default function GoLivePage() {
   // not open a socket of its own.
   const [pendingStart, setPendingStart] = useState<{ channelName: string; appId: string } | null>(null)
   // True once the camera attempt settled (successfully or not). The Go Live
-  // button is enabled as soon as this is true: waiting for the server would
+  // button is released as soon as this is true: waiting for the server would
   // block the instructor on a cold API, which is exactly what we avoid.
   const [cameraReady, setCameraReady] = useState(false)
+  // True when getUserMedia failed. The page always publishes mic + camera, so
+  // without a camera there is nothing to stream: this blocks "Go Live" until
+  // the retry succeeds.
+  const [cameraError, setCameraError] = useState(false)
 
   const { data: me } = useQuery({
     queryKey: ['me'],
@@ -91,7 +105,13 @@ export default function GoLivePage() {
     dismissQuestion,
     broadcastLiveStarted,
     broadcastLiveEnded,
-  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
+  // The socket is opened from the moment the page mounts instead of when the
+  // stream starts: its 'connect' event is the fastest reliable signal that a
+  // cold API is awake, and that is what clears the "connecting to server"
+  // state. Joining the room early is harmless — the gateway excludes the
+  // instructor from the viewer count and nothing is announced until
+  // 'live-started' is emitted.
+  } = useLiveSocket(courseId, instructorName, 'instructor', instructorAvatar)
 
   const localVideoRef = useRef<HTMLDivElement>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -252,6 +272,8 @@ export default function GoLivePage() {
         setRecordingState('error')
       }, 6000)
     } catch (e: any) {
+      // An aborted start is cleanup, not a recording failure.
+      if (isAbortError(e)) return
       console.error('[Recording] could not start', e?.message)
       setRecordingState('error')
     }
@@ -313,6 +335,8 @@ export default function GoLivePage() {
         router.push(`/${locale}/dashboard/my-courses`)
       }, 2000)
     } catch (e: any) {
+      // An aborted upload is cleanup (the tab is leaving), not a failure.
+      if (isAbortError(e)) return
       console.error('[Recording] upload failed', e?.message)
       setRecordingState('error')
       toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
@@ -381,9 +405,18 @@ export default function GoLivePage() {
         previewVideoRef.current.play?.().catch(() => {})
       }
       setPreviewActive(true)
+      // A successful (re)try clears the previous camera failure.
+      setCameraError(false)
+      setPrepNote('')
       return true
     } catch (e: any) {
+      // An aborted device request is cleanup, not a camera failure.
+      if (isAbortError(e)) return false
       const name = e?.name || ''
+      console.error('[Camera] init failed:', e)
+      // Must block the stream: the page always publishes mic + camera, so
+      // without a camera there is nothing to publish.
+      setCameraError(true)
       setPrepNote(
         name === 'NotAllowedError' || name === 'SecurityError'
           ? (isAr ? 'لم يتم منح إذن الكاميرا/الميكروفون — سيخبرك المتصفح عند بدء البث' : 'Camera/mic permission denied — your browser will ask again when the stream starts')
@@ -403,6 +436,7 @@ export default function GoLivePage() {
     ;(async () => {
       setPrepStage('camera')
       setCameraReady(false)
+      setCameraError(false)
       await startPreview()
       if (cancelled) { stopPreview(); return }
       setCameraReady(true)
@@ -416,6 +450,26 @@ export default function GoLivePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId])
+
+  // A camera failure blocks "Go Live", so the instructor needs a way to try
+  // again without reloading the page (the permission might just have been
+  // granted, or the device plugged back in).
+  const handleRetryCamera = async () => {
+    setCameraError(false)
+    setPrepNote('')
+    setPrepStage('camera')
+    const ok = await startPreview()
+    setCameraReady(true)
+    if (ok) {
+      setPrepStage(prev => (
+        prev === 'camera' ? (serverState === 'ready' || connected ? 'ready' : 'server') : prev
+      ))
+    } else {
+      // Do not leave a spinner over a black preview: the overlay then says the
+      // camera is not active.
+      setPrepStage('ready')
+    }
+  }
 
   // Step 2 — the server warm-up, in the background. It never blocks the
   // preview and never blocks the Go Live button: a failure only produces a
@@ -435,6 +489,8 @@ export default function GoLivePage() {
         setServerState('ready')
         setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
       } catch (e: any) {
+        // An aborted warm-up is cleanup, not a server failure.
+        if (isAbortError(e)) return
         if (cancelled) return
         const status = e?.response?.status
         setServerState('failed')
@@ -455,11 +511,25 @@ export default function GoLivePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, warmUpAttempt])
 
+  // The live socket connects to the very same API host. A connected socket
+  // therefore means the server is awake, so the "connecting to server" state is
+  // cleared the moment the socket is up instead of waiting for a cold-start
+  // warm-up request — which can take minutes because the shared client retries
+  // timeouts twice. A 'failed' warm-up is left alone: it is a real answer from
+  // the server (auth, permissions) and the instructor must see it.
+  useEffect(() => {
+    if (!connected) return
+    if (serverState !== 'connecting') return
+    setServerState('ready')
+    setServerError('')
+    setPrepStage(prev => (prev === 'server' ? 'ready' : prev))
+  }, [connected, serverState])
+
   // Announce the live start on the SHARED socket (the one useLiveSocket owns).
-  // The hook connects it as soon as `liveStarted` becomes true and joins the
-  // room in its 'connect' handler, so waiting for `connected` guarantees the
-  // announcement is not dropped. Exactly one socket serves the room for this
-  // page — the page never registers a listener of its own.
+  // The hook joins the room in its 'connect' handler, so waiting for
+  // `connected` guarantees the announcement is not dropped. Exactly one socket
+  // serves the room for this page — the page never registers a listener of its
+  // own.
   useEffect(() => {
     if (!pendingStart || !connected) return
     broadcastLiveStarted(pendingStart.channelName, pendingStart.appId)
@@ -480,14 +550,27 @@ export default function GoLivePage() {
   //   "جارٍ تحضير الكاميرا..." → "جارٍ الاتصال بالخادم..." → "جاهز للبث"
   const prepStatus = starting
     ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
-    : !cameraReady
-      ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
-      : serverState === 'connecting'
-        ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
-        : (isAr ? 'جاهز للبث' : 'Ready to go live')
-  const prepStatusDone = cameraReady && serverState === 'ready'
+    : cameraError
+      ? (isAr ? 'تعذر فتح الكاميرا' : 'Camera unavailable')
+      : !cameraReady
+        ? (isAr ? 'جارٍ تحضير الكاميرا...' : 'Preparing camera...')
+        : serverState === 'connecting'
+          ? (isAr ? 'جارٍ الاتصال بالخادم...' : 'Connecting to server...')
+          : (isAr ? 'جاهز للبث' : 'Ready to go live')
+  // Never claim the page is ready while the camera is unavailable: "Go Live"
+  // is blocked in that state.
+  const prepStatusDone = cameraReady && !cameraError && serverState === 'ready'
 
   const handleStartLive = async () => {
+    // Without a camera there is nothing to publish (the page always sends mic
+    // and camera), so refuse the attempt instead of failing halfway through
+    // with a raw SDK error.
+    if (cameraError) {
+      toast.error(isAr
+        ? 'تعذر فتح الكاميرا — أعد المحاولة أولاً'
+        : 'The camera is unavailable — retry it first')
+      return
+    }
     setStarting(true)
     setPrepStage('connecting')
     try {
@@ -554,6 +637,8 @@ export default function GoLivePage() {
 
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
     } catch(e: any) {
+      // An aborted start is cleanup, not a failure to go live.
+      if (isAbortError(e)) return
       toast.error(e.message || (isAr ? 'فشل بدء البث' : 'Failed to start'))
       // Leave the instructor with a working preview instead of a black box,
       // and report that the server is reachable again.
@@ -899,8 +984,10 @@ export default function GoLivePage() {
                 }}>
                   {prepStatusDone
                     ? <CheckCircle2 size={13} color="#16a34a" />
-                    : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
-                  <span style={{ color: prepStatusDone ? '#86efac' : subtext, fontSize: 11, fontWeight: 700 }}>
+                    : cameraError
+                      ? <AlertTriangle size={13} color="#f87171" />
+                      : <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.25)', borderTopColor: '#f1f5f9', animation: 'spin 0.9s linear infinite' }} />}
+                  <span style={{ color: prepStatusDone ? '#86efac' : cameraError ? '#f87171' : subtext, fontSize: 11, fontWeight: 700 }}>
                     {prepStatus}
                   </span>
                 </div>
@@ -1009,7 +1096,17 @@ export default function GoLivePage() {
                       </button>
                     ))}
                   </div>
-                  <button onClick={handleStartLive} disabled={starting || !cameraReady} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady?'wait':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady?0.7:1 }}>
+                  {cameraError && (
+                    <button
+                      onClick={handleRetryCamera}
+                      disabled={starting}
+                      title={isAr ? 'إعادة محاولة فتح الكاميرا' : 'Try opening the camera again'}
+                      style={{ height: 48, paddingInline: 16, borderRadius: 14, background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)', cursor: starting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b', fontSize: 13, fontWeight: 700, opacity: starting ? 0.7 : 1 }}>
+                      <RotateCcw size={15} />
+                      {isAr ? 'إعادة محاولة الكاميرا' : 'Retry camera'}
+                    </button>
+                  )}
+                  <button onClick={handleStartLive} disabled={starting || !cameraReady || cameraError} style={{ height: 48, paddingInline: 28, borderRadius: 14, background: '#dc2626', border: 'none', cursor: starting||!cameraReady||cameraError?'not-allowed':'pointer', display: 'flex', alignItems: 'center', gap: 8, color: '#fff', fontSize: 14, fontWeight: 800, opacity: starting||!cameraReady||cameraError?0.5:1 }}>
                     {starting
                       ? <><div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />{prepLabel}</>
                       : <><Play size={18} />{prepLabel}</>}
