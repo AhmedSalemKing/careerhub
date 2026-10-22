@@ -91,7 +91,7 @@ export default function GoLivePage() {
     dismissQuestion,
     broadcastLiveStarted,
     broadcastLiveEnded,
-  } = useLiveSocket(liveStarted ? courseId : '', instructorName, 'instructor', instructorAvatar)
+  } = useLiveSocket(courseId, instructorName, 'instructor', instructorAvatar)
 
   const localVideoRef = useRef<HTMLDivElement>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
@@ -528,18 +528,30 @@ export default function GoLivePage() {
       // If the SDK then fails, handleEndLive-style cleanup restores it below.
       stopPreview()
 
-      const [micTrack, camTrack] = await AgoraRTC.createMicrophoneAndCameraTracks()
+      let micTrack: any
+      let camTrack: any = null
+      try {
+        const tracks = await AgoraRTC.createMicrophoneAndCameraTracks()
+        micTrack = tracks[0]
+        camTrack = tracks[1]
+      } catch (e) {
+        // The camera is unavailable (denied, missing, or held by another app).
+        // That must not cancel the lecture: continue with the microphone only.
+        micTrack = await AgoraRTC.createMicrophoneAudioTrack()
+      }
+      const tracksToPublish = camTrack ? [micTrack, camTrack] : [micTrack]
+
       localTracksRef.current = [micTrack, camTrack]
       setMicOn(true)
-      setCamOn(true)
+      setCamOn(!!camTrack)
 
-      if (localVideoRef.current) camTrack.play(localVideoRef.current)
+      if (localVideoRef.current && camTrack) camTrack.play(localVideoRef.current)
 
-      await client.publish([micTrack, camTrack])
+      await client.publish(tracksToPublish)
 
       // The recording runs on the very same tracks that are being published,
       // so what is saved is what the students saw.
-      startRecording([micTrack, camTrack])
+      startRecording(tracksToPublish)
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
       // announce on THAT socket once it has joined the room. Emitting before the
@@ -671,7 +683,7 @@ export default function GoLivePage() {
       // so a session is still saved when the watchdog stopped it early.
       const recording = await stopRecording()
 
-      localTracksRef.current.forEach(t => { t.stop(); t.close() })
+      localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       if (clientRef.current) await clientRef.current.leave()
       await post(`/live/end/${courseId}`, {})
