@@ -140,6 +140,12 @@ export default function LiveViewerPage() {
     sendQuestion,
   } = useLiveSocket(courseId, userName, 'viewer', userAvatar)
 
+  // Mirror of the hook's `connected` flag for callbacks that outlive the render
+  // they were created in: the 30s connect cap below would otherwise read a
+  // value captured 30 seconds earlier.
+  const socketConnectedRef = useRef(false)
+  useEffect(() => { socketConnectedRef.current = connected }, [connected])
+
   // Sync hook state to local state
   useEffect(() => {
     if (hookStreamEnded) {
@@ -401,16 +407,26 @@ export default function LiveViewerPage() {
     clearTimeout(connectTimeoutRef.current)
     connectTimedOutRef.current = false
     connectTimeoutRef.current = setTimeout(() => {
-      if (!watchingRef.current) {
-        connectTimedOutRef.current = true
-        setLiveState('failed')
-        setConnectError(tl('connectionTimeout'))
-        joiningRef.current = false
-        joinedRef.current = false
-        // The Agora client is deliberately left alone here: a join that lands
-        // after the cap still clears this error (see the success path below).
-        // The retry button and the unmount cleanup both call leave().
+      if (watchingRef.current) return
+      connectTimedOutRef.current = true
+      joiningRef.current = false
+      // The join can succeed while no video ever arrives — the instructor has
+      // simply not published yet, or the cold start is still settling. A
+      // connected socket proves the server is reachable, so this is NOT a
+      // connection failure: go back to the waiting state and let the
+      // 'stream-started' event or the poll pick the stream up, instead of
+      // showing "فشل الاتصال" to a student who is already connected.
+      if (joinedRef.current || socketConnectedRef.current) {
+        setConnectError('')
+        setLiveState('waiting')
+        return
       }
+      setLiveState('failed')
+      setConnectError(tl('connectionTimeout'))
+      joinedRef.current = false
+      // The Agora client is deliberately left alone here: a join that lands
+      // after the cap still clears this error (see the success path below).
+      // The retry button and the unmount cleanup both call leave().
     }, 30000)
 
     try {
@@ -822,7 +838,7 @@ export default function LiveViewerPage() {
                  </>
                )}
 
-               {/* CONNECTING — stream is live, Agora join in progress (15s cap) */}
+               {/* CONNECTING — stream is live, Agora join in progress (30s cap) */}
                {liveState === 'connecting' && (
                  <>
                    <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />
