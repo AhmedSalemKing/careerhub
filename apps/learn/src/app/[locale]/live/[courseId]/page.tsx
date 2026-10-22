@@ -34,6 +34,11 @@ export default function LiveViewerPage() {
   const [error, setError] = useState('')
   const [joined, setJoined] = useState(false)
   const [hasVideo, setHasVideo] = useState(false)
+  // True once ANY track from the instructor (audio or video) is playing. A
+  // joined channel is only worth showing as "connected" once a track arrives,
+  // and an audio-only session (no camera, no screen share) must be a success
+  // state — not a connection failure.
+  const [hasAudio, setHasAudio] = useState(false)
   const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [showPanel, setShowPanel] = useState(true)
@@ -70,11 +75,20 @@ export default function LiveViewerPage() {
   const pollRef = useRef<any>(null)
   const connectTimeoutRef = useRef<any>(null)
   // Track whether we have already joined for the current live session so polling
-  // and socket events don't trigger duplicate Agora joins.
+  // and socket events don't trigger duplicate Agora joins. Playback of the
+  // first published track then promotes the page to `watching`. Kept as a ref
+  // because the mutation happens outside React (in the SDK callbacks).
   const joinedRef = useRef(false)
+  // True while a single media source (audio OR video) is subscribed and ready
+  // to play. The connection is considered established as soon as one of them
+  // arrives, because an audio-only instructor must not look like a failure.
+  const mediaReadyRef = useRef(false)
   const joiningRef = useRef(false)
-  // True only once the video track is actually playing (we're watching).
+  // `watchingRef` mirrors the state machine for the code paths that run outside
+  // React render (polling, SDK callbacks). "Watching" means at least one
+  // instructor track is playing — audio-only counts.
   const watchingRef = useRef(false)
+  watchingRef.current = hasVideo || hasAudio
   // Last Agora-connected viewer count read from the API (Course.liveViewerCount),
   // used so the socket room size can never override it with an inflated number.
   const dbViewerCountRef = useRef(0)
@@ -130,6 +144,8 @@ export default function LiveViewerPage() {
   useEffect(() => {
     if (hookStreamEnded) {
       setStreamEnded(true)
+      setHasAudio(false)
+      setHasVideo(false)
       clientRef.current?.leave().catch(() => {})
     }
   }, [hookStreamEnded])
@@ -294,7 +310,8 @@ export default function LiveViewerPage() {
         return false
       }
 
-      // Already connected for this live session — nothing more to do.
+      // Already joined for this live session — a duplicate token fetch/join is
+      // useless. The first subscribed track promotes the page to `watching`.
       if (joinedRef.current) {
         clearTimeout(loadingTimeoutRef.current)
         setLoading(false)
@@ -423,7 +440,7 @@ export default function LiveViewerPage() {
           // A failed subscription would otherwise leave the page on the endless
           // "connecting" spinner: surface the retry button instead.
           console.error('[Live] Subscribe failed:', se?.message)
-          if (!watchingRef.current) {
+          if (!mediaReadyRef.current) {
             setConnectError(tl('failedToConnect'))
             setLiveState('failed')
             joiningRef.current = false
@@ -433,20 +450,45 @@ export default function LiveViewerPage() {
           }
           return
         }
+
+        // Any successfully subscribed track means we are connected. This is
+        // what makes an audio-only instructor (no camera, no screen share) a
+        // success instead of a "فشل الاتصال". A second, late track (the
+        // instructor starts screen sharing) just adds video on top.
+        const firstTrack = !mediaReadyRef.current
+        mediaReadyRef.current = true
+        clearTimeout(connectTimeoutRef.current)
+        joinedRef.current = true
+        joiningRef.current = false
+        if (firstTrack) {
+          setJoined(true)
+          setLiveState('watching')
+        }
+
         if (mediaType === 'video' && videoContainerRef.current) {
           user.videoTrack?.play(videoContainerRef.current)
           setHasVideo(true)
-          // We are successfully watching — clear the connection timeout.
-          clearTimeout(connectTimeoutRef.current)
-          joinedRef.current = true
-          joiningRef.current = false
-          watchingRef.current = true
-          setLiveState('watching')
-          const overlay = document.getElementById('waiting-overlay')
-          if (overlay) overlay.style.display = 'none'
         }
         if (mediaType === 'audio') {
-          try { await user.audioTrack?.play() } catch (ae) { console.error('[Live] Audio play:', ae) }
+          try {
+            await user.audioTrack?.play()
+          } catch (ae) {
+            // Autoplay was blocked: browsers only allow audio after a user
+            // gesture. Route the track into a hidden <audio> element so the
+            // controls' unmute click can start it later.
+            console.warn('[Live] Audio play blocked, using <audio> element:', ae)
+            const el = document.getElementById('live-audio') as HTMLAudioElement | null
+            if (el) {
+              try {
+                el.srcObject = new MediaStream([user.audioTrack.getMediaStreamTrack()])
+                el.muted = muted
+                await el.play().catch(() => {})
+              } catch (fe) {
+                console.error('[Live] Audio element play failed:', fe)
+              }
+            }
+          }
+          setHasAudio(true)
         }
       })
 
@@ -454,14 +496,14 @@ export default function LiveViewerPage() {
         if (mediaType === 'video') {
           user.videoTrack?.stop()
           setHasVideo(false)
-          watchingRef.current = false
-          // The published video stopped; if the whole stream hasn't ended, keep
-          // the user in a "connecting" style state until video returns.
-          if (!streamEnded) setLiveState('connecting')
-          const overlay = document.getElementById('waiting-overlay')
-          if (overlay) overlay.style.display = 'flex'
+          // The video source went away, but the connection did not: the client
+          // stays in the channel and audio keeps playing. The avatar is shown
+          // until a video track comes back (e.g. screen share starts again).
         }
-        if (mediaType === 'audio') user.audioTrack?.stop()
+        if (mediaType === 'audio') {
+          user.audioTrack?.stop()
+          setHasAudio(false)
+        }
       })
 
       client.on('token-privilege-will-expire', async () => {
@@ -476,8 +518,10 @@ export default function LiveViewerPage() {
 
       await client.join(td.appId, td.channelName, td.token, td.uid)
 
-      // Joined the channel. Mark the join as done so a poll or socket event
-      // doesn't retry; the connection timeout is cleared once video arrives.
+      // The channel is joined. `joinedRef` prevents a duplicate join; the page
+      // is promoted to `watching` by the first subscribed track. The 15s cap is
+      // deliberately left running here: a channel with no instructor track at
+      // all (wrong channel, stale token) must still end in the retry state.
       joinedRef.current = true
       joiningRef.current = false
 
@@ -490,7 +534,7 @@ export default function LiveViewerPage() {
       clearTimeout(connectTimeoutRef.current)
       joiningRef.current = false
       joinedRef.current = false
-      watchingRef.current = false
+      mediaReadyRef.current = false
       try { clientRef.current?.leave() } catch {}
       clientRef.current = null
       const msg = (e.name === 'AbortError' || e.name === 'TimeoutError')
@@ -509,10 +553,11 @@ export default function LiveViewerPage() {
     clearTimeout(connectTimeoutRef.current)
     joinedRef.current = false
     joiningRef.current = false
-    watchingRef.current = false
+    mediaReadyRef.current = false
     try { await clientRef.current?.leave() } catch {}
     clientRef.current = null
     setHasVideo(false)
+    setHasAudio(false)
     setConnectError('')
     setLiveState('connecting')
 
@@ -535,26 +580,24 @@ export default function LiveViewerPage() {
   // When the socket detects the stream started, re-check immediately and
   // auto-connect (no manual refresh or button click required).
   useEffect(() => {
-    if (!hookStreamStarted || watchingRef.current) return
+    if (!hookStreamStarted || mediaReadyRef.current) return
     setStreamEnded(false)
     setTokenData(null)
     joinedRef.current = false
-    watchingRef.current = false
+    mediaReadyRef.current = false
     checkStreamStatus(userToken || token)
   }, [hookStreamStarted])
 
-  // The "connecting" state must never be a dead end. Several paths lead into
-  // it (initial join, retry, a video track that is unpublished and never comes
-  // back after a screen-share switch, a failed re-subscribe), and only some of
-  // them used to start a timeout. This one cap covers all of them: after 15s
-  // without a playing video the student gets the retry button instead of an
-  // endless "connecting to the stream" spinner. The timer is cleared as soon
-  // as the state changes, i.e. immediately when the video starts.
+  // The "connecting" state must never be a dead end. It is entered before the
+  // Agora join and left the moment the first track (audio OR video) is playing.
+  // The 15s cap is what catches the remaining cases — a join that never
+  // completes, or a channel where the instructor never publishes anything —
+  // and turns them into the retry button instead of an endless spinner.
   useEffect(() => {
     if (liveState !== 'connecting') return
     clearTimeout(connectTimeoutRef.current)
     connectTimeoutRef.current = setTimeout(() => {
-      if (watchingRef.current) return
+      if (mediaReadyRef.current) return
       console.warn('[Live] Connecting timed out — showing retry')
       joiningRef.current = false
       joinedRef.current = false
@@ -577,7 +620,7 @@ export default function LiveViewerPage() {
     if (!t) return
 
     pollRef.current = setInterval(() => {
-      if (watchingRef.current || joiningRef.current) return
+      if (mediaReadyRef.current || joiningRef.current) return
       checkStreamStatus(t, true)
     }, 5000)
 
@@ -626,7 +669,7 @@ export default function LiveViewerPage() {
       clearTimeout(loadingTimeoutRef.current)
       clearTimeout(connectTimeoutRef.current)
       clearInterval(pollRef.current)
-      watchingRef.current = false
+      mediaReadyRef.current = false
       joinedRef.current = false
       if (token) {
         patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
@@ -662,6 +705,8 @@ export default function LiveViewerPage() {
 
   const handleLeave = async () => {
     if (clientRef.current) await clientRef.current.leave().catch(() => {})
+    setHasAudio(false)
+    setHasVideo(false)
     if (token) {
       patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
     }
@@ -736,8 +781,8 @@ export default function LiveViewerPage() {
       {/* TOP BAR */}
       <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive || hasVideo ? '#dc2626' : '#6b7280', animation: isLive || hasVideo ? 'livePulse 1.5s infinite' : 'none' }} />
-          <span style={{ color: isLive || hasVideo ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive || liveState === 'watching' ? '#dc2626' : '#6b7280', animation: isLive || liveState === 'watching' ? 'livePulse 1.5s infinite' : 'none' }} />
+          <span style={{ color: isLive || liveState === 'watching' ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
         </div>
            {viewerCount > 0 && (
              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -777,7 +822,35 @@ export default function LiveViewerPage() {
         <div style={{ position: 'relative', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div ref={videoContainerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
 
-          {!hasVideo && !streamEnded && (
+          {/* Audio-only (music) element: always rendered while connected so the
+              instructor's audio keeps playing when there is no video track. */}
+          {liveState === 'watching' && <audio id="live-audio" autoPlay playsInline muted={muted} style={{ display: 'none' }} />}
+
+          {/* AUDIO-ONLY — connected and receiving audio, but the instructor has
+              no camera and no screen share. A success state with an avatar, not
+              a connection failure. Replaced by the video element as soon as a
+              video track is published. */}
+          {!hasVideo && liveState === 'watching' && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
+              <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'linear-gradient(135deg,#5120c8,#dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 36, fontWeight: 900, boxShadow: '0 0 0 6px rgba(220,38,38,0.12)' }}>
+                {(userName?.[0]?.toUpperCase() || '?')}
+              </div>
+              <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>
+                {tl('instructorAudioOnly')}
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0 }}>
+                {tl('audioOnlyHint')}
+              </p>
+              {hasAudio && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 }}>
+                  <Volume2 size={14} color="#16a34a" />
+                  <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>{tl('audioPlaying')}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!hasVideo && !streamEnded && liveState !== 'watching' && (
              <div id="waiting-overlay" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
 
                {/* WAITING — instructor has not started the stream yet */}
@@ -836,7 +909,7 @@ export default function LiveViewerPage() {
                )}
 
                {/* Fallback: live but no token yet — allow a manual join once. */}
-               {liveState !== 'waiting' && liveState !== 'connecting' && liveState !== 'failed' && streamReady && (
+               {liveState !== 'waiting' && liveState !== 'connecting' && liveState !== 'failed' && streamReady && !hasAudio && !hasVideo && (
                  <>
                    <div style={{ width: 72, height: 72, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                      <Radio size={28} color="rgba(220,38,38,0.4)" />
@@ -882,7 +955,17 @@ export default function LiveViewerPage() {
 
           {/* Video controls overlay */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 20px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => setMuted(m => !m)} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <button onClick={() => {
+              const next = !muted
+              setMuted(next)
+              // The instructor's audio may be playing in the hidden <audio>
+              // element; keep both routes in sync with the mute button.
+              const el = document.getElementById('live-audio') as HTMLAudioElement | null
+              if (el) el.muted = next
+              clientRef.current?.remoteUsers?.forEach((u: any) => {
+                try { u.audioTrack?.setMuted?.(next) } catch {}
+              })
+            }} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
 
