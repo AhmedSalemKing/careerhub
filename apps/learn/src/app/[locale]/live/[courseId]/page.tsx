@@ -172,7 +172,7 @@ export default function LiveViewerPage() {
     try {
       const courseRes = await fetch(`${API}/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(30000),
         // The status must never be served from cache: the instructor can go live
         // at any moment and a stale "scheduled" response would leave the student
         // stuck on "البث لم يبدأ بعد".
@@ -265,7 +265,7 @@ export default function LiveViewerPage() {
         try {
           const liveLessonsRes = await fetch(`${API}/courses/${courseId}/live-lessons`, {
             headers: { Authorization: `Bearer ${userToken}` },
-            signal: AbortSignal.timeout(6000),
+            signal: AbortSignal.timeout(30000),
             cache: 'no-store'
           })
           if (liveLessonsRes.ok) {
@@ -324,7 +324,7 @@ export default function LiveViewerPage() {
         : `${API}/live/token/${courseId}`
       const tokenRes = await fetch(tokenEndpoint, {
         headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(30000),
         cache: 'no-store'
       })
 
