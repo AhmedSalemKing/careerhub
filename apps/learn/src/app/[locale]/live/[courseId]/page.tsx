@@ -12,6 +12,17 @@ import { webLoginUrl } from '../../../../lib/constants'
 import { patch } from '../../../../lib/api'
 import toast from 'react-hot-toast'
 
+/**
+ * An aborted fetch is intentional cleanup — the page navigated away or the
+ * component unmounted — not a connection failure. Treating it as one pushed
+ * students onto the "فشل الاتصال بالبث" screen for no reason, so every catch
+ * below returns early on it. `DOMException('AbortError')` carries the same
+ * `name`, hence the duck-typed check.
+ */
+function isAbortError(error: any): boolean {
+  return error?.name === 'AbortError'
+}
+
 export default function LiveViewerPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -69,6 +80,9 @@ export default function LiveViewerPage() {
   const loadingTimeoutRef = useRef<any>(null)
   const pollRef = useRef<any>(null)
   const connectTimeoutRef = useRef<any>(null)
+  // True once the 30s connect cap fired. A late Agora join or a socket
+  // reconnection after that point has to clear the stale error state.
+  const connectTimedOutRef = useRef(false)
   // Track whether we have already joined for the current live session so polling
   // and socket events don't trigger duplicate Agora joins.
   const joinedRef = useRef(false)
@@ -352,11 +366,15 @@ export default function LiveViewerPage() {
       void handleJoinStream(td)
       return true
     } catch (e: any) {
+      // An aborted request is intentional cleanup, not a real connection
+      // failure. Bail out before touching the error state: the loading safety
+      // net (or the next poll) then recovers without showing the error screen.
+      if (isAbortError(e)) return false
       clearTimeout(loadingTimeoutRef.current)
       console.error('[Live] Check error:', e.message)
       // Connection-level failures stay inside the player so the student gets the
       // inline retry button instead of a full-page error.
-      const msg = (e.name === 'AbortError' || e.name === 'TimeoutError')
+      const msg = e.name === 'TimeoutError'
         ? tl('connectionTimeout')
         : (e.message || tl('failedToConnect'))
       setConnectError(msg)
@@ -377,20 +395,23 @@ export default function LiveViewerPage() {
     setConnectError('')
     setLiveState('connecting')
 
-    // Fail the connection attempt after 15s instead of spinning for 30s. The cap
-    // applies until we are actually watching (video track playing), so a live
-    // stream that never publishes video still surfaces the retry button quickly.
+    // Render's free tier sleeps, and waking the API up can take 10-30s. The
+    // cap below therefore has to be at least 30s, otherwise a perfectly fine
+    // cold-start join is reported as a connection failure.
     clearTimeout(connectTimeoutRef.current)
+    connectTimedOutRef.current = false
     connectTimeoutRef.current = setTimeout(() => {
       if (!watchingRef.current) {
+        connectTimedOutRef.current = true
         setLiveState('failed')
         setConnectError(tl('connectionTimeout'))
         joiningRef.current = false
         joinedRef.current = false
-        try { clientRef.current?.leave() } catch {}
-        clientRef.current = null
+        // The Agora client is deliberately left alone here: a join that lands
+        // after the cap still clears this error (see the success path below).
+        // The retry button and the unmount cleanup both call leave().
       }
-    }, 15000)
+    }, 30000)
 
     try {
       const AgoraRTCModule: any = await import('agora-rtc-sdk-ng')
@@ -439,6 +460,8 @@ export default function LiveViewerPage() {
           joiningRef.current = false
           watchingRef.current = true
           setLiveState('watching')
+          setConnectError('')
+          connectTimedOutRef.current = false
           const overlay = document.getElementById('waiting-overlay')
           if (overlay) overlay.style.display = 'none'
         }
@@ -473,6 +496,15 @@ export default function LiveViewerPage() {
 
       await client.join(td.appId, td.channelName, td.token, td.uid)
 
+      // The join can land AFTER the 30s cap already showed the error (a warm-up
+      // that took longer than expected). The connection is healthy now, so the
+      // stale timeout must not keep the student on the failure screen.
+      if (connectTimedOutRef.current) {
+        connectTimedOutRef.current = false
+        setConnectError('')
+        setLiveState('connecting')
+      }
+
       // Joined the channel. Mark the join as done so a poll or socket event
       // doesn't retry; the connection timeout is cleared once video arrives.
       joinedRef.current = true
@@ -483,6 +515,8 @@ export default function LiveViewerPage() {
       patch(`/live/viewers/${courseId}`, { delta: 1 }).catch(() => {})
 
     } catch (e: any) {
+      // An aborted attempt is cleanup, not a connection failure.
+      if (isAbortError(e)) return
       console.error('[Live] Join failed:', e.message)
       clearTimeout(connectTimeoutRef.current)
       joiningRef.current = false
@@ -490,7 +524,7 @@ export default function LiveViewerPage() {
       watchingRef.current = false
       try { clientRef.current?.leave() } catch {}
       clientRef.current = null
-      const msg = (e.name === 'AbortError' || e.name === 'TimeoutError')
+      const msg = e.name === 'TimeoutError'
         ? tl('connectionTimeout')
         : (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key'))
           ? tl('sessionExpired')
@@ -504,6 +538,7 @@ export default function LiveViewerPage() {
   // right away (within ~2s) instead of waiting for the next poll cycle.
   const handleRetry = async () => {
     clearTimeout(connectTimeoutRef.current)
+    connectTimedOutRef.current = false
     joinedRef.current = false
     joiningRef.current = false
     watchingRef.current = false
@@ -528,6 +563,22 @@ export default function LiveViewerPage() {
       setLiveState('waiting')
     }
   }
+
+  // Render's free tier drops the first socket connection and can make the join
+  // exceed the cap. If the socket comes back AFTER the timeout already fired,
+  // the server is awake — clear the stale error and reconnect cleanly instead
+  // of leaving the student on the failure screen.
+  useEffect(() => {
+    if (!connected) return
+    if (!connectTimedOutRef.current) return
+    connectTimedOutRef.current = false
+    setConnectError('')
+    setLiveState('connecting')
+    void handleRetry()
+    // Only the connected transition matters: re-running on every render would
+    // retry in a loop while the join keeps failing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected])
 
   // When the socket detects the stream started, re-check immediately and
   // auto-connect (no manual refresh or button click required).

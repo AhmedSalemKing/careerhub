@@ -139,8 +139,13 @@ export function useLiveSocket(
       socket = io(`${SOCKET_URL}/live`, {
         transports: ['websocket', 'polling'],
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+        // The API sleeps on Render's free tier: the first connection can take
+        // 10-30s to wake it up, so keep retrying long enough for that instead
+        // of giving up on the room after a few short attempts.
+        reconnectionAttempts: 10,
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
+        timeout: 30000,
       })
       socketRef.current = socket
 
