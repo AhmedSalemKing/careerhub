@@ -351,21 +351,25 @@ export default function GoLivePage() {
   // Uploads a recording segment that was finished while the stream kept
   // running (screen share switched on or off). Every segment becomes its own
   // recorded entry — the chunks are deliberately not merged.
+  //
+  // This upload is strictly best-effort: a failure is logged only. It must
+  // never set recordingState (which drives the "recording could not be saved"
+  // UI) nor show a toast, because the session is still live and the final
+  // upload is the only one that reports success/failure to the instructor.
   const uploadSegment = async (blob: Blob | null) => {
     if (!blob || !blob.size) return
-    const extension = (blob.type || recordingMimeRef.current).includes('mp4') ? 'mp4' : 'webm'
-    const formData = new FormData()
-    formData.append('file', blob, `live-recording-${courseId}-${Date.now()}.${extension}`)
-    formData.append('courseId', courseId)
-    formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
-    // The stream is still running: this segment must become its own recording
-    // and must not mark the live as ended.
-    formData.append('append', 'true')
     try {
+      const extension = (blob.type || recordingMimeRef.current).includes('mp4') ? 'mp4' : 'webm'
+      const formData = new FormData()
+      formData.append('file', blob, `live-recording-${courseId}-${Date.now()}.${extension}`)
+      formData.append('courseId', courseId)
+      formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
+      // The stream is still running: this segment must become its own recording
+      // and must not mark the live as ended.
+      formData.append('append', 'true')
       await post('/live/save-recording', formData, { timeout: 0 })
     } catch (e: any) {
-      console.error('[Recording] segment upload failed', e?.message)
-      toast.error(isAr ? 'تعذر رفع جزء من التسجيل' : 'A part of the recording could not be saved')
+      console.error('[Recording] segment upload failed (ignored):', e?.message)
     }
   }
 

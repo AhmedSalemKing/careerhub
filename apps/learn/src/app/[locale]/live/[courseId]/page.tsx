@@ -284,7 +284,10 @@ export default function LiveViewerPage() {
         // Always return to (or stay in) "waiting" when the stream is not live and
         // we are not currently watching. This lets the poll recover the page even
         // after a previous failed connect attempt, and never overwrites "watching".
-        if (!watchingRef.current) {
+        // A join that is already in flight is left alone, otherwise a slower,
+        // slightly stale response could push the UI back to "waiting" while the
+        // Agora client is still connecting.
+        if (!watchingRef.current && !joiningRef.current) {
           setJoined(false)
           setLiveState('waiting')
         }
@@ -377,21 +380,6 @@ export default function LiveViewerPage() {
     setConnectError('')
     setLiveState('connecting')
 
-    // Fail the connection attempt after 15s instead of spinning for 30s. The cap
-    // applies until we are actually watching (video track playing), so a live
-    // stream that never publishes video still surfaces the retry button quickly.
-    clearTimeout(connectTimeoutRef.current)
-    connectTimeoutRef.current = setTimeout(() => {
-      if (!watchingRef.current) {
-        setLiveState('failed')
-        setConnectError(tl('connectionTimeout'))
-        joiningRef.current = false
-        joinedRef.current = false
-        try { clientRef.current?.leave() } catch {}
-        clientRef.current = null
-      }
-    }, 15000)
-
     try {
       const AgoraRTCModule: any = await import('agora-rtc-sdk-ng')
       const AgoraRTC = AgoraRTCModule.default
@@ -429,7 +417,22 @@ export default function LiveViewerPage() {
       }
 
       client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
-        await client.subscribe(user, mediaType)
+        try {
+          await client.subscribe(user, mediaType)
+        } catch (se: any) {
+          // A failed subscription would otherwise leave the page on the endless
+          // "connecting" spinner: surface the retry button instead.
+          console.error('[Live] Subscribe failed:', se?.message)
+          if (!watchingRef.current) {
+            setConnectError(tl('failedToConnect'))
+            setLiveState('failed')
+            joiningRef.current = false
+            joinedRef.current = false
+            try { clientRef.current?.leave() } catch {}
+            clientRef.current = null
+          }
+          return
+        }
         if (mediaType === 'video' && videoContainerRef.current) {
           user.videoTrack?.play(videoContainerRef.current)
           setHasVideo(true)
@@ -539,6 +542,29 @@ export default function LiveViewerPage() {
     watchingRef.current = false
     checkStreamStatus(userToken || token)
   }, [hookStreamStarted])
+
+  // The "connecting" state must never be a dead end. Several paths lead into
+  // it (initial join, retry, a video track that is unpublished and never comes
+  // back after a screen-share switch, a failed re-subscribe), and only some of
+  // them used to start a timeout. This one cap covers all of them: after 15s
+  // without a playing video the student gets the retry button instead of an
+  // endless "connecting to the stream" spinner. The timer is cleared as soon
+  // as the state changes, i.e. immediately when the video starts.
+  useEffect(() => {
+    if (liveState !== 'connecting') return
+    clearTimeout(connectTimeoutRef.current)
+    connectTimeoutRef.current = setTimeout(() => {
+      if (watchingRef.current) return
+      console.warn('[Live] Connecting timed out — showing retry')
+      joiningRef.current = false
+      joinedRef.current = false
+      try { clientRef.current?.leave() } catch {}
+      clientRef.current = null
+      setConnectError(tl('connectionTimeout'))
+      setLiveState('failed')
+    }, 15000)
+    return () => clearTimeout(connectTimeoutRef.current)
+  }, [liveState])
 
   // Poll the session status while we are not yet watching, so the student is
   // auto-connected as soon as the instructor goes live. Polling also keeps
