@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-const SOCKET_URL = 'https://api.deveways.com'
+// The socket must live on the same deployment as the REST calls. It used to be
+// hardcoded here while every fetch followed NEXT_PUBLIC_API_URL, so a stale env
+// var let the socket connect to the healthy API while the status and token
+// requests 404'd on another host — the exact split that showed "2 viewers"
+// together with "Course not found" on the student live page. Deriving both from
+// one variable makes that impossible.
+const SOCKET_URL = (() => {
+  const explicit = process.env.NEXT_PUBLIC_SOCKET_URL
+  const raw = (explicit && explicit.trim())
+    ? explicit.trim()
+    : (process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api')
+  // socket.io connects to the origin, not to the REST prefix.
+  return raw.replace(/\/+$/, '').replace(/\/api$/, '')
+})()
 
 const MAX_COMMENTS = 100
 const MAX_QUESTIONS = 50

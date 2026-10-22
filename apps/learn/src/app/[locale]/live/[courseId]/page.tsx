@@ -23,10 +23,26 @@ function isAbortError(error: any): boolean {
   return error?.name === 'AbortError'
 }
 
+/**
+ * A sleeping or overloaded API answers 5xx (Render's proxy sends 502/503 while
+ * the container boots), 408, or 429 — or drops the connection entirely
+ * (status 0). None of those mean the course is missing, so they must be retried
+ * instead of being reported as a permanent failure.
+ */
+function isTransientStatus(status: number): boolean {
+  return status === 0 || status === 408 || status === 429 || status >= 500
+}
+
+// A cold start can take 30-60s: five attempts four seconds apart cover the boot
+// without keeping the student on a spinner forever.
+const PROBE_RETRY_MAX = 5
+const PROBE_RETRY_DELAY = 4000
+
 export default function LiveViewerPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const tl = useTranslations('learn')
+  const tc = useTranslations('course')
   const router = useRouter()
   const params = useParams()
   const courseId = params.courseId as string
@@ -92,6 +108,10 @@ export default function LiveViewerPage() {
   // Last Agora-connected viewer count read from the API (Course.liveViewerCount),
   // used so the socket room size can never override it with an inflated number.
   const dbViewerCountRef = useRef(0)
+  // Bounded budgets for a probe that fails while the API wakes up. Reset as
+  // soon as the API answers, and by the manual retry button.
+  const probeRetryRef = useRef(0)
+  const probeRetryTimerRef = useRef<any>(null)
 
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
@@ -184,7 +204,18 @@ export default function LiveViewerPage() {
         // stuck on "البث لم يبدأ بعد".
         cache: 'no-store'
       })
-      if (!courseRes.ok) throw new Error('Course not found')
+      if (!courseRes.ok) {
+        // The old code threw a hardcoded "Course not found" for ANY non-2xx.
+        // That turned a Render cold-start 502 into a dead end: the student's
+        // socket was connected (so the API was up) while this probe was still
+        // booting the container. Carry the real status so the catch below can
+        // tell a transient hiccup from a genuinely missing course.
+        const failure: any = new Error(`HTTP ${courseRes.status}`)
+        failure.status = courseRes.status
+        throw failure
+      }
+      // The API answered: restore the retry budget for the next real hiccup.
+      probeRetryRef.current = 0
       const courseData = await courseRes.json()
       // The API wraps the payload as { success, data: { course } }, so unwrap
       // both layers. Falling back to courseData.data / courseData keeps this
@@ -335,20 +366,29 @@ export default function LiveViewerPage() {
       })
 
       if (tokenRes.status === 403) {
+        // 403 has two very different meanings here: the stream really ended, or
+        // the student has no enrollment row. Reporting the second one as "the
+        // stream ended" sends a live viewer to a dead end, so read the reason.
+        const body = await tokenRes.json().catch(() => null)
+        const reason = String(body?.message || '')
         clearTimeout(loadingTimeoutRef.current)
-        setLiveState('ended')
-        setError('ended')
         setLoading(false)
+        if (reason.toLowerCase().includes('ended')) {
+          setLiveState('ended')
+          setError('ended')
+        } else {
+          setConnectError(reason || tl('enrollFirst'))
+          setLiveState('failed')
+        }
         return false
       }
 
       if (!tokenRes.ok) {
-        clearTimeout(loadingTimeoutRef.current)
-        setLoading(false)
-        setJoined(true)
-        setConnectError(tl('failedToConnect'))
-        setLiveState('failed')
-        return true
+        // Same rule as the course probe: keep the status so a 502 from a booting
+        // container is retried instead of shown as a permanent failure.
+        const failure: any = new Error(`HTTP ${tokenRes.status}`)
+        failure.status = tokenRes.status
+        throw failure
       }
 
       const data = await tokenRes.json()
@@ -378,12 +418,47 @@ export default function LiveViewerPage() {
       if (isAbortError(e)) return false
       clearTimeout(loadingTimeoutRef.current)
       console.error('[Live] Check error:', e.message)
-      // Connection-level failures stay inside the player so the student gets the
-      // inline retry button instead of a full-page error.
-      const msg = e.name === 'TimeoutError'
-        ? tl('connectionTimeout')
-        : (e.message || tl('failedToConnect'))
-      setConnectError(msg)
+
+      const status = typeof e?.status === 'number' ? e.status : 0
+      const isTimeout = e?.name === 'TimeoutError'
+      const transient = isTimeout || isTransientStatus(status)
+
+      // A transient failure is the API waking up, not a dead stream. A
+      // connected socket proves the API is reachable, so the full retry budget
+      // applies; without it the 5s poll takes over after a couple of quick
+      // attempts (and a timed-out probe gets one more try, not five).
+      if (transient && !silent) {
+        const budget = socketConnectedRef.current ? PROBE_RETRY_MAX : 2
+        const limit = isTimeout ? 1 : budget
+        if (probeRetryRef.current < limit) {
+          probeRetryRef.current++
+          clearTimeout(probeRetryTimerRef.current)
+          probeRetryTimerRef.current = setTimeout(() => {
+            if (watchingRef.current || joinedRef.current) return
+            void checkStreamStatus(userToken || token, false)
+          }, PROBE_RETRY_DELAY)
+          setConnectError('')
+          setLoading(true)
+          setLiveState('connecting')
+          return false
+        }
+      }
+
+      // A background poll must never flash the error screen: the next tick
+      // retries by itself and the foreground probe owns the retry budget.
+      if (transient && silent) return false
+
+      setConnectError(
+        status === 404
+          ? tc('not_found')
+          : status === 401
+            ? tl('sessionExpired')
+            : isTimeout
+              ? tl('connectionTimeout')
+              : status
+                ? `${tl('failedToConnect')} (HTTP ${status})`
+                : tl('failedToConnect'),
+      )
       setLiveState('failed')
       setLoading(false)
       return false
@@ -554,6 +629,10 @@ export default function LiveViewerPage() {
   // right away (within ~2s) instead of waiting for the next poll cycle.
   const handleRetry = async () => {
     clearTimeout(connectTimeoutRef.current)
+    // A manual retry is a fresh start: cancel any pending probe retry and give
+    // the cold-start budget back.
+    clearTimeout(probeRetryTimerRef.current)
+    probeRetryRef.current = 0
     connectTimedOutRef.current = false
     joinedRef.current = false
     joiningRef.current = false
@@ -662,6 +741,7 @@ export default function LiveViewerPage() {
     return () => {
       clearTimeout(loadingTimeoutRef.current)
       clearTimeout(connectTimeoutRef.current)
+      clearTimeout(probeRetryTimerRef.current)
       clearInterval(pollRef.current)
       watchingRef.current = false
       joinedRef.current = false
