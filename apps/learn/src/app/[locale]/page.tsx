@@ -536,7 +536,13 @@ export default function HomePage() {
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.price}<span className="text-sm font-normal ml-1" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? 'ر.س' : 'SAR'}</span></div>
                     {enrolledIds.has(course.id) ? (
                       <Link
-                        href={isLiveCourse(course) ? `/${locale}/live/${course.id}` : `/${locale}/learn/${course.id}`}
+                        href={
+                          isLiveCourse(course)
+                            ? course.liveStatus === 'ended'
+                              ? `/${locale}/courses/${course.id}`
+                              : `/${locale}/live/${course.id}`
+                            : `/${locale}/learn/${course.id}`
+                        }
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',

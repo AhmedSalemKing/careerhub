@@ -53,6 +53,7 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
+import LiveCourseDetail from "../../../../components/live/LiveCourseDetail";
 
 export default function CourseDetailPage({
 	params,
@@ -390,6 +391,22 @@ export default function CourseDetailPage({
 				</div>
 			</div>
 		);
+
+	// A live course is ONE event, not a curriculum: it gets its own page
+	// (video / countdown instead of a lesson tree and a progress bar).
+	if (isLive) {
+		return (
+			<LiveCourseDetail
+				course={course}
+				locale={locale}
+				isDark={isDark}
+				isEnrolled={isEnrolled}
+				enrollmentStatus={enrollmentStatus}
+				enrolling={enrolling}
+				onEnroll={handleEnroll}
+			/>
+		);
+	}
 
 	const thumb = getMediaUrl(course.thumbnail);
 	const previewVideo = getMediaUrl(course.previewVideo);
@@ -1300,7 +1317,7 @@ export default function CourseDetailPage({
 													? "0 4px 24px rgba(220,38,38,0.35)"
 													: "0 4px 24px rgba(22,163,74,0.35)",
 											}}>
-											{isLive ? (
+											{isLive && liveNow ? (
 												<>
 													<Radio size={22} strokeWidth={2.5} />
 													{isAr ? "انضم للبث المباشر" : "Join Live Stream"}

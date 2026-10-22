@@ -9,7 +9,7 @@ import {
   Video, Radio, MapPin, Search, X, Clock, Users,
   Calendar, Play, ChevronRight, Wifi, WifiOff,
   Star, BookOpen, Lock, CheckCircle2, AlertCircle,
-  DollarSign, Navigation, Square
+  DollarSign, Navigation, Square, PlayCircle
 } from 'lucide-react'
 import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
@@ -742,6 +742,20 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
                 {price > 0 && !isPaid
                   ? <><Lock size={12} />{tl('enrollAndWait')}</>
                   : <><Calendar size={12} />{tl('addToCalendar')}</>}
+              </button>
+            )}
+
+            {/* The stream is over: the recording lives on the session page. */}
+            {isEnded && (
+              <button onClick={() => router.push(`/${locale}/courses/${course.id}`)} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '10px 18px', borderRadius: 11,
+                background: 'rgba(81,32,200,0.1)', color: '#5120c8',
+                border: '1px solid rgba(81,32,200,0.3)', cursor: 'pointer',
+                fontSize: 12, fontWeight: 600,
+              }}>
+                <PlayCircle size={14} />
+                {isAr ? 'شاهد التسجيل' : 'Watch recording'}
               </button>
             )}
           </div>

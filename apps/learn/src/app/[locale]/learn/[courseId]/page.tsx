@@ -27,6 +27,7 @@ import {
 	ChevronDown,
 	CheckCheck,
 	Video,
+	Radio,
 	FileText,
 	Clock,
 	Award,
@@ -58,6 +59,7 @@ import {
 	BarChart3,
 } from "lucide-react";
 import VideoProtection from "../../../../components/VideoProtection";
+import LiveSessionReplay from "../../../../components/live/LiveSessionReplay";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
 import { useAuthStore } from "../../../../stores/authStore";
@@ -278,6 +280,11 @@ function MetaItem({
 			);
 		},
 	});
+
+	// A live course is ONE event, not a curriculum. It gets its own watch
+	// page (a single replay) instead of an empty lesson tree.
+	const isLiveCourse = course?.type === "live";
+	const liveState = normalizeLiveStatus(course?.liveStatus);
 
 	const {
 		data: enrollment,
@@ -751,6 +758,15 @@ function MetaItem({
 		return () => clearInterval(interval);
 	}, [activeLessonId, courseId, allLessonsFlat, authChecked, qc]);
 
+	// A live session that has not ended yet belongs on the live viewer,
+	// not on a watch page with an empty lesson list.
+	useEffect(() => {
+		if (!course) return;
+		if (course.type !== "live") return;
+		if (normalizeLiveStatus(course.liveStatus) === "ended") return;
+		router.replace(`/${locale}/live/${courseId}`);
+	}, [course, courseId, locale, router]);
+
 	// Double-tap to seek ±5s on mobile
 	const showSeekFeedback = (side: "forward" | "backward") => {
 		setSeekFeedback({ side, visible: true });
@@ -1134,8 +1150,42 @@ function MetaItem({
 		);
 	}
 
+	// Before the session ends the student belongs on the live viewer.
+	if (isLiveCourse && liveState !== "ended") {
+		return (
+			<div
+				className="flex min-h-screen items-center justify-center"
+				style={{ background: bg }}>
+				<div className="text-center">
+					<Radio
+						className="mx-auto h-10 w-10 mb-3 animate-pulse"
+						style={{ color: redColor }}
+					/>
+					<p className="text-sm" style={{ color: textSecondary }}>
+						{isAr
+							? "جارٍ فتح صفحة البث المباشر..."
+							: "Opening the live room..."}
+					</p>
+				</div>
+			</div>
+		);
+	}
+
 	if (!isEnrolled && !enrollmentLoading) {
 		return <NotEnrolledPage courseId={courseId} locale={locale} />;
+	}
+
+	// The session is over: one replay, no lesson list, no progress bar,
+	// no certificate section.
+	if (isLiveCourse && liveState === "ended") {
+		return (
+			<LiveSessionReplay
+				course={course}
+				locale={locale}
+				isDark={isDark}
+				userEmail={userEmail}
+			/>
+		);
 	}
 
 	return (

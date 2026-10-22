@@ -130,6 +130,48 @@ export function formatLiveDateTimeShort(value: string | number | Date | null | u
   }))
 }
 
+/**
+ * The plain `ar-EG` locale renders Arabic-Indic digits (٢٢ أكتوبر ٢٠٢٦).
+ * A live session schedule reads much better — and matches the way the
+ * instructor typed it — with Latin digits, so the numbering system is pinned
+ * to `latn` on top of the Gregorian calendar.
+ */
+const AR_LOCALE_LATN = 'ar-EG-u-ca-gregory-nu-latn'
+const EN_LOCALE_LATN = 'en-US-u-ca-gregory'
+
+function localeOfLatn(locale?: string): string {
+  return locale === 'ar' || locale?.startsWith('ar') ? AR_LOCALE_LATN : EN_LOCALE_LATN
+}
+
+/**
+ * "الأربعاء، 22 أكتوبر 2026" — long weekday + date.
+ * Gregorian calendar, Latin digits, browser timezone.
+ */
+export function formatLiveDateLong(value: string | number | Date | null | undefined, locale = 'en'): string {
+  const d = toDate(value)
+  if (!d) return '—'
+  return d.toLocaleDateString(localeOfLatn(locale), opts(locale, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }))
+}
+
+/**
+ * "02:00 ص" — wall-clock time of the session.
+ * Gregorian calendar, Latin digits, browser timezone.
+ */
+export function formatLiveTimeShort(value: string | number | Date | null | undefined, locale = 'en'): string {
+  const d = toDate(value)
+  if (!d) return '—'
+  return d.toLocaleTimeString(localeOfLatn(locale), opts(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }))
+}
+
 /** HH:MM countdown unit string used by "starts in X h Y m". */
 export function liveCountdownParts(value: string | number | Date | null | undefined) {
   const d = toDate(value)
