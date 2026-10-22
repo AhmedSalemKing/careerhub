@@ -627,11 +627,13 @@ export default function GoLivePage() {
       clientRef.current = client
 
       // Bounded: a sleeping or blocked gateway must not leave the page on
-      // "جارٍ الاتصال بالبث…" forever. 30s covers Render's cold start; after
-      // that the error is retryable instead of an endless spinner.
+      // "جارٍ الاتصال بالبث…" forever. Agora walks several edge/gateway
+      // fallbacks when the nearest node refuses the WebSocket, which can take
+      // over a minute, so the cap matches the student page's 90s window —
+      // otherwise a join that would have succeeded is reported as a failure.
       await withTimeout(
         client.join(data.appId, data.channelName, data.token, 1),
-        30000,
+        90000,
         isAr
           ? 'انتهت مهلة الاتصال بخادم البث — حاول مرة أخرى'
           : 'The streaming server did not respond — please try again',

@@ -33,10 +33,27 @@ function isTransientStatus(status: number): boolean {
   return status === 0 || status === 408 || status === 429 || status >= 500
 }
 
+/**
+ * Join errors a retry cannot fix: the token or the project credentials are
+ * wrong. Everything else — gateway unreachable, WebSocket reset, timeout — is
+ * worth another attempt, because the SDK walks several fallback paths.
+ */
+function isPermanentJoinError(message: string): boolean {
+  return /INVALID_TOKEN|INVALID_VENDOR_KEY|ERR_NO_AUTHORIZED|PERMISSION_DENIED|dynamic key|BANNED/i.test(message || '')
+}
+
 // A cold start can take 30-60s: five attempts four seconds apart cover the boot
 // without keeping the student on a spinner forever.
 const PROBE_RETRY_MAX = 5
 const PROBE_RETRY_DELAY = 4000
+
+// Agora walks several edge/gateway fallbacks when the first WebSocket is
+// refused, which can take over a minute on a cold network. A failed join is
+// retried automatically (10s, 20s, then 30s apart) instead of leaving the
+// student on "البث لم يبدأ بعد" forever — the 'stream-started' broadcast already
+// fired before they arrived, so nothing else would restart the join.
+const MAX_AGORA_RETRIES = 6
+const AGORA_JOIN_TIMEOUT = 90000
 
 export default function LiveViewerPage() {
   const locale = useLocale()
@@ -80,7 +97,7 @@ export default function LiveViewerPage() {
   // Connection state machine:
   //  loading    -> resolving session / enrollment
   //  waiting    -> stream not started yet (polling until it goes live)
-  //  connecting -> stream is live, Agora join in progress (30s cap)
+  //  connecting -> stream is live, Agora join in progress (90s cap)
   //  failed     -> join failed or timed out (retry available)
   //  watching   -> connected and receiving the stream
   //  ended      -> stream finished
@@ -96,7 +113,7 @@ export default function LiveViewerPage() {
   const loadingTimeoutRef = useRef<any>(null)
   const pollRef = useRef<any>(null)
   const connectTimeoutRef = useRef<any>(null)
-  // True once the 30s connect cap fired. A late Agora join or a socket
+  // True once the 90s connect cap fired. A late Agora join or a socket
   // reconnection after that point has to clear the stale error state.
   const connectTimedOutRef = useRef(false)
   // Track whether we have already joined for the current live session so polling
@@ -112,6 +129,11 @@ export default function LiveViewerPage() {
   // soon as the API answers, and by the manual retry button.
   const probeRetryRef = useRef(0)
   const probeRetryTimerRef = useRef<any>(null)
+  // Automatic Agora rejoin, used when a join times out or fails while the
+  // socket is up. Bounded, with a growing delay, and cleared on success, on a
+  // manual retry, on 'stream-started' and on unmount.
+  const agoraRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const agoraRetryCountRef = useRef(0)
 
   const token = typeof window !== 'undefined'
     ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
@@ -161,8 +183,8 @@ export default function LiveViewerPage() {
   } = useLiveSocket(courseId, userName, 'viewer', userAvatar)
 
   // Mirror of the hook's `connected` flag for callbacks that outlive the render
-  // they were created in: the 30s connect cap below would otherwise read a
-  // value captured 30 seconds earlier.
+  // they were created in: the 90s connect cap below would otherwise read a
+  // value captured 90 seconds earlier.
   const socketConnectedRef = useRef(false)
   useEffect(() => { socketConnectedRef.current = connected }, [connected])
 
@@ -468,17 +490,54 @@ export default function LiveViewerPage() {
   // Init Agora + start stream playback. Accepts an explicit token payload so it
   // can be called automatically from polling/socket detection, while still being
   // safe to call from the manual "Join Live Stream" button.
+  const clearAgoraRetry = () => {
+    if (agoraRetryTimerRef.current) clearTimeout(agoraRetryTimerRef.current)
+    agoraRetryTimerRef.current = null
+  }
+
+  // A join that timed out or was rejected while the socket is healthy is not a
+  // dead end: schedule a clean attempt with a growing delay. The stale client is
+  // torn down first — handleJoinStream refuses to start while clientRef is set,
+  // which is exactly how a student could sit on "waiting" forever.
+  const scheduleAgoraRetry = (td: any) => {
+    if (watchingRef.current || joinedRef.current) return
+    if (agoraRetryCountRef.current >= MAX_AGORA_RETRIES) return
+    agoraRetryCountRef.current++
+    const delay = Math.min(10000 * agoraRetryCountRef.current, 30000)
+    clearAgoraRetry()
+    agoraRetryTimerRef.current = setTimeout(() => {
+      agoraRetryTimerRef.current = null
+      if (watchingRef.current) return
+      void (async () => {
+        const stale = clientRef.current
+        clientRef.current = null
+        joiningRef.current = false
+        joinedRef.current = false
+        if (stale) {
+          try { await stale.leave() } catch {}
+        }
+        await handleJoinStream(td)
+      })()
+    }, delay)
+  }
+
   const handleJoinStream = async (overrideTokenData?: any) => {
     const td = overrideTokenData || tokenData
     if (!td || clientRef.current || joiningRef.current) return
+
+    // The client this attempt creates. The catch and the watchdog below only
+    // touch clientRef if it still points at this client, so a late rejection
+    // from an abandoned attempt cannot tear down a newer, healthy one.
+    let attemptClient: any = null
 
     joiningRef.current = true
     setConnectError('')
     setLiveState('connecting')
 
-    // Render's free tier sleeps, and waking the API up can take 10-30s. The
-    // cap below therefore has to be at least 30s, otherwise a perfectly fine
-    // cold-start join is reported as a connection failure.
+    // Render's free tier sleeps, and waking the API up can take 10-30s. Agora
+    // additionally has to walk its gateway fallbacks when the nearest edge node
+    // refuses the WebSocket, so the cap has to cover that negotiation too:
+    // 90s before the attempt is considered failed.
     clearTimeout(connectTimeoutRef.current)
     connectTimedOutRef.current = false
     connectTimeoutRef.current = setTimeout(() => {
@@ -488,21 +547,29 @@ export default function LiveViewerPage() {
       // The join can succeed while no video ever arrives — the instructor has
       // simply not published yet, or the cold start is still settling. A
       // connected socket proves the server is reachable, so this is NOT a
-      // connection failure: go back to the waiting state and let the
-      // 'stream-started' event or the poll pick the stream up, instead of
-      // showing "فشل الاتصال" to a student who is already connected.
+      // connection failure: go back to the waiting state and retry the join
+      // instead of showing "فشل الاتصال" to a student who is already connected.
       if (joinedRef.current || socketConnectedRef.current) {
         setConnectError('')
         setLiveState('waiting')
+        if (agoraRetryCountRef.current < MAX_AGORA_RETRIES) {
+          scheduleAgoraRetry(td)
+        } else if (clientRef.current === attemptClient) {
+          // Budget exhausted. Free the abandoned client so the 5s status poll
+          // can start a fresh join instead of hitting the "already joining"
+          // guard forever.
+          void (async () => {
+            try { await attemptClient?.leave() } catch {}
+            clientRef.current = null
+          })()
+        }
         return
       }
       setLiveState('failed')
       setConnectError(tl('connectionTimeout'))
       joinedRef.current = false
-      // The Agora client is deliberately left alone here: a join that lands
-      // after the cap still clears this error (see the success path below).
       // The retry button and the unmount cleanup both call leave().
-    }, 30000)
+    }, AGORA_JOIN_TIMEOUT)
 
     try {
       const AgoraRTCModule: any = await import('agora-rtc-sdk-ng')
@@ -524,6 +591,7 @@ export default function LiveViewerPage() {
       }
 
       const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
+      attemptClient = client
       await client.setClientRole('audience')
       clientRef.current = client
 
@@ -553,6 +621,8 @@ export default function LiveViewerPage() {
           setLiveState('watching')
           setConnectError('')
           connectTimedOutRef.current = false
+          agoraRetryCountRef.current = 0
+          clearAgoraRetry()
           const overlay = document.getElementById('waiting-overlay')
           if (overlay) overlay.style.display = 'none'
         }
@@ -600,6 +670,8 @@ export default function LiveViewerPage() {
       // doesn't retry; the connection timeout is cleared once video arrives.
       joinedRef.current = true
       joiningRef.current = false
+      agoraRetryCountRef.current = 0
+      clearAgoraRetry()
 
       // Route through the central authenticated client so the JWT is attached by
       // the shared interceptor and the request targets the configured API host.
@@ -613,8 +685,27 @@ export default function LiveViewerPage() {
       joiningRef.current = false
       joinedRef.current = false
       watchingRef.current = false
-      try { clientRef.current?.leave() } catch {}
-      clientRef.current = null
+      // Only tear down the client this attempt created: a retry may already have
+      // replaced clientRef while this promise was rejecting.
+      if (clientRef.current === attemptClient) {
+        try { attemptClient?.leave() } catch {}
+        clientRef.current = null
+      }
+
+      // The gateway was unreachable or the SDK aborted its negotiation while the
+      // instructor is provably live (the socket is connected). Retry with
+      // backoff instead of parking the student on "فشل الاتصال".
+      if (
+        socketConnectedRef.current &&
+        agoraRetryCountRef.current < MAX_AGORA_RETRIES &&
+        !isPermanentJoinError(e?.message || '')
+      ) {
+        setConnectError('')
+        setLiveState('waiting')
+        scheduleAgoraRetry(td)
+        return
+      }
+
       const msg = e.name === 'TimeoutError'
         ? tl('connectionTimeout')
         : (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key'))
@@ -629,10 +720,12 @@ export default function LiveViewerPage() {
   // right away (within ~2s) instead of waiting for the next poll cycle.
   const handleRetry = async () => {
     clearTimeout(connectTimeoutRef.current)
-    // A manual retry is a fresh start: cancel any pending probe retry and give
-    // the cold-start budget back.
+    // A manual retry is a fresh start: cancel any pending probe/socket retry and
+    // give the cold-start and Agora budgets back.
     clearTimeout(probeRetryTimerRef.current)
     probeRetryRef.current = 0
+    clearAgoraRetry()
+    agoraRetryCountRef.current = 0
     connectTimedOutRef.current = false
     joinedRef.current = false
     joiningRef.current = false
@@ -683,6 +776,11 @@ export default function LiveViewerPage() {
     setTokenData(null)
     joinedRef.current = false
     watchingRef.current = false
+    // 'stream-started' is the server telling us the stream is live right now
+    // (including the catch-up event a late-joining viewer receives). Give the
+    // join a fresh retry budget instead of leaving an exhausted counter behind.
+    clearAgoraRetry()
+    agoraRetryCountRef.current = 0
     checkStreamStatus(userToken || token)
   }, [hookStreamStarted])
 
@@ -697,7 +795,9 @@ export default function LiveViewerPage() {
     if (!t) return
 
     pollRef.current = setInterval(() => {
-      if (watchingRef.current || joiningRef.current) return
+      // A pending auto-retry owns the next join attempt: polling it again would
+      // race the backoff and churn Agora clients.
+      if (watchingRef.current || joiningRef.current || agoraRetryTimerRef.current) return
       checkStreamStatus(t, true)
     }, 5000)
 
@@ -742,6 +842,10 @@ export default function LiveViewerPage() {
       clearTimeout(loadingTimeoutRef.current)
       clearTimeout(connectTimeoutRef.current)
       clearTimeout(probeRetryTimerRef.current)
+      if (agoraRetryTimerRef.current) {
+        clearTimeout(agoraRetryTimerRef.current)
+        agoraRetryTimerRef.current = null
+      }
       clearInterval(pollRef.current)
       watchingRef.current = false
       joinedRef.current = false
@@ -918,7 +1022,7 @@ export default function LiveViewerPage() {
                  </>
                )}
 
-               {/* CONNECTING — stream is live, Agora join in progress (30s cap) */}
+               {/* CONNECTING — stream is live, Agora join in progress (90s cap) */}
                {liveState === 'connecting' && (
                  <>
                    <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />

@@ -259,6 +259,19 @@ export class LiveService {
     }
   }
 
+  /**
+   * Minimal live-state read for the gateway. The 'live-started' broadcast only
+   * reaches sockets that are in the room at that moment, so a late-joining
+   * viewer has to be told separately whether the stream is already running.
+   * Selecting two columns keeps that check cheap.
+   */
+  async getCourseStatus(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { liveStatus: true, agoraChannelName: true },
+    })
+  }
+
   async getLiveCourses(status?: string) {
     const where: any = { type: 'live' }
     if (status) where.liveStatus = status
