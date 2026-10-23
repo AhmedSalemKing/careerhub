@@ -108,25 +108,20 @@ export default function GoLivePage() {
   // the stream is running. When the stream ends the file is uploaded to the
   // API, which stores it on Bunny.net and turns it into a lesson. Nothing is
   // recorded unless the instructor asked for it.
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordingChunksRef = useRef<Blob[]>([])
+  const chunksRef = useRef<Blob[]>([])
+  const recordingStartMsRef = useRef<number | null>(null)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const recordingMimeRef = useRef<string>('video/webm')
   // The finished file is kept so a failed upload can be retried without
   // recording the session again.
   const recordingBlobRef = useRef<Blob | null>(null)
-  const recordingMimeRef = useRef<string>('video/webm')
   // Fires when the recorder produced no data at all, so a dead recorder is
   // reported instead of silently uploading an empty file.
   const recordingWatchdogRef = useRef<any>(null)
-  // Resolver of the "the recorder stopped" promise.
-  const recordingStoppedRef = useRef<((blob: Blob | null) => void) | null>(null)
-  // Wall-clock start of the recording. MediaRecorder never writes the duration
-  // into a webm produced this way (it stays "unknown"), so Bunny shows 00:00
-  // and the player cannot seek. The real duration is measured here and patched
-  // into the container before the upload.
-  const recordingStartTimeRef = useRef<number>(0)
   // Duration (ms) of the finished recording, kept with the blob so a retried
   // upload patches the header with the same value.
   const recordingDurationRef = useRef<number>(0)
+  const [hasRecordingFile, setHasRecordingFile] = useState(false)
 
   // ── Composite recording (canvas) ────────────────────────────────────────
   // MediaRecorder cannot add a track to a running recording, so recording the
@@ -145,8 +140,6 @@ export default function GoLivePage() {
   const cameraTrackRef = useRef<any>(null)
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'uploading' | 'done' | 'error'>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
-  // Whether there is a file that can be uploaded again after a failure.
-  const [hasRecordingFile, setHasRecordingFile] = useState(false)
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -334,71 +327,57 @@ export default function GoLivePage() {
   //
   // The recorder reads a canvas composite rather than the raw tracks, so the
   // screen share that starts mid-session is captured too, with no restart.
-  const startRecording = (tracks: any[]) => {
+  function startRecording(tracks?: any[]) {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
     if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return
     try {
-      const nativeTracks = tracks
-        .map(nativeTrackOf)
-        .filter((track): track is MediaStreamTrack => !!track)
-      const micNative = nativeTracks.find(t => t.kind === 'audio')
+      // a. get mic native track
+      const micNative = micTrackRef.current
+        ? nativeTrackOf(micTrackRef.current)
+        : null
       if (!micNative) {
         console.warn('[Recording] no microphone track — the session will not be recorded')
         return
       }
-      // Point the canvas at the current camera (if any) before recording.
+
+      // b. build composite (canvas video + mic audio)
       attachVideoToComposite(cameraTrackRef.current ?? null)
-      // The composite always carries a canvas video track, so a video codec is
-      // always correct here.
+      const compositeStream = buildCompositeStream(micNative)
+
+      // c. always video MIME (canvas always has a video track)
       const mimeType = pickRecordingMimeType(true)
       if (!mimeType) {
-        console.warn('[Recording] no supported mime type — the session will not be recorded')
+        console.warn('[Recording] no supported MIME')
         return
       }
-      const stream = buildCompositeStream(micNative)
-      const recorder = new MediaRecorder(stream, { mimeType })
-      recordingChunksRef.current = []
-      recorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data && e.data.size > 0) recordingChunksRef.current.push(e.data)
+
+      // d. reset chunk buffer
+      chunksRef.current = []
+      recordingMimeRef.current = mimeType.split(';')[0]
+
+      // e. create recorder with 1-second timeslice
+      const recorder = new MediaRecorder(compositeStream, { mimeType })
+      recorderRef.current = recorder
+
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunksRef.current.push(e.data)
       }
-      // A recorder failure is silent: the live stream must keep going and the
-      // instructor must not see a blocking error mid-session.
+
       recorder.onerror = () => {
         console.error('[Recording] recorder failed — recording stopped silently')
       }
-      // The file is assembled whenever the recorder stops — no matter if the
-      // stream ended or the watchdog gave up.
-      recorder.onstop = () => {
-        const blob = new Blob(recordingChunksRef.current, { type: recordingMimeRef.current })
-        recordingBlobRef.current = blob.size > 0 ? blob : null
-        // Remember how long the session ran so the upload can patch the
-        // duration into the webm header (MediaRecorder leaves it unknown).
-        recordingDurationRef.current = recordingStartTimeRef.current
-          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
-          : 0
-        setHasRecordingFile(!!recordingBlobRef.current)
-        mediaRecorderRef.current = null
-        const resolve = recordingStoppedRef.current
-        recordingStoppedRef.current = null
-        resolve?.(recordingBlobRef.current)
-      }
-      recorder.start(1000)
-      mediaRecorderRef.current = recorder
-      recordingStartTimeRef.current = Date.now()
-      // Keep the full family including audio/video ("audio/webm" or
-      // "video/webm") but drop the codec list: it would end up in the upload's
-      // content type and be rejected by the API.
-      recordingMimeRef.current = mimeType.split(';')[0]
+
+      // f. mark exact start time just before .start()
+      recordingStartMsRef.current = Date.now()
+      recorder.start(1000)   // 1-second timeslice — crucial for long sessions
       setRecordingState('recording')
 
       // Watchdog: a recorder that produces no data is not recording anything.
-      // It stops the recorder silently — the final upload reports the truth
-      // (no file) instead of interrupting the live with an error.
       clearTimeout(recordingWatchdogRef.current)
       recordingWatchdogRef.current = setTimeout(() => {
-        if (mediaRecorderRef.current !== recorder) return
-        if (recordingChunksRef.current.length > 0) return
+        if (recorderRef.current !== recorder) return
+        if (chunksRef.current.length > 0) return
         console.warn('[Recording] the recorder produced no data — stopping silently')
         try { recorder.stop() } catch { /* already stopped */ }
       }, 6000)
@@ -407,68 +386,111 @@ export default function GoLivePage() {
     }
   }
 
+  function stopRecordingAndUpload(): Promise<void> {
+    return new Promise((resolve) => {
+      const recorder = recorderRef.current
+      clearTimeout(recordingWatchdogRef.current)
+      if (!recorder || recorder.state === 'inactive') {
+        resolve()
+        return
+      }
+
+      // capture stop time BEFORE calling .stop()
+      const stopMs = Date.now()
+
+      recorder.onstop = async () => {
+        try {
+          const durationSec =
+            recordingStartMsRef.current != null
+              ? (stopMs - recordingStartMsRef.current) / 1000
+              : 0
+
+          console.log('[recording] chunks.length=', chunksRef.current.length, 'totalBytes=', chunksRef.current.reduce((a,b)=>a+b.size,0))
+          console.log('[recording] durationSec passed to fixWebmDuration=', durationSec, 'startMs=', recordingStartMsRef.current, 'stopMs=', stopMs)
+
+          const mimeType = recordingMimeRef.current || 'video/webm'
+          let blob = new Blob(chunksRef.current, { type: mimeType })
+
+          // fix webm duration metadata if applicable
+          if (mimeType.includes('webm') && durationSec > 0) {
+            try {
+              blob = await fixWebmDuration(blob, durationSec, { logger: false })
+            } catch (err) {
+              console.warn('[recording] fixWebmDuration failed, uploading raw', err)
+            }
+          }
+
+          recordingBlobRef.current = blob.size > 0 ? blob : null
+          recordingDurationRef.current = durationSec * 1000
+          setHasRecordingFile(!!recordingBlobRef.current)
+          if (blob.size > 0) {
+            await uploadRecordingBlob(blob, mimeType)
+          } else {
+            setRecordingState('error')
+          }
+        } catch (err) {
+          console.error('[recording] upload error', err)
+          setRecordingState('error')
+        } finally {
+          chunksRef.current = []
+          recordingStartMsRef.current = null
+          recorderRef.current = null
+          resolve()
+        }
+      }
+
+      try {
+        recorder.stop()   // triggers ondataavailable one last time, then onstop
+      } catch {
+        resolve()
+      }
+    })
+  }
+
   // Stops the recorder and waits for the last chunk to arrive. Resolves with
   // the finished file (or null when nothing was recorded).
   const stopRecording = (): Promise<Blob | null> => {
-    const recorder = mediaRecorderRef.current
+    const recorder = recorderRef.current
     clearTimeout(recordingWatchdogRef.current)
-    const finish = () => {
-      // The draw loop and the hidden video element keep running until the
-      // recorder is fully stopped — stopping them earlier would freeze the
-      // last frame or drop the final chunk.
-      stopComposite()
-    }
     if (!recorder) {
-      finish()
       return Promise.resolve(recordingBlobRef.current)
     }
     if (recorder.state === 'inactive') {
-      // Already stopped (the watchdog gave up) — nothing left to wait for.
-      mediaRecorderRef.current = null
-      finish()
+      recorderRef.current = null
       return Promise.resolve(recordingBlobRef.current)
     }
     return new Promise<Blob | null>((resolve) => {
-      recordingStoppedRef.current = (blob) => { finish(); resolve(blob) }
+      const prevOnStop = recorder.onstop
+      recorder.onstop = (ev) => {
+        if (typeof prevOnStop === 'function') {
+          try { (prevOnStop as any).call(recorder, ev) } catch {}
+        }
+        resolve(recordingBlobRef.current)
+      }
       try {
         recorder.stop()
       } catch {
-        recordingStoppedRef.current = null
-        finish()
         resolve(recordingBlobRef.current)
       }
     })
   }
 
-  // Uploads the recording. The upload never blocks the end-of-stream flow:
-  // it runs in the background and the instructor may leave the page (only
-  // the tab has to stay open until the upload finished).
-  const uploadRecording = async () => {
-    const blob = recordingBlobRef.current
+  const uploadRecordingBlob = async (blob: Blob, mimeType: string) => {
     if (!blob || !blob.size) {
       setRecordingState('error')
       return
     }
     setRecordingState('uploading')
     setUploadProgress(0)
-    const isAudioOnly = recordingMimeRef.current.includes('audio')
-    const extension = recordingMimeRef.current.includes('mp4') ? 'mp4' : 'webm'
+    const isAudioOnly = mimeType.includes('audio')
+    const extension = mimeType.includes('mp4') ? 'mp4' : 'webm'
     // Bunny accepts both; the API forwards the blob's own type.
     const contentType = isAudioOnly ? 'audio/webm' : 'video/webm'
 
-    // MediaRecorder writes no duration into the webm it produces, which is why
-    // Bunny reported 00:00 and the player could not seek. Patch the real
-    // duration into the container header before uploading. The blob is only
-    // rewritten in memory; the original is kept for a retry.
     let uploadBlob = blob
-    if (extension === 'webm') {
+    if (extension === 'webm' && recordingDurationRef.current > 0) {
       try {
-        const duration = recordingDurationRef.current || (recordingStartTimeRef.current
-          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
-          : 0)
-        if (duration > 0) {
-          uploadBlob = await fixWebmDuration(blob, duration, { logger: false })
-        }
+        uploadBlob = await fixWebmDuration(blob, recordingDurationRef.current / 1000, { logger: false })
       } catch (e: any) {
         // A metadata patch must never lose the recording: upload it as-is.
         console.error('[Recording] could not patch webm duration:', e?.message)
@@ -493,8 +515,6 @@ export default function GoLivePage() {
       setUploadProgress(100)
       setRecordingState('done')
       toast.success(isAr ? 'تم حفظ التسجيل بنجاح' : 'The recording was saved')
-      // The page used to jump back to the course list the moment the stream
-      // ended. It now waits for the recording, then goes back on its own.
       setTimeout(() => {
         router.push(`/${locale}/dashboard/my-courses`)
       }, 2000)
@@ -503,6 +523,18 @@ export default function GoLivePage() {
       setRecordingState('error')
       toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
     }
+  }
+
+  // Uploads the recording. The upload never blocks the end-of-stream flow:
+  // it runs in the background and the instructor may leave the page (only
+  // the tab has to stay open until the upload finished).
+  const uploadRecording = async () => {
+    const blob = recordingBlobRef.current
+    if (!blob || !blob.size) {
+      setRecordingState('error')
+      return
+    }
+    await uploadRecordingBlob(blob, recordingMimeRef.current)
   }
 
   // A tab that is closed mid-upload loses the recording, so the browser is
@@ -939,14 +971,12 @@ export default function GoLivePage() {
 
       // Stop the recorder while its source tracks are still alive so the last
       // chunk is not lost, then release the tracks.
-      let recording: Blob | null = null
       try {
-        recording = await stopRecording()
+        await stopRecordingAndUpload()
       } catch (e: any) {
         console.error('[Recording] stop failed:', e?.message)
       }
-      // stopRecording() already tears the composite down; this covers the case
-      // where it threw before reaching that point.
+      // ONLY after recording is done
       stopComposite()
 
       localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
@@ -955,10 +985,7 @@ export default function GoLivePage() {
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       await post(`/live/end/${courseId}`, {})
 
-      if (recordingRequested && recording) {
-        // The upload must not hold the end-of-stream flow back: it runs in
-        // the background and the page keeps showing its progress.
-        void uploadRecording()
+      if (recordingRequested && recordingBlobRef.current) {
         toast(
           isAr
             ? 'انتهى البث — جارٍ حفظ التسجيل'
@@ -969,9 +996,6 @@ export default function GoLivePage() {
       }
 
       if (recordingRequested) {
-        // The recording was requested but nothing was captured (the browser
-        // has no MediaRecorder, or the stream was too short). Say so
-        // instead of implying a recording exists.
         toast(
           isAr
             ? 'انتهى البث — لم يتم تسجيل أي مقطع في هذا المتصفح'
