@@ -16,6 +16,7 @@ import {
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import { LIVE_RECORDING_SUPPORTED, liveRecordingNote, formatLiveTime } from '../../../../../../lib/live'
+import fixWebmDuration from 'fix-webm-duration'
 import toast from 'react-hot-toast'
 
 export default function GoLivePage() {
@@ -118,9 +119,14 @@ export default function GoLivePage() {
   const recordingWatchdogRef = useRef<any>(null)
   // Resolver of the "the recorder stopped" promise.
   const recordingStoppedRef = useRef<((blob: Blob | null) => void) | null>(null)
-  // Black canvas track that gives an audio-only session a video container.
-  // It is stopped together with the recorder so the canvas stops capturing.
-  const blankVideoTrackRef = useRef<MediaStreamTrack | null>(null)
+  // Wall-clock start of the recording. MediaRecorder never writes the duration
+  // into a webm produced this way (it stays "unknown"), so Bunny shows 00:00
+  // and the player cannot seek. The real duration is measured here and patched
+  // into the container before the upload.
+  const recordingStartTimeRef = useRef<number>(0)
+  // Duration (ms) of the finished recording, kept with the blob so a retried
+  // upload patches the header with the same value.
+  const recordingDurationRef = useRef<number>(0)
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'uploading' | 'done' | 'error'>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   // Whether there is a file that can be uploaded again after a failure.
@@ -201,9 +207,12 @@ export default function GoLivePage() {
 
   // Starts the local recording on the given tracks. Recording is a separate,
   // fire-and-forget system: it captures whatever the stream started with
-  // (mic + camera, or mic only) and nothing else can restart or stop it. A
-  // black canvas track is added when there is no video at all so the saved
-  // file is still a valid video container.
+  // (mic + camera, or mic only) and nothing else can restart or stop it.
+  //
+  // A camera-less session is recorded as an audio-only webm (opus). No fake
+  // canvas video track is added: the canvas object was only referenced by the
+  // track it produced, so it could be garbage-collected a few seconds in and
+  // take the MediaRecorder down with it (the file ended up a few hundred KB).
   const startRecording = (tracks: any[]) => {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
@@ -219,29 +228,6 @@ export default function GoLivePage() {
         return
       }
       const stream = new MediaStream(nativeTracks)
-      // Audio-only sessions still get a video track: most players reject a
-      // webm without one. A static black canvas at 1 fps is enough.
-      if (!nativeTracks.some(t => t.kind === 'video')) {
-        try {
-          const canvas = document.createElement('canvas')
-          canvas.width = 1280
-          canvas.height = 720
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-            ctx.fillStyle = '#000'
-            ctx.fillRect(0, 0, canvas.width, canvas.height)
-          }
-          const blankStream = canvas.captureStream(1)
-          const blankVideoTrack = blankStream.getVideoTracks()[0]
-          if (blankVideoTrack) {
-            blankVideoTrackRef.current?.stop()
-            blankVideoTrackRef.current = blankVideoTrack
-            stream.addTrack(blankVideoTrack)
-          }
-        } catch {
-          /* no canvas capture support — record audio only */
-        }
-      }
       const recorder = new MediaRecorder(stream, { mimeType })
       recordingChunksRef.current = []
       recorder.ondataavailable = (e: BlobEvent) => {
@@ -257,8 +243,11 @@ export default function GoLivePage() {
       recorder.onstop = () => {
         const blob = new Blob(recordingChunksRef.current, { type: recordingMimeRef.current })
         recordingBlobRef.current = blob.size > 0 ? blob : null
-        blankVideoTrackRef.current?.stop()
-        blankVideoTrackRef.current = null
+        // Remember how long the session ran so the upload can patch the
+        // duration into the webm header (MediaRecorder leaves it unknown).
+        recordingDurationRef.current = recordingStartTimeRef.current
+          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
+          : 0
         setHasRecordingFile(!!recordingBlobRef.current)
         mediaRecorderRef.current = null
         const resolve = recordingStoppedRef.current
@@ -267,6 +256,7 @@ export default function GoLivePage() {
       }
       recorder.start(1000)
       mediaRecorderRef.current = recorder
+      recordingStartTimeRef.current = Date.now()
       // Only the family is kept ("video/webm"), the codec list would end up
       // in the upload's content type and be rejected by the API.
       recordingMimeRef.current = mimeType.split(';')[0]
@@ -321,8 +311,29 @@ export default function GoLivePage() {
     setRecordingState('uploading')
     setUploadProgress(0)
     const extension = recordingMimeRef.current.includes('mp4') ? 'mp4' : 'webm'
+
+    // MediaRecorder writes no duration into the webm it produces, which is why
+    // Bunny reported 00:00 and the player could not seek. Patch the real
+    // duration into the container header before uploading. The blob is only
+    // rewritten in memory; the original is kept for a retry.
+    let uploadBlob = blob
+    if (extension === 'webm') {
+      try {
+        const duration = recordingDurationRef.current || (recordingStartTimeRef.current
+          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
+          : 0)
+        if (duration > 0) {
+          uploadBlob = await fixWebmDuration(blob, duration, { logger: false })
+        }
+      } catch (e: any) {
+        // A metadata patch must never lose the recording: upload it as-is.
+        console.error('[Recording] could not patch webm duration:', e?.message)
+        uploadBlob = blob
+      }
+    }
+
     const formData = new FormData()
-    formData.append('file', blob, `live-recording-${courseId}-${Date.now()}.${extension}`)
+    formData.append('file', uploadBlob, `live-recording-${courseId}-${Date.now()}.${extension}`)
     formData.append('courseId', courseId)
     formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
     try {
