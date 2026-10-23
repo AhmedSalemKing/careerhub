@@ -44,11 +44,19 @@ export class LiveController {
       // (Safari) and puts the codec list inside the mime type
       // ("video/webm;codecs=vp9,opus"), so the family — not the exact
       // string — is what identifies a recording.
+      //
+      // An audio-only session (instructor with no camera) is recorded as
+      // audio/webm, which Bunny Stream accepts just like video/webm, so both
+      // media families are allowed here.
       const mime = file.mimetype || '';
-      if (mime.startsWith('video/') || mime === 'application/octet-stream') {
+      if (
+        mime.startsWith('video/') ||
+        mime.startsWith('audio/') ||
+        mime === 'application/octet-stream'
+      ) {
         cb(null, true);
       } else {
-        cb(new BadRequestException('Only video recordings are allowed'), false);
+        cb(new BadRequestException('Only video or audio recordings are allowed'), false);
       }
     },
   }))

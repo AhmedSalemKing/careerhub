@@ -168,8 +168,29 @@ export default function GoLivePage() {
   // ── Recording helpers ───────────────────────────────────────────────────
   // The mime type the browser can actually record. WebM is the norm
   // (Chrome/Firefox), Safari records MP4.
-  const pickRecordingMimeType = (): string => {
+  //
+  // The type MUST match the tracks in the stream: declaring a video codec
+  // (vp8/vp9) on a stream that has no video track makes MediaRecorder start but
+  // produce no data — an audio-only session came out as a ~638 KB empty blob.
+  // So an audio-only stream is recorded as audio/webm (opus).
+  const pickRecordingMimeType = (hasVideo: boolean): string => {
     if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return ''
+    if (!hasVideo) {
+      const audioCandidates = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ]
+      for (const candidate of audioCandidates) {
+        try {
+          if (MediaRecorder.isTypeSupported(candidate)) return candidate
+        } catch {
+          /* isTypeSupported throws on some old browsers — try the next one */
+        }
+      }
+      return ''
+    }
     const candidates = [
       'video/webm;codecs=vp9,opus',
       'video/webm;codecs=vp8,opus',
@@ -209,22 +230,30 @@ export default function GoLivePage() {
   // fire-and-forget system: it captures whatever the stream started with
   // (mic + camera, or mic only) and nothing else can restart or stop it.
   //
-  // A camera-less session is recorded as an audio-only webm (opus). No fake
-  // canvas video track is added: the canvas object was only referenced by the
-  // track it produced, so it could be garbage-collected a few seconds in and
-  // take the MediaRecorder down with it (the file ended up a few hundred KB).
+  // A camera-less session is recorded as an audio-only webm (opus) with an
+  // audio mime type. No fake canvas video track is added: the canvas object was
+  // only referenced by the track it produced, so it could be garbage-collected
+  // a few seconds in and take the MediaRecorder down with it. And declaring a
+  // video codec for a stream with no video track makes the recorder emit no
+  // data at all — hence the audio-aware mime type below.
   const startRecording = (tracks: any[]) => {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
     if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return
-    const mimeType = pickRecordingMimeType()
-    if (!mimeType) return
     try {
       const nativeTracks = tracks
         .map(nativeTrackOf)
         .filter((track): track is MediaStreamTrack => !!track)
       if (!nativeTracks.length) {
         console.warn('[Recording] no native track available — the session will not be recorded')
+        return
+      }
+      // The mime type has to match the tracks: a video codec on an audio-only
+      // stream produces an empty file.
+      const hasVideo = nativeTracks.some(t => t.kind === 'video')
+      const mimeType = pickRecordingMimeType(hasVideo)
+      if (!mimeType) {
+        console.warn('[Recording] no supported mime type — the session will not be recorded')
         return
       }
       const stream = new MediaStream(nativeTracks)
@@ -257,8 +286,9 @@ export default function GoLivePage() {
       recorder.start(1000)
       mediaRecorderRef.current = recorder
       recordingStartTimeRef.current = Date.now()
-      // Only the family is kept ("video/webm"), the codec list would end up
-      // in the upload's content type and be rejected by the API.
+      // Keep the full family including audio/video ("audio/webm" or
+      // "video/webm") but drop the codec list: it would end up in the upload's
+      // content type and be rejected by the API.
       recordingMimeRef.current = mimeType.split(';')[0]
       setRecordingState('recording')
 
@@ -310,7 +340,10 @@ export default function GoLivePage() {
     }
     setRecordingState('uploading')
     setUploadProgress(0)
+    const isAudioOnly = recordingMimeRef.current.includes('audio')
     const extension = recordingMimeRef.current.includes('mp4') ? 'mp4' : 'webm'
+    // Bunny accepts both; the API forwards the blob's own type.
+    const contentType = isAudioOnly ? 'audio/webm' : 'video/webm'
 
     // MediaRecorder writes no duration into the webm it produces, which is why
     // Bunny reported 00:00 and the player could not seek. Patch the real
@@ -336,6 +369,7 @@ export default function GoLivePage() {
     formData.append('file', uploadBlob, `live-recording-${courseId}-${Date.now()}.${extension}`)
     formData.append('courseId', courseId)
     formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
+    formData.append('contentType', contentType)
     try {
       await post('/live/save-recording', formData, {
         // A recording can be much bigger than a normal request — the default
