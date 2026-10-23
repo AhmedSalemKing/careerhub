@@ -84,7 +84,8 @@
     "no_assessment": "You haven’t completed the career assessment yet",
     "enrolled_courses": "Enrolled courses",
     "completed_courses": "Completed courses",
-    "certificates_earned": "Certificates earned"
+    "certificates_earned": "Certificates earned",
+    "cameraUnavailableAudioOnly": "Camera unavailable — streaming and recording in audio-only mode"
   },
   "assessment": {
     "title": "Career path assessment",
@@ -547,4 +548,3 @@
     "reject": "Reject"
   }
 }
-

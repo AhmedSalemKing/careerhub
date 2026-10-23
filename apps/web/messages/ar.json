@@ -84,7 +84,8 @@
     "no_assessment": "لم تكمل اختبار المسار المهني بعد",
     "enrolled_courses": "كورسات مسجلة",
     "completed_courses": "كورسات مكتملة",
-    "certificates_earned": "شهادات محققة"
+    "certificates_earned": "شهادات محققة",
+    "cameraUnavailableAudioOnly": "تعذّر تشغيل الكاميرا — سيتم البث والتسجيل بالصوت فقط"
   },
   "assessment": {
     "title": "اختبار تحديد المسار المهني",

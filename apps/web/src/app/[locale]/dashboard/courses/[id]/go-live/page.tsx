@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -127,6 +127,22 @@ export default function GoLivePage() {
   // Duration (ms) of the finished recording, kept with the blob so a retried
   // upload patches the header with the same value.
   const recordingDurationRef = useRef<number>(0)
+
+  // ── Composite recording (canvas) ────────────────────────────────────────
+  // MediaRecorder cannot add a track to a running recording, so recording the
+  // raw Agora tracks meant screen share — which starts long after
+  // startRecording() — was never captured. Instead a hidden canvas always
+  // mirrors whichever video is live (camera OR screen) and the recorder reads
+  // that canvas: switching sources is then instant and needs no restart.
+  const compositeCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const compositeStreamRef = useRef<MediaStream | null>(null)
+  const animFrameRef = useRef<number | null>(null)
+  // Whichever video is currently being drawn: camera OR screen.
+  const activeVideoElementRef = useRef<HTMLVideoElement | null>(null)
+  // The live Agora tracks, kept so the canvas can always be re-pointed at the
+  // right video source when screen share starts or stops.
+  const micTrackRef = useRef<any>(null)
+  const cameraTrackRef = useRef<any>(null)
   const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'uploading' | 'done' | 'error'>('idle')
   const [uploadProgress, setUploadProgress] = useState(0)
   // Whether there is a file that can be uploaded again after a failure.
@@ -226,16 +242,98 @@ export default function GoLivePage() {
     return null
   }
 
+  // Builds the stream the recorder reads: a canvas that mirrors the active
+  // video (camera or screen) plus the microphone. The canvas is always a
+  // video source, so the recording is always a video file even when the
+  // instructor has no camera — the canvas just stays black.
+  const buildCompositeStream = useCallback((micNativeTrack: MediaStreamTrack): MediaStream => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1280
+    canvas.height = 720
+    compositeCanvasRef.current = canvas
+    const ctx = canvas.getContext('2d')
+
+    // Draw loop. The canvas element is held in a ref for the whole session, so
+    // it can never be garbage-collected out from under the recorder.
+    const draw = () => {
+      if (ctx) {
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        const videoEl = activeVideoElementRef.current
+        if (videoEl && !videoEl.paused && videoEl.readyState >= 2) {
+          try {
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
+          } catch {
+            /* a frame that is not ready yet — keep the black background */
+          }
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(draw)
+    }
+    draw()
+
+    // Combine the canvas video with the microphone audio.
+    const canvasStream = canvas.captureStream(30)
+    const composite = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      micNativeTrack,
+    ])
+    compositeStreamRef.current = composite
+    return composite
+  }, [])
+
+  // Points the canvas at the given Agora video track (camera or screen share).
+  // Called whenever the active video source changes; passing null leaves the
+  // canvas black on purpose.
+  const attachVideoToComposite = useCallback((agoraVideoTrack: any) => {
+    if (activeVideoElementRef.current) {
+      activeVideoElementRef.current.srcObject = null
+      activeVideoElementRef.current = null
+    }
+    if (!agoraVideoTrack) return
+    try {
+      const nativeTrack = nativeTrackOf(agoraVideoTrack)
+      if (!nativeTrack) return
+      const stream = new MediaStream([nativeTrack])
+      const videoEl = document.createElement('video')
+      videoEl.srcObject = stream
+      videoEl.muted = true
+      videoEl.autoplay = true
+      videoEl.playsInline = true
+      // play() may reject before the element is in the document; the draw loop
+      // simply paints black until the first frame arrives.
+      void videoEl.play().catch(() => {})
+      activeVideoElementRef.current = videoEl
+    } catch (e: any) {
+      console.warn('[Recording] could not attach video to composite:', e?.message)
+    }
+  }, [])
+
+  // Stops the canvas draw loop and releases the hidden video element.
+  const stopComposite = useCallback(() => {
+    if (animFrameRef.current !== null) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = null
+    }
+    const videoEl = activeVideoElementRef.current
+    if (videoEl) {
+      try { videoEl.pause() } catch { /* already paused */ }
+      videoEl.srcObject = null
+      activeVideoElementRef.current = null
+    }
+    compositeStreamRef.current?.getTracks().forEach(t => {
+      try { t.stop() } catch { /* already stopped */ }
+    })
+    compositeStreamRef.current = null
+    compositeCanvasRef.current = null
+  }, [])
+
   // Starts the local recording on the given tracks. Recording is a separate,
   // fire-and-forget system: it captures whatever the stream started with
   // (mic + camera, or mic only) and nothing else can restart or stop it.
   //
-  // A camera-less session is recorded as an audio-only webm (opus) with an
-  // audio mime type. No fake canvas video track is added: the canvas object was
-  // only referenced by the track it produced, so it could be garbage-collected
-  // a few seconds in and take the MediaRecorder down with it. And declaring a
-  // video codec for a stream with no video track makes the recorder emit no
-  // data at all — hence the audio-aware mime type below.
+  // The recorder reads a canvas composite rather than the raw tracks, so the
+  // screen share that starts mid-session is captured too, with no restart.
   const startRecording = (tracks: any[]) => {
     if (!recordingRequested) return
     // Old browser without MediaRecorder: skip silently, never break the live.
@@ -244,19 +342,21 @@ export default function GoLivePage() {
       const nativeTracks = tracks
         .map(nativeTrackOf)
         .filter((track): track is MediaStreamTrack => !!track)
-      if (!nativeTracks.length) {
-        console.warn('[Recording] no native track available — the session will not be recorded')
+      const micNative = nativeTracks.find(t => t.kind === 'audio')
+      if (!micNative) {
+        console.warn('[Recording] no microphone track — the session will not be recorded')
         return
       }
-      // The mime type has to match the tracks: a video codec on an audio-only
-      // stream produces an empty file.
-      const hasVideo = nativeTracks.some(t => t.kind === 'video')
-      const mimeType = pickRecordingMimeType(hasVideo)
+      // Point the canvas at the current camera (if any) before recording.
+      attachVideoToComposite(cameraTrackRef.current ?? null)
+      // The composite always carries a canvas video track, so a video codec is
+      // always correct here.
+      const mimeType = pickRecordingMimeType(true)
       if (!mimeType) {
         console.warn('[Recording] no supported mime type — the session will not be recorded')
         return
       }
-      const stream = new MediaStream(nativeTracks)
+      const stream = buildCompositeStream(micNative)
       const recorder = new MediaRecorder(stream, { mimeType })
       recordingChunksRef.current = []
       recorder.ondataavailable = (e: BlobEvent) => {
@@ -312,18 +412,29 @@ export default function GoLivePage() {
   const stopRecording = (): Promise<Blob | null> => {
     const recorder = mediaRecorderRef.current
     clearTimeout(recordingWatchdogRef.current)
-    if (!recorder) return Promise.resolve(recordingBlobRef.current)
+    const finish = () => {
+      // The draw loop and the hidden video element keep running until the
+      // recorder is fully stopped — stopping them earlier would freeze the
+      // last frame or drop the final chunk.
+      stopComposite()
+    }
+    if (!recorder) {
+      finish()
+      return Promise.resolve(recordingBlobRef.current)
+    }
     if (recorder.state === 'inactive') {
       // Already stopped (the watchdog gave up) — nothing left to wait for.
       mediaRecorderRef.current = null
+      finish()
       return Promise.resolve(recordingBlobRef.current)
     }
     return new Promise<Blob | null>((resolve) => {
-      recordingStoppedRef.current = resolve
+      recordingStoppedRef.current = (blob) => { finish(); resolve(blob) }
       try {
         recorder.stop()
       } catch {
         recordingStoppedRef.current = null
+        finish()
         resolve(recordingBlobRef.current)
       }
     })
@@ -632,8 +743,24 @@ export default function GoLivePage() {
       // Positions are fixed: 0 = mic, 1 = camera, so the toggle buttons keep
       // working even when one of the two is missing.
       localTracksRef.current = [micTrack, camTrack]
+      // The recording canvas reads these refs, so they must survive beyond the
+      // local variables above.
+      micTrackRef.current = micTrack
+      cameraTrackRef.current = camTrack
       setMicOn(!!micTrack)
       setCamOn(!!camTrack)
+
+      // The instructor has to know the session is audio-only — otherwise the
+      // recording silently comes out with a black canvas and nobody understands
+      // why. The live itself keeps going.
+      if (!camTrack) {
+        toast(
+          isAr
+            ? 'تعذّر تشغيل الكاميرا — سيتم البث والتسجيل بالصوت فقط'
+            : 'Camera unavailable — streaming and recording in audio-only mode',
+          { icon: '⚠️' },
+        )
+      }
 
       if (localVideoRef.current && camTrack) camTrack.play(localVideoRef.current)
 
@@ -707,10 +834,11 @@ export default function GoLivePage() {
     }
   }, [screenSharing, liveStarted])
 
-  // Screen share is a pure Agora publish. It is completely independent of the
-  // recorder: switching it on or off never starts, stops, flushes or uploads a
-  // recording. The recording keeps capturing the tracks the stream started
-  // with (mic + camera, or mic only) for the whole session.
+  // Screen share is a pure Agora publish. It never starts, stops, flushes or
+  // uploads a recording. Recording reads a canvas composite instead of the raw
+  // Agora tracks, so switching the video source only re-points the canvas at
+  // the screen share (or back at the camera) — the running recorder is
+  // untouched and keeps capturing throughout.
   const toggleScreenShare = async () => {
     if (!clientRef.current || !liveStarted) return
     try {
@@ -733,6 +861,10 @@ export default function GoLivePage() {
               console.error('[ScreenShare] could not restore camera', e?.message)
             }
           }
+          // The recording canvas falls back to the camera (or black when there
+          // is none). Screen share is only ever replaced in the canvas — the
+          // recorder itself is never restarted.
+          attachVideoToComposite(camTrack ?? null)
           setScreenSharing(false)
         }
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
@@ -772,6 +904,10 @@ export default function GoLivePage() {
         // Play screen in main immediately (avoids flash)
         if (localVideoRef.current) track.play(localVideoRef.current)
 
+        // The recording canvas now mirrors the screen share instead of the
+        // camera, without interrupting the running recording.
+        attachVideoToComposite(track)
+
         // Set state — useEffect will handle PiP camera placement
         // after React renders the PiP container
         setScreenSharing(true)
@@ -809,8 +945,13 @@ export default function GoLivePage() {
       } catch (e: any) {
         console.error('[Recording] stop failed:', e?.message)
       }
+      // stopRecording() already tears the composite down; this covers the case
+      // where it threw before reaching that point.
+      stopComposite()
 
       localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
+      micTrackRef.current = null
+      cameraTrackRef.current = null
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       await post(`/live/end/${courseId}`, {})
 
