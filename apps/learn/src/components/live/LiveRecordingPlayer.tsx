@@ -49,7 +49,12 @@ export default function LiveRecordingPlayer({
 		setFailed(false);
 		setLoading(true);
 
-		const onLoaded = () => setLoading(false);
+		const onLoaded = () => {
+			// A recording always starts at 0:00. Never inherit the playback
+			// position of the live stream the student was watching.
+			video.currentTime = 0;
+			setLoading(false);
+		};
 		const onError = () => {
 			setLoading(false);
 			setFailed(true);
@@ -73,7 +78,9 @@ export default function LiveRecordingPlayer({
 			return;
 		}
 
-		const hls = new Hls({ enableWorker: true });
+		// Force the recording to start at its beginning instead of resuming
+		// from the live position the student left off at.
+		const hls = new Hls({ enableWorker: true, startPosition: 0 });
 
 		hls.on(Hls.Events.MANIFEST_PARSED, () => {
 			setLoading(false);
