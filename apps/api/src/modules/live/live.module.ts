@@ -3,15 +3,15 @@ import { LiveController } from './live.controller'
 import { LiveService } from './live.service'
 import { AgoraService } from './agora.service'
 import { LiveGateway } from './live.gateway'
+import { AgoraCloudRecordingService } from './agora-cloud-recording.service'
+import { RecordingProcessorService } from './recording-processor.service'
 import { PrismaModule } from '../../prisma/prisma.module'
 import { UploadModule } from '../upload/upload.module'
 
 @Module({
-  // UploadModule exports BunnyStreamService — the live recording is stored on
-  // Bunny.net Stream through the exact same service as every other video.
   imports: [PrismaModule, UploadModule],
   controllers: [LiveController],
-  providers: [LiveService, AgoraService, LiveGateway],
-  exports: [LiveService, AgoraService],
+  providers: [LiveService, AgoraService, LiveGateway, AgoraCloudRecordingService, RecordingProcessorService],
+  exports: [LiveService, AgoraService, AgoraCloudRecordingService],
 })
 export class LiveModule {}

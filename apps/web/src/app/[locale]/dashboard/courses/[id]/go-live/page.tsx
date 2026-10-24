@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -11,12 +11,10 @@ import {
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
   UserCheck, UserX, Send, Wifi, WifiOff, Info,
-  AlertTriangle, Upload
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import { LIVE_RECORDING_SUPPORTED, liveRecordingNote, formatLiveTime } from '../../../../../../lib/live'
-import fixWebmDuration from 'fix-webm-duration'
 import toast from 'react-hot-toast'
 
 export default function GoLivePage() {
@@ -74,6 +72,14 @@ export default function GoLivePage() {
   // block the instructor on a cold API, which is exactly what we avoid.
   const [cameraReady, setCameraReady] = useState(false)
 
+  // Cloud recording state
+  const [connectionState, setConnectionState] = useState<
+    'idle' | 'connecting' | 'connected' | 'reconnecting' | 'failed'
+  >('idle')
+  const [isCloudRecording, setIsCloudRecording] = useState(false)
+  const [sessionEnded, setSessionEnded] = useState(false)
+  const [liveError, setLiveError] = useState<string | null>(null)
+
   const { data: me } = useQuery({
     queryKey: ['me'],
     queryFn: async () => { const r = await get('/auth/me'); return r.data?.data ?? r.data }
@@ -103,50 +109,6 @@ export default function GoLivePage() {
   const screenTrackRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
 
-  // ── Client-side recording (MediaRecorder → Bunny.net) ───────────────────
-  // The browser records the instructor's camera + microphone locally while
-  // the stream is running. When the stream ends the file is uploaded to the
-  // API, which stores it on Bunny.net and turns it into a lesson. Nothing is
-  // recorded unless the instructor asked for it.
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-  const recordingChunksRef = useRef<Blob[]>([])
-  // The finished file is kept so a failed upload can be retried without
-  // recording the session again.
-  const recordingBlobRef = useRef<Blob | null>(null)
-  const recordingMimeRef = useRef<string>('video/webm')
-  // Fires when the recorder produced no data at all, so a dead recorder is
-  // reported instead of silently uploading an empty file.
-  const recordingWatchdogRef = useRef<any>(null)
-  // Resolver of the "the recorder stopped" promise.
-  const recordingStoppedRef = useRef<((blob: Blob | null) => void) | null>(null)
-  // Wall-clock start of the recording. MediaRecorder never writes the duration
-  // into a webm produced this way (it stays "unknown"), so Bunny shows 00:00
-  // and the player cannot seek. The real duration is measured here and patched
-  // into the container before the upload.
-  const recordingStartTimeRef = useRef<number>(0)
-  // Duration (ms) of the finished recording, kept with the blob so a retried
-  // upload patches the header with the same value.
-  const recordingDurationRef = useRef<number>(0)
-
-  // ── Composite recording (canvas) ────────────────────────────────────────
-  // MediaRecorder cannot add a track to a running recording, so recording the
-  // raw Agora tracks meant screen share — which starts long after
-  // startRecording() — was never captured. Instead a hidden canvas always
-  // mirrors whichever video is live (camera OR screen) and the recorder reads
-  // that canvas: switching sources is then instant and needs no restart.
-  const compositeCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const compositeStreamRef = useRef<MediaStream | null>(null)
-  const animFrameRef = useRef<number | null>(null)
-  // Whichever video is currently being drawn: camera OR screen.
-  const activeVideoElementRef = useRef<HTMLVideoElement | null>(null)
-  // The live Agora tracks, kept so the canvas can always be re-pointed at the
-  // right video source when screen share starts or stops.
-  const micTrackRef = useRef<any>(null)
-  const cameraTrackRef = useRef<any>(null)
-  const [recordingState, setRecordingState] = useState<'idle' | 'recording' | 'uploading' | 'done' | 'error'>('idle')
-  const [uploadProgress, setUploadProgress] = useState(0)
-  // Whether there is a file that can be uploaded again after a failure.
-  const [hasRecordingFile, setHasRecordingFile] = useState(false)
 
   const { data: course } = useQuery({
     queryKey: ['course', courseId],
@@ -158,364 +120,6 @@ export default function GoLivePage() {
 
   const courseTitle = course?.titleAr || course?.titleEn || course?.title || ''
   const liveLink = learnUrlWithToken(`/${locale}/live/${courseId}`)
-
-  // Does the instructor want a recording of this session? For a lesson live the
-  // preference lives in the lesson content, for a course live it is the
-  // course-level recording flag.
-  const recordingRequested = useMemo(() => {
-    if (lessonId) {
-      const sections = (course?.sections ?? []) as {
-        lessons?: {
-          id?: string
-          content?: { saveRecording?: boolean } | null
-        }[]
-      }[]
-      const lessons = sections.flatMap((s) => s?.lessons ?? [])
-      const lesson = lessons.find((l) => l?.id === lessonId)
-      const content = lesson?.content
-      if (content && typeof content === 'object' && 'saveRecording' in content) {
-        return content.saveRecording !== false
-      }
-      return true
-    }
-    return course?.autoPublishRecording !== false
-  }, [course, lessonId])
-
-  // ── Recording helpers ───────────────────────────────────────────────────
-  // The mime type the browser can actually record. WebM is the norm
-  // (Chrome/Firefox), Safari records MP4.
-  //
-  // The type MUST match the tracks in the stream: declaring a video codec
-  // (vp8/vp9) on a stream that has no video track makes MediaRecorder start but
-  // produce no data — an audio-only session came out as a ~638 KB empty blob.
-  // So an audio-only stream is recorded as audio/webm (opus).
-  const pickRecordingMimeType = (hasVideo: boolean): string => {
-    if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return ''
-    if (!hasVideo) {
-      const audioCandidates = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/ogg;codecs=opus',
-        'audio/mp4',
-      ]
-      for (const candidate of audioCandidates) {
-        try {
-          if (MediaRecorder.isTypeSupported(candidate)) return candidate
-        } catch {
-          /* isTypeSupported throws on some old browsers — try the next one */
-        }
-      }
-      return ''
-    }
-    const candidates = [
-      'video/webm;codecs=vp9,opus',
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
-      'video/mp4',
-    ]
-    for (const candidate of candidates) {
-      try {
-        if (MediaRecorder.isTypeSupported(candidate)) return candidate
-      } catch {
-        /* isTypeSupported throws on some old browsers — try the next one */
-      }
-    }
-    return ''
-  }
-
-  // The native MediaStreamTrack behind an Agora track.
-  //
-  // The published track is the best source (it is literally what the students
-  // receive), but the SDK does not always expose it, so the original source
-  // track is used as a fallback. Both are real MediaStreamTracks the
-  // MediaRecorder can record.
-  const nativeTrackOf = (track: any): MediaStreamTrack | null => {
-    if (!track) return null
-    try {
-      const published = track.getMediaStreamTrack?.(true)
-      if (published) return published
-      if (track.mediaStreamTrack) return track.mediaStreamTrack
-      if (track._originMediaStreamTrack) return track._originMediaStreamTrack
-    } catch {
-      /* the SDK may refuse the call — fall through to the next source */
-    }
-    return null
-  }
-
-  // Builds the stream the recorder reads: a canvas that mirrors the active
-  // video (camera or screen) plus the microphone. The canvas is always a
-  // video source, so the recording is always a video file even when the
-  // instructor has no camera — the canvas just stays black.
-  const buildCompositeStream = useCallback((micNativeTrack: MediaStreamTrack): MediaStream => {
-    const canvas = document.createElement('canvas')
-    canvas.width = 1280
-    canvas.height = 720
-    compositeCanvasRef.current = canvas
-    const ctx = canvas.getContext('2d')
-
-    // Draw loop. The canvas element is held in a ref for the whole session, so
-    // it can never be garbage-collected out from under the recorder.
-    const draw = () => {
-      if (ctx) {
-        ctx.fillStyle = '#000'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
-        const videoEl = activeVideoElementRef.current
-        if (videoEl && !videoEl.paused && videoEl.readyState >= 2) {
-          try {
-            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height)
-          } catch {
-            /* a frame that is not ready yet — keep the black background */
-          }
-        }
-      }
-      animFrameRef.current = requestAnimationFrame(draw)
-    }
-    draw()
-
-    // Combine the canvas video with the microphone audio.
-    const canvasStream = canvas.captureStream(30)
-    const composite = new MediaStream([
-      ...canvasStream.getVideoTracks(),
-      micNativeTrack,
-    ])
-    compositeStreamRef.current = composite
-    return composite
-  }, [])
-
-  // Points the canvas at the given Agora video track (camera or screen share).
-  // Called whenever the active video source changes; passing null leaves the
-  // canvas black on purpose.
-  const attachVideoToComposite = useCallback((agoraVideoTrack: any) => {
-    if (activeVideoElementRef.current) {
-      activeVideoElementRef.current.srcObject = null
-      activeVideoElementRef.current = null
-    }
-    if (!agoraVideoTrack) return
-    try {
-      const nativeTrack = nativeTrackOf(agoraVideoTrack)
-      if (!nativeTrack) return
-      const stream = new MediaStream([nativeTrack])
-      const videoEl = document.createElement('video')
-      videoEl.srcObject = stream
-      videoEl.muted = true
-      videoEl.autoplay = true
-      videoEl.playsInline = true
-      // play() may reject before the element is in the document; the draw loop
-      // simply paints black until the first frame arrives.
-      void videoEl.play().catch(() => {})
-      activeVideoElementRef.current = videoEl
-    } catch (e: any) {
-      console.warn('[Recording] could not attach video to composite:', e?.message)
-    }
-  }, [])
-
-  // Stops the canvas draw loop and releases the hidden video element.
-  const stopComposite = useCallback(() => {
-    if (animFrameRef.current !== null) {
-      cancelAnimationFrame(animFrameRef.current)
-      animFrameRef.current = null
-    }
-    const videoEl = activeVideoElementRef.current
-    if (videoEl) {
-      try { videoEl.pause() } catch { /* already paused */ }
-      videoEl.srcObject = null
-      activeVideoElementRef.current = null
-    }
-    compositeStreamRef.current?.getTracks().forEach(t => {
-      try { t.stop() } catch { /* already stopped */ }
-    })
-    compositeStreamRef.current = null
-    compositeCanvasRef.current = null
-  }, [])
-
-  // Starts the local recording on the given tracks. Recording is a separate,
-  // fire-and-forget system: it captures whatever the stream started with
-  // (mic + camera, or mic only) and nothing else can restart or stop it.
-  //
-  // The recorder reads a canvas composite rather than the raw tracks, so the
-  // screen share that starts mid-session is captured too, with no restart.
-  const startRecording = (tracks: any[]) => {
-    if (!recordingRequested) return
-    // Old browser without MediaRecorder: skip silently, never break the live.
-    if (typeof window === 'undefined' || typeof MediaRecorder === 'undefined') return
-    try {
-      const nativeTracks = tracks
-        .map(nativeTrackOf)
-        .filter((track): track is MediaStreamTrack => !!track)
-      const micNative = nativeTracks.find(t => t.kind === 'audio')
-      if (!micNative) {
-        console.warn('[Recording] no microphone track — the session will not be recorded')
-        return
-      }
-      // Point the canvas at the current camera (if any) before recording.
-      attachVideoToComposite(cameraTrackRef.current ?? null)
-      // The composite always carries a canvas video track, so a video codec is
-      // always correct here.
-      const mimeType = pickRecordingMimeType(true)
-      if (!mimeType) {
-        console.warn('[Recording] no supported mime type — the session will not be recorded')
-        return
-      }
-      const stream = buildCompositeStream(micNative)
-      const recorder = new MediaRecorder(stream, { mimeType })
-      recordingChunksRef.current = []
-      recorder.ondataavailable = (e: BlobEvent) => {
-        if (e.data && e.data.size > 0) recordingChunksRef.current.push(e.data)
-      }
-      // A recorder failure is silent: the live stream must keep going and the
-      // instructor must not see a blocking error mid-session.
-      recorder.onerror = () => {
-        console.error('[Recording] recorder failed — recording stopped silently')
-      }
-      // The file is assembled whenever the recorder stops — no matter if the
-      // stream ended or the watchdog gave up.
-      recorder.onstop = () => {
-        const blob = new Blob(recordingChunksRef.current, { type: recordingMimeRef.current })
-        recordingBlobRef.current = blob.size > 0 ? blob : null
-        // Remember how long the session ran so the upload can patch the
-        // duration into the webm header (MediaRecorder leaves it unknown).
-        recordingDurationRef.current = recordingStartTimeRef.current
-          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
-          : 0
-        setHasRecordingFile(!!recordingBlobRef.current)
-        mediaRecorderRef.current = null
-        const resolve = recordingStoppedRef.current
-        recordingStoppedRef.current = null
-        resolve?.(recordingBlobRef.current)
-      }
-      recorder.start(1000)
-      mediaRecorderRef.current = recorder
-      recordingStartTimeRef.current = Date.now()
-      // Keep the full family including audio/video ("audio/webm" or
-      // "video/webm") but drop the codec list: it would end up in the upload's
-      // content type and be rejected by the API.
-      recordingMimeRef.current = mimeType.split(';')[0]
-      setRecordingState('recording')
-
-      // Watchdog: a recorder that produces no data is not recording anything.
-      // It stops the recorder silently — the final upload reports the truth
-      // (no file) instead of interrupting the live with an error.
-      clearTimeout(recordingWatchdogRef.current)
-      recordingWatchdogRef.current = setTimeout(() => {
-        if (mediaRecorderRef.current !== recorder) return
-        if (recordingChunksRef.current.length > 0) return
-        console.warn('[Recording] the recorder produced no data — stopping silently')
-        try { recorder.stop() } catch { /* already stopped */ }
-      }, 6000)
-    } catch (e: any) {
-      console.error('[Recording] could not start (ignored):', e?.message)
-    }
-  }
-
-  // Stops the recorder and waits for the last chunk to arrive. Resolves with
-  // the finished file (or null when nothing was recorded).
-  const stopRecording = (): Promise<Blob | null> => {
-    const recorder = mediaRecorderRef.current
-    clearTimeout(recordingWatchdogRef.current)
-    const finish = () => {
-      // The draw loop and the hidden video element keep running until the
-      // recorder is fully stopped — stopping them earlier would freeze the
-      // last frame or drop the final chunk.
-      stopComposite()
-    }
-    if (!recorder) {
-      finish()
-      return Promise.resolve(recordingBlobRef.current)
-    }
-    if (recorder.state === 'inactive') {
-      // Already stopped (the watchdog gave up) — nothing left to wait for.
-      mediaRecorderRef.current = null
-      finish()
-      return Promise.resolve(recordingBlobRef.current)
-    }
-    return new Promise<Blob | null>((resolve) => {
-      recordingStoppedRef.current = (blob) => { finish(); resolve(blob) }
-      try {
-        recorder.stop()
-      } catch {
-        recordingStoppedRef.current = null
-        finish()
-        resolve(recordingBlobRef.current)
-      }
-    })
-  }
-
-  // Uploads the recording. The upload never blocks the end-of-stream flow:
-  // it runs in the background and the instructor may leave the page (only
-  // the tab has to stay open until the upload finished).
-  const uploadRecording = async () => {
-    const blob = recordingBlobRef.current
-    if (!blob || !blob.size) {
-      setRecordingState('error')
-      return
-    }
-    setRecordingState('uploading')
-    setUploadProgress(0)
-    const isAudioOnly = recordingMimeRef.current.includes('audio')
-    const extension = recordingMimeRef.current.includes('mp4') ? 'mp4' : 'webm'
-    // Bunny accepts both; the API forwards the blob's own type.
-    const contentType = isAudioOnly ? 'audio/webm' : 'video/webm'
-
-    // MediaRecorder writes no duration into the webm it produces, which is why
-    // Bunny reported 00:00 and the player could not seek. Patch the real
-    // duration into the container header before uploading. The blob is only
-    // rewritten in memory; the original is kept for a retry.
-    let uploadBlob = blob
-    if (extension === 'webm') {
-      try {
-        const duration = recordingDurationRef.current || (recordingStartTimeRef.current
-          ? Math.max(0, Date.now() - recordingStartTimeRef.current)
-          : 0)
-        if (duration > 0) {
-          uploadBlob = await fixWebmDuration(blob, duration, { logger: false })
-        }
-      } catch (e: any) {
-        // A metadata patch must never lose the recording: upload it as-is.
-        console.error('[Recording] could not patch webm duration:', e?.message)
-        uploadBlob = blob
-      }
-    }
-
-    const formData = new FormData()
-    formData.append('file', uploadBlob, `live-recording-${courseId}-${Date.now()}.${extension}`)
-    formData.append('courseId', courseId)
-    formData.append('title', isAr ? 'تسجيل البث المباشر' : 'Live Session Recording')
-    formData.append('contentType', contentType)
-    try {
-      await post('/live/save-recording', formData, {
-        // A recording can be much bigger than a normal request — the default
-        // 60s timeout would cut it in the middle.
-        timeout: 0,
-        onUploadProgress: (e: any) => {
-          if (e?.total) setUploadProgress(Math.round((e.loaded / e.total) * 100))
-        },
-      })
-      setUploadProgress(100)
-      setRecordingState('done')
-      toast.success(isAr ? 'تم حفظ التسجيل بنجاح' : 'The recording was saved')
-      // The page used to jump back to the course list the moment the stream
-      // ended. It now waits for the recording, then goes back on its own.
-      setTimeout(() => {
-        router.push(`/${locale}/dashboard/my-courses`)
-      }, 2000)
-    } catch (e: any) {
-      console.error('[Recording] upload failed', e?.message)
-      setRecordingState('error')
-      toast.error(isAr ? 'فشل رفع التسجيل — يمكنك إعادة المحاولة' : 'Upload failed — you can retry')
-    }
-  }
-
-  // A tab that is closed mid-upload loses the recording, so the browser is
-  // asked to confirm the navigation first.
-  useEffect(() => {
-    if (recordingState !== 'uploading') return
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-    window.addEventListener('beforeunload', handler)
-    return () => window.removeEventListener('beforeunload', handler)
-  }, [recordingState])
 
   useEffect(() => {
     if (liveStarted) {
@@ -707,7 +311,39 @@ export default function GoLivePage() {
       await client.setClientRole('host')
       clientRef.current = client
 
-      await client.join(data.appId, data.channelName, data.token, 1)
+      // Fetch a server-signed token for this channel
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      const tokenRes = await fetch(
+        `${apiUrl}/live/token?channelName=${data.channelName}&role=publisher`,
+        { credentials: 'include' },
+      )
+      if (!tokenRes.ok) throw new Error('Failed to get Agora token')
+      const { token: rtcToken, uid: rtcUid } = await tokenRes.json()
+
+      client.on('token-privilege-will-expire', async () => {
+        try {
+          const r = await fetch(
+            `${apiUrl}/live/token?channelName=${data.channelName}&role=publisher`,
+            { credentials: 'include' },
+          )
+          const { token: newToken } = await r.json()
+          await client.renewToken(newToken)
+        } catch (e) {
+          console.error('Token renewal failed:', e)
+        }
+      })
+
+      client.on('connection-state-changed', (state: string) => {
+        const map: Record<string, typeof connectionState> = {
+          DISCONNECTED: 'idle', CONNECTING: 'connecting',
+          CONNECTED: 'connected', RECONNECTING: 'reconnecting',
+        }
+        setConnectionState(map[state] || 'idle')
+      })
+
+      setConnectionState('connecting')
+
+      await client.join(process.env.NEXT_PUBLIC_AGORA_APP_ID!, data.channelName, rtcToken, rtcUid)
 
       // Hand the camera over to Agora: releasing the getUserMedia handle first
       // avoids two open handles fighting over the same device (black preview).
@@ -743,10 +379,6 @@ export default function GoLivePage() {
       // Positions are fixed: 0 = mic, 1 = camera, so the toggle buttons keep
       // working even when one of the two is missing.
       localTracksRef.current = [micTrack, camTrack]
-      // The recording canvas reads these refs, so they must survive beyond the
-      // local variables above.
-      micTrackRef.current = micTrack
-      cameraTrackRef.current = camTrack
       setMicOn(!!micTrack)
       setCamOn(!!camTrack)
 
@@ -766,11 +398,16 @@ export default function GoLivePage() {
 
       await client.publish(tracksToPublish)
 
-      // Recording is an independent, fire-and-forget background process. It
-      // captures the tracks the stream started with (mic + camera, or mic
-      // only). Screen share is never part of the recording and never restarts
-      // it. A recording failure cannot affect the live stream.
-      startRecording(tracksToPublish)
+      // Start Agora Cloud Recording (server-side, non-blocking)
+      try {
+        const recRes = await fetch(
+          `${apiUrl}/live/${courseId}/recording/start`,
+          { method: 'POST', credentials: 'include' },
+        )
+        if (recRes.ok) setIsCloudRecording(true)
+      } catch (e) {
+        console.error('Cloud recording start failed (non-fatal):', e)
+      }
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
       // announce on THAT socket once it has joined the room. Emitting before the
@@ -861,10 +498,6 @@ export default function GoLivePage() {
               console.error('[ScreenShare] could not restore camera', e?.message)
             }
           }
-          // The recording canvas falls back to the camera (or black when there
-          // is none). Screen share is only ever replaced in the canvas — the
-          // recorder itself is never restarted.
-          attachVideoToComposite(camTrack ?? null)
           setScreenSharing(false)
         }
         toast.success(isAr ? 'توقف مشاركة الشاشة' : 'Screen sharing stopped')
@@ -904,10 +537,6 @@ export default function GoLivePage() {
         // Play screen in main immediately (avoids flash)
         if (localVideoRef.current) track.play(localVideoRef.current)
 
-        // The recording canvas now mirrors the screen share instead of the
-        // camera, without interrupting the running recording.
-        attachVideoToComposite(track)
-
         // Set state — useEffect will handle PiP camera placement
         // after React renders the PiP container
         setScreenSharing(true)
@@ -928,60 +557,34 @@ export default function GoLivePage() {
       // Wait a moment for socket to send
       await new Promise(r => setTimeout(r, 500))
 
-      // The stream and the recording are independent systems. Leaving Agora
-      // must not stop the recorder, and a recorder/upload problem must not
-      // block the stream from ending.
+      // Stop Agora Cloud Recording before leaving
+      if (isCloudRecording) {
+        try {
+          await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/live/${courseId}/recording/stop`,
+            { method: 'POST', credentials: 'include' },
+          )
+        } catch (e) {
+          console.error('Recording stop failed (non-fatal):', e)
+        }
+      }
+
       try {
         if (clientRef.current) await clientRef.current.leave()
       } catch (e: any) {
         console.error('[Live] leave failed:', e?.message)
       }
 
-      // Stop the recorder while its source tracks are still alive so the last
-      // chunk is not lost, then release the tracks.
-      let recording: Blob | null = null
-      try {
-        recording = await stopRecording()
-      } catch (e: any) {
-        console.error('[Recording] stop failed:', e?.message)
-      }
-      // stopRecording() already tears the composite down; this covers the case
-      // where it threw before reaching that point.
-      stopComposite()
-
       localTracksRef.current.filter(Boolean).forEach(t => { t.stop(); t.close() })
-      micTrackRef.current = null
-      cameraTrackRef.current = null
       if (screenTrackRef.current) { screenTrackRef.current.stop(); screenTrackRef.current.close() }
       await post(`/live/end/${courseId}`, {})
 
-      if (recordingRequested && recording) {
-        // The upload must not hold the end-of-stream flow back: it runs in
-        // the background and the page keeps showing its progress.
-        void uploadRecording()
-        toast(
-          isAr
-            ? 'انتهى البث — جارٍ حفظ التسجيل'
-            : 'Stream ended — saving the recording',
-          { icon: '🎥' },
-        )
-        return
-      }
-
-      if (recordingRequested) {
-        // The recording was requested but nothing was captured (the browser
-        // has no MediaRecorder, or the stream was too short). Say so
-        // instead of implying a recording exists.
-        toast(
-          isAr
-            ? 'انتهى البث — لم يتم تسجيل أي مقطع في هذا المتصفح'
-            : 'Stream ended — this browser did not capture a recording',
-          { icon: '🎥' },
-        )
-      } else {
-        toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
-      }
-      router.push(`/${locale}/dashboard/my-courses`)
+      setSessionEnded(true)
+      setConnectionState('idle')
+      toast.success(isAr ? 'تم إنهاء البث' : 'Stream ended')
+      setTimeout(() => {
+        router.push(`/${locale}/dashboard/my-courses`)
+      }, 3000)
     } catch(e: any) {
       toast.error(e.message || 'Error')
     } finally {
@@ -1039,10 +642,15 @@ export default function GoLivePage() {
                   : (isAr ? 'استوديو البث' : 'LIVE STUDIO')}
             </span>
             {liveStarted && !streamEnded && <span style={{ color: '#dc2626', fontSize: 13, fontFamily: 'monospace', fontWeight: 700 }}>{formatTime(elapsed)}</span>}
-            {recordingState === 'recording' && (
+            {isCloudRecording && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#fca5a5', fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite' }} />
                 REC
+              </span>
+            )}
+            {connectionState === 'reconnecting' && (
+              <span style={{ color: '#f59e0b', fontSize: 10, fontWeight: 700 }}>
+                {isAr ? 'جارٍ إعادة الاتصال...' : 'Reconnecting...'}
               </span>
             )}
           </div>
@@ -1201,9 +809,9 @@ export default function GoLivePage() {
                   <p style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>
                     {isAr ? 'انتهى البث المباشر' : 'The live stream has ended'}
                   </p>
-                  {recordingState === 'uploading' && (
+                  {isCloudRecording && (
                     <p style={{ color: subtext, fontSize: 12, margin: 0 }}>
-                      {isAr ? 'جارٍ رفع التسجيل...' : 'Uploading the recording...'}
+                      {isAr ? 'سيظهر التسجيل في مكتبة الكورس خلال بضع دقائق' : 'Recording will appear in the course library in a few minutes'}
                     </p>
                   )}
                 </div>
@@ -1298,83 +906,25 @@ export default function GoLivePage() {
               )}
             </div>
 
-            {/* ── Recording status ──────────────────────────────────────────
-                Only rendered when the instructor asked for a recording. The
-                four states mirror the lifecycle of the file: it is being
-                captured, it is being uploaded, it is stored, or it failed. */}
-            {recordingRequested && recordingState !== 'idle' && (
-              <div style={{
-                padding: '12px 14px',
-                background: cardBg,
-                borderRadius: 12,
-                border: `1px solid ${border}`,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}>
-                {recordingState === 'recording' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#dc2626', animation: 'livePulse 1.5s infinite', flexShrink: 0 }} />
-                    <span style={{ color: '#fca5a5', fontSize: 12, fontWeight: 700 }}>
-                      {isAr ? 'جارٍ التسجيل...' : 'Recording...'}
-                    </span>
-                    <span style={{ color: subtext, fontSize: 11, marginLeft: isAr ? 0 : 'auto', marginRight: isAr ? 'auto' : 0 }}>
-                      {isAr ? 'يتم التسجيل في متصفحك' : 'Recording happens in your browser'}
-                    </span>
-                  </div>
-                )}
+            {/* Cloud recording status */}
+            {isCloudRecording && (
+              <div style={{ padding: '10px 14px', background: cardBg, borderRadius: 12, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite', flexShrink: 0 }} />
+                <span style={{ color: '#fca5a5', fontSize: 12, fontWeight: 600 }}>
+                  {isAr ? 'جارٍ التسجيل السحابي...' : 'Cloud recording in progress...'}
+                </span>
+              </div>
+            )}
 
-                {recordingState === 'uploading' && (
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
-                      <span style={{ color: text, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Upload size={13} color="#f59e0b" />
-                        {isAr ? 'جارٍ رفع التسجيل...' : 'Uploading the recording...'}
-                      </span>
-                      <span style={{ color: subtext, fontSize: 12, fontWeight: 700, fontFamily: 'monospace' }}>{uploadProgress}%</span>
-                    </div>
-                    <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                      <div style={{ width: `${uploadProgress}%`, height: '100%', background: '#dc2626', transition: 'width 0.2s ease' }} />
-                    </div>
-                    <p style={{ color: '#fbbf24', fontSize: 11, margin: '8px 0 0', lineHeight: 1.6 }}>
-                      {isAr ? 'التسجيل لا يزال يُرفع — لا تغلق الصفحة' : 'The recording is still uploading — do not close the page'}
-                    </p>
-                  </div>
-                )}
-
-                {recordingState === 'done' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <CheckCircle2 size={15} color="#16a34a" />
-                    <span style={{ color: '#86efac', fontSize: 12, fontWeight: 700, flex: 1, minWidth: 140 }}>
-                      {isAr ? 'تم حفظ التسجيل بنجاح' : 'The recording was saved'}
-                    </span>
-                    <button
-                      onClick={() => router.push(`/${locale}/dashboard/my-courses`)}
-                      style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, color: text, cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
-                    >
-                      {isAr ? 'العودة إلى كورساتي' : 'Back to my courses'}
-                    </button>
-                  </div>
-                )}
-
-                {recordingState === 'error' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <AlertTriangle size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
-                    <span style={{ color: '#fbbf24', fontSize: 12, fontWeight: 700, flex: 1, minWidth: 140 }}>
-                      {isAr ? 'لم يتم حفظ التسجيل' : 'The recording could not be saved'}
-                    </span>
-                    {/* The retry button only makes sense when there is a file to
-                        send again — a dead recorder has nothing to retry. */}
-                    {hasRecordingFile && (
-                      <button
-                        onClick={() => uploadRecording()}
-                        style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.35)', color: '#fcd34d', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}
-                      >
-                        {isAr ? 'إعادة المحاولة' : 'Retry'}
-                      </button>
-                    )}
-                  </div>
-                )}
+            {/* Session ended message */}
+            {sessionEnded && (
+              <div style={{ textAlign: 'center', padding: '16px', background: cardBg, borderRadius: 12, border: `1px solid ${border}` }}>
+                <p style={{ color: text, fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>
+                  {isAr ? 'انتهى البث بنجاح ✓' : 'Stream ended successfully ✓'}
+                </p>
+                <p style={{ color: subtext, fontSize: 12, margin: 0 }}>
+                  {isAr ? 'سيظهر التسجيل في مكتبة الكورس خلال بضع دقائق' : 'Recording will appear in the course library in a few minutes'}
+                </p>
               </div>
             )}
 
@@ -1424,12 +974,11 @@ export default function GoLivePage() {
               </div>
             )}
 
-            {/* Recording notice — before going live the instructor knows that
-                the session is captured in the browser and uploaded afterwards. */}
-            {LIVE_RECORDING_SUPPORTED && recordingRequested && !liveStarted && (
+            {/* Cloud recording notice — before going live */}
+            {!liveStarted && (
               <div style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)', color: subtext, fontSize: 12, lineHeight: 1.6, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                 <Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>{liveRecordingNote(locale)}</span>
+                <span>{isAr ? 'سيتم تسجيل الجلسة تلقائياً على السحابة وستظهر في مكتبة الكورس بعد انتهاء البث.' : 'The session will be automatically recorded to the cloud and appear in the course library after the stream ends.'}</span>
               </div>
             )}
           </div>

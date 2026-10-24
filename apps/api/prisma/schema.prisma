@@ -1283,3 +1283,62 @@ model WalletTransaction {
   @@index([createdAt])
   @@map("wallet_transactions")
 }
+
+enum LiveSessionStatus {
+  SCHEDULED
+  STARTING
+  LIVE
+  ENDING
+  ENDED
+}
+
+enum RecordingStatus {
+  PENDING
+  STARTING
+  RECORDING
+  STOPPING
+  PROCESSING
+  UPLOADING
+  READY
+  FAILED
+  NEEDS_ATTENTION
+}
+
+model LiveSession {
+  id            String            @id @default(cuid())
+  courseId      String
+  channelName   String            @unique
+  instructorId  String
+  status        LiveSessionStatus @default(SCHEDULED)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  recording     LiveRecording?
+}
+
+model LiveRecording {
+  id            String          @id @default(cuid())
+  liveSessionId String          @unique
+  status        RecordingStatus @default(PENDING)
+  resourceId    String?
+  sid           String?         @unique
+  b2Key         String?
+  bunnyVideoId  String?
+  lastError     String?
+  retryCount    Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  liveSession   LiveSession     @relation(fields: [liveSessionId], references: [id])
+}
+
+model WebhookEvent {
+  id          String    @id @default(cuid())
+  source      String
+  eventType   String
+  externalId  String?
+  payload     Json
+  processed   Boolean   @default(false)
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+}

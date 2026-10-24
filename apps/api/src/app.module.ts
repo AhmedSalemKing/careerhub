@@ -31,6 +31,7 @@ import { VerificationModule } from './modules/verification/verification.module';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { ConsultingModule } from './modules/consulting/consulting.module';
 import { LiveModule } from './modules/live/live.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
 import { AuditModule } from './common/services/audit.module';
 import { CsrfModule } from './modules/csrf/csrf.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
@@ -107,6 +108,7 @@ import { QuizzesModule } from './modules/quizzes/quizzes.module';
     WalletModule,
     ConsultingModule,
     LiveModule,
+    WebhookModule,
     AuditModule,
     CsrfModule,
     QuizzesModule,
