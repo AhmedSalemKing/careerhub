@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "module": "commonjs",
-    "target": "es2019"
+    "target": "es2019",
+    "incremental": false
   },
   "exclude": [
     "node_modules",
