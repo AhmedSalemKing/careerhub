@@ -312,21 +312,13 @@ export default function GoLivePage() {
       clientRef.current = client
 
       // Fetch a server-signed token for this channel
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      const tokenRes = await fetch(
-        `${apiUrl}/live/token?channelName=${data.channelName}&role=publisher`,
-        { credentials: 'include' },
-      )
-      if (!tokenRes.ok) throw new Error('Failed to get Agora token')
-      const { token: rtcToken, uid: rtcUid } = await tokenRes.json()
+      const tokenRes = await get(`/live/token?channelName=${data.channelName}&role=publisher`)
+      const { token: rtcToken, uid: rtcUid } = tokenRes.data?.data ?? tokenRes.data
 
       client.on('token-privilege-will-expire', async () => {
         try {
-          const r = await fetch(
-            `${apiUrl}/live/token?channelName=${data.channelName}&role=publisher`,
-            { credentials: 'include' },
-          )
-          const { token: newToken } = await r.json()
+          const r = await get(`/live/token?channelName=${data.channelName}&role=publisher`)
+          const { token: newToken } = r.data?.data ?? r.data
           await client.renewToken(newToken)
         } catch (e) {
           console.error('Token renewal failed:', e)
