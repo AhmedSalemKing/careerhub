@@ -12,6 +12,6 @@ import { UploadModule } from '../upload/upload.module'
   imports: [PrismaModule, UploadModule],
   controllers: [LiveController],
   providers: [LiveService, AgoraService, LiveGateway, AgoraCloudRecordingService, RecordingProcessorService],
-  exports: [LiveService, AgoraService, AgoraCloudRecordingService],
+  exports: [LiveService, AgoraService, AgoraCloudRecordingService, RecordingProcessorService],
 })
 export class LiveModule {}

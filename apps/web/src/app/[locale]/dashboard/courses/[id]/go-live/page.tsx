@@ -108,6 +108,9 @@ export default function GoLivePage() {
   const localTracksRef = useRef<any[]>([])
   const screenTrackRef = useRef<any>(null)
   const timerRef = useRef<any>(null)
+  // Channel the instructor actually joined. Sent with recording/stop so the
+  // server stops the recording that belongs to this stream, not a stale one.
+  const liveChannelRef = useRef<string | null>(null)
 
 
   const { data: course } = useQuery({
@@ -382,7 +385,7 @@ export default function GoLivePage() {
           isAr
             ? 'تعذّر تشغيل الكاميرا — سيتم البث والتسجيل بالصوت فقط'
             : 'Camera unavailable — streaming and recording in audio-only mode',
-          { icon: '⚠️' },
+          { icon: <Info size={18} color="#f59e0b" /> },
         )
       }
 
@@ -395,7 +398,7 @@ export default function GoLivePage() {
       // it resolves the right base URL and attaches the JWT (a bare fetch sent
       // no Authorization header and returned 401).
       try {
-        await post(`/live/${courseId}/recording/start`, {})
+        await post(`/live/${courseId}/recording/start`, { channelName: data.channelName })
         setIsCloudRecording(true)
       } catch (e) {
         console.error('Cloud recording start failed (non-fatal):', e)
@@ -410,6 +413,7 @@ export default function GoLivePage() {
       // sockets in the same room meant the room was registered twice.
       setLiveStarted(true)
       setPendingStart({ channelName: data.channelName, appId: data.appId })
+      liveChannelRef.current = data.channelName
       setServerState('ready')
 
       toast.success(isAr ? 'البث المباشر بدأ!' : 'Live stream started!')
@@ -553,7 +557,9 @@ export default function GoLivePage() {
       // shared axios client, same as start.
       if (isCloudRecording) {
         try {
-          await post(`/live/${courseId}/recording/stop`, {})
+          await post(`/live/${courseId}/recording/stop`, {
+            channelName: liveChannelRef.current ?? undefined,
+          })
         } catch (e) {
           console.error('Recording stop failed (non-fatal):', e)
         }
@@ -910,7 +916,7 @@ export default function GoLivePage() {
             {sessionEnded && (
               <div style={{ textAlign: 'center', padding: '16px', background: cardBg, borderRadius: 12, border: `1px solid ${border}` }}>
                 <p style={{ color: text, fontSize: 14, fontWeight: 700, margin: '0 0 4px' }}>
-                  {isAr ? 'انتهى البث بنجاح ✓' : 'Stream ended successfully ✓'}
+                  {isAr ? 'انتهى البث بنجاح' : 'Stream ended successfully'}
                 </p>
                 <p style={{ color: subtext, fontSize: 12, margin: 0 }}>
                   {isAr ? 'سيظهر التسجيل في مكتبة الكورس خلال بضع دقائق' : 'Recording will appear in the course library in a few minutes'}

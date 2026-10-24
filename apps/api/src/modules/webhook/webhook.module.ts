@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
-import { RecordingProcessorService } from '../live/recording-processor.service';
+import { LiveModule } from '../live/live.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, LiveModule],
   controllers: [WebhookController],
-  providers: [RecordingProcessorService],
 })
 export class WebhookModule {}

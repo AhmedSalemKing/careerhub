@@ -23,6 +23,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "clean": "rimraf dist",

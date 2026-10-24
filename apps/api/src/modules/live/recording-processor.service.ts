@@ -9,7 +9,7 @@ export class RecordingProcessorService {
 
   constructor(private readonly prisma: PrismaService) {
     this.s3 = new S3Client({
-      region: 'eu-central-003',
+      region: this.resolveRegion(),
       endpoint: process.env.B2_ENDPOINT,
       credentials: {
         accessKeyId: process.env.B2_KEY_ID,
@@ -19,18 +19,31 @@ export class RecordingProcessorService {
     });
   }
 
+  /**
+   * The S3 client must be signed for the bucket's real region. Backblaze
+   * encodes the region in the endpoint (s3.<region>.backblazeb2.com); signing
+   * with a hardcoded region produces SignatureDoesNotMatch at download time.
+   */
+  private resolveRegion(): string {
+    const explicit = process.env.B2_REGION?.trim();
+    if (explicit) return explicit;
+    const match = (process.env.B2_ENDPOINT || '').match(/s3[.-]([a-z0-9-]+)\.backblazeb2\.com/i);
+    return match?.[1] || 'us-east-1';
+  }
+
   async processRecordingComplete(webhookEventId: string, sid: string, fileList: any[]): Promise<void> {
     const recording = await this.prisma.liveRecording.findUnique({ where: { sid } });
     if (!recording) { this.logger.warn(`No recording for sid: ${sid}`); return; }
     if (recording.status === 'READY') { this.logger.log(`Already processed: ${sid}`); return; }
 
     await this.prisma.liveRecording.update({ where: { sid }, data: { status: 'PROCESSING' } });
+    this.logger.log(`Processing ${sid}: ${Array.isArray(fileList) ? fileList.length : 0} file(s) in payload`);
 
     try {
       // Agora sends fileList as an array of path strings; older webhook payloads
       // (and the processor's own callers) may wrap them as { fileName }. Accept
       // both shapes and always prefer the single MP4 over HLS .ts fragments.
-      const fileNames: string[] = fileList
+      const fileNames: string[] = (Array.isArray(fileList) ? fileList : [])
         .map((f: any) => (typeof f === 'string' ? f : f?.fileName))
         .filter((f: unknown): f is string => typeof f === 'string' && f.length > 0);
 
@@ -44,6 +57,7 @@ export class RecordingProcessorService {
       }
 
       const b2Key = fileKey;
+      this.logger.log(`Selected B2 object ${b2Key} (${mp4File ? 'mp4' : 'ts fallback'})`);
       await this.prisma.liveRecording.update({ where: { sid }, data: { b2Key } });
 
       const bunnyVideoId = await this.uploadToBunny(recording.liveSessionId, b2Key);
@@ -58,7 +72,7 @@ export class RecordingProcessorService {
         data: { processed: true, processedAt: new Date() },
       });
 
-      this.logger.log(`✓ ${sid} → Bunny ${bunnyVideoId}`);
+      this.logger.log(`Recording ${sid} uploaded to Bunny as ${bunnyVideoId}`);
     } catch (err) {
       const retryCount = (recording.retryCount || 0) + 1;
       await this.prisma.liveRecording.update({
@@ -85,11 +99,14 @@ export class RecordingProcessorService {
     });
     if (!createRes.ok) throw new Error(`Bunny create: ${await createRes.text()}`);
     const { guid } = await createRes.json();
+    this.logger.log(`Created Bunny video ${guid} for session ${sessionId}`);
 
     const { Body, ContentLength } = await this.s3.send(new GetObjectCommand({
       Bucket: process.env.B2_BUCKET,
       Key: b2Key,
     }));
+    if (!Body) throw new Error(`Empty B2 object: ${b2Key}`);
+    this.logger.log(`Downloading ${b2Key} from B2 (${ContentLength ?? 'unknown'} bytes)`);
 
     const uploadRes = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${guid}`, {
       method: 'PUT',
@@ -104,6 +121,7 @@ export class RecordingProcessorService {
     } as any);
     if (!uploadRes.ok) throw new Error(`Bunny upload: ${await uploadRes.text()}`);
 
+    this.logger.log(`Bunny upload finished for video ${guid}`);
     return guid;
   }
 }

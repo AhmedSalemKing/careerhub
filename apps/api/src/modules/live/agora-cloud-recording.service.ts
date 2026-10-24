@@ -12,6 +12,13 @@ export class AgoraCloudRecordingService {
     return `Basic ${creds}`;
   }
 
+  private requireEnv(keys: string[]): void {
+    const missing = keys.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
+  }
+
   private async request(method: string, path: string, body?: any, retries = 3): Promise<any> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
@@ -21,26 +28,45 @@ export class AgoraCloudRecordingService {
           body: body ? JSON.stringify(body) : undefined,
         });
         const text = await res.text();
-        if (!res.ok) throw new Error(`Agora API ${res.status}: ${text}`);
-        return JSON.parse(text);
+        if (!res.ok) {
+          // Attach the HTTP status so a 4xx (bad configuration, unknown
+          // resource) is not retried: retrying it only delays the real error.
+          const error: any = new Error(`Agora API ${res.status}: ${text}`);
+          error.status = res.status;
+          throw error;
+        }
+        return text ? JSON.parse(text) : {};
       } catch (err) {
+        const status = (err as any)?.status;
+        const retryable = !status || status >= 500;
         this.logger.warn(`Attempt ${attempt}/${retries}: ${err.message}`);
-        if (attempt === retries) throw err;
+        if (!retryable || attempt === retries) throw err;
         await new Promise(r => setTimeout(r, attempt * 2000));
       }
     }
   }
 
   async acquireResource(channelName: string, uid: string): Promise<string> {
+    this.requireEnv(['AGORA_APP_ID', 'AGORA_CUSTOMER_KEY', 'AGORA_CUSTOMER_SECRET']);
     const data = await this.request('POST', '/acquire', {
       cname: channelName,
       uid,
       clientRequest: { resourceExpiredHour: 24 },
     });
+    this.logger.log(`Acquired Agora resource ${data.resourceId} for channel ${channelName}`);
     return data.resourceId;
   }
 
   async startRecording(resourceId: string, channelName: string, uid: string, token: string): Promise<string> {
+    this.requireEnv([
+      'AGORA_APP_ID',
+      'AGORA_CUSTOMER_KEY',
+      'AGORA_CUSTOMER_SECRET',
+      'B2_BUCKET',
+      'B2_KEY_ID',
+      'B2_APPLICATION_KEY',
+      'B2_ENDPOINT',
+    ]);
     const data = await this.request('POST', `/resourceid/${resourceId}/mode/mix/start`, {
       cname: channelName,
       uid,
@@ -77,6 +103,9 @@ export class AgoraCloudRecordingService {
         },
       },
     });
+    this.logger.log(
+      `Started Agora cloud recording sid=${data.sid} resource=${resourceId} channel=${channelName} vendor=11 region=0`,
+    );
     return data.sid;
   }
 
@@ -101,6 +130,7 @@ export class AgoraCloudRecordingService {
   }
 
   generateRtcToken(channelName: string, uid: number, role: 'publisher' | 'subscriber'): string {
+    this.requireEnv(['AGORA_APP_ID', 'AGORA_APP_CERTIFICATE']);
     const { RtcTokenBuilder, RtcRole } = require('agora-token');
     const currentTime = Math.floor(Date.now() / 1000);
     const expireTime = currentTime + 3600;

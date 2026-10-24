@@ -2,7 +2,7 @@ import {
   Controller, Post, Req, Res, Headers, Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RecordingProcessorService } from '../live/recording-processor.service';
 
@@ -22,13 +22,24 @@ export class WebhookController {
     @Headers('agora-signature-v2') sigV2: string,
     @Headers('agora-signature') sig: string,
   ): Promise<void> {
-    const rawBody: string = (req as any).rawBody || JSON.stringify(req.body);
+    const rawBody: Buffer = (req as any).rawBody
+      || Buffer.from(JSON.stringify(req.body ?? {}));
     const secret = process.env.AGORA_WEBHOOK_SECRET || '';
 
-    if (secret && (sigV2 || sig)) {
-      const usedSig = sigV2 || sig;
+    if (secret) {
+      const usedSig = (sigV2 || sig || '').trim();
+      if (!usedSig) {
+        this.logger.warn('Agora webhook rejected: missing signature header');
+        res.status(401).json({ error: 'Missing signature' });
+        return;
+      }
       const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
-      if (expected !== usedSig) {
+      const expectedBuf = Buffer.from(expected, 'utf8');
+      const actualBuf = Buffer.from(usedSig.toLowerCase(), 'utf8');
+      if (
+        expectedBuf.length !== actualBuf.length
+        || !timingSafeEqual(expectedBuf, actualBuf)
+      ) {
         this.logger.warn('Invalid Agora signature');
         res.status(401).json({ error: 'Invalid signature' });
         return;
@@ -36,13 +47,14 @@ export class WebhookController {
     }
 
     const body = req.body as any;
-    const eventType = body?.eventType ?? body?.noticeId;
-    const sid = body?.payload?.sid || body?.sid;
+    const eventType = String(body?.eventType ?? body?.noticeId ?? 'unknown');
+    const sid = body?.payload?.sid || body?.sid || null;
 
     // Agora expects a 200 within 10 seconds and retries only 3 times before
     // giving up. Acknowledge as soon as the signature is valid, then do every
     // DB write and the (slow) recording processing in the background.
     res.status(200).json({ received: true });
+    this.logger.log(`Agora webhook accepted: eventType=${eventType} sid=${sid ?? 'none'}`);
 
     setImmediate(async () => {
       try {
@@ -59,32 +71,43 @@ export class WebhookController {
         const event = await this.prisma.webhookEvent.create({
           data: {
             source: 'agora',
-            eventType: String(eventType ?? 'unknown'),
-            externalId: sid ?? null,
+            eventType,
+            externalId: sid,
             payload: body,
             processed: false,
           },
         });
 
-        const isUploadEvent = [31, 32, 40, 'cloud_recording_file_infos', 'cloud_recording_upload_finished'].includes(eventType);
+        const isUploadEvent = ['31', '32', '40', 'cloud_recording_file_infos', 'cloud_recording_upload_finished']
+          .includes(eventType);
         if (!isUploadEvent || !sid) return;
 
-        let fileList: any[] = [];
-        const details = body?.payload?.details || body?.payload;
-        if (Array.isArray(details?.fileList)) {
-          fileList = details.fileList;
-        } else if (typeof details?.fileList === 'string') {
-          fileList = details.fileList.split(',').map((f: string) => f.trim());
-        } else if (Array.isArray(body?.fileList)) {
-          fileList = body.fileList;
-        }
+        const fileList = this.extractFileList(body);
+        this.logger.log(`Webhook file list for sid ${sid}: ${JSON.stringify(fileList)}`);
 
         if (fileList.length > 0) {
           await this.processor.processRecordingComplete(event.id, sid, fileList);
+        } else {
+          this.logger.warn(`Upload event for sid ${sid} carried no file list`);
         }
       } catch (err) {
-        this.logger.error(`Webhook processing error: ${err.message}`);
+        this.logger.error(`Webhook processing error: ${err.message}`, err.stack);
       }
     });
   }
+
+  private extractFileList(body: any): string[] {
+    const details = body?.payload?.details || body?.payload;
+    let raw: any = details?.fileList ?? body?.fileList;
+
+    if (typeof raw === 'string') {
+      raw = raw.split(',');
+    }
+    if (!Array.isArray(raw)) return [];
+
+    return raw
+      .map((f: any) => (typeof f === 'string' ? f.trim() : f?.fileName))
+      .filter((f: unknown): f is string => typeof f === 'string' && f.length > 0);
+  }
 }
+
