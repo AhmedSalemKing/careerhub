@@ -39,27 +39,33 @@ export class WebhookController {
     const eventType = body?.eventType ?? body?.noticeId;
     const sid = body?.payload?.sid || body?.sid;
 
-    if (sid) {
-      const duplicate = await this.prisma.webhookEvent.findFirst({
-        where: { externalId: sid, processed: true },
-      });
-      if (duplicate) { res.status(200).json({ received: true, duplicate: true }); return; }
-    }
-
-    const event = await this.prisma.webhookEvent.create({
-      data: {
-        source: 'agora',
-        eventType: String(eventType ?? 'unknown'),
-        externalId: sid ?? null,
-        payload: body,
-        processed: false,
-      },
-    });
-
+    // Agora expects a 200 within 10 seconds and retries only 3 times before
+    // giving up. Acknowledge as soon as the signature is valid, then do every
+    // DB write and the (slow) recording processing in the background.
     res.status(200).json({ received: true });
 
     setImmediate(async () => {
       try {
+        if (sid) {
+          const duplicate = await this.prisma.webhookEvent.findFirst({
+            where: { externalId: sid, processed: true },
+          });
+          if (duplicate) {
+            this.logger.log(`Duplicate webhook ignored for sid: ${sid}`);
+            return;
+          }
+        }
+
+        const event = await this.prisma.webhookEvent.create({
+          data: {
+            source: 'agora',
+            eventType: String(eventType ?? 'unknown'),
+            externalId: sid ?? null,
+            payload: body,
+            processed: false,
+          },
+        });
+
         const isUploadEvent = [31, 32, 40, 'cloud_recording_file_infos', 'cloud_recording_upload_finished'].includes(eventType);
         if (!isUploadEvent || !sid) return;
 
@@ -68,7 +74,7 @@ export class WebhookController {
         if (Array.isArray(details?.fileList)) {
           fileList = details.fileList;
         } else if (typeof details?.fileList === 'string') {
-          fileList = details.fileList.split(',').map((f: string) => ({ fileName: f.trim() }));
+          fileList = details.fileList.split(',').map((f: string) => f.trim());
         } else if (Array.isArray(body?.fileList)) {
           fileList = body.fileList;
         }

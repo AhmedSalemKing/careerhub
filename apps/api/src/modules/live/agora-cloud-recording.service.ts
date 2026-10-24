@@ -58,14 +58,22 @@ export class AgoraCloudRecordingService {
             bitrate: 2000,
             mixedVideoLayout: 1,
           },
+          recordingFileConfig: {
+            avFileType: ['hls', 'mp4'],
+          },
         },
         storageConfig: {
-          vendor: 1,
-          region: 10,
+          // vendor 11 = S3-compatible storage. vendor 1 is AWS S3 only and is
+          // rejected by Agora when pointed at a non-AWS endpoint such as B2.
+          vendor: 11,
+          region: 0,
           bucket: process.env.B2_BUCKET,
           accessKey: process.env.B2_KEY_ID,
           secretKey: process.env.B2_APPLICATION_KEY,
           fileNamePrefix: ['recordings', channelName],
+          extensionParams: {
+            endpoint: process.env.B2_ENDPOINT,
+          },
         },
       },
     });

@@ -390,13 +390,13 @@ export default function GoLivePage() {
 
       await client.publish(tracksToPublish)
 
-      // Start Agora Cloud Recording (server-side, non-blocking)
+      // Start Agora Cloud Recording (server-side, non-blocking).
+      // Uses the shared axios client like every other API call on this page:
+      // it resolves the right base URL and attaches the JWT (a bare fetch sent
+      // no Authorization header and returned 401).
       try {
-        const recRes = await fetch(
-          `${apiUrl}/live/${courseId}/recording/start`,
-          { method: 'POST', credentials: 'include' },
-        )
-        if (recRes.ok) setIsCloudRecording(true)
+        await post(`/live/${courseId}/recording/start`, {})
+        setIsCloudRecording(true)
       } catch (e) {
         console.error('Cloud recording start failed (non-fatal):', e)
       }
@@ -549,13 +549,11 @@ export default function GoLivePage() {
       // Wait a moment for socket to send
       await new Promise(r => setTimeout(r, 500))
 
-      // Stop Agora Cloud Recording before leaving
+      // Stop Agora Cloud Recording before leaving — authenticated through the
+      // shared axios client, same as start.
       if (isCloudRecording) {
         try {
-          await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/live/${courseId}/recording/stop`,
-            { method: 'POST', credentials: 'include' },
-          )
+          await post(`/live/${courseId}/recording/stop`, {})
         } catch (e) {
           console.error('Recording stop failed (non-fatal):', e)
         }

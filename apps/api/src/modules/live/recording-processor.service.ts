@@ -27,13 +27,23 @@ export class RecordingProcessorService {
     await this.prisma.liveRecording.update({ where: { sid }, data: { status: 'PROCESSING' } });
 
     try {
-      const mainFile = fileList.find((f: any) => f.fileName?.endsWith('.mp4'))
-        || fileList.find((f: any) => f.fileName?.endsWith('.ts'))
-        || fileList[0];
+      // Agora sends fileList as an array of path strings; older webhook payloads
+      // (and the processor's own callers) may wrap them as { fileName }. Accept
+      // both shapes and always prefer the single MP4 over HLS .ts fragments.
+      const fileNames: string[] = fileList
+        .map((f: any) => (typeof f === 'string' ? f : f?.fileName))
+        .filter((f: unknown): f is string => typeof f === 'string' && f.length > 0);
 
-      if (!mainFile?.fileName) throw new Error('No usable file in fileList');
+      const mp4File = fileNames.find((f: string) => f.endsWith('.mp4'));
+      const tsFile = fileNames.find((f: string) => f.endsWith('.ts'));
+      const fileKey = mp4File ?? tsFile;
 
-      const b2Key = mainFile.fileName;
+      if (!fileKey) {
+        this.logger.error(`No processable file in: ${JSON.stringify(fileList)}`);
+        throw new Error('No mp4 or ts file found in recording file list');
+      }
+
+      const b2Key = fileKey;
       await this.prisma.liveRecording.update({ where: { sid }, data: { b2Key } });
 
       const bunnyVideoId = await this.uploadToBunny(recording.liveSessionId, b2Key);
