@@ -419,6 +419,7 @@ export class LiveService {
     courseId: string,
     userId: string,
     range: string | undefined,
+    requestOrigin: string | undefined,
     res: ExpressResponse,
   ) {
     const course = await this.prisma.course.findUnique({
@@ -462,12 +463,27 @@ export class LiveService {
       return
     }
 
+    const STREAM_ALLOWED_ORIGINS = [
+      'https://devewayhub.vercel.app',
+      'https://deveway-teal.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ]
+    const allowOrigin =
+      requestOrigin && STREAM_ALLOWED_ORIGINS.includes(requestOrigin)
+        ? requestOrigin
+        : STREAM_ALLOWED_ORIGINS[0]
+
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    res.setHeader('Access-Control-Allow-Origin', allowOrigin)
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Authorization')
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges')
+    res.setHeader('Accept-Ranges', 'bytes')
     res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'video/mp4')
     res.setHeader('Content-Disposition', 'inline')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
     res.setHeader('Pragma', 'no-cache')
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN')
 
     const statusCode = upstream.status === 206 ? 206 : 200
     res.status(statusCode)

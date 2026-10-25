@@ -56,8 +56,9 @@ export class LiveController {
     @Req() req: Request,
     @Res() res: Response,
     @Headers('range') range: string,
+    @Headers('origin') origin: string,
   ) {
-    return this.liveService.streamRecording(courseId, (req as any).user.id, range, res)
+    return this.liveService.streamRecording(courseId, (req as any).user.id, range, origin, res)
   }
 
   @Get('recording/public/:courseId')

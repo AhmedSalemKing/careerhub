@@ -56,6 +56,7 @@ async function bootstrap() {
       },
     },
     crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     noSniff: true,
     xssFilter: true,
@@ -87,8 +88,9 @@ async function bootstrap() {
       'Origin',
       'If-None-Match',
       'If-Modified-Since',
+      'Range',
     ],
-    exposedHeaders: ['Content-Length', 'Content-Range', 'ETag'],
+    exposedHeaders: ['Content-Length', 'Content-Range', 'ETag', 'Accept-Ranges'],
     maxAge: 86400,
   });
 
