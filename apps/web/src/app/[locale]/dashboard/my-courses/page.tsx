@@ -137,120 +137,117 @@ export default function MyCoursesPage() {
 				width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
 				background: 'var(--background)',
 				minHeight: '100vh',
+				fontFamily: "'PingAR', sans-serif",
 			}}>
-				<div style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
-					{/* 1. Hero section */}
+				<style>{`
+					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Black.otf') format('opentype'); font-weight:700; }
+					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Medium.otf') format('opentype'); font-weight:500; }
+					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Light.otf') format('opentype'); font-weight:300; }
+					@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+					@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr !important; } }
+					@media (max-width: 640px) { .course-grid { grid-template-columns: 1fr !important; } }
+					.course-card:hover { border-color: var(--primary-border) !important; }
+				`}</style>
+				<div style={{ padding: 'clamp(16px,3vw,32px)', maxWidth: '1400px', margin: '0 auto' }}>
+					{/* 1. Page header row */}
 					<div style={{
 						display: 'flex',
-						alignItems: 'center',
 						justifyContent: 'space-between',
-						gap: '24px',
+						alignItems: 'flex-start',
+						marginBottom: 24,
 						flexWrap: 'wrap',
-						direction: 'rtl',
-						marginBottom: '24px',
+						gap: 16,
 					}}>
-						<div style={{ flex: '1', minWidth: '250px' }}>
+						<div>
 							<h1 style={{
 								fontWeight: 700,
-								fontSize: 'clamp(2rem, 5vw, 3rem)',
+								fontSize: 'clamp(1.8rem,4vw,2.4rem)',
 								color: 'var(--foreground)',
 								margin: 0,
-								marginBottom: '8px',
+								marginBottom: 4,
+								fontFamily: "'PingAR', sans-serif",
 							}}>
 								{isAr ? "كورساتي" : "My Courses"}
 							</h1>
 							<p style={{
+								fontWeight: 300,
+								fontSize: '0.88rem',
 								color: 'var(--muted)',
-								fontSize: '0.9rem',
 								margin: 0,
-								marginBottom: '16px',
+								fontFamily: "'PingAR', sans-serif",
 							}}>
 								{isAr ? "إدارة ومتابعة الكورسات التي أنشأتها" : "Manage and track the courses you created"}
 							</p>
-							<div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-								<div style={{
-									background: 'var(--surface)',
-									border: '1px solid var(--border)',
-									borderRadius: 999,
-									padding: '6px 16px',
-									fontSize: '0.85rem',
-									color: 'var(--foreground)',
-								}}>
-									{courses.length} {isAr ? "كورس" : "courses"}
-								</div>
-								{isInstructor && (
-									<Link href={`/${locale}/dashboard/create-course`} style={{
-										display: 'inline-flex',
-										alignItems: 'center',
-										gap: '8px',
-										background: 'var(--primary)',
-										color: '#fff',
-										borderRadius: 12,
-										padding: '10px 20px',
-										fontSize: '0.9rem',
-										fontWeight: 500,
-										textDecoration: 'none',
-									}}>
-										<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-											stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-											<line x1="12" y1="5" x2="12" y2="19" />
-											<line x1="5" y1="12" x2="19" y2="12" />
-										</svg>
-										{isAr ? "+ إنشاء كورس" : "+ Create Course"}
-									</Link>
-								)}
-							</div>
 						</div>
-						<div style={{
-							background: 'var(--surface)',
-							border: '1px solid var(--border)',
-							borderRadius: 20,
-							padding: 24,
-							width: 280,
-							textAlign: 'center',
-						}}>
-							<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block' }}>
-								<path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-								<path d="M6 12v5c3 3 9 3 12 0v-5" />
-							</svg>
-							<div style={{ fontWeight: 700, color: 'var(--foreground)', marginBottom: '6px' }}>
-								{isAr ? "مستقبلك التعليمي يبدأ هنا" : "Your learning future starts here"}
+						<div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+							<div style={{
+								background: 'var(--surface)',
+								border: '1px solid var(--border)',
+								borderRadius: 999,
+								padding: '6px 16px',
+								fontSize: '0.85rem',
+								fontWeight: 500,
+								color: 'var(--foreground)',
+								fontFamily: "'PingAR', sans-serif",
+							}}>
+								{courses.length} {isAr ? "كورس" : "Course"}
 							</div>
-							<div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>
-								{isAr ? "أنشئ كورسات ملهمة وشارك معرفتك مع آلاف الطلاب حول العالم." : "Create inspiring courses and share your knowledge with thousands of students worldwide."}
-							</div>
+							{isInstructor && (
+								<Link href={`/${locale}/dashboard/create-course`} style={{
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: 8,
+									background: 'var(--primary)',
+									color: '#fff',
+									border: 'none',
+									borderRadius: 12,
+									padding: '10px 22px',
+									fontSize: '0.9rem',
+									fontWeight: 500,
+									textDecoration: 'none',
+									cursor: 'pointer',
+									fontFamily: "'PingAR', sans-serif",
+								}}>
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+										stroke="#fff" strokeWidth="2" strokeLinecap="round">
+										<line x1="12" y1="5" x2="12" y2="19" />
+										<line x1="5" y1="12" x2="19" y2="12" />
+									</svg>
+									{isAr ? "إنشاء كورس" : "Create Course"}
+								</Link>
+							)}
 						</div>
 					</div>
 
-					{/* 2. Stats row */}
+					{/* 2. Stats row — 3 cards */}
 					{isInstructor && !isLoading && courses.length > 0 && (
 						<div style={{
 							display: 'grid',
 							gridTemplateColumns: 'repeat(3, 1fr)',
 							gap: 12,
-							margin: '16px 0',
+							marginBottom: 20,
 						}} className="stats-grid">
 							{[
 								{
 									label: isAr ? 'إجمالي الطلاب' : 'Total Students',
 									value: totalStudents,
 									icon: (
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 											<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
 											<circle cx="9" cy="7" r="4" />
 											<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
 											<path d="M16 3.13a4 4 0 0 1 0 7.75" />
 										</svg>
 									),
-									trend: "+12% من الشهر الماضي",
 								},
 								{
 									label: isAr ? 'الكورسات المنشورة' : 'Published Courses',
 									value: publishedCount,
 									icon: (
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-											<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-											<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+											<rect x="2" y="3" width="20" height="14" rx="2" />
+											<line x1="8" y1="21" x2="16" y2="21" />
+											<line x1="12" y1="17" x2="12" y2="21" />
 										</svg>
 									),
 								},
@@ -258,7 +255,7 @@ export default function MyCoursesPage() {
 									label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue',
 									value: `${totalRevenue.toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`,
 									icon: (
-										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 											<line x1="12" y1="1" x2="12" y2="23" />
 											<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
 										</svg>
@@ -275,8 +272,8 @@ export default function MyCoursesPage() {
 									gap: 16,
 								}}>
 									<div style={{
-										width: 48,
-										height: 48,
+										width: 44,
+										height: 44,
 										borderRadius: 12,
 										background: 'var(--primary-subtle)',
 										display: 'flex',
@@ -287,35 +284,29 @@ export default function MyCoursesPage() {
 										{stat.icon}
 									</div>
 									<div style={{ flex: 1 }}>
-										<div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginBottom: '4px' }}>
+										<div style={{ fontWeight: 300, fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4, fontFamily: "'PingAR', sans-serif" }}>
 											{stat.label}
 										</div>
-										<div style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--foreground)' }}>
+										<div style={{ fontWeight: 500, fontSize: '1.5rem', color: 'var(--foreground)', fontFamily: "'PingAR', sans-serif" }}>
 											{stat.value}
 										</div>
-										{stat.trend && (
-											<div style={{ color: 'var(--success)', fontSize: '0.75rem', marginTop: '2px' }}>
-												{stat.trend}
-											</div>
-										)}
 									</div>
 								</div>
 							))}
 						</div>
 					)}
 
-					{/* 3. Filter + Search bar */}
+					{/* 3. Filter bar */}
 					<div style={{
 						display: 'flex',
-						gap: 12,
+						gap: 10,
 						alignItems: 'center',
-						margin: '16px 0',
-						direction: 'rtl',
+						marginBottom: 20,
 						flexWrap: 'wrap',
 					}}>
-						<div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+						<div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-								style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+								style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
 								<circle cx="11" cy="11" r="8" />
 								<line x1="21" y1="21" x2="16.65" y2="16.65" />
 							</svg>
@@ -329,68 +320,59 @@ export default function MyCoursesPage() {
 									background: 'var(--surface)',
 									border: '1px solid var(--border)',
 									borderRadius: 12,
-									padding: '10px 16px 10px 40px',
+									padding: '10px 16px',
+									paddingRight: 40,
 									color: 'var(--foreground)',
-									fontSize: '0.9rem',
+									fontFamily: "'PingAR', sans-serif",
+									fontWeight: 300,
+									fontSize: '0.88rem',
 									boxSizing: 'border-box',
+									outline: 'none',
 								}}
 							/>
 						</div>
-						<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+						<div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
 							{tabs.map((tab) => (
 								<button
 									key={tab.key}
 									onClick={() => setActiveTab(tab.key)}
 									style={{
-										background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
-										color: activeTab === tab.key ? '#fff' : 'var(--muted)',
-										border: activeTab === tab.key ? 'none' : '1px solid var(--border)',
 										borderRadius: 999,
 										padding: '8px 16px',
 										fontSize: '0.85rem',
+										fontWeight: 500,
 										cursor: 'pointer',
+										border: activeTab === tab.key ? '1px solid var(--primary)' : '1px solid var(--border)',
 										whiteSpace: 'nowrap',
+										background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
+										color: activeTab === tab.key ? '#fff' : 'var(--muted)',
+										fontFamily: "'PingAR', sans-serif",
 									}}
 								>
 									{tab.label}
 								</button>
 							))}
 						</div>
-						<button style={{
+						<select style={{
 							background: 'var(--surface)',
 							border: '1px solid var(--border)',
 							borderRadius: 12,
 							padding: '10px 14px',
 							color: 'var(--foreground)',
+							fontFamily: "'PingAR', sans-serif",
+							fontWeight: 300,
 							fontSize: '0.85rem',
 							cursor: 'pointer',
-							display: 'flex',
-							alignItems: 'center',
-							gap: '6px',
 						}}>
-							{isAr ? "الأحدث" : "Latest"} ▼
-						</button>
-						<button style={{
-							background: 'var(--surface)',
-							border: '1px solid var(--border)',
-							borderRadius: 10,
-							padding: 10,
-							cursor: 'pointer',
-							display: 'flex',
-							alignItems: 'center',
-							justifyContent: 'center',
-						}}>
-							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-								<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-							</svg>
-						</button>
+							<option>{isAr ? "الأحدث" : "Latest"}</option>
+						</select>
 					</div>
 
 					{/* 4. Course cards grid */}
 					{isLoading && (
 						<div style={{
 							display: 'grid',
-							gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+							gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
 							gap: 16,
 						}} className="course-grid">
 							{[1, 2, 3].map(i => (
@@ -400,11 +382,11 @@ export default function MyCoursesPage() {
 									borderRadius: 20,
 									overflow: 'hidden',
 								}}>
-									<div style={{ height: 180, background: 'var(--surface)' }} />
+									<div style={{ height: 180, background: 'var(--surface-2)' }} />
 									<div style={{ padding: 16 }}>
-										<div style={{ height: 16, width: '70%', background: 'var(--surface)', borderRadius: 4, marginBottom: 8 }} />
-										<div style={{ height: 12, width: '90%', background: 'var(--surface)', borderRadius: 4, marginBottom: 12 }} />
-										<div style={{ height: 12, width: '50%', background: 'var(--surface)', borderRadius: 4 }} />
+										<div style={{ height: 16, width: '70%', background: 'var(--surface-2)', borderRadius: 4, marginBottom: 8 }} />
+										<div style={{ height: 12, width: '90%', background: 'var(--surface-2)', borderRadius: 4, marginBottom: 12 }} />
+										<div style={{ height: 12, width: '50%', background: 'var(--surface-2)', borderRadius: 4 }} />
 									</div>
 								</div>
 							))}
@@ -462,7 +444,7 @@ export default function MyCoursesPage() {
 					{!isLoading && filteredCourses.length > 0 && (
 						<div style={{
 							display: 'grid',
-							gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+							gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
 							gap: 16,
 						}} className="course-grid">
 							{filteredCourses.map((course: any) => {
@@ -477,16 +459,14 @@ export default function MyCoursesPage() {
 										border: '1px solid var(--border)',
 										borderRadius: 20,
 										overflow: 'hidden',
-										position: 'relative',
 										transition: 'border-color 0.2s',
 									}} className="course-card">
-										{/* Thumbnail */}
+										{/* Thumbnail area */}
 										<div style={{
 											height: 180,
-											width: '100%',
-											background: 'var(--surface)',
 											position: 'relative',
 											overflow: 'hidden',
+											background: course.thumbnail ? 'transparent' : 'var(--surface-2)',
 										}}>
 											{course.thumbnail ? (
 												<img src={getMediaUrl(course.thumbnail) ?? ''} alt={title}
@@ -499,9 +479,10 @@ export default function MyCoursesPage() {
 													alignItems: 'center',
 													justifyContent: 'center',
 												}}>
-													<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-														<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-														<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+													<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+														<rect x="3" y="3" width="18" height="18" rx="2" />
+														<circle cx="8.5" cy="8.5" r="1.5" />
+														<polyline points="21,15 16,10 5,21" />
 													</svg>
 												</div>
 											)}
@@ -519,62 +500,50 @@ export default function MyCoursesPage() {
 												display: 'flex',
 												alignItems: 'center',
 												gap: 6,
+												fontFamily: "'PingAR', sans-serif",
 											}}>
 												{statusConfig.hasDot && (
 													<span style={{
-														width: 6,
-														height: 6,
+														width: 7,
+														height: 7,
 														borderRadius: '50%',
 														background: statusConfig.pulse ? '#dc2626' : statusConfig.color,
 														animation: statusConfig.pulse ? 'pulse 1.5s ease-in-out infinite' : 'none',
 													}} />
 												)}
-												{isAr ? statusConfig.ar : statusConfig.key}
+												{isAr ? statusConfig.ar : (statusConfig.key === 'rejected' ? 'مرفوض' : statusConfig.ar)}
 											</div>
 										</div>
 
 										{/* Card body */}
 										<div style={{ padding: 16 }}>
-											<h3 style={{
-												fontWeight: 700,
-												fontSize: '1rem',
+											<div style={{
+												fontWeight: 500,
+												fontSize: '0.97rem',
 												color: 'var(--foreground)',
-												marginBottom: 6,
-												overflow: 'hidden',
-												textOverflow: 'ellipsis',
+												marginBottom: 8,
 												display: '-webkit-box',
 												WebkitLineClamp: 2,
 												WebkitBoxOrient: 'vertical',
+												overflow: 'hidden',
 												lineHeight: 1.4,
+												fontFamily: "'PingAR', sans-serif",
 											}}>
 												{title}
-											</h3>
-											{course.description && (
-												<p style={{
-													color: 'var(--muted)',
-													fontSize: '0.82rem',
-													lineHeight: 1.5,
-													marginBottom: 12,
-													overflow: 'hidden',
-													textOverflow: 'ellipsis',
-													display: '-webkit-box',
-													WebkitLineClamp: 2,
-													WebkitBoxOrient: 'vertical',
-												}}>
-													{course.description}
-												</p>
-											)}
+											</div>
 
 											{/* Meta row */}
 											<div style={{
 												display: 'flex',
 												gap: 16,
-												alignItems: 'center',
 												fontSize: '0.8rem',
 												color: 'var(--muted)',
+												fontWeight: 300,
+												marginBottom: 12,
+												fontFamily: "'PingAR', sans-serif",
 											}}>
 												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 														<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
 														<circle cx="9" cy="7" r="4" />
 														<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -583,7 +552,7 @@ export default function MyCoursesPage() {
 													<span>{enrollments} {isAr ? "طالب" : "students"}</span>
 												</div>
 												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 														<line x1="12" y1="1" x2="12" y2="23" />
 														<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
 													</svg>
@@ -595,7 +564,6 @@ export default function MyCoursesPage() {
 											<div style={{
 												display: 'flex',
 												gap: 8,
-												marginTop: 12,
 												alignItems: 'center',
 											}}>
 												{isInstructor ? (
@@ -603,45 +571,71 @@ export default function MyCoursesPage() {
 														<Link href={`/${locale}/dashboard/courses/${course.id}/manage`} style={{
 															background: 'var(--primary)',
 															color: '#fff',
+															border: 'none',
 															borderRadius: 10,
 															padding: '8px 20px',
 															fontSize: '0.85rem',
 															fontWeight: 500,
 															textDecoration: 'none',
-															flex: 1,
-															textAlign: 'center',
+															fontFamily: "'PingAR', sans-serif",
 														}}>
 															{isAr ? "إدارة" : "Manage"}
 														</Link>
-														<button style={{
-															background: 'var(--surface-2)',
-															border: '1px solid var(--border)',
-															borderRadius: 10,
-															padding: 8,
-															cursor: 'pointer',
-															display: 'flex',
-															alignItems: 'center',
-															justifyContent: 'center',
-														}}>
+														{course.type === 'live' && course.status === 'PUBLISHED' && course.liveStatus !== 'ended' && (
+															<button
+																onClick={async () => {
+																	try {
+																		const lessonsRes = await get(`/courses/${course.id}/lessons`)
+																		const lessons = (lessonsRes?.data as any)?.data || lessonsRes?.data || []
+																		const liveLesson = lessons.find((l: any) => l.lessonType === 'LIVE' || l.type === 'LIVE')
+																		if (liveLesson?.id) {
+																			await post(`/live/lesson-start/${liveLesson.id}`, {})
+																			router.push(`/${locale}/dashboard/courses/${course.id}/go-live?lessonId=${liveLesson.id}`)
+																		} else {
+																			router.push(`/${locale}/dashboard/courses/${course.id}/manage`)
+																		}
+																	} catch (e) {
+																		router.push(`/${locale}/dashboard/courses/${course.id}/manage`)
+																	}
+																}}
+																style={{
+																	background: 'var(--primary)',
+																	color: '#fff',
+																	border: 'none',
+																	borderRadius: 10,
+																	padding: '8px 16px',
+																	fontSize: '0.85rem',
+																	fontWeight: 500,
+																	cursor: 'pointer',
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 6,
+																	fontFamily: "'PingAR', sans-serif",
+																	marginLeft: 6,
+																}}
+															>
+																<span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1.5s infinite' }} />
+																{isAr ? "بدء البث" : "Start Live"}
+															</button>
+														)}
+														<button
+															onClick={() => handleDelete(course.id)}
+															style={{
+																marginLeft: 'auto',
+																background: 'transparent',
+																border: 'none',
+																cursor: 'pointer',
+																padding: 6,
+																borderRadius: 8,
+																display: 'flex',
+																alignItems: 'center',
+																justifyContent: 'center',
+															}}
+														>
 															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-																<circle cx="12" cy="12" r="3" />
-																<path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
-															</svg>
-														</button>
-														<button onClick={() => handleDelete(course.id)} style={{
-															marginLeft: 'auto',
-															background: 'transparent',
-															border: 'none',
-															cursor: 'pointer',
-															padding: 6,
-															display: 'flex',
-															alignItems: 'center',
-															justifyContent: 'center',
-														}}>
-															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																<circle cx="12" cy="5" r="1" />
 																<circle cx="12" cy="12" r="1" />
-																<circle cx="19" cy="12" r="1" />
-																<circle cx="5" cy="12" r="1" />
+																<circle cx="12" cy="19" r="1" />
 															</svg>
 														</button>
 													</>
@@ -652,13 +646,13 @@ export default function MyCoursesPage() {
 														style={{
 															background: 'var(--primary)',
 															color: '#fff',
+															border: 'none',
 															borderRadius: 10,
 															padding: '8px 20px',
 															fontSize: '0.85rem',
 															fontWeight: 500,
 															textDecoration: 'none',
-															flex: 1,
-															textAlign: 'center',
+															fontFamily: "'PingAR', sans-serif",
 														}}>
 														{isAr ? "متابعة" : "Continue"}
 													</a>
