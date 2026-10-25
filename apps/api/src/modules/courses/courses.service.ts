@@ -35,8 +35,9 @@ export class CoursesService {
     type?: string;
     sort?: string;
     userId?: string;
+    country?: string;
   }) {
-    const { page, limit, careerPath, categoryId, level, search, language, type, sort, userId } = options;
+    const { page, limit, careerPath, categoryId, level, search, language, type, sort, userId, country } = options;
     const effectiveLimit = limit || 100;
     const safePage = page || 1;
     const skip = (safePage - 1) * effectiveLimit;
@@ -128,6 +129,8 @@ export class CoursesService {
           descriptionAr: true,
           thumbnail: true,
           price: true,
+          priceEGP: true,
+          priceUSD: true,
           level: true,
           type: true,
           liveStatus: true,
@@ -176,7 +179,7 @@ export class CoursesService {
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
-      price: course.price,
+      price: this.resolvePrice(course as any, country),
       level: course.level,
       type: course.type,
       liveStatus: course.liveStatus,
@@ -1573,6 +1576,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.description !== undefined && { descriptionEn: dto.description }),
         ...(dto.descriptionAr !== undefined && { descriptionAr: dto.descriptionAr }),
         ...(dto.price !== undefined && { price: dto.price }),
+        ...(dto.priceEGP !== undefined && { priceEGP: dto.priceEGP }),
+        ...(dto.priceUSD !== undefined && { priceUSD: dto.priceUSD }),
         ...(dto.level && { level: dto.level }),
         ...(dto.status && { status: dto.status as any }),
         ...(dto.thumbnail !== undefined && { thumbnail: dto.thumbnail }),
@@ -2084,6 +2089,12 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     if (enrollments === 0) return 0;
     const completionRate = certificates / enrollments;
     return Math.min(5, 3 + completionRate * 2); // Rating between 3-5 based on completion rate
+  }
+
+  resolvePrice(course: { price: number; priceEGP?: any; priceUSD?: any }, country?: string | null): number {
+    if (country === 'EG' && course.priceEGP != null) return Number(course.priceEGP);
+    if (country === 'US' && course.priceUSD != null) return Number(course.priceUSD);
+    return Number(course.price);
   }
 
   private generateSlug(title: string): string {

@@ -336,6 +336,8 @@ model Course {
   previewVideo  String?
   price         Float        @default(0)
   currency      String       @default("USD")
+  priceEGP      Decimal?
+  priceUSD      Decimal?
   duration      Int?
   level         String       @default("BEGINNER")
   tags          String[]     @default([])
@@ -1282,6 +1284,18 @@ model WalletTransaction {
   @@index([userId])
   @@index([createdAt])
   @@map("wallet_transactions")
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Float
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rates")
 }
 
 enum LiveSessionStatus {

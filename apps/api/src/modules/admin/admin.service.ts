@@ -1521,6 +1521,31 @@ export class AdminService {
     }, {});
   }
 
+  async getExchangeRates() {
+    const keys = ['exchange.USD_SAR', 'exchange.USD_EGP'];
+    const rows = await this.prisma.siteSetting.findMany({ where: { key: { in: keys } } });
+    const map: Record<string, number> = {};
+    for (const r of rows) map[r.key] = Number(r.value);
+    return {
+      usdToSar: map['exchange.USD_SAR'] ?? 3.75,
+      usdToEgp: map['exchange.USD_EGP'] ?? 50.0,
+    };
+  }
+
+  async updateExchangeRates(body: { usdToSar?: number; usdToEgp?: number }) {
+    const updates: Array<{ key: string; value: number; group: string; type: string }> = [];
+    if (body.usdToSar != null) updates.push({ key: 'exchange.USD_SAR', value: body.usdToSar, group: 'exchange', type: 'number' });
+    if (body.usdToEgp != null) updates.push({ key: 'exchange.USD_EGP', value: body.usdToEgp, group: 'exchange', type: 'number' });
+    for (const u of updates) {
+      await this.prisma.siteSetting.upsert({
+        where: { key: u.key },
+        create: { key: u.key, value: u.value, group: u.group, type: u.type },
+        update: { value: u.value },
+      });
+    }
+    return { success: true };
+  }
+
   async resetCmsSettings() {
     const defaults = [
       { key: 'theme.primaryColor', value: '#5120C8', group: 'theme', type: 'color' },

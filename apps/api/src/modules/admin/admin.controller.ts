@@ -966,6 +966,21 @@ export class AdminController {
     return await this.adminService.resetCmsSettings();
   }
 
+  // ── Exchange Rates ─────────────────────────────────────────────────────────
+
+  @Get('exchange-rate')
+  @ApiOperation({ summary: 'Get exchange rates (USD→SAR, USD→EGP)' })
+  async getExchangeRates() {
+    return this.adminService.getExchangeRates();
+  }
+
+  @Patch('exchange-rate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update exchange rates' })
+  async updateExchangeRates(@Body() body: { usdToSar?: number; usdToEgp?: number }) {
+    return this.adminService.updateExchangeRates(body);
+  }
+
   @Get('site-config')
   @Public()
   @ApiOperation({ summary: 'Public site configuration for frontend' })

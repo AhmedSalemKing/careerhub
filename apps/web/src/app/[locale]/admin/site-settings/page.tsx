@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { applySiteSettings } from '../../../components/Providers'
-import { Home, MessageSquare, FileText, Save } from 'lucide-react'
+import { Home, MessageSquare, FileText, Save, DollarSign } from 'lucide-react'
 
 type SiteConfig = Record<string, any>
 
@@ -10,6 +10,7 @@ const TABS = [
   { id: 'landing', label: 'الصفحة الرئيسية', icon: Home },
   { id: 'testimonials', label: 'آراء المستخدمين', icon: MessageSquare },
   { id: 'pages', label: 'الصفحات', icon: FileText },
+  { id: 'pricing', label: 'أسعار الصرف', icon: DollarSign },
 ]
 
   const inputStyle: React.CSSProperties = {
@@ -38,10 +39,35 @@ export default function CMSSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('landing')
   const [saved, setSaved] = useState(false)
+  const [rates, setRates] = useState({ usdToSar: 3.75, usdToEgp: 50.0 })
+  const [ratesSaving, setRatesSaving] = useState(false)
+  const [ratesSaved, setRatesSaved] = useState(false)
 
   const g = (key: string, fallback: any = '') => siteConfig[key] ?? fallback
   const set = (key: string, value: any) =>
     setSiteConfig((prev) => ({ ...prev, [key]: value }))
+
+  useEffect(() => {
+    api.get('/admin/exchange-rate')
+      .then((res) => {
+        const d = res.data.data ?? res.data
+        if (d?.usdToSar != null) setRates({ usdToSar: d.usdToSar, usdToEgp: d.usdToEgp })
+      })
+      .catch(() => {})
+  }, [])
+
+  async function handleSaveRates() {
+    setRatesSaving(true)
+    try {
+      await api.patch('/admin/exchange-rate', rates)
+      setRatesSaved(true)
+      setTimeout(() => setRatesSaved(false), 3000)
+    } catch (e) {
+      console.error('Save rates failed:', e)
+    } finally {
+      setRatesSaving(false)
+    }
+  }
 
   useEffect(() => {
     api.get('/admin/cms-settings')
@@ -294,6 +320,53 @@ export default function CMSSettingsPage() {
                   + إضافة رأي جديد
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* ══ PRICING ══ */}
+          {activeTab === 'pricing' && (
+            <div style={cardStyle}>
+              <SectionTitle label="أسعار الصرف" />
+              <p style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '-8px', marginBottom: '16px' }}>
+                تُستخدم لتحويل الأسعار تلقائيًا حسب بلد المستخدم
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" style={{ marginTop: '12px' }}>
+                <div>
+                  <Label text="1 USD = ? SAR" />
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={rates.usdToSar}
+                    onChange={(e) => setRates(r => ({ ...r, usdToSar: parseFloat(e.target.value) || 0 }))}
+                    style={inputStyle}
+                  />
+                </div>
+                <div>
+                  <Label text="1 USD = ? EGP" />
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={rates.usdToEgp}
+                    onChange={(e) => setRates(r => ({ ...r, usdToEgp: parseFloat(e.target.value) || 0 }))}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+              <button
+                onClick={handleSaveRates}
+                disabled={ratesSaving}
+                style={{
+                  marginTop: '20px',
+                  padding: '12px 24px',
+                  borderRadius: '10px',
+                  background: ratesSaved ? '#10b981' : ratesSaving ? 'rgba(81,32,200,0.5)' : '#5120C8',
+                  color: '#fff', border: 'none',
+                  cursor: ratesSaving ? 'wait' : 'pointer',
+                  fontWeight: 700, fontSize: '14px',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                }}
+              >
+                <Save className="h-4 w-4" />
+                {ratesSaved ? 'تم الحفظ' : ratesSaving ? 'جاري الحفظ...' : 'حفظ أسعار الصرف'}
+              </button>
             </div>
           )}
 

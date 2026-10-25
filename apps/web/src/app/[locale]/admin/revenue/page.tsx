@@ -50,6 +50,13 @@ export default function AdminRevenuePage() {
   const sessionTotal = paidSessions.reduce((sum: number, s: any) => sum + Number(s.price || 0), 0)
   const total = paymentTotal + sessionTotal
 
+  const sarPayments = payments.filter((p: any) => !p.currency || p.currency === 'SAR')
+  const egpPayments = payments.filter((p: any) => p.currency === 'EGP')
+  const usdPayments = payments.filter((p: any) => p.currency === 'USD')
+  const sarTotal = sarPayments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
+  const egpTotal = egpPayments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
+  const usdTotal = usdPayments.reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
+
   const monthlyPayments = payments
     .filter((p) => new Date(p.createdAt) >= monthStart)
     .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0)
@@ -117,6 +124,20 @@ export default function AdminRevenuePage() {
           <BarChart2 size={18} style={{ color: '#5120c8' }} />
           {isAr ? 'توزيع الإيرادات' : 'Revenue Breakdown'}
         </h2>
+        {(egpTotal > 0 || usdTotal > 0) && (
+          <div className="grid grid-cols-3 gap-3 mb-4 pb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            {[
+              { currency: 'SAR', amount: sarTotal, label: isAr ? 'ريال سعودي' : 'Saudi Riyal', color: '#10b981' },
+              { currency: 'EGP', amount: egpTotal, label: isAr ? 'جنيه مصري' : 'Egyptian Pound', color: '#f59e0b' },
+              { currency: 'USD', amount: usdTotal, label: isAr ? 'دولار أمريكي' : 'US Dollar', color: '#3b82f6' },
+            ].map((c) => (
+              <div key={c.currency} className="rounded-lg p-3" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--muted)' }}>{c.label}</p>
+                <p className="text-lg font-bold" style={{ color: c.color }}>{c.amount.toLocaleString(isAr ? 'ar-SA' : 'en-US')} {c.currency}</p>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="grid sm:grid-cols-2 gap-4">
           <div
             className="rounded-lg p-4 border"

@@ -13,6 +13,7 @@
   HttpStatus,
   ParseIntPipe,
   BadRequestException,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CoursesService } from './courses.service';
@@ -63,8 +64,11 @@ export class CoursesController {
     @Query('type') type?: string,
     @Query('sort') sort?: string,
     @Request() req?: any,
+    @Headers('x-vercel-ip-country') country?: string,
+    @Headers('cf-ipcountry') cfCountry?: string,
   ) {
     const userId = req?.user?.id
+    const resolvedCountry = country || cfCountry || undefined
     console.log('[Courses Controller] userId:', userId, 'auth:', !!req?.user)
 
     const courses = await this.coursesService.getCourses({
@@ -78,6 +82,7 @@ export class CoursesController {
       type,
       sort,
       userId,
+      country: resolvedCountry,
     });
 
     if (req?.user?.id && search) {
