@@ -5,17 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { learnUrlWithToken } from "../../../../lib/learn-link";
-import {
-	BookOpen,
-	Play,
-	Radio,
-	MapPin,
-	Video,
-	Clock,
-	CheckCircle2,
-	AlertCircle,
-	Square,
-} from "lucide-react";
 import { get } from "../../../../lib/api";
 import { AuthGate } from "../../../components/AuthGate";
 import ConfirmModal from "@/components/ConfirmModal";
@@ -27,25 +16,23 @@ function getTitle(c: any, locale: string) {
 	return c.titleEn || c.titleAr || c.title || "Untitled";
 }
 
-function getTypeConfig(course: any) {
-	const type = course.type || "recorded";
-	if (type === "live")
-		return { label: "Live", ar: "بث مباشر", icon: Radio, color: "#dc2626", bg: "rgba(220,38,38,0.1)" };
-	if (type === "offline")
-		return { label: "Offline", ar: "مقر فعلي", icon: MapPin, color: "#16a34a", bg: "rgba(22,163,74,0.1)" };
-	return { label: "Recorded", ar: "مسجل", icon: Video, color: "#5120c8", bg: "rgba(81,32,200,0.1)" };
-}
-
-function getStatusConfig(status: string) {
+function getStatusConfig(status: string, course: any) {
+	// Check for live course ended
+	if (course?.type === "live" && course?.liveStatus === "ended") {
+		return { key: "ended", ar: "انتهى البث", color: "#dc2626", bg: "rgba(220,38,38,0.08)", hasDot: false };
+	}
+	if (course?.type === "live" && course?.liveStatus === "live") {
+		return { key: "live", ar: "بث مباشر", color: "#dc2626", bg: "rgba(220,38,38,0.12)", hasDot: true, pulse: true };
+	}
 	switch (status) {
 		case "PUBLISHED":
-			return { label: "Published", ar: "منشور", color: "#16a34a", bg: "rgba(22,163,74,0.1)", icon: CheckCircle2 };
+			return { key: "published", ar: "منشور", color: "var(--success)", bg: "var(--success-subtle)", hasDot: true };
 		case "DRAFT":
-			return { label: "Draft", ar: "مسودة", color: "#f59e0b", bg: "rgba(245,158,11,0.1)", icon: AlertCircle };
+			return { key: "draft", ar: "مسودة", color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
 		case "PENDING_REVIEW":
-			return { label: "Pending", ar: "قيد المراجعة", color: "#ffffff", bg: "rgba(81,32,200,0.1)", icon: Clock };
+			return { key: "pending", ar: "قيد المراجعة", color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
 		default:
-			return { label: status, ar: status, color: "#6b7280", bg: "rgba(107,114,128,0.1)", icon: AlertCircle };
+			return { key: status, ar: status, color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
 	}
 }
 
@@ -55,6 +42,8 @@ export default function MyCoursesPage() {
 	const { user, hydrate } = useAuthStore();
 	const [courses, setCourses] = useState<any[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const [activeTab, setActiveTab] = useState<string>("all");
+	const [searchQuery, setSearchQuery] = useState<string>("");
 
 	useEffect(() => { hydrate(); }, [hydrate]);
 
@@ -114,394 +103,574 @@ export default function MyCoursesPage() {
 		})
 	};
 
+	// Filter courses
+	const filteredCourses = courses.filter((course: any) => {
+		// Filter by tab
+		if (activeTab === "published") {
+			if (course.status !== "PUBLISHED") return false;
+		} else if (activeTab === "live") {
+			if (course.type !== "live" || course.liveStatus === "ended") return false;
+		} else if (activeTab === "draft") {
+			if (course.status !== "DRAFT") return false;
+		} else if (activeTab === "ended") {
+			if (!(course.type === "live" && course.liveStatus === "ended")) return false;
+		}
+		// Filter by search
+		if (searchQuery) {
+			const title = getTitle(course, locale).toLowerCase();
+			if (!title.includes(searchQuery.toLowerCase())) return false;
+		}
+		return true;
+	});
+
+	const tabs = [
+		{ key: "all", label: isAr ? "الكل" : "All" },
+		{ key: "live", label: isAr ? "بث مباشر" : "Live" },
+		{ key: "draft", label: isAr ? "مسودة" : "Draft" },
+		{ key: "published", label: isAr ? "منشور" : "Published" },
+		{ key: "ended", label: isAr ? "انتهى البث" : "Ended" },
+	];
+
 	return (
 		<AuthGate>
-			<div className="p-4 md:p-6" dir={isAr ? "rtl" : "ltr"} style={{
-			width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
-		}}>
-				{/* PAGE HEADER */}
-				<div style={{
-					display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-					marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
-				}}>
-					<div>
-						<h1 style={{ fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 800, margin: 0 }}>
-							{isAr ? 'كورساتي' : 'My Courses'}
-						</h1>
-						<p style={{ color: 'var(--muted-foreground)', marginTop: '4px', fontSize: '0.9rem' }}>
-							{courses.length} {isAr ? 'كورس' : 'courses'}
-						</p>
-					</div>
-					{isInstructor && (
-						<Link href={`/${locale}/dashboard/create-course`} style={{
-							display: 'inline-flex', alignItems: 'center', gap: '8px',
-							padding: '10px 20px', borderRadius: '10px',
-							background: 'var(--primary, #5120c8)', color: '#fff',
-							fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
-						}}>
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-								stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-								<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-							</svg>
-							{isAr ? 'إنشاء كورس' : 'New Course'}
-						</Link>
-					)}
-				</div>
-
-				{/* STATS BAR */}
-				{isInstructor && !isLoading && courses.length > 0 && (
+			<div dir="rtl" style={{
+				width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
+				background: 'var(--background)',
+				minHeight: '100vh',
+			}}>
+				<div style={{ padding: '24px 20px', maxWidth: '1400px', margin: '0 auto' }}>
+					{/* 1. Hero section */}
 					<div style={{
-						display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-						gap: '1rem', marginBottom: '2rem',
+						display: 'flex',
+						alignItems: 'center',
+						justifyContent: 'space-between',
+						gap: '24px',
+						flexWrap: 'wrap',
+						direction: 'rtl',
+						marginBottom: '24px',
 					}}>
-						{[
-							{
-								labelAr: 'إجمالي الطلاب', labelEn: 'Total Students',
-								value: totalStudents,
-								icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-							},
-							{
-								labelAr: 'إجمالي الإيرادات', labelEn: 'Total Revenue',
-								value: `${totalRevenue.toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`,
-								icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
-							},
-							{
-								labelAr: 'كورسات منشورة', labelEn: 'Published',
-								value: publishedCount,
-								icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-							},
-						].map((stat, i) => (
-							<div key={i} style={{
-								padding: '1rem 1.25rem',
-								background: 'rgba(255,255,255,0.03)',
-								border: '1px solid rgba(255,255,255,0.08)',
-								borderRadius: '12px',
-								display: 'flex', alignItems: 'center', gap: '12px',
+						<div style={{ flex: '1', minWidth: '250px' }}>
+							<h1 style={{
+								fontWeight: 700,
+								fontSize: 'clamp(2rem, 5vw, 3rem)',
+								color: 'var(--foreground)',
+								margin: 0,
+								marginBottom: '8px',
 							}}>
+								{isAr ? "كورساتي" : "My Courses"}
+							</h1>
+							<p style={{
+								color: 'var(--muted)',
+								fontSize: '0.9rem',
+								margin: 0,
+								marginBottom: '16px',
+							}}>
+								{isAr ? "إدارة ومتابعة الكورسات التي أنشأتها" : "Manage and track the courses you created"}
+							</p>
+							<div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
 								<div style={{
-									width: '40px', height: '40px', borderRadius: '10px',
-									background: 'rgba(81,32,200,0.15)',
-									display: 'flex', alignItems: 'center', justifyContent: 'center',
-									color: '#a78bfa',
+									background: 'var(--surface)',
+									border: '1px solid var(--border)',
+									borderRadius: 999,
+									padding: '6px 16px',
+									fontSize: '0.85rem',
+									color: 'var(--foreground)',
 								}}>
-									{stat.icon}
+									{courses.length} {isAr ? "كورس" : "courses"}
 								</div>
-								<div>
-									<p style={{ fontSize: '1.4rem', fontWeight: 700, margin: 0 }}>
-										{stat.value}
-									</p>
-									<p style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', margin: 0 }}>
-										{isAr ? stat.labelAr : stat.labelEn}
-									</p>
-								</div>
-							</div>
-						))}
-					</div>
-				)}
-
-				{/* LOADING */}
-				{isLoading && (
-					<div style={{
-						display: 'grid',
-						gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))',
-						gap: '1.25rem',
-					}}>
-						{[1, 2, 3].map(i => (
-							<div key={i} style={{
-								background: 'rgba(255,255,255,0.03)',
-								border: '1px solid rgba(255,255,255,0.08)',
-								borderRadius: '16px', overflow: 'hidden',
-							}}>
-								<div style={{ height: '160px', background: 'rgba(255,255,255,0.05)', animation: 'pulse 1.5s infinite' }} />
-								<div style={{ padding: '1rem 1.25rem' }}>
-									<div style={{ height: '16px', width: '70%', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }}/>
-									<div style={{ height: '12px', width: '40%', marginTop: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }}/>
-								</div>
-							</div>
-						))}
-					</div>
-				)}
-
-				{/* EMPTY STATE */}
-				{!isLoading && courses.length === 0 && (
-					<div style={{
-						textAlign:'center', padding:'3rem 1rem',
-						background:'rgba(255,255,255,0.02)',
-						border:'1px dashed rgba(255,255,255,0.08)',
-						borderRadius:'16px',
-					}}>
-						<div style={{
-							width:'72px', height:'72px', borderRadius:'18px',
-							background:'rgba(81,32,200,0.1)',
-							border:'1px solid rgba(81,32,200,0.2)',
-							display:'flex', alignItems:'center', justifyContent:'center',
-							margin:'0 auto 1.25rem',
-						}}>
-							<svg width="32" height="32" viewBox="0 0 24 24" fill="none"
-								stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
-								<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-								<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-							</svg>
-						</div>
-						<h3 style={{ fontSize:'1.1rem', fontWeight:700, margin:'0 0 8px' }}>
-							{isInstructor
-								? (isAr ? 'لا توجد كورسات بعد' : 'No courses yet')
-								: (isAr ? 'لم تشترك في أي كورس بعد' : 'Not enrolled in any course')}
-						</h3>
-						<p style={{ color:'var(--muted-foreground)', fontSize:'0.875rem',
-							margin:'0 0 1.5rem', maxWidth:'300px', marginInline:'auto' }}>
-							{isInstructor
-								? (isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge')
-								: (isAr ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start your learning journey')}
-						</p>
-						<a href={isInstructor ? `/${locale}/dashboard/create-course` : learnUrlWithToken(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
-							padding:'10px 24px', borderRadius:'10px',
-							background:'#5120c8', color:'#fff',
-							textDecoration:'none', fontWeight:600, fontSize:'0.875rem',
-							display:'inline-flex', alignItems:'center', gap:'8px',
-						}}>
-							<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-								stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-								<line x1="12" y1="5" x2="12" y2="19"/>
-								<line x1="5" y1="12" x2="19" y2="12"/>
-							</svg>
-							{isInstructor
-								? (isAr ? 'إنشاء كورس جديد' : 'Create Course')
-								: (isAr ? 'تصفح الكورسات' : 'Browse Courses')}
-						</a>
-					</div>
-				)}
-
-				{/* COURSE GRID */}
-				{!isLoading && courses.length > 0 && (
-					<div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
-						{courses.map((course: any) => {
-							const title = getTitle(course, locale);
-							const typeConfig = getTypeConfig(course);
-							const statusConfig = getStatusConfig(course.status);
-							const TypeIcon = typeConfig.icon;
-							const enrollments = course._count?.enrollments || course.enrollmentsCount || course.enrollments || 0;
-							const earnings = course.earnings || course.revenue || 0;
-
-							return (
-								<div key={course.id} style={{
-									background: 'rgba(255,255,255,0.03)',
-									border: '1px solid rgba(255,255,255,0.08)',
-									borderRadius: '16px',
-									overflow: 'hidden',
-									transition: 'border-color 0.2s',
-									position: 'relative',
-									width: '100%', minWidth: 0, boxSizing: 'border-box',
-								}}>
-									{/* Thumbnail */}
-									<div style={{
-										width: '100%', aspectRatio: '16/9', background: '#1a1a2e',
-										position: 'relative', overflow: 'hidden',
+								{isInstructor && (
+									<Link href={`/${locale}/dashboard/create-course`} style={{
+										display: 'inline-flex',
+										alignItems: 'center',
+										gap: '8px',
+										background: 'var(--primary)',
+										color: '#fff',
+										borderRadius: 12,
+										padding: '10px 20px',
+										fontSize: '0.9rem',
+										fontWeight: 500,
+										textDecoration: 'none',
 									}}>
-										{course.thumbnail ? (
-											<img src={getMediaUrl(course.thumbnail) ?? ''} alt={title}
-												style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />
-										) : (
-											<div style={{
-												width: '100%', height: '100%',
-												background: 'linear-gradient(135deg, #1a0a2e 0%, #2d1054 100%)',
-												display: 'flex', alignItems: 'center', justifyContent: 'center',
-											}}>
-												<TypeIcon style={{ width: 48, height: 48, opacity: 0.2 }} />
-											</div>
-										)}
+										<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+											<line x1="12" y1="5" x2="12" y2="19" />
+											<line x1="5" y1="12" x2="19" y2="12" />
+										</svg>
+										{isAr ? "+ إنشاء كورس" : "+ Create Course"}
+									</Link>
+								)}
+							</div>
+						</div>
+						<div style={{
+							background: 'var(--surface)',
+							border: '1px solid var(--border)',
+							borderRadius: 20,
+							padding: 24,
+							width: 280,
+							textAlign: 'center',
+						}}>
+							<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px', display: 'block' }}>
+								<path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+								<path d="M6 12v5c3 3 9 3 12 0v-5" />
+							</svg>
+							<div style={{ fontWeight: 700, color: 'var(--foreground)', marginBottom: '6px' }}>
+								{isAr ? "مستقبلك التعليمي يبدأ هنا" : "Your learning future starts here"}
+							</div>
+							<div style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>
+								{isAr ? "أنشئ كورسات ملهمة وشارك معرفتك مع آلاف الطلاب حول العالم." : "Create inspiring courses and share your knowledge with thousands of students worldwide."}
+							</div>
+						</div>
+					</div>
 
-										{/* Status badge */}
-										<div style={{
-											position: 'absolute', top: '10px', right: '10px',
-											padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem',
-											fontWeight: 600,
-											background: statusConfig.bg,
-											border: `1px solid ${statusConfig.color}40`,
-											color: statusConfig.color,
-										}}>
-											{isAr ? statusConfig.ar : statusConfig.label}
+					{/* 2. Stats row */}
+					{isInstructor && !isLoading && courses.length > 0 && (
+						<div style={{
+							display: 'grid',
+							gridTemplateColumns: 'repeat(3, 1fr)',
+							gap: 12,
+							margin: '16px 0',
+						}} className="stats-grid">
+							{[
+								{
+									label: isAr ? 'إجمالي الطلاب' : 'Total Students',
+									value: totalStudents,
+									icon: (
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+											<circle cx="9" cy="7" r="4" />
+											<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+											<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+										</svg>
+									),
+									trend: "+12% من الشهر الماضي",
+								},
+								{
+									label: isAr ? 'الكورسات المنشورة' : 'Published Courses',
+									value: publishedCount,
+									icon: (
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+											<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+											<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+										</svg>
+									),
+								},
+								{
+									label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue',
+									value: `${totalRevenue.toLocaleString()} ${isAr ? 'ر.س' : 'SAR'}`,
+									icon: (
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+											<line x1="12" y1="1" x2="12" y2="23" />
+											<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+										</svg>
+									),
+								},
+							].map((stat, i) => (
+								<div key={i} style={{
+									background: 'var(--surface)',
+									border: '1px solid var(--border)',
+									borderRadius: 16,
+									padding: 20,
+									display: 'flex',
+									alignItems: 'center',
+									gap: 16,
+								}}>
+									<div style={{
+										width: 48,
+										height: 48,
+										borderRadius: 12,
+										background: 'var(--primary-subtle)',
+										display: 'flex',
+										alignItems: 'center',
+										justifyContent: 'center',
+										flexShrink: 0,
+									}}>
+										{stat.icon}
+									</div>
+									<div style={{ flex: 1 }}>
+										<div style={{ color: 'var(--muted)', fontSize: '0.8rem', marginBottom: '4px' }}>
+											{stat.label}
 										</div>
-
-										{/* Course type badge */}
-										{course.type === "live" && (
-											<div style={{
-												position: 'absolute', top: '10px', left: '10px',
-												padding: '3px 10px', borderRadius: '20px', fontSize: '0.72rem',
-												fontWeight: 600,
-												background: 'rgba(239,68,68,0.2)',
-												border: '1px solid rgba(239,68,68,0.4)',
-												color: '#f87171',
-											}}>
-												{course.liveStatus === 'ended'
-													? (isAr ? 'انتهى البث' : 'Ended')
-													: (isAr ? 'بث مباشر' : 'Live')}
-											</div>
-										)}
-
-										{/* Go Live actions for live courses */}
-										{course.type === "live" && course.liveStatus !== 'ended' && (
-											course.liveStatus === 'live' ? (
-												<a href={`/${locale}/dashboard/courses/${course.id}/go-live`}
-													onClick={(e) => e.stopPropagation()}
-													style={{
-														position: 'absolute', bottom: '10px', right: '10px',
-														display: 'flex', alignItems: 'center', gap: '4px',
-														padding: '4px 12px', borderRadius: '8px',
-														background: 'rgba(239,68,68,0.9)', color: '#fff',
-														fontSize: '0.72rem', fontWeight: 600, textDecoration: 'none',
-													}}>
-													<Radio size={12} />
-													{isAr ? 'إدارة البث' : 'Manage Live'}
-												</a>
-											) : (
-												<button onClick={(e) => { e.stopPropagation(); router.push(`/${locale}/dashboard/courses/${course.id}/go-live`); }}
-													style={{
-														position: 'absolute', bottom: '10px', right: '10px',
-														display: 'flex', alignItems: 'center', gap: '4px',
-														padding: '4px 12px', borderRadius: '8px',
-														background: 'rgba(239,68,68,0.9)', color: '#fff',
-														fontSize: '0.72rem', fontWeight: 600, border: 'none', cursor: 'pointer',
-													}}>
-													<Play size={12} />
-													{isAr ? 'بدء البث' : 'Go Live'}
-												</button>
-											)
-										)}
-										{course.type === "live" && course.liveStatus === 'ended' && (
-											<div style={{
-												position: 'absolute', bottom: '10px', right: '10px',
-												display: 'flex', alignItems: 'center', gap: '4px',
-												padding: '4px 12px', borderRadius: '8px',
-												background: 'rgba(107,114,128,0.2)', color: '#9ca3af',
-												fontSize: '0.72rem', fontWeight: 600,
-											}}>
-												<Square size={12} />
-												{isAr ? 'منتهي' : 'Ended'}
+										<div style={{ fontWeight: 700, fontSize: '1.5rem', color: 'var(--foreground)' }}>
+											{stat.value}
+										</div>
+										{stat.trend && (
+											<div style={{ color: 'var(--success)', fontSize: '0.75rem', marginTop: '2px' }}>
+												{stat.trend}
 											</div>
 										)}
 									</div>
+								</div>
+							))}
+						</div>
+					)}
 
-									{/* Card body */}
-									<div style={{ padding: '1rem 1.25rem' }}>
-										<h3 style={{
-											fontSize: 'clamp(11px, 3vw, 14px)', fontWeight: 700, margin: '0 0 8px',
-											overflow: 'hidden', textOverflow: 'ellipsis',
-											display: '-webkit-box', WebkitLineClamp: 2,
-											WebkitBoxOrient: 'vertical',
-										}}>
-											{title}
-										</h3>
+					{/* 3. Filter + Search bar */}
+					<div style={{
+						display: 'flex',
+						gap: 12,
+						alignItems: 'center',
+						margin: '16px 0',
+						direction: 'rtl',
+						flexWrap: 'wrap',
+					}}>
+						<div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+								style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)' }}>
+								<circle cx="11" cy="11" r="8" />
+								<line x1="21" y1="21" x2="16.65" y2="16.65" />
+							</svg>
+							<input
+								type="text"
+								placeholder={isAr ? "ابحث عن كورس..." : "Search for course..."}
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								style={{
+									width: '100%',
+									background: 'var(--surface)',
+									border: '1px solid var(--border)',
+									borderRadius: 12,
+									padding: '10px 16px 10px 40px',
+									color: 'var(--foreground)',
+									fontSize: '0.9rem',
+									boxSizing: 'border-box',
+								}}
+							/>
+						</div>
+						<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+							{tabs.map((tab) => (
+								<button
+									key={tab.key}
+									onClick={() => setActiveTab(tab.key)}
+									style={{
+										background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
+										color: activeTab === tab.key ? '#fff' : 'var(--muted)',
+										border: activeTab === tab.key ? 'none' : '1px solid var(--border)',
+										borderRadius: 999,
+										padding: '8px 16px',
+										fontSize: '0.85rem',
+										cursor: 'pointer',
+										whiteSpace: 'nowrap',
+									}}
+								>
+									{tab.label}
+								</button>
+							))}
+						</div>
+						<button style={{
+							background: 'var(--surface)',
+							border: '1px solid var(--border)',
+							borderRadius: 12,
+							padding: '10px 14px',
+							color: 'var(--foreground)',
+							fontSize: '0.85rem',
+							cursor: 'pointer',
+							display: 'flex',
+							alignItems: 'center',
+							gap: '6px',
+						}}>
+							{isAr ? "الأحدث" : "Latest"} ▼
+						</button>
+						<button style={{
+							background: 'var(--surface)',
+							border: '1px solid var(--border)',
+							borderRadius: 10,
+							padding: 10,
+							cursor: 'pointer',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+						}}>
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+							</svg>
+						</button>
+					</div>
 
-										{/* Stats row */}
+					{/* 4. Course cards grid */}
+					{isLoading && (
+						<div style={{
+							display: 'grid',
+							gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+							gap: 16,
+						}} className="course-grid">
+							{[1, 2, 3].map(i => (
+								<div key={i} style={{
+									background: 'var(--card-bg)',
+									border: '1px solid var(--border)',
+									borderRadius: 20,
+									overflow: 'hidden',
+								}}>
+									<div style={{ height: 180, background: 'var(--surface)' }} />
+									<div style={{ padding: 16 }}>
+										<div style={{ height: 16, width: '70%', background: 'var(--surface)', borderRadius: 4, marginBottom: 8 }} />
+										<div style={{ height: 12, width: '90%', background: 'var(--surface)', borderRadius: 4, marginBottom: 12 }} />
+										<div style={{ height: 12, width: '50%', background: 'var(--surface)', borderRadius: 4 }} />
+									</div>
+								</div>
+							))}
+						</div>
+					)}
+
+					{!isLoading && filteredCourses.length === 0 && (
+						<div style={{
+							textAlign: 'center',
+							padding: '3rem 1rem',
+							background: 'var(--surface)',
+							border: '1px dashed var(--border)',
+							borderRadius: 16,
+						}}>
+							<h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
+								{isInstructor
+									? (isAr ? 'لا توجد كورسات بعد' : 'No courses yet')
+									: (isAr ? 'لم تشترك في أي كورس بعد' : 'Not enrolled in any course')}
+							</h3>
+							<p style={{
+								color: 'var(--muted)',
+								fontSize: '0.875rem',
+								margin: '0 0 1.5rem',
+								maxWidth: '300px',
+								marginInline: 'auto'
+							}}>
+								{isInstructor
+									? (isAr ? 'ابدأ بإنشاء كورسك الأول وشارك معرفتك مع الطلاب' : 'Create your first course and share your knowledge')
+									: (isAr ? 'تصفح الكورسات المتاحة وابدأ رحلة التعلم' : 'Browse available courses and start your learning journey')}
+							</p>
+							{isInstructor && (
+								<Link href={`/${locale}/dashboard/create-course`} style={{
+									padding: '10px 24px',
+									borderRadius: 12,
+									background: 'var(--primary)',
+									color: '#fff',
+									textDecoration: 'none',
+									fontWeight: 500,
+									fontSize: '0.875rem',
+									display: 'inline-flex',
+									alignItems: 'center',
+									gap: '8px',
+								}}>
+									<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+										stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+										<line x1="12" y1="5" x2="12" y2="19" />
+										<line x1="5" y1="12" x2="19" y2="12" />
+									</svg>
+									{isAr ? 'إنشاء كورس جديد' : 'Create Course'}
+								</Link>
+							)}
+						</div>
+					)}
+
+					{!isLoading && filteredCourses.length > 0 && (
+						<div style={{
+							display: 'grid',
+							gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+							gap: 16,
+						}} className="course-grid">
+							{filteredCourses.map((course: any) => {
+								const title = getTitle(course, locale);
+								const statusConfig = getStatusConfig(course.status, course);
+								const enrollments = course._count?.enrollments || course.enrollmentsCount || course.enrollments || 0;
+								const coursePrice = course.price;
+
+								return (
+									<div key={course.id} style={{
+										background: 'var(--card-bg)',
+										border: '1px solid var(--border)',
+										borderRadius: 20,
+										overflow: 'hidden',
+										position: 'relative',
+										transition: 'border-color 0.2s',
+									}} className="course-card">
+										{/* Thumbnail */}
 										<div style={{
-											display: 'flex', alignItems: 'center', gap: '12px',
-											marginBottom: '1rem', flexWrap: 'wrap',
+											height: 180,
+											width: '100%',
+											background: 'var(--surface)',
+											position: 'relative',
+											overflow: 'hidden',
 										}}>
-											{isInstructor ? (
-												<>
-													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-															stroke="currentColor" strokeWidth="2">
-															<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-															<circle cx="9" cy="7" r="4"/>
-														</svg>
-														{enrollments}
-													</span>
-													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-															stroke="currentColor" strokeWidth="2">
-															<line x1="12" y1="1" x2="12" y2="23"/>
-															<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-														</svg>
-														{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}
-													</span>
-													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-														fontSize: '0.8rem', color: '#4ade80', fontWeight: 600 }}>
-														{earnings.toLocaleString()} ر.س
-													</span>
-												</>
+											{course.thumbnail ? (
+												<img src={getMediaUrl(course.thumbnail) ?? ''} alt={title}
+													style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
 											) : (
-												<>
-													<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-														fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-														<svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-															stroke="currentColor" strokeWidth="2">
-															<line x1="12" y1="1" x2="12" y2="23"/>
-															<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-														</svg>
-														{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}
-													</span>
-													{course.progress !== undefined && (
-														<span style={{ display: 'flex', alignItems: 'center', gap: '4px',
-															fontSize: '0.8rem', color: '#a78bfa', fontWeight: 600 }}>
-															{Math.round(course.progress)}% {isAr ? 'مكتمل' : 'complete'}
-														</span>
-													)}
-												</>
+												<div style={{
+													width: '100%',
+													height: '100%',
+													display: 'flex',
+													alignItems: 'center',
+													justifyContent: 'center',
+												}}>
+													<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+														<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+														<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+													</svg>
+												</div>
 											)}
+											{/* Status badge */}
+											<div style={{
+												position: 'absolute',
+												top: 12,
+												right: 12,
+												borderRadius: 999,
+												padding: '4px 12px',
+												fontSize: '0.78rem',
+												fontWeight: 500,
+												background: statusConfig.bg,
+												color: statusConfig.color,
+												display: 'flex',
+												alignItems: 'center',
+												gap: 6,
+											}}>
+												{statusConfig.hasDot && (
+													<span style={{
+														width: 6,
+														height: 6,
+														borderRadius: '50%',
+														background: statusConfig.pulse ? '#dc2626' : statusConfig.color,
+														animation: statusConfig.pulse ? 'pulse 1.5s ease-in-out infinite' : 'none',
+													}} />
+												)}
+												{isAr ? statusConfig.ar : statusConfig.key}
+											</div>
 										</div>
 
-										{/* Actions */}
-										<div style={{ display: 'flex', gap: '8px' }}>
-											{isInstructor ? (
-												<>
-													<Link href={`/${locale}/dashboard/courses/${course.id}/manage`}
-														style={{
-															flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
-															background: 'rgba(81,32,200,0.15)',
-															border: '1px solid rgba(81,32,200,0.3)',
-															color: '#a78bfa',
-															fontWeight: 600,
+										{/* Card body */}
+										<div style={{ padding: 16 }}>
+											<h3 style={{
+												fontWeight: 700,
+												fontSize: '1rem',
+												color: 'var(--foreground)',
+												marginBottom: 6,
+												overflow: 'hidden',
+												textOverflow: 'ellipsis',
+												display: '-webkit-box',
+												WebkitLineClamp: 2,
+												WebkitBoxOrient: 'vertical',
+												lineHeight: 1.4,
+											}}>
+												{title}
+											</h3>
+											{course.description && (
+												<p style={{
+													color: 'var(--muted)',
+													fontSize: '0.82rem',
+													lineHeight: 1.5,
+													marginBottom: 12,
+													overflow: 'hidden',
+													textOverflow: 'ellipsis',
+													display: '-webkit-box',
+													WebkitLineClamp: 2,
+													WebkitBoxOrient: 'vertical',
+												}}>
+													{course.description}
+												</p>
+											)}
+
+											{/* Meta row */}
+											<div style={{
+												display: 'flex',
+												gap: 16,
+												alignItems: 'center',
+												fontSize: '0.8rem',
+												color: 'var(--muted)',
+											}}>
+												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+														<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+														<circle cx="9" cy="7" r="4" />
+														<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+														<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+													</svg>
+													<span>{enrollments} {isAr ? "طالب" : "students"}</span>
+												</div>
+												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+														<line x1="12" y1="1" x2="12" y2="23" />
+														<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+													</svg>
+													<span>{coursePrice === 0 || coursePrice === null ? (isAr ? "مجاني" : "Free") : `${coursePrice} ${isAr ? "ر.س" : "SAR"}`}</span>
+												</div>
+											</div>
+
+											{/* Action row */}
+											<div style={{
+												display: 'flex',
+												gap: 8,
+												marginTop: 12,
+												alignItems: 'center',
+											}}>
+												{isInstructor ? (
+													<>
+														<Link href={`/${locale}/dashboard/courses/${course.id}/manage`} style={{
+															background: 'var(--primary)',
+															color: '#fff',
+															borderRadius: 10,
+															padding: '8px 20px',
+															fontSize: '0.85rem',
+															fontWeight: 500,
 															textDecoration: 'none',
-															fontSize: 'clamp(11px, 2.5vw, 13px)',
-															width: '100%',
-														}}>
-														{isAr ? 'إدارة' : 'Manage'}
-													</Link>
-													<button onClick={() => handleDelete(course.id)}
-														style={{
-															padding: '8px', borderRadius: '8px',
-															background: 'rgba(239,68,68,0.08)',
-															border: '1px solid rgba(239,68,68,0.2)',
-															color: '#f87171',
-															fontSize: 'clamp(11px, 2.5vw, 13px)',
-															cursor: 'pointer',
-															width: '100%',
+															flex: 1,
 															textAlign: 'center',
 														}}>
-														<svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-															stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-															<polyline points="3 6 5 6 21 6"/>
-															<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-														</svg>
-													</button>
-												</>
-											) : (
-												<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
-													target="_blank" rel="noopener noreferrer"
-													style={{
-														flex: 1, padding: '8px', borderRadius: '8px', textAlign: 'center',
-														background: 'rgba(81,32,200,0.15)',
-														border: '1px solid rgba(81,32,200,0.3)',
-														color: '#a78bfa',
-														fontWeight: 600,
-														textDecoration: 'none',
-														fontSize: 'clamp(11px, 2.5vw, 13px)',
-														width: '100%',
-													}}>
-													{isAr ? 'متابعة' : 'Continue'}
-												</a>
-											)}
+															{isAr ? "إدارة" : "Manage"}
+														</Link>
+														<button style={{
+															background: 'var(--surface-2)',
+															border: '1px solid var(--border)',
+															borderRadius: 10,
+															padding: 8,
+															cursor: 'pointer',
+															display: 'flex',
+															alignItems: 'center',
+															justifyContent: 'center',
+														}}>
+															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																<circle cx="12" cy="12" r="3" />
+																<path d="M12 1v6m0 6v6m11-7h-6m-6 0H1" />
+															</svg>
+														</button>
+														<button onClick={() => handleDelete(course.id)} style={{
+															marginLeft: 'auto',
+															background: 'transparent',
+															border: 'none',
+															cursor: 'pointer',
+															padding: 6,
+															display: 'flex',
+															alignItems: 'center',
+															justifyContent: 'center',
+														}}>
+															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																<circle cx="12" cy="12" r="1" />
+																<circle cx="19" cy="12" r="1" />
+																<circle cx="5" cy="12" r="1" />
+															</svg>
+														</button>
+													</>
+												) : (
+													<a href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}
+														target="_blank"
+														rel="noopener noreferrer"
+														style={{
+															background: 'var(--primary)',
+															color: '#fff',
+															borderRadius: 10,
+															padding: '8px 20px',
+															fontSize: '0.85rem',
+															fontWeight: 500,
+															textDecoration: 'none',
+															flex: 1,
+															textAlign: 'center',
+														}}>
+														{isAr ? "متابعة" : "Continue"}
+													</a>
+												)}
+											</div>
 										</div>
 									</div>
-								</div>
-							);
-						})}
-					</div>
-				)}
+								);
+							})}
+						</div>
+					)}
+				</div>
 			</div>
 			<ConfirmModal
 				isOpen={confirmModal.isOpen}
@@ -513,6 +682,25 @@ export default function MyCoursesPage() {
 				onConfirm={confirmModal.onConfirm}
 				onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
 			/>
+			<style jsx global>{`
+				@keyframes pulse {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0.5; }
+				}
+				@media (max-width: 640px) {
+					.course-grid {
+						grid-template-columns: 1fr !important;
+					}
+				}
+				@media (max-width: 480px) {
+					.stats-grid {
+						grid-template-columns: 1fr !important;
+					}
+				}
+				.course-card:hover {
+					border-color: var(--primary-border) !important;
+				}
+			`}</style>
 		</AuthGate>
 	);
 }
