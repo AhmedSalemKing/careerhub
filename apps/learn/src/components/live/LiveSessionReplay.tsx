@@ -12,7 +12,7 @@
  * Icons only — no emoji anywhere in this file.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -30,7 +30,6 @@ import {
 	liveRecordingNote,
 } from "../../lib/live";
 import VideoProtection from "../VideoProtection";
-import LiveRecordingPlayer from "./LiveRecordingPlayer";
 
 export interface LiveSessionReplayProps {
 	course: any;
@@ -96,6 +95,23 @@ export default function LiveSessionReplay({
 		return null;
 	}, [recordedLesson, course?.liveStartTime, course?.liveEndTime]);
 
+	const courseId = course?.id as string | undefined;
+	const apiBase =
+		(typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) ||
+		"https://api.deveways.com/api";
+
+	const [currentUrl, setCurrentUrl] = useState<string | null>(recordingUrl);
+	const [videoError, setVideoError] = useState(false);
+	const [refreshing, setRefreshing] = useState(false);
+
+	// Sync when the parent re-fetches a newer URL (e.g. 30 s polling)
+	useEffect(() => {
+		if (recordingUrl && recordingUrl !== currentUrl) {
+			setCurrentUrl(recordingUrl);
+			setVideoError(false);
+		}
+	}, [recordingUrl]);
+
 	const bg = isDark ? "#0d0d0d" : "#ffffff";
 	const cardBg = isDark ? "#161616" : "#ffffff";
 	const surfaceBg = isDark ? "#111111" : "#f8f8fa";
@@ -119,7 +135,7 @@ export default function LiveSessionReplay({
 				</a>
 
 				{/* ── The recording ───────────────────────────────────────────── */}
-				{recordingUrl ? (
+				{currentUrl ? (
 					<div
 						className="rounded-2xl overflow-hidden"
 						style={{
@@ -127,7 +143,128 @@ export default function LiveSessionReplay({
 							border: `1px solid ${borderColor}`,
 							boxShadow: "0 8px 40px rgba(0,0,0,0.14)",
 						}}>
-						<LiveRecordingPlayer src={recordingUrl} poster={thumb} />
+						{videoError ? (
+							<div
+								style={{
+									width: "100%",
+									aspectRatio: "16/9",
+									background: "#0f1117",
+									border: "1px solid #1e2333",
+									borderRadius: 12,
+									display: "flex",
+									flexDirection: "column",
+									alignItems: "center",
+									justifyContent: "center",
+									gap: 14,
+									direction: "rtl",
+								}}>
+								<svg
+									width="40"
+									height="40"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="#7c3aed"
+									strokeWidth="1.5"
+									strokeLinecap="round">
+									<path d="M15 10l4.553-2.369A1 1 0 0121 8.535v6.93a1 1 0 01-1.447.894L15 14" />
+									<rect x="2" y="6" width="13" height="12" rx="2" />
+									<line x1="9" y1="9" x2="9" y2="15" stroke="#6b7280" />
+									<line x1="6" y1="12" x2="12" y2="12" stroke="#6b7280" />
+								</svg>
+								<div style={{ fontWeight: 500, fontSize: "1rem", color: "#f3f4f6" }}>
+									{isAr ? "تعذّر تشغيل الفيديو" : "Playback failed"}
+								</div>
+								<div
+									style={{
+										fontWeight: 300,
+										fontSize: "0.85rem",
+										color: "#9ca3af",
+										textAlign: "center",
+										maxWidth: 280,
+									}}>
+									{isAr
+										? "رابط التشغيل انتهت صلاحيته — اضغط لتجديده"
+										: "The playback link has expired — click to refresh"}
+								</div>
+								<button
+									disabled={refreshing}
+									onClick={async () => {
+										if (!courseId) return;
+										setRefreshing(true);
+										try {
+											const res = await fetch(
+												`${apiBase}/live/recording/public/${courseId}`,
+											);
+											const raw = (await res.json()) as any;
+											const newUrl: string | null =
+												raw?.data?.recordingUrl ?? raw?.recordingUrl ?? null;
+											if (newUrl) {
+												setCurrentUrl(newUrl);
+												setVideoError(false);
+											}
+										} finally {
+											setRefreshing(false);
+										}
+									}}
+									style={{
+										background: refreshing ? "#1e1b4b" : "#7c3aed",
+										color: "#fff",
+										border: "none",
+										borderRadius: 999,
+										padding: "10px 28px",
+										fontSize: "0.9rem",
+										fontWeight: 500,
+										cursor: refreshing ? "not-allowed" : "pointer",
+										display: "flex",
+										alignItems: "center",
+										gap: 8,
+										transition: "background 0.2s",
+									}}>
+									{refreshing ? (
+										<>
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												strokeLinecap="round"
+												style={{ animation: "spin 1s linear infinite" }}>
+												<path d="M21 12a9 9 0 11-6.219-8.56" />
+											</svg>
+											{isAr ? "جارٍ التجديد..." : "Refreshing..."}
+										</>
+									) : (
+										<>
+											<svg
+												width="14"
+												height="14"
+												viewBox="0 0 24 24"
+												fill="none"
+												stroke="currentColor"
+												strokeWidth="2"
+												strokeLinecap="round">
+												<path d="M23 4v6h-6" />
+												<path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+											</svg>
+											{isAr ? "تجديد الرابط" : "Refresh link"}
+										</>
+									)}
+								</button>
+								<style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+							</div>
+						) : (
+							<video
+								key={currentUrl}
+								src={currentUrl}
+								controls
+								playsInline
+								poster={thumb || undefined}
+								style={{ width: "100%", display: "block", aspectRatio: "16/9" }}
+								onError={() => setVideoError(true)}
+							/>
+						)}
 					</div>
 				) : (
 					<div

@@ -153,10 +153,17 @@ export class LiveService {
   async pollForRecording(courseId: string, roomName: string, sessionId: string): Promise<void> {
     this.logger.log(`[Live] Waiting 60 s before polling for recording: room=${roomName}`)
     await new Promise(r => setTimeout(r, 60_000))
-    const url = await this.daily.getRecordingForRoom(roomName)
-    if (url) {
-      this.logger.log(`[Live] Recording ready for course ${courseId}: ${url}`)
-      await this.saveRecording(courseId, sessionId, url)
+    const result = await this.daily.getRecordingWithId(roomName)
+    if (result) {
+      this.logger.log(`[Live] Recording ready for course ${courseId}: recordingId=${result.id}`)
+      // Store the Daily.co recording ID so getRecordingUrlForCourse can always fetch
+      // a fresh pre-signed URL without re-listing. The URL itself is never cached.
+      await this.prisma.liveRecording.upsert({
+        where: { liveSessionId: sessionId },
+        update: { sid: result.id, status: 'READY' },
+        create: { liveSessionId: sessionId, sid: result.id, status: 'READY' },
+      }).catch((e: Error) => this.logger.warn(`Could not upsert LiveRecording: ${e.message}`))
+      await this.saveRecording(courseId, sessionId, result.url)
     } else {
       this.logger.warn(`[Live] No recording found for room ${roomName} after polling`)
     }
@@ -217,16 +224,32 @@ export class LiveService {
     const session = await this.prisma.liveSession.findFirst({
       where: { courseId },
       orderBy: { createdAt: 'desc' },
+      include: { recording: { select: { sid: true } } },
     })
     if (!session) return { recordingUrl: null }
-    if (session.recordingUrl) return { recordingUrl: session.recordingUrl }
-    if (!session.dailyRoomName) return { recordingUrl: null }
 
-    const url = await this.daily.getRecordingForRoom(session.dailyRoomName, 1)
-    if (url) {
-      await this.prisma.liveSession.update({ where: { id: session.id }, data: { recordingUrl: url } })
+    const recordingId = session.recording?.sid
+
+    if (recordingId) {
+      // Always fetch a fresh pre-signed URL — Daily.co access links expire ~1 hour
+      const url = await this.daily.getAccessLink(recordingId)
       return { recordingUrl: url }
     }
+
+    if (!session.dailyRoomName) return { recordingUrl: null }
+
+    // Fallback: list the room's recordings (one attempt) to find the ID and URL
+    const result = await this.daily.getRecordingWithId(session.dailyRoomName, 1)
+    if (result) {
+      // Store the ID so future calls skip the list step
+      await this.prisma.liveRecording.upsert({
+        where: { liveSessionId: session.id },
+        update: { sid: result.id, status: 'READY' },
+        create: { liveSessionId: session.id, sid: result.id, status: 'READY' },
+      }).catch((e: Error) => this.logger.warn(`Could not upsert LiveRecording: ${e.message}`))
+      return { recordingUrl: result.url }
+    }
+
     return { recordingUrl: null }
   }
 

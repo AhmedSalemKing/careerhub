@@ -65,13 +65,18 @@ export class DailyService implements OnModuleInit {
     return data.token;
   }
 
-  private async fetchRecordingUrl(roomName: string, maxRetries = 10): Promise<string | null> {
+  // Returns both the Daily.co recording ID and a fresh pre-signed download URL.
+  // The ID is stored so future calls can skip the list step.
+  // The URL MUST NOT be cached — it expires after ~1 hour.
+  private async fetchRecording(
+    roomName: string,
+    maxRetries = 10,
+  ): Promise<{ id: string; url: string } | null> {
     const apiKey = this.apiKey;
 
     for (let i = 0; i < maxRetries; i++) {
       if (i > 0) await new Promise(r => setTimeout(r, 15_000));
       try {
-        // Step 1: find the most recent finished recording for this room
         const listRes = await fetch(
           `${this.baseUrl}/recordings?room_name=${encodeURIComponent(roomName)}&limit=10`,
           { headers: { Authorization: `Bearer ${apiKey}` } },
@@ -85,19 +90,44 @@ export class DailyService implements OnModuleInit {
 
         if (!finished) continue;
 
-        // Step 2: fetch the presigned download link (not in the list response)
         const linkRes = await fetch(
           `${this.baseUrl}/recordings/${finished.id}/access-link`,
           { headers: { Authorization: `Bearer ${apiKey}` } },
         );
         const linkJson = await linkRes.json();
         const url: string | undefined = linkJson?.download_link;
-        if (url) return url;
+        if (url) return { id: finished.id as string, url };
       } catch (e) {
-        this.logger.warn(`fetchRecordingUrl attempt ${i + 1} failed: ${(e as Error).message}`);
+        this.logger.warn(`fetchRecording attempt ${i + 1} failed: ${(e as Error).message}`);
       }
     }
     return null;
+  }
+
+  private async fetchRecordingUrl(roomName: string, maxRetries = 10): Promise<string | null> {
+    const result = await this.fetchRecording(roomName, maxRetries);
+    return result?.url ?? null;
+  }
+
+  // Get a fresh pre-signed download URL for a known recording ID.
+  // Call this on EVERY request — never cache the result.
+  async getAccessLink(recordingId: string): Promise<string | null> {
+    try {
+      const res = await fetch(
+        `${this.baseUrl}/recordings/${recordingId}/access-link`,
+        { headers: { Authorization: `Bearer ${this.apiKey}` } },
+      );
+      const json = await res.json();
+      return (json?.download_link as string) ?? null;
+    } catch (e) {
+      this.logger.warn(`getAccessLink failed for ${recordingId}: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  // Find the recording for a room and return both its ID and a fresh URL.
+  async getRecordingWithId(roomName: string, maxRetries = 10): Promise<{ id: string; url: string } | null> {
+    return this.fetchRecording(roomName, maxRetries);
   }
 
   async getRecordingForRoom(roomName: string, maxRetries = 10): Promise<string | null> {
