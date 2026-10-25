@@ -583,14 +583,13 @@ export class CoursesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Delete a course (Admin only)' })
+  @ApiOperation({ summary: 'Delete a course (Admin or owner instructor)' })
   @ApiResponse({ status: 204, description: 'Course deleted successfully' })
-  async deleteCourse(@Param('id') id: string) {
-    await this.coursesService.deleteCourse(id);
+  async deleteCourse(@Param('id') id: string, @Request() req: any) {
+    await this.coursesService.deleteCourse(id, req.user.id, isAdminUser(req.user));
   }
 
   @Patch(':id/publish')

@@ -1241,7 +1241,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return course;
   }
 
-  async deleteCourse(id: string) {
+  async deleteCourse(id: string, userId?: string, isAdmin = false) {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      select: { id: true, instructorId: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+    if (!isAdmin && course.instructorId !== userId) {
+      throw new ForbiddenException('ليس لديك صلاحية حذف هذا الكورس');
+    }
     await this.prisma.course.delete({
       where: { id },
     });
