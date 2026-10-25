@@ -37,6 +37,7 @@ export interface LiveSessionReplayProps {
 	locale: string;
 	isDark: boolean;
 	userEmail?: string;
+	cloudRecordingUrl?: string | null;
 }
 
 export default function LiveSessionReplay({
@@ -44,6 +45,7 @@ export default function LiveSessionReplay({
 	locale,
 	isDark,
 	userEmail,
+	cloudRecordingUrl,
 }: LiveSessionReplayProps) {
 	const isAr = locale === "ar";
 
@@ -74,9 +76,10 @@ export default function LiveSessionReplay({
 		return lessons.find((l: any) => !!l?.videoUrl) ?? null;
 	}, [sections]);
 
-	const recordingUrl = recordedLesson
+	const lessonRecordingUrl = recordedLesson
 		? getMediaUrl(recordedLesson.videoUrl)
 		: null;
+	const recordingUrl = lessonRecordingUrl ?? cloudRecordingUrl ?? null;
 
 	const durationMinutes = useMemo(() => {
 		const seconds = recordedLesson?.videoDuration;
