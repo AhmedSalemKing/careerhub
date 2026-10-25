@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useLocale } from "next-intl";
 import Link from "next/link";
@@ -593,10 +593,10 @@ export default function MyCoursesPage() {
 																			await post(`/live/lesson-start/${liveLesson.id}`, {})
 																			router.push(`/${locale}/dashboard/courses/${course.id}/go-live?lessonId=${liveLesson.id}`)
 																		} else {
-																			router.push(`/${locale}/dashboard/courses/${course.id}/manage`)
+																			router.push(`/${locale}/dashboard/courses/${course.id}/go-live`)
 																		}
 																	} catch (e) {
-																		router.push(`/${locale}/dashboard/courses/${course.id}/manage`)
+																		router.push(`/${locale}/dashboard/courses/${course.id}/go-live`)
 																	}
 																}}
 																style={{
