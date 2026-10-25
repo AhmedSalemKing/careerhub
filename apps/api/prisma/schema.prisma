@@ -1077,19 +1077,19 @@ model AssessmentSession {
 }
 
 // ════════════════════════════════════════════════════════
-// ✅ SiteSettings - UPDATED COLORS (Purple + White Theme)
+// SiteSettings - UPDATED COLORS (Purple + White Theme)
 // ════════════════════════════════════════════════════════
 model SiteSettings {
   id              String   @id @default(cuid())
   siteName        String   @default("DeveWay")
   
-  // ✅ Updated: Purple theme (was blue #5120c8)
+  // Updated: Purple theme (was blue #5120c8)
   primaryColor    String   @default("#5120c8")
   
-  // ✅ Updated: Clean white for light mode (was #0d0d0d / #0d0d0d)
+  // Updated: Clean white for light mode (was #0d0d0d / #0d0d0d)
   backgroundColor String   @default("#FFFFFF")
   
-  // ✅ Updated: Purple buttons (was blue #5120c8)
+  // Updated: Purple buttons (was blue #5120c8)
   buttonColor     String   @default("#5120c8")
   
   logoUrl         String?
@@ -1305,20 +1305,21 @@ enum RecordingStatus {
 }
 
 model LiveSession {
-  id            String            @id @default(cuid())
-  courseId      String
-  channelName   String?           @unique
-  instructorId  String
-  status        LiveSessionStatus @default(SCHEDULED)
-  isLive        Boolean           @default(false)
-  dailyRoomName String?
-  dailyRoomUrl  String?
-  recordingUrl  String?
-  startedAt     DateTime?
-  endedAt       DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  recording     LiveRecording?
+  id              String            @id @default(cuid())
+  courseId        String
+  channelName     String?           @unique
+  instructorId    String
+  status          LiveSessionStatus @default(SCHEDULED)
+  isLive          Boolean           @default(false)
+  dailyRoomName   String?
+  dailyRoomUrl    String?
+  recordingUrl    String?
+  startedAt       DateTime?
+  endedAt         DateTime?
+  durationMinutes Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  recording       LiveRecording?
 }
 
 model LiveRecording {

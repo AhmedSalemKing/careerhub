@@ -37,6 +37,15 @@ export class LiveController {
     return this.liveService.getLiveStatus(courseId)
   }
 
+  @Get('manage/:courseId')
+  @UseGuards(JwtAuthGuard)
+  async getLiveManage(
+    @Param('courseId') courseId: string,
+    @Request() req: any,
+  ) {
+    return this.liveService.getLiveManageData(courseId, req.user.id)
+  }
+
   @Get('recording/public/:courseId')
   async getRecordingPublic(@Param('courseId') courseId: string) {
     return this.liveService.getRecordingUrlForCourse(courseId)

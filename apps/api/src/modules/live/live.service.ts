@@ -114,9 +114,13 @@ export class LiveService {
     })
 
     if (session) {
+      const endedAt = new Date()
+      const durationMinutes = session.startedAt
+        ? Math.max(1, Math.round((endedAt.getTime() - session.startedAt.getTime()) / 60000))
+        : 0
       await this.prisma.liveSession.update({
         where: { id: session.id },
-        data: { isLive: false, status: 'ENDED', endedAt: new Date() },
+        data: { isLive: false, status: 'ENDED', endedAt, durationMinutes },
       })
 
       if (session.dailyRoomName) {
@@ -304,6 +308,83 @@ export class LiveService {
       data: { liveViewerCount: { increment: delta } },
     })
     return { success: true }
+  }
+
+  async getLiveManageData(courseId: string, instructorId: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        instructor: {
+          select: {
+            id: true,
+            profile: { select: { firstName: true, lastName: true, avatar: true } },
+          },
+        },
+        _count: { select: { enrollments: true } },
+      },
+    })
+    if (!course || course.instructorId !== instructorId) {
+      throw new ForbiddenException('Not authorized')
+    }
+
+    const session = await this.prisma.liveSession.findFirst({
+      where: { courseId },
+      orderBy: { createdAt: 'desc' },
+      include: { recording: { select: { sid: true } } },
+    })
+
+    let recordingUrl: string | null = null
+    if (session?.recording?.sid) {
+      try {
+        recordingUrl = await this.daily.getAccessLink(session.recording.sid)
+      } catch (e) {
+        this.logger.warn(`Could not fetch recording access link for ${courseId}: ${e.message}`)
+        recordingUrl = null
+      }
+    }
+
+    const instructorProfile = course.instructor?.profile
+    const instructorName = instructorProfile
+      ? `${instructorProfile.firstName ?? ''} ${instructorProfile.lastName ?? ''}`.trim()
+      : null
+
+    const sessionStatus = session?.status ?? 'SCHEDULED'
+    const durationMinutes =
+      session?.durationMinutes && session.durationMinutes > 0
+        ? session.durationMinutes
+        : course.duration ?? 0
+
+    return {
+      success: true,
+      data: {
+        course: {
+          id: course.id,
+          title: course.titleAr || course.titleEn,
+          description: course.descriptionAr || course.descriptionEn || '',
+          thumbnail: course.thumbnail,
+          publishStatus: course.status,
+          enrollmentsCount: course._count.enrollments,
+        },
+        instructor: {
+          id: course.instructor?.id ?? null,
+          name: instructorName,
+          avatar: instructorProfile?.avatar ?? null,
+        },
+        session: session
+          ? {
+              id: session.id,
+              status: sessionStatus,
+              scheduledAt: course.liveStartTime?.toISOString() ?? null,
+              startedAt: session.startedAt?.toISOString() ?? null,
+              endedAt: session.endedAt?.toISOString() ?? null,
+              durationMinutes,
+              viewerCount: course.liveViewerCount ?? 0,
+              dailyRecordingId: session.recording?.sid ?? null,
+            }
+          : null,
+        recordingUrl,
+      },
+    }
   }
 
   /**

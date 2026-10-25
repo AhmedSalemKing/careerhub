@@ -14,9 +14,6 @@ import {
   liveRecordingNote,
   isLiveStatus,
   formatLiveDateTimeShort,
-  formatLiveDateShort,
-  formatLiveTime,
-  normalizeLiveStatus,
 } from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
 
@@ -855,45 +852,69 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
 
 // ─── Live Course Manage View ─────────────────────────────────────────────────
 
-function LiveManageView({ course, courseId, locale }: { course: any; courseId: string; locale: string }) {
+function LiveManageView({ courseId, locale }: { courseId: string; locale: string }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState(0)
 
-  const { data: recordingData } = useQuery({
-    queryKey: ['live-recording-manage', courseId],
+  const { data: manageData, isLoading } = useQuery({
+    queryKey: ['live-manage', courseId],
     queryFn: async () => {
-      try {
-        const res = await get(`/live/recording/${courseId}`)
-        const raw = res?.data as any
-        return raw?.data?.recordingUrl ?? raw?.recordingUrl ?? null
-      } catch {
-        return null
-      }
+      const res = await get(`/live/manage/${courseId}`)
+      const raw = res?.data as any
+      return raw?.data ?? raw ?? null
     },
     enabled: !!courseId,
     refetchInterval: 30_000,
   })
-  const cloudRecordingUrl = (recordingData as string | null) ?? null
 
-  const liveStatus = normalizeLiveStatus(course?.liveStatus)
-  const liveStatusUpper = liveStatus?.toUpperCase() ?? 'SCHEDULED'
-  const publishStatus = course?.status ?? 'DRAFT'
+  const course = (manageData as any)?.course
+  const instructor = (manageData as any)?.instructor
+  const session = (manageData as any)?.session
+  const recUrl = ((manageData as any)?.recordingUrl as string | null) ?? null
 
-  const startDate = course?.liveStartTime ? new Date(course.liveStartTime) : null
-  const endDate = course?.liveEndTime ? new Date(course.liveEndTime) : null
-  const liveDate = startDate ? formatLiveDateShort(course.liveStartTime, locale) : '—'
-  const liveTime = startDate ? formatLiveTime(course.liveStartTime, locale) : '—'
-  const endedAt = endDate ? formatLiveDateTimeShort(course.liveEndTime, locale) : null
+  const liveStatus = (session?.status as string) ?? 'SCHEDULED'
+  const publishStatus = course?.publishStatus ?? 'DRAFT'
 
-  const duration = course?.liveDuration
-    ? Number(course.liveDuration)
-    : startDate && endDate
-      ? Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 60000))
-      : 0
+  const scheduledAt = session?.scheduledAt ? new Date(session.scheduledAt) : null
+  const endedAtRaw = session?.endedAt ? new Date(session.endedAt) : null
+  const liveDate = scheduledAt
+    ? scheduledAt.toLocaleDateString('ar-EG-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '—'
+  const liveTime = scheduledAt
+    ? scheduledAt.toLocaleTimeString('ar-EG-u-ca-gregory', { hour: '2-digit', minute: '2-digit', hour12: true })
+    : '—'
+  const endedAt = endedAtRaw
+    ? endedAtRaw.toLocaleString('ar-EG-u-ca-gregory', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', hour12: true })
+    : null
 
-  const viewerCount = course?.viewerCount ?? course?._count?.liveViewers ?? 0
+  const duration = Number(session?.durationMinutes ?? 0)
+  const viewerCount = Number(session?.viewerCount ?? 0)
+  const enrollmentsCount = Number(course?.enrollmentsCount ?? 0)
 
-  const tabs = ['عامة نظرة', 'التسجيل', 'المحاضرين', 'الاشتراكات', 'الإعدادات']
+  const tabs = ['عامة نظرة', 'التسجيل', 'المحاضرين', `الاشتراكات (${enrollmentsCount})`, 'الإعدادات']
+
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#090b10',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          color: '#9ca3af', fontFamily: "'PingAR', sans-serif",
+          fontWeight: 300, fontSize: '0.9rem',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="#7c3aed" strokeWidth="2" strokeLinecap="round"
+            style={{ animation: 'spin 1s linear infinite' }}>
+            <path d="M21 12a9 9 0 11-6.219-8.56" />
+          </svg>
+          <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+          جارٍ تحميل بيانات البث...
+        </div>
+      </div>
+    )
+  }
 
   const SvgCalendar = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
@@ -983,10 +1004,16 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
     </svg>
   )
 
-  const statusIcon = liveStatusUpper === 'LIVE' ? (
+  const statusIcon = liveStatus === 'LIVE' ? (
     <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px #ef4444' }} />
-  ) : liveStatusUpper === 'ENDED' ? (
+  ) : liveStatus === 'ENDED' ? (
     <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
+  ) : liveStatus === 'FAILED' ? (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
   ) : (
     <SvgCalendar />
   )
@@ -1108,27 +1135,28 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: liveStatusUpper === 'ENDED' ? '#1e2333' : '#1e1b4b',
+              background: liveStatus === 'ENDED' ? '#1e2333' : '#1e1b4b',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {statusIcon}
             </div>
             <div>
               <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                {liveStatusUpper === 'LIVE' ? 'مباشر الآن'
-                  : liveStatusUpper === 'ENDED' ? 'انتهى البث'
-                    : 'مجدول'}
+                {liveStatus === 'LIVE' ? 'مباشر الآن'
+                  : liveStatus === 'ENDED' ? 'انتهى البث'
+                    : liveStatus === 'FAILED' ? 'تعذّر البث'
+                      : 'مجدول'}
               </div>
-              {liveStatusUpper === 'ENDED' && endedAt && (
+              {liveStatus === 'ENDED' && endedAt && (
                 <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.75rem' }}>
                   {endedAt}
                 </div>
               )}
             </div>
           </div>
-          {liveStatusUpper === 'ENDED' && cloudRecordingUrl && (
+          {liveStatus === 'ENDED' && recUrl && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button onClick={() => window.open(cloudRecordingUrl, '_blank')} style={{
+              <button onClick={() => window.open(recUrl, '_blank')} style={{
                 background: '#7c3aed', color: '#fff', border: 'none',
                 borderRadius: 8, padding: '8px 12px', fontSize: '0.82rem',
                 fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
@@ -1137,7 +1165,7 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                 <SvgPlay />
                 مشاهدة التسجيل
               </button>
-              <button onClick={() => navigator.clipboard.writeText(cloudRecordingUrl)} style={{
+              <button onClick={() => navigator.clipboard.writeText(recUrl)} style={{
                 background: 'transparent', color: '#9ca3af',
                 border: '1px solid #1e2333', borderRadius: 8,
                 padding: '8px 12px', fontSize: '0.82rem', fontWeight: 300,
@@ -1187,9 +1215,9 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
             {[
               {
                 label: 'حالة البث',
-                badge: liveStatusUpper === 'ENDED'
+                badge: liveStatus === 'ENDED'
                   ? { text: 'تم الانتهاء', bg: '#10b981', color: '#fff' }
-                  : liveStatusUpper === 'LIVE'
+                  : liveStatus === 'LIVE'
                     ? { text: 'مباشر الآن', bg: '#ef4444', color: '#fff' }
                     : { text: 'مجدول', bg: '#f59e0b22', color: '#f59e0b' }
               },
@@ -1199,7 +1227,7 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
               { label: 'المشاهدون أثناء البث', value: String(viewerCount) },
               {
                 label: 'حالة التسجيل',
-                badge: cloudRecordingUrl
+                badge: recUrl
                   ? { text: 'جاهز للمشاهدة', bg: '#7c3aed22', color: '#a78bfa' }
                   : { text: 'جارٍ التجهيز', bg: '#f59e0b22', color: '#f59e0b' }
               },
@@ -1234,6 +1262,37 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                 يمكنك مشاهدة تسجيل البث المباشر أو مشاركته مع طلابك من خلال صفحة الكورس.
               </span>
             </div>
+
+            {/* Instructor */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 0', borderTop: '1px solid #1e2333', marginTop: 12,
+            }}>
+              <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.82rem', flex: 1 }}>
+                المحاضر
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {instructor?.avatar ? (
+                  <img src={instructor.avatar}
+                    style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%',
+                    background: '#1e1b4b', border: '1px solid #2d2060',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="#a78bfa" strokeWidth="2" strokeLinecap="round">
+                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </div>
+                )}
+                <div style={{ fontWeight: 500, fontSize: '0.88rem' }}>
+                  {instructor?.name ?? '—'}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* التسجيل panel */}
@@ -1249,15 +1308,15 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                 <SvgCamera />
                 التسجيل
               </h3>
-              {cloudRecordingUrl ? (
+              {recUrl ? (
                 <>
                   {/* Video thumbnail */}
                   <div style={{
                     width: '100%', aspectRatio: '16/9', borderRadius: 10,
                     background: '#1e1b4b', marginBottom: 12,
                     position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                  }} onClick={() => window.open(cloudRecordingUrl, '_blank')}>
-                    <video src={cloudRecordingUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  }} onClick={() => window.open(recUrl, '_blank')}>
+                    <video src={recUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     <div style={{
                       position: 'absolute', inset: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -1279,7 +1338,7 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                     التسجيل متاح الآن بجودة عالية لمراجعة المحتوى في أي وقت.
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => window.open(cloudRecordingUrl, '_blank')} style={{
+                    <button onClick={() => window.open(recUrl, '_blank')} style={{
                       flex: 1, background: '#7c3aed', color: '#fff', border: 'none',
                       borderRadius: 8, padding: '9px', fontSize: '0.82rem',
                       fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
@@ -1288,7 +1347,7 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                       <SvgExternal />
                       فتح التسجيل
                     </button>
-                    <button onClick={() => navigator.clipboard.writeText(cloudRecordingUrl)} style={{
+                    <button onClick={() => navigator.clipboard.writeText(recUrl)} style={{
                       flex: 1, background: 'transparent', color: '#9ca3af',
                       border: '1px solid #1e2333', borderRadius: 8,
                       padding: '9px', fontSize: '0.82rem', fontWeight: 300,
@@ -1308,10 +1367,10 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
                     <SvgHourglass />
                   </div>
                   <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                    {liveStatusUpper === 'ENDED' ? 'جارٍ تجهيز التسجيل...' : 'التسجيل غير متاح بعد'}
+                    {liveStatus === 'ENDED' ? 'جارٍ تجهيز التسجيل...' : 'التسجيل غير متاح بعد'}
                   </div>
                   <div style={{ fontWeight: 300, fontSize: '0.8rem' }}>
-                    {liveStatusUpper === 'ENDED'
+                    {liveStatus === 'ENDED'
                       ? 'قد يستغرق ذلك بضع دقائق بعد انتهاء البث.'
                       : 'التسجيل يكون متاحاً بعد انتهاء البث المباشر.'}
                   </div>
@@ -1359,8 +1418,8 @@ function LiveManageView({ course, courseId, locale }: { course: any; courseId: s
           background: '#13161f', border: '1px solid #1e2333',
           borderRadius: 14, padding: 24, textAlign: 'center',
         }}>
-          {cloudRecordingUrl ? (
-            <video src={cloudRecordingUrl} controls style={{ width: '100%', maxHeight: 480, borderRadius: 12 }} />
+          {recUrl ? (
+            <video src={recUrl} controls style={{ width: '100%', maxHeight: 480, borderRadius: 12 }} />
           ) : (
             <div style={{ color: '#9ca3af', padding: '40px 0' }}>
               <div style={{ marginBottom: 12 }}>
@@ -1462,7 +1521,7 @@ export default function ManageCoursePage() {
   return (
     <AuthGate>
       {isLiveCourse ? (
-        <LiveManageView course={course} courseId={courseId} locale={locale} />
+        <LiveManageView courseId={courseId} locale={locale} />
       ) : (
       <>
         <div className="p-6" dir="rtl">
