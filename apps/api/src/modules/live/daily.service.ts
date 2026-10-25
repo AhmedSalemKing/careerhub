@@ -36,7 +36,6 @@ export class DailyService implements OnModuleInit {
       properties: {
         enable_chat: true,
         enable_screenshare: true,
-        enable_recording: 'cloud',
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
       },
     });
@@ -59,24 +58,14 @@ export class DailyService implements OnModuleInit {
       properties: {
         room_name: roomName,
         is_owner: isOwner,
-        start_cloud_recording: isOwner,
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 6,
       },
     });
     return data.token;
   }
 
-  async getRecordingForRoom(roomName: string): Promise<string | null> {
-    try {
-      const data = await this.request(`/recordings?room_name=${roomName}`);
-      if (data?.data?.length > 0) {
-        const recording = data.data[0];
-        const accessLink = await this.request(`/recordings/${recording.id}/access-link`, 'GET');
-        return accessLink?.download_link || null;
-      }
-    } catch (e) {
-      this.logger.warn(`Could not fetch recordings for room ${roomName}: ${e.message}`);
-    }
+  async getRecordingForRoom(_roomName: string): Promise<string | null> {
+    // Cloud recording not available on Daily.co free plan
     return null;
   }
 

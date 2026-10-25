@@ -150,19 +150,8 @@ export class LiveService {
     }
   }
 
-  async pollForRecording(courseId: string, roomName: string, sessionId: string): Promise<void> {
-    const maxAttempts = 20
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise((r) => setTimeout(r, 30_000))
-      const recordingUrl = await this.daily.getRecordingForRoom(roomName)
-      if (recordingUrl) {
-        await this.saveRecording(courseId, sessionId, recordingUrl)
-        this.logger.log(`Recording saved for course ${courseId}: ${recordingUrl}`)
-        return
-      }
-      this.logger.debug(`Polling for recording ${i + 1}/${maxAttempts} for room ${roomName}`)
-    }
-    this.logger.warn(`Recording not found after polling for course ${courseId}`)
+  async pollForRecording(_courseId: string, _roomName: string, _sessionId: string): Promise<void> {
+    this.logger.log('[Live] Cloud recording not available on free plan; skipping poll')
   }
 
   async saveRecording(courseId: string, sessionId: string, recordingUrl: string): Promise<void> {
