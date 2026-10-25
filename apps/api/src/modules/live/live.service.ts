@@ -114,13 +114,15 @@ export class LiveService {
     })
 
     if (session) {
-      const endedAt = new Date()
-      const durationMinutes = session.startedAt
-        ? Math.max(1, Math.round((endedAt.getTime() - session.startedAt.getTime()) / 60000))
-        : 0
+      const now = new Date()
+      const started = session.startedAt ?? course.liveStartTime ?? now
+      const durationMinutes = Math.max(
+        1,
+        Math.round((now.getTime() - new Date(started).getTime()) / 60000),
+      )
       await this.prisma.liveSession.update({
         where: { id: session.id },
-        data: { isLive: false, status: 'ENDED', endedAt, durationMinutes },
+        data: { isLive: false, status: 'ENDED', endedAt: now, durationMinutes },
       })
 
       if (session.dailyRoomName) {
@@ -349,10 +351,30 @@ export class LiveService {
       : null
 
     const sessionStatus = session?.status ?? 'SCHEDULED'
-    const durationMinutes =
-      session?.durationMinutes && session.durationMinutes > 0
-        ? session.durationMinutes
-        : course.duration ?? 0
+
+    const computedDuration = (() => {
+      if (session?.durationMinutes && session.durationMinutes > 0) {
+        return session.durationMinutes
+      }
+      if (session?.startedAt && session?.endedAt) {
+        return Math.round(
+          (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 60000,
+        )
+      }
+      if (course?.liveStartTime && session?.endedAt) {
+        return Math.round(
+          (new Date(session.endedAt).getTime() - new Date(course.liveStartTime).getTime()) / 60000,
+        )
+      }
+      return course?.duration ?? 0
+    })()
+
+    if (computedDuration > 0 && (!session?.durationMinutes || session.durationMinutes === 0)) {
+      await this.prisma.liveSession.update({
+        where: { id: session.id },
+        data: { durationMinutes: computedDuration },
+      }).catch(() => {})
+    }
 
     return {
       success: true,
@@ -377,7 +399,7 @@ export class LiveService {
               scheduledAt: course.liveStartTime?.toISOString() ?? null,
               startedAt: session.startedAt?.toISOString() ?? null,
               endedAt: session.endedAt?.toISOString() ?? null,
-              durationMinutes,
+              durationMinutes: computedDuration,
               viewerCount: course.liveViewerCount ?? 0,
               dailyRecordingId: session.recording?.sid ?? null,
             }
