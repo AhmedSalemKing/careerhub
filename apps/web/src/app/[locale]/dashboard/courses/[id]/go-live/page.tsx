@@ -10,12 +10,52 @@ import {
   Radio, Users, Copy, Check, Mic, MicOff,
   Video, VideoOff, X, CheckCircle2, Play, Square,
   MonitorUp, Hand, MessageSquare, TrendingUp,
-  UserCheck, UserX, Send, Wifi, WifiOff, Info,
+  UserCheck, UserX, Send, Wifi, WifiOff, Info, Circle,
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { confirmToast } from '../../../../../../lib/confirm-toast'
 import { LIVE_RECORDING_SUPPORTED, liveRecordingNote, formatLiveTime } from '../../../../../../lib/live'
 import toast from 'react-hot-toast'
+
+/**
+ * Starts Agora Cloud Recording with cold-start friendly retries. Render free
+ * instances can take 50+ seconds to wake, so every attempt allows 60 seconds.
+ * This must never block or abort the live stream: it is called in the
+ * background and failures are surfaced to the instructor only.
+ */
+async function startRecordingWithRetry(courseId: string, channelName?: string, maxAttempts = 3) {
+  let lastError: any = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`[Recording] start attempt ${attempt} for course ${courseId}, channel ${channelName || '(server resolves)'}`)
+      const response = await post(
+        `/live/${courseId}/recording/start`,
+        channelName ? { channelName } : {},
+        { timeout: 60000, skipAuthRedirect: true, skipRetry: true },
+      )
+      return response.data?.data ?? response.data
+    } catch (err: any) {
+      lastError = err
+      const status = err?.response?.status
+      console.error(`[Recording] start attempt ${attempt} failed:`, {
+        status,
+        code: err?.code,
+        message: err?.message,
+        response: err?.response?.data,
+      })
+
+      // Authorization/validation errors will not fix themselves by retrying.
+      if (status && status < 500 && status !== 429) throw err
+      if (attempt === maxAttempts) throw err
+
+      console.log('[Recording] retrying in 5s...')
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+    }
+  }
+
+  throw lastError ?? new Error('Recording start failed')
+}
 
 export default function GoLivePage() {
   const locale = useLocale()
@@ -77,6 +117,7 @@ export default function GoLivePage() {
     'idle' | 'connecting' | 'connected' | 'reconnecting' | 'failed'
   >('idle')
   const [isCloudRecording, setIsCloudRecording] = useState(false)
+  const [recordingState, setRecordingState] = useState<'idle' | 'starting' | 'active' | 'failed'>('idle')
   const [sessionEnded, setSessionEnded] = useState(false)
   const [liveError, setLiveError] = useState<string | null>(null)
 
@@ -111,6 +152,9 @@ export default function GoLivePage() {
   // Channel the instructor actually joined. Sent with recording/stop so the
   // server stops the recording that belongs to this stream, not a stale one.
   const liveChannelRef = useRef<string | null>(null)
+  // Set synchronously when a recording start is initiated, before React state
+  // updates. handleEndLive uses it so a fast "End stream" still stops Agora.
+  const recordingAttemptedRef = useRef(false)
 
 
   const { data: course } = useQuery({
@@ -393,16 +437,38 @@ export default function GoLivePage() {
 
       await client.publish(tracksToPublish)
 
-      // Start Agora Cloud Recording (server-side, non-blocking).
-      // Uses the shared axios client like every other API call on this page:
-      // it resolves the right base URL and attaches the JWT (a bare fetch sent
-      // no Authorization header and returned 401).
-      try {
-        await post(`/live/${courseId}/recording/start`, { channelName: data.channelName })
-        setIsCloudRecording(true)
-      } catch (e) {
-        console.error('Cloud recording start failed (non-fatal):', e)
-      }
+      // Start Agora Cloud Recording immediately after the instructor's tracks
+      // are published. The server also auto-starts on /live/start, so this is
+      // an idempotent second trigger; either path results in exactly one
+      // recording (the endpoint returns the active one if it already exists).
+      // It runs in the background and never blocks the live stream.
+      console.log('[Recording] triggering cloud recording after publish', {
+        courseId,
+        channelName: data.channelName,
+      })
+      setRecordingState('starting')
+      recordingAttemptedRef.current = true
+      void startRecordingWithRetry(courseId, data.channelName)
+        .then((recording) => {
+          console.log('[Recording] Started:', recording)
+          setRecordingState('active')
+          setIsCloudRecording(true)
+          toast.success(
+            isAr ? 'بدأ التسجيل السحابي للجلسة' : 'Cloud recording started',
+            { icon: <Circle size={16} fill="#dc2626" color="#dc2626" /> },
+          )
+        })
+        .catch((err) => {
+          console.error('[Recording] Failed to start:', err)
+          setRecordingState('failed')
+          setIsCloudRecording(false)
+          // Never block or end the live session because recording failed.
+          toast.error(
+            isAr
+              ? 'تعذر بدء تسجيل الجلسة. البث مستمر.'
+              : 'Could not start session recording. The stream continues.',
+          )
+        })
 
       // Mark live first so the useLiveSocket hook connects its own socket, then
       // announce on THAT socket once it has joined the room. Emitting before the
@@ -553,15 +619,30 @@ export default function GoLivePage() {
       // Wait a moment for socket to send
       await new Promise(r => setTimeout(r, 500))
 
-      // Stop Agora Cloud Recording before leaving — authenticated through the
-      // shared axios client, same as start.
-      if (isCloudRecording) {
+      // Stop Agora Cloud Recording before leaving. Attempt this whenever a
+      // start was initiated (including a start that is still retrying) so the
+      // recording is finalized instead of running until the idle timeout.
+      if (recordingAttemptedRef.current) {
         try {
-          await post(`/live/${courseId}/recording/stop`, {
-            channelName: liveChannelRef.current ?? undefined,
+          console.log('[Recording] stopping cloud recording', {
+            courseId,
+            channelName: liveChannelRef.current,
           })
-        } catch (e) {
-          console.error('Recording stop failed (non-fatal):', e)
+          await post(
+            `/live/${courseId}/recording/stop`,
+            { channelName: liveChannelRef.current ?? undefined },
+            { timeout: 60000, skipAuthRedirect: true, skipRetry: true },
+          )
+          console.log('[Recording] Stopped')
+          recordingAttemptedRef.current = false
+          setRecordingState('idle')
+          setIsCloudRecording(false)
+        } catch (e: any) {
+          console.error('[Recording] Failed to stop:', {
+            status: e?.response?.status,
+            message: e?.message,
+            response: e?.response?.data,
+          })
         }
       }
 
@@ -638,10 +719,19 @@ export default function GoLivePage() {
                   : (isAr ? 'استوديو البث' : 'LIVE STUDIO')}
             </span>
             {liveStarted && !streamEnded && <span style={{ color: '#dc2626', fontSize: 13, fontFamily: 'monospace', fontWeight: 700 }}>{formatTime(elapsed)}</span>}
-            {isCloudRecording && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#fca5a5', fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite' }} />
-                REC
+            {recordingState !== 'idle' && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: recordingState === 'failed' ? '#f59e0b' : '#fca5a5', fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>
+                <Circle
+                  size={9}
+                  color={recordingState === 'failed' ? '#f59e0b' : '#ef4444'}
+                  fill={recordingState === 'active' ? '#ef4444' : 'transparent'}
+                  style={recordingState === 'active' ? { animation: 'livePulse 1.5s infinite' } : undefined}
+                />
+                {recordingState === 'active'
+                  ? 'REC'
+                  : recordingState === 'starting'
+                    ? (isAr ? 'بدء التسجيل' : 'REC STARTING')
+                    : (isAr ? 'تعذر التسجيل' : 'REC FAILED')}
               </span>
             )}
             {connectionState === 'reconnecting' && (
@@ -903,11 +993,20 @@ export default function GoLivePage() {
             </div>
 
             {/* Cloud recording status */}
-            {isCloudRecording && (
+            {recordingState !== 'idle' && (
               <div style={{ padding: '10px 14px', background: cardBg, borderRadius: 12, border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite', flexShrink: 0 }} />
-                <span style={{ color: '#fca5a5', fontSize: 12, fontWeight: 600 }}>
-                  {isAr ? 'جارٍ التسجيل السحابي...' : 'Cloud recording in progress...'}
+                <Circle
+                  size={10}
+                  color={recordingState === 'failed' ? '#f59e0b' : '#ef4444'}
+                  fill={recordingState === 'active' ? '#ef4444' : 'transparent'}
+                  style={recordingState === 'active' ? { animation: 'livePulse 1.5s infinite', flexShrink: 0 } : { flexShrink: 0 }}
+                />
+                <span style={{ color: recordingState === 'failed' ? '#f59e0b' : '#fca5a5', fontSize: 12, fontWeight: 600 }}>
+                  {recordingState === 'active'
+                    ? (isAr ? 'جارٍ التسجيل السحابي...' : 'Cloud recording in progress...')
+                    : recordingState === 'starting'
+                      ? (isAr ? 'جارٍ بدء التسجيل السحابي...' : 'Starting cloud recording...')
+                      : (isAr ? 'تعذر بدء تسجيل الجلسة. البث مستمر.' : 'Could not start session recording. The stream continues.')}
                 </span>
               </div>
             )}

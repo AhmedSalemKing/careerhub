@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// ✅ FIXED: دالة تحديد baseURL محسنة تماماً
+// Resolve the API base URL once, preferring the environment variable.
 const getBaseURL = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_URL
 
@@ -48,6 +48,7 @@ api.interceptors.response.use(
     if (config) {
       if (!config._retryCount) config._retryCount = 0
       const shouldRetry =
+        !(config as any).skipRetry &&
         config._retryCount < 2 &&
         (!error.response ||
           error.response.status === 503 ||
@@ -68,15 +69,17 @@ api.interceptors.response.use(
     const message = data?.message || ''
     const code = data?.code || message
     
-    console.error('[API] ❌ Error:', {
+    console.error('[API] Error:', {
       url: error.config?.url,
       status,
       message,
       code,
     })
 
-    // Handle auth errors - force logout and redirect
-    if (status === 401) {
+    // Handle auth errors - force logout and redirect. Callers that must not be
+    // interrupted (for example the non-fatal cloud-recording call during a
+    // live stream) can opt out with skipAuthRedirect.
+    if (status === 401 && !(error.config as any)?.skipAuthRedirect) {
       const isAuthPath = window.location.pathname.includes('/login')
       const isRegisterPath = window.location.pathname.includes('/register')
       

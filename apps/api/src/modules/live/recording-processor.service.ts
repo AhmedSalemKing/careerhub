@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class RecordingProcessorService {
@@ -10,13 +10,17 @@ export class RecordingProcessorService {
   constructor(private readonly prisma: PrismaService) {
     this.s3 = new S3Client({
       region: this.resolveRegion(),
-      endpoint: process.env.B2_ENDPOINT,
+      endpoint: process.env.B2_ENDPOINT || process.env.BACKBLAZE_B2_ENDPOINT,
       credentials: {
-        accessKeyId: process.env.B2_KEY_ID,
-        secretAccessKey: process.env.B2_APPLICATION_KEY,
+        accessKeyId: process.env.B2_KEY_ID || process.env.BACKBLAZE_B2_KEY_ID,
+        secretAccessKey: process.env.B2_APPLICATION_KEY || process.env.BACKBLAZE_B2_APPLICATION_KEY,
       },
       forcePathStyle: true,
     });
+  }
+
+  private get bucket(): string | undefined {
+    return process.env.B2_BUCKET || process.env.BACKBLAZE_B2_BUCKET;
   }
 
   /**
@@ -27,12 +31,16 @@ export class RecordingProcessorService {
   private resolveRegion(): string {
     const explicit = process.env.B2_REGION?.trim();
     if (explicit) return explicit;
-    const match = (process.env.B2_ENDPOINT || '').match(/s3[.-]([a-z0-9-]+)\.backblazeb2\.com/i);
+    const endpoint = process.env.B2_ENDPOINT || process.env.BACKBLAZE_B2_ENDPOINT || '';
+    const match = endpoint.match(/s3[.-]([a-z0-9-]+)\.backblazeb2\.com/i);
     return match?.[1] || 'us-east-1';
   }
 
   async processRecordingComplete(webhookEventId: string, sid: string, fileList: any[]): Promise<void> {
-    const recording = await this.prisma.liveRecording.findUnique({ where: { sid } });
+    const recording = await this.prisma.liveRecording.findUnique({
+      where: { sid },
+      include: { liveSession: { select: { channelName: true } } },
+    });
     if (!recording) { this.logger.warn(`No recording for sid: ${sid}`); return; }
     if (recording.status === 'READY') { this.logger.log(`Already processed: ${sid}`); return; }
 
@@ -40,9 +48,11 @@ export class RecordingProcessorService {
     this.logger.log(`Processing ${sid}: ${Array.isArray(fileList) ? fileList.length : 0} file(s) in payload`);
 
     try {
-      // Agora sends fileList as an array of path strings; older webhook payloads
-      // (and the processor's own callers) may wrap them as { fileName }. Accept
-      // both shapes and always prefer the single MP4 over HLS .ts fragments.
+      // Agora eventType 31/32 ("uploaded"/"backuped") sends
+      // details.fileList as an array of objects: { fileName, trackType, ... }.
+      // Some payload variants and manual replays use plain path strings. Accept
+      // both, normalize to strings, and always prefer the single MP4 over HLS
+      // .ts fragments.
       const fileNames: string[] = (Array.isArray(fileList) ? fileList : [])
         .map((f: any) => (typeof f === 'string' ? f : f?.fileName))
         .filter((f: unknown): f is string => typeof f === 'string' && f.length > 0);
@@ -56,7 +66,7 @@ export class RecordingProcessorService {
         throw new Error('No mp4 or ts file found in recording file list');
       }
 
-      const b2Key = fileKey;
+      const b2Key = await this.resolveB2Key(fileKey, recording.liveSession?.channelName);
       this.logger.log(`Selected B2 object ${b2Key} (${mp4File ? 'mp4' : 'ts fallback'})`);
       await this.prisma.liveRecording.update({ where: { sid }, data: { b2Key } });
 
@@ -88,6 +98,37 @@ export class RecordingProcessorService {
     }
   }
 
+  /**
+   * Agora reports the uploaded file as a bare name in some payloads and as the
+   * full object key in others. The recorder was started with
+   * fileNamePrefix ['recordings', channelName], so probe the likely keys
+   * instead of downloading a guaranteed-missing object.
+   */
+  private async resolveB2Key(fileName: string, channelName?: string): Promise<string> {
+    const clean = fileName.replace(/^\/+/, '');
+    const base = clean.split('/').pop() || clean;
+    const prefix = channelName ? `recordings/${channelName}` : null;
+
+    const candidates = [clean];
+    if (prefix) {
+      candidates.push(`${prefix}/${base}`);
+      if (!clean.startsWith('recordings/')) candidates.push(`${prefix}/${clean}`);
+    }
+
+    for (const key of Array.from(new Set(candidates))) {
+      try {
+        await this.s3.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+        return key;
+      } catch (err: any) {
+        this.logger.warn(`B2 key candidate not found: ${key} (${err?.name || err?.message})`);
+      }
+    }
+
+    const fallback = prefix ? `${prefix}/${base}` : clean;
+    this.logger.warn(`Could not verify ${fileName} in B2, falling back to ${fallback}`);
+    return fallback;
+  }
+
   private async uploadToBunny(sessionId: string, b2Key: string): Promise<string> {
     const libraryId = process.env.BUNNY_LIBRARY_ID;
     const apiKey = process.env.BUNNY_API_KEY;
@@ -102,7 +143,7 @@ export class RecordingProcessorService {
     this.logger.log(`Created Bunny video ${guid} for session ${sessionId}`);
 
     const { Body, ContentLength } = await this.s3.send(new GetObjectCommand({
-      Bucket: process.env.B2_BUCKET,
+      Bucket: this.bucket,
       Key: b2Key,
     }));
     if (!Body) throw new Error(`Empty B2 object: ${b2Key}`);

@@ -10,6 +10,11 @@ import { PrismaService } from '../../prisma/prisma.service'
 export class LiveController {
   private readonly logger = new Logger(LiveController.name);
 
+  // /live/start, /live/lesson-start, and the browser's /recording/start can
+  // arrive within milliseconds of each other. Sharing the in-flight promise
+  // guarantees Agora only starts one recording per course/channel.
+  private readonly recordingStarts = new Map<string, Promise<any>>();
+
   constructor(
     private liveService: LiveService,
     private readonly agoraService: AgoraCloudRecordingService,
@@ -25,13 +30,39 @@ export class LiveController {
   @Post('start/:courseId')
   @UseGuards(JwtAuthGuard)
   async startLive(@Param('courseId') courseId: string, @Request() req: any) {
-    return this.liveService.startLive(courseId, req.user.id)
+    const result = await this.liveService.startLive(courseId, req.user.id)
+    const channelName = result?.data?.channelName
+
+    // Start Cloud Recording from the server as soon as the session is live.
+    // The browser also calls /recording/start, but this path is the guarantee:
+    // it still runs when the deployed web bundle is stale, the tab throttles
+    // background work, or the client request is lost during a cold start.
+    if (channelName) {
+      this.logger.log(`[Recording] Auto-start after /live/start for course ${courseId}, channel: ${channelName}`);
+      void this.ensureRecordingStarted(courseId, channelName, req.user.id)
+        .catch((error) => {
+          this.logger.error(`[Recording] Auto-start FAILED${error?.message ? ': ' + error.message : ''}`, error?.stack);
+        });
+    }
+
+    return result
   }
 
   @Post('end/:courseId')
   @UseGuards(JwtAuthGuard)
   async endLive(@Param('courseId') courseId: string, @Request() req: any) {
-    return this.liveService.endLive(courseId, req.user.id)
+    const result = await this.liveService.endLive(courseId, req.user.id)
+
+    // Safety net: if the instructor closed the tab or the browser never called
+    // /recording/stop, stop the recording here so the files are finalized and
+    // uploaded instead of running until the idle timeout.
+    this.logger.log(`[Recording] Auto-stop after /live/end for course ${courseId}`);
+    void this.ensureRecordingStopped(courseId, req.user.id)
+      .catch((error) => {
+        this.logger.error(`[Recording] Auto-stop FAILED${error?.message ? ': ' + error.message : ''}`, error?.stack);
+      });
+
+    return result
   }
 
   /**
@@ -105,7 +136,19 @@ export class LiveController {
   @Post('lesson-start/:lessonId')
   @UseGuards(JwtAuthGuard)
   async startLessonLive(@Param('lessonId') lessonId: string, @Request() req: any) {
-    return this.liveService.startLessonLive(lessonId, req.user.id)
+    const result = await this.liveService.startLessonLive(lessonId, req.user.id)
+    const courseId = result?.data?.courseId
+    const channelName = result?.data?.channelName
+
+    if (courseId && channelName) {
+      this.logger.log(`[Recording] Auto-start after /live/lesson-start for course ${courseId}, channel: ${channelName}`);
+      void this.ensureRecordingStarted(courseId, channelName, req.user.id)
+        .catch((error) => {
+          this.logger.error(`[Recording] Auto-start FAILED${error?.message ? ': ' + error.message : ''}`, error?.stack);
+        });
+    }
+
+    return result
   }
 
   @Post('lesson-end/:lessonId')
@@ -139,25 +182,56 @@ export class LiveController {
     this.logger.log(`[Recording] START request for course: ${courseId}`);
     this.logger.log(`[Recording] User: ${userId}, requested channel: ${requestedChannel || '(resolve from course)'}`);
 
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, instructorId: true, agoraChannelName: true },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.accountType)
+      || ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.role);
+    if (course.instructorId !== userId && !isAdmin) {
+      throw new ForbiddenException('Not authorized to record this course');
+    }
+
+    // The channel must be the one the instructor actually joined. The course
+    // stores it when /live/start runs; the client can also pass it explicitly
+    // (lesson live sessions are not stored on the course).
+    const channelName = requestedChannel || course.agoraChannelName || `deveway_${courseId}`;
+    if (course.agoraChannelName && channelName !== course.agoraChannelName) {
+      this.logger.warn(
+        `[Recording] Channel mismatch: client=${channelName}, course=${course.agoraChannelName}. Using the client channel.`,
+      );
+    }
+    this.logger.log(`[Recording] Resolved channel: ${channelName}`);
+
+    return this.ensureRecordingStarted(courseId, channelName, userId);
+  }
+
+  /**
+   * Starts Cloud Recording once for a course/channel pair. Safe to call from
+   * /live/start, /live/lesson-start, and /recording/start at the same time:
+   * concurrent callers share one in-flight start, and a completed recording is
+   * reused instead of started twice.
+   */
+  private async ensureRecordingStarted(courseId: string, channelName: string, userId: string) {
+    const key = `${courseId}:${channelName}`;
+    const inFlight = this.recordingStarts.get(key);
+    if (inFlight) {
+      this.logger.log(`[Recording] Start already in progress for ${key}, joining it`);
+      return inFlight;
+    }
+
+    const task = this.startRecordingOnce(courseId, channelName, userId)
+      .finally(() => this.recordingStarts.delete(key));
+    this.recordingStarts.set(key, task);
+    return task;
+  }
+
+  private async startRecordingOnce(courseId: string, channelName: string, userId: string) {
+    this.logger.log(`[Recording] Ensuring recording for course ${courseId}, channel ${channelName}`);
+
     try {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { id: true, instructorId: true, agoraChannelName: true },
-      });
-      if (!course) throw new NotFoundException('Course not found');
-
-      const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.accountType)
-        || ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.role);
-      if (course.instructorId !== userId && !isAdmin) {
-        throw new ForbiddenException('Not authorized to record this course');
-      }
-
-      // The channel must be the one the instructor actually joined. The course
-      // stores it when /live/start runs; the client can also pass it explicitly
-      // (lesson live sessions are not stored on the course).
-      const channelName = requestedChannel || course.agoraChannelName || `deveway_${courseId}`;
-      this.logger.log(`[Recording] Resolved channel: ${channelName}`);
-
       let session = await this.prisma.liveSession.findFirst({
         where: { courseId, channelName },
         include: { recording: true },
@@ -181,7 +255,7 @@ export class LiveController {
       const existing = (session as any).recording;
       if (existing?.status === 'RECORDING') {
         this.logger.log(`[Recording] Already recording for session ${session.id} (sid ${existing.sid})`);
-        return { started: true, recordingId: existing.id, sid: existing.sid, existing: true };
+        return { started: true, recordingId: existing.id, sid: existing.sid, channelName, existing: true };
       }
 
       const recordingUid = '666';
@@ -201,7 +275,7 @@ export class LiveController {
         update: { resourceId, sid, status: 'RECORDING', retryCount: 0, lastError: null },
       });
 
-      this.logger.log(`[Recording] START complete, recordingId: ${recording.id}`);
+      this.logger.log(`[Recording] START complete, recordingId: ${recording.id}, channel: ${channelName}`);
       return { started: true, recordingId: recording.id, sid, channelName };
     } catch (error) {
       this.logger.error(`[Recording] FAILED: ${error.message}`, error.stack);
@@ -222,19 +296,27 @@ export class LiveController {
     this.logger.log(`[Recording] STOP request for course: ${courseId}`);
     this.logger.log(`[Recording] User: ${userId}, requested channel: ${requestedChannel || '(latest session)'}`);
 
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { instructorId: true },
+    });
+    if (!course) throw new NotFoundException('Course not found');
+
+    const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.accountType)
+      || ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.role);
+    if (course.instructorId !== userId && !isAdmin) {
+      throw new ForbiddenException('Not authorized to record this course');
+    }
+
+    return this.ensureRecordingStopped(courseId, requestedChannel || undefined);
+  }
+
+  /**
+   * Stops the active recording for a course (optionally for one channel).
+   * Idempotent: /recording/stop followed by /live/end only stops once.
+   */
+  private async ensureRecordingStopped(courseId: string, requestedChannel?: string) {
     try {
-      const course = await this.prisma.course.findUnique({
-        where: { id: courseId },
-        select: { instructorId: true },
-      });
-      if (!course) throw new NotFoundException('Course not found');
-
-      const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.accountType)
-        || ['ADMIN', 'SUPER_ADMIN'].includes(req.user?.role);
-      if (course.instructorId !== userId && !isAdmin) {
-        throw new ForbiddenException('Not authorized to record this course');
-      }
-
       const session = await this.prisma.liveSession.findFirst({
         where: {
           courseId,
@@ -250,6 +332,11 @@ export class LiveController {
       }
 
       const rec = (session as any).recording;
+      if (rec.status === 'READY' || rec.status === 'PROCESSING' || rec.status === 'STOPPING') {
+        this.logger.log(`[Recording] Recording ${rec.sid} already ${rec.status}, nothing to stop`);
+        return { stopped: true, sid: rec.sid, message: `Already ${rec.status}` };
+      }
+
       this.logger.log(`[Recording] Stopping sid ${rec.sid} (resource ${rec.resourceId}) on channel ${session.channelName}`);
 
       await this.agoraService.stopRecording(

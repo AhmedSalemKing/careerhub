@@ -7,6 +7,25 @@ export class AgoraCloudRecordingService {
   private get appId() { return process.env.AGORA_APP_ID; }
   private get baseUrl() { return `https://api.agora.io/v1/apps/${this.appId}/cloud_recording`; }
 
+  // Accept both names: the deployment currently uses B2_*, while new Render
+  // setups use the explicit BACKBLAZE_B2_* names.
+  private get b2Endpoint() { return process.env.B2_ENDPOINT || process.env.BACKBLAZE_B2_ENDPOINT; }
+  private get b2Bucket() { return process.env.B2_BUCKET || process.env.BACKBLAZE_B2_BUCKET; }
+  private get b2KeyId() { return process.env.B2_KEY_ID || process.env.BACKBLAZE_B2_KEY_ID; }
+  private get b2ApplicationKey() { return process.env.B2_APPLICATION_KEY || process.env.BACKBLAZE_B2_APPLICATION_KEY; }
+
+  private requireStorage(): void {
+    const missing: string[] = [];
+    if (!this.appId) missing.push('AGORA_APP_ID');
+    if (!this.b2Endpoint) missing.push('B2_ENDPOINT or BACKBLAZE_B2_ENDPOINT');
+    if (!this.b2Bucket) missing.push('B2_BUCKET or BACKBLAZE_B2_BUCKET');
+    if (!this.b2KeyId) missing.push('B2_KEY_ID or BACKBLAZE_B2_KEY_ID');
+    if (!this.b2ApplicationKey) missing.push('B2_APPLICATION_KEY or BACKBLAZE_B2_APPLICATION_KEY');
+    if (missing.length > 0) {
+      throw new Error(`Missing required storage environment variables: ${missing.join(', ')}`);
+    }
+  }
+
   private get authHeader() {
     const creds = Buffer.from(`${process.env.AGORA_CUSTOMER_KEY}:${process.env.AGORA_CUSTOMER_SECRET}`).toString('base64');
     return `Basic ${creds}`;
@@ -62,18 +81,18 @@ export class AgoraCloudRecordingService {
       'AGORA_APP_ID',
       'AGORA_CUSTOMER_KEY',
       'AGORA_CUSTOMER_SECRET',
-      'B2_BUCKET',
-      'B2_KEY_ID',
-      'B2_APPLICATION_KEY',
-      'B2_ENDPOINT',
     ]);
+    this.requireStorage();
     const data = await this.request('POST', `/resourceid/${resourceId}/mode/mix/start`, {
       cname: channelName,
       uid,
       clientRequest: {
         token,
         recordingConfig: {
-          maxIdleTime: 30,
+          // The server starts the recorder before the instructor's client has
+          // finished joining (cold start, camera permission). Keep the
+          // recorder waiting up to five minutes instead of exiting after 30s.
+          maxIdleTime: 300,
           streamTypes: 2,
           channelType: 1,
           videoStreamType: 0,
@@ -93,12 +112,12 @@ export class AgoraCloudRecordingService {
           // rejected by Agora when pointed at a non-AWS endpoint such as B2.
           vendor: 11,
           region: 0,
-          bucket: process.env.B2_BUCKET,
-          accessKey: process.env.B2_KEY_ID,
-          secretKey: process.env.B2_APPLICATION_KEY,
+          bucket: this.b2Bucket,
+          accessKey: this.b2KeyId,
+          secretKey: this.b2ApplicationKey,
           fileNamePrefix: ['recordings', channelName],
           extensionParams: {
-            endpoint: process.env.B2_ENDPOINT,
+            endpoint: this.b2Endpoint,
           },
         },
       },

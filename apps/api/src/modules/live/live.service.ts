@@ -6,9 +6,9 @@ import { BunnyStreamService } from '../upload/bunny-stream.service'
 @Injectable()
 export class LiveService {
   /**
-   * The recording is produced by the instructor's browser (MediaRecorder) and
-   * uploaded to this API, which stores it on Bunny.net Stream and turns it
-   * into a Lesson. Agora Cloud Recording is not used and is not needed.
+   * Live sessions use Agora Cloud Recording (composite/mix mode). The server
+   * starts the recorder when the session goes live, Agora uploads the MP4 to
+   * Backblaze B2, and a webhook hands the file to Bunny.net Stream.
    */
   readonly recordingSupported = true;
 
@@ -57,7 +57,13 @@ export class LiveService {
     if (course.instructorId !== instructorId) throw new ForbiddenException('Not authorized')
     if (course.type !== 'live') throw new BadRequestException('Not a live course')
 
-    const channelName = this.agora.generateChannelName(courseId)
+    // Reuse the channel while the course is already live. Calling /live/start
+    // twice (double click, cold-start retry) must never produce a second
+    // channel: the instructor, viewers, and the recorder would end up on
+    // different channels and the recording would be empty.
+    const channelName = (course.liveStatus === 'live' && course.agoraChannelName)
+      ? course.agoraChannelName
+      : this.agora.generateChannelName(courseId)
     const uid = 1
     const token = this.agora.generateToken(channelName, uid, 'publisher')
 
@@ -401,7 +407,7 @@ export class LiveService {
       data: { liveStatus: 'live', agoraChannelName: channelName }
     })
 
-    return { success: true, data: { token, channelName, appId: this.agora.getAppId() } }
+    return { success: true, data: { token, channelName, appId: this.agora.getAppId(), courseId: lesson.section?.course?.id } }
   }
 
   async endLessonLive(lessonId: string, instructorId: string) {

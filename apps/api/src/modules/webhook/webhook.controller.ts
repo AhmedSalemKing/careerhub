@@ -33,7 +33,7 @@ export class WebhookController {
         res.status(401).json({ error: 'Missing signature' });
         return;
       }
-      const expected = createHmac('sha256', secret).update(rawBody).digest('hex');
+      const expected = createHmac(sigV2 ? 'sha256' : 'sha1', secret).update(rawBody).digest('hex');
       const expectedBuf = Buffer.from(expected, 'utf8');
       const actualBuf = Buffer.from(usedSig.toLowerCase(), 'utf8');
       if (
@@ -78,8 +78,15 @@ export class WebhookController {
           },
         });
 
-        const isUploadEvent = ['31', '32', '40', 'cloud_recording_file_infos', 'cloud_recording_upload_finished']
-          .includes(eventType);
+        // Agora Cloud Recording event types (per the official docs):
+        // 4  cloud_recording_file_infos (M3U8 generated)
+        // 11 session_exit, 31 uploaded, 32 backuped, 41 recorder_leave.
+        // Only 31 and 32 carry the final fileList that can be uploaded to B2.
+        if (eventType === '11' || eventType === '41') {
+          this.logger.log(`Recording lifecycle event ${eventType} for sid ${sid ?? 'none'}`);
+        }
+
+        const isUploadEvent = ['31', '32'].includes(eventType);
         if (!isUploadEvent || !sid) return;
 
         const fileList = this.extractFileList(body);
