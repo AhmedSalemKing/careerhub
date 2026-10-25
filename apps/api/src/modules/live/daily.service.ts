@@ -66,23 +66,42 @@ export class DailyService implements OnModuleInit {
   }
 
   private async fetchRecordingUrl(roomName: string, maxRetries = 10): Promise<string | null> {
+    const apiKey = this.apiKey;
+
     for (let i = 0; i < maxRetries; i++) {
-      await new Promise(r => setTimeout(r, 30_000));
+      if (i > 0) await new Promise(r => setTimeout(r, 15_000));
       try {
-        const data = await this.request(`/recordings?room_name=${encodeURIComponent(roomName)}&limit=1`);
-        const rec = data?.data?.[0];
-        if (rec?.status === 'finished' && (rec.download_link || rec.view_link)) {
-          return rec.download_link ?? rec.view_link;
-        }
+        // Step 1: find the most recent finished recording for this room
+        const listRes = await fetch(
+          `${this.baseUrl}/recordings?room_name=${encodeURIComponent(roomName)}&limit=10`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        );
+        const listJson = await listRes.json();
+        const recordings: any[] = listJson?.data ?? [];
+
+        const finished = recordings
+          .filter((r: any) => r.status === 'finished')
+          .sort((a: any, b: any) => b.start_ts - a.start_ts)[0];
+
+        if (!finished) continue;
+
+        // Step 2: fetch the presigned download link (not in the list response)
+        const linkRes = await fetch(
+          `${this.baseUrl}/recordings/${finished.id}/access-link`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        );
+        const linkJson = await linkRes.json();
+        const url: string | undefined = linkJson?.download_link;
+        if (url) return url;
       } catch (e) {
-        this.logger.warn(`Recording poll attempt ${i + 1} failed: ${(e as Error).message}`);
+        this.logger.warn(`fetchRecordingUrl attempt ${i + 1} failed: ${(e as Error).message}`);
       }
     }
     return null;
   }
 
-  async getRecordingForRoom(roomName: string): Promise<string | null> {
-    return this.fetchRecordingUrl(roomName);
+  async getRecordingForRoom(roomName: string, maxRetries = 10): Promise<string | null> {
+    return this.fetchRecordingUrl(roomName, maxRetries);
   }
 
   async registerWebhook(): Promise<void> {
