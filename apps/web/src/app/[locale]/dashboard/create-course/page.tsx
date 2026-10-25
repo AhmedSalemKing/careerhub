@@ -842,68 +842,302 @@ export default function CreateCoursePage() {
             </>
           )}
 
-          {/* STEP 4: Review */}
+          {/* STEP 4: Review — full-page centered overlay */}
           {step === 4 && (
             <>
-              <h2 className="text-lg font-bold font-madinet text-foreground">
-                {isAr ? 'مراجعة وإنشاء الكورس' : 'Review & Create'}
-              </h2>
+              <style>{`
+                @font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Black.otf') format('opentype'); font-weight:700; }
+                @font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Medium.otf') format('opentype'); font-weight:500; }
+                @font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Light.otf') format('opentype'); font-weight:300; }
+                @keyframes _rev_spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+              `}</style>
+              <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                minHeight: '100vh', overflowY: 'auto',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                background: '#090b10', padding: '32px 16px',
+                fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+                zIndex: 1000,
+              }}>
 
-              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-4 space-y-3 text-sm">
-                {selectedType && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: `${selectedType.color}15` }}>
-                      <selectedType.icon size={14} color={selectedType.color} />
+                {/* Page title */}
+                <h1 style={{ fontWeight: 700, fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: '#f3f4f6', marginBottom: 24, textAlign: 'center' }}>
+                  {isAr ? 'مراجعة وإنشاء الكورس' : 'Review & Create Course'}
+                </h1>
+
+                {/* Main card */}
+                <div style={{ width: '100%', maxWidth: 680, background: '#13161f', border: '1px solid #1e2333', borderRadius: 20, padding: 28 }}>
+
+                  {/* 1. Header row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{
+                      background: '#7c3aed', color: '#fff', borderRadius: 999,
+                      padding: '4px 14px', fontSize: '0.8rem', fontWeight: 500,
+                      display: 'flex', alignItems: 'center', gap: 6,
+                    }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', opacity: 0.8, display: 'inline-block', flexShrink: 0 }} />
+                      {isAr
+                        ? (selectedType?.ar ?? '')
+                        : (selectedType?.en ?? '')}
                     </div>
-                    <span className="text-xs font-bold" style={{ color: selectedType.color }}>
-                      {isAr ? selectedType.ar : selectedType.en}
-                    </span>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                      background: '#1e1b4b', border: '1px solid #2d2060',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                      </svg>
+                    </div>
                   </div>
-                )}
-                <Row label={isAr ? 'العنوان' : 'Title'} value={form.title} />
-                <Row label={isAr ? 'العنوان بالعربية' : 'Arabic Title'} value={form.titleAr || '—'} />
-                <Row label={isAr ? 'الوصف' : 'Description'} value={form.description ? form.description.slice(0, 80) + '...' : '—'} />
-                <Row label={isAr ? 'السعر' : 'Price'} value={`${form.price} ${isAr ? 'ر.س' : 'SAR'}`} />
-                <Row label={isAr ? 'المستوى' : 'Level'} value={LEVELS.find(l => l.value === form.level)?.[isAr ? 'ar' : 'en'] ?? form.level} />
-                <Row label={isAr ? 'الصورة' : 'Thumbnail'} value={form.thumbnail ? (isAr ? 'تم الرفع ✓' : 'Uploaded ✓') : (isAr ? 'لا توجد' : 'None')} />
-                {form.type === 'live' && (
-                  <>
-                    <Row label={isAr ? 'تاريخ البث' : 'Live Date'} value={`${form.liveDate} ${form.liveTime}`} />
-                    <Row label={isAr ? 'المدة' : 'Duration'} value={`${form.liveDuration} ${isAr ? 'دقيقة' : 'min'}`} />
-                  </>
-                )}
-                {form.type === 'offline' && (
-                  <>
-                    <Row label={isAr ? 'المكان' : 'Venue'} value={form.locationName} />
-                    <Row label={isAr ? 'العنوان' : 'Address'} value={form.locationAddress || '—'} />
-                    <Row label={isAr ? 'التاريخ' : 'Date'} value={`${form.offlineDate} ${form.offlineTime}`} />
-                    <Row label={isAr ? 'الحد الأقصى' : 'Max Attendees'} value={form.maxAttendees || (isAr ? 'غير محدود' : 'Unlimited')} />
-                    <Row label={isAr ? 'طريقة الدفع' : 'Payment'} value={form.offlinePaymentType === 'online' ? (isAr ? 'دفع مسبق' : 'Online') : (isAr ? 'في المقر' : 'On Site')} />
-                  </>
-                )}
-                {form.type === 'recorded' && (
-                  <Row label={isAr ? 'الأقسام' : 'Sections'}
-                    value={form.sections.filter(s => s.title.trim()).map(s => s.title).join('، ') || (isAr ? 'لا توجد' : 'None')} />
-                )}
-              </div>
 
-              <div>
-                <label className={labelCls}>{isAr ? 'حالة النشر' : 'Publish Status'}</label>
-                <div className="flex gap-3">
-                  {[
-                    { value: 'DRAFT', ar: 'حفظ كمسودة', en: 'Save as Draft', descAr: 'لن يُعرض للطلاب', descEn: 'Won\'t be visible to students' },
-                    { value: 'PENDING_REVIEW', ar: 'إرسال للمراجعة', en: 'Submit for Review', descAr: 'سيراجعه فريق DeveWay', descEn: 'DeveWay team will review' },
-                  ].map(opt => (
-                    <button key={opt.value} onClick={() => set('status', opt.value)}
-                      className={`flex-1 rounded-xl border p-3 text-right transition-all ${
-                        form.status === opt.value
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-foreground hover:border-primary/50'
-                      }`}>
-                      <div className="text-sm font-bold">{isAr ? opt.ar : opt.en}</div>
-                      <div className="text-xs text-[color:var(--muted)] mt-0.5">{isAr ? opt.descAr : opt.descEn}</div>
+                  {/* 2. Course title */}
+                  <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#f3f4f6', margin: '16px 0 20px', lineHeight: 1.3 }}>
+                    {form.title}
+                  </div>
+
+                  {/* 3. Info grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+                    {/* الوصف */}
+                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الوصف' : 'Description'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                          {form.description ? form.description.slice(0, 50) + (form.description.length > 50 ? '...' : '') : '—'}
+                        </div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                    </div>
+
+                    {/* العنوان بالعربية */}
+                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'العنوان بالعربية' : 'Arabic Title'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.titleAr || '—'}</div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <polyline points="4 7 4 4 20 4 20 7"/>
+                        <line x1="9" y1="20" x2="15" y2="20"/>
+                        <line x1="12" y1="4" x2="12" y2="20"/>
+                      </svg>
+                    </div>
+
+                    {/* المستوى */}
+                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المستوى' : 'Level'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                          {LEVELS.find(l => l.value === form.level)?.[isAr ? 'ar' : 'en'] ?? form.level}
+                        </div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                      </svg>
+                    </div>
+
+                    {/* السعر */}
+                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'السعر' : 'Price'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.price} {isAr ? 'ر.س' : 'SAR'}</div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
+                        <line x1="7" y1="7" x2="7.01" y2="7"/>
+                      </svg>
+                    </div>
+
+                    {/* تاريخ البث — live only */}
+                    {form.type === 'live' && (
+                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'تاريخ البث' : 'Live Date'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.liveDate} {form.liveTime}</div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                          <rect x="3" y="4" width="18" height="18" rx="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* المكان — offline only */}
+                    {form.type === 'offline' && (
+                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المكان' : 'Venue'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.locationName || '—'}</div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                          <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* الصورة */}
+                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الصورة' : 'Thumbnail'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: form.thumbnail ? '#34d399' : '#f3f4f6' }}>
+                          {form.thumbnail ? (isAr ? 'تم الرفع' : 'Uploaded') : (isAr ? 'لا توجد' : 'None')}
+                        </div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+
+                    {/* الأقسام — recorded only */}
+                    {form.type === 'recorded' && (
+                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الأقسام' : 'Sections'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                            {form.sections.filter(s => s.title.trim()).length || (isAr ? 'لا توجد' : 'None')}
+                          </div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                          <line x1="8" y1="6" x2="21" y2="6"/>
+                          <line x1="8" y1="12" x2="21" y2="12"/>
+                          <line x1="8" y1="18" x2="21" y2="18"/>
+                          <line x1="3" y1="6" x2="3.01" y2="6"/>
+                          <line x1="3" y1="12" x2="3.01" y2="12"/>
+                          <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                      </div>
+                    )}
+
+                    {/* التاريخ — offline only */}
+                    {form.type === 'offline' && (
+                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'التاريخ' : 'Date'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.offlineDate} {form.offlineTime}</div>
+                        </div>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                          <rect x="3" y="4" width="18" height="18" rx="2"/>
+                          <line x1="16" y1="2" x2="16" y2="6"/>
+                          <line x1="8" y1="2" x2="8" y2="6"/>
+                          <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* المدة — full width, live only */}
+                  {form.type === 'live' && (
+                    <div style={{ marginTop: 12, background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المدة التقريبية' : 'Expected Duration'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.liveDuration} {isAr ? 'دقيقة' : 'min'}</div>
+                      </div>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* 4. Publication status */}
+                  <div style={{ fontWeight: 500, fontSize: '0.85rem', color: '#9ca3af', margin: '20px 0 10px' }}>
+                    {isAr ? 'حالة النشر' : 'Publish Status'}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {([
+                      { val: 'DRAFT', ar: 'حفظ كمسودة', en: 'Save as Draft', subAr: 'لن يُعرض للطلاب', subEn: "Won't be visible to students" },
+                      { val: 'PENDING_REVIEW', ar: 'إرسال للمراجعة', en: 'Submit for Review', subAr: 'سيراجعه فريق DeveWay', subEn: 'DeveWay team will review' },
+                    ] as const).map(opt => {
+                      const active = form.status === opt.val
+                      return (
+                        <button
+                          key={opt.val}
+                          onClick={() => set('status', opt.val)}
+                          style={{
+                            border: active ? '1px solid #7c3aed' : '1px solid #1e2333',
+                            background: active ? '#7c3aed' : '#0f1117',
+                            borderRadius: 12, padding: '14px 16px',
+                            cursor: 'pointer', textAlign: 'right',
+                            display: 'flex', flexDirection: 'column', gap: 4,
+                            fontFamily: "'PingAR', sans-serif",
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontWeight: 500, fontSize: '0.88rem', color: '#f3f4f6' }}>
+                              {isAr ? opt.ar : opt.en}
+                            </span>
+                            {active && (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            )}
+                          </div>
+                          <span style={{ fontWeight: 300, fontSize: '0.75rem', color: active ? 'rgba(255,255,255,0.7)' : '#6b7280' }}>
+                            {isAr ? opt.subAr : opt.subEn}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Error */}
+                  {error && (
+                    <div style={{ marginTop: 16, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: '0.88rem', color: '#f87171', fontWeight: 300 }}>
+                      {error}
+                    </div>
+                  )}
+
+                  {/* 5. Action buttons */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 24, flexDirection: 'row-reverse' }}>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={saving}
+                      style={{
+                        flex: 1, background: '#7c3aed', color: '#fff',
+                        borderRadius: 12, padding: 13, fontWeight: 500, fontSize: '0.95rem',
+                        border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        opacity: saving ? 0.7 : 1,
+                        fontFamily: "'PingAR', sans-serif",
+                      }}
+                    >
+                      {saving ? (
+                        <span style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', display: 'inline-block', animation: '_rev_spin 0.8s linear infinite' }} />
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                      )}
+                      {saving ? (isAr ? 'جاري الإنشاء...' : 'Creating...') : (isAr ? 'إنشاء الكورس' : 'Create Course')}
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setStep(s => Math.max(1, s - 1) as any)}
+                      style={{
+                        background: '#13161f', border: '1px solid #1e2333',
+                        color: '#9ca3af', borderRadius: 12, padding: '13px 20px',
+                        fontWeight: 300, fontSize: '0.88rem', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        fontFamily: "'PingAR', sans-serif",
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 19 19 12 12 5"/>
+                      </svg>
+                      {isAr ? 'السابق' : 'Back'}
+                    </button>
+                  </div>
+
                 </div>
               </div>
             </>
@@ -919,13 +1153,13 @@ export default function CreateCoursePage() {
 
         {/* Navigation */}
         <div className="flex items-center justify-between mt-6">
-          <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
+          <button onClick={() => setStep(s => Math.max(1, s - 1) as 1 | 2 | 3 | 4)} disabled={step === 1}
             className="rounded-xl border border-[color:var(--border)] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] disabled:opacity-30 transition-all flex items-center gap-2">
             <ChevronRight className="h-4 w-4" /> {isAr ? 'السابق' : 'Back'}
           </button>
 
           {step < 4 ? (
-            <button onClick={() => { setError(''); setStep(s => Math.min(4, s + 1)) }} disabled={!canProceed()}
+            <button onClick={() => { setError(''); setStep(s => Math.min(4, s + 1) as 1 | 2 | 3 | 4) }} disabled={!canProceed()}
               className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2">
               {isAr ? 'التالي' : 'Next'} <ChevronLeft className="h-4 w-4" />
             </button>
