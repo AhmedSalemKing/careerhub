@@ -37,7 +37,6 @@ export class DailyService implements OnModuleInit {
         enable_chat: true,
         enable_screenshare: true,
         enable_recording: 'cloud',
-        autodelete_room: true,
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
       },
     });
