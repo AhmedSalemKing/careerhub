@@ -158,30 +158,7 @@ export default function CourseDetailPage({
 		staleTime: 30 * 1000,
 	});
 
-	// Cloud recording URL — polled every 30 s when the stream is over.
-	const { data: cloudRecordingData } = useQuery({
-		queryKey: ["cloud-recording", courseId],
-		queryFn: async () => {
-			try {
-				const res = await get(`/live/recording/public/${courseId}`);
-				const raw = res?.data as any;
-				const url: string | null =
-					(raw?.data?.recordingUrl) ??
-					(raw?.recordingUrl) ??
-					null;
-				return { recordingUrl: url };
-			} catch {
-				return { recordingUrl: null };
-			}
-		},
-		enabled: !!courseId,
-		refetchInterval: 30_000,
-		staleTime: 0,
-	});
-	const cloudRecordingUrl: string | null =
-		(cloudRecordingData as any)?.recordingUrl ?? null;
-
-	useEffect(() => {
+		useEffect(() => {
 		if (enrollmentData === undefined) return;
 		const enrolled = !!(
 			enrollmentData?.enrolled === true ||
@@ -428,7 +405,6 @@ export default function CourseDetailPage({
 				enrollmentStatus={enrollmentStatus}
 				enrolling={enrolling}
 				onEnroll={handleEnroll}
-				cloudRecordingUrl={cloudRecordingUrl}
 			/>
 		);
 	}
@@ -1298,29 +1274,7 @@ export default function CourseDetailPage({
 											</div>
 											)}
 
-											{!recordedLesson && cloudRecordingUrl && (
-											<div
-												className="rounded-xl overflow-hidden"
-												style={{
-													border: `1px solid ${borderColor}`,
-													background: "#000",
-												}}>
-											<LiveRecordingPlayer
-												src={cloudRecordingUrl}
-												poster={thumb}
-											/>
-											<div
-												className="px-3 py-2 text-xs font-medium"
-												style={{
-													color: textPrimary,
-													background: cardBg,
-												}}>
-											{isAr ? "تسجيل البث المباشر" : "Live session recording"}
-											</div>
-											</div>
-											)}
-
-											{!recordedLesson && !cloudRecordingUrl && (
+											{!recordedLesson && (
 											<div
 												className="flex items-start gap-2 p-3 rounded-xl text-xs leading-relaxed"
 												style={{

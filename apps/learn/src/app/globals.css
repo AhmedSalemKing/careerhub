@@ -51,6 +51,30 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'PingAR';
+    src: url('/fonts/alfont_com_PingARLT-Black.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'PingAR';
+    src: url('/fonts/alfont_com_PingARLT-Medium.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'PingAR';
+    src: url('/fonts/alfont_com_PingARLT-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* ══════════════════════════════════════
    DESIGN TOKENS — LIGHT MODE
    Pure White Theme • Clean & Minimal

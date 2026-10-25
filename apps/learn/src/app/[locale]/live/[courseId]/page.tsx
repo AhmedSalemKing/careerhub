@@ -302,62 +302,136 @@ export default function LiveViewerPage() {
 
   // ─── Not Found ────────────────────────────────────────────────────────────
   if (liveState === 'not_found') return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
-      <div style={{ fontSize: '3rem' }}>🔍</div>
-      <h2 style={{ color: '#f1f5f9', margin: 0 }}>هذا البث غير موجود</h2>
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg, #090b10)',
+      fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+      padding: '2rem', gap: 16,
+    }}>
+      <div style={{
+        width: 80, height: 80, borderRadius: '50%',
+        background: '#13161f', border: '1px solid #1e2333',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+          stroke="#9ca3af" strokeWidth="1.8" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
+      <h2 style={{ color: '#f3f4f6', margin: 0, fontWeight: 700, fontSize: '1.5rem' }}>هذا البث غير موجود</h2>
       <p style={{ color: '#6b7280', margin: 0 }}>تأكد من صحة الرابط أو تواصل مع المحاضر.</p>
       <button
         onClick={() => router.push(`/${locale}/courses`)}
-        style={{ marginTop: 8, padding: '10px 24px', background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+        style={{
+          marginTop: 8, padding: '10px 24px', background: '#7c3aed', color: '#fff',
+          border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 500,
+          fontFamily: "'PingAR', sans-serif",
+        }}
       >
         تصفح الكورسات
       </button>
     </div>
   )
 
-  // ─── Ended with recording ─────────────────────────────────────────────────
-  if (liveState === 'ended_with_recording') return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
-      <div style={{ fontSize: '2.5rem' }}>🎬</div>
-      <h2 style={{ color: '#f1f5f9', margin: 0 }}>انتهى البث المباشر</h2>
-      <p style={{ color: '#94a3b8', margin: 0 }}>يمكنك مشاهدة التسجيل الآن.</p>
-      {recordingUrl && (
-        <div style={{ width: '100%', maxWidth: 720, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <video
-            src={recordingUrl}
-            controls
-            playsInline
-            style={{ width: '100%', display: 'block', aspectRatio: '16/9', background: '#000' }}
-          />
+  // ─── Ended (with or without recording) ─────────────────────────────────────
+  if (liveState === 'ended_with_recording' || liveState === 'ended_no_recording') return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg, #090b10)',
+      fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+      padding: '2rem',
+    }}>
+      <style>{`@keyframes endedPulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        border: '1px solid #2d3148', borderRadius: 999,
+        padding: '6px 16px', marginBottom: '2.5rem',
+        color: '#9ca3af', fontSize: '0.85rem', fontWeight: 300,
+      }}>
+        <span style={{
+          width: 8, height: 8, borderRadius: '50%',
+          background: '#f59e0b', display: 'inline-block',
+          animation: 'endedPulse 2s ease-in-out infinite',
+        }} />
+        البث انتهى
+      </div>
+
+      <div style={{
+        width: 120, height: 120, borderRadius: '50%',
+        background: 'radial-gradient(circle, #3b1f8c55 0%, #090b1000 70%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '2rem', position: 'relative',
+      }}>
+        <div style={{
+          width: 80, height: 80, borderRadius: '50%',
+          background: '#13161f', border: '1px solid #2d2060',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+            stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M15 10l4.553-2.369A1 1 0 0121 8.535v6.93a1 1 0 01-1.447.894L15 14" />
+            <rect x="2" y="6" width="13" height="12" rx="2" />
+            <line x1="9" y1="9" x2="9" y2="15" stroke="#9f6af8" />
+            <line x1="6" y1="12" x2="12" y2="12" stroke="#9f6af8" />
+          </svg>
         </div>
-      )}
-      <button
-        onClick={() => router.push(`/${locale}/courses/${courseId}`)}
-        style={{ padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
-      >
-        {isAr ? 'شاهد التسجيل في الكورس' : 'View in Course'}
-      </button>
-    </div>
-  )
+        <div style={{
+          position: 'absolute', bottom: 16, right: 16,
+          width: 22, height: 22, borderRadius: '50%',
+          background: '#7c3aed', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: '0.7rem', color: '#fff',
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </div>
+      </div>
 
-  // ─── Ended no recording ───────────────────────────────────────────────────
-  if (liveState === 'ended_no_recording') return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
-      <div style={{ fontSize: '2.5rem' }}>📹</div>
-      <h2 style={{ color: '#f1f5f9', margin: 0 }}>انتهى البث المباشر</h2>
-      <p style={{ color: '#94a3b8', margin: 0, textAlign: 'center' }}>
-        {isAr ? 'سيتوفر التسجيل قريباً — يُرجى المراجعة لاحقاً.' : 'The recording will be available soon — please check back later.'}
+      <h1 style={{
+        fontWeight: 700, fontSize: 'clamp(1.8rem, 5vw, 2.4rem)',
+        color: '#f3f4f6', margin: '0 0 0.75rem', textAlign: 'center',
+      }}>
+        انتهى البث المباشر
+      </h1>
+
+      <p style={{
+        fontWeight: 300, fontSize: '1rem', color: '#9ca3af',
+        margin: '0 0 2.5rem', textAlign: 'center',
+      }}>
+        {recordingUrl
+          ? 'يمكنك مشاهدة التسجيل الآن'
+          : 'سيتوفر التسجيل قريباً بعد انتهاء المعالجة'}
       </p>
-      <button
-        onClick={() => router.push(`/${locale}/courses/${courseId}`)}
-        style={{ marginTop: 8, padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
-      >
-        {isAr ? 'العودة إلى الكورس' : 'Back to Course'}
-      </button>
+
+      {recordingUrl && (
+        <button
+          onClick={() => router.push(`/${locale}/learn/${courseId}`)}
+          style={{
+            background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+            color: '#fff', border: 'none', borderRadius: 999,
+            padding: '14px 36px', fontSize: '1rem', fontWeight: 500,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10,
+            fontFamily: "'PingAR', sans-serif",
+            boxShadow: '0 0 32px #7c3aed44',
+          }}
+        >
+          شاهد التسجيل في الكورس
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+            <polyline points="15,3 21,3 21,9" />
+            <line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 
-  // ─── Live + waiting ───────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', direction: isAr ? 'rtl' : 'ltr' }}>
       <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>

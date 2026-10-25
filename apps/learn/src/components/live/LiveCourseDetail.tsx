@@ -49,7 +49,6 @@ export interface LiveCourseDetailProps {
 	enrollmentStatus?: "loading" | "enrolled" | "not-enrolled";
 	enrolling?: boolean;
 	onEnroll?: () => void;
-	cloudRecordingUrl?: string | null;
 }
 
 export default function LiveCourseDetail({
@@ -60,7 +59,6 @@ export default function LiveCourseDetail({
 	enrollmentStatus = "not-enrolled",
 	enrolling = false,
 	onEnroll,
-	cloudRecordingUrl = null,
 }: LiveCourseDetailProps) {
 	const isAr = locale === "ar";
 
@@ -102,10 +100,7 @@ export default function LiveCourseDetail({
 		[lessons],
 	);
 	const lessonRecordingUrl = recordedLesson ? getMediaUrl(recordedLesson.videoUrl) : null;
-	// Use the cloud recording URL as a fallback when the lesson pipeline hasn't
-	// created a lesson yet (the recording is available on Daily.co but saveRecording
-	// hasn't run or hasn't persisted yet).
-	const recordingUrl = lessonRecordingUrl ?? cloudRecordingUrl ?? null;
+	const recordingUrl = lessonRecordingUrl ?? null;
 	const hasRecording = isEnded && !!recordingUrl;
 
 	// The countdown has to tick, otherwise it freezes on the value it had when

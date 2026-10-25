@@ -14,6 +14,9 @@ import {
   liveRecordingNote,
   isLiveStatus,
   formatLiveDateTimeShort,
+  formatLiveDateShort,
+  formatLiveTime,
+  normalizeLiveStatus,
 } from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
 
@@ -478,7 +481,7 @@ function AddLectureModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white truncate max-w-[200px]">{form.fileName}</p>
-                          <p className="text-xs text-[color:var(--muted)]">ملف مرفوع ✓</p>
+                          <p className="text-xs text-[color:var(--muted)] flex items-center gap-1">ملف مرفوع <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></p>
                         </div>
                       </div>
                       <button
@@ -850,6 +853,544 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
   )
 }
 
+// ─── Live Course Manage View ─────────────────────────────────────────────────
+
+function LiveManageView({ course, courseId, locale }: { course: any; courseId: string; locale: string }) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState(0)
+
+  const { data: recordingData } = useQuery({
+    queryKey: ['live-recording-manage', courseId],
+    queryFn: async () => {
+      try {
+        const res = await get(`/live/recording/${courseId}`)
+        const raw = res?.data as any
+        return raw?.data?.recordingUrl ?? raw?.recordingUrl ?? null
+      } catch {
+        return null
+      }
+    },
+    enabled: !!courseId,
+    refetchInterval: 30_000,
+  })
+  const cloudRecordingUrl = (recordingData as string | null) ?? null
+
+  const liveStatus = normalizeLiveStatus(course?.liveStatus)
+  const liveStatusUpper = liveStatus?.toUpperCase() ?? 'SCHEDULED'
+  const publishStatus = course?.status ?? 'DRAFT'
+
+  const startDate = course?.liveStartTime ? new Date(course.liveStartTime) : null
+  const endDate = course?.liveEndTime ? new Date(course.liveEndTime) : null
+  const liveDate = startDate ? formatLiveDateShort(course.liveStartTime, locale) : '—'
+  const liveTime = startDate ? formatLiveTime(course.liveStartTime, locale) : '—'
+  const endedAt = endDate ? formatLiveDateTimeShort(course.liveEndTime, locale) : null
+
+  const duration = course?.liveDuration
+    ? Number(course.liveDuration)
+    : startDate && endDate
+      ? Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 60000))
+      : 0
+
+  const viewerCount = course?.viewerCount ?? course?._count?.liveViewers ?? 0
+
+  const tabs = ['عامة نظرة', 'التسجيل', 'المحاضرين', 'الاشتراكات', 'الإعدادات']
+
+  const SvgCalendar = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+
+  const SvgClock = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+
+  const SvgHourglass = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 00-.586-1.414l-2.828-2.828a2 2 0 010-2.828l2.828-2.828A2 2 0 0017 6.172V2H7v4.172a2 2 0 00.586 1.414l2.828 2.828a2 2 0 010 2.828l-2.828 2.828A2 2 0 007 17.828V22h10z" />
+    </svg>
+  )
+
+  const SvgRadio = () => (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="2" />
+      <path d="M16.24 7.76a6 6 0 010 8.49m-8.48-.01a6 6 0 010-8.49" />
+      <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" />
+    </svg>
+  )
+
+  const SvgBackArrow = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <line x1="19" y1="12" x2="5" y2="12" />
+      <polyline points="12 5 5 12 12 19" />
+    </svg>
+  )
+
+  const SvgPlay = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <polygon points="5,3 19,12 5,21" />
+    </svg>
+  )
+
+  const SvgExternal = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
+      <polyline points="15,3 21,3 21,9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  )
+
+  const SvgCopy = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" />
+      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  )
+
+  const SvgInfo = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="16" x2="12" y2="12" />
+      <line x1="12" y1="8" x2="12.01" y2="8" strokeWidth="3" />
+    </svg>
+  )
+
+  const SvgCheck = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+
+  const SvgCamera = () => (
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M15 10l4.553-2.369A1 1 0 0121 8.535v6.93a1 1 0 01-1.447.894L15 14" />
+      <rect x="2" y="6" width="13" height="12" rx="2" />
+      <line x1="9" y1="9" x2="9" y2="15" />
+      <line x1="6" y1="12" x2="12" y2="12" />
+    </svg>
+  )
+
+  const SvgGradCap = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M22 10l-10-5-10 5 10 5 10-5z" />
+      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+    </svg>
+  )
+
+  const statusIcon = liveStatusUpper === 'LIVE' ? (
+    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px #ef4444' }} />
+  ) : liveStatusUpper === 'ENDED' ? (
+    <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981' }} />
+  ) : (
+    <SvgCalendar />
+  )
+
+  return (
+    <div style={{
+      minHeight: '100vh', background: '#090b10',
+      fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+      color: '#f3f4f6', padding: '24px 20px',
+    }}>
+      {/* Breadcrumb */}
+      <div style={{ color: '#9ca3af', fontSize: '0.8rem', fontWeight: 300, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span>لوحة التحكم</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>الكورسات</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <span>إدارة اللايف</span>
+      </div>
+
+      {/* Page header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <span style={{
+              background: '#10b98122', color: '#10b981', border: '1px solid #10b98133',
+              borderRadius: 999, padding: '3px 12px', fontSize: '0.78rem', fontWeight: 500,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}>
+              {publishStatus === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+            </span>
+          </div>
+          <h1 style={{ fontWeight: 700, fontSize: '1.8rem', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+            إدارة البث المباشر
+            <SvgRadio />
+          </h1>
+          <p style={{ fontWeight: 300, color: '#9ca3af', margin: '4px 0 0', fontSize: '0.9rem' }}>
+            تابع تفاصيل البث المباشر وأدر التسجيل الخاص به
+          </p>
+        </div>
+        <button
+          onClick={() => router.push(`/${locale}/dashboard/my-courses`)}
+          style={{
+            background: '#13161f', border: '1px solid #1e2333',
+            borderRadius: 10, padding: '8px 16px', color: '#9ca3af',
+            fontWeight: 300, fontSize: '0.85rem', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontFamily: "'PingAR', sans-serif",
+          }}
+        >
+          <SvgBackArrow />
+          العودة إلى الكورسات
+        </button>
+      </div>
+
+      {/* Top info card */}
+      <div style={{
+        background: '#13161f', border: '1px solid #1e2333',
+        borderRadius: 16, padding: 20, marginBottom: 16,
+        display: 'grid', gridTemplateColumns: '1fr auto', gap: 16,
+      }}>
+        {/* Left: course info */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          {/* Thumbnail */}
+          <div style={{
+            width: 100, height: 70, borderRadius: 10, overflow: 'hidden',
+            background: '#1e1b4b', flexShrink: 0, position: 'relative',
+          }}>
+            {course?.thumbnail ? (
+              <img src={course.thumbnail} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <SvgCamera />
+              </div>
+            )}
+            <div style={{
+              position: 'absolute', bottom: 6, right: 6,
+              background: '#7c3aed', borderRadius: 6,
+              padding: '2px 8px', fontSize: '0.65rem', fontWeight: 500, color: '#fff',
+              display: 'flex', alignItems: 'center', gap: 4,
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />
+              Live
+            </div>
+          </div>
+          <div>
+            <h2 style={{ fontWeight: 700, fontSize: '1.15rem', margin: '0 0 4px' }}>
+              {course?.title}
+            </h2>
+            <p style={{ fontWeight: 300, color: '#9ca3af', margin: '0 0 12px', fontSize: '0.85rem' }}>
+              {course?.description || 'كورس تجريبي'}
+            </p>
+            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+              {[
+                { icon: <SvgCalendar />, label: 'تاريخ البث', value: liveDate },
+                { icon: <SvgClock />, label: 'الوقت', value: liveTime },
+                { icon: <SvgHourglass />, label: 'المدة', value: `${duration} دقيقة` },
+              ].map(({ icon, label, value }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: '0.85rem', color: '#7c3aed' }}>{icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.7rem' }}>{label}</div>
+                    <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: status card */}
+        <div style={{
+          minWidth: 220, background: '#0f1117', border: '1px solid #1e2333',
+          borderRadius: 12, padding: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: liveStatusUpper === 'ENDED' ? '#1e2333' : '#1e1b4b',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {statusIcon}
+            </div>
+            <div>
+              <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                {liveStatusUpper === 'LIVE' ? 'مباشر الآن'
+                  : liveStatusUpper === 'ENDED' ? 'انتهى البث'
+                    : 'مجدول'}
+              </div>
+              {liveStatusUpper === 'ENDED' && endedAt && (
+                <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.75rem' }}>
+                  {endedAt}
+                </div>
+              )}
+            </div>
+          </div>
+          {liveStatusUpper === 'ENDED' && cloudRecordingUrl && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={() => window.open(cloudRecordingUrl, '_blank')} style={{
+                background: '#7c3aed', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '8px 12px', fontSize: '0.82rem',
+                fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+                <SvgPlay />
+                مشاهدة التسجيل
+              </button>
+              <button onClick={() => navigator.clipboard.writeText(cloudRecordingUrl)} style={{
+                background: 'transparent', color: '#9ca3af',
+                border: '1px solid #1e2333', borderRadius: 8,
+                padding: '8px 12px', fontSize: '0.82rem', fontWeight: 300,
+                cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}>
+                <SvgCopy />
+                نسخ رابط التسجيل
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{
+        display: 'flex', gap: 4, background: '#13161f',
+        border: '1px solid #1e2333', borderRadius: 12,
+        padding: 4, marginBottom: 20, overflowX: 'auto',
+      }}>
+        {tabs.map((tab, i) => (
+          <button key={tab} onClick={() => setActiveTab(i)} style={{
+            flex: 1, padding: '9px 16px', borderRadius: 8, border: 'none',
+            background: activeTab === i ? '#7c3aed' : 'transparent',
+            color: activeTab === i ? '#fff' : '#9ca3af',
+            fontWeight: activeTab === i ? 500 : 300, fontSize: '0.88rem',
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            fontFamily: "'PingAR', sans-serif",
+          }}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content — Tab 0: عامة نظرة */}
+      {activeTab === 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+          {/* تفاصيل البث */}
+          <div style={{
+            background: '#13161f', border: '1px solid #1e2333',
+            borderRadius: 14, padding: 20,
+          }}>
+            <h3 style={{ fontWeight: 500, fontSize: '1rem', margin: '0 0 16px', textAlign: 'right' }}>
+              تفاصيل البث
+            </h3>
+            {[
+              {
+                label: 'حالة البث',
+                badge: liveStatusUpper === 'ENDED'
+                  ? { text: 'تم الانتهاء', bg: '#10b981', color: '#fff' }
+                  : liveStatusUpper === 'LIVE'
+                    ? { text: 'مباشر الآن', bg: '#ef4444', color: '#fff' }
+                    : { text: 'مجدول', bg: '#f59e0b22', color: '#f59e0b' }
+              },
+              { label: 'تاريخ البث', value: liveDate },
+              { label: 'وقت البدء', value: liveTime },
+              { label: 'المدة الفعلية', value: `${duration} دقيقة` },
+              { label: 'المشاهدون أثناء البث', value: String(viewerCount) },
+              {
+                label: 'حالة التسجيل',
+                badge: cloudRecordingUrl
+                  ? { text: 'جاهز للمشاهدة', bg: '#7c3aed22', color: '#a78bfa' }
+                  : { text: 'جارٍ التجهيز', bg: '#f59e0b22', color: '#f59e0b' }
+              },
+            ].map(({ label, value, badge }) => (
+              <div key={label} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 0', borderBottom: '1px solid #1e2333',
+              }}>
+                <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.85rem' }}>{label}</div>
+                {badge ? (
+                  <span style={{
+                    background: badge.bg, color: badge.color,
+                    borderRadius: 999, padding: '3px 10px',
+                    fontSize: '0.78rem', fontWeight: 500,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}>
+                    {badge.text}
+                    {badge.text === 'تم الانتهاء' && <SvgCheck />}
+                  </span>
+                ) : (
+                  <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>{value}</div>
+                )}
+              </div>
+            ))}
+            <div style={{
+              marginTop: 14, background: '#0f1117',
+              border: '1px solid #1e2333', borderRadius: 8,
+              padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <SvgInfo />
+              <span style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.78rem' }}>
+                يمكنك مشاهدة تسجيل البث المباشر أو مشاركته مع طلابك من خلال صفحة الكورس.
+              </span>
+            </div>
+          </div>
+
+          {/* التسجيل panel */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{
+              background: '#13161f', border: '1px solid #1e2333',
+              borderRadius: 14, padding: 20,
+            }}>
+              <h3 style={{
+                fontWeight: 500, fontSize: '1rem', margin: '0 0 14px',
+                display: 'flex', alignItems: 'center', gap: 8, textAlign: 'right',
+              }}>
+                <SvgCamera />
+                التسجيل
+              </h3>
+              {cloudRecordingUrl ? (
+                <>
+                  {/* Video thumbnail */}
+                  <div style={{
+                    width: '100%', aspectRatio: '16/9', borderRadius: 10,
+                    background: '#1e1b4b', marginBottom: 12,
+                    position: 'relative', overflow: 'hidden', cursor: 'pointer',
+                  }} onClick={() => window.open(cloudRecordingUrl, '_blank')}>
+                    <video src={cloudRecordingUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: '#00000055',
+                    }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: '50%',
+                        background: '#7c3aed', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <SvgPlay />
+                      </div>
+                    </div>
+                  </div>
+                  <h4 style={{ fontWeight: 500, fontSize: '0.95rem', margin: '0 0 4px' }}>
+                    تسجيل البث المباشر
+                  </h4>
+                  <p style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.8rem', margin: '0 0 12px' }}>
+                    التسجيل متاح الآن بجودة عالية لمراجعة المحتوى في أي وقت.
+                  </p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => window.open(cloudRecordingUrl, '_blank')} style={{
+                      flex: 1, background: '#7c3aed', color: '#fff', border: 'none',
+                      borderRadius: 8, padding: '9px', fontSize: '0.82rem',
+                      fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <SvgExternal />
+                      فتح التسجيل
+                    </button>
+                    <button onClick={() => navigator.clipboard.writeText(cloudRecordingUrl)} style={{
+                      flex: 1, background: 'transparent', color: '#9ca3af',
+                      border: '1px solid #1e2333', borderRadius: 8,
+                      padding: '9px', fontSize: '0.82rem', fontWeight: 300,
+                      cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <SvgCopy />
+                      مشاركة التسجيل
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{
+                  textAlign: 'center', padding: '24px 0', color: '#9ca3af',
+                }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <SvgHourglass />
+                  </div>
+                  <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                    {liveStatusUpper === 'ENDED' ? 'جارٍ تجهيز التسجيل...' : 'التسجيل غير متاح بعد'}
+                  </div>
+                  <div style={{ fontWeight: 300, fontSize: '0.8rem' }}>
+                    {liveStatusUpper === 'ENDED'
+                      ? 'قد يستغرق ذلك بضع دقائق بعد انتهاء البث.'
+                      : 'التسجيل يكون متاحاً بعد انتهاء البث المباشر.'}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Link to course page */}
+            <div style={{
+              background: '#13161f', border: '1px solid #1e2333',
+              borderRadius: 14, padding: 16,
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            }}>
+              <div>
+                <div style={{ fontWeight: 500, fontSize: '0.9rem', marginBottom: 3 }}>
+                  الانتقال إلى صفحة الكورس
+                </div>
+                <div style={{ fontWeight: 300, color: '#9ca3af', fontSize: '0.78rem' }}>
+                  يمكنك مشاهدة التسجيل داخل صفحة الكورس
+                </div>
+              </div>
+              <button
+                onClick={() => window.open(
+                  `https://devewayhub.vercel.app/ar/learn/${courseId}`, '_blank'
+                )}
+                style={{
+                  background: '#1e1b4b', border: '1px solid #2d2060',
+                  borderRadius: 10, padding: '9px 14px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  color: '#a78bfa', fontWeight: 500, fontSize: '0.82rem',
+                  fontFamily: "'PingAR', sans-serif",
+                }}
+              >
+                <SvgGradCap />
+                الذهاب إلى الكورس
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 1: التسجيل — full recording management */}
+      {activeTab === 1 && (
+        <div style={{
+          background: '#13161f', border: '1px solid #1e2333',
+          borderRadius: 14, padding: 24, textAlign: 'center',
+        }}>
+          {cloudRecordingUrl ? (
+            <video src={cloudRecordingUrl} controls style={{ width: '100%', maxHeight: 480, borderRadius: 12 }} />
+          ) : (
+            <div style={{ color: '#9ca3af', padding: '40px 0' }}>
+              <div style={{ marginBottom: 12 }}>
+                <SvgCamera />
+              </div>
+              <div style={{ fontWeight: 500, marginBottom: 6 }}>لا يوجد تسجيل بعد</div>
+              <div style={{ fontWeight: 300, fontSize: '0.85rem' }}>
+                يظهر التسجيل هنا بعد انتهاء البث المباشر ومعالجته.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tabs 2, 3, 4 — placeholder for future */}
+      {activeTab >= 2 && (
+        <div style={{
+          background: '#13161f', border: '1px solid #1e2333',
+          borderRadius: 14, padding: 40, textAlign: 'center', color: '#9ca3af',
+        }}>
+          <div style={{ fontWeight: 300, fontSize: '0.9rem' }}>
+            قريباً — سيتم إضافة هذا القسم في تحديث قادم.
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
 // ─── Main Manage Page ─────────────────────────────────────────────────────────
 
 export default function ManageCoursePage() {
@@ -912,9 +1453,19 @@ export default function ManageCoursePage() {
 
   const sections: { id: string; title: string; lessons: any[] }[] = course.sections ?? []
 
+  const isLiveCourse =
+    course?.type?.toLowerCase() === 'live' ||
+    course?.courseType?.toLowerCase() === 'live' ||
+    !!course?.liveSession ||
+    !!course?.liveStatus
+
   return (
     <AuthGate>
-      <div className="p-6" dir="rtl">
+      {isLiveCourse ? (
+        <LiveManageView course={course} courseId={courseId} locale={locale} />
+      ) : (
+      <>
+        <div className="p-6" dir="rtl">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
@@ -991,7 +1542,7 @@ export default function ManageCoursePage() {
                         key={lesson.id}
                         className="flex items-center gap-2 rounded-xl bg-[color:var(--surface-2)] px-3 py-2 text-sm"
                       >
-                        {/* ✅ Show appropriate icon based on content type */}
+                        {/* Show appropriate icon based on content type */}
                         {(lesson.type === 'LIVE') ? (
                           <div className="h-3.5 w-3.5 rounded-full bg-red-500 animate-pulse shrink-0" />
                         ) : lesson.videoUrl ? (
@@ -1105,7 +1656,7 @@ export default function ManageCoursePage() {
                   <div className="divide-y divide-[color:var(--border)]">
                     {sec.lessons.map((lesson: any) => (
                       <div key={lesson.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[color:var(--surface-2)] transition-colors">
-                        {/* ✅ Enhanced icon display */}
+                        {/* Enhanced icon display */}
                         <div className="flex gap-1">
                           {(lesson.type === 'LIVE') && (
                             <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
@@ -1247,6 +1798,7 @@ export default function ManageCoursePage() {
           onSaved={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })}
         />
       )}
+      </>)}
     </AuthGate>
   )
 }
@@ -1422,7 +1974,12 @@ function CourseSettingsTab({
         className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all"
       >
         {saving && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-        {saved ? '✓ تم الحفظ' : 'حفظ التغييرات'}
+        {saved ? (
+          <span className="flex items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            تم الحفظ
+          </span>
+        ) : 'حفظ التغييرات'}
       </button>
 
       {/* ── Certificate Settings ──────────────────────────── */}
@@ -1450,8 +2007,18 @@ function CourseSettingsTab({
             </h3>
             <p style={{ margin:0, fontSize:'0.78rem', color:'var(--muted-foreground)' }}>
               {course?.isCompleted
-                ? 'الكورس مكتمل ✓ الشهادات متاحة للطلاب'
-                : 'الكورس قيد التطوير ✕ الشهادات معطلة'}
+                ? (
+                  <span className="flex items-center gap-1">
+                    الكورس مكتمل — الشهادات متاحة للطلاب
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  </span>
+                )
+                : (
+                  <span className="flex items-center gap-1">
+                    الكورس قيد التطوير — الشهادات معطلة
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </span>
+                )}
             </p>
           </div>
         </div>
