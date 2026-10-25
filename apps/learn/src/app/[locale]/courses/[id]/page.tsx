@@ -428,6 +428,7 @@ export default function CourseDetailPage({
 				enrollmentStatus={enrollmentStatus}
 				enrolling={enrolling}
 				onEnroll={handleEnroll}
+				cloudRecordingUrl={cloudRecordingUrl}
 			/>
 		);
 	}
