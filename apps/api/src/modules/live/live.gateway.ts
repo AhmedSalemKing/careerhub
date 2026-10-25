@@ -92,7 +92,6 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (session?.liveStatus?.toLowerCase() === 'live') {
           client.emit('stream-started', {
             courseId,
-            channelName: session.agoraChannelName || courseId,
             lateJoin: true,
             timestamp: new Date().toISOString(),
           })
@@ -181,15 +180,12 @@ export class LiveGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Instructor broadcasts live started
   @SubscribeMessage('live-started')
   handleLiveStarted(
-    @MessageBody() data: { courseId: string; channelName: string; appId: string },
+    @MessageBody() data: { courseId: string },
     @ConnectedSocket() client: Socket,
   ) {
     console.log(`[Gateway] Live started for ${data.courseId}`)
-    // Broadcast to ALL viewers in room
     client.to(data.courseId).emit('stream-started', {
       courseId: data.courseId,
-      channelName: data.channelName,
-      appId: data.appId,
       timestamp: new Date().toISOString(),
     })
     return { event: 'live-started-ack' }

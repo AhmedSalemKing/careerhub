@@ -3,13 +3,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useParams } from 'next/navigation'
 import {
-  Radio, Users, Volume2, VolumeX, Maximize2, Minimize2,
-  LogOut, Hand, MessageSquare, Send, X, Wifi, WifiOff, Square
+  Radio, Users, LogOut, Hand, MessageSquare, Send, X, Wifi, WifiOff, Square,
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../hooks/useLiveSocket'
 import { syncAuthUser } from '../../../../lib/auth-sync'
 import { webLoginUrl } from '../../../../lib/constants'
 import { patch } from '../../../../lib/api'
+import { DailyCall } from '../../../components/live/DailyCall'
 import toast from 'react-hot-toast'
 
 export default function LiveViewerPage() {
@@ -20,9 +20,6 @@ export default function LiveViewerPage() {
   const params = useParams()
   const courseId = params.courseId as string
 
-  // Base API URL (includes the /api prefix). Derived from the same configuration
-  // as the central axios client so every request hits https://api.deveways.com/api
-  // instead of the retired onrender host.
   const API = (() => {
     const envUrl = process.env.NEXT_PUBLIC_API_URL
     const base = (envUrl && envUrl.trim()) ? envUrl.trim() : 'https://api.deveways.com'
@@ -31,104 +28,23 @@ export default function LiveViewerPage() {
   })()
 
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [joined, setJoined] = useState(false)
-  const [hasVideo, setHasVideo] = useState(false)
-  // True once ANY track from the instructor (audio or video) is playing. A
-  // joined channel is only worth showing as "connected" once a track arrives,
-  // and an audio-only session (no camera, no screen share) must be a success
-  // state — not a connection failure.
-  const [hasAudio, setHasAudio] = useState(false)
-  const [muted, setMuted] = useState(false)
-  const [fullscreen, setFullscreen] = useState(false)
-  const [showPanel, setShowPanel] = useState(true)
-  const [newComment, setNewComment] = useState('')
-  const [hasQuestion, setHasQuestion] = useState(false)
-  const [questionText, setQuestionText] = useState('')
-  const [showQuestionInput, setShowQuestionInput] = useState(false)
+  const [isLive, setIsLive] = useState(false)
+  const [roomUrl, setRoomUrl] = useState('')
+  const [token, setToken] = useState('')
+  const [streamEnded, setStreamEnded] = useState(false)
+  const [recordingUrl, setRecordingUrl] = useState('')
   const [userName, setUserName] = useState(tl('viewer'))
   const [userAvatar, setUserAvatar] = useState('')
-  const [streamEnded, setStreamEnded] = useState(false)
+  const [showPanel, setShowPanel] = useState(true)
+  const [newComment, setNewComment] = useState('')
+  const [questionText, setQuestionText] = useState('')
+  const [showQuestionInput, setShowQuestionInput] = useState(false)
+  const [hasQuestion, setHasQuestion] = useState(false)
   const [viewerCount, setViewerCount] = useState(0)
-  const [lessonId, setLessonId] = useState<string | null>(null)
-  const [streamReady, setStreamReady] = useState(false)
-  const [tokenData, setTokenData] = useState<any>(null)
   const [userToken, setUserToken] = useState('')
 
-  // Connection state machine:
-  //  loading    -> resolving session / enrollment
-  //  waiting    -> stream not started yet (polling until it goes live)
-  //  connecting -> stream is live, Agora join in progress (30s cap)
-  //  failed     -> join failed or timed out (retry available)
-  //  watching   -> connected and receiving the stream
-  //  ended      -> stream finished
-  const [liveState, setLiveState] = useState<'loading' | 'waiting' | 'connecting' | 'failed' | 'watching' | 'ended'>('loading')
-  const [connectError, setConnectError] = useState('')
-  // Explicit "is the instructor live right now?" flag derived from the API
-  // (Course.liveStatus or any Lesson.liveStatus === 'live').
-  const [isLive, setIsLive] = useState(false)
-
-  const videoContainerRef = useRef<HTMLDivElement>(null)
-  const commentsEndRef = useRef<HTMLDivElement>(null)
-  const clientRef = useRef<any>(null)
-  const loadingTimeoutRef = useRef<any>(null)
   const pollRef = useRef<any>(null)
-  const connectTimeoutRef = useRef<any>(null)
-  // Track whether we have already joined for the current live session so polling
-  // and socket events don't trigger duplicate Agora joins. Playback of the
-  // first published track then promotes the page to `watching`. Kept as a ref
-  // because the mutation happens outside React (in the SDK callbacks).
   const joinedRef = useRef(false)
-  // True while a single media source (audio OR video) is subscribed and ready
-  // to play. The connection is considered established as soon as one of them
-  // arrives, because an audio-only instructor must not look like a failure.
-  const mediaReadyRef = useRef(false)
-  const joiningRef = useRef(false)
-  // `watchingRef` mirrors the state machine for the code paths that run outside
-  // React render (polling, SDK callbacks). "Watching" means at least one
-  // instructor track is playing — audio-only counts.
-  const watchingRef = useRef(false)
-  watchingRef.current = hasVideo || hasAudio
-  // Last Agora-connected viewer count read from the API (Course.liveViewerCount),
-  // used so the socket room size can never override it with an inflated number.
-  const dbViewerCountRef = useRef(0)
-
-  const token = typeof window !== 'undefined'
-    ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
-       localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
-    : ''
-
-  useEffect(() => {
-    const stored = localStorage.getItem('userName') || localStorage.getItem('user_name') || ''
-    if (stored) setUserName(stored)
-    const storedAvatar = localStorage.getItem('user_avatar') || ''
-    if (storedAvatar) setUserAvatar(storedAvatar)
-
-    const t = typeof window !== 'undefined'
-      ? (localStorage.getItem('token') || sessionStorage.getItem('token') ||
-         localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || '')
-      : ''
-    if (t) {
-      syncAuthUser()
-        .then((user: any) => {
-          const profile = user?.profile
-          if (profile) {
-            const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
-            setUserName(name)
-            setUserAvatar(profile.avatar || '')
-            localStorage.setItem('userName', name)
-            localStorage.setItem('user_avatar', profile.avatar || '')
-          }
-        })
-        .catch(() => {})
-    }
-  }, [])
-
-  // Parse lessonId from URL search params
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    setLessonId(params.get('lessonId'))
-  }, [])
 
   const {
     connected,
@@ -140,519 +56,31 @@ export default function LiveViewerPage() {
     sendQuestion,
   } = useLiveSocket(courseId, userName, 'viewer', userAvatar)
 
-  // Sync hook state to local state
   useEffect(() => {
     if (hookStreamEnded) {
       setStreamEnded(true)
-      setHasAudio(false)
-      setHasVideo(false)
-      clientRef.current?.leave().catch(() => {})
+      setIsLive(false)
+      setRoomUrl('')
+      setToken('')
+      checkForRecording()
     }
   }, [hookStreamEnded])
 
-  // Check stream status: enrollment + token fetch (no Agora init).
-  // `silent` is used by the background poll so it doesn't flash the loading UI.
-  // Returns true when the stream is live (and a token was obtained / join started).
-  const checkStreamStatus = async (userToken: string, silent = false): Promise<boolean> => {
-    if (!userToken) return false
-    if (!silent) {
-      setLoading(true)
-      setLiveState('loading')
-    }
-    setError('')
-
-    clearTimeout(loadingTimeoutRef.current)
-    if (!silent) {
-      loadingTimeoutRef.current = setTimeout(() => {
-        // Safety net: never leave the generic spinner up forever.
-        setLoading(false)
-        setJoined(true)
-        setLiveState(prev => (prev === 'loading' ? 'waiting' : prev))
-      }, 15000)
-    }
-
-    try {
-      const courseRes = await fetch(`${API}/courses/${courseId}`, {
-        headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000),
-        // The status must never be served from cache: the instructor can go live
-        // at any moment and a stale "scheduled" response would leave the student
-        // stuck on "البث لم يبدأ بعد".
-        cache: 'no-store'
-      })
-      if (!courseRes.ok) throw new Error('Course not found')
-      const courseData = await courseRes.json()
-      // The API wraps the payload as { success, data: { course } }, so unwrap
-      // both layers. Falling back to courseData.data / courseData keeps this
-      // compatible with any response shape that returns the course directly.
-      const course =
-        courseData?.data?.course ||
-        courseData?.data ||
-        courseData
-
-      if (course?.liveStatus === 'ended' || course?.liveStatus === 'ENDED') {
-        clearTimeout(loadingTimeoutRef.current)
-        setLiveState('ended')
-        setError('ended')
-        setLoading(false)
-        return false
-      }
-
-      const isEnrolled = course?.isEnrolled === true
-      const price = parseFloat(course?.price || '0')
-
-      // The authoritative "watching now" number is Course.liveViewerCount, which
-      // the students themselves increment/decrement on a successful Agora join
-      // (see PATCH /live/viewers/:courseId). Prefer it over the socket room size,
-      // which also counts the instructor and idle page opens.
-      if (typeof course?.liveViewerCount === 'number') {
-        dbViewerCountRef.current = course.liveViewerCount
-        setViewerCount(course.liveViewerCount)
-      }
-
-      if (!isEnrolled && price > 0) {
-        const payRes = await fetch(`${API}/payments/checkout/course/${courseId}`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ locale })
-        }).then(r => r.json()).catch(() => null)
-
-        clearTimeout(loadingTimeoutRef.current)
-        if (payRes?.data?.url) {
-          window.location.href = payRes.data.url
-        } else {
-          setError(tl('enrollFirst'))
-          setLiveState('failed')
-          setLoading(false)
-        }
-        return false
-      }
-
-      if (!isEnrolled && price === 0) {
-        await fetch(`${API}/courses/${courseId}/enroll`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${userToken}`, 'Content-Type': 'application/json' }
-        }).catch(() => {})
-      }
-
-      // Has the instructor started the stream? Two supported flows:
-      //   * course-level live  -> Course.liveStatus === 'live'
-      //   * lesson-level live  -> Lesson.liveStatus === 'live' (lessonId in the URL)
-      // Only then do we fetch a token and attempt to connect. Before that we show
-      // the explicit "waiting" state instead of an endless spinner.
-      // The instructor's go-live action writes one of these to the DB:
-      //   * course flow (/live/start)        -> Course.liveStatus = 'live'
-      //   * lesson flow (/live/lesson-start) -> Lesson.liveStatus = 'live'
-      // so we treat the stream as live when EITHER the course or any lesson is live.
-      const isLiveValue = (v: any) => typeof v === 'string' && v.toLowerCase() === 'live'
-      const lessons = (course?.sections || []).flatMap((s: any) => s?.lessons || [])
-      const targetLesson = lessonId
-        ? lessons.find((l: any) => l?.id === lessonId || l?.lessonId === lessonId)
-        : null
-
-      const courseLive = isLiveValue(course?.liveStatus)
-      const targetLessonLive = isLiveValue(targetLesson?.liveStatus)
-      let anyLessonLive = lessons.some((l: any) => isLiveValue(l?.liveStatus))
-      let liveLesson: any = targetLessonLive
-        ? targetLesson
-        : (lessons.find((l: any) => isLiveValue(l?.liveStatus)) || null)
-
-      // The course payload only carries full lesson objects for enrolled viewers.
-      // When it does not (e.g. the enrollment row is still settling right after
-      // signup, or sections are stripped for non-enrolled viewers), fall back to
-      // the dedicated /courses/:id/live-lessons endpoint, which always returns the
-      // live lessons (with their liveStatus + agoraChannelName) for this course.
-      // This is what makes the background poll reliably detect the lesson flow.
-      if (!courseLive && !anyLessonLive) {
-        try {
-          const liveLessonsRes = await fetch(`${API}/courses/${courseId}/live-lessons`, {
-            headers: { Authorization: `Bearer ${userToken}` },
-            signal: AbortSignal.timeout(6000),
-            cache: 'no-store'
-          })
-          if (liveLessonsRes.ok) {
-            const lld = await liveLessonsRes.json()
-            const liveLessonList: any[] = (lld?.data ?? lld ?? []) || []
-            const liveNowLessons = Array.isArray(liveLessonList)
-              ? liveLessonList.filter((l: any) => isLiveValue(l?.liveStatus))
-              : []
-            if (liveNowLessons.length > 0) {
-              anyLessonLive = true
-              liveLesson = lessonId
-                ? (liveNowLessons.find((l: any) => l?.id === lessonId || l?.lessonId === lessonId) || liveNowLessons[0])
-                : liveNowLessons[0]
-            }
-          }
-        } catch {
-          // A failed probe must not break the flow — fall through to "waiting".
-        }
-      }
-
-      // Single source of truth for the page: is the stream live right now?
-      const liveNow = courseLive || anyLessonLive
-      setIsLive(liveNow)
-
-      if (!liveNow) {
-        clearTimeout(loadingTimeoutRef.current)
-        setStreamReady(false)
-        setTokenData(null)
-        setLoading(false)
-        // Always return to (or stay in) "waiting" when the stream is not live and
-        // we are not currently watching. This lets the poll recover the page even
-        // after a previous failed connect attempt, and never overwrites "watching".
-        // A join that is already in flight is left alone, otherwise a slower,
-        // slightly stale response could push the UI back to "waiting" while the
-        // Agora client is still connecting.
-        if (!watchingRef.current && !joiningRef.current) {
-          setJoined(false)
-          setLiveState('waiting')
-        }
-        return false
-      }
-
-      // Already joined for this live session — a duplicate token fetch/join is
-      // useless. The first subscribed track promotes the page to `watching`.
-      if (joinedRef.current) {
-        clearTimeout(loadingTimeoutRef.current)
-        setLoading(false)
-        return true
-      }
-
-      // Pick the token endpoint that matches the live source so the student joins
-      // the same Agora channel the instructor published to:
-      //   * lesson flow  -> Lesson.agoraChannelName (set by /live/lesson-start)
-      //   * course flow   -> Course.agoraChannelName (set by /live/start)
-      // Prefer the lesson channel whenever a lesson is live and the course itself
-      // is not, so a lesson-based stream is never joined on the course channel.
-      const useLessonChannel = !!liveLesson && !courseLive
-      const tokenEndpoint = useLessonChannel
-        ? `${API}/live/lesson-token/${liveLesson.id}`
-        : `${API}/live/token/${courseId}`
-      const tokenRes = await fetch(tokenEndpoint, {
-        headers: { Authorization: `Bearer ${userToken}` },
-        signal: AbortSignal.timeout(8000),
-        cache: 'no-store'
-      })
-
-      if (tokenRes.status === 403) {
-        clearTimeout(loadingTimeoutRef.current)
-        setLiveState('ended')
-        setError('ended')
-        setLoading(false)
-        return false
-      }
-
-      if (!tokenRes.ok) {
-        clearTimeout(loadingTimeoutRef.current)
-        setLoading(false)
-        setJoined(true)
-        setConnectError(tl('failedToConnect'))
-        setLiveState('failed')
-        return true
-      }
-
-      const data = await tokenRes.json()
-      const td = data?.data || data
-
-      if (!td?.token || !td?.appId || !td?.channelName) {
-        clearTimeout(loadingTimeoutRef.current)
-        setLoading(false)
-        setJoined(true)
-        setConnectError(tl('failedToConnect'))
-        setLiveState('failed')
-        return true
-      }
-
-      clearTimeout(loadingTimeoutRef.current)
-      setTokenData(td)
-      setStreamReady(true)
-      setLoading(false)
-      setJoined(true)
-      // Stream is live and we hold a token: auto-connect (no manual click needed).
-      void handleJoinStream(td)
-      return true
-    } catch (e: any) {
-      clearTimeout(loadingTimeoutRef.current)
-      console.error('[Live] Check error:', e.message)
-      // Connection-level failures stay inside the player so the student gets the
-      // inline retry button instead of a full-page error.
-      const msg = (e.name === 'AbortError' || e.name === 'TimeoutError')
-        ? tl('connectionTimeout')
-        : (e.message || tl('failedToConnect'))
-      setConnectError(msg)
-      setLiveState('failed')
-      setLoading(false)
-      return false
-    }
-  }
-
-  // Init Agora + start stream playback. Accepts an explicit token payload so it
-  // can be called automatically from polling/socket detection, while still being
-  // safe to call from the manual "Join Live Stream" button.
-  const handleJoinStream = async (overrideTokenData?: any) => {
-    const td = overrideTokenData || tokenData
-    if (!td || clientRef.current || joiningRef.current) return
-
-    joiningRef.current = true
-    setConnectError('')
-    setLiveState('connecting')
-
-    try {
-      const AgoraRTCModule: any = await import('agora-rtc-sdk-ng')
-      const AgoraRTC = AgoraRTCModule.default
-      AgoraRTC.setLogLevel(4)
-
-      // Route Agora through nearby edge servers. The default US edge nodes
-      // (e.g. *.edge.sd-rtn.com in the 104.x/23.x ranges) are far from the
-      // Middle East, which caused multi-second WebSocket handshakes and failed
-      // connections. ASIA/INDIA are the closest regions to MENA and act as the
-      // fast path, with GLOBAL appended so the SDK can still fall back.
-      try {
-        const AREAS = AgoraRTCModule.AREAS
-        AgoraRTC.setArea({
-          areaCode: [AREAS?.ASIA ?? 'ASIA', AREAS?.INDIA ?? 'INDIA', AREAS?.GLOBAL ?? 'GLOBAL'],
-        })
-      } catch (areaErr) {
-        console.warn('[Live] AgoraRTC.setArea unsupported:', areaErr)
-      }
-
-      const client = AgoraRTC.createClient({ mode: 'live', codec: 'vp8' })
-      await client.setClientRole('audience')
-      clientRef.current = client
-
-      // Resume AudioContext after user gesture (browser autoplay policy)
-      try {
-        if (typeof window !== 'undefined') {
-          const ACtor = (window.AudioContext || (window as any).webkitAudioContext)
-          if (ACtor) {
-            const ctx = new ACtor()
-            await ctx.resume()
-          }
-        }
-      } catch (ae) {
-        console.error('[Live] AudioContext resume:', ae)
-      }
-
-      client.on('user-published', async (user: any, mediaType: 'audio' | 'video') => {
-        try {
-          await client.subscribe(user, mediaType)
-        } catch (se: any) {
-          // A failed subscription would otherwise leave the page on the endless
-          // "connecting" spinner: surface the retry button instead.
-          console.error('[Live] Subscribe failed:', se?.message)
-          if (!mediaReadyRef.current) {
-            setConnectError(tl('failedToConnect'))
-            setLiveState('failed')
-            joiningRef.current = false
-            joinedRef.current = false
-            try { clientRef.current?.leave() } catch {}
-            clientRef.current = null
-          }
-          return
-        }
-
-        // Any successfully subscribed track means we are connected. This is
-        // what makes an audio-only instructor (no camera, no screen share) a
-        // success instead of a "فشل الاتصال". A second, late track (the
-        // instructor starts screen sharing) just adds video on top.
-        const firstTrack = !mediaReadyRef.current
-        mediaReadyRef.current = true
-        clearTimeout(connectTimeoutRef.current)
-        joinedRef.current = true
-        joiningRef.current = false
-        if (firstTrack) {
-          setJoined(true)
-          setLiveState('watching')
-        }
-
-        if (mediaType === 'video' && videoContainerRef.current) {
-          user.videoTrack?.play(videoContainerRef.current)
-          setHasVideo(true)
-        }
-        if (mediaType === 'audio') {
-          try {
-            await user.audioTrack?.play()
-          } catch (ae) {
-            // Autoplay was blocked: browsers only allow audio after a user
-            // gesture. Route the track into a hidden <audio> element so the
-            // controls' unmute click can start it later.
-            console.warn('[Live] Audio play blocked, using <audio> element:', ae)
-            const el = document.getElementById('live-audio') as HTMLAudioElement | null
-            if (el) {
-              try {
-                el.srcObject = new MediaStream([user.audioTrack.getMediaStreamTrack()])
-                el.muted = muted
-                await el.play().catch(() => {})
-              } catch (fe) {
-                console.error('[Live] Audio element play failed:', fe)
-              }
-            }
-          }
-          setHasAudio(true)
-        }
-      })
-
-      client.on('user-unpublished', (user: any, mediaType: 'audio' | 'video') => {
-        if (mediaType === 'video') {
-          user.videoTrack?.stop()
-          setHasVideo(false)
-          // The video source went away, but the connection did not: the client
-          // stays in the channel and audio keeps playing. The avatar is shown
-          // until a video track comes back (e.g. screen share starts again).
-        }
-        if (mediaType === 'audio') {
-          user.audioTrack?.stop()
-          setHasAudio(false)
-        }
-      })
-
-      client.on('token-privilege-will-expire', async () => {
-        const renewEndpoint = lessonId
-          ? `${API}/live/lesson-token/${lessonId}`
-          : `${API}/live/token/${courseId}`
-        const res = await fetch(renewEndpoint, {
-          headers: { Authorization: `Bearer ${userToken}` }
-        }).then(r => r.json()).catch(() => null)
-        if (res?.data?.token) await client.renewToken(res.data.token)
-      })
-
-      await client.join(td.appId, td.channelName, td.token, td.uid)
-
-      // The channel is joined. `joinedRef` prevents a duplicate join; the page
-      // is promoted to `watching` by the first subscribed track. The 15s cap is
-      // deliberately left running here: a channel with no instructor track at
-      // all (wrong channel, stale token) must still end in the retry state.
-      joinedRef.current = true
-      joiningRef.current = false
-
-      // Route through the central authenticated client so the JWT is attached by
-      // the shared interceptor and the request targets the configured API host.
-      patch(`/live/viewers/${courseId}`, { delta: 1 }).catch(() => {})
-
-    } catch (e: any) {
-      console.error('[Live] Join failed:', e.message)
-      clearTimeout(connectTimeoutRef.current)
-      joiningRef.current = false
-      joinedRef.current = false
-      mediaReadyRef.current = false
-      try { clientRef.current?.leave() } catch {}
-      clientRef.current = null
-      const msg = (e.name === 'AbortError' || e.name === 'TimeoutError')
-        ? tl('connectionTimeout')
-        : (e.message?.includes('CAN_NOT_GET_GATEWAY') || e.message?.includes('dynamic key'))
-          ? tl('sessionExpired')
-          : (e.message || tl('failedToConnect'))
-      setConnectError(msg)
-      setLiveState('failed')
-    }
-  }
-
-  // Manual retry from the failed state. Resets state immediately and reconnects
-  // right away (within ~2s) instead of waiting for the next poll cycle.
-  const handleRetry = async () => {
-    clearTimeout(connectTimeoutRef.current)
-    joinedRef.current = false
-    joiningRef.current = false
-    mediaReadyRef.current = false
-    try { await clientRef.current?.leave() } catch {}
-    clientRef.current = null
-    setHasVideo(false)
-    setHasAudio(false)
-    setConnectError('')
-    setLiveState('connecting')
-
-    // Fast path: we already hold a non-expired token/channel, so a token refresh
-    // is not needed — retry the Agora join directly and without delay.
-    if (tokenData?.token && tokenData?.appId && tokenData?.channelName) {
-      void handleJoinStream(tokenData)
-      return
-    }
-
-    // Otherwise re-probe the session, comparing against the last known liveness so
-    // we only pay for a fresh status check when something actually changed.
-    const stillLive = await checkStreamStatus(userToken || token, false)
-    if (!stillLive) {
-      // Stream is no longer live — reflect that immediately.
-      setLiveState('waiting')
-    }
-  }
-
-  // When the socket detects the stream started, re-check immediately and
-  // auto-connect (no manual refresh or button click required).
   useEffect(() => {
-    if (!hookStreamStarted || mediaReadyRef.current) return
-    setStreamEnded(false)
-    setTokenData(null)
-    joinedRef.current = false
-    mediaReadyRef.current = false
-    checkStreamStatus(userToken || token)
+    if (hookStreamStarted && !joinedRef.current) {
+      joinLive()
+    }
   }, [hookStreamStarted])
 
-  // The "connecting" state must never be a dead end. It is entered before the
-  // Agora join and left the moment the first track (audio OR video) is playing.
-  // The 15s cap is what catches the remaining cases — a join that never
-  // completes, or a channel where the instructor never publishes anything —
-  // and turns them into the retry button instead of an endless spinner.
   useEffect(() => {
-    if (liveState !== 'connecting') return
-    clearTimeout(connectTimeoutRef.current)
-    connectTimeoutRef.current = setTimeout(() => {
-      if (mediaReadyRef.current) return
-      console.warn('[Live] Connecting timed out — showing retry')
-      joiningRef.current = false
-      joinedRef.current = false
-      try { clientRef.current?.leave() } catch {}
-      clientRef.current = null
-      setConnectError(tl('connectionTimeout'))
-      setLiveState('failed')
-    }, 15000)
-    return () => clearTimeout(connectTimeoutRef.current)
-  }, [liveState])
-
-  // Poll the session status while we are not yet watching, so the student is
-  // auto-connected as soon as the instructor goes live. Polling also keeps
-  // running from `connecting`/`failed` so a status change (or a transient
-  // connection failure) is recovered without a manual reload. Stops once we are
-  // actually watching or the stream has ended.
-  useEffect(() => {
-    if (liveState === 'watching' || liveState === 'ended') return
-    const t = userToken || token
-    if (!t) return
-
-    pollRef.current = setInterval(() => {
-      if (mediaReadyRef.current || joiningRef.current) return
-      checkStreamStatus(t, true)
-    }, 5000)
-
-    return () => {
-      clearInterval(pollRef.current)
-      pollRef.current = null
-    }
-  }, [liveState, userToken, token, lessonId])
+    if (socketViewerCount > 0) setViewerCount(socketViewerCount)
+  }, [socketViewerCount])
 
   useEffect(() => {
-    commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [socketComments])
-
-  useEffect(() => {
-    // The socket room is the live audience: the gateway excludes the
-    // instructor and broadcasts a new count on every join AND disconnect.
-    // Course.liveViewerCount is only a hint — it is incremented on every join
-    // attempt (including retries) and can miss the matching decrement, so it
-    // drifts upward. Using it as a floor made the badge grow and never drop,
-    // which is why it showed the wrong number. The DB value is used only as a
-    // placeholder until the socket delivers the real count.
-    if (!connected) return
-    if (socketViewerCount > 0) {
-      setViewerCount(socketViewerCount)
-    } else if (dbViewerCountRef.current > 0) {
-      setViewerCount(dbViewerCountRef.current)
-    }
-  }, [socketViewerCount, connected])
-
-  // On mount: check stream status (does NOT init Agora — only on user click)
-  useEffect(() => {
-    if (lessonId === null) return
+    const stored = localStorage.getItem('userName') || ''
+    if (stored) setUserName(stored)
+    const storedAvatar = localStorage.getItem('user_avatar') || ''
+    if (storedAvatar) setUserAvatar(storedAvatar)
 
     const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
       localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
@@ -663,35 +91,106 @@ export default function LiveViewerPage() {
     }
 
     setUserToken(t)
-    checkStreamStatus(t)
+    syncAuthUser().then((user: any) => {
+      const profile = user?.profile
+      if (profile) {
+        const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
+        setUserName(name)
+        setUserAvatar(profile.avatar || '')
+        localStorage.setItem('userName', name)
+        localStorage.setItem('user_avatar', profile.avatar || '')
+      }
+    }).catch(() => {})
+
+    joinLive(t)
 
     return () => {
-      clearTimeout(loadingTimeoutRef.current)
-      clearTimeout(connectTimeoutRef.current)
       clearInterval(pollRef.current)
-      mediaReadyRef.current = false
-      joinedRef.current = false
-      if (token) {
-        patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
-      }
-      clientRef.current?.leave().catch(() => {})
     }
-  }, [courseId, lessonId])
+  }, [courseId])
+
+  const joinLive = async (overrideToken?: string) => {
+    const t = overrideToken || userToken || localStorage.getItem('token') || ''
+    if (!t || joinedRef.current) return
+
+    setLoading(true)
+    try {
+      const res = await fetch(`${API}/live/join/${courseId}`, {
+        headers: { Authorization: `Bearer ${t}` },
+        cache: 'no-store',
+      })
+      if (!res.ok) throw new Error('join failed')
+      const data = await res.json()
+
+      if (data.isLive && data.roomUrl && data.token) {
+        setRoomUrl(data.roomUrl)
+        setToken(data.token)
+        setIsLive(true)
+        joinedRef.current = true
+        clearInterval(pollRef.current)
+        patch(`/live/viewers/${courseId}`, { delta: 1 }).catch(() => {})
+      } else {
+        setIsLive(false)
+        startPolling(t)
+      }
+    } catch {
+      setIsLive(false)
+      startPolling(t)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const startPolling = (t: string) => {
+    clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      if (joinedRef.current) { clearInterval(pollRef.current); return }
+      try {
+        const res = await fetch(`${API}/live/status/${courseId}`, {
+          headers: { Authorization: `Bearer ${t}` },
+          cache: 'no-store',
+        })
+        if (!res.ok) return
+        const status = await res.json()
+        if (status.recordingUrl) {
+          setRecordingUrl(status.recordingUrl)
+          setStreamEnded(true)
+          clearInterval(pollRef.current)
+          return
+        }
+        if (status.isLive) {
+          clearInterval(pollRef.current)
+          await joinLive(t)
+        }
+      } catch {}
+    }, 10000)
+  }
+
+  const checkForRecording = async () => {
+    const t = userToken || localStorage.getItem('token') || ''
+    if (!t) return
+    try {
+      const res = await fetch(`${API}/live/status/${courseId}`, {
+        headers: { Authorization: `Bearer ${t}` },
+        cache: 'no-store',
+      })
+      if (!res.ok) return
+      const status = await res.json()
+      if (status.recordingUrl) setRecordingUrl(status.recordingUrl)
+    } catch {}
+  }
+
+  const handleLeave = () => {
+    clearInterval(pollRef.current)
+    const t = userToken || localStorage.getItem('token') || ''
+    if (t && isLive) patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
+    router.back()
+  }
 
   const handleSendComment = () => {
     if (!newComment.trim()) return
     sendComment(newComment)
     setNewComment('')
-  }
-
-  const handleRaiseHand = () => {
-    if (hasQuestion) {
-      setHasQuestion(false)
-      setShowQuestionInput(false)
-      toast.success(tl('questionCancelled'))
-    } else {
-      setShowQuestionInput(true)
-    }
   }
 
   const handleSubmitQuestion = () => {
@@ -703,26 +202,6 @@ export default function LiveViewerPage() {
     setQuestionText('')
   }
 
-  const handleLeave = async () => {
-    if (clientRef.current) await clientRef.current.leave().catch(() => {})
-    setHasAudio(false)
-    setHasVideo(false)
-    if (token) {
-      patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
-    }
-    router.back()
-  }
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.()
-      setFullscreen(true)
-    } else {
-      document.exitFullscreen?.()
-      setFullscreen(false)
-    }
-  }
-
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -731,77 +210,26 @@ export default function LiveViewerPage() {
     </div>
   )
 
-  if (error === 'ended') return (
-    <div style={{ minHeight:'100vh', background:'#000', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16, padding:24, direction:isAr?'rtl':'ltr' }}>
-      <div style={{ width:80, height:80, borderRadius:'50%', background:'rgba(107,114,128,0.1)', border:'1px solid rgba(107,114,128,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <Square size={32} color="#6b7280" />
-      </div>
-      <h2 style={{ color:'#f1f5f9', fontSize:20, fontWeight:900, margin:0 }}>
-        {tl('streamEndedTitle')}
-      </h2>
-      <p style={{ color:'#94a3b8', fontSize:14, textAlign:'center', maxWidth:320, lineHeight:1.7 }}>
-        {tl('streamEndedDesc')}
-      </p>
-      <div style={{ display:'flex', gap:10 }}>
-        <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding:'11px 22px', borderRadius:11, background:'#5120c8', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
-          {tl('viewCourse')}
-        </button>
-        <button onClick={() => router.push(`/${locale}/courses`)} style={{ padding:'11px 22px', borderRadius:11, background:'rgba(255,255,255,0.06)', color:'#94a3b8', border:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontSize:13, fontWeight:600 }}>
-          {tl('browseCourses')}
-        </button>
-      </div>
-    </div>
-  )
-
-  if (error) return (
-    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24, direction: isAr?'rtl':'ltr' }}>
-      <Radio size={56} color="rgba(220,38,38,0.3)" />
-      <h3 style={{ color: '#f1f5f9', fontSize: 16, fontWeight: 800, margin: 0, textAlign: 'center' }}>{tl('couldNotJoin')}</h3>
-      <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', maxWidth: 360, lineHeight: 1.6 }}>{error}</p>
-      <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={() => router.push(`/${locale}/courses`)} style={{ padding: '11px 22px', borderRadius: 11, background: 'rgba(255,255,255,0.08)', color: '#f1f5f9', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-          {tl('backToCourses')}
-        </button>
-        <button onClick={() => window.location.reload()} style={{ padding: '11px 22px', borderRadius: 11, background: '#dc2626', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-          {tl('tryAgain')}
-        </button>
-      </div>
-    </div>
-  )
-
   return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', direction: isAr ? 'rtl' : 'ltr' }}>
-      <style>{`
-        @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}
-        @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
+      <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* TOP BAR */}
       <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive || liveState === 'watching' ? '#dc2626' : '#6b7280', animation: isLive || liveState === 'watching' ? 'livePulse 1.5s infinite' : 'none' }} />
-          <span style={{ color: isLive || liveState === 'watching' ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? '#dc2626' : '#6b7280', animation: isLive ? 'livePulse 1.5s infinite' : 'none' }} />
+          <span style={{ color: isLive ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
         </div>
-           {viewerCount > 0 && (
-             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-               <Users size={12} color="rgba(255,255,255,0.5)" />
-               <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{viewerCount}</span>
-             </div>
-           )}
+        {viewerCount > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Users size={12} color="rgba(255,255,255,0.5)" />
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>{viewerCount}</span>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>
-          {connected ? (
-            <>
-              <Wifi size={12} color="#16a34a" />
-              <span style={{ color: '#16a34a', fontSize: 11 }}>{tl('connected')}</span>
-            </>
-          ) : (
-            <>
-              <WifiOff size={12} color="#f59e0b" />
-              <span style={{ color: '#f59e0b', fontSize: 11 }}>{tl('connecting')}</span>
-            </>
-          )}
+          {connected
+            ? <><Wifi size={12} color="#16a34a" /><span style={{ color: '#16a34a', fontSize: 11 }}>{tl('connected')}</span></>
+            : <><WifiOff size={12} color="#f59e0b" /><span style={{ color: '#f59e0b', fontSize: 11 }}>{tl('connecting')}</span></>}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => setShowPanel(p => !p)} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -818,176 +246,52 @@ export default function LiveViewerPage() {
       {/* MAIN */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: showPanel ? '1fr 300px' : '1fr', overflow: 'hidden' }}>
 
-        {/* Video */}
-        <div style={{ position: 'relative', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div ref={videoContainerRef} style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }} />
-
-          {/* Audio-only (music) element: always rendered while connected so the
-              instructor's audio keeps playing when there is no video track. */}
-          {liveState === 'watching' && <audio id="live-audio" autoPlay playsInline muted={muted} style={{ display: 'none' }} />}
-
-          {/* AUDIO-ONLY — connected and receiving audio, but the instructor has
-              no camera and no screen share. A success state with an avatar, not
-              a connection failure. Replaced by the video element as soon as a
-              video track is published. */}
-          {!hasVideo && liveState === 'watching' && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
-              <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'linear-gradient(135deg,#5120c8,#dc2626)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 36, fontWeight: 900, boxShadow: '0 0 0 6px rgba(220,38,38,0.12)' }}>
-                {(userName?.[0]?.toUpperCase() || '?')}
+        {/* Video area */}
+        <div style={{ position: 'relative', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+          {isLive && roomUrl && token ? (
+            <div style={{ width: '100%', height: '100%' }}>
+              <DailyCall roomUrl={roomUrl} token={token} />
+            </div>
+          ) : streamEnded ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(107,114,128,0.15)', border: '1px solid rgba(107,114,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Square size={28} color="#6b7280" />
               </div>
-              <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>
-                {tl('instructorAudioOnly')}
-              </p>
-              <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, margin: 0 }}>
-                {tl('audioOnlyHint')}
-              </p>
-              {hasAudio && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 }}>
-                  <Volume2 size={14} color="#16a34a" />
-                  <span style={{ color: '#16a34a', fontSize: 12, fontWeight: 700 }}>{tl('audioPlaying')}</span>
+              <h2 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 900, margin: 0 }}>{tl('liveEnded')}</h2>
+              <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>{tl('thanksForWatching')}</p>
+              {recordingUrl && (
+                <div style={{ width: '100%', maxWidth: 700, marginTop: 16 }}>
+                  <p style={{ color: '#86efac', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
+                    {isAr ? 'التسجيل متاح الآن:' : 'Recording available:'}
+                  </p>
+                  <video src={recordingUrl} controls style={{ width: '100%', borderRadius: 12, background: '#111' }} />
                 </div>
               )}
+              <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+                {tl('viewCourse')}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
+              <div style={{ position: 'relative', width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.25)', animation: 'livePulse 2s ease-in-out infinite' }} />
+                <span style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.4)', animation: 'livePulse 2s ease-in-out infinite 0.4s' }} />
+                <Radio size={28} color="rgba(220,38,38,0.55)" />
+              </div>
+              <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>{tl('streamNotStartedTitle')}</p>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, maxWidth: 340, lineHeight: 1.7, margin: 0 }}>{tl('streamNotStartedDesc')}</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', animation: 'livePulse 1.2s infinite' }} />
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{tl('waitingForInstructor')}</span>
+              </div>
             </div>
           )}
 
-          {!hasVideo && !streamEnded && liveState !== 'watching' && (
-             <div id="waiting-overlay" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
-
-               {/* WAITING — instructor has not started the stream yet */}
-               {liveState === 'waiting' && (
-                 <>
-                   <div style={{ position: 'relative', width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.25)', animation: 'livePulse 2s ease-in-out infinite' }} />
-                     <span style={{ position: 'absolute', inset: 10, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.4)', animation: 'livePulse 2s ease-in-out infinite 0.4s' }} />
-                     <Radio size={28} color="rgba(220,38,38,0.55)" />
-                   </div>
-                   <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>
-                     {tl('streamNotStartedTitle')}
-                   </p>
-                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, maxWidth: 340, lineHeight: 1.7, margin: 0 }}>
-                     {tl('streamNotStartedDesc')}
-                   </p>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f59e0b', animation: 'livePulse 1.2s infinite' }} />
-                     <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12 }}>{tl('waitingForInstructor')}</span>
-                   </div>
-                 </>
-               )}
-
-               {/* CONNECTING — stream is live, Agora join in progress (15s cap) */}
-               {liveState === 'connecting' && (
-                 <>
-                   <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />
-                   <p style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700, margin: 0 }}>
-                     {tl('connectingToStream')}
-                   </p>
-                   <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: 0 }}>
-                     {tl('connectionMayTakeAMoment')}
-                   </p>
-                 </>
-               )}
-
-               {/* FAILED — connection failed or timed out; offer a retry */}
-               {liveState === 'failed' && (
-                 <>
-                   <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <WifiOff size={28} color="#f87171" />
-                   </div>
-                   <p style={{ color: '#f1f5f9', fontSize: 15, fontWeight: 800, margin: 0 }}>
-                     {tl('failedToConnect')}
-                   </p>
-                   <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, maxWidth: 340, lineHeight: 1.7, margin: 0 }}>
-                     {connectError || tl('connectionTimeout')}
-                   </p>
-                   <button onClick={handleRetry} style={{
-                     padding: '11px 30px', borderRadius: 10, background: '#dc2626',
-                     color: '#fff', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 800,
-                   }}>
-                     {tl('tryAgain')}
-                   </button>
-                 </>
-               )}
-
-               {/* Fallback: live but no token yet — allow a manual join once. */}
-               {liveState !== 'waiting' && liveState !== 'connecting' && liveState !== 'failed' && streamReady && !hasAudio && !hasVideo && (
-                 <>
-                   <div style={{ width: 72, height: 72, borderRadius: '50%', border: '2px solid rgba(220,38,38,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <Radio size={28} color="rgba(220,38,38,0.4)" />
-                   </div>
-                   <p style={{ color: '#f87171', fontSize: 14, fontWeight: 700 }}>
-                     {tl('liveStreamActive')}
-                   </p>
-                   <button onClick={() => handleJoinStream()} style={{
-                     padding: '12px 32px', borderRadius: 10, background: '#dc2626',
-                     color: '#fff', border: 'none', cursor: 'pointer', fontSize: 15,
-                     fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8,
-                     animation: 'pulse 1.5s infinite',
-                   }}>
-                     <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#fff' }} />
-                     {tl('joinLiveStream')}
-                   </button>
-                 </>
-               )}
-             </div>
-           )}
-
-           {streamEnded && (
-             <div style={{
-               position: 'absolute', inset: 0, zIndex: 50,
-               background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)',
-               display: 'flex', flexDirection: 'column',
-               alignItems: 'center', justifyContent: 'center', gap: 16,
-             }}>
-               <div style={{ width:72, height:72, borderRadius:'50%', background:'rgba(107,114,128,0.15)', border:'1px solid rgba(107,114,128,0.3)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                 <Square size={28} color="#6b7280" />
-               </div>
-                <h2 style={{ color:'#f1f5f9', fontSize:20, fontWeight:900, margin:0 }}>
-                  {tl('liveEnded')}
-                </h2>
-                <p style={{ color:'#94a3b8', fontSize:14, margin:0 }}>
-                  {tl('thanksForWatching')}
-                </p>
-                <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding:'11px 24px', borderRadius:11, background:'#5120c8', color:'#fff', border:'none', cursor:'pointer', fontSize:13, fontWeight:700 }}>
-                  {tl('viewCourse')}
-                </button>
-             </div>
-           )}
-
-          {/* Video controls overlay */}
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 20px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={() => {
-              const next = !muted
-              setMuted(next)
-              // The instructor's audio may be playing in the hidden <audio>
-              // element; keep both routes in sync with the mute button.
-              const el = document.getElementById('live-audio') as HTMLAudioElement | null
-              if (el) el.muted = next
-              clientRef.current?.remoteUsers?.forEach((u: any) => {
-                try { u.audioTrack?.setMuted?.(next) } catch {}
-              })
-            }} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-
-            <button onClick={handleRaiseHand} style={{ height: 36, paddingInline: 14, borderRadius: 18, background: hasQuestion ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', border: `1px solid ${hasQuestion ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: hasQuestion ? '#d97706' : '#fff', fontSize: 12, fontWeight: 700 }}>
-              <Hand size={14} />
-              {hasQuestion ? tl('cancelQuestion') : tl('raiseHand')}
-            </button>
-
-            <div style={{ flex: 1 }} />
-
-            <button onClick={toggleFullscreen} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-          </div>
-
           {/* Question input overlay */}
           {showQuestionInput && (
-            <div style={{ position: 'absolute', bottom: 70, left: 20, right: 20, animation: 'slideUp 0.2s ease' }}>
+            <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, zIndex: 10, animation: 'slideUp 0.2s ease' }}>
               <div style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', borderRadius: 14, border: '1px solid rgba(245,158,11,0.3)', padding: '14px' }}>
-                <div style={{ color: '#d97706', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
-                  {tl('typeYourQuestion')}
-                </div>
+                <div style={{ color: '#d97706', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{tl('typeYourQuestion')}</div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input type="text" placeholder={tl('yourQuestionHere')} value={questionText} onChange={e => setQuestionText(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSubmitQuestion()}
@@ -1002,12 +306,22 @@ export default function LiveViewerPage() {
               </div>
             </div>
           )}
+
+          {/* Controls overlay */}
+          {isLive && (
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 20px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button onClick={() => { if (hasQuestion) { setHasQuestion(false); setShowQuestionInput(false) } else { setShowQuestionInput(true) } }}
+                style={{ height: 36, paddingInline: 14, borderRadius: 18, background: hasQuestion ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', border: `1px solid ${hasQuestion ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: hasQuestion ? '#d97706' : '#fff', fontSize: 12, fontWeight: 700 }}>
+                <Hand size={14} />
+                {hasQuestion ? tl('cancelQuestion') : tl('raiseHand')}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Comments panel */}
         {showPanel && (
-          <div style={{ background: '#0d0d0d', borderLeft: isAr?'none':'1px solid rgba(255,255,255,0.06)', borderRight: isAr?'1px solid rgba(255,255,255,0.06)':'none', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
+          <div style={{ background: '#0d0d0d', borderLeft: isAr ? 'none' : '1px solid rgba(255,255,255,0.06)', borderRight: isAr ? '1px solid rgba(255,255,255,0.06)' : 'none', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
               <button style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '11px', background: 'none', border: 'none', cursor: 'pointer', color: '#f1f5f9', borderBottom: '2px solid #dc2626', fontSize: 12, fontWeight: 700 }}>
                 <MessageSquare size={13} />
@@ -1024,20 +338,15 @@ export default function LiveViewerPage() {
                 </div>
               ) : socketComments.map(c => (
                 <div key={c.id} style={{ display: 'flex', gap: 8, animation: 'slideUp 0.2s ease' }}>
-                  {c.avatar ? (
-                    <img src={c.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: 26, height: 26, borderRadius: '50%', background: c.isOwn ? '#dc2626' : '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>
-                      {(c.userName?.[0]?.toUpperCase() || '?')}
-                    </div>
-                  )}
+                  {c.avatar
+                    ? <img src={c.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    : <div style={{ width: 26, height: 26, borderRadius: '50%', background: c.isOwn ? '#dc2626' : '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{(c.userName?.[0]?.toUpperCase() || '?')}</div>}
                   <div style={{ flex: 1 }}>
                     <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
                     <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>
                   </div>
                 </div>
               ))}
-              <div ref={commentsEndRef} />
             </div>
 
             <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>

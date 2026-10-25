@@ -1307,9 +1307,13 @@ enum RecordingStatus {
 model LiveSession {
   id            String            @id @default(cuid())
   courseId      String
-  channelName   String            @unique
+  channelName   String?           @unique
   instructorId  String
   status        LiveSessionStatus @default(SCHEDULED)
+  isLive        Boolean           @default(false)
+  dailyRoomName String?
+  dailyRoomUrl  String?
+  recordingUrl  String?
   startedAt     DateTime?
   endedAt       DateTime?
   createdAt     DateTime          @default(now())
