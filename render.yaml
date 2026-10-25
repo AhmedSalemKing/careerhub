@@ -59,5 +59,7 @@ services:
         sync: false
       - key: BUNNY_API_KEY
         sync: false
+      - key: BUNNY_CDN_HOSTNAME
+        sync: false
       - key: FRONTEND_URL
         sync: false
