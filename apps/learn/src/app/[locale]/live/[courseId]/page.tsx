@@ -12,6 +12,8 @@ import { patch } from '../../../../lib/api'
 import { DailyCall } from '../../../components/live/DailyCall'
 import toast from 'react-hot-toast'
 
+type LiveState = 'loading' | 'not_found' | 'ended_with_recording' | 'ended_no_recording' | 'waiting' | 'live'
+
 export default function LiveViewerPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -27,12 +29,10 @@ export default function LiveViewerPage() {
     return cleaned.endsWith('/api') ? cleaned : `${cleaned}/api`
   })()
 
-  const [loading, setLoading] = useState(true)
-  const [isLive, setIsLive] = useState(false)
+  const [liveState, setLiveState] = useState<LiveState>('loading')
   const [roomUrl, setRoomUrl] = useState('')
   const [token, setToken] = useState('')
-  const [streamEnded, setStreamEnded] = useState(false)
-  const [recordingUrl, setRecordingUrl] = useState('')
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
   const [userName, setUserName] = useState(tl('viewer'))
   const [userAvatar, setUserAvatar] = useState('')
   const [showPanel, setShowPanel] = useState(true)
@@ -58,17 +58,16 @@ export default function LiveViewerPage() {
 
   useEffect(() => {
     if (hookStreamEnded) {
-      setStreamEnded(true)
-      setIsLive(false)
-      setRoomUrl('')
-      setToken('')
-      checkForRecording()
+      joinedRef.current = false
+      clearInterval(pollRef.current)
+      checkForRecordingAndSetState()
     }
   }, [hookStreamEnded])
 
   useEffect(() => {
-    if (hookStreamStarted && !joinedRef.current) {
-      joinLive()
+    if (hookStreamStarted && liveState === 'waiting') {
+      const t = userToken || getStoredToken()
+      if (t) joinLive(t)
     }
   }, [hookStreamStarted])
 
@@ -76,69 +75,93 @@ export default function LiveViewerPage() {
     if (socketViewerCount > 0) setViewerCount(socketViewerCount)
   }, [socketViewerCount])
 
-  useEffect(() => {
-    const stored = localStorage.getItem('userName') || ''
-    if (stored) setUserName(stored)
-    const storedAvatar = localStorage.getItem('user_avatar') || ''
-    if (storedAvatar) setUserAvatar(storedAvatar)
+  const getStoredToken = (): string =>
+    localStorage.getItem('token') || sessionStorage.getItem('token') ||
+    localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
 
-    const t = localStorage.getItem('token') || sessionStorage.getItem('token') ||
-      localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
+  const getAuthHeader = (t: string): Record<string, string> =>
+    t ? { Authorization: `Bearer ${t}` } : {}
 
-    if (!t) {
-      window.location.href = webLoginUrl(locale, `/${locale}/live/${courseId}`)
-      return
-    }
+  // Entry point: check status before attempting to join
+  const checkStatusAndProceed = async (t: string) => {
+    try {
+      const res = await fetch(`${API}/live/status/${courseId}`, {
+        headers: getAuthHeader(t),
+        cache: 'no-store',
+      })
 
-    setUserToken(t)
-    syncAuthUser().then((user: any) => {
-      const profile = user?.profile
-      if (profile) {
-        const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
-        setUserName(name)
-        setUserAvatar(profile.avatar || '')
-        localStorage.setItem('userName', name)
-        localStorage.setItem('user_avatar', profile.avatar || '')
+      if (res.status === 404) {
+        setLiveState('not_found')
+        return
       }
-    }).catch(() => {})
 
-    joinLive(t)
+      const raw = await res.json()
+      const status = raw?.data ?? raw
 
-    return () => {
-      clearInterval(pollRef.current)
+      if (!status?.exists) {
+        setLiveState('not_found')
+        return
+      }
+
+      if (!status.isLive) {
+        // Stream already ended — resolve recording state immediately
+        const recUrl: string | null = status.recordingUrl ?? null
+        if (recUrl) {
+          setRecordingUrl(recUrl)
+          setLiveState('ended_with_recording')
+        } else {
+          // Try the dedicated recording endpoint once
+          const recRes = await fetch(`${API}/live/recording/public/${courseId}`, {
+            cache: 'no-store',
+          })
+          if (recRes.ok) {
+            const recRaw = await recRes.json()
+            const url: string | null =
+              recRaw?.data?.recordingUrl ?? recRaw?.recordingUrl ?? null
+            if (url) {
+              setRecordingUrl(url)
+              setLiveState('ended_with_recording')
+              return
+            }
+          }
+          setLiveState('ended_no_recording')
+        }
+        return
+      }
+
+      // Live is active — join
+      await joinLive(t)
+    } catch {
+      setLiveState('waiting')
+      startPolling(t)
     }
-  }, [courseId])
+  }
 
-  const joinLive = async (overrideToken?: string) => {
-    const t = overrideToken || userToken || localStorage.getItem('token') || ''
+  const joinLive = async (t: string) => {
     if (!t || joinedRef.current) return
-
-    setLoading(true)
     try {
       const res = await fetch(`${API}/live/join/${courseId}`, {
-        headers: { Authorization: `Bearer ${t}` },
+        headers: getAuthHeader(t),
         cache: 'no-store',
       })
       if (!res.ok) throw new Error('join failed')
       const raw = await res.json()
-      const data = raw?.data ?? raw  // unwrap TransformInterceptor envelope
+      const data = raw?.data ?? raw
 
       if (data.isLive && data.roomUrl && data.token) {
         setRoomUrl(data.roomUrl)
         setToken(data.token)
-        setIsLive(true)
+        setLiveState('live')
         joinedRef.current = true
         clearInterval(pollRef.current)
         patch(`/live/viewers/${courseId}`, { delta: 1 }).catch(() => {})
       } else {
-        setIsLive(false)
+        setLiveState('waiting')
         startPolling(t)
       }
     } catch {
-      setIsLive(false)
+      setLiveState('waiting')
       startPolling(t)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -148,18 +171,31 @@ export default function LiveViewerPage() {
       if (joinedRef.current) { clearInterval(pollRef.current); return }
       try {
         const res = await fetch(`${API}/live/status/${courseId}`, {
-          headers: { Authorization: `Bearer ${t}` },
+          headers: getAuthHeader(t),
           cache: 'no-store',
         })
         if (!res.ok) return
-        const rawStatus = await res.json()
-        const status = rawStatus?.data ?? rawStatus  // unwrap TransformInterceptor envelope
-        if (status.recordingUrl) {
-          setRecordingUrl(status.recordingUrl)
-          setStreamEnded(true)
+        const raw = await res.json()
+        const status = raw?.data ?? raw
+
+        if (!status?.exists) {
+          setLiveState('not_found')
           clearInterval(pollRef.current)
           return
         }
+
+        if (!status.isLive && status.exists) {
+          clearInterval(pollRef.current)
+          const recUrl: string | null = status.recordingUrl ?? null
+          if (recUrl) {
+            setRecordingUrl(recUrl)
+            setLiveState('ended_with_recording')
+          } else {
+            setLiveState('ended_no_recording')
+          }
+          return
+        }
+
         if (status.isLive) {
           clearInterval(pollRef.current)
           await joinLive(t)
@@ -168,25 +204,46 @@ export default function LiveViewerPage() {
     }, 10000)
   }
 
-  const checkForRecording = async () => {
-    const t = userToken || localStorage.getItem('token') || ''
-    if (!t) return
+  const checkForRecordingAndSetState = async () => {
+    const t = userToken || getStoredToken()
     try {
       const res = await fetch(`${API}/live/status/${courseId}`, {
-        headers: { Authorization: `Bearer ${t}` },
+        headers: t ? getAuthHeader(t) : {},
         cache: 'no-store',
       })
-      if (!res.ok) return
-      const rawStatus = await res.json()
-      const status = rawStatus?.data ?? rawStatus  // unwrap TransformInterceptor envelope
-      if (status.recordingUrl) setRecordingUrl(status.recordingUrl)
-    } catch {}
+      if (!res.ok) {
+        setLiveState('ended_no_recording')
+        return
+      }
+      const raw = await res.json()
+      const status = raw?.data ?? raw
+      const recUrl: string | null = status?.recordingUrl ?? null
+      if (recUrl) {
+        setRecordingUrl(recUrl)
+        setLiveState('ended_with_recording')
+      } else {
+        // Try dedicated recording endpoint
+        const recRes = await fetch(`${API}/live/recording/public/${courseId}`, { cache: 'no-store' })
+        if (recRes.ok) {
+          const recRaw = await recRes.json()
+          const url: string | null = recRaw?.data?.recordingUrl ?? recRaw?.recordingUrl ?? null
+          if (url) {
+            setRecordingUrl(url)
+            setLiveState('ended_with_recording')
+            return
+          }
+        }
+        setLiveState('ended_no_recording')
+      }
+    } catch {
+      setLiveState('ended_no_recording')
+    }
   }
 
   const handleLeave = () => {
     clearInterval(pollRef.current)
-    const t = userToken || localStorage.getItem('token') || ''
-    if (t && isLive) patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
+    const t = userToken || getStoredToken()
+    if (t && liveState === 'live') patch(`/live/viewers/${courseId}`, { delta: -1 }).catch(() => {})
     router.back()
   }
 
@@ -205,7 +262,37 @@ export default function LiveViewerPage() {
     setQuestionText('')
   }
 
-  if (loading) return (
+  useEffect(() => {
+    const stored = localStorage.getItem('userName') || ''
+    if (stored) setUserName(stored)
+    const storedAvatar = localStorage.getItem('user_avatar') || ''
+    if (storedAvatar) setUserAvatar(storedAvatar)
+
+    const t = getStoredToken()
+    if (!t) {
+      window.location.href = webLoginUrl(locale, `/${locale}/live/${courseId}`)
+      return
+    }
+
+    setUserToken(t)
+    syncAuthUser().then((user: any) => {
+      const profile = user?.profile
+      if (profile) {
+        const name = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || tl('viewer')
+        setUserName(name)
+        setUserAvatar(profile.avatar || '')
+        localStorage.setItem('userName', name)
+        localStorage.setItem('user_avatar', profile.avatar || '')
+      }
+    }).catch(() => {})
+
+    checkStatusAndProceed(t)
+
+    return () => { clearInterval(pollRef.current) }
+  }, [courseId])
+
+  // ─── Loading ──────────────────────────────────────────────────────────────
+  if (liveState === 'loading') return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid rgba(220,38,38,0.2)', borderTopColor: '#dc2626', animation: 'spin 0.8s linear infinite' }} />
@@ -213,6 +300,64 @@ export default function LiveViewerPage() {
     </div>
   )
 
+  // ─── Not Found ────────────────────────────────────────────────────────────
+  if (liveState === 'not_found') return (
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
+      <div style={{ fontSize: '3rem' }}>🔍</div>
+      <h2 style={{ color: '#f1f5f9', margin: 0 }}>هذا البث غير موجود</h2>
+      <p style={{ color: '#6b7280', margin: 0 }}>تأكد من صحة الرابط أو تواصل مع المحاضر.</p>
+      <button
+        onClick={() => router.push(`/${locale}/courses`)}
+        style={{ marginTop: 8, padding: '10px 24px', background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}
+      >
+        تصفح الكورسات
+      </button>
+    </div>
+  )
+
+  // ─── Ended with recording ─────────────────────────────────────────────────
+  if (liveState === 'ended_with_recording') return (
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
+      <div style={{ fontSize: '2.5rem' }}>🎬</div>
+      <h2 style={{ color: '#f1f5f9', margin: 0 }}>انتهى البث المباشر</h2>
+      <p style={{ color: '#94a3b8', margin: 0 }}>يمكنك مشاهدة التسجيل الآن.</p>
+      {recordingUrl && (
+        <div style={{ width: '100%', maxWidth: 720, borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <video
+            src={recordingUrl}
+            controls
+            playsInline
+            style={{ width: '100%', display: 'block', aspectRatio: '16/9', background: '#000' }}
+          />
+        </div>
+      )}
+      <button
+        onClick={() => router.push(`/${locale}/courses/${courseId}`)}
+        style={{ padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+      >
+        {isAr ? 'شاهد التسجيل في الكورس' : 'View in Course'}
+      </button>
+    </div>
+  )
+
+  // ─── Ended no recording ───────────────────────────────────────────────────
+  if (liveState === 'ended_no_recording') return (
+    <div style={{ minHeight: '100vh', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24 }}>
+      <div style={{ fontSize: '2.5rem' }}>📹</div>
+      <h2 style={{ color: '#f1f5f9', margin: 0 }}>انتهى البث المباشر</h2>
+      <p style={{ color: '#94a3b8', margin: 0, textAlign: 'center' }}>
+        {isAr ? 'سيتوفر التسجيل قريباً — يُرجى المراجعة لاحقاً.' : 'The recording will be available soon — please check back later.'}
+      </p>
+      <button
+        onClick={() => router.push(`/${locale}/courses/${courseId}`)}
+        style={{ marginTop: 8, padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}
+      >
+        {isAr ? 'العودة إلى الكورس' : 'Back to Course'}
+      </button>
+    </div>
+  )
+
+  // ─── Live + waiting ───────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: '#000', display: 'flex', flexDirection: 'column', direction: isAr ? 'rtl' : 'ltr' }}>
       <style>{`@keyframes livePulse{0%,100%{opacity:1}50%{opacity:.3}}@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -220,8 +365,8 @@ export default function LiveViewerPage() {
       {/* TOP BAR */}
       <div style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: isLive ? '#dc2626' : '#6b7280', animation: isLive ? 'livePulse 1.5s infinite' : 'none' }} />
-          <span style={{ color: isLive ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: liveState === 'live' ? '#dc2626' : '#6b7280', animation: liveState === 'live' ? 'livePulse 1.5s infinite' : 'none' }} />
+          <span style={{ color: liveState === 'live' ? '#dc2626' : '#6b7280', fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>LIVE</span>
         </div>
         {viewerCount > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -251,28 +396,9 @@ export default function LiveViewerPage() {
 
         {/* Video area */}
         <div style={{ position: 'relative', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-          {isLive && roomUrl && token ? (
+          {liveState === 'live' && roomUrl && token ? (
             <div style={{ width: '100%', height: '100%' }}>
               <DailyCall roomUrl={roomUrl} token={token} />
-            </div>
-          ) : streamEnded ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 24, textAlign: 'center' }}>
-              <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(107,114,128,0.15)', border: '1px solid rgba(107,114,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Square size={28} color="#6b7280" />
-              </div>
-              <h2 style={{ color: '#f1f5f9', fontSize: 20, fontWeight: 900, margin: 0 }}>{tl('liveEnded')}</h2>
-              <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>{tl('thanksForWatching')}</p>
-              {recordingUrl && (
-                <div style={{ width: '100%', maxWidth: 700, marginTop: 16 }}>
-                  <p style={{ color: '#86efac', fontSize: 13, fontWeight: 700, marginBottom: 8 }}>
-                    {isAr ? 'التسجيل متاح الآن:' : 'Recording available:'}
-                  </p>
-                  <video src={recordingUrl} controls style={{ width: '100%', borderRadius: 12, background: '#111' }} />
-                </div>
-              )}
-              <button onClick={() => router.push(`/${locale}/courses/${courseId}`)} style={{ padding: '11px 24px', borderRadius: 11, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
-                {tl('viewCourse')}
-              </button>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
@@ -311,7 +437,7 @@ export default function LiveViewerPage() {
           )}
 
           {/* Controls overlay */}
-          {isLive && (
+          {liveState === 'live' && (
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 20px 16px', background: 'linear-gradient(transparent, rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', gap: 10 }}>
               <button onClick={() => { if (hasQuestion) { setHasQuestion(false); setShowQuestionInput(false) } else { setShowQuestionInput(true) } }}
                 style={{ height: 36, paddingInline: 14, borderRadius: 18, background: hasQuestion ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.1)', backdropFilter: 'blur(4px)', border: `1px solid ${hasQuestion ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: hasQuestion ? '#d97706' : '#fff', fontSize: 12, fontWeight: 700 }}>

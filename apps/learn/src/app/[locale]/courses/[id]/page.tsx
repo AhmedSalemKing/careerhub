@@ -158,21 +158,24 @@ export default function CourseDetailPage({
 		staleTime: 30 * 1000,
 	});
 
-	// Cloud recording URL — polled every 30 s when the stream is over and no
-	// lesson recording has been created yet (the pipeline can take a few minutes).
+	// Cloud recording URL — polled every 30 s when the stream is over.
 	const { data: cloudRecordingData } = useQuery({
 		queryKey: ["cloud-recording", courseId],
 		queryFn: async () => {
 			try {
 				const res = await get(`/live/recording/public/${courseId}`);
-				return (res?.data as any)?.data ?? res?.data ?? null;
+				const raw = res?.data as any;
+				const url: string | null =
+					(raw?.data?.recordingUrl) ??
+					(raw?.recordingUrl) ??
+					null;
+				return { recordingUrl: url };
 			} catch {
-				return null;
+				return { recordingUrl: null };
 			}
 		},
-		enabled: !!courseId && normalizeLiveStatus(course?.liveStatus) === "ended",
-		refetchInterval: (query) =>
-			(query.state.data as any)?.recordingUrl ? false : 30_000,
+		enabled: !!courseId,
+		refetchInterval: 30_000,
 		staleTime: 0,
 	});
 	const cloudRecordingUrl: string | null =

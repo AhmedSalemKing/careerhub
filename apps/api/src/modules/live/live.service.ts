@@ -218,7 +218,7 @@ export class LiveService {
       where: { courseId },
       orderBy: { createdAt: 'desc' },
     })
-    if (!session) throw new NotFoundException('No session found')
+    if (!session) return { recordingUrl: null }
     if (session.recordingUrl) return { recordingUrl: session.recordingUrl }
     if (!session.dailyRoomName) return { recordingUrl: null }
 
@@ -230,14 +230,20 @@ export class LiveService {
     return { recordingUrl: null }
   }
 
-  async getLiveStatus(courseId: string): Promise<{ isLive: boolean; recordingUrl?: string }> {
+  async getLiveStatus(courseId: string) {
     const session = await this.prisma.liveSession.findFirst({
       where: { courseId },
       orderBy: { createdAt: 'desc' },
+      select: { isLive: true, dailyRoomUrl: true, recordingUrl: true },
     })
+    if (!session) {
+      return { exists: false, isLive: false, recordingUrl: null }
+    }
     return {
-      isLive: session?.isLive ?? false,
-      recordingUrl: session?.recordingUrl ?? undefined,
+      exists: true,
+      isLive: session.isLive,
+      roomUrl: session.dailyRoomUrl,
+      recordingUrl: session.recordingUrl,
     }
   }
 
