@@ -144,6 +144,7 @@ export default function MyCoursesPage() {
 					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Medium.otf') format('opentype'); font-weight:500; }
 					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Light.otf') format('opentype'); font-weight:300; }
 					@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+					@keyframes livePulse { 0% { transform: scale(1); opacity: 0.7; } 70% { transform: scale(2.2); opacity: 0; } 100% { transform: scale(2.2); opacity: 0; } }
 					@media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr !important; } }
 					@media (max-width: 640px) { .course-grid { grid-template-columns: 1fr !important; } }
 					.course-card:hover { border-color: var(--primary-border) !important; }
@@ -599,22 +600,57 @@ export default function MyCoursesPage() {
 																	}
 																}}
 																style={{
-																	background: 'var(--primary)',
+																	display: 'flex',
+																	alignItems: 'center',
+																	gap: 8,
+																	background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
 																	color: '#fff',
 																	border: 'none',
 																	borderRadius: 10,
-																	padding: '8px 16px',
+																	padding: '8px 18px',
 																	fontSize: '0.85rem',
 																	fontWeight: 500,
-																	cursor: 'pointer',
-																	display: 'flex',
-																	alignItems: 'center',
-																	gap: 6,
 																	fontFamily: "'PingAR', sans-serif",
-																	marginLeft: 6,
+																	cursor: 'pointer',
+																	boxShadow: '0 0 18px rgba(220,38,38,0.35)',
+																	transition: 'all 0.2s',
+																	position: 'relative',
+																	overflow: 'hidden',
+																}}
+																onMouseEnter={e => {
+																	(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 28px rgba(220,38,38,0.55)';
+																	(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.03)';
+																}}
+																onMouseLeave={e => {
+																	(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 18px rgba(220,38,38,0.35)';
+																	(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)';
 																}}
 															>
-																<span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1.5s infinite' }} />
+																<span style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+																	<span style={{
+																		position: 'absolute',
+																		width: 16, height: 16,
+																		borderRadius: '50%',
+																		background: 'rgba(255,255,255,0.3)',
+																		animation: 'livePulse 1.4s ease-out infinite',
+																	}} />
+																	<span style={{
+																		width: 8, height: 8,
+																		borderRadius: '50%',
+																		background: '#fff',
+																		display: 'inline-block',
+																		position: 'relative',
+																		zIndex: 1,
+																	}} />
+																</span>
+																<svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+																	stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+																	<path d="M16.24 7.76a6 6 0 0 1 0 8.49"/>
+																	<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+																	<path d="M4.93 19.07a10 10 0 0 1 0-14.14"/>
+																	<path d="M7.76 16.24a6 6 0 0 1 0-8.49"/>
+																	<circle cx="12" cy="12" r="2"/>
+																</svg>
 																{isAr ? "بدء البث" : "Start Live"}
 															</button>
 														)}
