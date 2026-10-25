@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { learnUrlWithToken } from "../../../../lib/learn-link";
-import { get } from "../../../../lib/api";
+import { get, post, del } from "../../../../lib/api";
 import { AuthGate } from "../../../components/AuthGate";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
@@ -96,9 +96,14 @@ export default function MyCoursesPage() {
 			title: isAr ? 'حذف الكورس' : 'Delete Course',
 			message: isAr ? 'هل أنت متأكد من حذف هذا الكورس؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this course? This action cannot be undone.',
 			destructive: true,
-			onConfirm: () => {
+			onConfirm: async () => {
 				setConfirmModal(prev => ({ ...prev, isOpen: false }))
-				// TODO: Implement delete
+				try {
+					await del(`/courses/${courseId}`)
+					setCourses(prev => prev.filter((c: any) => c.id !== courseId))
+				} catch (e: any) {
+					console.error('Delete course error:', e)
+				}
 			},
 		})
 	};
