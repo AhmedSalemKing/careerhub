@@ -10,7 +10,7 @@ export function DailyCall({ roomUrl, token }: DailyCallProps) {
   return (
     <iframe
       src={`${roomUrl}?t=${token}`}
-      allow="camera; microphone; fullscreen; speaker; display-capture"
+      allow="camera *; microphone *; fullscreen *; speaker *; display-capture *; autoplay *; clipboard-write *"
       allowFullScreen
       style={{
         width: '100%',

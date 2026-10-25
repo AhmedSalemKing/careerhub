@@ -120,7 +120,8 @@ export default function LiveViewerPage() {
         cache: 'no-store',
       })
       if (!res.ok) throw new Error('join failed')
-      const data = await res.json()
+      const raw = await res.json()
+      const data = raw?.data ?? raw  // unwrap TransformInterceptor envelope
 
       if (data.isLive && data.roomUrl && data.token) {
         setRoomUrl(data.roomUrl)
@@ -151,7 +152,8 @@ export default function LiveViewerPage() {
           cache: 'no-store',
         })
         if (!res.ok) return
-        const status = await res.json()
+        const rawStatus = await res.json()
+        const status = rawStatus?.data ?? rawStatus  // unwrap TransformInterceptor envelope
         if (status.recordingUrl) {
           setRecordingUrl(status.recordingUrl)
           setStreamEnded(true)
@@ -175,7 +177,8 @@ export default function LiveViewerPage() {
         cache: 'no-store',
       })
       if (!res.ok) return
-      const status = await res.json()
+      const rawStatus = await res.json()
+      const status = rawStatus?.data ?? rawStatus  // unwrap TransformInterceptor envelope
       if (status.recordingUrl) setRecordingUrl(status.recordingUrl)
     } catch {}
   }
