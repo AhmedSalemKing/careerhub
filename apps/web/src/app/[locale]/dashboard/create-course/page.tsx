@@ -855,23 +855,23 @@ export default function CreateCoursePage() {
                 position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                 minHeight: '100vh', overflowY: 'auto',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                background: '#090b10', padding: '32px 16px',
+                background: 'var(--background)', padding: '32px 16px',
                 fontFamily: "'PingAR', sans-serif", direction: 'rtl',
                 zIndex: 1000,
               }}>
 
                 {/* Page title */}
-                <h1 style={{ fontWeight: 700, fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: '#f3f4f6', marginBottom: 24, textAlign: 'center' }}>
+                <h1 style={{ fontWeight: 700, fontSize: 'clamp(1.6rem, 4vw, 2rem)', color: 'var(--foreground)', marginBottom: 24, textAlign: 'center' }}>
                   {isAr ? 'مراجعة وإنشاء الكورس' : 'Review & Create Course'}
                 </h1>
 
                 {/* Main card */}
-                <div style={{ width: '100%', maxWidth: 680, background: '#13161f', border: '1px solid #1e2333', borderRadius: 20, padding: 28 }}>
+                <div style={{ width: '100%', maxWidth: 680, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28 }}>
 
                   {/* 1. Header row */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{
-                      background: '#7c3aed', color: '#fff', borderRadius: 999,
+                      background: 'var(--primary)', color: '#fff', borderRadius: 999,
                       padding: '4px 14px', fontSize: '0.8rem', fontWeight: 500,
                       display: 'flex', alignItems: 'center', gap: 6,
                     }}>
@@ -882,10 +882,10 @@ export default function CreateCoursePage() {
                     </div>
                     <div style={{
                       width: 44, height: 44, borderRadius: 12, flexShrink: 0,
-                      background: '#1e1b4b', border: '1px solid #2d2060',
+                      background: 'var(--primary-subtle)', border: '1px solid var(--primary-border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                       </svg>
@@ -893,7 +893,7 @@ export default function CreateCoursePage() {
                   </div>
 
                   {/* 2. Course title */}
-                  <div style={{ fontWeight: 700, fontSize: '1.3rem', color: '#f3f4f6', margin: '16px 0 20px', lineHeight: 1.3 }}>
+                  <div style={{ fontWeight: 700, fontSize: '1.3rem', color: 'var(--foreground)', margin: '16px 0 20px', lineHeight: 1.3 }}>
                     {form.title}
                   </div>
 
@@ -901,10 +901,10 @@ export default function CreateCoursePage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
 
                     {/* الوصف */}
-                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الوصف' : 'Description'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'الوصف' : 'Description'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>
                           {form.description ? form.description.slice(0, 50) + (form.description.length > 50 ? '...' : '') : '—'}
                         </div>
                       </div>
@@ -915,10 +915,10 @@ export default function CreateCoursePage() {
                     </div>
 
                     {/* العنوان بالعربية */}
-                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'العنوان بالعربية' : 'Arabic Title'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.titleAr || '—'}</div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'العنوان بالعربية' : 'Arabic Title'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.titleAr || '—'}</div>
                       </div>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                         <polyline points="4 7 4 4 20 4 20 7"/>
@@ -928,10 +928,10 @@ export default function CreateCoursePage() {
                     </div>
 
                     {/* المستوى */}
-                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المستوى' : 'Level'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'المستوى' : 'Level'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>
                           {LEVELS.find(l => l.value === form.level)?.[isAr ? 'ar' : 'en'] ?? form.level}
                         </div>
                       </div>
@@ -943,10 +943,10 @@ export default function CreateCoursePage() {
                     </div>
 
                     {/* السعر */}
-                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'السعر' : 'Price'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.price} {isAr ? 'ر.س' : 'SAR'}</div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'السعر' : 'Price'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.price} {isAr ? 'ر.س' : 'SAR'}</div>
                       </div>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
@@ -956,10 +956,10 @@ export default function CreateCoursePage() {
 
                     {/* تاريخ البث — live only */}
                     {form.type === 'live' && (
-                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'تاريخ البث' : 'Live Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.liveDate} {form.liveTime}</div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'تاريخ البث' : 'Live Date'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.liveDate} {form.liveTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -972,10 +972,10 @@ export default function CreateCoursePage() {
 
                     {/* المكان — offline only */}
                     {form.type === 'offline' && (
-                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المكان' : 'Venue'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.locationName || '—'}</div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'المكان' : 'Venue'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.locationName || '—'}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
@@ -985,10 +985,10 @@ export default function CreateCoursePage() {
                     )}
 
                     {/* الصورة */}
-                    <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الصورة' : 'Thumbnail'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: form.thumbnail ? '#34d399' : '#f3f4f6' }}>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'الصورة' : 'Thumbnail'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: form.thumbnail ? '#34d399' : 'var(--foreground)' }}>
                           {form.thumbnail ? (isAr ? 'تم الرفع' : 'Uploaded') : (isAr ? 'لا توجد' : 'None')}
                         </div>
                       </div>
@@ -1001,10 +1001,10 @@ export default function CreateCoursePage() {
 
                     {/* الأقسام — recorded only */}
                     {form.type === 'recorded' && (
-                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'الأقسام' : 'Sections'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'الأقسام' : 'Sections'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>
                             {form.sections.filter(s => s.title.trim()).length || (isAr ? 'لا توجد' : 'None')}
                           </div>
                         </div>
@@ -1021,10 +1021,10 @@ export default function CreateCoursePage() {
 
                     {/* التاريخ — offline only */}
                     {form.type === 'offline' && (
-                      <div style={{ background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'التاريخ' : 'Date'}</div>
-                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.offlineDate} {form.offlineTime}</div>
+                          <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'التاريخ' : 'Date'}</div>
+                          <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.offlineDate} {form.offlineTime}</div>
                         </div>
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                           <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -1038,10 +1038,10 @@ export default function CreateCoursePage() {
 
                   {/* المدة — full width, live only */}
                   {form.type === 'live' && (
-                    <div style={{ marginTop: 12, background: '#0f1117', border: '1px solid #1e2333', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ marginTop: 12, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4 }}>{isAr ? 'المدة التقريبية' : 'Expected Duration'}</div>
-                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: '#f3f4f6' }}>{form.liveDuration} {isAr ? 'دقيقة' : 'min'}</div>
+                        <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'المدة التقريبية' : 'Expected Duration'}</div>
+                        <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>{form.liveDuration} {isAr ? 'دقيقة' : 'min'}</div>
                       </div>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>
                         <circle cx="12" cy="12" r="10"/>
@@ -1051,7 +1051,7 @@ export default function CreateCoursePage() {
                   )}
 
                   {/* 4. Publication status */}
-                  <div style={{ fontWeight: 500, fontSize: '0.85rem', color: '#9ca3af', margin: '20px 0 10px' }}>
+                  <div style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--muted)', margin: '20px 0 10px' }}>
                     {isAr ? 'حالة النشر' : 'Publish Status'}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -1065,8 +1065,8 @@ export default function CreateCoursePage() {
                           key={opt.val}
                           onClick={() => set('status', opt.val)}
                           style={{
-                            border: active ? '1px solid #7c3aed' : '1px solid #1e2333',
-                            background: active ? '#7c3aed' : '#0f1117',
+                            border: active ? '1px solid var(--primary)' : '1px solid var(--border)',
+                            background: active ? 'var(--primary)' : 'var(--surface)',
                             borderRadius: 12, padding: '14px 16px',
                             cursor: 'pointer', textAlign: 'right',
                             display: 'flex', flexDirection: 'column', gap: 4,
@@ -1074,7 +1074,7 @@ export default function CreateCoursePage() {
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 500, fontSize: '0.88rem', color: '#f3f4f6' }}>
+                            <span style={{ fontWeight: 500, fontSize: '0.88rem', color: 'var(--foreground)' }}>
                               {isAr ? opt.ar : opt.en}
                             </span>
                             {active && (
@@ -1104,7 +1104,7 @@ export default function CreateCoursePage() {
                       onClick={handleSubmit}
                       disabled={saving}
                       style={{
-                        flex: 1, background: '#7c3aed', color: '#fff',
+                        flex: 1, background: 'var(--primary)', color: '#fff',
                         borderRadius: 12, padding: 13, fontWeight: 500, fontSize: '0.95rem',
                         border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -1124,8 +1124,8 @@ export default function CreateCoursePage() {
                     <button
                       onClick={() => setStep(s => Math.max(1, s - 1) as any)}
                       style={{
-                        background: '#13161f', border: '1px solid #1e2333',
-                        color: '#9ca3af', borderRadius: 12, padding: '13px 20px',
+                        background: 'var(--card)', border: '1px solid var(--border)',
+                        color: 'var(--muted)', borderRadius: 12, padding: '13px 20px',
                         fontWeight: 300, fontSize: '0.88rem', cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: 8,
                         fontFamily: "'PingAR', sans-serif",
