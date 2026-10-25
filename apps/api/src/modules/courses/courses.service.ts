@@ -1252,9 +1252,42 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     if (!isAdmin && course.instructorId !== userId) {
       throw new ForbiddenException('ليس لديك صلاحية حذف هذا الكورس');
     }
-    await this.prisma.course.delete({
-      where: { id },
-    });
+
+    // Some relations to Course are still RESTRICT at the database level
+    // (enrollments, certificates, ratings), so a plain course.delete() raises
+    // a foreign-key error. Remove course-owned rows first and unlink records
+    // that must survive (payments) in a single transaction.
+    await this.prisma.$transaction(
+      async (tx) => {
+        const liveSessions = await tx.liveSession.findMany({
+          where: { courseId: id },
+          select: { id: true },
+        });
+        const liveSessionIds = liveSessions.map((session) => session.id);
+        if (liveSessionIds.length > 0) {
+          await tx.liveRecording.deleteMany({
+            where: { liveSessionId: { in: liveSessionIds } },
+          });
+          await tx.liveSession.deleteMany({
+            where: { id: { in: liveSessionIds } },
+          });
+        }
+
+        await tx.rating.deleteMany({ where: { courseId: id } });
+        await tx.certificate.deleteMany({ where: { courseId: id } });
+        await tx.enrollment.deleteMany({ where: { courseId: id } });
+        // Financial history stays; only the reference to the deleted course goes.
+        await tx.payment.updateMany({
+          where: { courseId: id },
+          data: { courseId: null },
+        });
+        await tx.cartItem.deleteMany({ where: { courseId: id } });
+        await tx.bundleCourse.deleteMany({ where: { courseId: id } });
+
+        await tx.course.delete({ where: { id } });
+      },
+      { timeout: 30_000, maxWait: 10_000 },
+    );
 
     this.logger.log(`Course deleted: ${id}`);
   }
