@@ -150,8 +150,16 @@ export class LiveService {
     }
   }
 
-  async pollForRecording(_courseId: string, _roomName: string, _sessionId: string): Promise<void> {
-    this.logger.log('[Live] Cloud recording not available on free plan; skipping poll')
+  async pollForRecording(courseId: string, roomName: string, sessionId: string): Promise<void> {
+    this.logger.log(`[Live] Waiting 60 s before polling for recording: room=${roomName}`)
+    await new Promise(r => setTimeout(r, 60_000))
+    const url = await this.daily.getRecordingForRoom(roomName)
+    if (url) {
+      this.logger.log(`[Live] Recording ready for course ${courseId}: ${url}`)
+      await this.saveRecording(courseId, sessionId, url)
+    } else {
+      this.logger.warn(`[Live] No recording found for room ${roomName} after polling`)
+    }
   }
 
   async saveRecording(courseId: string, sessionId: string, recordingUrl: string): Promise<void> {
@@ -203,6 +211,15 @@ export class LiveService {
     } catch (e) {
       this.logger.error(`Failed to save recording for course ${courseId}: ${e.message}`)
     }
+  }
+
+  async getRecordingUrlForCourse(courseId: string): Promise<{ recordingUrl: string | null }> {
+    const session = await this.prisma.liveSession.findFirst({
+      where: { courseId },
+      orderBy: { createdAt: 'desc' },
+      select: { recordingUrl: true },
+    })
+    return { recordingUrl: session?.recordingUrl ?? null }
   }
 
   async getLiveStatus(courseId: string): Promise<{ isLive: boolean; recordingUrl?: string }> {

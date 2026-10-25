@@ -9,6 +9,7 @@ import { learnUrlWithToken } from '../../../../../../lib/learn-link'
 import {
   Radio, Users, Copy, Check, Play, Square, Hand, MessageSquare,
   TrendingUp, UserCheck, UserX, Send, Wifi, WifiOff, X, CheckCircle2,
+  Video, Loader2,
 } from 'lucide-react'
 import { useLiveSocket } from '../../../../../../hooks/useLiveSocket'
 import { formatLiveTime } from '../../../../../../lib/live'
@@ -64,6 +65,20 @@ export default function GoLivePage() {
     queryKey: ['course', courseId],
     queryFn: async () => { const res = await get(`/courses/${courseId}`); return res.data?.data ?? res.data },
   })
+
+  const { data: recordingData } = useQuery({
+    queryKey: ['live-recording', courseId],
+    queryFn: async () => {
+      try {
+        const res = await get(`/live/recording/${courseId}`)
+        return res.data?.data ?? res.data ?? null
+      } catch { return null }
+    },
+    enabled: streamEnded,
+    refetchInterval: (query) => (query.state.data as any)?.recordingUrl ? false : 30_000,
+    staleTime: 0,
+  })
+  const recordingUrl: string | null = (recordingData as any)?.recordingUrl ?? null
 
   const courseTitle = course?.titleAr || course?.titleEn || ''
   const liveLink = learnUrlWithToken(`/${locale}/live/${courseId}`)
@@ -208,14 +223,43 @@ export default function GoLivePage() {
               {liveStarted && roomUrl && token ? (
                 <DailyCall roomUrl={roomUrl} token={token} />
               ) : streamEnded ? (
-                <div style={{ height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                <div style={{ minHeight: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 }}>
                   <CheckCircle2 size={34} color="#16a34a" />
                   <p style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>
                     {isAr ? 'انتهى البث المباشر' : 'The live stream has ended'}
                   </p>
-                  <p style={{ color: subtext, fontSize: 12, margin: 0 }}>
-                    {isAr ? 'سيظهر التسجيل في مكتبة الكورس خلال بضع دقائق' : 'Recording will appear in the course library in a few minutes'}
-                  </p>
+
+                  {recordingUrl ? (
+                    <div style={{ width: '100%', maxWidth: 560, borderRadius: 12, overflow: 'hidden', border: `1px solid ${border}` }}>
+                      <video
+                        src={recordingUrl}
+                        controls
+                        playsInline
+                        style={{ width: '100%', display: 'block', aspectRatio: '16/9', background: '#000' }}
+                      />
+                      <div style={{ padding: '8px 12px', background: '#111', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Video size={14} color="#16a34a" />
+                        <span style={{ color: subtext, fontSize: 12 }}>
+                          {isAr ? 'التسجيل جاهز' : 'Recording ready'}
+                        </span>
+                        <a
+                          href={recordingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ marginInlineStart: 'auto', color: '#7c3aed', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}
+                        >
+                          {isAr ? 'فتح الرابط' : 'Open link'}
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Loader2 size={16} color="#94a3b8" style={{ animation: 'spin 1s linear infinite' }} />
+                      <span style={{ color: subtext, fontSize: 12 }}>
+                        {isAr ? 'جارٍ معالجة التسجيل — قد يستغرق بضع دقائق' : 'Processing recording — this may take a few minutes'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ height: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>

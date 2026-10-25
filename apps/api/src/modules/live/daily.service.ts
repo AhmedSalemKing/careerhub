@@ -36,6 +36,7 @@ export class DailyService implements OnModuleInit {
       properties: {
         enable_chat: true,
         enable_screenshare: true,
+        enable_recording: 'cloud',
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 8,
       },
     });
@@ -64,9 +65,24 @@ export class DailyService implements OnModuleInit {
     return data.token;
   }
 
-  async getRecordingForRoom(_roomName: string): Promise<string | null> {
-    // Cloud recording not available on Daily.co free plan
+  private async fetchRecordingUrl(roomName: string, maxRetries = 10): Promise<string | null> {
+    for (let i = 0; i < maxRetries; i++) {
+      await new Promise(r => setTimeout(r, 30_000));
+      try {
+        const data = await this.request(`/recordings?room_name=${encodeURIComponent(roomName)}&limit=1`);
+        const rec = data?.data?.[0];
+        if (rec?.status === 'finished' && (rec.download_link || rec.view_link)) {
+          return rec.download_link ?? rec.view_link;
+        }
+      } catch (e) {
+        this.logger.warn(`Recording poll attempt ${i + 1} failed: ${(e as Error).message}`);
+      }
+    }
     return null;
+  }
+
+  async getRecordingForRoom(roomName: string): Promise<string | null> {
+    return this.fetchRecordingUrl(roomName);
   }
 
   async registerWebhook(): Promise<void> {

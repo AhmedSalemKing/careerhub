@@ -158,6 +158,26 @@ export default function CourseDetailPage({
 		staleTime: 30 * 1000,
 	});
 
+	// Cloud recording URL — polled every 30 s when the stream is over and no
+	// lesson recording has been created yet (the pipeline can take a few minutes).
+	const { data: cloudRecordingData } = useQuery({
+		queryKey: ["cloud-recording", courseId],
+		queryFn: async () => {
+			try {
+				const res = await get(`/live/recording/public/${courseId}`);
+				return (res?.data as any)?.data ?? res?.data ?? null;
+			} catch {
+				return null;
+			}
+		},
+		enabled: !!courseId && normalizeLiveStatus(course?.liveStatus) === "ended",
+		refetchInterval: (query) =>
+			(query.state.data as any)?.recordingUrl ? false : 30_000,
+		staleTime: 0,
+	});
+	const cloudRecordingUrl: string | null =
+		(cloudRecordingData as any)?.recordingUrl ?? null;
+
 	useEffect(() => {
 		if (enrollmentData === undefined) return;
 		const enrolled = !!(
@@ -1274,7 +1294,29 @@ export default function CourseDetailPage({
 											</div>
 											)}
 
-											{!recordedLesson && (
+											{!recordedLesson && cloudRecordingUrl && (
+											<div
+												className="rounded-xl overflow-hidden"
+												style={{
+													border: `1px solid ${borderColor}`,
+													background: "#000",
+												}}>
+											<LiveRecordingPlayer
+												src={cloudRecordingUrl}
+												poster={thumb}
+											/>
+											<div
+												className="px-3 py-2 text-xs font-medium"
+												style={{
+													color: textPrimary,
+													background: cardBg,
+												}}>
+											{isAr ? "تسجيل البث المباشر" : "Live session recording"}
+											</div>
+											</div>
+											)}
+
+											{!recordedLesson && !cloudRecordingUrl && (
 											<div
 												className="flex items-start gap-2 p-3 rounded-xl text-xs leading-relaxed"
 												style={{
@@ -1285,8 +1327,8 @@ export default function CourseDetailPage({
 												<Info size={14} style={{ flexShrink: 0, marginTop: 2 }} />
 												<span>
 													{isAr
-														? "انتهى البث المباشر. التسجيل التلقائي غير متوفر بعد — سيتم إضافته قريباً"
-														: "The live stream has ended. Auto-recording is not available yet — it will be added soon."}
+														? "انتهى البث المباشر. التسجيل قيد المعالجة — سيظهر هنا خلال بضع دقائق"
+														: "The live stream has ended. Recording is being processed — it will appear here in a few minutes."}
 												</span>
 											</div>
 											)}
