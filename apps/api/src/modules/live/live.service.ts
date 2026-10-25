@@ -1,4 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common'
+import type { Response as ExpressResponse } from 'express'
+import { Readable } from 'node:stream'
 import { PrismaService } from '../../prisma/prisma.service'
 import { DailyService } from './daily.service'
 import { BunnyStreamService } from '../upload/bunny-stream.service'
@@ -406,6 +408,90 @@ export class LiveService {
           : null,
         recordingUrl,
       },
+    }
+  }
+
+  /**
+   * Streams a live recording through the backend proxy.
+   * The raw Daily.co / S3 URL is never sent to the browser.
+   */
+  async streamRecording(
+    courseId: string,
+    userId: string,
+    range: string | undefined,
+    res: ExpressResponse,
+  ) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      include: { enrollments: { where: { userId } } },
+    })
+    if (!course) {
+      res.status(404).json({ success: false, message: 'Course not found' })
+      return
+    }
+
+    const isOwner = course.instructorId === userId
+    const isEnrolled = course.enrollments.length > 0
+    if (!isOwner && !isEnrolled) {
+      res.status(403).json({ success: false, message: 'غير مصرح' })
+      return
+    }
+
+    const { recordingUrl } = await this.getRecordingUrlForCourse(courseId)
+    if (!recordingUrl) {
+      res.status(404).json({ success: false, message: 'التسجيل غير متاح' })
+      return
+    }
+
+    const upstreamHeaders: Record<string, string> = {
+      'User-Agent': 'DeveWay-Server/1.0',
+    }
+    if (range) upstreamHeaders['Range'] = range
+
+    let upstream: globalThis.Response
+    try {
+      upstream = await fetch(recordingUrl, { headers: upstreamHeaders })
+    } catch (e: any) {
+      this.logger.warn(`Upstream fetch failed for ${courseId}: ${e.message}`)
+      res.status(502).json({ success: false, message: 'فشل الاتصال بالتسجيل' })
+      return
+    }
+
+    if (!upstream.ok && upstream.status !== 206) {
+      res.status(upstream.status).end()
+      return
+    }
+
+    res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'video/mp4')
+    res.setHeader('Content-Disposition', 'inline')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+
+    const statusCode = upstream.status === 206 ? 206 : 200
+    res.status(statusCode)
+
+    const contentLength = upstream.headers.get('content-length')
+    const contentRange = upstream.headers.get('content-range')
+    if (contentLength) res.setHeader('Content-Length', contentLength)
+    if (contentRange) res.setHeader('Content-Range', contentRange)
+
+    if (!upstream.body) {
+      res.status(502).end()
+      return
+    }
+
+    try {
+      const nodeStream = Readable.fromWeb(upstream.body as any)
+      nodeStream.on('error', (err: Error) => {
+        this.logger.warn(`Stream error for ${courseId}: ${err.message}`)
+        if (!res.writableEnded) res.end()
+      })
+      nodeStream.pipe(res)
+    } catch (e: any) {
+      this.logger.warn(`Could not pipe stream for ${courseId}: ${e.message}`)
+      res.status(502).end()
     }
   }
 

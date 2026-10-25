@@ -1574,3 +1574,12 @@ html[dir="rtl"] h4,
 [dir="rtl"] h4 {
   font-weight: 600 !important;
 }
+
+/* ── Hide browser-native download / overflow buttons on protected video ── */
+video::-webkit-media-controls-download-button,
+video::-webkit-media-controls-overflow-button {
+  display: none !important;
+}
+video::-webkit-media-controls-enclosure {
+  overflow: hidden;
+}

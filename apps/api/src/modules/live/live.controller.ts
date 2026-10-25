@@ -1,10 +1,13 @@
 import {
   Controller, Get, Post, Patch, Param, Body, Request,
   UseGuards, Query, UploadedFile, UseInterceptors, BadRequestException,
+  Req, Res, Headers,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { memoryStorage } from 'multer'
+import { Response } from 'express'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { StreamAuthGuard } from './guards/stream-auth.guard'
 import { LiveService } from './live.service'
 
 @Controller('live')
@@ -44,6 +47,17 @@ export class LiveController {
     @Request() req: any,
   ) {
     return this.liveService.getLiveManageData(courseId, req.user.id)
+  }
+
+  @Get('stream/:courseId')
+  @UseGuards(StreamAuthGuard)
+  async streamRecording(
+    @Param('courseId') courseId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+    @Headers('range') range: string,
+  ) {
+    return this.liveService.streamRecording(courseId, (req as any).user.id, range, res)
   }
 
   @Get('recording/public/:courseId')

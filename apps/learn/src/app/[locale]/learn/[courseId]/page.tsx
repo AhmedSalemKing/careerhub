@@ -286,20 +286,7 @@ function MetaItem({
 	const isLiveCourse = course?.type === "live";
 	const liveState = normalizeLiveStatus(course?.liveStatus);
 
-	// Cloud recording URL — fetched from the live service for ended live courses
-	const { data: cloudRecordingData } = useQuery({
-		queryKey: ["cloud-recording", courseId],
-		enabled: !!courseId && authChecked && isLiveCourse && liveState === "ended",
-		refetchInterval: 30_000,
-		queryFn: async () => {
-			const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://api.deveways.com/api";
-			const res = await fetch(`${apiUrl}/live/recording/public/${courseId}`);
-			if (!res.ok) return null;
-			const raw = await res.json() as any;
-			return raw?.data?.recordingUrl ?? raw?.recordingUrl ?? null;
-		},
-	});
-	const cloudRecordingUrl: string | null = (cloudRecordingData as string | null | undefined) ?? null;
+	const authToken = useAuthStore((s: any) => s.token) || getAuthToken();
 
 	const {
 		data: enrollment,
@@ -1199,7 +1186,7 @@ function MetaItem({
 				locale={locale}
 				isDark={isDark}
 				userEmail={userEmail}
-				cloudRecordingUrl={cloudRecordingUrl}
+				token={authToken}
 			/>
 		);
 	}
