@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
+import { useAuthStore } from '../../../../stores/authStore'
 import Toast from '../../../components/Toast'
 import {
   BookOpen,
@@ -116,6 +117,7 @@ export default function AdminCreateCoursePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const user = useAuthStore((s) => s.user)
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -348,40 +350,42 @@ export default function AdminCreateCoursePage() {
               </h3>
             </div>
 
-            {/* Assign Instructor */}
-            <div style={{ position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', marginBottom: 16 }}>
-              <label style={labelStyle}>
-                <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
-                {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
-              </label>
-              <select
-                value={form.isInstructor ? 'self' : form.instructorId}
-                onChange={(e) => {
-                  if (e.target.value === 'self') {
-                    set('isInstructor', true)
-                    set('instructorId', '')
-                  } else {
-                    set('isInstructor', false)
-                    set('instructorId', e.target.value)
-                  }
-                }}
-                style={{
-                  ...inputStyle,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <option value="self" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}
-                </option>
-                {(instructors as any[]).map((inst: any) => (
-                  <option key={inst.id} value={inst.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {inst.profile?.firstName} {inst.profile?.lastName}
+            {/* Assign Instructor — admin only; instructors are automatically the owner */}
+            {(user?.role === 'ADMIN' || user?.accountType === 'ADMIN') && (
+              <div style={{ position: 'relative', width: '100%', maxWidth: '100%', boxSizing: 'border-box', marginBottom: 16 }}>
+                <label style={labelStyle}>
+                  <User size={14} style={{ marginLeft: isAr ? 4 : 0, marginRight: isAr ? 0 : 4 }} />
+                  {isAr ? 'تعيين المحاضر' : 'Assign Instructor'}
+                </label>
+                <select
+                  value={form.isInstructor ? 'self' : form.instructorId}
+                  onChange={(e) => {
+                    if (e.target.value === 'self') {
+                      set('isInstructor', true)
+                      set('instructorId', '')
+                    } else {
+                      set('isInstructor', false)
+                      set('instructorId', e.target.value)
+                    }
+                  }}
+                  style={{
+                    ...inputStyle,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <option value="self" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {isAr ? 'الأدمن هو صاحب الكورس' : 'Admin is the course owner'}
                   </option>
-                ))}
-              </select>
-            </div>
+                  {(instructors as any[]).map((inst: any) => (
+                    <option key={inst.id} value={inst.id} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {inst.profile?.firstName} {inst.profile?.lastName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Title */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
