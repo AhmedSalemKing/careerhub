@@ -6,10 +6,10 @@
 #
 # IMPORTANT: prisma migrate deploy runs during pre-deploy. Prisma uses
 # DIRECT_URL for migrations. Supabase's direct host (db.<ref>.supabase.co) is
-# IPv6-only and Render cannot reach it, so DIRECT_URL must be set to the
-# Supabase session pooler on port 5432, for example:
+# IPv6-only and Render cannot reach it.
+# Set DIRECT_URL in the Render dashboard to the Supabase SESSION POOLER (port 5432):
 #   postgresql://postgres.<ref>:<password>@<region>.pooler.supabase.com:5432/postgres
-# Do not use the transaction pooler on port 6543 for migrations.
+# Do NOT use the transaction pooler (port 6543) or the IPv6-only direct host for migrations.
 
 services:
   - type: web
@@ -62,4 +62,8 @@ services:
       - key: BUNNY_CDN_HOSTNAME
         sync: false
       - key: FRONTEND_URL
+        sync: false
+      - key: DAILY_API_KEY
+        sync: false
+      - key: DAILY_DOMAIN
         sync: false
