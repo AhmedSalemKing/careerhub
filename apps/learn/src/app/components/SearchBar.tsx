@@ -276,7 +276,7 @@ export function SearchBar() {
                             margin: 0,
                             fontFamily: 'DM Sans, sans-serif',
                           }}>
-                            {course.price > 0 ? `${course.price} SAR` : (isAr ? 'مجاني' : 'Free')}
+                            {(course as any).priceDisplay ?? (course.price > 0 ? `${course.price} SAR` : (isAr ? 'مجاني' : 'Free'))}
                           </p>
                         </div>
                         <ArrowLeft size={14} color="rgba(255,255,255,0.2)" />

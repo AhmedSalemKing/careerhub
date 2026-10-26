@@ -197,6 +197,7 @@ export default function HomePage() {
     students: c._count?.enrollments || 0,
     rating: c.rating || 4.5,
     price: c.price ?? 0,
+    priceDisplay: c.priceDisplay ?? null,
     isMostPopular: c.isMostPopular === true,
     createdAt: c.createdAt,
     enrollmentCount: c._count?.enrollments || 0,
@@ -533,7 +534,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-1"><Star className="h-4 w-4" style={{ color: '#F5A623', fill: '#F5A623' }} /><span className="font-medium">{course.rating}</span></div>
                   </div>
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                    <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.price}<span className="text-sm font-normal ml-1" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? 'ر.س' : 'SAR'}</span></div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.priceDisplay ?? (course.price > 0 ? `${course.price} ${locale === 'ar' ? 'ر.س' : 'SAR'}` : (locale === 'ar' ? 'مجاني' : 'Free'))}</div>
                     {enrolledIds.has(course.id) ? (
                       <Link
                         href={

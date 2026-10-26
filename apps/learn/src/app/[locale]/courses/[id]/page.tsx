@@ -1189,13 +1189,7 @@ export default function CourseDetailPage({
 											<span
 												className="text-3xl font-bold"
 												style={{ color: purple }}>
-												{course.price}
-											</span>
-											<span
-												className="text-base"
-												style={{ color: textSecondary }}>
-												{" "}
-												{t("currency")}
+												{(course as any).priceDisplay ?? `${course.price} ${t("currency")}`}
 											</span>
 										</div>
 										{course.originalPrice &&
@@ -1691,8 +1685,7 @@ export default function CourseDetailPage({
 									) : (
 										<>
 											<ShoppingCart size={20} />
-											{isAr ? "اشترك الآن" : "Enroll Now"} – {course?.price}{" "}
-											{isAr ? "ريال" : "SAR"}
+											{isAr ? "اشترك الآن" : "Enroll Now"} – {(course as any)?.priceDisplay ?? `${course?.price} ${isAr ? "ريال" : "SAR"}`}
 										</>
 									)}
 								</button>

@@ -410,7 +410,7 @@ export default function ApprovalsPage() {
                         </span>
                         <span>
                           {isAr ? 'السعر:' : 'Price:'}{' '}
-                          {course.price} {isAr ? 'ر.س' : 'SAR'}
+                          {(course as any).priceDisplay ?? `${course.price} ${isAr ? 'ر.س' : 'SAR'}`}
                           {(course as any).priceUSD != null && <> &larr; {Number((course as any).priceUSD).toFixed(2)}$</>}
                           {(course as any).priceEGP != null && <> / {Number((course as any).priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
                         </span>

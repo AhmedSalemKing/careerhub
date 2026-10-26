@@ -521,7 +521,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
 
         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 700 }}>
-            {price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}
+            {course.priceDisplay ?? (price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free'))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 600 }}>
             {isEnrolled ? tl('continueBtn') : tl('viewBtn')}

@@ -34,6 +34,14 @@ api.interceptors.request.use((config) => {
       config.headers = config.headers ?? {}
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    const market = document.cookie.match(/(?:^|;\s*)market=([^;]*)/)?.[1]?.trim()
+    if (market === 'EGP') {
+      const url = config.url || ''
+      if (url.startsWith('/courses') || url.includes('/courses/')) {
+        config.params = { ...config.params, country: 'EG' }
+      }
+    }
   }
   return config
 })

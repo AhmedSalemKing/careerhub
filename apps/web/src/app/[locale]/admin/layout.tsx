@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { api } from '../../../lib/api'
 import BottomDock from '../../../components/BottomDock'
+import AdminCurrencyToggle from '../../../components/AdminCurrencyToggle'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const locale = useLocale()
@@ -306,11 +307,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="h-6 w-6 text-foreground" />
           </button>
           <span className="font-bold text-foreground">{isAr ? 'لوحة الإدارة' : 'Admin Panel'}</span>
+          <div style={{ marginInlineStart: 'auto' }}>
+            <AdminCurrencyToggle />
+          </div>
         </div>
       )}
 
       {/* Page */}
       <main className="p-6 lg:p-8" style={{ paddingTop: '80px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <AdminCurrencyToggle />
+        </div>
         {children}
       </main>
 

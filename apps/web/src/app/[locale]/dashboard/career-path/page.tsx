@@ -769,7 +769,7 @@ href={learnUrlWithToken(`/${locale}/courses`)}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{bundle.title}</div>
-                            <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</div>
+                            <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {(bundle as any).priceDisplay ?? (bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free'))}</div>
                           </div>
                           <button onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{isAr ? 'عرض' : 'View'}</button>
                         </div>
