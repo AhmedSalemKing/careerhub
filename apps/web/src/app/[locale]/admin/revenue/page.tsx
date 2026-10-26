@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
-import { formatMoney } from '../../../../lib/market'
 import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
@@ -17,10 +16,13 @@ export default function AdminRevenuePage() {
   const isAr = locale === 'ar'
   const [tab, setTab] = useState<'payments' | 'sessions'>('payments')
 
+  const toEGP = (sar: number) =>
+    (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+
   const formatPrice = (amount: number, display?: string | null) => {
     if (display) return display
     if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
-    return formatMoney(amount)
+    return toEGP(amount)
   }
 
   const { data: paymentsData, isLoading: loadingP } = useQuery({

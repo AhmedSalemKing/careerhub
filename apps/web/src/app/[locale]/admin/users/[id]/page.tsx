@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
 import { get } from '../../../../../lib/api'
-import { formatMoney } from '../../../../../lib/market'
 import {
   ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Wallet, Briefcase,
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
@@ -80,9 +79,12 @@ function paymentTitle(item: any, isAr: boolean) {
   return item?.course?.titleEn || item?.course?.titleAr || item?.description || (isAr ? 'دفع' : 'Payment')
 }
 
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+
 function formatCurrency(amount: number, display?: string | null) {
   if (display) return display
-  return formatMoney(amount)
+  return toEGP(amount)
 }
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {
@@ -201,8 +203,8 @@ export default function UserDetailPage() {
   const STATS: { label: string; value: string | number; subValue?: string; icon: any; color: string; bg: string }[] = [
     { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: formatCurrency(totalPaid), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
     { label: isAr ? 'الكورسات' : 'Courses', value: enrolledCount + createdCount, subValue: `${enrolledCount} ${isAr ? 'مشترك' : 'enrolled'} / ${createdCount} ${isAr ? 'منشأ' : 'created'}`, icon: BookOpen, color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
-    { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
-    { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
+    { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings, financials?.totalEarningsDisplay), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
+    { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance, financials?.walletBalanceDisplay), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
   ]
 
   const activityGroups = groupActivities(activities, isAr)

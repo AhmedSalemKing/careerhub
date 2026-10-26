@@ -5,6 +5,9 @@ import { DollarSign, Clock, Wallet, Loader2, ArrowDownLeft, CheckCircle } from '
 import { post } from '@/lib/api'
 import { formatMoney, getCountryClient } from '@/lib/market'
 
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+
 export default function EarningsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -47,7 +50,7 @@ export default function EarningsPage() {
     setTransferring(true)
     try {
       await post('/wallet/transfer-from-earnings', { amount })
-      setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${formatMoney(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}` })
+      setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${toEGP(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}` })
       setTransferAmount('')
       await fetchEarnings()
     } catch(e: any) {

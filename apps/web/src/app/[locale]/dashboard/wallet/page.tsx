@@ -316,7 +316,7 @@ export default function WalletPage() {
               </div>
               <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</span>
             </div>
-            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{formatMoney(stats.totalPayments)}</p>
+            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{toEGP(stats.totalPayments)}</p>
           </div>
           <div style={{ background: surface, borderRadius: 16, padding: 20, border: `1px solid ${border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>

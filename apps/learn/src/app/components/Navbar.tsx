@@ -13,10 +13,11 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
-import { formatMoney } from '../../lib/market'
-
 /* ═══ Cross-domain web app (notifications + wallet live there) ═══ */
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
+
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 /* ═══ Shared font for nav + buttons ═══ */
 const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
@@ -493,7 +494,7 @@ export function Navbar() {
                 >
                   <Wallet className="h-4 w-4" />
                   <span className="text-xs font-bold">
-                    {formatMoney(wallet?.balance, (wallet as any)?.balanceDisplay)}
+                    {(wallet as any)?.balanceDisplay ?? toEGP(wallet?.balance ?? 0)}
                   </span>
                 </a>
               )}
@@ -696,7 +697,7 @@ export function Navbar() {
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Wallet className="h-3.5 w-3.5" />
-                  {formatMoney(wallet?.balance, (wallet as any)?.balanceDisplay)}
+                  {(wallet as any)?.balanceDisplay ?? toEGP(wallet?.balance ?? 0)}
                 </a>
               )}
               <CartIcon />

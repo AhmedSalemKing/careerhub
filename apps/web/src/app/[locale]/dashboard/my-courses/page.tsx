@@ -10,7 +10,10 @@ import { AuthGate } from "../../../components/AuthGate";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
-import { formatCoursePrice, formatMoney } from "../../../../lib/market";
+import { formatCoursePrice } from "../../../../lib/market";
+
+const toEGP = (sar: number) =>
+	(sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 function getTitle(c: any, locale: string) {
 	if (locale === "ar") return c.titleAr || c.titleEn || c.title || "بدون عنوان";
@@ -260,7 +263,7 @@ export default function MyCoursesPage() {
 								},
 								{
 									label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue',
-									value: formatMoney(totalRevenue),
+									value: toEGP(totalRevenue),
 									icon: (
 										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 											<line x1="12" y1="1" x2="12" y2="23" />
