@@ -28,9 +28,12 @@ const MONETARY_FIELDS = new Set([
   'priceUSD',
   'sessionPrice',
   'coursePrice',
+  'hourlyRate',
   'walletBalance',
+  'earningsBalance',
   'totalRevenue',
   'monthlyRevenue',
+  'todayRevenue',
   'averageOrder',
   'totalEarnings',
   'pendingAmount',
@@ -124,7 +127,7 @@ function transformValue(obj: unknown, rate: number, depth = 0): unknown {
 
     if (
       typeof val === 'number' &&
-      val > 0 &&
+      val !== 0 &&
       isMonetaryKey(key) &&
       !record[`${key}Display`]
     ) {
