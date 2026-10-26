@@ -2,15 +2,16 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '@/lib/api'
-import { formatMoney } from '@/lib/market'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowRight, CreditCard, History, TrendingUp, TrendingDown, Receipt } from 'lucide-react'
-
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
+
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 function TopupForm({ onSuccess }: { onSuccess: (data: any) => void }) {
   const stripe = useStripe()
@@ -68,7 +69,7 @@ function TopupForm({ onSuccess }: { onSuccess: (data: any) => void }) {
               border: `1px solid ${amount === a ? '#5120c8' : isDark ? 'rgba(255,255,255,0.12)' : '#e5e7eb'}`,
               cursor: 'pointer', transition: 'all 0.2s',
             }}>
-              {formatMoney(a)}
+              {`${Number(a).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
             </button>
           ))}
         </div>
@@ -177,7 +178,7 @@ export default function WalletPage() {
     queryClient.invalidateQueries({ queryKey: ['wallet'] })
     queryClient.invalidateQueries({ queryKey: ['wallet-balance'] })
     setShowTopup(false)
-    const balanceStr = data?.balanceDisplay ?? formatMoney(newBalance)
+    const balanceStr = data?.balanceDisplay ?? `${Number(newBalance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
     setSuccessMsg(isAr ? `تم شحن المحفظة بنجاح! رصيدك الجديد: ${balanceStr}` : `Wallet topped up! New balance: ${balanceStr}`)
     setTimeout(() => setSuccessMsg(''), 6000)
   }
@@ -256,7 +257,7 @@ export default function WalletPage() {
             <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginBottom: 8 }}>{isAr ? 'الرصيد المتاح' : 'Available Balance'}</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 28 }}>
               <span style={{ color: '#fff', fontSize: 52, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}>
-                {isLoading ? '...' : (wallet?.balanceDisplay ?? formatMoney(balance))}
+                {isLoading ? '...' : (wallet?.balanceDisplay ?? `${Number(balance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`)} 
               </span>
             </div>
             
@@ -305,7 +306,7 @@ export default function WalletPage() {
               </div>
               <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي الشحن' : 'Total Top-ups'}</span>
             </div>
-            <p style={{ color: '#16a34a', fontSize: 22, fontWeight: 700, margin: 0 }}>{formatMoney(stats.totalTopups)}</p>
+            <p style={{ color: '#16a34a', fontSize: 22, fontWeight: 700, margin: 0 }}>{stats.totalTopups === 0 ? '٠٫٠٠ ج.م' : toEGP(stats.totalTopups)}</p>
           </div>
           <div style={{ background: surface, borderRadius: 16, padding: 20, border: `1px solid ${border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -314,7 +315,7 @@ export default function WalletPage() {
               </div>
               <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</span>
             </div>
-            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{formatMoney(stats.totalPayments)}</p>
+            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{stats.totalPayments === 0 ? '٠٫٠٠ ج.م' : toEGP(stats.totalPayments)}</p>
           </div>
           <div style={{ background: surface, borderRadius: 16, padding: 20, border: `1px solid ${border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -396,7 +397,7 @@ export default function WalletPage() {
                     color: tx.amount > 0 ? '#16a34a' : '#ef4444',
                     whiteSpace: 'nowrap',
                   }}>
-                    {tx.amount > 0 ? '+' : ''}{formatMoney(Math.abs(tx.amount), tx.amountDisplay)}
+                    {tx.amount > 0 ? '+' : ''}{tx.amountDisplay ?? `${Number(Math.abs(tx.amount) ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
                   </div>
                 </div>
               ))}

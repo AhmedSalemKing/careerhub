@@ -17,7 +17,10 @@ import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
-import { formatCoursePrice, formatMoney } from '../../../lib/market'
+import { formatCoursePrice } from '../../../lib/market'
+
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -147,7 +150,7 @@ function InstructorOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: formatMoney(stats?.revenue, stats?.revenueDisplay),
+            value: stats?.revenueDisplay ?? `${Number(stats?.revenue ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`,
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
             icon: (
@@ -1006,7 +1009,7 @@ function ConsultantOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: formatMoney(totalRevenue),
+            value: totalRevenue === 0 ? '٠٫٠٠ ج.م' : toEGP(totalRevenue),
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
           },

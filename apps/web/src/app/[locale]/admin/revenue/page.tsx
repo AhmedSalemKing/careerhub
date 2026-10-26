@@ -8,7 +8,6 @@ import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
 } from 'lucide-react'
-import { formatMoney } from '../../../../lib/market'
 
 export default function AdminRevenuePage() {
   const { theme } = useTheme()
@@ -18,9 +17,7 @@ export default function AdminRevenuePage() {
   const [tab, setTab] = useState<'payments' | 'sessions'>('payments')
 
   const formatPrice = (amount: number, display?: string | null) => {
-    if (display) return display
-    if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
-    return formatMoney(amount)
+    return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
   }
 
   const { data: paymentsData, isLoading: loadingP } = useQuery({
@@ -90,7 +87,7 @@ export default function AdminRevenuePage() {
       {/* ─── Stats Cards ─── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatPrice(total), icon: DollarSign, color: '#10b981' },
+          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatPrice(total, (paymentsData as any)?.totalDisplay), icon: DollarSign, color: '#10b981' },
           { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: formatPrice(monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
           { label: isAr ? 'عدد المدفوعات' : 'Transactions', value: `${totalTransactions}`, icon: CreditCard, color: '#5120c8' },
           { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: formatPrice(avgOrder), icon: BarChart2, color: '#8b5cf6' },
@@ -352,7 +349,7 @@ export default function AdminRevenuePage() {
           <div>
             <p className="font-bold" style={{ color: isDark ? '#34d399' : '#059669' }}>{isAr ? 'ملخص الإيرادات' : 'Revenue Summary'}</p>
             <p className="text-sm mt-1" style={{ color: isDark ? 'rgba(52,211,153,0.7)' : 'rgba(5,150,105,0.7)' }}>
-              {isAr ? 'كورسات' : 'Courses'}: {formatPrice(paymentTotal)} | {isAr ? 'جلسات' : 'Sessions'}: {formatPrice(sessionTotal)} | {isAr ? 'الإجمالي' : 'Total'}: {formatPrice(total)}
+              {isAr ? 'كورسات' : 'Courses'}: {formatPrice(paymentTotal, (paymentsData as any)?.coursesRevenueDisplay)} | {isAr ? 'جلسات' : 'Sessions'}: {formatPrice(sessionTotal, (sessionsData as any)?.sessionsRevenueDisplay)} | {isAr ? 'الإجمالي' : 'Total'}: {formatPrice(total, (paymentsData as any)?.totalRevenueDisplay)}
             </p>
           </div>
         </div>

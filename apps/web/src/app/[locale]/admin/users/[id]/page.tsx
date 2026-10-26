@@ -79,11 +79,8 @@ function paymentTitle(item: any, isAr: boolean) {
   return item?.course?.titleEn || item?.course?.titleAr || item?.description || (isAr ? 'دفع' : 'Payment')
 }
 
-import { formatMoney } from '../../../../../lib/market'
-
 function formatCurrency(amount: number, display?: string | null) {
-  if (display) return display
-  return formatMoney(amount)
+  return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
 }
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {

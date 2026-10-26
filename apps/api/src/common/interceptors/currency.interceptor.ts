@@ -20,7 +20,8 @@ function isMonetaryField(key: string): boolean {
     k.includes('withdraw') || k.includes('payout') || k.includes('commission') ||
     k.includes('refund') || k.includes('salary') || k.includes('payment') ||
     k.includes('wallet') || k.includes('total') || k.includes('paid') ||
-    k === 'fee' || k === 'cost' || k.includes('rate')
+    k === 'fee' || k === 'cost' || k.includes('rate') ||
+    k.includes('ordervalue') || k.includes('grossvalue') || k.includes('netvalue')
   )
 }
 
