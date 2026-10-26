@@ -5,7 +5,8 @@ import { useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
-import { formatMoney } from '../../../../lib/market'
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 import {
   Calendar, Video, Globe, Phone, PlusCircle, ExternalLink,
   CheckCircle, XCircle, Clock, Users, Eye,
@@ -135,7 +136,7 @@ export default function AdminSessionsPage() {
           { label: isAr ? 'قيد الانتظار' : 'Pending', value: stats.pending, color: '#f59e0b', icon: Clock },
           { label: isAr ? 'مكتملة' : 'Completed', value: stats.completed, color: '#10b981', icon: CheckCircle },
           { label: isAr ? 'ملغية' : 'Cancelled', value: stats.cancelled, color: '#ef4444', icon: XCircle },
-          { label: isAr ? 'الإيرادات' : 'Revenue', value: formatMoney(stats.revenue, (stats as any).revenueDisplay), color: '#8b5cf6', icon: Users },
+          { label: isAr ? 'الإيرادات' : 'Revenue', value: toEGP(stats.revenue), color: '#8b5cf6', icon: Users },
         ].map((stat, i) => {
           const Icon = stat.icon
           return (
@@ -299,7 +300,7 @@ export default function AdminSessionsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-sm" style={{ color: '#10b981' }}>
-                          {formatMoney(s.price, s.priceDisplay)}
+                          {s.priceDisplay ?? toEGP(s.price ?? 0)}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">

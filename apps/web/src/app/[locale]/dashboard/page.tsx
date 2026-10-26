@@ -18,6 +18,8 @@ import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice, formatMoney } from '../../../lib/market'
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -1006,7 +1008,7 @@ function ConsultantOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: formatMoney(totalRevenue),
+            value: toEGP(totalRevenue),
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
           },

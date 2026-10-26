@@ -15,7 +15,8 @@ import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
 import { learnUrlWithToken } from '../../lib/learn-link'
-import { formatMoney } from '../../lib/market'
+const toEGP = (sar: number) =>
+  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
 
 /* ════════════════════════════════════════
    SCROLL TO SECTION UTILITY
@@ -313,7 +314,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [walletData, setWalletData] = useState<{ balance: number } | null>(null)
+  const [walletData, setWalletData] = useState<{ balance: number; balanceDisplay?: string | null } | null>(null)
   const { user, token, hydrate } = useAuthStore()
 
   useEffect(() => {
@@ -345,7 +346,7 @@ export function Navbar() {
     if (!token) return
     get('/wallet').then((res) => {
       const data = (res?.data as any)?.data
-      if (data) setWalletData({ balance: data.balance || 0 })
+      if (data) setWalletData({ balance: data.balance || 0, balanceDisplay: data.balanceDisplay ?? null })
     }).catch(() => setWalletData(null))
   }, [token])
 
@@ -535,8 +536,8 @@ export function Navbar() {
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
-                      ? formatMoney(walletData?.balance, (walletData as any)?.balanceDisplay)
-                      : formatMoney(0)
+                      ? (walletData.balanceDisplay ?? toEGP(walletData.balance ?? 0))
+                      : toEGP(0)
                     }
                   </span>
                 </Link>
