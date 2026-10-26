@@ -66,9 +66,10 @@ export class CoursesController {
     @Request() req?: any,
     @Headers('x-vercel-ip-country') country?: string,
     @Headers('cf-ipcountry') cfCountry?: string,
+    @Query('country') countryQuery?: string,
   ) {
     const userId = req?.user?.id
-    const resolvedCountry = country || cfCountry || undefined
+    const resolvedCountry = country || cfCountry || countryQuery || undefined
     console.log('[Courses Controller] userId:', userId, 'auth:', !!req?.user)
 
     const courses = await this.coursesService.getCourses({

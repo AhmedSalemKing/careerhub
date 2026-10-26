@@ -174,8 +174,8 @@ export class CoursesService {
     ]);
 
     const maxEnrollment = Math.max(...courses.map(c => c._count.enrollments), 0)
-    const transformedCourses = courses.map(course => {
-      const resolved = this.resolvePrice(course as any, country);
+    const transformedCourses = await Promise.all(courses.map(async course => {
+      const resolved = await this.resolvePrice(course as any, country);
       return {
       id: course.id,
       categoryId: course.categoryId,
@@ -185,7 +185,7 @@ export class CoursesService {
       thumbnail: course.thumbnail,
       price: resolved.amount,
       currency: resolved.currency,
-      priceDisplay: resolved.display,
+      priceDisplay: resolved.priceDisplay,
       level: course.level,
       type: course.type,
       liveStatus: course.liveStatus,
@@ -207,7 +207,7 @@ export class CoursesService {
       _count: course._count,
       isMostPopular: course._count.enrollments === maxEnrollment && maxEnrollment > 0,
     };
-    });
+    }));
 
     // If userId provided, check enrollment for each course
     let coursesWithEnrollment = transformedCourses
@@ -829,14 +829,14 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       isEnrolled = !!enrollment;
     }
 
-    const resolved = this.resolvePrice(course as any, country);
+    const resolved = await this.resolvePrice(course as any, country);
 
     if (isOwner || isAdmin || isEnrolled) {
       return {
         ...(course as any),
         price: resolved.amount,
         currency: resolved.currency,
-        priceDisplay: resolved.display,
+        priceDisplay: resolved.priceDisplay,
         isEnrolled,
       };
     }
@@ -845,7 +845,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       ...(course as any),
       price: resolved.amount,
       currency: resolved.currency,
-      priceDisplay: resolved.display,
+      priceDisplay: resolved.priceDisplay,
       isEnrolled: false,
       sections: ((course as any).sections ?? []).map((section: any) => ({
         ...section,
@@ -918,7 +918,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       quizzes: [],
     }));
 
-    const resolved = this.resolvePrice(course as any, country);
+    const resolved = await this.resolvePrice(course as any, country);
 
     return {
       id: course.id,
@@ -928,7 +928,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       thumbnail: course.thumbnail,
       price: resolved.amount,
       currency: resolved.currency,
-      priceDisplay: resolved.display,
+      priceDisplay: resolved.priceDisplay,
       duration: (course as any).duration,
       level: course.level,
       isFeatured: course.isFeatured,
@@ -2130,29 +2130,36 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return Math.min(5, 3 + completionRate * 2); // Rating between 3-5 based on completion rate
   }
 
-  resolvePrice(
+  async resolvePrice(
     course: { price: number; priceEGP?: any; priceUSD?: any; priceSAR?: any },
     country?: string | null,
-  ): { amount: number; currency: string; display: string } {
-    const basePrice = Number(course.price ?? 0);
-    if (basePrice === 0) {
-      return { amount: 0, currency: 'SAR', display: 'مجاني' };
+  ): Promise<{ amount: number; currency: string; priceDisplay: string }> {
+    const basePrice = Number(course.priceSAR ?? course.price ?? 0);
+    if (!basePrice) {
+      return { amount: 0, currency: 'SAR', priceDisplay: 'مجاني' };
     }
     if (country === 'EG') {
-      const egp = course.priceEGP != null
-        ? Number(course.priceEGP)
-        : parseFloat((basePrice * 13.75).toFixed(2));
+      let egp: number;
+      if (course.priceEGP != null && Number(course.priceEGP) > 0) {
+        egp = Number(course.priceEGP);
+      } else {
+        try {
+          const rates = await this.exchangeRateService.getRates();
+          egp = parseFloat((basePrice * rates.EGP).toFixed(2));
+        } catch {
+          egp = parseFloat((basePrice * 13.75).toFixed(2));
+        }
+      }
       return {
         amount: egp,
         currency: 'EGP',
-        display: `${egp.toLocaleString('ar-EG')} ج.م`,
+        priceDisplay: `${egp.toLocaleString('ar-EG', { maximumFractionDigits: 0 })} ج.م`,
       };
     }
-    const sar = course.priceSAR != null ? Number(course.priceSAR) : basePrice;
     return {
-      amount: sar,
+      amount: basePrice,
       currency: 'SAR',
-      display: `${sar.toLocaleString('ar-SA')} ر.س`,
+      priceDisplay: `${basePrice.toLocaleString('ar-SA', { maximumFractionDigits: 0 })} ر.س`,
     };
   }
 

@@ -16,6 +16,8 @@ interface Course {
   titleAr?: string
   description?: string
   price: number
+  priceDisplay?: string | null
+  currency?: string | null
   level?: string
   thumbnail?: string
   instructor?: {
@@ -80,7 +82,12 @@ export function CoursesShowcase() {
   useEffect(() => {
     let mounted = true
 
-    api.get('/courses?status=PUBLISHED&limit=10')
+    const market = typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c => c.trim().startsWith('market='))?.split('=')[1]?.trim()
+      : undefined
+    const countryParam = market === 'EGP' ? '&country=EG' : ''
+
+    api.get(`/courses?status=PUBLISHED&limit=10${countryParam}`)
       .then((res) => {
         if (!mounted) return
         
@@ -544,7 +551,8 @@ export function CoursesShowcase() {
                     <div className="cs-footer">
                       {/* ✅ PRICE - PingARLT Font Applied Here */}
                       <span className="cs-price">
-                        {course.price > 0 ? `${course.price} ${t('sar')}` : t('free')}
+                        {course.priceDisplay
+                          ?? (course.price > 0 ? `${course.price} ${t('sar')}` : t('free'))}
                       </span>
 
                       <span className="cs-enrollments">
