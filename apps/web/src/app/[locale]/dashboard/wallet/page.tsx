@@ -10,17 +10,8 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
-function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
-  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
-  const isEGP = sample.includes('ج.م')
-  if (isEGP) {
-    const egpTotal = items.reduce((sum: number, item: any) => {
-      const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
-      return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
-    }, 0)
-    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
-  }
-  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+function fmtSAR(n: number): string {
+  return `${(n ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
 }
 
 function TopupForm({ onSuccess }: { onSuccess: (data: any) => void }) {
@@ -316,7 +307,7 @@ export default function WalletPage() {
               </div>
               <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي الشحن' : 'Total Top-ups'}</span>
             </div>
-            <p style={{ color: '#16a34a', fontSize: 22, fontWeight: 700, margin: 0 }}>{displayTotal((transactions as any[]).filter((t: any) => t.type === 'TOPUP'), 'amountDisplay', stats.totalTopups)}</p>
+            <p style={{ color: '#16a34a', fontSize: 22, fontWeight: 700, margin: 0 }}>{wallet?.totalTopupsDisplay ?? fmtSAR(wallet?.totalTopups ?? stats.totalTopups)}</p>
           </div>
           <div style={{ background: surface, borderRadius: 16, padding: 20, border: `1px solid ${border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -325,7 +316,7 @@ export default function WalletPage() {
               </div>
               <span style={{ color: textSecondary, fontSize: 12, fontWeight: 500 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</span>
             </div>
-            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{displayTotal((transactions as any[]).filter((t: any) => t.type === 'TOPUP'), 'amountDisplay', stats.totalPayments)}</p>
+            <p style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>{wallet?.totalPaymentsDisplay ?? fmtSAR(wallet?.totalPayments ?? stats.totalPayments)}</p>
           </div>
           <div style={{ background: surface, borderRadius: 16, padding: 20, border: `1px solid ${border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>

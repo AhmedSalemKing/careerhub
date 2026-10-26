@@ -83,8 +83,8 @@ function formatCurrency(amount: number, display?: string | null) {
   return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
 }
 
-function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
-  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+function displayTotal(items: any[], displayKey: string, rawTotal: number, egpProbe?: string): string {
+  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? egpProbe ?? ''
   const isEGP = sample.includes('ج.م')
   if (isEGP) {
     const egpTotal = items.reduce((sum: number, item: any) => {
@@ -210,7 +210,7 @@ export default function UserDetailPage() {
   const paymentCount = payments.length
 
   const STATS: { label: string; value: string | number; subValue?: string; icon: any; color: string; bg: string }[] = [
-    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
+    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
     { label: isAr ? 'الكورسات' : 'Courses', value: enrolledCount + createdCount, subValue: `${enrolledCount} ${isAr ? 'مشترك' : 'enrolled'} / ${createdCount} ${isAr ? 'منشأ' : 'created'}`, icon: BookOpen, color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
     { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings, financials?.totalEarningsDisplay), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
     { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance, financials?.walletBalanceDisplay), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
@@ -582,7 +582,7 @@ export default function UserDetailPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 16, background: 'rgba(52, 199, 89, 0.08)', border: '1px solid rgba(52, 199, 89, 0.2)', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#34C759' }}>{displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid)}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#34C759' }}>{displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay)}</div>
             </div>
             <div style={{ textAlign: isAr ? 'right' : 'left' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'عدد العمليات' : 'Transactions'}</div>

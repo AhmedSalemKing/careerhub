@@ -24,15 +24,27 @@ export class WalletService {
       where: { id: userId },
       select: { walletBalance: true }
     })
-    
-    const transactions = await this.prisma.walletTransaction.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-    })
-    
+
+    const [transactions, topupAgg, paymentAgg] = await Promise.all([
+      this.prisma.walletTransaction.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+      this.prisma.walletTransaction.aggregate({
+        where: { userId, type: { in: ['TOPUP', 'EARNINGS_TRANSFER'] } },
+        _sum: { amount: true },
+      }),
+      this.prisma.walletTransaction.aggregate({
+        where: { userId, type: 'PAYMENT' },
+        _sum: { amount: true },
+      }),
+    ])
+
     return {
       balance: user?.walletBalance || 0,
+      totalTopups: Number(topupAgg._sum?.amount) || 0,
+      totalPayments: Math.abs(Number(paymentAgg._sum?.amount) || 0),
       transactions,
     }
   }

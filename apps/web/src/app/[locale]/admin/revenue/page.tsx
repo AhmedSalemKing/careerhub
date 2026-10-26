@@ -20,8 +20,8 @@ export default function AdminRevenuePage() {
     return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
   }
 
-  function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
-    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+  function displayTotal(items: any[], displayKey: string, rawTotal: number, egpProbe?: string): string {
+    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? egpProbe ?? ''
     const isEGP = sample.includes('ج.م')
     if (isEGP) {
       const egpTotal = items.reduce((sum: number, item: any) => {
@@ -33,8 +33,8 @@ export default function AdminRevenuePage() {
     return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
   }
 
-  function displayAvg(items: any[], displayKey: string, totalTx: number, rawAvg: number): string {
-    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+  function displayAvg(items: any[], displayKey: string, totalTx: number, rawAvg: number, egpProbe?: string): string {
+    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? egpProbe ?? ''
     const isEGP = sample.includes('ج.م')
     if (isEGP && totalTx > 0) {
       const egpTotal = items.reduce((sum: number, item: any) => {
@@ -123,9 +123,9 @@ export default function AdminRevenuePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: displayTotal(allRevItems, '_d', total), icon: DollarSign, color: '#10b981' },
-          { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: displayTotal(monthlyRevItems, '_d', monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
+          { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: displayTotal(monthlyRevItems, '_d', monthlyRevenue, allRevItems[0]?._d), icon: TrendingUp, color: '#f59e0b' },
           { label: isAr ? 'عدد المدفوعات' : 'Transactions', value: `${totalTransactions}`, icon: CreditCard, color: '#5120c8' },
-          { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: displayAvg(allRevItems, '_d', totalTransactions, avgOrder), icon: BarChart2, color: '#8b5cf6' },
+          { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: displayAvg(allRevItems, '_d', totalTransactions, avgOrder, allRevItems[0]?._d), icon: BarChart2, color: '#8b5cf6' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
