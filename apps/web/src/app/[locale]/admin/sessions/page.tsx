@@ -10,8 +10,18 @@ import {
   CheckCircle, XCircle, Clock, Users, Eye,
 } from 'lucide-react'
 
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
+  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+  const isEGP = sample.includes('ج.م')
+  if (isEGP) {
+    const egpTotal = items.reduce((sum: number, item: any) => {
+      const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
+      return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
+    }, 0)
+    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+  }
+  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+}
 
 function MapPin(props: any) {
   return (
@@ -137,7 +147,7 @@ export default function AdminSessionsPage() {
           { label: isAr ? 'قيد الانتظار' : 'Pending', value: stats.pending, color: '#f59e0b', icon: Clock },
           { label: isAr ? 'مكتملة' : 'Completed', value: stats.completed, color: '#10b981', icon: CheckCircle },
           { label: isAr ? 'ملغية' : 'Cancelled', value: stats.cancelled, color: '#ef4444', icon: XCircle },
-          { label: isAr ? 'الإيرادات' : 'Revenue', value: stats.revenue === 0 ? '٠٫٠٠ ج.م' : toEGP(stats.revenue), color: '#8b5cf6', icon: Users },
+          { label: isAr ? 'الإيرادات' : 'Revenue', value: displayTotal((allSessions as any[]).filter((s: any) => ['PAID', 'CONFIRMED'].includes(s.paymentStatus)), 'priceDisplay', stats.revenue), color: '#8b5cf6', icon: Users },
         ].map((stat, i) => {
           const Icon = stat.icon
           return (

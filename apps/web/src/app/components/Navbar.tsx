@@ -535,8 +535,8 @@ export function Navbar() {
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
-                      ? (walletData.balanceDisplay ?? (walletData.balance === 0 ? '٠٫٠٠ ج.م' : `${Number(walletData.balance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`))
-                      : '٠٫٠٠ ج.م'
+                      ? (walletData.balanceDisplay ?? `${Number(walletData.balance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`)
+                      : `${Number(0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
                     }
                   </span>
                 </Link>

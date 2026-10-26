@@ -19,8 +19,18 @@ import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice } from '../../../lib/market'
 
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
+  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+  const isEGP = sample.includes('ج.م')
+  if (isEGP) {
+    const egpTotal = items.reduce((sum: number, item: any) => {
+      const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
+      return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
+    }, 0)
+    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+  }
+  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+}
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -1009,7 +1019,7 @@ function ConsultantOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: totalRevenue === 0 ? '٠٫٠٠ ج.م' : toEGP(totalRevenue),
+            value: displayTotal(completed, 'priceDisplay', totalRevenue),
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
           },

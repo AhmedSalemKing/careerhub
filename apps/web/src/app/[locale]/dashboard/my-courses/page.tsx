@@ -12,8 +12,18 @@ import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
 import { formatCoursePrice } from "../../../../lib/market";
 
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
+  const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+  const isEGP = sample.includes('ج.م')
+  if (isEGP) {
+    const egpTotal = items.reduce((sum: number, item: any) => {
+      const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
+      return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
+    }, 0)
+    return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+  }
+  return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+}
 
 function getTitle(c: any, locale: string) {
 	if (locale === "ar") return c.titleAr || c.titleEn || c.title || "بدون عنوان";
@@ -263,7 +273,7 @@ export default function MyCoursesPage() {
 								},
 								{
 									label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue',
-									value: totalRevenue === 0 ? '٠٫٠٠ ج.م' : toEGP(totalRevenue),
+									value: displayTotal(courses, 'earningsDisplay', totalRevenue),
 									icon: (
 										<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 											<line x1="12" y1="1" x2="12" y2="23" />
