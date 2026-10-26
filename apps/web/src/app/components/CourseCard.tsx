@@ -14,6 +14,8 @@ export type CourseCardCourse = {
   level?: string | null
   duration?: number | null
   price?: number | null
+  priceDisplay?: string | null
+  currency?: string | null
   instructor?: string | { id?: string; isVerified?: boolean; profile?: { firstName?: string; lastName?: string; avatar?: string } } | null
   category?: string | null
 }
@@ -78,6 +80,7 @@ export function CourseCard({
 
   // ✅ FIXED: Safe price access with nullish coalescing
   const price = course.price ?? 0
+  const priceDisplay = course.priceDisplay
   const duration = course.duration ?? 0
 
   return (
@@ -531,9 +534,11 @@ export function CourseCard({
         {/* Footer: Price + CTA ✅ FIXED: Use safe price variable + PingARLT Font */}
         <div className="cc-footer">
           <span className={`cc-price ${price === 0 ? 'free' : ''}`}>
-            {price > 0 
-              ? `${price} ${isAr ? 'ريال' : 'SAR'}`
-              : isAr ? 'مجاني' : 'Free'
+            {priceDisplay
+              ? priceDisplay
+              : price > 0
+                ? `${price} ${isAr ? 'ريال' : 'SAR'}`
+                : isAr ? 'مجاني' : 'Free'
             }
           </span>
 

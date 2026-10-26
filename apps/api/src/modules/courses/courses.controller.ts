@@ -265,22 +265,25 @@ export class CoursesController {
     @Param('slug') slug: string,
     @Query('language') language?: string,
     @Request() req?: any,
+    @Headers('x-vercel-ip-country') ipCountry?: string,
+    @Headers('cf-ipcountry') cfCountry?: string,
   ) {
     const viewer = req?.user
       ? { id: req.user.sub || req.user.id, role: req.user.role }
       : undefined;
+    const country = (ipCountry || cfCountry || undefined) as string | undefined;
     // Try by ID first (cuid format), then fall back to slug
     const isCuid = /^c[a-z0-9]{24,}$/.test(slug);
     let courseData: any;
     if (isCuid) {
       try {
-        courseData = await this.coursesService.getCourseById(slug, viewer);
+        courseData = await this.coursesService.getCourseById(slug, viewer, country);
       } catch {
         // fall through to slug lookup
       }
     }
     if (!courseData) {
-      courseData = await this.coursesService.getCourseBySlug(slug, language || 'en');
+      courseData = await this.coursesService.getCourseBySlug(slug, language || 'en', country);
     }
 
     // Track VIEW_COURSE activity if user is authenticated

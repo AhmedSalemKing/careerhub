@@ -783,7 +783,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     }
   }
 
-  async getCourseById(id: string, viewer?: { id?: string; role?: string }) {
+  async getCourseById(id: string, viewer?: { id?: string; role?: string }, country?: string) {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
@@ -829,12 +829,23 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       isEnrolled = !!enrollment;
     }
 
+    const resolved = this.resolvePrice(course as any, country);
+
     if (isOwner || isAdmin || isEnrolled) {
-      return { ...(course as any), isEnrolled };
+      return {
+        ...(course as any),
+        price: resolved.amount,
+        currency: resolved.currency,
+        priceDisplay: resolved.display,
+        isEnrolled,
+      };
     }
 
     return {
       ...(course as any),
+      price: resolved.amount,
+      currency: resolved.currency,
+      priceDisplay: resolved.display,
       isEnrolled: false,
       sections: ((course as any).sections ?? []).map((section: any) => ({
         ...section,
@@ -863,7 +874,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     };
   }
 
-  async getCourseBySlug(slug: string, language: string = 'en') {
+  async getCourseBySlug(slug: string, language: string = 'en', country?: string) {
     const course = await this.prisma.course.findUnique({
       where: { slug },
       include: {
@@ -907,14 +918,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       quizzes: [],
     }));
 
+    const resolved = this.resolvePrice(course as any, country);
+
     return {
       id: course.id,
       slug: course.slug,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
-      price: course.price,
-      currency: course.currency,
+      price: resolved.amount,
+      currency: resolved.currency,
+      priceDisplay: resolved.display,
       duration: (course as any).duration,
       level: course.level,
       isFeatured: course.isFeatured,
@@ -2120,12 +2134,26 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     course: { price: number; priceEGP?: any; priceUSD?: any; priceSAR?: any },
     country?: string | null,
   ): { amount: number; currency: string; display: string } {
-    if (country === 'EG' && course.priceEGP != null) {
-      const amount = Number(course.priceEGP);
-      return { amount, currency: 'EGP', display: `${amount} ج.م` };
+    const basePrice = Number(course.price ?? 0);
+    if (basePrice === 0) {
+      return { amount: 0, currency: 'SAR', display: 'مجاني' };
     }
-    const amount = Number(course.priceSAR ?? course.price);
-    return { amount, currency: 'SAR', display: `${amount} ر.س` };
+    if (country === 'EG') {
+      const egp = course.priceEGP != null
+        ? Number(course.priceEGP)
+        : parseFloat((basePrice * 13.75).toFixed(2));
+      return {
+        amount: egp,
+        currency: 'EGP',
+        display: `${egp.toLocaleString('ar-EG')} ج.م`,
+      };
+    }
+    const sar = course.priceSAR != null ? Number(course.priceSAR) : basePrice;
+    return {
+      amount: sar,
+      currency: 'SAR',
+      display: `${sar.toLocaleString('ar-SA')} ر.س`,
+    };
   }
 
   private generateSlug(title: string): string {
