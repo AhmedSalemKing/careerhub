@@ -1,132 +1,36 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common'
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'
 import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service'
 
-/**
- * Exact monetary field names that should get a Display variant for Egyptian users.
- */
-const MONETARY_FIELDS = new Set([
-  'price',
-  'amount',
-  'total',
-  'balance',
-  'earnings',
-  'revenue',
-  'subtotal',
-  'paid',
-  'value',
-  'cost',
-  'fee',
-  'salary',
-  'priceSAR',
-  'priceUSD',
-  'sessionPrice',
-  'coursePrice',
-  'hourlyRate',
-  'walletBalance',
-  'earningsBalance',
-  'totalRevenue',
-  'monthlyRevenue',
-  'todayRevenue',
-  'coursesRevenue',
-  'sessionsRevenue',
-  'averageOrder',
-  'averageOrderValue',
-  'totalEarnings',
-  'coachEarnings',
-  'pendingAmount',
-  'pending',
-  'pendingBalance',
-  'withdrawnAmount',
-  'withdrawable',
-  'availableBalance',
-  'totalPaid',
-  'totalAmount',
-  'netAmount',
-  'grossAmount',
-  'netEarnings',
-  'grossRevenue',
-  'platformRevenue',
-  'instructorRevenue',
-  'refundAmount',
-  'discountAmount',
-  'subtotal',
-  'fee',
-  'commission',
-  'payout',
-  'withdrawal',
+const NON_MONETARY_KEYS = new Set([
+  'id', 'userId', 'courseId', 'sessionId', 'orderId', 'instructorId',
+  'count', 'totalCount', 'totalPages', 'pageCount', 'page', 'limit',
+  'rate', 'rating', 'completionRate', 'successRate', 'passRate',
+  'duration', 'percentage', 'progress', 'order', 'index', 'rank',
+  'score', 'version', 'status', 'code', 'level', 'step', 'attempt',
 ])
 
-/**
- * Fields that are never monetary — skip even if their name looks like one.
- */
-const NON_MONETARY = new Set([
-  'id',
-  'userId',
-  'courseId',
-  'sessionId',
-  'orderId',
-  'instructorId',
-  'categoryId',
-  'count',
-  'totalCount',
-  'totalPages',
-  'page',
-  'limit',
-  'rate',
-  'rating',
-  'completionRate',
-  'duration',
-  'order',
-  'index',
-  'rank',
-  'score',
-  'version',
-  'status',
-  'code',
-  'type',
-  'level',
-])
+function isMonetaryField(key: string): boolean {
+  if (NON_MONETARY_KEYS.has(key)) return false
+  const k = key.toLowerCase()
+  return (
+    k.includes('price') || k.includes('amount') || k.includes('balance') ||
+    k.includes('earning') || k.includes('revenue') || k.includes('topup') ||
+    k.includes('withdraw') || k.includes('payout') || k.includes('commission') ||
+    k.includes('refund') || k.includes('salary') || k.includes('payment') ||
+    k.includes('wallet') || k.includes('total') || k.includes('paid') ||
+    k === 'fee' || k === 'cost' || k.includes('rate')
+  )
+}
 
 function formatEGP(sarAmount: number, rate: number): string {
-  const egp = (sarAmount * rate).toFixed(2)
-  const arabicEgp = Number(egp).toLocaleString('ar-EG', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })
-  return `${arabicEgp} ج.م`
+  const egp = Math.round(sarAmount * rate)
+  return `${egp.toLocaleString('ar-EG')} ج.م`
 }
 
-function formatSAR(amount: number): string {
-  return Number(amount).toLocaleString('ar-SA', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }) + ' ر.س'
-}
-
-function isMonetaryKey(key: string): boolean {
-  if (NON_MONETARY.has(key)) return false
-  if (MONETARY_FIELDS.has(key)) return true
-  const lower = key.toLowerCase()
-  return (
-    (lower.includes('price') ||
-      lower.includes('amount') ||
-      lower.includes('balance') ||
-      lower.includes('earning') ||
-      lower.includes('revenue') ||
-      lower.includes('total') ||
-      lower.includes('payment') ||
-      lower.includes('paid') ||
-      lower.includes('fee') ||
-      lower.includes('cost')) &&
-    !NON_MONETARY.has(key)
-  )
+function formatSAR(sarAmount: number): string {
+  return `${sarAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
 }
 
 function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0): unknown {
@@ -143,24 +47,15 @@ function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0)
   for (const key of Object.keys(record)) {
     const val = record[key]
 
-    if (val && typeof val === 'object') {
+    if (val !== null && typeof val === 'object') {
       result[key] = transformValue(val, rate, isEgypt, depth + 1)
       continue
     }
 
     result[key] = val
 
-    if (
-      typeof val === 'number' &&
-      val !== 0 &&
-      isMonetaryKey(key) &&
-      !record[`${key}Display`]
-    ) {
+    if (typeof val === 'number' && val >= 0 && isMonetaryField(key) && !result[`${key}Display`]) {
       result[`${key}Display`] = isEgypt ? formatEGP(val, rate) : formatSAR(val)
-
-      if ((key === 'price' || key === 'amount') && !record['priceDisplay']) {
-        result['priceDisplay'] = isEgypt ? formatEGP(val, rate) : formatSAR(val)
-      }
     }
   }
 
@@ -173,29 +68,25 @@ export class CurrencyInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<{
-      headers: Record<string, string | string[] | undefined>
+      headers: Record<string, string>
       query: Record<string, string>
     }>()
 
-    const rawCountry =
-      req.headers['x-vercel-ip-country'] ??
-      req.headers['cf-ipcountry'] ??
-      req.headers['x-market-country'] ??
-      req.query?.country ??
-      'SA'
+    const country =
+      req.headers['x-vercel-ip-country'] || req.headers['cf-ipcountry'] ||
+      req.headers['x-market-country'] || req.query?.country || 'SA'
 
-    const country = String(rawCountry).toUpperCase()
-    const isEgypt = country === 'EG'
+    const isEgypt = String(country).toUpperCase() === 'EG'
 
     return next.handle().pipe(
       mergeMap(async (data) => {
         try {
-          const rate = isEgypt ? await this.exchangeRateService.getSARtoEGPRate() : 0
+          const rate = await this.exchangeRateService.getSARtoEGPRate()
           return transformValue(data, rate, isEgypt)
         } catch {
-          return data // Never break the response
+          return data
         }
-      })
+      }),
     )
   }
 }
