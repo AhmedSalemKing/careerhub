@@ -16,6 +16,7 @@ type CartItem = {
     titleEn: string
     titleAr?: string
     price: number
+    priceDisplay?: string | null
     thumbnail?: string
     level: string
   }
@@ -136,9 +137,7 @@ export function CartIcon() {
                           {item.course?.titleAr || item.course?.titleEn || 'كورس'}
                         </p>
                         <p className="text-primary font-bold text-sm">
-                          {item.course?.price > 0
-                            ? `${item.course.price} ريال`
-                            : 'مجاني'}
+                          {item.course?.priceDisplay ?? (item.course?.price > 0 ? `${item.course.price} ريال` : 'مجاني')}
                         </p>
                       </div>
                       <button

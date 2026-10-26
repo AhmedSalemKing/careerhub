@@ -63,6 +63,7 @@ export default function HomePage() {
     students: c._count?.enrollments || 0,
     rating: 4.7 + i * 0.1,
     price: c.price ?? 0,
+    priceDisplay: (c.priceDisplay ?? null) as string | null,
     badge: c.isMostPopular ? (locale === 'ar' ? 'الأكثر طلباً' : 'Popular') : i === 1 ? (locale === 'ar' ? 'جديد' : 'New') : null,
     badgeBg: c.isMostPopular ? '#F5A623' : '#2BBFA3',
     thumbnail: c.thumbnail,
@@ -283,10 +284,7 @@ export default function HomePage() {
 
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>
-                      {course.price}
-                      <span className="text-sm font-normal ml-1" style={{ color: 'var(--muted)' }}>
-                        {locale === 'ar' ? 'ر.س' : 'SAR'}
-                      </span>
+                      {course.priceDisplay ?? (course.price > 0 ? `${course.price} ${locale === 'ar' ? 'ر.س' : 'SAR'}` : (locale === 'ar' ? 'مجاني' : 'Free'))}
                     </div>
                     <Link
                       href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}

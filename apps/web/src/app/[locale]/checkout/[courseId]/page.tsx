@@ -36,6 +36,7 @@ export default function CheckoutPage() {
   const course = data
   const courseType = course?.type || "recorded"
   const price = course?.price || 0
+  const priceDisplay = (course as any)?.priceDisplay ?? null
   const courseTitle = course?.titleAr || course?.titleEn || ""
 
   const getTypeIcon = () => {
@@ -125,7 +126,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                 <span className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? "الاجمالي" : "Total"}</span>
-                <span className="text-2xl font-black" style={{ color: 'var(--primary)' }}>{price} {isAr ? "ريال" : "SAR"}</span>
+                <span className="text-2xl font-black" style={{ color: 'var(--primary)' }}>{priceDisplay ?? `${price} ${isAr ? "ريال" : "SAR"}`}</span>
               </div>
             </div>
           </div>
@@ -181,7 +182,7 @@ export default function CheckoutPage() {
                 </>
               ) : (
                 <>
-                  {isAr ? `ادفع ${price} ريال عبر Stripe` : `Pay ${price} SAR via Stripe`}
+                  {isAr ? `ادفع ${priceDisplay ?? `${price} ريال`} عبر Stripe` : `Pay ${priceDisplay ?? `${price} SAR`} via Stripe`}
                   <ArrowRight size={20} style={{ transform: isAr ? "rotate(180deg)" : "none" }} />
                 </>
               )}
