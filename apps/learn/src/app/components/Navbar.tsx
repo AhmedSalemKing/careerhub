@@ -13,6 +13,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
+import { formatMoney } from '../../lib/market'
 
 /* ═══ Cross-domain web app (notifications + wallet live there) ═══ */
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
@@ -492,7 +493,7 @@ export function Navbar() {
                 >
                   <Wallet className="h-4 w-4" />
                   <span className="text-xs font-bold">
-                    {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
+                    {formatMoney(wallet?.balance, (wallet as any)?.balanceDisplay)}
                   </span>
                 </a>
               )}
@@ -695,7 +696,7 @@ export function Navbar() {
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Wallet className="h-3.5 w-3.5" />
-                  {(wallet?.balance || 0).toFixed(0)} {isAr ? 'ر.س' : 'SAR'}
+                  {formatMoney(wallet?.balance, (wallet as any)?.balanceDisplay)}
                 </a>
               )}
               <CartIcon />

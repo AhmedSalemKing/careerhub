@@ -15,6 +15,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
 import { learnUrlWithToken } from '../../lib/learn-link'
+import { formatMoney } from '../../lib/market'
 
 /* ════════════════════════════════════════
    SCROLL TO SECTION UTILITY
@@ -534,8 +535,8 @@ export function Navbar() {
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
-                      ? `${(walletData?.balance || 0).toFixed(0)} ${isAr ? 'ر.س' : 'SAR'}`
-                      : `0 ${isAr ? 'ر.س' : 'SAR'}`
+                      ? formatMoney(walletData?.balance, (walletData as any)?.balanceDisplay)
+                      : formatMoney(0)
                     }
                   </span>
                 </Link>

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
 import { get } from '../../../../../lib/api'
+import { formatMoney } from '../../../../../lib/market'
 import {
   ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Wallet, Briefcase,
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
@@ -79,9 +80,9 @@ function paymentTitle(item: any, isAr: boolean) {
   return item?.course?.titleEn || item?.course?.titleAr || item?.description || (isAr ? 'دفع' : 'Payment')
 }
 
-function formatCurrency(amount: number, isAr: boolean) {
-  const val = Number(amount) || 0
-  return `${val.toLocaleString(isAr ? 'ar-SA' : 'en-US')} ${isAr ? 'ر.س' : 'SAR'}`
+function formatCurrency(amount: number, display?: string | null) {
+  if (display) return display
+  return formatMoney(amount)
 }
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {
@@ -198,10 +199,10 @@ export default function UserDetailPage() {
   const paymentCount = payments.length
 
   const STATS: { label: string; value: string | number; subValue?: string; icon: any; color: string; bg: string }[] = [
-    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: formatCurrency(totalPaid, isAr), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
+    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: formatCurrency(totalPaid), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
     { label: isAr ? 'الكورسات' : 'Courses', value: enrolledCount + createdCount, subValue: `${enrolledCount} ${isAr ? 'مشترك' : 'enrolled'} / ${createdCount} ${isAr ? 'منشأ' : 'created'}`, icon: BookOpen, color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
-    { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings, isAr), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
-    { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance, isAr), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
+    { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
+    { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
   ]
 
   const activityGroups = groupActivities(activities, isAr)
@@ -435,7 +436,7 @@ export default function UserDetailPage() {
                       )}
                       {Boolean(act?.metadata?.amount) && (
                         <p style={{ fontSize: 13, color: 'var(--foreground)', margin: '4px 0 0' }}>
-                          {formatCurrency(act.metadata.amount, isAr)}
+                          {formatCurrency(act.metadata.amount, act.metadata.amountDisplay)}
                         </p>
                       )}
                       <p style={{ fontSize: 11, color: 'var(--muted)', margin: '4px 0 0' }}>
@@ -498,7 +499,7 @@ export default function UserDetailPage() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                               <span style={{ fontSize: 12, color: 'var(--muted)' }}>{formatDate(enroll.enrolledAt, isAr)}</span>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3' }}>{formatCurrency(enroll.course?.price || 0, isAr)}</span>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3' }}>{formatCurrency(enroll.course?.price || 0, enroll.course?.priceDisplay)}</span>
                             </div>
                             {progress > 0 && (
                               <div>
@@ -548,7 +549,7 @@ export default function UserDetailPage() {
                               {course.status}
                             </span>
                             <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3' }}>
-                              {formatCurrency(course.price || 0, isAr)}
+                              {formatCurrency(course.price || 0, course.priceDisplay)}
                             </span>
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
@@ -570,7 +571,7 @@ export default function UserDetailPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 16, background: 'rgba(52, 199, 89, 0.08)', border: '1px solid rgba(52, 199, 89, 0.2)', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#34C759' }}>{formatCurrency(totalPaid, isAr)}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#34C759' }}>{formatCurrency(totalPaid)}</div>
             </div>
             <div style={{ textAlign: isAr ? 'right' : 'left' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'عدد العمليات' : 'Transactions'}</div>
@@ -607,7 +608,7 @@ export default function UserDetailPage() {
                 </div>
                 <div style={{ textAlign: isAr ? 'right' : 'left' }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: success ? '#34C759' : 'var(--muted)' }}>
-                    {formatCurrency(p.amount, isAr)}
+                    {formatCurrency(p.amount, p.amountDisplay)}
                   </div>
                   <div style={{ fontSize: 11, color: success ? '#34C759' : '#EF4444', marginTop: 2 }}>{p.status}</div>
                 </div>

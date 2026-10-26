@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
+import { formatMoney } from '@/lib/market'
 import {
   Calendar, Clock, Video, CheckCircle2, XCircle,
   ExternalLink, Plus, RefreshCw, Link2, X,
@@ -323,7 +324,7 @@ export default function MySessionsPage() {
               <button onClick={() => paySession(session.id, session.price)}
                 disabled={payingId === session.id}
                 style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, opacity: payingId === session.id ? 0.7 : 1 }}>
-                <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${session.price} ر.س` : `Pay ${session.price} SAR`)}
+                <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${formatMoney(session.price, (session as any).priceDisplay)}` : `Pay ${formatMoney(session.price, (session as any).priceDisplay)}`)}
               </button>
             )}
 

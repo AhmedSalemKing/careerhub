@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
+import { formatMoney } from '../../../../lib/market'
 
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
@@ -555,7 +556,7 @@ export default function CreateCoursePage() {
                     <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
                       className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
                     <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
-                      {isAr ? 'ر.س' : 'SAR'}
+                      SAR
                     </span>
                   </div>
                   <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
@@ -949,7 +950,7 @@ export default function CreateCoursePage() {
                       <div>
                         <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'الأسعار' : 'Pricing'}</div>
                         <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>
-                          {form.price} {isAr ? 'ر.س' : 'SAR'}
+                          {formatMoney(parseFloat(form.price || '0'))}
                         </div>
                       </div>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>

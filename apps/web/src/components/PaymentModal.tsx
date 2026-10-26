@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { X, CreditCard, Lock, CheckCircle2, AlertCircle } from 'lucide-react'
 import { get, post } from '@/lib/api'
+import { formatMoney } from '@/lib/market'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -26,6 +27,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
   const [error, setError] = useState('')
   const [clientSecret, setClientSecret] = useState('')
   const [amount, setAmount] = useState(0)
+  const [amountDisplay, setAmountDisplay] = useState('')
   const [isFree, setIsFree] = useState(false)
 
   useEffect(() => {
@@ -39,6 +41,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
         } else {
           setClientSecret(data?.clientSecret)
           setAmount(data?.amount || 0)
+          setAmountDisplay(data?.amountDisplay || '')
         }
       } catch(e: any) {
         const err = e as any
@@ -120,7 +123,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
             </div>
           </div>
           <div style={{ color: '#5120c8', fontSize: 22, fontWeight: 900, flexShrink: 0 }}>
-            {amount} <span style={{ fontSize: 12, color: subtext }}>ر.س</span>
+            {formatMoney(amount, amountDisplay)}
           </div>
         </div>
       </div>
@@ -156,7 +159,7 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
         style={{ width: '100%', padding: '13px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: (loading || !stripe || !clientSecret) ? 'wait' : 'pointer', fontSize: 14, fontWeight: 700, opacity: (loading || !stripe || !clientSecret) ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         {loading
           ? (isAr ? 'جاري المعالجة...' : 'Processing...')
-          : <><CreditCard size={15} />{isAr ? `ادفع ${amount} ر.س` : `Pay ${amount} SAR`}</>}
+          : <><CreditCard size={15} />{isAr ? `ادفع ${formatMoney(amount, amountDisplay)}` : `Pay ${formatMoney(amount, amountDisplay)}`}</>}
       </button>
 
       {/* Test mode notice */}

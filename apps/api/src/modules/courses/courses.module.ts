@@ -27,6 +27,6 @@ const bullImports = process.env.REDIS_URL
   ],
   controllers: [CoursesController],
   providers: [CoursesService, EnrollmentService, ProgressService, RecommendationService, ExchangeRateService],
-  exports: [CoursesService, EnrollmentService, ProgressService, RecommendationService],
+  exports: [CoursesService, EnrollmentService, ProgressService, RecommendationService, ExchangeRateService],
 })
 export class CoursesModule {}

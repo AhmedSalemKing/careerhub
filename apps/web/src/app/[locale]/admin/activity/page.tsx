@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
+import { formatMoney } from '../../../../lib/market'
 import {
   Activity, Users, LogIn, BookOpen, Calendar, DollarSign,
   Search, RefreshCw, Monitor, TrendingUp, Clock, MapPin,
@@ -64,7 +65,7 @@ function getDetails(act: any, isAr: boolean): string {
     case 'PAYMENT_SUCCESS':
     case 'PAYMENT': {
       const paymentParts: string[] = []
-      if (meta.amount) paymentParts.push(`${meta.amount} ${isAr ? 'ر.س' : 'SAR'}`)
+      if (meta.amount) paymentParts.push(formatMoney(meta.amount, meta.amountDisplay))
       if (meta.type === 'consultation') {
         if (meta.consultantName) {
           const prefix = isAr ? 'جلسة مع' : 'Session with'
@@ -83,7 +84,7 @@ function getDetails(act: any, isAr: boolean): string {
     }
     case 'VIEW_COURSE': return meta.courseTitle || act.entityId || '—'
     case 'SEARCH_COURSES': return meta.query || '—'
-    case 'WALLET_TOPUP': return `${meta.amount || ''} ${isAr ? 'ر.س' : 'SAR'}`.trim() || '—'
+    case 'WALLET_TOPUP': return meta.amount ? formatMoney(meta.amount, meta.amountDisplay) : '—'
     case 'COMPLETE_LESSON':
     case 'WATCH_LESSON': return meta.lessonTitle || act.entityId || '—'
     case 'CERTIFICATE_ISSUED': return meta.courseTitle || '—'

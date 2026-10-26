@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import api from '@/lib/api'
 import { DollarSign, Users, BookOpen, TrendingUp, Download, Eye } from 'lucide-react'
-import { formatCoursePrice } from '@/lib/market'
+import { formatCoursePrice, formatMoney } from '@/lib/market'
 
 export default function RevenuePage() {
   const locale = useLocale()
@@ -47,7 +47,7 @@ export default function RevenuePage() {
               <DollarSign size={20} color="#a78bfa" />
             </div>
             <div style={{ color: '#a78bfa', fontSize: 22, fontWeight: 800 }}>
-              {totalRevenue.toLocaleString()} <span style={{ fontSize: 14, fontWeight: 600 }}>{isAr ? 'ر.س' : 'SAR'}</span>
+              {formatMoney(totalRevenue, data?.totalRevenueDisplay)}
             </div>
             <div style={{ color: '#6b7280', fontSize: 13, marginTop: 4 }}>
               {isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}
@@ -98,7 +98,7 @@ export default function RevenuePage() {
             </h2>
             {courseBreakdown.length > 0 && (
               <span style={{ color: '#6b7280', fontSize: 13 }}>
-                {isAr ? 'إجمالي' : 'Total'}: <span style={{ color: '#a78bfa', fontWeight: 700 }}>{totalRevenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}</span>
+                {isAr ? 'إجمالي' : 'Total'}: <span style={{ color: '#a78bfa', fontWeight: 700 }}>{formatMoney(totalRevenue)}</span>
               </span>
             )}
           </div>
@@ -156,7 +156,7 @@ export default function RevenuePage() {
                         {formatCoursePrice(course)}
                       </td>
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#4ade80', fontWeight: 700, fontSize: 15 }}>
-                        {course.revenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}
+                        {formatMoney(course.revenue, course.revenueDisplay)}
                       </td>
                     </tr>
                   ))}
@@ -171,7 +171,7 @@ export default function RevenuePage() {
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'center' }} />
                     <td style={{ padding: '16px 20px', textAlign: 'center', color: '#a78bfa', fontWeight: 800, fontSize: 16 }}>
-                      {totalRevenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}
+                      {formatMoney(totalRevenue, data?.totalRevenueDisplay)}
                     </td>
                   </tr>
                 </tfoot>

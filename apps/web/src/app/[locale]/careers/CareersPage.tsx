@@ -384,7 +384,7 @@ export default function CareersPage() {
                   <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
                     <DollarSign size={12} color="#5120c8" />
                     <span style={{ color:'#5120c8', fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:700, whiteSpace:'nowrap', overflow:'hidden' }}>
-                      {path.salary} {isAr?'ر.س':'SAR'}
+                      {path.salary} SAR
                     </span>
                   </div>
                   <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>

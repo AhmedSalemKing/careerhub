@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { api } from "../../../lib/api";
 import { ErrorBoundary } from "../../../components/ErrorBoundary";
+import { formatMoney } from "../../../lib/market";
 import {
 	Users,
 	BookOpen,
@@ -34,8 +35,11 @@ type StatsData = {
 	publishedCourses: number;
 	pendingUsers: number;
 	totalRevenue: number;
+	totalRevenueDisplay?: string | null;
 	monthlyRevenue: number;
+	monthlyRevenueDisplay?: string | null;
 	todayRevenue: number;
+	todayRevenueDisplay?: string | null;
 	recentUsers: RecentUser[];
 	monthlyChart: { month: string; revenue: number }[];
 };
@@ -46,11 +50,10 @@ export default function AdminOverviewPage() {
 	const isDark = theme === "dark";
 	const isAr = locale === "ar";
 
-	const formatPrice = (amount: number) => {
+	const formatPrice = (amount: number, display?: string | null) => {
+		if (display) return display;
 		if (!amount || amount === 0) return isAr ? "مجاني" : "Free";
-		return isAr
-			? `${amount.toLocaleString("ar-SA")} ر.س`
-			: `${amount.toLocaleString("en-US")} SAR`;
+		return formatMoney(amount);
 	};
 	const [stats, setStats] = useState<StatsData | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -195,16 +198,16 @@ export default function AdminOverviewPage() {
 					},
 					{
 						label: isAr ? "إيرادات الشهر" : "Monthly Revenue",
-						value: formatPrice(monthlyRevenue),
+						value: formatPrice(monthlyRevenue, stats?.monthlyRevenueDisplay),
 						sub: isAr
-							? `اليوم: ${formatPrice(todayRevenue)}`
-							: `Today: ${formatPrice(todayRevenue)}`,
+							? `اليوم: ${formatPrice(todayRevenue, stats?.todayRevenueDisplay)}`
+							: `Today: ${formatPrice(todayRevenue, stats?.todayRevenueDisplay)}`,
 						icon: TrendingUp,
 						color: "#f59e0b",
 					},
 					{
 						label: isAr ? "إجمالي الإيرادات" : "Total Revenue",
-						value: formatPrice(totalRevenue),
+						value: formatPrice(totalRevenue, stats?.totalRevenueDisplay),
 						sub: isAr ? "منذ الإطلاق" : "since launch",
 						icon: DollarSign,
 						color: "#5120c8",

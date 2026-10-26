@@ -8,6 +8,7 @@ import {
   ChevronLeft, ChevronRight, Filter
 } from 'lucide-react'
 import { api } from '@/lib/api'
+import { formatMoney } from '@/lib/market'
 
 type InvoiceType = 'COURSE' | 'SESSION' | 'WALLET_TOPUP'
 
@@ -120,7 +121,7 @@ export default function InvoicesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <SummaryCard
             label={isAr ? 'إجمالي المدفوعات' : 'Total Spent'}
-            value={`${summary.totalSpent.toFixed(2)} ${isAr ? 'ر.س' : 'SAR'}`}
+            value={formatMoney(summary.totalSpent, (summary as any).totalSpentDisplay)}
             color="#5120C8"
             bg="rgba(81,32,200,0.08)"
           />
@@ -292,10 +293,7 @@ export default function InvoicesPage() {
                   {/* Amount */}
                   <div className="text-right shrink-0">
                     <p className="font-bold text-base" style={{ color: cfg.color }}>
-                      {inv.amount.toFixed(2)}
-                      <span className="text-xs mr-1" style={{ color: 'var(--muted)' }}>
-                        {' '}{isAr ? 'ر.س' : 'SAR'}
-                      </span>
+                      {formatMoney(inv.amount, (inv as any).amountDisplay)}
                     </p>
                     <p className="text-[10px] font-mono text-[color:var(--muted)] mt-0.5">
                       {inv.reference.slice(-8).toUpperCase()}

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { get } from '@/lib/api'
 import { useTheme } from 'next-themes'
 import { BarChart2, Users, BookOpen, Star, TrendingUp, Award, Loader2 } from 'lucide-react'
-import { formatCoursePrice } from '@/lib/market'
+import { formatCoursePrice, formatMoney } from '@/lib/market'
 
 export default function AnalyticsPage() {
   const { theme } = useTheme()
@@ -23,7 +23,7 @@ export default function AnalyticsPage() {
     { label:'إجمالي المستخدمين', value: stats?.totalStudents ?? 0, icon:<Users size={20} color="#5120c8"/>, bg:'rgba(81,32,200,0.1)' },
     { label:'الكورسات المنشورة', value: stats?.publishedCourses ?? 0, icon:<BookOpen size={20} color="#2BBFA3"/>, bg:'rgba(43,191,163,0.1)' },
     { label:'متوسط التقييم', value: stats?.avgRating ? `${stats.avgRating}` : 'لا يوجد', icon:<Star size={20} color="#f59e0b"/>, bg:'rgba(245,158,11,0.1)' },
-    { label:'إجمالي الإيرادات', value: `${(stats?.totalRevenue || 0).toFixed(0)} ر.س`, icon:<TrendingUp size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
+    { label:'إجمالي الإيرادات', value: formatMoney(stats?.totalRevenue, stats?.totalRevenueDisplay), icon:<TrendingUp size={20} color="#16a34a"/>, bg:'rgba(22,163,74,0.1)' },
     { label:'الشهادات المصدرة', value: stats?.certificatesIssued ?? 0, icon:<Award size={20} color="#ef4444"/>, bg:'rgba(239,68,68,0.1)' },
     { label:'معدل الإكمال', value: `${stats?.completionRate ?? 0}%`, icon:<BarChart2 size={20} color="#8b5cf6"/>, bg:'rgba(139,92,246,0.1)' },
   ]

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '@/lib/api'
 import { useTheme } from 'next-themes'
+import { formatMoney } from '@/lib/market'
 import { Calendar, Clock, User, Video, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 export default function SchedulePage() {
@@ -129,7 +130,7 @@ export default function SchedulePage() {
                 {/* Amount */}
                 {session.price && (
                   <div style={{ color: '#16a34a', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
-                    {session.price} ر.س
+                    {formatMoney(session.price, (session as any).priceDisplay)}
                   </div>
                 )}
               </div>

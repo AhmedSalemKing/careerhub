@@ -17,7 +17,7 @@ import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
-import { formatCoursePrice } from '../../../lib/market'
+import { formatCoursePrice, formatMoney } from '../../../lib/market'
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -33,7 +33,7 @@ function InstructorOverview() {
     queryFn: async () => {
       const res = await get('/courses/instructor/stats')
       const d = (res?.data as any)?.data ?? {}
-      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.totalRevenue ?? 0 }
+      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.totalRevenue ?? 0, revenueDisplay: d.totalRevenueDisplay ?? null }
     },
   })
 
@@ -147,7 +147,7 @@ function InstructorOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: `${stats?.revenue ?? 0} ر.س`,
+            value: formatMoney(stats?.revenue, stats?.revenueDisplay),
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
             icon: (
@@ -1006,7 +1006,7 @@ function ConsultantOverview() {
           },
           {
             labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: `${totalRevenue} ${isAr ? 'ر.س' : 'SAR'}`,
+            value: formatMoney(totalRevenue),
             color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
             href: `/${locale}/dashboard/revenue`,
           },

@@ -2,7 +2,7 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TrackActivityMiddleware } from './middleware/track-activity.middleware';
 import { HttpLoggerMiddleware } from './middleware/http-logger.middleware';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import * as Joi from 'joi';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bull';
@@ -35,6 +35,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
 import { AuditModule } from './common/services/audit.module';
 import { CsrfModule } from './modules/csrf/csrf.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
+import { CurrencyInterceptor } from './common/interceptors/currency.interceptor';
 
 @Module({
   imports: [
@@ -118,6 +119,10 @@ import { QuizzesModule } from './modules/quizzes/quizzes.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: CurrencyInterceptor,
     },
   ],
 })

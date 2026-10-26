@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
+import { formatMoney } from '../../../../lib/market'
 import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
@@ -16,9 +17,10 @@ export default function AdminRevenuePage() {
   const isAr = locale === 'ar'
   const [tab, setTab] = useState<'payments' | 'sessions'>('payments')
 
-  const formatPrice = (amount: number) => {
+  const formatPrice = (amount: number, display?: string | null) => {
+    if (display) return display
     if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
-    return isAr ? `${amount.toLocaleString('ar-SA')} ر.س` : `${amount.toLocaleString('en-US')} SAR`
+    return formatMoney(amount)
   }
 
   const { data: paymentsData, isLoading: loadingP } = useQuery({
@@ -240,7 +242,7 @@ export default function AdminRevenuePage() {
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{idx + 1}</td>
                         <td className="p-3 font-medium" style={{ color: 'var(--foreground)' }}>{name}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{courseTitle}</td>
-                        <td className="p-3 font-bold" style={{ color: '#10b981' }}>{formatPrice(Number(p.amount))}</td>
+                        <td className="p-3 font-bold" style={{ color: '#10b981' }}>{formatPrice(Number(p.amount), p.amountDisplay)}</td>
                         <td className="p-3">
                           <span
                             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
@@ -323,7 +325,7 @@ export default function AdminRevenuePage() {
                         <td className="p-3 font-medium" style={{ color: 'var(--foreground)' }}>{student}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{consultant}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{s.topic || '—'}</td>
-                        <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price))}</td>
+                        <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price), s.priceDisplay)}</td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
                           {new Date(s.scheduledAt || s.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
                         </td>

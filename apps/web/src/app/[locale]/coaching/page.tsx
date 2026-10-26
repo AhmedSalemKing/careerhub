@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { localDateTimeToISO } from '@/lib/time'
+import { formatMoney } from '@/lib/market'
 import {
   Search, X, ChevronRight, Briefcase, Clock,
   CheckCircle2, Calendar, DollarSign, GraduationCap,
@@ -234,7 +235,7 @@ export default function CoachingPage() {
                     )}
                     <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 8 }}>
                       <div>
-                        <div style={{ color: '#5120c8', fontSize: 'clamp(13px, 3.5vw, 16px)', fontWeight: 700, lineHeight: 1 }}>{price > 0 ? price : (isAr ? 'مجاني' : 'Free')}{price > 0 && <span style={{ fontSize: 10, fontWeight: 500, color: subtext, marginRight: 2 }}> {isAr ? 'ر.س' : 'SAR'}</span>}</div>
+                        <div style={{ color: '#5120c8', fontSize: 'clamp(13px, 3.5vw, 16px)', fontWeight: 700, lineHeight: 1 }}>{price > 0 ? formatMoney(price, c.hourlyRateDisplay || c.profile?.sessionPriceDisplay) : (isAr ? 'مجاني' : 'Free')}</div>
                         {price > 0 && <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>}
                       </div>
                       <div className="grid grid-cols-2 gap-2 mt-2">
@@ -314,7 +315,7 @@ export default function CoachingPage() {
             </div>
             <div style={{ padding: '14px 22px', borderTop: `1px solid ${border}`, display: 'flex', gap: 8, alignItems: 'center', position: 'sticky', bottom: 0, background: cardBg }}>
               <div style={{ flex: 1 }}>
-                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 700 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? `${detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</div>
+                <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 700 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? formatMoney(detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice, detailConsultant.hourlyRateDisplay || detailConsultant.profile?.sessionPriceDisplay) : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>
               </div>
               <button onClick={() => { setDetailConsultant(null); setBookingConsultant(detailConsultant) }} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
@@ -491,7 +492,7 @@ function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, bo
                 <div style={{ height: 1, background: border }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: text, fontSize: 13, fontWeight: 500 }}>{isAr ? 'السعر' : 'Price'}</span>
-                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 700 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? `${consultant.hourlyRate || consultant.profile?.sessionPrice} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free')}</span>
+                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 700 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? formatMoney(consultant.hourlyRate || consultant.profile?.sessionPrice, consultant.hourlyRateDisplay || consultant.profile?.sessionPriceDisplay) : (isAr ? 'مجاني' : 'Free')}</span>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>

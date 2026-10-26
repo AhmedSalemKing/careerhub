@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
+import { formatMoney } from '../../../../lib/market'
 import {
   Calendar,
   Clock,
@@ -380,7 +381,7 @@ export default function AdminCreateSessionPage() {
                   {isAr ? 'تلقائي من المستشار' : 'Auto from consultant'}
                 </span>
                 <span>
-                  {parseFloat(form.price) > 0 ? `${form.price} ${isAr ? 'ر.س' : 'SAR'}` : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}
+                  {parseFloat(form.price) > 0 ? formatMoney(parseFloat(form.price)) : form.consultantId ? (isAr ? 'مجاني' : 'Free') : '—'}
                 </span>
               </div>
             </div>

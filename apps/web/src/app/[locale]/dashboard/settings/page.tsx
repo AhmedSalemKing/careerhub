@@ -412,7 +412,7 @@ export default function SettingsPage() {
                   <input type="number" value={profileForm.experience} onChange={e => setProfileForm(f => ({ ...f, experience: e.target.value }))} style={inputStyle} placeholder="5" min="0" />
                 </div>
                 <div>
-                  <label style={labelStyle}>{isAr ? 'السعر/ساعة (ر.س)' : 'Hourly Rate (SAR)'}</label>
+                  <label style={labelStyle}>{isAr ? 'السعر/ساعة (SAR)' : 'Hourly Rate (SAR)'}</label>
                   <input type="number" value={profileForm.hourlyRate} onChange={e => setProfileForm(f => ({ ...f, hourlyRate: e.target.value }))} style={inputStyle} placeholder="200" min="0" />
                 </div>
               </div>

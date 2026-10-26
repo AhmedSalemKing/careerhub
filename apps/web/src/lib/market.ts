@@ -2,9 +2,9 @@
  * DeveWay Currency System
  *
  * Business rules:
- * - Egypt (EG): show prices in EGP using priceDisplay from API
- * - All others: show prices in SAR using priceDisplay from API
- * - Earnings/wallet/revenue: ALWAYS SAR (never use this utility for those)
+ * - Egypt (EG): show prices in EGP using *Display fields from API
+ * - All others: show prices in SAR using raw values as fallback
+ * - Earnings/wallet/revenue/course prices: all use API Display fields when available
  *
  * Single source of truth: x-vercel-ip-country (server) / market cookie (client)
  */
@@ -91,5 +91,28 @@ export function formatCoursePrice(course: {
   if (!course.price || course.price === 0) return 'مجاني'
 
   // 3. Fallback: raw price in SAR (should rarely happen if API is correct)
-  return `${Number(course.price).toLocaleString('ar-SA')} ر.س`
+  return `${Number(course.price).toLocaleString('ar-SA', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ر.س`
+}
+
+/**
+ * Format any monetary amount for display.
+ * Prefer API-provided Display fields for Egyptian market.
+ *
+ * @param amount - Raw SAR amount
+ * @param displayValue - Optional pre-formatted value from API (e.g. "٩٦٤٫٠٠ ج.م")
+ * @returns Formatted string like "٩٦٤٫٠٠ ج.م" or "٧٢٠٫٠٠ ر.س"
+ */
+export function formatMoney(
+  amount: number | string | null | undefined,
+  displayValue?: string | null
+): string {
+  if (displayValue) return displayValue
+  const num = Number(amount) || 0
+  return `${num.toLocaleString('ar-SA', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} ر.س`
 }

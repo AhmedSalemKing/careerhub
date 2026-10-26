@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
-import { formatCoursePrice } from '../../../../lib/market'
+import { formatCoursePrice, formatMoney } from '../../../../lib/market'
 import {
   CheckCircle,
   XCircle,
@@ -247,7 +247,7 @@ export default function ApprovalsPage() {
                       {u.hourlyRate && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
                           <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'السعر بالساعة' : 'Hourly Rate'}</p>
-                          <p className="text-sm font-medium text-foreground">{u.hourlyRate} {isAr ? 'ر.س' : 'SAR'}</p>
+                          <p className="text-sm font-medium text-foreground">{formatMoney(u.hourlyRate, u.hourlyRateDisplay)}</p>
                         </div>
                       )}
                       {u.meetingMethod && (

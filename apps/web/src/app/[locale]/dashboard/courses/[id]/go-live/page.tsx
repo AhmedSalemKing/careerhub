@@ -37,8 +37,6 @@ export default function GoLivePage() {
   const [copied, setCopied] = useState(false)
   const [peakViewers, setPeakViewers] = useState(0)
   const [elapsed, setElapsed] = useState(0)
-  const [activeTab, setActiveTab] = useState<'questions' | 'comments'>('questions')
-  const [newComment, setNewComment] = useState('')
   const [showEndConfirm, setShowEndConfirm] = useState(false)
 
   const { data: me } = useQuery({
@@ -144,6 +142,7 @@ export default function GoLivePage() {
 
   const pendingQuestions = questions.filter(q => !q.approved && !q.answered)
   const approvedQuestions = questions.filter(q => q.approved && !q.answered)
+  const questionsCount = questions.length
 
   return (
     <AuthGate>
@@ -310,107 +309,80 @@ export default function GoLivePage() {
             )}
           </div>
 
-          {/* RIGHT: Questions & Comments Panel */}
+          {/* RIGHT: Questions Panel */}
           <div style={{ borderLeft: isAr ? 'none' : '1px solid #1a1a1a', borderRight: isAr ? '1px solid #1a1a1a' : 'none', display: 'flex', flexDirection: 'column', background: '#0d0d0d', overflow: 'hidden' }}>
 
-            <div style={{ display: 'flex', borderBottom: `1px solid ${border}`, flexShrink: 0 }}>
-              {[
-                { key: 'questions', ar: 'الأسئلة', en: 'Questions', icon: Hand, badge: pendingQuestions.length },
-                { key: 'comments', ar: 'التعليقات', en: 'Comments', icon: MessageSquare, badge: comments.length },
-              ].map(tab => {
-                const active = activeTab === tab.key
-                return (
-                  <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '12px', background: 'none', border: 'none', cursor: 'pointer', color: active ? '#f1f5f9' : subtext, borderBottom: `2px solid ${active ? '#dc2626' : 'transparent'}`, fontSize: 12, fontWeight: 700 }}>
-                    <tab.icon size={13} />
-                    {isAr ? tab.ar : tab.en}
-                    {tab.badge > 0 && <span style={{ padding: '1px 6px', borderRadius: 10, background: tab.key === 'questions' ? '#d97706' : '#5120c8', color: '#fff', fontSize: 9, fontWeight: 800 }}>{tab.badge}</span>}
-                  </button>
-                )
-              })}
+            <div style={{
+              padding: '12px 14px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              fontSize: '0.82rem', fontWeight: 700,
+              color: text,
+              display: 'flex', alignItems: 'center', gap: 6,
+              flexShrink: 0,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2">
+                <path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/>
+                <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/>
+                <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/>
+                <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>
+              </svg>
+              الأسئلة
+              {questionsCount > 0 && (
+                <span style={{
+                  background: 'var(--primary)', color: '#fff',
+                  borderRadius: 999, padding: '1px 8px',
+                  fontSize: '0.72rem', fontWeight: 700,
+                }}>{questionsCount}</span>
+              )}
             </div>
 
             {/* Questions */}
-            {activeTab === 'questions' && (
-              <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
-                {!liveStarted ? (
-                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-                    <Hand size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
-                    <p style={{ color: subtext, fontSize: 12 }}>{isAr ? 'ستظهر الأسئلة هنا أثناء البث' : 'Questions will appear here during stream'}</p>
-                  </div>
-                ) : pendingQuestions.length === 0 && approvedQuestions.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-                    <p style={{ color: subtext, fontSize: 12 }}>{isAr ? 'لا توجد أسئلة بعد' : 'No questions yet'}</p>
-                  </div>
-                ) : (
-                  <>
-                    {pendingQuestions.map(q => (
-                      <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                          <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>{q.userName[0]}</div>
-                          <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
-                          <span style={{ color: subtext, fontSize: 10, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>{formatLiveTime(q.timestamp, locale)}</span>
-                        </div>
-                        <p style={{ color: text, fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>{q.text}</p>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => approveQuestion(q.id)} style={{ flex: 1, padding: '6px', borderRadius: 7, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                            <UserCheck size={11} />{isAr ? 'موافقة' : 'Approve'}
-                          </button>
-                          <button onClick={() => dismissQuestion(q.id)} style={{ width: 32, height: 32, borderRadius: 7, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <UserX size={12} />
-                          </button>
-                        </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+              {!liveStarted ? (
+                <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                  <Hand size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
+                  <p style={{ color: subtext, fontSize: 12 }}>{isAr ? 'ستظهر الأسئلة هنا أثناء البث' : 'Questions will appear here during stream'}</p>
+                </div>
+              ) : pendingQuestions.length === 0 && approvedQuestions.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 16px' }}>
+                  <p style={{ color: subtext, fontSize: 12 }}>{isAr ? 'لا توجد أسئلة بعد' : 'No questions yet'}</p>
+                </div>
+              ) : (
+                <>
+                  {pendingQuestions.map(q => (
+                    <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', background: 'rgba(245,158,11,0.05)', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 800 }}>{q.userName[0]}</div>
+                        <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
+                        <span style={{ color: subtext, fontSize: 10, marginRight: isAr ? 0 : 'auto', marginLeft: isAr ? 'auto' : 0 }}>{formatLiveTime(q.timestamp, locale)}</span>
                       </div>
-                    ))}
-                    {approvedQuestions.map(q => (
-                      <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(22,163,74,0.25)', background: 'rgba(22,163,74,0.06)', marginBottom: 8 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                          <CheckCircle2 size={12} color="#16a34a" />
-                          <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
-                        </div>
-                        <p style={{ color: text, fontSize: 12, margin: 0, lineHeight: 1.5 }}>{q.text}</p>
-                        <button onClick={() => answerQuestion(q.id)} style={{ marginTop: 8, width: '100%', padding: '5px', borderRadius: 7, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-                          {isAr ? 'تم الإجابة' : 'Mark Answered'}
+                      <p style={{ color: text, fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>{q.text}</p>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => approveQuestion(q.id)} style={{ flex: 1, padding: '6px', borderRadius: 7, background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                          <UserCheck size={11} />{isAr ? 'موافقة' : 'Approve'}
                         </button>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Comments */}
-            {activeTab === 'comments' && (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {comments.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-                      <MessageSquare size={32} color="rgba(255,255,255,0.1)" style={{ marginBottom: 8 }} />
-                      <p style={{ color: subtext, fontSize: 12 }}>{isAr ? 'ستظهر التعليقات هنا' : 'Comments will appear here'}</p>
-                    </div>
-                  ) : comments.map((c, i) => (
-                    <div key={c.id || i} style={{ display: 'flex', gap: 8 }}>
-                      <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{c.userName[0]}</div>
-                      <div style={{ flex: 1 }}>
-                        <span style={{ color: '#7c6bc9', fontSize: 11, fontWeight: 700 }}>{c.userName} </span>
-                        <span style={{ color: '#e2e8f0', fontSize: 12 }}>{c.text}</span>
+                        <button onClick={() => dismissQuestion(q.id)} style={{ width: 32, height: 32, borderRadius: 7, background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <UserX size={12} />
+                        </button>
                       </div>
                     </div>
                   ))}
-                </div>
-                <div style={{ padding: '10px', borderTop: `1px solid ${border}`, flexShrink: 0 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <input value={newComment} onChange={e => setNewComment(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && newComment.trim() && (sendComment(newComment), setNewComment(''))}
-                      placeholder={isAr ? 'أضف تعليقاً...' : 'Add comment...'}
-                      style={{ flex: 1, padding: '8px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', border: `1px solid ${border}`, color: text, fontSize: 12, outline: 'none' }} />
-                    <button onClick={() => { if (newComment.trim()) { sendComment(newComment); setNewComment('') } }}
-                      style={{ width: 32, height: 32, borderRadius: '50%', background: newComment.trim() ? '#5120c8' : 'rgba(255,255,255,0.06)', border: 'none', cursor: newComment.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-                      <Send size={13} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+                  {approvedQuestions.map(q => (
+                    <div key={q.id} style={{ padding: '12px', borderRadius: 10, border: '1px solid rgba(22,163,74,0.25)', background: 'rgba(22,163,74,0.06)', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <CheckCircle2 size={12} color="#16a34a" />
+                        <span style={{ color: text, fontSize: 11, fontWeight: 700 }}>{q.userName}</span>
+                      </div>
+                      <p style={{ color: text, fontSize: 12, margin: 0, lineHeight: 1.5 }}>{q.text}</p>
+                      <button onClick={() => answerQuestion(q.id)} style={{ marginTop: 8, width: '100%', padding: '5px', borderRadius: 7, background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.2)', color: '#16a34a', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                        {isAr ? 'تم الإجابة' : 'Mark Answered'}
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
 
             {/* Stats */}
             <div style={{ padding: '12px 14px', borderTop: `1px solid ${border}`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, flexShrink: 0 }}>
