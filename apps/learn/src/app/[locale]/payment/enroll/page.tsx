@@ -17,7 +17,10 @@ export default function EnrollPaymentPage() {
   const courseId = searchParams.get('courseId') || ''
   const amount = parseFloat(searchParams.get('amount') || '0')
   const rawDisplay = searchParams.get('amountDisplay')
-  const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : null
+  const SAR_TO_EGP = 15.0027
+  const toEGP = (sar: number) =>
+    (sar * SAR_TO_EGP).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+  const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : toEGP(amount)
   const title = searchParams.get('title') || ''
   const courseType = searchParams.get('type') || 'recorded'
 
