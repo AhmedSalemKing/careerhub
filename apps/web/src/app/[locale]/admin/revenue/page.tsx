@@ -20,6 +20,32 @@ export default function AdminRevenuePage() {
     return display ?? `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
   }
 
+  function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
+    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+    const isEGP = sample.includes('ج.م')
+    if (isEGP) {
+      const egpTotal = items.reduce((sum: number, item: any) => {
+        const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
+        return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
+      }, 0)
+      return `${Math.round(egpTotal).toLocaleString('ar-EG')} ج.م`
+    }
+    return `${(rawTotal ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  }
+
+  function displayAvg(items: any[], displayKey: string, totalTx: number, rawAvg: number): string {
+    const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
+    const isEGP = sample.includes('ج.م')
+    if (isEGP && totalTx > 0) {
+      const egpTotal = items.reduce((sum: number, item: any) => {
+        const d = (item[displayKey] ?? '').replace(/[٠-٩]/g, (c: string) => String(c.charCodeAt(0) - 0x0660))
+        return sum + (parseFloat(d.replace(/[^\d.]/g, '')) || 0)
+      }, 0)
+      return `${Math.round(egpTotal / totalTx).toLocaleString('ar-EG')} ج.م`
+    }
+    return `${(rawAvg ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
+  }
+
   const { data: paymentsData, isLoading: loadingP } = useQuery({
     queryKey: ['admin-payments-confirmed'],
     queryFn: async () => {
@@ -67,6 +93,15 @@ export default function AdminRevenuePage() {
   const totalTransactions = payments.length + paidSessions.length
   const avgOrder = totalTransactions > 0 ? total / totalTransactions : 0
 
+  const allRevItems = [
+    ...payments.map((p: any) => ({ _d: p.amountDisplay })),
+    ...paidSessions.map((s: any) => ({ _d: s.priceDisplay })),
+  ]
+  const monthlyRevItems = [
+    ...payments.filter((p: any) => new Date(p.createdAt) >= monthStart).map((p: any) => ({ _d: p.amountDisplay })),
+    ...paidSessions.filter((s: any) => new Date(s.createdAt) >= monthStart).map((s: any) => ({ _d: s.priceDisplay })),
+  ]
+
   const userName = (u: any) =>
     u?.profile ? `${u.profile.firstName} ${u.profile.lastName}` : u?.email ?? '—'
 
@@ -87,10 +122,10 @@ export default function AdminRevenuePage() {
       {/* ─── Stats Cards ─── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: formatPrice(total, (paymentsData as any)?.totalDisplay), icon: DollarSign, color: '#10b981' },
-          { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: formatPrice(monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
+          { label: isAr ? 'إجمالي الإيرادات' : 'Total Revenue', value: displayTotal(allRevItems, '_d', total), icon: DollarSign, color: '#10b981' },
+          { label: isAr ? 'إيرادات هذا الشهر' : 'Monthly Revenue', value: displayTotal(monthlyRevItems, '_d', monthlyRevenue), icon: TrendingUp, color: '#f59e0b' },
           { label: isAr ? 'عدد المدفوعات' : 'Transactions', value: `${totalTransactions}`, icon: CreditCard, color: '#5120c8' },
-          { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: formatPrice(avgOrder), icon: BarChart2, color: '#8b5cf6' },
+          { label: isAr ? 'متوسط قيمة الطلب' : 'Avg Order Value', value: displayAvg(allRevItems, '_d', totalTransactions, avgOrder), icon: BarChart2, color: '#8b5cf6' },
         ].map((s, i) => {
           const Icon = s.icon
           return (
@@ -146,7 +181,7 @@ export default function AdminRevenuePage() {
               <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الكورسات' : 'Course Revenue'}</span>
               <CreditCard size={16} style={{ color: '#5120c8' }} />
             </div>
-            <p className="text-xl font-bold" style={{ color: '#5120c8' }}>{formatPrice(paymentTotal)}</p>
+            <p className="text-xl font-bold" style={{ color: '#5120c8' }}>{displayTotal(payments, 'amountDisplay', paymentTotal)}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{payments.length} {isAr ? 'عملية دفع' : 'payments'}</p>
           </div>
           <div
@@ -157,7 +192,7 @@ export default function AdminRevenuePage() {
               <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الجلسات' : 'Session Revenue'}</span>
               <Calendar size={16} style={{ color: '#8b5cf6' }} />
             </div>
-            <p className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(sessionTotal)}</p>
+            <p className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{displayTotal(paidSessions, 'priceDisplay', sessionTotal)}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{paidSessions.length} {isAr ? 'جلسة مدفوعة' : 'paid sessions'}</p>
           </div>
         </div>
@@ -349,7 +384,7 @@ export default function AdminRevenuePage() {
           <div>
             <p className="font-bold" style={{ color: isDark ? '#34d399' : '#059669' }}>{isAr ? 'ملخص الإيرادات' : 'Revenue Summary'}</p>
             <p className="text-sm mt-1" style={{ color: isDark ? 'rgba(52,211,153,0.7)' : 'rgba(5,150,105,0.7)' }}>
-              {isAr ? 'كورسات' : 'Courses'}: {formatPrice(paymentTotal, (paymentsData as any)?.coursesRevenueDisplay)} | {isAr ? 'جلسات' : 'Sessions'}: {formatPrice(sessionTotal, (sessionsData as any)?.sessionsRevenueDisplay)} | {isAr ? 'الإجمالي' : 'Total'}: {formatPrice(total, (paymentsData as any)?.totalRevenueDisplay)}
+              {isAr ? 'كورسات' : 'Courses'}: {displayTotal(payments, 'amountDisplay', paymentTotal)} | {isAr ? 'جلسات' : 'Sessions'}: {displayTotal(paidSessions, 'priceDisplay', sessionTotal)} | {isAr ? 'الإجمالي' : 'Total'}: {displayTotal(allRevItems, '_d', total)}
             </p>
           </div>
         </div>
