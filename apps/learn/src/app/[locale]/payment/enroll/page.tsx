@@ -16,6 +16,8 @@ export default function EnrollPaymentPage() {
 
   const courseId = searchParams.get('courseId') || ''
   const amount = parseFloat(searchParams.get('amount') || '0')
+  const rawDisplay = searchParams.get('amountDisplay')
+  const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : null
   const title = searchParams.get('title') || ''
   const courseType = searchParams.get('type') || 'recorded'
 
@@ -90,12 +92,12 @@ export default function EnrollPaymentPage() {
           <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ color: '#94a3b8', fontSize: 13 }}>{t('coursePrice')}</span>
-              <span style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>{amount} {t('sar')}</span>
+              <span style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>{amountDisplay ?? (amount === 0 ? '٠٫٠٠ ج.م' : amount + ' ر.س')}</span>
             </div>
             <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', marginBottom: 8 }} />
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>{t('totalLabel')}</span>
-              <span style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{amount} {t('sar')}</span>
+              <span style={{ color: '#5120c8', fontSize: 18, fontWeight: 900 }}>{amountDisplay ?? (amount === 0 ? '٠٫٠٠ ج.م' : amount + ' ر.س')}</span>
             </div>
           </div>
 

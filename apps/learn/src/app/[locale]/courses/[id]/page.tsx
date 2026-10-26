@@ -258,6 +258,7 @@ export default function CourseDetailPage({
 			const params = new URLSearchParams({
 				courseId: course.id,
 				amount: String(price),
+				amountDisplay: course.priceDisplay || "",
 				title: course.titleAr || course.titleEn || "",
 				type: courseType,
 				returnUrl: `/${locale}/courses/${courseId}`,

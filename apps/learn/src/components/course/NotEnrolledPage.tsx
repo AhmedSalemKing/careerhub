@@ -8,6 +8,7 @@ import { Lock, ShoppingCart, ArrowLeft, ShieldCheck, Clock, Award, Compass } fro
 interface CourseInfo {
 	id?: string;
 	price?: number;
+	priceDisplay?: string | null;
 	titleAr?: string;
 	titleEn?: string;
 	slug?: string;
@@ -50,6 +51,7 @@ export default function NotEnrolledPage({ courseId, locale, course }: NotEnrolle
 	const paymentParams = new URLSearchParams({
 		courseId: resolvedId,
 		amount: String(info?.price ?? 0),
+		amountDisplay: info?.priceDisplay || "",
 		title: info?.titleAr || info?.titleEn || "",
 		type: info?.type || "recorded",
 		returnUrl: `/${locale}/courses/${info?.slug || resolvedId}`,
