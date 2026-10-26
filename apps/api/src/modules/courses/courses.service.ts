@@ -2139,27 +2139,23 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       return { amount: 0, currency: 'SAR', priceDisplay: 'مجاني' };
     }
     if (country === 'EG') {
-      let egp: number;
-      if (course.priceEGP != null && Number(course.priceEGP) > 0) {
-        egp = Number(course.priceEGP);
-      } else {
-        try {
-          const rates = await this.exchangeRateService.getRates();
-          egp = parseFloat((basePrice * rates.EGP).toFixed(2));
-        } catch {
-          egp = parseFloat((basePrice * 13.75).toFixed(2));
-        }
+      let egpAmount: number;
+      try {
+        const rates = await this.exchangeRateService.getRates();
+        egpAmount = parseFloat((basePrice * rates.EGP).toFixed(2));
+      } catch {
+        egpAmount = parseFloat((basePrice * 13.75).toFixed(2));
       }
       return {
-        amount: egp,
+        amount: egpAmount,
         currency: 'EGP',
-        priceDisplay: `${egp.toLocaleString('ar-EG', { maximumFractionDigits: 0 })} ج.م`,
+        priceDisplay: `${Math.round(egpAmount).toLocaleString('ar-EG')} ج.م`,
       };
     }
     return {
       amount: basePrice,
       currency: 'SAR',
-      priceDisplay: `${basePrice.toLocaleString('ar-SA', { maximumFractionDigits: 0 })} ر.س`,
+      priceDisplay: `${basePrice.toLocaleString('ar-SA')} ر.س`,
     };
   }
 

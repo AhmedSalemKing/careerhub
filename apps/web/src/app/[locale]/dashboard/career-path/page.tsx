@@ -730,7 +730,7 @@ const [confirmModal, setConfirmModal] = useState<{
                         <div style={{ padding: '14px' }}>
                           <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: '0 0 6px', lineHeight: 1.4 }}>{course.title || (isAr ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr))}</h4>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: '#5120c8', fontSize: 13, fontWeight: 700 }}>{course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free')}</span>
+                            <span style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 700 }}>{(course as any).priceDisplay ?? (course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free'))}</span>
                             <Award size={13} color={subtext} />
                           </div>
                         </div>

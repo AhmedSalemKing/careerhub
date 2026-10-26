@@ -249,7 +249,7 @@ function InstructorOverview() {
                   <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
                     {course._count?.enrollments ?? 0}
                     {isAr ? ' طالب' : ' students'}
-                    {course.price === 0 ? (isAr ? ' مجاني' : ' Free') : ` ${course.price} ر.س`}
+                    {(course as any).priceDisplay ?? (course.price === 0 ? (isAr ? ' مجاني' : ' Free') : ` ${course.price} ر.س`)}
                   </p>
                 </div>
                 <div style={{

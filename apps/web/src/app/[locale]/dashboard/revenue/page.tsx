@@ -152,9 +152,9 @@ export default function RevenuePage() {
                         {course.enrollmentCount}
                       </td>
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>
-                        {course.price === 0
+                        {(course as any).priceDisplay ?? (course.price === 0
                           ? (isAr ? 'مجاني' : 'Free')
-                          : `${course.price} ${isAr ? 'ر.س' : 'SAR'}`}
+                          : `${course.price} ${isAr ? 'ر.س' : 'SAR'}`)}
                       </td>
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#4ade80', fontWeight: 700, fontSize: 15 }}>
                         {course.revenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}

@@ -411,8 +411,8 @@ export default function ApprovalsPage() {
                         <span>
                           {isAr ? 'السعر:' : 'Price:'}{' '}
                           {course.price} {isAr ? 'ر.س' : 'SAR'}
-                          {course.priceUSD != null && <> &larr; {Number(course.priceUSD).toFixed(2)}$</>}
-                          {course.priceEGP != null && <> / {Number(course.priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
+                          {(course as any).priceUSD != null && <> &larr; {Number((course as any).priceUSD).toFixed(2)}$</>}
+                          {(course as any).priceEGP != null && <> / {Number((course as any).priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
                         </span>
                         <span>{isAr ? 'المستوى:' : 'Level:'} {course.level}</span>
                         <span>{isAr ? 'الأقسام:' : 'Sections:'} {course._count?.sections || 0}</span>

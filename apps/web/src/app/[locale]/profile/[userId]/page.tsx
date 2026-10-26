@@ -130,7 +130,7 @@ export default function PublicProfilePage() {
                     <p style={{ fontWeight:600, fontSize:'0.88rem', margin:'0 0 6px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--foreground)' }}>{isAr ? course.titleAr : course.titleEn}</p>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                       <span style={{ fontSize:'0.78rem', color:'var(--muted-foreground)' }}>{course._count?.enrollments || 0} {isAr ? 'طالب' : 'students'}</span>
-                      <span style={{ fontSize:'0.82rem', fontWeight:600, color: course.price === 0 ? '#4ade80' : 'var(--foreground)' }}>{course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`}</span>
+                      <span style={{ fontSize:'0.82rem', fontWeight:600, color: course.price === 0 ? '#4ade80' : 'var(--foreground)' }}>{(course as any).priceDisplay ?? (course.price === 0 ? (isAr ? 'مجاني' : 'Free') : `${course.price} ر.س`)}</span>
                     </div>
                   </div>
                 </div>
