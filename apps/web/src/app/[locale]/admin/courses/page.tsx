@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 
 import { learnUrlWithToken } from '../../../../lib/learn-link'
+import { formatCoursePrice } from '../../../../lib/market'
 
 type AdminCourse = {
   id: string
@@ -18,6 +19,7 @@ type AdminCourse = {
   title?: string
   status: string
   price?: number
+  priceDisplay?: string | null
   currency?: string
   createdAt: string
   careerPath?: { titleEn: string } | null
@@ -392,11 +394,8 @@ export default function AdminCoursesPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="font-medium" style={{ color: '#10b981' }}>
-                        {c.price ? `${c.price}` : (isAr ? 'مجاني' : 'Free')}
+                        {formatCoursePrice(c)}
                       </span>
-                      {c.currency && (
-                        <span className="text-xs ml-1" style={{ color: 'var(--muted)' }}>{c.currency}</span>
-                      )}
                     </td>
                     <td className="px-4 py-3.5">
                       <span

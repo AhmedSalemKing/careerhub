@@ -10,6 +10,7 @@ import { AuthGate } from "../../../components/AuthGate";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getMediaUrl } from "../../../../lib/media";
 import { useAuthStore } from "../../../../stores/authStore";
+import { formatCoursePrice } from "../../../../lib/market";
 
 function getTitle(c: any, locale: string) {
 	if (locale === "ar") return c.titleAr || c.titleEn || c.title || "بدون عنوان";
@@ -562,7 +563,7 @@ export default function MyCoursesPage() {
 														<line x1="12" y1="1" x2="12" y2="23" />
 														<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
 													</svg>
-													<span>{(course as any).priceDisplay ?? (coursePrice === 0 || coursePrice === null ? (isAr ? "مجاني" : "Free") : `${coursePrice} ${isAr ? "ر.س" : "SAR"}`)}</span>
+													<span>{formatCoursePrice(course)}</span>
 												</div>
 											</div>
 

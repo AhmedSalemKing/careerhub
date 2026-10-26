@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import api from '@/lib/api'
 import { DollarSign, Users, BookOpen, TrendingUp, Download, Eye } from 'lucide-react'
+import { formatCoursePrice } from '@/lib/market'
 
 export default function RevenuePage() {
   const locale = useLocale()
@@ -152,9 +153,7 @@ export default function RevenuePage() {
                         {course.enrollmentCount}
                       </td>
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>
-                        {(course as any).priceDisplay ?? (course.price === 0
-                          ? (isAr ? 'مجاني' : 'Free')
-                          : `${course.price} ${isAr ? 'ر.س' : 'SAR'}`)}
+                        {formatCoursePrice(course)}
                       </td>
                       <td style={{ padding: '14px 20px', textAlign: 'center', color: '#4ade80', fontWeight: 700, fontSize: 15 }}>
                         {course.revenue.toLocaleString()} {isAr ? 'ر.س' : 'SAR'}

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
+import { formatCoursePrice } from '../../../lib/market'
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 
@@ -521,7 +522,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
 
         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 700 }}>
-            {course.priceDisplay ?? (price > 0 ? `${price} ${isAr ? 'ر.س' : 'SAR'}` : (isAr ? 'مجاني' : 'Free'))}
+            {formatCoursePrice(course)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 600 }}>
             {isEnrolled ? tl('continueBtn') : tl('viewBtn')}
@@ -712,7 +713,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
           {/* Price + CTA */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ color: isLive ? '#dc2626' : '#5120c8', fontSize: 18, fontWeight: 700 }}>
-            {price > 0 ? `${price} ${tl('sar')}` : tl('free')}
+            {formatCoursePrice(course)}
             </div>
 
             {isLive && (
@@ -874,11 +875,11 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         {/* Price + CTA */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
           <div style={{ color: '#16a34a', fontSize: 16, fontWeight: 700 }}>
-            {price > 0
+            {course.priceDisplay ?? (price > 0
               ? `${price} ${tl('sar')}`
               : course.offlinePaymentType === 'on_site'
                 ? tl('payOnSite')
-                : tl('free')}
+                : tl('free'))}
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); handleBookSeat(); }}

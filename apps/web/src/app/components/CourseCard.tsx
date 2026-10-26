@@ -5,6 +5,7 @@ import { learnUrlWithToken } from '../../lib/learn-link'
 import { useState, useRef } from 'react'
 import { Clock, Signal, ExternalLink, Play, BookOpen } from 'lucide-react'
 import VerifiedBadge from '../../components/VerifiedBadge'
+import { formatCoursePrice } from '../../lib/market'
 
 export type CourseCardCourse = {
   id: string
@@ -80,7 +81,6 @@ export function CourseCard({
 
   // ✅ FIXED: Safe price access with nullish coalescing
   const price = course.price ?? 0
-  const priceDisplay = course.priceDisplay
   const duration = course.duration ?? 0
 
   return (
@@ -534,12 +534,7 @@ export function CourseCard({
         {/* Footer: Price + CTA ✅ FIXED: Use safe price variable + PingARLT Font */}
         <div className="cc-footer">
           <span className={`cc-price ${price === 0 ? 'free' : ''}`}>
-            {priceDisplay
-              ? priceDisplay
-              : price > 0
-                ? `${price} ${isAr ? 'ريال' : 'SAR'}`
-                : isAr ? 'مجاني' : 'Free'
-            }
+            {formatCoursePrice(course)}
           </span>
 
           <span className="cc-view-link">

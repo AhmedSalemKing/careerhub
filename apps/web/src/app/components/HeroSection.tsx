@@ -13,6 +13,7 @@ import { TypewriterHero } from './TypewriterHero' // استيراد مكون ا�
 // import { Button } from '../components/ui/button' // تم الاستغناء عنه لتجنب أخطاء الـ Typescript
 import { get } from '../../lib/api'
 import { learnUrlWithToken } from '../../lib/learn-link'
+import { formatCoursePrice } from '../../lib/market'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_URL || ''
@@ -284,7 +285,7 @@ export default function HomePage() {
 
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>
-                      {course.priceDisplay ?? (course.price > 0 ? `${course.price} ${locale === 'ar' ? 'ر.س' : 'SAR'}` : (locale === 'ar' ? 'مجاني' : 'Free'))}
+                      {formatCoursePrice(course)}
                     </div>
                     <Link
                       href={learnUrlWithToken(`/${locale}/courses/${course.id}`)}

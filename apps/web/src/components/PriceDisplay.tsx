@@ -1,5 +1,5 @@
 'use client'
-import { getMarket, formatPrice } from '../lib/currency'
+import { formatCoursePrice } from '../lib/market'
 
 interface Props {
   amount: number
@@ -7,8 +7,6 @@ interface Props {
   locale?: string
 }
 
-export default function PriceDisplay({ amount, priceDisplay, locale }: Props) {
-  if (priceDisplay) return <>{priceDisplay}</>
-  const market = getMarket()
-  return <>{formatPrice(amount, market, locale)}</>
+export default function PriceDisplay({ amount, priceDisplay }: Props) {
+  return <>{formatCoursePrice({ price: amount, priceDisplay })}</>
 }

@@ -17,6 +17,7 @@ import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
+import { formatCoursePrice } from '../../../lib/market'
 
 /* ════════════════════════════════════════════════════════
    INSTRUCTOR OVERVIEW — PROFESSIONAL DESIGN
@@ -249,7 +250,7 @@ function InstructorOverview() {
                   <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
                     {course._count?.enrollments ?? 0}
                     {isAr ? ' طالب' : ' students'}
-                    {(course as any).priceDisplay ?? (course.price === 0 ? (isAr ? ' مجاني' : ' Free') : ` ${course.price} ر.س`)}
+                    {formatCoursePrice(course)}
                   </p>
                 </div>
                 <div style={{

@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation"
 import { useLocale } from "next-intl"
 import { get, post } from "../../../../lib/api"
 import { getMediaUrl } from "../../../../lib/media"
+import { formatCoursePrice } from "../../../../lib/market"
 import { useQuery } from "@tanstack/react-query"
 import { CheckCircle2, Loader2, AlertTriangle, ArrowRight, Video, Radio, MapPin, BookOpen } from "lucide-react"
 
@@ -36,7 +37,6 @@ export default function CheckoutPage() {
   const course = data
   const courseType = course?.type || "recorded"
   const price = course?.price || 0
-  const priceDisplay = (course as any)?.priceDisplay ?? null
   const courseTitle = course?.titleAr || course?.titleEn || ""
 
   const getTypeIcon = () => {
@@ -126,7 +126,7 @@ export default function CheckoutPage() {
               )}
               <div className="flex justify-between items-center pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
                 <span className="text-lg font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? "الاجمالي" : "Total"}</span>
-                <span className="text-2xl font-black" style={{ color: 'var(--primary)' }}>{priceDisplay ?? `${price} ${isAr ? "ريال" : "SAR"}`}</span>
+                <span className="text-2xl font-black" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course || {})}</span>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function CheckoutPage() {
                 </>
               ) : (
                 <>
-                  {isAr ? `ادفع ${priceDisplay ?? `${price} ريال`} عبر Stripe` : `Pay ${priceDisplay ?? `${price} SAR`} via Stripe`}
+                  {isAr ? `ادفع ${formatCoursePrice(course || {})} عبر Stripe` : `Pay ${formatCoursePrice(course || {})} via Stripe`}
                   <ArrowRight size={20} style={{ transform: isAr ? "rotate(180deg)" : "none" }} />
                 </>
               )}

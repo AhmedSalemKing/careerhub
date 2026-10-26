@@ -2,9 +2,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { Search, X, BookOpen, User, ArrowLeft } from 'lucide-react'
+import { formatCoursePrice, getCountryClient } from '../../lib/market'
 
 interface SearchResult {
-  courses: { id: string; title: string; titleAr?: string; thumbnail?: string; price: number }[]
+  courses: { id: string; title: string; titleAr?: string; thumbnail?: string; price: number; priceDisplay?: string | null }[]
   consultants: { id: string; speciality: string; profile?: { firstName: string; lastName: string } }[]
 }
 
@@ -53,7 +54,8 @@ export function SearchBar() {
     setLoading(true)
     timerRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`${API}/api/courses/search?q=${encodeURIComponent(q)}`)
+        const countryParam = getCountryClient() === 'EG' ? '&country=EG' : ''
+        const res = await fetch(`${API}/api/courses/search?q=${encodeURIComponent(q)}${countryParam}`)
         const data = await res.json()
         setResults(data?.data ?? null)
       } catch { setResults(null) }
@@ -276,7 +278,7 @@ export function SearchBar() {
                             margin: 0,
                             fontFamily: 'DM Sans, sans-serif',
                           }}>
-                            {(course as any).priceDisplay ?? (course.price > 0 ? `${course.price} SAR` : (isAr ? 'مجاني' : 'Free'))}
+                            {formatCoursePrice(course)}
                           </p>
                         </div>
                         <ArrowLeft size={14} color="rgba(255,255,255,0.2)" />

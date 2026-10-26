@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { get } from '@/lib/api'
 import { useTheme } from 'next-themes'
 import { BarChart2, Users, BookOpen, Star, TrendingUp, Award, Loader2 } from 'lucide-react'
+import { formatCoursePrice } from '@/lib/market'
 
 export default function AnalyticsPage() {
   const { theme } = useTheme()
@@ -68,7 +69,7 @@ export default function AnalyticsPage() {
                     <div style={{ color:'#6b7280', fontSize:12, marginTop:2 }}>{c.enrollments || 0} مستخدم  {c.status === 'PUBLISHED' ? ' منشور' : ' مسودة'}</div>
                   </div>
                   <div style={{ color: isDark?'#94a3b8':'#6b7280', fontSize:13, fontWeight:600 }}>
-                    {(c as any).priceDisplay ?? `${c.price || 0} ر.س`}
+                    {formatCoursePrice(c)}
                   </div>
                 </div>
               ))}

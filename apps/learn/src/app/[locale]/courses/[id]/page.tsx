@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { get, post } from "../../../../lib/api";
 import { webLoginUrl } from "../../../../lib/constants";
+import { formatCoursePrice } from "../../../../lib/market";
 import { getMediaUrl, getCourseTitle } from "../../../../lib/media";
 import {
 	normalizeLiveStatus,
@@ -1189,7 +1190,7 @@ export default function CourseDetailPage({
 											<span
 												className="text-3xl font-bold"
 												style={{ color: purple }}>
-												{(course as any).priceDisplay ?? `${course.price} ${t("currency")}`}
+												{formatCoursePrice(course as any)}
 											</span>
 										</div>
 										{course.originalPrice &&
@@ -1685,7 +1686,7 @@ export default function CourseDetailPage({
 									) : (
 										<>
 											<ShoppingCart size={20} />
-											{isAr ? "اشترك الآن" : "Enroll Now"} – {(course as any)?.priceDisplay ?? `${course?.price} ${isAr ? "ريال" : "SAR"}`}
+											{isAr ? "اشترك الآن" : "Enroll Now"} – {formatCoursePrice(course as any)}
 										</>
 									)}
 								</button>

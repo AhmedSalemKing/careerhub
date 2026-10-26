@@ -5,6 +5,7 @@ import { ShoppingCart, X, Trash2, ArrowRight, BookOpen } from 'lucide-react'
 import { get, del } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { notify } from '../../lib/notify'
+import { formatCoursePrice } from '../../lib/market'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -137,7 +138,7 @@ export function CartIcon() {
                           {item.course?.titleAr || item.course?.titleEn || 'كورس'}
                         </p>
                         <p className="text-primary font-bold text-sm">
-                          {item.course?.priceDisplay ?? (item.course?.price > 0 ? `${item.course.price} ريال` : 'مجاني')}
+                          {formatCoursePrice(item.course || {})}
                         </p>
                       </div>
                       <button

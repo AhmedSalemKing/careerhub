@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
 import api from '../../lib/api'
 import { learnUrlWithToken } from '../../lib/learn-link'
+import { formatCoursePrice } from '../../lib/market'
 
 /* ════════════════════════════════════════
    INTERFACES
@@ -79,15 +80,11 @@ export function CoursesShowcase() {
   // learnUrl() from constants appends the auth token for cross-domain nav
 
   // ── Fetch real courses ──
+  // Country is injected automatically by the Axios interceptor via the market cookie.
   useEffect(() => {
     let mounted = true
 
-    const market = typeof document !== 'undefined'
-      ? document.cookie.split(';').find(c => c.trim().startsWith('market='))?.split('=')[1]?.trim()
-      : undefined
-    const countryParam = market === 'EGP' ? '&country=EG' : ''
-
-    api.get(`/courses?status=PUBLISHED&limit=10${countryParam}`)
+    api.get('/courses?status=PUBLISHED&limit=10')
       .then((res) => {
         if (!mounted) return
         
@@ -551,8 +548,7 @@ export function CoursesShowcase() {
                     <div className="cs-footer">
                       {/* ✅ PRICE - PingARLT Font Applied Here */}
                       <span className="cs-price">
-                        {course.priceDisplay
-                          ?? (course.price > 0 ? `${course.price} ${t('sar')}` : t('free'))}
+                        {formatCoursePrice(course)}
                       </span>
 
                       <span className="cs-enrollments">

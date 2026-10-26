@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
+import { formatCoursePrice } from '../../../../lib/market'
 import {
   CheckCircle,
   XCircle,
@@ -410,7 +411,7 @@ export default function ApprovalsPage() {
                         </span>
                         <span>
                           {isAr ? 'السعر:' : 'Price:'}{' '}
-                          {(course as any).priceDisplay ?? `${course.price} ${isAr ? 'ر.س' : 'SAR'}`}
+                          {formatCoursePrice(course)}
                           {(course as any).priceUSD != null && <> &larr; {Number((course as any).priceUSD).toFixed(2)}$</>}
                           {(course as any).priceEGP != null && <> / {Number((course as any).priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
                         </span>

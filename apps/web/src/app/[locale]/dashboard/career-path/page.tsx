@@ -14,6 +14,7 @@ import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
+import { formatCoursePrice, getCountryClient } from '../../../../lib/market'
 
 const PATH_KEYWORDS: Record<string, string[]> = {
   'سيبراني': ['سيبر', 'اختراق', 'أمن', 'شبكات', 'حماية', 'cyber', 'security', 'pentest', 'network', 'ethical hacking', 'vulnerability', 'forensics', 'malware', 'SIEM', 'SOC', 'firewall', 'encryption', 'cryptography'],
@@ -171,7 +172,8 @@ const [confirmModal, setConfirmModal] = useState<{
     setCoursesLoading(true)
     const token = getToken()
 
-    fetch(`${apiUrl}/courses?page=1&limit=100&language=${locale === 'ar' ? 'ar' : 'en'}`, {
+    const countryParam = getCountryClient() === 'EG' ? '&country=EG' : ''
+    fetch(`${apiUrl}/courses?page=1&limit=100&language=${locale === 'ar' ? 'ar' : 'en'}${countryParam}`, {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -192,7 +194,8 @@ const [confirmModal, setConfirmModal] = useState<{
   useEffect(() => {
     setBundlesLoading(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
-    fetch(`${apiUrl}/courses/bundles`, {
+    const bundleCountryParam = getCountryClient() === 'EG' ? '?country=EG' : ''
+    fetch(`${apiUrl}/courses/bundles${bundleCountryParam}`, {
       headers: { 'Content-Type': 'application/json' },
     })
       .then(r => r.json())
@@ -730,7 +733,7 @@ const [confirmModal, setConfirmModal] = useState<{
                         <div style={{ padding: '14px' }}>
                           <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: '0 0 6px', lineHeight: 1.4 }}>{course.title || (isAr ? (course.titleAr || course.titleEn) : (course.titleEn || course.titleAr))}</h4>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 700 }}>{(course as any).priceDisplay ?? (course.price > 0 ? `${course.price} ر.س` : (isAr ? 'مجاني' : 'Free'))}</span>
+                            <span style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 700 }}>{formatCoursePrice(course)}</span>
                             <Award size={13} color={subtext} />
                           </div>
                         </div>
@@ -769,7 +772,7 @@ href={learnUrlWithToken(`/${locale}/courses`)}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{bundle.title}</div>
-                            <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {(bundle as any).priceDisplay ?? (bundle.price > 0 ? `${bundle.price} ر.س` : (isAr ? 'مجاني' : 'Free'))}</div>
+                            <div style={{ color: subtext, fontSize: 12, marginTop: 3 }}>{bundle.coursesCount || bundle.courses?.length || 0} {isAr ? 'كورس' : 'courses'} · {formatCoursePrice(bundle)}</div>
                           </div>
                           <button onClick={() => window.open(`https://deveway-teal.vercel.app/${locale}/bundles/${bundle.id}`, '_blank')} style={{ padding: '8px 14px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{isAr ? 'عرض' : 'View'}</button>
                         </div>

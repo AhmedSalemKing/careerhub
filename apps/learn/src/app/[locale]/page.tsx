@@ -12,6 +12,7 @@ import {
 import { CareerPathsSection } from '../components/CareerPathsSection'
 import { Button } from '../components/ui/button'
 import { get } from '../../lib/api'
+import { formatCoursePrice } from '../../lib/market'
 import { syncAuthUser } from '../../lib/auth-sync'
 import { useAuthStore } from '../../stores/authStore'
 
@@ -534,7 +535,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-1"><Star className="h-4 w-4" style={{ color: '#F5A623', fill: '#F5A623' }} /><span className="font-medium">{course.rating}</span></div>
                   </div>
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                    <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{course.priceDisplay ?? (course.price > 0 ? `${course.price} ${locale === 'ar' ? 'ر.س' : 'SAR'}` : (locale === 'ar' ? 'مجاني' : 'Free'))}</div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course)}</div>
                     {enrolledIds.has(course.id) ? (
                       <Link
                         href={

@@ -38,7 +38,7 @@ api.interceptors.request.use((config) => {
     const market = getCookie('market')
     if (market === 'EGP') {
       const url = config.url || ''
-      if (url.startsWith('/courses') || url.includes('/courses/')) {
+      if (url.includes('/courses')) {
         config.params = { ...config.params, country: 'EG' }
       }
     }
