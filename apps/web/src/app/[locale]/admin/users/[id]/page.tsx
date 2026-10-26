@@ -79,12 +79,11 @@ function paymentTitle(item: any, isAr: boolean) {
   return item?.course?.titleEn || item?.course?.titleAr || item?.description || (isAr ? 'دفع' : 'Payment')
 }
 
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+import { formatMoney } from '../../../../../lib/market'
 
 function formatCurrency(amount: number, display?: string | null) {
   if (display) return display
-  return toEGP(amount)
+  return formatMoney(amount)
 }
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {

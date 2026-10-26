@@ -103,6 +103,13 @@ function formatEGP(sarAmount: number, rate: number): string {
   return `${arabicEgp} ج.م`
 }
 
+function formatSAR(amount: number): string {
+  return Number(amount).toLocaleString('ar-SA', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }) + ' ر.س'
+}
+
 function isMonetaryKey(key: string): boolean {
   if (NON_MONETARY.has(key)) return false
   if (MONETARY_FIELDS.has(key)) return true
@@ -122,12 +129,12 @@ function isMonetaryKey(key: string): boolean {
   )
 }
 
-function transformValue(obj: unknown, rate: number, depth = 0): unknown {
+function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0): unknown {
   if (depth > 15 || obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => transformValue(item, rate, depth + 1))
+    return obj.map((item) => transformValue(item, rate, isEgypt, depth + 1))
   }
 
   const record = obj as Record<string, unknown>
@@ -137,7 +144,7 @@ function transformValue(obj: unknown, rate: number, depth = 0): unknown {
     const val = record[key]
 
     if (val && typeof val === 'object') {
-      result[key] = transformValue(val, rate, depth + 1)
+      result[key] = transformValue(val, rate, isEgypt, depth + 1)
       continue
     }
 
@@ -149,10 +156,10 @@ function transformValue(obj: unknown, rate: number, depth = 0): unknown {
       isMonetaryKey(key) &&
       !record[`${key}Display`]
     ) {
-      result[`${key}Display`] = formatEGP(val, rate)
+      result[`${key}Display`] = isEgypt ? formatEGP(val, rate) : formatSAR(val)
 
       if ((key === 'price' || key === 'amount') && !record['priceDisplay']) {
-        result['priceDisplay'] = formatEGP(val, rate)
+        result['priceDisplay'] = isEgypt ? formatEGP(val, rate) : formatSAR(val)
       }
     }
   }
@@ -182,10 +189,9 @@ export class CurrencyInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       mergeMap(async (data) => {
-        if (!isEgypt) return data
         try {
-          const rate = await this.exchangeRateService.getSARtoEGPRate()
-          return transformValue(data, rate)
+          const rate = isEgypt ? await this.exchangeRateService.getSARtoEGPRate() : 0
+          return transformValue(data, rate, isEgypt)
         } catch {
           return data // Never break the response
         }

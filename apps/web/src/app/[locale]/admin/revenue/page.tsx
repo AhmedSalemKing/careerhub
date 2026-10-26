@@ -8,6 +8,7 @@ import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
 } from 'lucide-react'
+import { formatMoney } from '../../../../lib/market'
 
 export default function AdminRevenuePage() {
   const { theme } = useTheme()
@@ -16,13 +17,10 @@ export default function AdminRevenuePage() {
   const isAr = locale === 'ar'
   const [tab, setTab] = useState<'payments' | 'sessions'>('payments')
 
-  const toEGP = (sar: number) =>
-    (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
-
   const formatPrice = (amount: number, display?: string | null) => {
     if (display) return display
     if (!amount || amount === 0) return isAr ? 'مجاني' : 'Free'
-    return toEGP(amount)
+    return formatMoney(amount)
   }
 
   const { data: paymentsData, isLoading: loadingP } = useQuery({

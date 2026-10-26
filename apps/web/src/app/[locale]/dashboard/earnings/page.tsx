@@ -3,10 +3,7 @@ import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
 import { DollarSign, Clock, Wallet, Loader2, ArrowDownLeft, CheckCircle } from 'lucide-react'
 import { post } from '@/lib/api'
-import { getCountryClient } from '@/lib/market'
-
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+import { formatMoney, getCountryClient } from '@/lib/market'
 
 export default function EarningsPage() {
   const locale = useLocale()
@@ -50,7 +47,7 @@ export default function EarningsPage() {
     setTransferring(true)
     try {
       await post('/wallet/transfer-from-earnings', { amount })
-      setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${toEGP(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}` })
+      setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${formatMoney(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}` })
       setTransferAmount('')
       await fetchEarnings()
     } catch(e: any) {
@@ -88,7 +85,7 @@ export default function EarningsPage() {
             {isAr ? 'إجمالي الأرباح' : 'Total Earnings'}
           </p>
           <p className="font-bold text-purple-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.totalEarningsDisplay ?? toEGP(data?.totalEarnings ?? 0)}
+            {formatMoney(data?.totalEarnings ?? 0, data?.totalEarningsDisplay)}
           </p>
         </div>
         <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
@@ -96,7 +93,7 @@ export default function EarningsPage() {
             {isAr ? 'الرصيد المتاح للسحب' : 'Available to Transfer'}
           </p>
           <p className="font-bold text-green-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.availableBalanceDisplay ?? toEGP(data?.availableBalance ?? 0)}
+            {formatMoney(data?.availableBalance ?? 0, data?.availableBalanceDisplay)}
           </p>
         </div>
         <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
@@ -104,7 +101,7 @@ export default function EarningsPage() {
             {isAr ? 'قيد الانتظار' : 'Pending'}
           </p>
           <p className="font-bold text-yellow-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.pendingAmountDisplay ?? toEGP(data?.pendingAmount ?? 0)}
+            {formatMoney(data?.pendingAmount ?? 0, data?.pendingAmountDisplay)}
           </p>
         </div>
         <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
@@ -141,8 +138,8 @@ export default function EarningsPage() {
             value={transferAmount}
             onChange={e => setTransferAmount(e.target.value)}
             placeholder={isAr
-              ? `الحد الأقصى: ${data?.availableBalanceDisplay ?? toEGP(data?.availableBalance ?? 0)}`
-              : `Max: ${data?.availableBalanceDisplay ?? toEGP(data?.availableBalance ?? 0)}`}
+              ? `الحد الأقصى: ${formatMoney(data?.availableBalance ?? 0, data?.availableBalanceDisplay)}`
+              : `Max: ${formatMoney(data?.availableBalance ?? 0, data?.availableBalanceDisplay)}`}
             className="px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 text-sm outline-none focus:border-purple-500 transition-colors"
             style={{ flex: 1, minWidth: 0, boxSizing: 'border-box' }}
           />
@@ -213,7 +210,7 @@ export default function EarningsPage() {
                     <td className="p-4 text-center">
                       <span className={`font-bold ${session.amount > 0 ? 'text-green-400' : 'text-gray-500'}`}>
                         {session.amount > 0
-                          ? (session.amountDisplay ?? toEGP(session.amount ?? 0))
+                          ? formatMoney(session.amount ?? 0, session.amountDisplay)
                           : (isAr ? 'مجاني' : 'Free')}
                       </span>
                     </td>
@@ -226,7 +223,7 @@ export default function EarningsPage() {
                     {isAr ? 'الإجمالي' : 'Total'}
                   </td>
                   <td className="p-4 text-center text-purple-400 font-bold text-lg">
-                    {data?.totalEarningsDisplay ?? toEGP(data?.totalEarnings ?? 0)}
+                    {formatMoney(data?.totalEarnings ?? 0, data?.totalEarningsDisplay)}
                   </td>
                 </tr>
               </tfoot>

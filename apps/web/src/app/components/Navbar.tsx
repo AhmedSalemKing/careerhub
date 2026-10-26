@@ -15,8 +15,7 @@ import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
 import { learnUrlWithToken } from '../../lib/learn-link'
-const toEGP = (sar: number) =>
-  (sar * 15.0027).toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م'
+import { formatMoney } from '../../lib/market'
 
 /* ════════════════════════════════════════
    SCROLL TO SECTION UTILITY
@@ -536,8 +535,8 @@ export function Navbar() {
                     lineHeight: 1, whiteSpace: 'nowrap',
                   }}>
                     {token && walletData !== null
-                      ? (walletData.balanceDisplay ?? toEGP(walletData.balance ?? 0))
-                      : toEGP(0)
+                      ? formatMoney(walletData.balance ?? 0, walletData.balanceDisplay ?? undefined)
+                      : formatMoney(0)
                     }
                   </span>
                 </Link>
