@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { ActivityService } from '../../common/services/activity.service';
+import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
 import { Course, CourseStatus, User } from '@prisma/client';
 import { parseClientDateTime } from '../../common/utils/client-datetime.util';
 
@@ -22,6 +23,7 @@ export class CoursesService {
     private prisma: PrismaService,
     private certificatesService: CertificatesService,
     private readonly activityService: ActivityService,
+    private readonly exchangeRateService: ExchangeRateService,
   ) { }
 
   async getCourses(options: {
@@ -172,14 +174,18 @@ export class CoursesService {
     ]);
 
     const maxEnrollment = Math.max(...courses.map(c => c._count.enrollments), 0)
-    const transformedCourses = courses.map(course => ({
+    const transformedCourses = courses.map(course => {
+      const resolved = this.resolvePrice(course as any, country);
+      return {
       id: course.id,
       categoryId: course.categoryId,
       category: language === 'ar' ? course.category?.nameAr : course.category?.nameEn,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
       thumbnail: course.thumbnail,
-      price: this.resolvePrice(course as any, country),
+      price: resolved.amount,
+      currency: resolved.currency,
+      priceDisplay: resolved.display,
       level: course.level,
       type: course.type,
       liveStatus: course.liveStatus,
@@ -200,7 +206,8 @@ export class CoursesService {
       } : undefined,
       _count: course._count,
       isMostPopular: course._count.enrollments === maxEnrollment && maxEnrollment > 0,
-    }));
+    };
+    });
 
     // If userId provided, check enrollment for each course
     let coursesWithEnrollment = transformedCourses
@@ -1467,13 +1474,19 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         courseStatus = 'PENDING_REVIEW'
       }
 
+      const sarPrice = parseFloat(dto.price) || 0;
+      const converted = await this.exchangeRateService.convert(sarPrice).catch(() => null);
+
       const courseData: any = {
         slug,
         titleEn: dto.title || dto.titleAr || 'بدون عنوان',
         titleAr: dto.titleAr || dto.title,
         descriptionEn: dto.description,
         descriptionAr: dto.descriptionAr,
-        price: parseFloat(dto.price) || 0,
+        price: sarPrice,
+        priceSAR: sarPrice,
+        priceEGP: converted?.egp ?? null,
+        priceUSD: converted?.usd ?? null,
         level: dto.level || 'BEGINNER',
         status: courseStatus as any,
         thumbnail: dto.thumbnail || null,
@@ -1568,6 +1581,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       recordingIntent = wantsRecording || wantsAutoPublish;
     }
 
+    let convertedPrices: { priceSAR?: number; priceEGP?: number; priceUSD?: number } = {};
+    if (dto.price !== undefined) {
+      const sarPrice = parseFloat(dto.price) || 0;
+      const conv = await this.exchangeRateService.convert(sarPrice).catch(() => null);
+      convertedPrices = {
+        priceSAR: sarPrice,
+        priceEGP: conv?.egp ?? undefined,
+        priceUSD: conv?.usd ?? undefined,
+      };
+    }
+
     const updated = await this.prisma.course.update({
       where: { id },
       data: {
@@ -1575,9 +1599,10 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.titleAr !== undefined && { titleAr: dto.titleAr }),
         ...(dto.description !== undefined && { descriptionEn: dto.description }),
         ...(dto.descriptionAr !== undefined && { descriptionAr: dto.descriptionAr }),
-        ...(dto.price !== undefined && { price: dto.price }),
-        ...(dto.priceEGP !== undefined && { priceEGP: dto.priceEGP }),
-        ...(dto.priceUSD !== undefined && { priceUSD: dto.priceUSD }),
+        ...(dto.price !== undefined && { price: parseFloat(dto.price) || 0 }),
+        ...(convertedPrices.priceSAR !== undefined && { priceSAR: convertedPrices.priceSAR }),
+        ...(convertedPrices.priceEGP !== undefined && { priceEGP: convertedPrices.priceEGP }),
+        ...(convertedPrices.priceUSD !== undefined && { priceUSD: convertedPrices.priceUSD }),
         ...(dto.level && { level: dto.level }),
         ...(dto.status && { status: dto.status as any }),
         ...(dto.thumbnail !== undefined && { thumbnail: dto.thumbnail }),
@@ -2091,10 +2116,16 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     return Math.min(5, 3 + completionRate * 2); // Rating between 3-5 based on completion rate
   }
 
-  resolvePrice(course: { price: number; priceEGP?: any; priceUSD?: any }, country?: string | null): number {
-    if (country === 'EG' && course.priceEGP != null) return Number(course.priceEGP);
-    if (country === 'US' && course.priceUSD != null) return Number(course.priceUSD);
-    return Number(course.price);
+  resolvePrice(
+    course: { price: number; priceEGP?: any; priceUSD?: any; priceSAR?: any },
+    country?: string | null,
+  ): { amount: number; currency: string; display: string } {
+    if (country === 'EG' && course.priceEGP != null) {
+      const amount = Number(course.priceEGP);
+      return { amount, currency: 'EGP', display: `${amount} ج.م` };
+    }
+    const amount = Number(course.priceSAR ?? course.price);
+    return { amount, currency: 'SAR', display: `${amount} ر.س` };
   }
 
   private generateSlug(title: string): string {

@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CertificatesModule } from '../certificates/certificates.module';
 import { AuditModule } from '../../common/services/audit.module';
+import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
 
 const bullImports = process.env.REDIS_URL
   ? [BullModule.registerQueue({ name: 'certificates' })]
@@ -25,7 +26,7 @@ const bullImports = process.env.REDIS_URL
     ...bullImports,
   ],
   controllers: [CoursesController],
-  providers: [CoursesService, EnrollmentService, ProgressService, RecommendationService],
+  providers: [CoursesService, EnrollmentService, ProgressService, RecommendationService, ExchangeRateService],
   exports: [CoursesService, EnrollmentService, ProgressService, RecommendationService],
 })
 export class CoursesModule {}

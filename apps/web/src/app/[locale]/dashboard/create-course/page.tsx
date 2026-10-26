@@ -250,8 +250,6 @@ export default function CreateCoursePage() {
     titleAr: '',
     description: '',
     price: '0',
-    priceEGP: '',
-    priceUSD: '',
     level: 'BEGINNER',
     status: 'DRAFT',
     categoryId: '',
@@ -369,8 +367,6 @@ export default function CreateCoursePage() {
         titleAr: form.titleAr,
         description: form.description,
         price: parseFloat(form.price) || 0,
-        ...(form.priceEGP !== '' && { priceEGP: parseFloat(form.priceEGP) || 0 }),
-        ...(form.priceUSD !== '' && { priceUSD: parseFloat(form.priceUSD) || 0 }),
         level: form.level,
         status: form.status,
         categoryId: form.categoryId || undefined,
@@ -554,39 +550,19 @@ export default function CreateCoursePage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className={labelCls}>{isAr ? 'الأسعار' : 'Pricing'}</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{isAr ? 'السعر (ر.س)' : 'Price (SAR)'}</p>
-                      <div className="relative">
-                        <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
-                          className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
-                        <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
-                          {isAr ? 'ر.س' : 'SAR'}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{isAr ? 'السعر المصري (ج.م)' : 'Egypt Price (EGP)'}</p>
-                      <div className="relative">
-                        <input type="number" min="0" step="0.01" placeholder={isAr ? 'اختياري' : 'Optional'} value={form.priceEGP} onChange={e => set('priceEGP', e.target.value)}
-                          className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
-                        <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
-                          EGP
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{isAr ? 'السعر الدولي (USD)' : 'International (USD)'}</p>
-                      <div className="relative">
-                        <input type="number" min="0" step="0.01" placeholder={isAr ? 'اختياري' : 'Optional'} value={form.priceUSD} onChange={e => set('priceUSD', e.target.value)}
-                          className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
-                        <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
-                          USD
-                        </span>
-                      </div>
-                    </div>
+                  <label className={labelCls}>{isAr ? 'السعر' : 'Price'}</label>
+                  <div className="relative">
+                    <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
+                      className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
+                    <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
+                      {isAr ? 'ر.س' : 'SAR'}
+                    </span>
                   </div>
+                  <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
+                    {isAr
+                      ? 'سيتم تحويل السعر تلقائيا للجنيه المصري والدولار عند الحفظ.'
+                      : 'EGP and USD equivalents are filled automatically on save.'}
+                  </p>
                 </div>
                 <div>
                   <label className={labelCls}>{isAr ? 'المستوى' : 'Level'}</label>
@@ -974,8 +950,6 @@ export default function CreateCoursePage() {
                         <div style={{ fontWeight: 500, fontSize: '0.78rem', color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'الأسعار' : 'Pricing'}</div>
                         <div style={{ fontWeight: 300, fontSize: '0.92rem', color: 'var(--foreground)' }}>
                           {form.price} {isAr ? 'ر.س' : 'SAR'}
-                          {form.priceEGP !== '' && <> &nbsp;·&nbsp; {form.priceEGP} EGP</>}
-                          {form.priceUSD !== '' && <> &nbsp;·&nbsp; {form.priceUSD} USD</>}
                         </div>
                       </div>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4b5563" strokeWidth="1.5" strokeLinecap="round" style={{ flexShrink: 0 }}>

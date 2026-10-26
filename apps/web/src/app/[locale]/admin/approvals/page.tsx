@@ -408,7 +408,12 @@ export default function ApprovalsPage() {
                           {course.instructor?.profile?.lastName}
                           {course.instructor?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                         </span>
-                        <span>{isAr ? 'السعر:' : 'Price:'} {course.price} {isAr ? 'ريال' : 'SAR'}</span>
+                        <span>
+                          {isAr ? 'السعر:' : 'Price:'}{' '}
+                          {course.price} {isAr ? 'ر.س' : 'SAR'}
+                          {course.priceUSD != null && <> &larr; {Number(course.priceUSD).toFixed(2)}$</>}
+                          {course.priceEGP != null && <> / {Number(course.priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
+                        </span>
                         <span>{isAr ? 'المستوى:' : 'Level:'} {course.level}</span>
                         <span>{isAr ? 'الأقسام:' : 'Sections:'} {course._count?.sections || 0}</span>
                       </div>

@@ -338,6 +338,7 @@ model Course {
   currency      String       @default("USD")
   priceEGP      Decimal?
   priceUSD      Decimal?
+  priceSAR      Decimal?     @db.Decimal(10,2)
   duration      Int?
   level         String       @default("BEGINNER")
   tags          String[]     @default([])
