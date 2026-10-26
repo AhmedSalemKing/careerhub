@@ -209,7 +209,7 @@ return [
                 background: 'rgba(255,255,255,0.03)',
                 border: '1px solid rgba(255,255,255,0.06)',
               }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: 0 }}>{user?.profile?.firstName || user?.name || ''}</p>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: 0 }}>{user?.profile?.firstName || (user as any)?.name || ''}</p>
                 <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0 0' }}>{user?.email}</p>
               </div>
             )}

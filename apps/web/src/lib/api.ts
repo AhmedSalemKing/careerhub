@@ -138,8 +138,8 @@ api.interceptors.response.use(
 )
 
 export default api
-export const get = (url: string, config?: any) => api.get(url, config)
-export const post = (url: string, data?: any, config?: any) => api.post(url, data, config)
-export const put = (url: string, data?: any) => api.put(url, data)
-export const patch = (url: string, data?: any) => api.patch(url, data)
-export const del = (url: string) => api.delete(url)
+export const get = <T = any>(url: string, config?: any) => api.get<T>(url, config)
+export const post = <T = any>(url: string, data?: any, config?: any) => api.post<T>(url, data, config)
+export const put = <T = any>(url: string, data?: any) => api.put<T>(url, data)
+export const patch = <T = any>(url: string, data?: any) => api.patch<T>(url, data)
+export const del = <T = any>(url: string) => api.delete<T>(url)

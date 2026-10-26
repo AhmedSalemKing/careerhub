@@ -131,7 +131,7 @@ export default function CareersPage() {
       const query = searchQuery.toLowerCase()
       const matchSearch = !query || 
         path.titleAr?.toLowerCase().includes(query) ||
-        path.titleEn?.toLowerCase().includes(query) ||
+        path.title?.toLowerCase().includes(query) ||
         path.skills?.some(s => s.toLowerCase().includes(query))
       return matchCategory && matchSearch
     })
@@ -340,7 +340,7 @@ export default function CareersPage() {
                       {String(idx + 1).padStart(2, '0')}
                     </div>
                     <h3 style={{ color:text, fontSize:'clamp(13px, 3vw, 16px)', fontWeight:700, margin:0 }}>
-                      {isAr ? path.titleAr : path.titleEn}
+                      {isAr ? path.titleAr : path.title}
                     </h3>
                   </div>
                   
@@ -440,7 +440,7 @@ export default function CareersPage() {
                         }}>
                           {step}
                         </span>
-                        {i < path.progression.length - 1 && (
+                        {i < (path.progression?.length ?? 0) - 1 && (
                           <span style={{ fontSize:'10px', color:'var(--muted)' }}>›</span>
                         )}
                       </span>
@@ -557,7 +557,7 @@ export default function CareersPage() {
                 <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
                   {(() => { const IconComp = ICON_MAP[detailPath.icon] || Briefcase; return <IconComp size={18} color="#5120c8" /> })()}
                   <h2 style={{ color:text, fontSize:18, fontWeight:900, margin:0, letterSpacing:'-0.02em' }}>
-                    {isAr ? detailPath.titleAr : detailPath.titleEn}
+                    {isAr ? detailPath.titleAr : detailPath.title}
                   </h2>
                 </div>
                 <p style={{ color:subtext, fontSize:13, margin:0, lineHeight:1.6 }}>

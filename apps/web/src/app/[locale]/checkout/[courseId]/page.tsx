@@ -92,7 +92,7 @@ export default function CheckoutPage() {
           <div className="rounded-3xl p-8 shadow-sm" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
             <div className="flex items-start gap-4 mb-6">
               {course?.thumbnail ? (
-                <img src={getMediaUrl(course.thumbnail)} alt="" className="w-24 h-24 rounded-2xl object-cover" />
+                <img src={getMediaUrl(course.thumbnail) ?? undefined} alt="" className="w-24 h-24 rounded-2xl object-cover" />
               ) : (
                 <div className="w-24 h-24 rounded-2xl flex items-center justify-center" style={{ background: 'var(--primary-subtle)' }}>
                   {getTypeIcon()}

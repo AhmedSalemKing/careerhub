@@ -362,7 +362,7 @@ export function Navbar() {
     : ''
 
   /* ═══ Navigation Links ═══ */
-  const links = [
+  const links: { href: string; label: string; isAnchor?: boolean; sectionId?: string }[] = [
     { href: `/${locale}/careers`, label: t('careers') },
     { href: `/${locale}/coaching`, label: t('coaches') },
   ]

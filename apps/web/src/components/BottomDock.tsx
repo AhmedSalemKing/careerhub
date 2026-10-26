@@ -22,6 +22,7 @@ export default function BottomDock({ items, onLogout, position = 'bottom' }: Bot
   const [visible, setVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [, setExpanded] = useState(false)
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const locale = pathname.split('/')[1] || 'ar'
