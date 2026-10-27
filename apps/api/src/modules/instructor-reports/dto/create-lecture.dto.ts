@@ -6,9 +6,9 @@ import {
   Min,
   IsEnum,
 } from 'class-validator';
-import { LectureRecordStatus } from '@prisma/client';
+import { LectureStatus } from '@prisma/client';
 
-export class CreateLectureRecordDto {
+export class CreateLectureDto {
   @IsString()
   instructorId: string;
 
@@ -27,8 +27,8 @@ export class CreateLectureRecordDto {
   durationMinutes: number;
 
   @IsOptional()
-  @IsEnum(LectureRecordStatus)
-  status?: LectureRecordStatus;
+  @IsEnum(LectureStatus)
+  status?: LectureStatus;
 
   @IsOptional()
   @IsString()

@@ -30,7 +30,7 @@ enum AssessmentStatus {
   EXPIRED
 }
 
-enum LectureRecordStatus {
+enum LectureStatus {
   DRAFT
   COMPLETED
   CANCELLED
@@ -163,7 +163,7 @@ model User {
   activities           UserActivity[]
   walletTransactions   WalletTransaction[]
   coachingCredits      CoachingCredit[]
-  lectureRecords       LectureRecord[]  @relation("InstructorLectures")
+  instructorLectures   InstructorLecture[] @relation("InstructorLectures")
 
   @@index([email])
   @@index([role])
@@ -392,7 +392,7 @@ model Course {
   ratings      Rating[]
   bundles     BundleCourse[]
   quizzes     Quiz[]
-  lectureRecords LectureRecord[]
+  instructorLectures InstructorLecture[]
 
   @@index([status])
   @@index([isFeatured])
@@ -403,25 +403,24 @@ model Course {
   @@index([careerPathId, status])
 }
 
-model LectureRecord {
-  id              String              @id @default(cuid())
+model InstructorLecture {
+  id              String        @id @default(cuid())
   instructorId    String
   courseId        String
   title           String?
   deliveredAt     DateTime
   durationMinutes Int
-  status          LectureRecordStatus @default(DRAFT)
+  status          LectureStatus @default(DRAFT)
   notes           String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  instructor      User                @relation("InstructorLectures", fields: [instructorId], references: [id])
-  course          Course              @relation(fields: [courseId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  instructor      User          @relation("InstructorLectures", fields: [instructorId], references: [id])
+  course          Course        @relation(fields: [courseId], references: [id])
 
-  @@index([instructorId])
+  @@index([instructorId, status])
   @@index([courseId])
-  @@index([status])
   @@index([deliveredAt])
-  @@map("lecture_records")
+  @@map("instructor_lectures")
 }
 
 model CourseBundle {
@@ -1392,41 +1391,4 @@ model WebhookEvent {
   createdAt   DateTime  @default(now())
 }
 
-enum ExternalLectureStatus {
-  SCHEDULED
-  COMPLETED
-  CANCELLED
-}
 
-model ExternalInstructor {
-  id        String    @id @default(cuid())
-  name      String
-  email     String?
-  phone     String?
-  specialty String?
-  notes     String?
-  isActive  Boolean   @default(true)
-  lectures  ExternalLecture[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-}
-
-model ExternalLecture {
-  id              String                @id @default(cuid())
-  instructor      ExternalInstructor    @relation(fields: [instructorId], references: [id])
-  instructorId    String
-  courseId        String
-  title           String?
-  lectureDate     DateTime
-  durationMinutes Int
-  status          ExternalLectureStatus @default(SCHEDULED)
-  notes           String?
-  createdById     String
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-
-  @@index([instructorId])
-  @@index([courseId])
-  @@index([lectureDate])
-  @@index([status])
-}

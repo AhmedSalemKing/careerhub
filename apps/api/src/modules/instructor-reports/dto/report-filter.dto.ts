@@ -1,24 +1,27 @@
 import { IsOptional, IsString, IsDateString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ReportFilterDto {
-  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   instructorId?: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   courseId?: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
-  dateFrom?: string;
+  from?: string;
 
-  @ApiPropertyOptional()
   @IsOptional()
   @IsDateString()
-  dateTo?: string;
+  to?: string;
+
+  /**
+   * Accepted because the web API client appends `country` to every request.
+   * It is intentionally not used to filter lecture reports.
+   */
+  @IsOptional()
+  @IsString()
+  country?: string;
 }

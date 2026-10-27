@@ -35,8 +35,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
 import { AuditModule } from './common/services/audit.module';
 import { CsrfModule } from './modules/csrf/csrf.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
-import { ExternalInstructorsModule } from './modules/external-instructors/external-instructors.module';
-import { LectureRecordsModule } from './modules/lecture-records/lecture-records.module';
+import { InstructorReportsModule } from './modules/instructor-reports/instructor-reports.module';
 import { CurrencyInterceptor } from './common/interceptors/currency.interceptor';
 
 @Module({
@@ -115,8 +114,7 @@ import { CurrencyInterceptor } from './common/interceptors/currency.interceptor'
     AuditModule,
     CsrfModule,
     QuizzesModule,
-    ExternalInstructorsModule,
-    LectureRecordsModule,
+    InstructorReportsModule,
   ],
   controllers: [],
   providers: [
