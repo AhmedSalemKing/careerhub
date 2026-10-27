@@ -12,6 +12,8 @@ import {
   Calendar,
   Activity,
   ExternalLink,
+  UserCheck,
+  ClipboardList,
   Menu,
   LogOut,
   X,
@@ -83,6 +85,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: Calendar, labelAr: 'الجلسات', labelEn: 'Sessions', href: `/${locale}/admin/sessions` },
     { icon: TrendingUp, labelAr: 'الإيرادات', labelEn: 'Revenue', href: `/${locale}/admin/revenue` },
     { icon: Activity, labelAr: 'النشاط', labelEn: 'Activity', href: `/${locale}/admin/activity` },
+    { icon: UserCheck, labelAr: 'المدربون الخارجيون', labelEn: 'Ext. Instructors', href: `/${locale}/admin/external-instructors` },
+    { icon: ClipboardList, labelAr: 'المحاضرات الخارجية', labelEn: 'Ext. Lectures', href: `/${locale}/admin/external-lectures` },
     { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/admin/site-settings` },
     { icon: ExternalLink, labelAr: 'الموقع الرئيسي', labelEn: 'Main Site', href: `/${locale}` },
   ]
