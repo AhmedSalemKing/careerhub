@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
+import { useTheme } from 'next-themes'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
@@ -116,15 +117,8 @@ export default function AdminCreateCoursePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const check = () => setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
-    check()
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    media.addEventListener('change', check)
-    return () => media.removeEventListener('change', check)
-  }, [])
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')

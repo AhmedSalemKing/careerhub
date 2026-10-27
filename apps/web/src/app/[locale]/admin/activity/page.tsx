@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
+import { useTheme } from 'next-themes'
 import { get } from '../../../../lib/api'
 import { formatMoney } from '../../../../lib/market'
 import {
@@ -112,7 +113,8 @@ function actionColor(action: string): string {
 export default function ActivityPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
-  const [isDark, setIsDark] = useState(false)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const [activeTab, setActiveTab] = useState('ALL')
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -126,14 +128,6 @@ export default function ActivityPage() {
   const [filterTo, setFilterTo] = useState('')
   const [page, setPage] = useState(1)
   const limit = 20
-
-  useEffect(() => {
-    const check = () => setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches)
-    check()
-    const media = window.matchMedia('(prefers-color-scheme: dark)')
-    media.addEventListener('change', check)
-    return () => media.removeEventListener('change', check)
-  }, [])
 
   const queryType = activeTab === 'ALL' ? undefined : activeTab === 'LOGIN' ? 'LOGIN' : activeTab === 'COURSE' ? 'ENROLL_COURSE,COMPLETE_LESSON,WATCH_LESSON,VIEW_COURSES' : activeTab === 'SESSION' ? 'BOOK_SESSION' : 'PAYMENT_SUCCESS,PAYMENT'
 
