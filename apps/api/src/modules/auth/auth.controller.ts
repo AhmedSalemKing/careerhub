@@ -534,6 +534,7 @@ export class AuthController {
         status: user.status,
         profile: user.profile,
         isNewUser: user.isNewUser || false,
+        accessToken: tokens.accessToken,
       }));
 
       if (user.isNewUser) {

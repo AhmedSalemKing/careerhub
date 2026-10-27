@@ -19,42 +19,23 @@ export default function GoogleAuthSuccess() {
     const handleSuccess = async () => {
       try {
         const data = JSON.parse(decodeURIComponent(dataParam))
-        const user: any = { ...data }
+        const { accessToken, ...rest } = data
+        const user: any = { ...rest }
 
-        const getCookie = (name: string): string | null => {
-          if (typeof document === 'undefined') return null
-          const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
-          return match ? decodeURIComponent(match[1]) : null
+        // Clear token from URL immediately (security: won't stay in browser history)
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', window.location.pathname)
         }
 
-        let accessToken = getCookie('access_token') || getCookie('auth_token') || getCookie('careerhub_token')
-
-        if (accessToken) {
-          localStorage.setItem('careerhub_token', accessToken)
-          localStorage.setItem('deveway_token', accessToken)
-          document.cookie = `careerhub_token=${accessToken}; path=/; max-age=${7 * 24 * 3600}; SameSite=None; Secure`
-          setToken(accessToken)
-        } else {
-          try {
-            const res = await api.get('/auth/me', { withCredentials: true } as any)
-            const me = res.data?.data || res.data?.user || res.data
-            if (me) {
-              Object.assign(user, me)
-            }
-          } catch (e: any) {
-            const status = e?.response?.status
-            const code = e?.response?.data?.code || e?.response?.data?.message
-            if (status === 401 && code === 'ACCOUNT_DELETED') {
-              router.push('/ar/login?error=account_deleted')
-              return
-            }
-            if (status === 401) {
-              router.push('/ar/login')
-              return
-            }
-            // ignore other errors
-          }
+        if (!accessToken) {
+          router.push('/ar/login')
+          return
         }
+
+        localStorage.setItem('careerhub_token', accessToken)
+        localStorage.setItem('deveway_token', accessToken)
+        document.cookie = `careerhub_token=${accessToken}; path=/; max-age=${7 * 24 * 3600}; SameSite=None; Secure`
+        setToken(accessToken)
 
         if (user.status === 'PENDING') {
           localStorage.setItem('careerhub_user', JSON.stringify(user))
