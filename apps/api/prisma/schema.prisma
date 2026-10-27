@@ -30,6 +30,12 @@ enum AssessmentStatus {
   EXPIRED
 }
 
+enum LectureRecordStatus {
+  DRAFT
+  COMPLETED
+  CANCELLED
+}
+
 enum CourseStatus {
   DRAFT
   PENDING_REVIEW
@@ -157,6 +163,7 @@ model User {
   activities           UserActivity[]
   walletTransactions   WalletTransaction[]
   coachingCredits      CoachingCredit[]
+  lectureRecords       LectureRecord[]  @relation("InstructorLectures")
 
   @@index([email])
   @@index([role])
@@ -385,6 +392,7 @@ model Course {
   ratings      Rating[]
   bundles     BundleCourse[]
   quizzes     Quiz[]
+  lectureRecords LectureRecord[]
 
   @@index([status])
   @@index([isFeatured])
@@ -393,6 +401,27 @@ model Course {
   @@index([categoryId])
   @@index([status, createdAt])
   @@index([careerPathId, status])
+}
+
+model LectureRecord {
+  id              String              @id @default(cuid())
+  instructorId    String
+  courseId        String
+  title           String?
+  deliveredAt     DateTime
+  durationMinutes Int
+  status          LectureRecordStatus @default(DRAFT)
+  notes           String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  instructor      User                @relation("InstructorLectures", fields: [instructorId], references: [id])
+  course          Course              @relation(fields: [courseId], references: [id])
+
+  @@index([instructorId])
+  @@index([courseId])
+  @@index([status])
+  @@index([deliveredAt])
+  @@map("lecture_records")
 }
 
 model CourseBundle {
