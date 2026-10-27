@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExternalReportService } from '../../src/modules/external-instructors/external-report.service';
-import { PrismaService } from '../../src/prisma/prisma.service';
+import { ExternalReportService } from './external-report.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ExternalLectureStatus } from '@prisma/client';
 
 const makeLecture = (overrides: Partial<any> = {}) => ({
