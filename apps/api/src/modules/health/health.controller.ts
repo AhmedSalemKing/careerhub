@@ -17,12 +17,8 @@ export class HealthController {
   @Get()
   @ApiOperation({ summary: 'Get basic health status' })
   @ApiResponse({ status: 200, description: 'Health status retrieved successfully' })
-  async getHealth() {
-    const health = await this.healthService.getBasicHealth();
-    return {
-      success: true,
-      data: health,
-    };
+  getHealth() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
   }
 
   @Get('detailed')
