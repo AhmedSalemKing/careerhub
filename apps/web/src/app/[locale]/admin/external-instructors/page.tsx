@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { api } from '../../../../lib/api'
 import { UserCheck, Plus, Pencil, Trash2, BarChart2, ChevronRight } from 'lucide-react'
+import { CAREER_PATHS } from '../../../../lib/career-paths'
 
 interface ExternalInstructor {
   id: string
@@ -26,6 +27,7 @@ export default function ExternalInstructorsPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', specialty: '', notes: '', isActive: true })
   const [saving, setSaving] = useState(false)
   const [includeInactive, setIncludeInactive] = useState(false)
+  const [specialtySearch, setSpecialtySearch] = useState('')
 
   async function load() {
     setLoading(true)
@@ -41,12 +43,14 @@ export default function ExternalInstructorsPage() {
   function openCreate() {
     setEditing(null)
     setForm({ name: '', email: '', phone: '', specialty: '', notes: '', isActive: true })
+    setSpecialtySearch('')
     setShowForm(true)
   }
 
   function openEdit(inst: ExternalInstructor) {
     setEditing(inst)
     setForm({ name: inst.name, email: inst.email ?? '', phone: inst.phone ?? '', specialty: inst.specialty ?? '', notes: '', isActive: inst.isActive })
+    setSpecialtySearch('')
     setShowForm(true)
   }
 
@@ -152,8 +156,6 @@ export default function ExternalInstructorsPage() {
               { key: 'name', label: isAr ? 'الاسم *' : 'Name *' },
               { key: 'email', label: isAr ? 'البريد الإلكتروني' : 'Email' },
               { key: 'phone', label: isAr ? 'الهاتف' : 'Phone' },
-              { key: 'specialty', label: isAr ? 'التخصص' : 'Specialty' },
-              { key: 'notes', label: isAr ? 'ملاحظات' : 'Notes' },
             ].map(({ key, label }) => (
               <div key={key} style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: 'var(--muted)' }}>{label}</label>
@@ -164,6 +166,58 @@ export default function ExternalInstructorsPage() {
                 />
               </div>
             ))}
+
+            {/* Specialty — searchable dropdown */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: 'var(--muted)' }}>
+                {isAr ? 'التخصص' : 'Specialty'}
+              </label>
+              <input
+                placeholder={isAr ? 'بحث في التخصصات...' : 'Search specialties...'}
+                value={specialtySearch}
+                onChange={e => setSpecialtySearch(e.target.value)}
+                style={{ width: '100%', padding: '7px 12px', borderRadius: '8px 8px 0 0', border: '1px solid var(--border)', borderBottom: 'none', background: 'var(--surface)', color: 'var(--foreground)', fontSize: 13, boxSizing: 'border-box' }}
+              />
+              <select
+                value={form.specialty}
+                onChange={e => setForm(f => ({ ...f, specialty: e.target.value }))}
+                size={6}
+                style={{ width: '100%', padding: '4px 8px', borderRadius: '0 0 8px 8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', fontSize: 13, boxSizing: 'border-box' }}
+              >
+                <option value="">{isAr ? '— اختر التخصص —' : '— Select specialty —'}</option>
+                {CAREER_PATHS.map(cat => {
+                  const q = specialtySearch.toLowerCase()
+                  const filtered = q
+                    ? cat.paths.filter(p => p.title.toLowerCase().includes(q) || p.titleAr.includes(q))
+                    : cat.paths
+                  if (!filtered.length) return null
+                  return (
+                    <optgroup key={cat.category} label={cat.category}>
+                      {filtered.map(p => (
+                        <option key={p.id} value={p.title}>
+                          {isAr ? `${p.titleAr} — ${p.title}` : p.title}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
+              </select>
+              {form.specialty && (
+                <div style={{ marginTop: 4, fontSize: 12, color: '#5120C8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>{isAr ? 'المختار: ' : 'Selected: '}<strong>{form.specialty}</strong></span>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, specialty: '' }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 12 }}>✕</button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 4, color: 'var(--muted)' }}>{isAr ? 'ملاحظات' : 'Notes'}</label>
+              <input
+                value={form.notes}
+                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
+              />
+            </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer' }}>
               <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
               <span style={{ fontSize: 14 }}>{isAr ? 'نشط' : 'Active'}</span>
