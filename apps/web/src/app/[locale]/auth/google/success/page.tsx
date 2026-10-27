@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
+import { api } from '@/lib/api'
 
 export default function GoogleAuthSuccess() {
   const searchParams = useSearchParams()
@@ -15,42 +16,63 @@ export default function GoogleAuthSuccess() {
       return
     }
 
-    try {
-      const data = JSON.parse(decodeURIComponent(dataParam))
-      const { accessToken, ...user } = data
+    const handleSuccess = async () => {
+      try {
+        const data = JSON.parse(decodeURIComponent(dataParam))
+        const user: any = { ...data }
 
-      // Handle PENDING status - redirect to pending page
-      if (user.status === 'PENDING') {
-        localStorage.setItem('careerhub_token', accessToken)
-        localStorage.setItem('deveway_token', accessToken)
+        const getCookie = (name: string): string | null => {
+          if (typeof document === 'undefined') return null
+          const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+          return match ? decodeURIComponent(match[1]) : null
+        }
+
+        let accessToken = getCookie('access_token') || getCookie('auth_token') || getCookie('careerhub_token')
+
+        if (accessToken) {
+          localStorage.setItem('careerhub_token', accessToken)
+          localStorage.setItem('deveway_token', accessToken)
+          document.cookie = `careerhub_token=${accessToken}; path=/; max-age=${7 * 24 * 3600}; SameSite=None; Secure`
+          setToken(accessToken)
+        } else {
+          try {
+            const res = await api.get('/auth/me')
+            const me = res.data?.data || res.data?.user || res.data
+            if (me) {
+              Object.assign(user, me)
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        if (user.status === 'PENDING') {
+          localStorage.setItem('careerhub_user', JSON.stringify(user))
+          localStorage.setItem('deveway_user', JSON.stringify(user))
+          setUser(user)
+          router.push('/ar/pending-approval')
+          return
+        }
+
         localStorage.setItem('careerhub_user', JSON.stringify(user))
         localStorage.setItem('deveway_user', JSON.stringify(user))
-        setToken(accessToken)
+
         setUser(user)
-        router.push('/ar/pending-approval')
-        return
+
+        window.dispatchEvent(new Event('auth:updated'))
+
+        const locale = 'ar'
+        if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
+          router.push(`/${locale}/admin`)
+        } else {
+          router.push(`/${locale}/dashboard`)
+        }
+      } catch (e) {
+        router.push('/ar/login?error=parse_failed')
       }
-
-      localStorage.setItem('careerhub_token', accessToken)
-      localStorage.setItem('deveway_token', accessToken)
-      localStorage.setItem('careerhub_user', JSON.stringify(user))
-      localStorage.setItem('deveway_user', JSON.stringify(user))
-      document.cookie = `careerhub_token=${accessToken}; path=/; max-age=${7 * 24 * 3600}; SameSite=None; Secure`
-
-      setToken(accessToken)
-      setUser(user)
-
-      window.dispatchEvent(new Event('auth:updated'))
-
-      const locale = 'ar'
-      if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
-        router.push(`/${locale}/admin`)
-      } else {
-        router.push(`/${locale}/dashboard`)
-      }
-    } catch (e) {
-      router.push('/ar/login?error=parse_failed')
     }
+
+    handleSuccess()
   }, [searchParams, router, setToken, setUser])
 
   return (

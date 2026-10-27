@@ -511,13 +511,28 @@ export class AuthController {
       // Only issue token for ACTIVE users
       const tokens = await this.authService.generateTokens(user);
 
+      // Set cookies with the token
+      res.cookie('auth_token', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/',
+      });
+      res.cookie('access_token', tokens.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 15 * 60 * 1000,
+        path: '/',
+      });
+
       const userData = encodeURIComponent(JSON.stringify({
         id: user.id,
         email: user.email,
         accountType: user.accountType,
         status: user.status,
         profile: user.profile,
-        accessToken: tokens.accessToken,
         isNewUser: user.isNewUser || false,
       }));
 
@@ -529,7 +544,6 @@ export class AuthController {
           lastName: user.profile?.lastName || '',
           avatar: user.profile?.avatar || '',
           googleId: user.googleId,
-          accessToken: tokens.accessToken,
           userId: user.id,
         }));
         res.redirect(`${frontendUrl}/ar/register?google=${googleParam}&step=2`);
