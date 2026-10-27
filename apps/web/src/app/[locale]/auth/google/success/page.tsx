@@ -36,13 +36,23 @@ export default function GoogleAuthSuccess() {
           setToken(accessToken)
         } else {
           try {
-            const res = await api.get('/auth/me')
+            const res = await api.get('/auth/me', { withCredentials: true } as any)
             const me = res.data?.data || res.data?.user || res.data
             if (me) {
               Object.assign(user, me)
             }
-          } catch (e) {
-            // ignore
+          } catch (e: any) {
+            const status = e?.response?.status
+            const code = e?.response?.data?.code || e?.response?.data?.message
+            if (status === 401 && code === 'ACCOUNT_DELETED') {
+              router.push('/ar/login?error=account_deleted')
+              return
+            }
+            if (status === 401) {
+              router.push('/ar/login')
+              return
+            }
+            // ignore other errors
           }
         }
 
@@ -51,6 +61,11 @@ export default function GoogleAuthSuccess() {
           localStorage.setItem('deveway_user', JSON.stringify(user))
           setUser(user)
           router.push('/ar/pending-approval')
+          return
+        }
+
+        if (!user || !user.id) {
+          router.push('/ar/login')
           return
         }
 
