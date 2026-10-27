@@ -1362,3 +1362,42 @@ model WebhookEvent {
   processedAt DateTime?
   createdAt   DateTime  @default(now())
 }
+
+enum ExternalLectureStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model ExternalInstructor {
+  id        String    @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  specialty String?
+  notes     String?
+  isActive  Boolean   @default(true)
+  lectures  ExternalLecture[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model ExternalLecture {
+  id              String                @id @default(cuid())
+  instructor      ExternalInstructor    @relation(fields: [instructorId], references: [id])
+  instructorId    String
+  courseId        String
+  title           String?
+  lectureDate     DateTime
+  durationMinutes Int
+  status          ExternalLectureStatus @default(SCHEDULED)
+  notes           String?
+  createdById     String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([instructorId])
+  @@index([courseId])
+  @@index([lectureDate])
+  @@index([status])
+}
