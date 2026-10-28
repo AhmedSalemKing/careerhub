@@ -209,9 +209,7 @@ export default function InstructorReportsClient({ country }: { country: string }
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
-  const [activeCurrency, setActiveCurrency] = useState<'SAR' | 'EGP'>(
-    country === 'EG' ? 'EGP' : 'SAR'
-  )
+  const activeCurrency: 'SAR' | 'EGP' = country === 'EG' ? 'EGP' : 'SAR'
 
   useEffect(() => {
     async function loadOptions() {
@@ -253,12 +251,6 @@ export default function InstructorReportsClient({ country }: { country: string }
     setLoaded(true)
     setLoading(false)
   }, [buildParams])
-
-  useEffect(() => {
-    if (loaded) {
-      loadReport()
-    }
-  }, [activeCurrency, loadReport])
 
   async function toggleDetails(instructorId: string) {
     const next = new Set(expanded)
@@ -406,63 +398,25 @@ export default function InstructorReportsClient({ country }: { country: string }
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-            <button
-              onClick={() => setActiveCurrency('SAR')}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
-                background: activeCurrency === 'SAR' ? 'var(--primary)' : 'transparent',
-                color: activeCurrency === 'SAR' ? '#fff' : 'var(--foreground)',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 600,
-                fontFamily: 'inherit',
-                transition: 'background 0.15s',
-              }}
-            >
-              ر.س
-            </button>
-            <button
-              onClick={() => setActiveCurrency('EGP')}
-              style={{
-                padding: '4px 10px',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
-                background: activeCurrency === 'EGP' ? 'var(--primary)' : 'transparent',
-                color: activeCurrency === 'EGP' ? '#fff' : 'var(--foreground)',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 600,
-                fontFamily: 'inherit',
-                transition: 'background 0.15s',
-              }}
-            >
-              ج.م
-            </button>
-          </div>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '9px 18px',
-              borderRadius: 9,
-              background: '#5120C8',
-              color: '#fff',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            <Plus size={16} />
-            {isAr ? 'تسجيل محاضرة' : 'Log Lecture'}
-          </button>
-        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '9px 18px',
+            borderRadius: 9,
+            background: '#5120C8',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          <Plus size={16} />
+          {isAr ? 'تسجيل محاضرة' : 'Log Lecture'}
+        </button>
       </div>
 
       <div
