@@ -1153,6 +1153,7 @@ model ConsultingSession {
   scheduledAt         DateTime
   duration            Int       @default(60)
   actualDuration      Int?
+  dailyRoomName       String?
   status              String    @default("PENDING")
   meetingType         String    @default("zoom")
   meetingLink         String?

@@ -46,6 +46,23 @@ export class DailyService implements OnModuleInit {
     };
   }
 
+  async createConsultingRoom(sessionId: string): Promise<{ roomUrl: string; roomName: string }> {
+    const roomName = `consulting-${sessionId}`;
+    const data = await this.request('/rooms', 'POST', {
+      name: roomName,
+      properties: {
+        enable_chat: true,
+        enable_screenshare: true,
+        max_participants: 2,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 4,
+      },
+    });
+    return {
+      roomUrl: `https://${this.domain}.daily.co/${roomName}`,
+      roomName: data.name,
+    };
+  }
+
   async deleteRoom(roomName: string): Promise<void> {
     try {
       await this.request(`/rooms/${roomName}`, 'DELETE');
@@ -136,16 +153,25 @@ export class DailyService implements OnModuleInit {
 
   async registerWebhook(): Promise<void> {
     const webhookUrl = `${this.appUrl}/api/webhooks/daily`;
+    const requiredEvents = ['recording.ready', 'recording.started', 'meeting.ended'];
     try {
       const existing = await this.request('/webhooks');
-      const alreadyExists = existing?.data?.some((w: any) => w.url === webhookUrl);
-      if (alreadyExists) {
-        this.logger.log('Daily webhook already registered');
-        return;
+      const found = existing?.data?.find((w: any) => w.url === webhookUrl);
+
+      if (found) {
+        const currentEvents: string[] = found.event_types || [];
+        if (requiredEvents.every((e) => currentEvents.includes(e))) {
+          this.logger.log('Daily webhook already registered with all required events');
+          return;
+        }
+        // Recreate with updated event list
+        await this.request(`/webhooks/${found.id}`, 'DELETE');
+        this.logger.log('Daily webhook recreating to add meeting.ended');
       }
+
       await this.request('/webhooks', 'POST', {
         url: webhookUrl,
-        event_types: ['recording.ready', 'recording.started'],
+        event_types: requiredEvents,
       });
       this.logger.log(`Daily webhook registered: ${webhookUrl}`);
     } catch (e) {

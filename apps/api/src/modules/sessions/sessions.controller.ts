@@ -5,11 +5,15 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { PrismaService } from '../../prisma/prisma.service'
+import { DailyService } from '../live/daily.service'
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
 export class SessionsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly dailyService: DailyService,
+  ) {}
 
   @Get('consultants')
   async getConsultants() {
@@ -358,6 +362,40 @@ export class SessionsController {
     }).catch(() => {})
 
     return { success: true }
+  }
+
+  @Post(':id/daily-room')
+  async createDailyRoom(@Param('id') id: string, @Request() req: any) {
+    const session = await this.prisma.consultingSession.findUnique({
+      where: { id },
+      select: { id: true, consultantId: true, studentId: true, dailyRoomName: true, status: true },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+
+    const isParticipant = session.consultantId === req.user.sub || session.studentId === req.user.sub
+    if (!isParticipant) throw new ForbiddenException('Not a participant in this session')
+
+    if (['CANCELLED', 'EXPIRED', 'COMPLETED'].includes(session.status)) {
+      throw new BadRequestException('Cannot create a room for a session that is not active')
+    }
+
+    // Reuse the existing room if already created
+    let roomName = session.dailyRoomName
+    if (!roomName) {
+      const room = await this.dailyService.createConsultingRoom(id)
+      roomName = room.roomName
+      await this.prisma.consultingSession.update({
+        where: { id },
+        data: { dailyRoomName: roomName, meetingType: 'daily' },
+      })
+    }
+
+    const isConsultant = session.consultantId === req.user.sub
+    const token = await this.dailyService.createToken(roomName, isConsultant)
+    const domain = process.env.DAILY_DOMAIN || 'deveway'
+    const roomUrl = `https://${domain}.daily.co/${roomName}`
+
+    return { success: true, data: { roomUrl, token, roomName } }
   }
 
   @Post(':id/pay')
