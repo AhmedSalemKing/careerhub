@@ -209,6 +209,10 @@ export default function InstructorReportsClient({ country }: { country: string }
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
 
+  const [activeCurrency, setActiveCurrency] = useState<'SAR' | 'EGP'>(
+    country === 'EG' ? 'EGP' : 'SAR'
+  )
+
   useEffect(() => {
     async function loadOptions() {
       try {
@@ -226,14 +230,21 @@ export default function InstructorReportsClient({ country }: { country: string }
     loadOptions()
   }, [])
 
+  useEffect(() => {
+    if (loaded) {
+      loadReport()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCurrency])
+
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {}
     if (filterInstructor) params.instructorId = filterInstructor
     if (filterFrom) params.dateFrom = filterFrom
     if (filterTo) params.dateTo = filterTo
-    if (country === 'EG') params.country = 'EG'
+    if (activeCurrency === 'EGP') params.country = 'EG'
     return params
-  }, [filterInstructor, filterFrom, filterTo, country])
+  }, [filterInstructor, filterFrom, filterTo, activeCurrency])
 
   const loadReport = useCallback(async () => {
     setLoading(true)
@@ -396,25 +407,63 @@ export default function InstructorReportsClient({ country }: { country: string }
           </div>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '9px 18px',
-            borderRadius: 9,
-            background: '#5120C8',
-            color: '#fff',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          <Plus size={16} />
-          {isAr ? 'تسجيل محاضرة' : 'Log Lecture'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <button
+              onClick={() => setActiveCurrency('SAR')}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: activeCurrency === 'SAR' ? 'var(--primary)' : 'transparent',
+                color: activeCurrency === 'SAR' ? '#fff' : 'var(--foreground)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                transition: 'background 0.15s',
+              }}
+            >
+              ر.س
+            </button>
+            <button
+              onClick={() => setActiveCurrency('EGP')}
+              style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: activeCurrency === 'EGP' ? 'var(--primary)' : 'transparent',
+                color: activeCurrency === 'EGP' ? '#fff' : 'var(--foreground)',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                transition: 'background 0.15s',
+              }}
+            >
+              ج.م
+            </button>
+          </div>
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '9px 18px',
+              borderRadius: 9,
+              background: '#5120C8',
+              color: '#fff',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            <Plus size={16} />
+            {isAr ? 'تسجيل محاضرة' : 'Log Lecture'}
+          </button>
+        </div>
       </div>
 
       <div
