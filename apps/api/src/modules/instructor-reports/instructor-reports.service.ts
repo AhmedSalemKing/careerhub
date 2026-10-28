@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LectureStatus } from '@prisma/client';
 import { CreateLectureDto } from './dto/create-lecture.dto';
@@ -69,13 +69,16 @@ export class InstructorReportsService {
     if (filter.instructorId) where.instructorId = filter.instructorId;
     if (filter.courseId) where.courseId = filter.courseId;
 
-    if (filter.from || filter.to) {
+    const from = filter.dateFrom ?? filter.from;
+    const to = filter.dateTo ?? filter.to;
+
+    if (from || to) {
       where.deliveredAt = {};
-      if (filter.from) where.deliveredAt.gte = new Date(filter.from);
-      if (filter.to) {
-        const to = new Date(filter.to);
-        to.setUTCHours(23, 59, 59, 999);
-        where.deliveredAt.lte = to;
+      if (from) where.deliveredAt.gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setUTCHours(23, 59, 59, 999);
+        where.deliveredAt.lte = toDate;
       }
     }
 
@@ -139,13 +142,16 @@ export class InstructorReportsService {
     if (filters.instructorId) where.instructorId = filters.instructorId;
     if (filters.courseId) where.courseId = filters.courseId;
 
-    if (filters.from || filters.to) {
+    const from = filters.dateFrom ?? filters.from;
+    const to = filters.dateTo ?? filters.to;
+
+    if (from || to) {
       where.deliveredAt = {};
-      if (filters.from) where.deliveredAt.gte = new Date(filters.from);
-      if (filters.to) {
-        const to = new Date(filters.to);
-        to.setUTCHours(23, 59, 59, 999);
-        where.deliveredAt.lte = to;
+      if (from) where.deliveredAt.gte = new Date(from);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setUTCHours(23, 59, 59, 999);
+        where.deliveredAt.lte = toDate;
       }
     }
 
@@ -195,20 +201,25 @@ export class InstructorReportsService {
   async getCollectiveReport(filter: ReportFilterDto): Promise<CollectiveReport> {
     const where = this.buildCompletedWhere(filter);
 
-    const rows = await this.prisma.instructorLecture.findMany({
-      where,
-      include: {
-        instructor: {
-          select: {
-            id: true,
-            email: true,
-            profile: { select: { firstName: true, lastName: true } },
+    let rows: any[];
+    try {
+      rows = await this.prisma.instructorLecture.findMany({
+        where,
+        include: {
+          instructor: {
+            select: {
+              id: true,
+              email: true,
+              profile: { select: { firstName: true, lastName: true } },
+            },
           },
+          course: { select: { id: true, titleAr: true, titleEn: true } },
         },
-        course: { select: { id: true, titleAr: true, titleEn: true } },
-      },
-      orderBy: [{ instructorId: 'asc' }, { deliveredAt: 'asc' }],
-    });
+        orderBy: [{ instructorId: 'asc' }, { deliveredAt: 'asc' }],
+      });
+    } catch (e: any) {
+      throw new InternalServerErrorException('DB query failed: ' + e.message);
+    }
 
     const instructorMap = new Map<string, InstructorReport>();
 

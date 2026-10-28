@@ -100,6 +100,7 @@ export default function InstructorReportsPage() {
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [exportingPdf, setExportingPdf] = useState(false)
 
   const [filterInstructor, setFilterInstructor] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
@@ -134,8 +135,8 @@ export default function InstructorReportsPage() {
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {}
     if (filterInstructor) params.instructorId = filterInstructor
-    if (filterFrom) params.from = filterFrom
-    if (filterTo) params.to = filterTo
+    if (filterFrom) params.dateFrom = filterFrom
+    if (filterTo) params.dateTo = filterTo
     return params
   }, [filterInstructor, filterFrom, filterTo])
 
@@ -197,6 +198,25 @@ export default function InstructorReportsPage() {
       console.error('[InstructorReports] export error', e)
     }
     setExporting(false)
+  }
+
+  async function exportPdf() {
+    setExportingPdf(true)
+    try {
+      const res = await api.get('/instructor-reports/report/export/pdf', {
+        params: buildParams(),
+        responseType: 'blob',
+      })
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `instructor-report-${Date.now()}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('[InstructorReports] pdf export error', e)
+    }
+    setExportingPdf(false)
   }
 
   async function saveLecture() {
@@ -363,6 +383,32 @@ export default function InstructorReportsPage() {
           >
             <FileSpreadsheet size={15} />
             {exporting ? (isAr ? 'جاري التصدير...' : 'Exporting...') : isAr ? 'تصدير Excel' : 'Export Excel'}
+          </button>
+          <button
+            onClick={exportPdf}
+            disabled={exportingPdf || !report}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '9px 16px',
+              borderRadius: 9,
+              background: '#dc2626',
+              color: '#fff',
+              border: 'none',
+              cursor: exportingPdf || !report ? 'not-allowed' : 'pointer',
+              fontSize: 13,
+              fontWeight: 700,
+              opacity: exportingPdf || !report ? 0.65 : 1,
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="9" y1="13" x2="15" y2="13" />
+              <line x1="9" y1="17" x2="15" y2="17" />
+            </svg>
+            {exportingPdf ? (isAr ? 'جاري التصدير...' : 'Exporting...') : isAr ? 'تصدير PDF' : 'Export PDF'}
           </button>
         </div>
       </div>

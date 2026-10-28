@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { InstructorReportsService } from './instructor-reports.service';
 import { ExcelExportService } from './excel-export.service';
+import { PdfExportService } from './pdf-export.service';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { ReportFilterDto } from './dto/report-filter.dto';
@@ -30,6 +31,7 @@ export class InstructorReportsController {
   constructor(
     private readonly reportService: InstructorReportsService,
     private readonly excelService: ExcelExportService,
+    private readonly pdfService: PdfExportService,
   ) {}
 
   // Static routes must be declared before dynamic routes.
@@ -39,6 +41,21 @@ export class InstructorReportsController {
   async getCollectiveReport(@Query() filter: ReportFilterDto) {
     const data = await this.reportService.getCollectiveReport(filter);
     return { success: true, data };
+  }
+
+  @Get('report/export/pdf')
+  @ApiOperation({ summary: 'Export instructor report as PDF' })
+  async exportPdf(@Query() filter: ReportFilterDto, @Res() res: Response) {
+    const dateFrom = filter.dateFrom ?? filter.from;
+    const dateTo = filter.dateTo ?? filter.to;
+    const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo });
+    const buffer = await this.pdfService.build(report.instructors, dateFrom, dateTo);
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="instructor-report-${Date.now()}.pdf"`,
+      'Content-Length': buffer.length,
+    });
+    res.end(buffer);
   }
 
   @Get('report/export/xlsx')
