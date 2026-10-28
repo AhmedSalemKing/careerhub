@@ -39,11 +39,13 @@ export interface InstructorLectureItem {
   courseId: string;
   courseName: string;
   title: string | null;
-  deliveredAt: Date;
+  deliveredAt: string;
   durationMinutes: number;
   hoursDisplay: string;
   status: LectureStatus;
   type: 'live' | 'consulting' | 'manual';
+  activityLabel: string;
+  instructorRole: string;
 }
 
 export interface InstructorDetailReport {
@@ -102,12 +104,15 @@ export class InstructorReportsService {
 
   // Resolve a reliable date from a session row with multiple nullable date fields.
   private resolveDate(
-    ...candidates: (Date | null | undefined)[]
-  ): Date {
-    for (const d of candidates) {
-      if (d && !isNaN(d.getTime())) return d;
+    ...candidates: (Date | string | null | undefined)[]
+  ): string {
+    for (const c of candidates) {
+      if (!c) continue;
+      const d = c instanceof Date ? c : new Date(c);
+      if (!isNaN(d.getTime())) return d.toISOString();
     }
-    return new Date();
+    // Epoch sentinel: frontend safeDate() renders this as '—'
+    return '1970-01-01T00:00:00.000Z';
   }
 
   // Calculate duration in minutes from timestamps, falling back to provided value.
@@ -165,8 +170,10 @@ export class InstructorReportsService {
     instructor: InstructorReport,
     course: CourseReport,
     minutes: number,
-    deliveredAt: Date,
+    deliveredAtInput: Date | string,
   ) {
+    const deliveredAt =
+      deliveredAtInput instanceof Date ? deliveredAtInput : new Date(deliveredAtInput);
     course.lectureCount += 1;
     course.totalMinutes += minutes;
     instructor.totalLectures += 1;
@@ -451,6 +458,13 @@ export class InstructorReportsService {
   ): Promise<InstructorDetailReport> {
     const merged = { ...filter, instructorId };
     const { from, to } = this.resolveDates(merged);
+
+    const userRecord = await this.prisma.user.findUnique({
+      where: { id: instructorId },
+      select: { accountType: true },
+    });
+    const isConsultant = userRecord?.accountType === 'CONSULTANT';
+
     const collective = await this.getCollectiveReport(merged);
 
     const instructor =
@@ -519,11 +533,13 @@ export class InstructorReportsService {
         courseId: row.courseId,
         courseName: row.course.titleAr || row.course.titleEn || row.courseId,
         title: row.title,
-        deliveredAt: row.deliveredAt,
+        deliveredAt: row.deliveredAt.toISOString(),
         durationMinutes: row.durationMinutes,
         hoursDisplay: formatHours(row.durationMinutes),
         status: row.status,
         type: 'manual' as const,
+        activityLabel: 'كورس',
+        instructorRole: isConsultant ? 'CONSULTANT' : 'INSTRUCTOR',
       })),
       ...liveRows.map((session) => {
         const c = courseById.get(session.courseId);
@@ -538,6 +554,8 @@ export class InstructorReportsService {
           hoursDisplay: formatHours(mins),
           status: LectureStatus.COMPLETED,
           type: 'live' as const,
+          activityLabel: 'كورس',
+          instructorRole: 'INSTRUCTOR',
         };
       }),
       ...consultingRows.map((session) => ({
@@ -550,8 +568,10 @@ export class InstructorReportsService {
         hoursDisplay: formatHours(session.duration ?? 60),
         status: LectureStatus.COMPLETED,
         type: 'consulting' as const,
+        activityLabel: 'جلسة',
+        instructorRole: 'CONSULTANT',
       })),
-    ].sort((a, b) => b.deliveredAt.getTime() - a.deliveredAt.getTime());
+    ].sort((a, b) => new Date(b.deliveredAt).getTime() - new Date(a.deliveredAt).getTime());
 
     return {
       generatedAt: collective.generatedAt,

@@ -54,6 +54,8 @@ interface LectureItem {
   hoursDisplay: string
   status: string
   type?: 'live' | 'consulting' | 'manual'
+  activityLabel?: string
+  instructorRole?: string
 }
 
 interface InstructorOption {
@@ -90,11 +92,12 @@ function formatHours(totalMinutes: number) {
   return `${hours} ساعة و${mins} دقيقة`
 }
 
-function safeDate(value: string | null | undefined, arabic: boolean): string {
+function safeDate(value: string | null | undefined): string {
   if (!value) return '—'
   const d = new Date(value)
   if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(arabic ? 'ar-EG' : 'en-GB')
+  if (d.getFullYear() === 1970) return '—'
+  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export default function InstructorReportsPage() {
@@ -525,7 +528,7 @@ export default function InstructorReportsPage() {
                                       <td style={subTdStyle}>{course.courseName}</td>
                                       <td style={subTdStyle}>{course.lectureCount}</td>
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
-                                      <td style={subTdStyle}>{safeDate(course.lastDeliveredAt, isAr)}</td>
+                                      <td style={subTdStyle}>{safeDate(course.lastDeliveredAt)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -557,17 +560,17 @@ export default function InstructorReportsPage() {
                                   <tbody>
                                     {lectures.map((lecture) => (
                                       <tr key={lecture.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={subTdStyle}>{safeDate(lecture.deliveredAt, isAr)}</td>
+                                        <td style={subTdStyle}>{safeDate(lecture.deliveredAt)}</td>
                                         <td style={subTdStyle}>{lecture.courseName}</td>
                                         <td style={subTdStyle}>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                            {lecture.type === 'consulting' ? (
+                                            {(lecture.activityLabel === 'جلسة' || (!lecture.activityLabel && lecture.type === 'consulting')) ? (
                                               <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.12)', color: '#065f46', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                {isAr ? 'جلسة استشارية' : 'Consulting'}
+                                                {lecture.activityLabel || 'جلسة'}
                                               </span>
                                             ) : (
                                               <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                {isAr ? 'محاضرة' : 'Lecture'}
+                                                {lecture.activityLabel || 'كورس'}
                                               </span>
                                             )}
                                             {lecture.title || ''}

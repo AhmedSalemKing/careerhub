@@ -8,11 +8,13 @@ export class PdfExportService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<Buffer> {
-    const pdfMake = await import('pdfmake/build/pdfmake');
-    const pdfFonts = await import('pdfmake/build/vfs_fonts');
-    (pdfMake as any).vfs =
-      (pdfFonts as any).pdfMake?.vfs ??
-      (pdfFonts as any).default?.pdfMake?.vfs;
+    const pdfMakeModule = await import('pdfmake/build/pdfmake');
+    const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
+    const pdfMake: any = (pdfMakeModule as any).default ?? pdfMakeModule;
+    pdfMake.vfs =
+      (pdfFontsModule as any).default?.pdfMake?.vfs ??
+      (pdfFontsModule as any).pdfMake?.vfs ??
+      (pdfFontsModule as any).vfs;
 
     const dateRange =
       dateFrom && dateTo
@@ -31,6 +33,15 @@ export class PdfExportService {
     ];
 
     for (const r of instructors) {
+      if (r.courses.length === 0) {
+        body.push([
+          { text: r.nameAr, bold: true },
+          '-',
+          { text: '0', alignment: 'center' },
+          { text: '0 ساعة', alignment: 'center' },
+        ]);
+        continue;
+      }
       for (let i = 0; i < r.courses.length; i++) {
         const c = r.courses[i];
         const hours = (c.totalMinutes / 60).toFixed(1) + ' س';
@@ -126,7 +137,7 @@ export class PdfExportService {
 
     return new Promise((resolve, reject) => {
       try {
-        (pdfMake as any).createPdf(doc).getBuffer((buf: Buffer) => resolve(buf));
+        pdfMake.createPdf(doc).getBuffer((buf: Buffer) => resolve(buf));
       } catch (e) {
         reject(e);
       }
