@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { api } from '../../../../lib/api'
+import { formatMoney, getCountryClient } from '../../../../lib/market'
 import {
   BarChart3,
   Users,
@@ -45,6 +46,7 @@ interface CourseReport {
   paidEnrollments?: number
   freeEnrollments?: number
   grossSales?: number
+  grossSalesDisplay?: string
   refunds?: number
   netRevenue?: number
   publishedAt?: string | Date | null
@@ -68,6 +70,7 @@ interface InstructorReport {
   totalTeachingMinutes?: number
   totalStudents?: number
   totalRevenue?: number
+  totalRevenueDisplay?: string
   courses: CourseReport[]
   totalLectures: number
   totalMinutes: number
@@ -88,6 +91,7 @@ interface ConsultantSessionDetail {
   currency?: string
   paymentStatus?: string
   paidAmount?: number
+  paidAmountDisplay?: string
   refundAmount?: number
 }
 
@@ -176,20 +180,6 @@ function safeDate(value: string | null | undefined): string {
   return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-function formatAmount(amount: number | undefined | null, currency = 'USD'): string {
-  if (!amount || amount <= 0) return '—'
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(amount)
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`
-  }
-}
-
 export default function InstructorReportsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -241,6 +231,7 @@ export default function InstructorReportsPage() {
     if (filterInstructor) params.instructorId = filterInstructor
     if (filterFrom) params.dateFrom = filterFrom
     if (filterTo) params.dateTo = filterTo
+    if (getCountryClient() === 'EG') params.country = 'EG'
     return params
   }, [filterInstructor, filterFrom, filterTo])
 
@@ -601,7 +592,7 @@ export default function InstructorReportsPage() {
                         <td style={tdStyle}>{totalLessons}</td>
                         <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
                         <td style={tdStyle}>{totalStudents}</td>
-                        <td style={tdStyle}>{totalRevenue > 0 ? formatAmount(totalRevenue) : '—'}</td>
+                        <td style={tdStyle}>{formatMoney(totalRevenue, (instructor as any).totalRevenueDisplay)}</td>
                         <td style={tdStyle}>
                           <button
                             onClick={() => toggleDetails(instructor.instructorId)}
@@ -652,7 +643,7 @@ export default function InstructorReportsPage() {
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
                                       <td style={subTdStyle}>{course.enrolledStudents ?? 0}</td>
                                       <td style={subTdStyle}>{course.paidEnrollments ?? 0}</td>
-                                      <td style={subTdStyle}>{formatAmount(course.grossSales ?? course.netRevenue, course.courseCurrency || 'USD')}</td>
+                                      <td style={subTdStyle}>{formatMoney(course.grossSales ?? course.netRevenue, course.grossSalesDisplay)}</td>
                                       <td style={subTdStyle}>{safeDate(course.publishedAt || course.lastDeliveredAt)}</td>
                                     </tr>
                                   ))}
@@ -794,7 +785,7 @@ export default function InstructorReportsPage() {
                                         <td style={subTdStyle}>{safeDate(session.scheduledAt as string | null)}</td>
                                         <td style={subTdStyle}>{session.actualDurationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
                                         <td style={subTdStyle}>{session.sessionStatus}</td>
-                                        <td style={subTdStyle}>{formatAmount(session.paidAmount, session.currency || 'SAR')}</td>
+                                        <td style={subTdStyle}>{formatMoney(session.paidAmount, session.paidAmountDisplay)}</td>
                                       </tr>
                                     ))}
                                   </tbody>

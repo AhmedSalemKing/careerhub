@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
 import { LectureStatus, LiveSessionStatus, CourseStatus } from '@prisma/client';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
@@ -35,6 +36,7 @@ export interface CourseReport {
   paidEnrollments?: number;
   freeEnrollments?: number;
   grossSales?: number;
+  grossSalesDisplay?: string;
   refunds?: number;
   netRevenue?: number;
   publishedAt?: Date | string | null;
@@ -58,6 +60,7 @@ export interface InstructorReport {
   totalTeachingMinutes?: number;
   totalStudents?: number;
   totalRevenue?: number;
+  totalRevenueDisplay?: string;
   courses: CourseReport[];
   totalLectures: number; // backward compat
   totalMinutes: number;
@@ -78,6 +81,7 @@ export interface ConsultantSessionDetail {
   currency?: string;
   paymentStatus?: string;
   paidAmount?: number;
+  paidAmountDisplay?: string;
   refundAmount?: number;
 }
 
@@ -144,7 +148,10 @@ const CONSULTING_COURSE_NAME = 'جلسات استشارية';
 
 @Injectable()
 export class InstructorReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly exchangeRateService: ExchangeRateService,
+  ) {}
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -209,6 +216,20 @@ export class InstructorReportsService {
       if (calculated > 0) return calculated;
     }
     return 0;
+  }
+
+  // Format a SAR amount for display, converting to EGP when country === 'EG'.
+  // egpRate must be pre-fetched once per request (not per call) to avoid N+1 awaits.
+  private formatMoneyDisplay(sarAmount: number, country?: string | null, egpRate?: number | null): string {
+    if (!sarAmount || sarAmount <= 0) return '—';
+    if (country === 'EG' && egpRate) {
+      return new Intl.NumberFormat('ar-EG', {
+        style: 'currency', currency: 'EGP', minimumFractionDigits: 0,
+      }).format(sarAmount * egpRate);
+    }
+    return new Intl.NumberFormat('ar-SA', {
+      style: 'currency', currency: 'SAR', minimumFractionDigits: 0,
+    }).format(sarAmount);
   }
 
   // ─── Aggregation helpers ──────────────────────────────────────────────────
@@ -404,9 +425,15 @@ export class InstructorReportsService {
    */
   async getCollectiveReport(filter: ReportFilterDto): Promise<CollectiveReport> {
     const { from, to } = this.resolveDates(filter);
+    const country = filter.country ?? null;
     console.log('[REPORT] getCollectiveReport called with filter:', JSON.stringify(filter));
 
     try {
+      // Pre-fetch EGP rate once so formatMoneyDisplay can be called synchronously later.
+      const egpRate: number | null = country === 'EG'
+        ? await this.exchangeRateService.getSARtoEGPRate().catch(() => 15.0027)
+        : null;
+
       // ── Step 1: Pre-populate ALL active instructors/consultants ───────────
       // This guarantees every instructor appears even with 0 entries.
       const allUsers = await this.prisma.user.findMany({
@@ -723,6 +750,9 @@ export class InstructorReportsService {
           currency: 'SAR',
           paymentStatus: session.paymentStatus,
           paidAmount: session.paymentStatus === 'PAID' ? (session.price || 0) : 0,
+          paidAmountDisplay: session.paymentStatus === 'PAID'
+            ? this.formatMoneyDisplay(session.price || 0, country, egpRate)
+            : '—',
           refundAmount: 0,
         });
         if (session.paymentStatus === 'PAID') {
@@ -778,11 +808,13 @@ export class InstructorReportsService {
           (c as any).enrolledStudents = students;
           (c as any).grossSales = revenue;
           (c as any).netRevenue = revenue;
+          (c as any).grossSalesDisplay = this.formatMoneyDisplay(revenue, country, egpRate);
           totalStudents += students;
           totalRevenue += revenue;
         }
         (inst as any).totalStudents = totalStudents;
         (inst as any).totalRevenue = totalRevenue;
+        (inst as any).totalRevenueDisplay = this.formatMoneyDisplay(totalRevenue, country, egpRate);
         // add lessons/liveSessions details
         for (const c of inst.courses) {
           if (!(c as any).lessons) (c as any).lessons = [];
