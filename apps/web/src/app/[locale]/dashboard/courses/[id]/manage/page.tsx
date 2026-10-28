@@ -1514,9 +1514,7 @@ export default function ManageCoursePage() {
 
   const isLiveCourse =
     course?.type?.toLowerCase() === 'live' ||
-    course?.courseType?.toLowerCase() === 'live' ||
-    !!course?.liveSession ||
-    !!course?.liveStatus
+    course?.courseType?.toLowerCase() === 'live'
 
   return (
     <AuthGate>
