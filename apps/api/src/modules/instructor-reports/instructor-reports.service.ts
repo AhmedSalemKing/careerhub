@@ -740,7 +740,7 @@ export class InstructorReportsService {
         const st = (session.status || '').toUpperCase();
         if (st === 'COMPLETED') cons.completedCount += 1;
         if (st === 'CANCELLED' || st === 'NO_SHOW') cons.cancelledCount += 1;
-        cons.totalActualMinutes += mins;
+        if (st === 'COMPLETED') cons.totalActualMinutes += mins;
         const resolvedScheduledAt = this.resolveDate(session.scheduledAt, session.completedAt, session.paidAt);
         cons.sessions.push({
           sessionId: session.id,
@@ -1116,5 +1116,26 @@ export class InstructorReportsService {
 
     this.logger.log(`Backfill complete: updated=${updated} failed=${failed} skipped=${skipped}`);
     return { updated, failed, skipped };
+  }
+
+  async backfillPublishedAt(): Promise<{ updated: number }> {
+    const courses = await this.prisma.course.findMany({
+      where: { status: CourseStatus.PUBLISHED, publishedAt: null },
+      select: { id: true, updatedAt: true, createdAt: true },
+    });
+
+    this.logger.log(`backfillPublishedAt: found ${courses.length} published course(s) with null publishedAt`);
+
+    let updated = 0;
+    for (const course of courses) {
+      await this.prisma.course.update({
+        where: { id: course.id },
+        data: { publishedAt: course.updatedAt ?? course.createdAt },
+      });
+      updated++;
+    }
+
+    this.logger.log(`backfillPublishedAt: updated ${updated} course(s)`);
+    return { updated };
   }
 }

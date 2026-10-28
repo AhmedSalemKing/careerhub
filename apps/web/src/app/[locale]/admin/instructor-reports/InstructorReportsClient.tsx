@@ -165,6 +165,7 @@ const EMPTY_FORM = {
 }
 
 function formatHours(totalMinutes: number) {
+  if (!totalMinutes || totalMinutes <= 0) return '—'
   const hours = Math.floor(totalMinutes / 60)
   const mins = totalMinutes % 60
   if (mins === 0) return `${hours} ساعة`

@@ -133,4 +133,11 @@ export class InstructorReportsController {
     const result = await this.reportService.backfillVideoDurations();
     return { success: true, data: result };
   }
+
+  @Post('backfill-published-at')
+  @ApiOperation({ summary: 'Backfill Course.publishedAt for published courses that are missing it (admin only)' })
+  async backfillPublishedAt() {
+    const result = await this.reportService.backfillPublishedAt();
+    return { success: true, data: result };
+  }
 }
