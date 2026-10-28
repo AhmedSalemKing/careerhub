@@ -632,7 +632,6 @@ export default function InstructorReportsClient({ country }: { country: string }
                                     <th style={subThStyle}>{isAr ? 'عدد الدروس' : 'Lessons'}</th>
                                     <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
                                     <th style={subThStyle}>{isAr ? 'الطلاب' : 'Students'}</th>
-                                    <th style={subThStyle}>{isAr ? 'المشتركون المدفوعون' : 'Paid'}</th>
                                     <th style={subThStyle}>{isAr ? 'الإيرادات' : 'Revenue'}</th>
                                     <th style={subThStyle}>{isAr ? 'تاريخ النشر' : 'Published'}</th>
                                   </tr>
@@ -644,7 +643,6 @@ export default function InstructorReportsClient({ country }: { country: string }
                                       <td style={subTdStyle}>{course.lessonCount || course.lessons?.length || course.lectureCount || 0}</td>
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
                                       <td style={subTdStyle}>{course.enrolledStudents ?? 0}</td>
-                                      <td style={subTdStyle}>{course.paidEnrollments ?? 0}</td>
                                       <td style={subTdStyle}>{formatMoney(course.grossSales ?? course.netRevenue, course.grossSalesDisplay)}</td>
                                       <td style={subTdStyle}>{safeDate(course.publishedAt || course.lastDeliveredAt)}</td>
                                     </tr>

@@ -519,6 +519,7 @@ export class InstructorReportsService {
         (ce as any).coursePrice = pc.price;
         (ce as any).courseCurrency = pc.currency;
         (ce as any).createdAt = pc.createdAt;
+        (ce as any).publishedAt = pc.createdAt;
       }
 
       if (pubCourseIds.length > 0) {
@@ -546,6 +547,7 @@ export class InstructorReportsService {
             type: true,
             module: { select: { courseId: true } },
             section: { select: { courseId: true } },
+            videoContent: { select: { duration: true } },
           },
         });
         console.log('[REPORT] found lessons:', lessons.length);
@@ -569,15 +571,16 @@ export class InstructorReportsService {
           (courseEntry as any).coursePrice = course.price;
           (courseEntry as any).courseCurrency = course.currency;
           (courseEntry as any).createdAt = course.createdAt;
+          (courseEntry as any).publishedAt = course.createdAt;
           if (!(courseEntry as any).lessons) (courseEntry as any).lessons = [];
-          const mins = this.resolveLessonDuration(lesson.videoDuration);
+          const mins = this.resolveLessonDuration(lesson.videoDuration ?? lesson.videoContent?.duration);
           (courseEntry as any).lessons.push({
             lessonId: lesson.id,
             lessonTitle: lesson.title,
             durationMinutes: mins,
             lessonDate: lesson.createdAt,
             lessonStatus: lesson.isPublished ? 'published' : 'draft',
-            typeBadge: lesson.type === 'LIVE' || lesson.type === 'live' ? 'بث' : 'مسجل',
+            typeBadge: lesson.type === 'LIVE' || lesson.type === 'live' ? 'بث مباشر' : 'مسجل',
           });
           this.addEntry(inst, courseEntry, mins, lesson.createdAt);
         }
@@ -886,6 +889,7 @@ export class InstructorReportsService {
       id: string;
       title: string;
       videoDuration: number | null;
+      videoContentDuration: number | null;
       createdAt: Date;
       courseId: string;
       courseName: string;
@@ -908,6 +912,7 @@ export class InstructorReportsService {
           createdAt: true,
           module: { select: { courseId: true } },
           section: { select: { courseId: true } },
+          videoContent: { select: { duration: true } },
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -921,6 +926,7 @@ export class InstructorReportsService {
           id: lesson.id,
           title: lesson.title,
           videoDuration: lesson.videoDuration,
+          videoContentDuration: lesson.videoContent?.duration ?? null,
           createdAt: lesson.createdAt,
           courseId,
           courseName: course.titleAr || course.titleEn || courseId,
@@ -981,7 +987,7 @@ export class InstructorReportsService {
     // ── Merge and sort all lecture items ──────────────────────────────────
     const lectures: InstructorLectureItem[] = [
       ...lessonRows.map((lesson) => {
-        const mins = this.resolveLessonDuration(lesson.videoDuration);
+        const mins = this.resolveLessonDuration(lesson.videoDuration ?? lesson.videoContentDuration);
         return {
           id: lesson.id,
           courseId: lesson.courseId,
@@ -992,7 +998,7 @@ export class InstructorReportsService {
           hoursDisplay: formatHours(mins),
           status: LectureStatus.COMPLETED,
           type: 'lesson' as const,
-          activityLabel: 'كورس',
+          activityLabel: 'درس',
           instructorRole: 'INSTRUCTOR',
           sessionStatus: 'منشورة',
         };
@@ -1024,7 +1030,7 @@ export class InstructorReportsService {
           hoursDisplay: formatHours(mins),
           status: LectureStatus.COMPLETED,
           type: 'live' as const,
-          activityLabel: 'كورس',
+          activityLabel: 'بث مباشر',
           instructorRole: 'INSTRUCTOR',
           sessionStatus: session.status === LiveSessionStatus.ENDED ? 'مكتملة' : 'جارية',
         };
@@ -1039,7 +1045,7 @@ export class InstructorReportsService {
         hoursDisplay: formatHours(session.duration ?? 60),
         status: LectureStatus.COMPLETED,
         type: 'consulting' as const,
-        activityLabel: 'جلسة',
+        activityLabel: 'استشارة',
         instructorRole: 'CONSULTANT',
         sessionStatus:
           session.status === 'COMPLETED' ? 'مكتملة' :
