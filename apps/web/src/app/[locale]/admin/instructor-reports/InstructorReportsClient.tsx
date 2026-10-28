@@ -230,13 +230,6 @@ export default function InstructorReportsClient({ country }: { country: string }
     loadOptions()
   }, [])
 
-  useEffect(() => {
-    if (loaded) {
-      loadReport()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCurrency])
-
   const buildParams = useCallback(() => {
     const params: Record<string, string> = {}
     if (filterInstructor) params.instructorId = filterInstructor
@@ -260,6 +253,12 @@ export default function InstructorReportsClient({ country }: { country: string }
     setLoaded(true)
     setLoading(false)
   }, [buildParams])
+
+  useEffect(() => {
+    if (loaded) {
+      loadReport()
+    }
+  }, [activeCurrency, loadReport])
 
   async function toggleDetails(instructorId: string) {
     const next = new Set(expanded)
