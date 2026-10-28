@@ -449,6 +449,20 @@ export class InstructorReportsService {
       const pubCourseMap = new Map(pubCourses.map((c) => [c.id, c]));
       const pubCourseIds = [...pubCourseMap.keys()];
 
+      // Pre-populate every published course into its instructor's courses array.
+      // Without this, instructors whose courses have no published lessons show 0 courses.
+      for (const pc of pubCourses) {
+        if (!pc.instructorId || !instructorMap.has(pc.instructorId)) continue;
+        const inst = instructorMap.get(pc.instructorId)!;
+        const courseName = pc.titleAr || pc.titleEn || pc.id;
+        const ce = this.ensureCourse(inst, pc.id, courseName);
+        (ce as any).courseTitle = courseName;
+        (ce as any).courseStatus = pc.status;
+        (ce as any).coursePrice = pc.price;
+        (ce as any).courseCurrency = pc.currency;
+        (ce as any).createdAt = pc.createdAt;
+      }
+
       if (pubCourseIds.length > 0) {
         const lessonWhere: any = {
           isPublished: true,

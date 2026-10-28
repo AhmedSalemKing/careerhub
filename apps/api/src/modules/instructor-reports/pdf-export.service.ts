@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { InstructorReport } from './instructor-reports.service';
+import type { InstructorReport, ConsultantReport } from './instructor-reports.service';
 
 @Injectable()
 export class PdfExportService {
   async build(
     instructors: InstructorReport[],
+    consultants: ConsultantReport[],
     dateFrom?: string,
     dateTo?: string,
   ): Promise<Buffer> {
@@ -26,129 +27,115 @@ export class PdfExportService {
           ? `من ${dateFrom}`
           : 'كل الفترات';
 
-    const body: any[][] = [
+    // Flat instructor summary — one row per instructor, no nested tables
+    const instrBody: any[][] = [
       [
-        { text: 'المحاضر', style: 'h' },
-        { text: 'الكورس', style: 'h' },
-        { text: 'المحاضرات', style: 'h' },
-        { text: 'الساعات', style: 'h' },
+        { text: 'المحاضر', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'الكورسات', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'الدروس', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'ساعات التدريس', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'الطلاب', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'الإيرادات', bold: true, fillColor: '#6366f1', color: '#fff' },
       ],
     ];
-
     for (const r of instructors) {
-      if (r.courses.length === 0) {
-        body.push([
-          { text: r.nameAr, bold: true },
-          '-',
-          { text: '0', alignment: 'center' },
-          { text: '0 ساعة', alignment: 'center' },
-        ]);
-        continue;
-      }
-      for (let i = 0; i < r.courses.length; i++) {
-        const c = r.courses[i];
-        const hours = (c.totalMinutes / 60).toFixed(1) + ' س';
-        body.push([
-          i === 0
-            ? { text: r.nameAr, rowSpan: r.courses.length, bold: true }
-            : {},
-          c.courseName,
-          { text: String(c.lectureCount), alignment: 'center' },
-          { text: hours, alignment: 'center' },
-        ]);
-      }
-      body.push([
-        {
-          text: 'إجمالي: ' + r.nameAr,
-          colSpan: 2,
-          bold: true,
-          fillColor: '#ede9fe',
-        },
-        {},
-        {
-          text: String(r.totalLectures),
-          bold: true,
-          alignment: 'center',
-          fillColor: '#ede9fe',
-        },
-        {
-          text: (r.totalMinutes / 60).toFixed(1) + ' س',
-          bold: true,
-          alignment: 'center',
-          fillColor: '#ede9fe',
-        },
+      const courseCount = (r as any).courseCount ??
+        r.courses.filter((c: any) => c.courseId !== '__consulting__').length;
+      const totalLessons = (r as any).totalLessons ?? r.totalLectures;
+      instrBody.push([
+        r.nameAr || r.nameEn || r.email,
+        String(courseCount),
+        String(totalLessons),
+        r.hoursDisplay || '0 ساعة',
+        String((r as any).totalStudents ?? 0),
+        String((r as any).totalRevenue ?? 0),
       ]);
     }
 
-    const totL = instructors.reduce((s, r) => s + r.totalLectures, 0);
-    const totM = instructors.reduce((s, r) => s + r.totalMinutes, 0);
-    body.push([
+    const content: any[] = [
+      { text: 'تقرير المحاضرين', style: 'title' },
+      { text: `الفترة: ${dateRange}`, style: 'sub', margin: [0, 4, 0, 16] },
+      { text: 'قسم المحاضرين', style: 'sectionHeader', margin: [0, 0, 0, 8] },
       {
-        text: 'الإجمالي الكلي',
-        colSpan: 2,
-        bold: true,
-        fillColor: '#4f46e5',
-        color: '#fff',
-      },
-      {},
-      {
-        text: String(totL),
-        bold: true,
-        alignment: 'center',
-        fillColor: '#4f46e5',
-        color: '#fff',
-      },
-      {
-        text: (totM / 60).toFixed(1) + ' س',
-        bold: true,
-        alignment: 'center',
-        fillColor: '#4f46e5',
-        color: '#fff',
-      },
-    ]);
-
-    const doc: any = {
-      content: [
-        { text: 'تقرير المحاضرين', style: 'title' },
-        {
-          text: `الفترة: ${dateRange}`,
-          style: 'sub',
-          margin: [0, 4, 0, 16],
+        table: {
+          headerRows: 1,
+          widths: [120, 50, 50, 70, 50, 60],
+          body: instrBody,
         },
+        layout: {
+          hLineWidth: (i: number) => (i <= 1 ? 1.5 : 0.5),
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#e5e7eb',
+          vLineColor: () => '#e5e7eb',
+        },
+        margin: [0, 0, 0, 20],
+      },
+    ];
+
+    if (consultants && consultants.length > 0) {
+      const consBody: any[][] = [
+        [
+          { text: 'الاستشاري', bold: true, fillColor: '#7c3aed', color: '#fff' },
+          { text: 'الجلسات', bold: true, fillColor: '#7c3aed', color: '#fff' },
+          { text: 'مكتملة', bold: true, fillColor: '#7c3aed', color: '#fff' },
+          { text: 'ملغاة', bold: true, fillColor: '#7c3aed', color: '#fff' },
+          { text: 'إجمالي الساعات', bold: true, fillColor: '#7c3aed', color: '#fff' },
+        ],
+      ];
+      for (const c of consultants) {
+        consBody.push([
+          c.nameAr || c.nameEn || c.email,
+          String(c.sessionCount),
+          String(c.completedCount),
+          String(c.cancelledCount),
+          c.hoursDisplay || '0 ساعة',
+        ]);
+      }
+      content.push(
+        { text: 'قسم الاستشاريين', style: 'sectionHeader', margin: [0, 0, 0, 8] },
         {
           table: {
             headerRows: 1,
-            widths: ['*', '*', 'auto', 'auto'],
-            body,
+            widths: [120, 50, 50, 50, 80],
+            body: consBody,
           },
           layout: {
-            fillColor: (i: number) => (i === 0 ? '#6366f1' : null),
-            hLineWidth: (i: number) => (i === 0 || i === 1 ? 2 : 0.5),
+            hLineWidth: (i: number) => (i <= 1 ? 1.5 : 0.5),
             vLineWidth: () => 0.5,
-            hLineColor: () => '#6366f1',
+            hLineColor: () => '#e5e7eb',
             vLineColor: () => '#e5e7eb',
           },
         },
-      ],
+      );
+    }
+
+    const doc: any = {
+      content,
       styles: {
         title: { fontSize: 18, bold: true, alignment: 'center', color: '#1e1b4b' },
         sub: { fontSize: 11, alignment: 'center', color: '#6b7280' },
-        h: { bold: true, color: '#fff' },
+        sectionHeader: { fontSize: 13, bold: true, color: '#1e1b4b' },
       },
-      defaultStyle: { font: 'Roboto', fontSize: 10 },
+      defaultStyle: { font: 'Roboto', fontSize: 10, alignment: 'right' },
     };
 
-    return new Promise((resolve, reject) => {
+    const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error('PDF generation timed out after 45s')),
+        45000,
+      );
       try {
-        const tBuild = Date.now();
-        pdfMake.createPdf(doc).getBuffer((buf: Buffer) => {
-          console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
-          resolve(buf);
+        pdfMake.createPdf(doc).getBuffer((buffer: Uint8Array) => {
+          clearTimeout(timeout);
+          resolve(Buffer.from(buffer));
         });
       } catch (e) {
-        console.error('[PDF] error', e);
+        clearTimeout(timeout);
         reject(e);
       }
     });
+
+    console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
+    return pdfBuffer;
   }
 }

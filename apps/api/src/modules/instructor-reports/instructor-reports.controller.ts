@@ -53,7 +53,7 @@ export class InstructorReportsController {
       const dateTo = filter.dateTo ?? filter.to;
       const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo });
       console.log('[PDF] data fetched in', Date.now() - t0, 'ms');
-      const buffer = await this.pdfService.build(report.instructors, dateFrom, dateTo);
+      const buffer = await this.pdfService.build(report.instructors, report.consultants ?? [], dateFrom, dateTo);
       console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
       res.set({
         'Content-Type': 'application/pdf',
