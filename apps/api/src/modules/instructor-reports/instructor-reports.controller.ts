@@ -43,21 +43,75 @@ export class InstructorReportsController {
     return { success: true, data };
   }
 
-  @Get('report/export/pdf')
-  @ApiOperation({ summary: 'Export instructor report as PDF' })
+  @Get('export/excel')
+  @ApiOperation({ summary: 'Export collective instructor report as Excel' })
+  async exportExcel(@Query() filter: ReportFilterDto, @Res() res: Response) {
+    await this.sendExcel(res, filter);
+  }
+
+  @Get('export/excel/:instructorId')
+  @ApiOperation({ summary: 'Export single instructor report as Excel' })
+  async exportExcelSingle(
+    @Param('instructorId') instructorId: string,
+    @Query() filter: ReportFilterDto,
+    @Res() res: Response,
+  ) {
+    await this.sendExcel(res, filter, instructorId);
+  }
+
+  @Get('export/pdf')
+  @ApiOperation({ summary: 'Export collective instructor report as PDF' })
   async exportPdf(@Query() filter: ReportFilterDto, @Res() res: Response) {
+    await this.sendPdf(res, filter);
+  }
+
+  @Get('export/pdf/:instructorId')
+  @ApiOperation({ summary: 'Export single instructor report as PDF' })
+  async exportPdfSingle(
+    @Param('instructorId') instructorId: string,
+    @Query() filter: ReportFilterDto,
+    @Res() res: Response,
+  ) {
+    await this.sendPdf(res, filter, instructorId);
+  }
+
+  private async sendExcel(res: Response, filter: ReportFilterDto, instructorId?: string) {
+    try {
+      const buffer = await this.excelService.generateExcel(filter, instructorId);
+      const suffix = instructorId ? `-${instructorId}` : '';
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="instructor-report${suffix}-${Date.now()}.xlsx"`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (e: any) {
+      console.error('[Excel] export error:', e);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: e?.message || 'Excel export failed' });
+      }
+    }
+  }
+
+  private async sendPdf(res: Response, filter: ReportFilterDto, instructorId?: string) {
     try {
       const t0 = Date.now();
-      console.log('[PDF] export start');
       const dateFrom = filter.dateFrom ?? filter.from;
       const dateTo = filter.dateTo ?? filter.to;
-      const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo });
+      const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo, instructorId });
       console.log('[PDF] data fetched in', Date.now() - t0, 'ms');
-      const buffer = await this.pdfService.build(report.instructors, report.consultants ?? [], dateFrom, dateTo);
+      const buffer = await this.pdfService.build(
+        report.instructors,
+        report.consultants ?? [],
+        dateFrom,
+        dateTo,
+        instructorId,
+      );
       console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
+      const suffix = instructorId ? `-${instructorId}` : '';
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="instructor-report-${Date.now()}.pdf"`,
+        'Content-Disposition': `attachment; filename="instructor-report${suffix}-${Date.now()}.pdf"`,
         'Content-Length': buffer.length,
       });
       res.end(buffer);
@@ -67,19 +121,6 @@ export class InstructorReportsController {
         res.status(500).json({ success: false, message: e?.message || 'PDF export failed' });
       }
     }
-  }
-
-  @Get('report/export/xlsx')
-  @ApiOperation({ summary: 'Export instructor report as Excel' })
-  async exportXlsx(@Query() filter: ReportFilterDto, @Res() res: Response) {
-    const buffer = await this.excelService.generateExcel(filter);
-    res.set({
-      'Content-Type':
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="instructor-report-${Date.now()}.xlsx"`,
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
   }
 
   @Get('report/instructor/:id')

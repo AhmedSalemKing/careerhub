@@ -143,8 +143,8 @@ export function formatHours(minutes: number): string {
 }
 
 // Virtual course id used for consulting sessions (no real courseId)
-const CONSULTING_COURSE_ID = '__consulting__';
-const CONSULTING_COURSE_NAME = 'جلسات استشارية';
+export const CONSULTING_COURSE_ID = '__consulting__';
+export const CONSULTING_COURSE_NAME = 'جلسات استشارية';
 
 @Injectable()
 export class InstructorReportsService {
@@ -262,11 +262,37 @@ export class InstructorReportsService {
     instructor: InstructorReport,
     courseId: string,
     courseName: string,
+    metadata?: {
+      courseStatus?: string;
+      coursePrice?: number;
+      courseCurrency?: string;
+      createdAt?: Date | string | null;
+      publishedAt?: Date | string | null;
+    },
   ): CourseReport {
     let c = instructor.courses.find((x) => x.courseId === courseId);
     if (!c) {
-      c = { courseId, courseName, courseTitle: courseName, lessonCount: 0, lectureCount: 0, totalMinutes: 0, hoursDisplay: '', lastDeliveredAt: null, lessons: [], liveSessions: [] } as any;
+      c = {
+        courseId,
+        courseName,
+        courseTitle: courseName,
+        lessonCount: 0,
+        lectureCount: 0,
+        totalMinutes: 0,
+        hoursDisplay: '',
+        lastDeliveredAt: null,
+        lessons: [],
+        liveSessions: [],
+        ...metadata,
+      } as any;
       instructor.courses.push(c);
+    }
+    if (metadata) {
+      if (metadata.courseStatus !== undefined) (c as any).courseStatus = metadata.courseStatus;
+      if (metadata.coursePrice !== undefined) (c as any).coursePrice = metadata.coursePrice;
+      if (metadata.courseCurrency !== undefined) (c as any).courseCurrency = metadata.courseCurrency;
+      if (metadata.createdAt !== undefined) (c as any).createdAt = metadata.createdAt;
+      if (metadata.publishedAt !== undefined) (c as any).publishedAt = metadata.publishedAt;
     }
     if ((c as any).lessonCount === undefined) (c as any).lessonCount = (c as any).lessons?.length || c.lectureCount || 0;
     if (!(c as any).lessons) (c as any).lessons = [];
@@ -515,13 +541,13 @@ export class InstructorReportsService {
         if (!pc.instructorId || !instructorMap.has(pc.instructorId)) continue;
         const inst = instructorMap.get(pc.instructorId)!;
         const courseName = pc.titleAr || pc.titleEn || pc.id;
-        const ce = this.ensureCourse(inst, pc.id, courseName);
-        (ce as any).courseTitle = courseName;
-        (ce as any).courseStatus = pc.status;
-        (ce as any).coursePrice = pc.price;
-        (ce as any).courseCurrency = pc.currency;
-        (ce as any).createdAt = pc.createdAt;
-        (ce as any).publishedAt = pc.publishedAt ?? pc.createdAt;
+        this.ensureCourse(inst, pc.id, courseName, {
+          courseStatus: pc.status,
+          coursePrice: pc.price,
+          courseCurrency: pc.currency,
+          createdAt: pc.createdAt,
+          publishedAt: pc.publishedAt ?? pc.createdAt,
+        });
       }
 
       if (pubCourseIds.length > 0) {
@@ -566,14 +592,13 @@ export class InstructorReportsService {
 
           const inst = instructorMap.get(course.instructorId)!;
           const courseName = course.titleAr || course.titleEn || courseId;
-          const courseEntry = this.ensureCourse(inst, courseId, courseName);
-          // enhance course entry
-          (courseEntry as any).courseTitle = courseName;
-          (courseEntry as any).courseStatus = course.status;
-          (courseEntry as any).coursePrice = course.price;
-          (courseEntry as any).courseCurrency = course.currency;
-          (courseEntry as any).createdAt = course.createdAt;
-          (courseEntry as any).publishedAt = course.publishedAt ?? course.createdAt;
+          const courseEntry = this.ensureCourse(inst, courseId, courseName, {
+            courseStatus: course.status,
+            coursePrice: course.price,
+            courseCurrency: course.currency,
+            createdAt: course.createdAt,
+            publishedAt: course.publishedAt ?? course.createdAt,
+          });
           if (!(courseEntry as any).lessons) (courseEntry as any).lessons = [];
           const mins = this.resolveLessonDuration(lesson.videoDuration ?? lesson.videoContent?.duration);
           (courseEntry as any).lessons.push({

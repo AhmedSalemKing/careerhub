@@ -7,7 +7,8 @@
     "tsConfigPath": "tsconfig.build.json",
     "assets": [
       { "include": "modules/certificates/template.png", "outDir": "./dist" },
-      { "include": "modules/certificates/fonts/**/*", "outDir": "./dist" }
+      { "include": "modules/certificates/fonts/**/*", "outDir": "./dist" },
+      { "include": "assets/fonts/**/*", "outDir": "./dist" }
     ]
   }
 }
