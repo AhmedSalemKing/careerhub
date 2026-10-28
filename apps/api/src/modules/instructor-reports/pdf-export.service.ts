@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import type { InstructorReport, ConsultantReport } from './instructor-reports.service';
 
+// Use require() so CJS pdfmake loads reliably in the compiled NestJS dist.
+// Dynamic import() can mis-resolve the vfs_fonts CJS exports and leave
+// pdfMake.vfs undefined, which causes an immediate "font not found" crash.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfMakeLib = require('pdfmake/build/pdfmake');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfFontsLib = require('pdfmake/build/vfs_fonts');
+pdfMakeLib.vfs = pdfFontsLib.pdfMake?.vfs ?? pdfFontsLib.vfs ?? {};
+
 @Injectable()
 export class PdfExportService {
   async build(
@@ -9,16 +18,12 @@ export class PdfExportService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<Buffer> {
-    console.log('[PDF] export start');
+    console.log('[PDF] export start, instructors:', instructors.length, 'consultants:', consultants.length);
     const t0 = Date.now();
-    const pdfMakeModule = await import('pdfmake/build/pdfmake');
-    const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-    const pdfMake: any = (pdfMakeModule as any).default ?? pdfMakeModule;
-    pdfMake.vfs =
-      (pdfFontsModule as any).default?.pdfMake?.vfs ??
-      (pdfFontsModule as any).pdfMake?.vfs ??
-      (pdfFontsModule as any).vfs;
-    console.log('[PDF] pdfmake loaded in', Date.now() - t0, 'ms');
+
+    if (!pdfMakeLib.vfs || Object.keys(pdfMakeLib.vfs).length === 0) {
+      throw new Error('pdfmake vfs fonts not loaded — cannot generate PDF');
+    }
 
     const dateRange =
       dateFrom && dateTo
@@ -35,7 +40,7 @@ export class PdfExportService {
         { text: 'الدروس', bold: true, fillColor: '#6366f1', color: '#fff' },
         { text: 'ساعات التدريس', bold: true, fillColor: '#6366f1', color: '#fff' },
         { text: 'الطلاب', bold: true, fillColor: '#6366f1', color: '#fff' },
-        { text: 'الإيرادات', bold: true, fillColor: '#6366f1', color: '#fff' },
+        { text: 'الايرادات', bold: true, fillColor: '#6366f1', color: '#fff' },
       ],
     ];
     for (const r of instructors) {
@@ -79,7 +84,7 @@ export class PdfExportService {
           { text: 'الجلسات', bold: true, fillColor: '#7c3aed', color: '#fff' },
           { text: 'مكتملة', bold: true, fillColor: '#7c3aed', color: '#fff' },
           { text: 'ملغاة', bold: true, fillColor: '#7c3aed', color: '#fff' },
-          { text: 'إجمالي الساعات', bold: true, fillColor: '#7c3aed', color: '#fff' },
+          { text: 'اجمالي الساعات', bold: true, fillColor: '#7c3aed', color: '#fff' },
         ],
       ];
       for (const c of consultants) {
@@ -125,12 +130,13 @@ export class PdfExportService {
         45000,
       );
       try {
-        pdfMake.createPdf(doc).getBuffer((buffer: Uint8Array) => {
+        pdfMakeLib.createPdf(doc).getBuffer((buffer: Uint8Array) => {
           clearTimeout(timeout);
           resolve(Buffer.from(buffer));
         });
       } catch (e) {
         clearTimeout(timeout);
+        console.error('[PDF] createPdf/getBuffer crash:', e);
         reject(e);
       }
     });

@@ -425,9 +425,13 @@ export class InstructorReportsService {
       console.log('[REPORT] all active instructors/consultants:', allUsers.length);
       allUsers.forEach(u => console.log(`  - ${u.email} (${u.accountType}) id=${u.id}`));
 
+      // Only INSTRUCTOR users go into the instructor map.
+      // CONSULTANT users are handled in the separate consultantMap below.
       const instructorMap = new Map<string, InstructorReport>();
       for (const user of allUsers) {
-        this.ensureInstructor(instructorMap, user.id, user.email, user.profile);
+        if (user.accountType === 'INSTRUCTOR') {
+          this.ensureInstructor(instructorMap, user.id, user.email, user.profile);
+        }
       }
 
       // ── Step 2: Lessons in published courses (INSTRUCTOR users only) ────
@@ -464,15 +468,17 @@ export class InstructorReportsService {
       }
 
       if (pubCourseIds.length > 0) {
+        // No isPublished filter: count ALL lessons of published courses.
+        // Lesson.isPublished defaults false and is not reliably set to true on publish,
+        // so filtering by it yields 0 results for all instructors.
+        // No date filter: date range applies to activity (LiveSession, ConsultingSession,
+        // InstructorLecture), not to course content.
         const lessonWhere: any = {
-          isPublished: true,
           OR: [
             { module: { courseId: { in: pubCourseIds } } },
             { section: { courseId: { in: pubCourseIds } } },
           ],
         };
-        // For accounting report of courses/lessons, do not filter lessons by date range by default
-        // if (from || to) lessonWhere.createdAt = this.dateRange(from, to);
         console.log('[REPORT] fetching lessons for courses:', pubCourseIds);
 
         const lessons = await this.prisma.lesson.findMany({
@@ -743,7 +749,7 @@ export class InstructorReportsService {
 
       return {
         generatedAt: new Date(),
-        totalInstructors: instructors.filter(i=> (i as any).courseCount > 0 || i.totalLectures > 0 || i.courses.length > 0).length || instructorMap.size,
+        totalInstructors: instructors.filter(i => (i as any).courseCount > 0).length,
         totalLectures,
         totalMinutes,
         totalCourses,
@@ -807,13 +813,11 @@ export class InstructorReportsService {
 
     if (instrCourseIds.length > 0) {
       const lessonDetailWhere: any = {
-        isPublished: true,
         OR: [
           { module: { courseId: { in: instrCourseIds } } },
           { section: { courseId: { in: instrCourseIds } } },
         ],
       };
-      if (from || to) lessonDetailWhere.createdAt = this.dateRange(from, to);
 
       const rawLessons = await this.prisma.lesson.findMany({
         where: lessonDetailWhere,
