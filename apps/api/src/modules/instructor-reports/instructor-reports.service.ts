@@ -583,7 +583,7 @@ export class InstructorReportsService {
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
       if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
 
-      const consultingSessions = await this.prisma.consultingSession.findMany({
+      const consultingSessions = await ((this.prisma as any).consultingSession || (this.prisma as any).ConsultingSession).findMany({
         where: consultingWhere,
         select: {
           id: true,
