@@ -670,6 +670,7 @@ export class InstructorReportsService {
           id: true,
           consultantId: true,
           duration: true,
+          actualDuration: true,
           scheduledAt: true,
           completedAt: true,
           topic: true,
@@ -734,7 +735,7 @@ export class InstructorReportsService {
           }
         }
         const cons = consultantMap.get(session.consultantId)!;
-        const mins = session.duration || 0;
+        const mins = (session as any).actualDuration || session.duration || 0;
         cons.sessionCount += 1;
         const st = (session.status || '').toUpperCase();
         if (st === 'COMPLETED') cons.completedCount += 1;
@@ -977,6 +978,7 @@ export class InstructorReportsService {
         id: true,
         consultantId: true,
         duration: true,
+        actualDuration: true,
         scheduledAt: true,
         completedAt: true,
         topic: true,
@@ -1043,8 +1045,8 @@ export class InstructorReportsService {
         courseName: CONSULTING_COURSE_NAME,
         title: session.sessionName || session.topic || 'جلسة استشارية',
         deliveredAt: this.resolveDate(session.completedAt, session.scheduledAt),
-        durationMinutes: session.duration ?? 60,
-        hoursDisplay: formatHours(session.duration ?? 60),
+        durationMinutes: (session as any).actualDuration ?? session.duration ?? 60,
+        hoursDisplay: formatHours((session as any).actualDuration ?? session.duration ?? 60),
         status: LectureStatus.COMPLETED,
         type: 'consulting' as const,
         activityLabel: 'استشارة',

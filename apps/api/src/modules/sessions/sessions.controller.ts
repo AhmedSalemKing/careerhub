@@ -622,15 +622,15 @@ export class SessionsController {
   }
 
   @Patch(':id/complete')
-  async completeSession(@Param('id') id: string, @Request() req: any) {
+  async completeSession(@Param('id') id: string, @Request() req: any, @Body() body: { actualDuration?: number } = {}) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id } }).catch(() => null)
     if (!session) throw new NotFoundException('Session not found')
-    
-    const isAllowed = session.consultantId === req.user.id || 
-                      session.studentId === req.user.id || 
+
+    const isAllowed = session.consultantId === req.user.id ||
+                      session.studentId === req.user.id ||
                       req.user.accountType === 'ADMIN'
     if (!isAllowed) throw new ForbiddenException()
-    
+
     // Add earnings to consultant (85%)
     if (session.consultantId && ((session as any).price || 0) > 0) {
       const earnings = ((session as any).price || 0) * 0.85
@@ -639,12 +639,17 @@ export class SessionsController {
         data: { walletBalance: { increment: earnings } }
       }).catch(() => {})
     }
-    
+
+    const updateData: any = { status: 'COMPLETED', completedAt: new Date() }
+    if (body.actualDuration != null && body.actualDuration > 0) {
+      updateData.actualDuration = Math.round(body.actualDuration)
+    }
+
     await this.prisma.consultingSession.update({
       where: { id },
-      data: { status: 'COMPLETED', completedAt: new Date() }
+      data: updateData,
     })
-    
+
     return { success: true }
   }
 
