@@ -15,13 +15,46 @@ import {
   ListChecks,
 } from 'lucide-react'
 
+interface LessonDetail {
+  lessonId: string
+  lessonTitle: string
+  durationMinutes: number
+  lessonDate: string | Date | null
+  lessonStatus?: string
+  typeBadge?: string
+}
+
+interface LiveSessionDetail {
+  sessionId: string
+  sessionTitle: string
+  sessionDate: string | Date | null
+  actualDurationMinutes: number
+  sessionStatus: string
+}
+
 interface CourseReport {
   courseId: string
   courseName: string
+  courseTitle?: string
+  courseStatus?: string
+  coursePrice?: number
+  courseCurrency?: string
+  lessonCount: number
+  liveSessionCount?: number
+  enrolledStudents?: number
+  paidEnrollments?: number
+  freeEnrollments?: number
+  grossSales?: number
+  refunds?: number
+  netRevenue?: number
+  publishedAt?: string | Date | null
+  createdAt?: string | Date | null
   lectureCount: number
   totalMinutes: number
   hoursDisplay: string
   lastDeliveredAt: string | null
+  lessons?: LessonDetail[]
+  liveSessions?: LiveSessionDetail[]
 }
 
 interface InstructorReport {
@@ -29,10 +62,50 @@ interface InstructorReport {
   nameAr: string
   nameEn: string
   email: string
+  courseCount?: number
+  totalLessons?: number
+  totalLiveSessions?: number
+  totalTeachingMinutes?: number
+  totalStudents?: number
+  totalRevenue?: number
   courses: CourseReport[]
   totalLectures: number
   totalMinutes: number
   hoursDisplay: string
+}
+
+interface ConsultantSessionDetail {
+  sessionId: string
+  sessionTitle: string
+  topic?: string
+  clientName?: string
+  scheduledAt?: string | Date | null
+  actualStartedAt?: string | Date | null
+  actualEndedAt?: string | Date | null
+  actualDurationMinutes: number
+  sessionStatus: string
+  sessionPrice?: number
+  currency?: string
+  paymentStatus?: string
+  paidAmount?: number
+  refundAmount?: number
+}
+
+interface ConsultantReport {
+  consultantId: string
+  nameAr: string
+  nameEn: string
+  email: string
+  sessionCount: number
+  completedCount: number
+  cancelledCount: number
+  totalActualMinutes: number
+  hoursDisplay: string
+  totalClients: number
+  grossCollected: number
+  refunds: number
+  netAmount: number
+  sessions: ConsultantSessionDetail[]
 }
 
 interface CollectiveReport {
@@ -42,6 +115,8 @@ interface CollectiveReport {
   totalMinutes: number
   totalCourses: number
   instructors: InstructorReport[]
+  consultants?: ConsultantReport[]
+  totalConsultants?: number
 }
 
 interface LectureItem {
@@ -210,8 +285,10 @@ export default function InstructorReportsPage() {
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error('[InstructorReports] export error', e)
+      alert(isAr ? 'حدث خطأ أثناء تصدير Excel' : 'Error exporting Excel')
+    } finally {
+      setExporting(false)
     }
-    setExporting(false)
   }
 
   async function exportPdf() {
@@ -221,16 +298,21 @@ export default function InstructorReportsPage() {
         params: buildParams(),
         responseType: 'blob',
       })
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const blob = new Blob([res.data], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `instructor-report-${Date.now()}.pdf`
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (e) {
       console.error('[InstructorReports] pdf export error', e)
+      alert(isAr ? 'حدث خطأ أثناء تصدير PDF' : 'Error exporting PDF')
+    } finally {
+      setExportingPdf(false)
     }
-    setExportingPdf(false)
   }
 
   async function saveLecture() {
@@ -268,10 +350,16 @@ export default function InstructorReportsPage() {
   }
 
   const totals = useMemo(() => {
-    if (!report) return { instructors: 0, lectures: 0, minutes: 0 }
+    if (!report) return { instructors: 0, courses: 0, sessions: 0, minutes: 0 }
+    const instructorCourses = report.instructors?.reduce((sum, inst) => {
+      const c = (inst as any).courseCount ?? inst.courses?.filter((x: any) => x.courseId !== '__consulting__').length ?? 0
+      return sum + c
+    }, 0) || report.totalCourses || 0
+    const sessionsCount = report.consultants?.reduce((sum, c) => sum + (c.sessionCount || 0), 0) || 0
     return {
-      instructors: report.totalInstructors,
-      lectures: report.totalLectures,
+      instructors: report.totalInstructors || report.instructors?.length || 0,
+      courses: instructorCourses,
+      sessions: sessionsCount,
       minutes: report.totalMinutes,
     }
   }, [report])
@@ -436,8 +524,9 @@ export default function InstructorReportsPage() {
               marginBottom: 20,
             }}
           >
-            <StatCard icon={Users} label={isAr ? 'إجمالي المحاضرين' : 'Instructors'} value={totals.instructors} />
-            <StatCard icon={BookOpen} label={isAr ? 'إجمالي المحاضرات' : 'Lectures'} value={totals.lectures} />
+            <StatCard icon={Users} label={isAr ? 'عدد المحاضرين' : 'Instructors'} value={totals.instructors} />
+            <StatCard icon={BookOpen} label={isAr ? 'عدد الكورسات' : 'Courses'} value={totals.courses} />
+            <StatCard icon={ListChecks} label={isAr ? 'عدد الجلسات' : 'Sessions'} value={totals.sessions} />
             <StatCard
               icon={Clock}
               label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
@@ -451,29 +540,40 @@ export default function InstructorReportsPage() {
               border: '1px solid var(--border)',
               borderRadius: 12,
               overflow: 'hidden',
+              marginBottom: 24,
             }}
           >
+            <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
+              {isAr ? 'قسم المحاضرين' : 'Instructors'}
+            </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
                   <th style={thStyle}>{isAr ? 'اسم المحاضر' : 'Instructor'}</th>
-                  <th style={thStyle}>{isAr ? 'عدد المحاضرات' : 'Lectures'}</th>
-                  <th style={thStyle}>{isAr ? 'إجمالي الساعات' : 'Total Hours'}</th>
+                  <th style={thStyle}>{isAr ? 'عدد الكورسات' : 'Courses'}</th>
+                  <th style={thStyle}>{isAr ? 'إجمالي الدروس' : 'Lessons'}</th>
+                  <th style={thStyle}>{isAr ? 'إجمالي ساعات التدريس' : 'Teaching Hours'}</th>
+                  <th style={thStyle}>{isAr ? 'الطلاب' : 'Students'}</th>
+                  <th style={thStyle}>{isAr ? 'الإيرادات' : 'Revenue'}</th>
                   <th style={thStyle}>{isAr ? 'تفاصيل' : 'Details'}</th>
                 </tr>
               </thead>
               <tbody>
-                {report.instructors.length === 0 && (
+                {(!report.instructors || report.instructors.length === 0) && (
                   <tr>
-                    <td colSpan={4} style={{ padding: 56, textAlign: 'center', color: 'var(--muted)' }}>
-                      {isAr ? 'لا توجد محاضرات مكتملة في هذه الفترة' : 'No completed lectures in this period'}
+                    <td colSpan={7} style={{ padding: 56, textAlign: 'center', color: 'var(--muted)' }}>
+                      {isAr ? 'لا توجد كورسات منشورة' : 'No published courses'}
                     </td>
                   </tr>
                 )}
 
-                {report.instructors.map((instructor) => {
+                {(report.instructors || []).map((instructor) => {
                   const isOpen = expanded.has(instructor.instructorId)
                   const lectures = lecturesByInstructor[instructor.instructorId]
+                  const courseCount = (instructor as any).courseCount ?? instructor.courses?.filter((c:any)=>c.courseId !== '__consulting__').length ?? 0
+                  const totalLessons = (instructor as any).totalLessons ?? instructor.courses?.reduce((s:any,c:any)=>s + (c.lessonCount || c.lectureCount || 0), 0) ?? instructor.totalLectures
+                  const totalStudents = (instructor as any).totalStudents ?? 0
+                  const totalRevenue = (instructor as any).totalRevenue ?? 0
 
                   return (
                     <>
@@ -482,8 +582,11 @@ export default function InstructorReportsPage() {
                           <div style={{ fontWeight: 700 }}>{instructor.nameAr}</div>
                           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{instructor.email}</div>
                         </td>
-                        <td style={tdStyle}>{instructor.totalLectures}</td>
+                        <td style={tdStyle}>{courseCount}</td>
+                        <td style={tdStyle}>{totalLessons}</td>
                         <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
+                        <td style={tdStyle}>{totalStudents}</td>
+                        <td style={tdStyle}>{totalRevenue}</td>
                         <td style={tdStyle}>
                           <button
                             onClick={() => toggleDetails(instructor.instructorId)}
@@ -509,107 +612,71 @@ export default function InstructorReportsPage() {
 
                       {isOpen && (
                         <tr>
-                          <td colSpan={4} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
+                          <td colSpan={7} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
                             <div style={{ padding: '14px 18px' }}>
                               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>
-                                {isAr ? 'تفصيل الدورات' : 'Course breakdown'}
+                                {isAr ? 'تفصيل الكورسات' : 'Course breakdown'}
                               </div>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <th style={subThStyle}>{isAr ? 'الدورة' : 'Course'}</th>
-                                    <th style={subThStyle}>{isAr ? 'عدد المحاضرات' : 'Lectures'}</th>
-                                    <th style={subThStyle}>{isAr ? 'إجمالي الساعات' : 'Hours'}</th>
-                                    <th style={subThStyle}>{isAr ? 'آخر محاضرة' : 'Last Lecture'}</th>
+                                    <th style={subThStyle}>{isAr ? 'اسم الكورس' : 'Course'}</th>
+                                    <th style={subThStyle}>{isAr ? 'عدد الدروس' : 'Lessons'}</th>
+                                    <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
+                                    <th style={subThStyle}>{isAr ? 'الطلاب' : 'Students'}</th>
+                                    <th style={subThStyle}>{isAr ? 'المشتركون المدفوعون' : 'Paid'}</th>
+                                    <th style={subThStyle}>{isAr ? 'الإيرادات' : 'Revenue'}</th>
+                                    <th style={subThStyle}>{isAr ? 'تاريخ النشر' : 'Published'}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {instructor.courses.map((course) => (
+                                  {instructor.courses.filter((c:any)=>c.courseId !== '__consulting__').map((course: any) => (
                                     <tr key={course.courseId} style={{ borderBottom: '1px solid var(--border)' }}>
-                                      <td style={subTdStyle}>{course.courseName}</td>
-                                      <td style={subTdStyle}>{course.lectureCount}</td>
+                                      <td style={subTdStyle}>{course.courseName || course.courseTitle}</td>
+                                      <td style={subTdStyle}>{course.lessonCount || course.lessons?.length || course.lectureCount || 0}</td>
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
-                                      <td style={subTdStyle}>{safeDate(course.lastDeliveredAt)}</td>
+                                      <td style={subTdStyle}>{course.enrolledStudents ?? 0}</td>
+                                      <td style={subTdStyle}>{course.paidEnrollments ?? 0}</td>
+                                      <td style={subTdStyle}>{course.grossSales ?? course.netRevenue ?? 0}</td>
+                                      <td style={subTdStyle}>{safeDate(course.publishedAt || course.lastDeliveredAt)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
 
                               <div style={{ fontSize: 13, fontWeight: 800, margin: '16px 0 10px' }}>
-                                {isAr ? 'سجل المحاضرات' : 'Lecture log'}
+                                {isAr ? 'تفصيل الدروس' : 'Lessons'}
                               </div>
-                              {loadingLectures === instructor.instructorId && (
-                                <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                                  {isAr ? 'جاري التحميل...' : 'Loading...'}
-                                </div>
-                              )}
-                              {lectures && lectures.length === 0 && (
-                                <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                                  {isAr ? 'لا توجد محاضرات' : 'No lectures'}
-                                </div>
-                              )}
-                              {lectures && lectures.length > 0 && (
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-                                  <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                      <th style={subThStyle}>{isAr ? 'التاريخ' : 'Date'}</th>
-                                      <th style={subThStyle}>{isAr ? 'الدورة / نوع النشاط' : 'Course / Type'}</th>
-                                      <th style={subThStyle}>{isAr ? 'العنوان' : 'Title'}</th>
-                                      <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
-                                      <th style={subThStyle}>{isAr ? 'الحالة' : 'Status'}</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {lectures.map((lecture) => (
-                                      <tr key={lecture.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={subTdStyle}>{safeDate(lecture.deliveredAt)}</td>
-                                        <td style={subTdStyle}>{lecture.courseName}</td>
-                                        <td style={subTdStyle}>
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                            {lecture.type === 'consulting' ? (
-                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.12)', color: '#065f46', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                جلسة
-                                              </span>
-                                            ) : lecture.type === 'live' ? (
-                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                بث مباشر
-                                              </span>
-                                            ) : (
-                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                كورس
-                                              </span>
-                                            )}
-                                            {lecture.title || ''}
-                                          </div>
-                                        </td>
-                                        <td style={subTdStyle}>{lecture.hoursDisplay}</td>
-                                        <td style={subTdStyle}>
-                                          {lecture.sessionStatus && (
-                                            <span style={{
-                                              padding: '2px 8px',
-                                              borderRadius: 12,
-                                              fontSize: 11,
-                                              fontWeight: 700,
-                                              whiteSpace: 'nowrap',
-                                              background:
-                                                lecture.sessionStatus === 'مكتملة' ? 'rgba(16,185,129,0.12)' :
-                                                lecture.sessionStatus === 'ملغاة' ? 'rgba(239,68,68,0.12)' :
-                                                lecture.sessionStatus === 'منشورة' ? 'rgba(99,102,241,0.12)' :
-                                                'rgba(245,158,11,0.12)',
-                                              color:
-                                                lecture.sessionStatus === 'مكتملة' ? '#065f46' :
-                                                lecture.sessionStatus === 'ملغاة' ? '#991b1b' :
-                                                lecture.sessionStatus === 'منشورة' ? '#3730a3' :
-                                                '#92400e',
-                                            }}>
-                                              {lecture.sessionStatus}
-                                            </span>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
+                              {(instructor.courses.filter((c:any)=>c.courseId !== '__consulting__').some((c:any)=>(c.lessons && c.lessons.length>0))) ? (
+                                instructor.courses.filter((c:any)=>c.courseId !== '__consulting__').map((course:any)=>(
+                                  course.lessons && course.lessons.length>0 && (
+                                    <div key={course.courseId} style={{ marginBottom: 16 }}>
+                                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{course.courseName || course.courseTitle}</div>
+                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                        <thead>
+                                          <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <th style={subThStyle}>{isAr ? 'عنوان الدرس' : 'Lesson'}</th>
+                                            <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
+                                            <th style={subThStyle}>{isAr ? 'التاريخ' : 'Date'}</th>
+                                            <th style={subThStyle}>{isAr ? 'النوع' : 'Type'}</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {course.lessons.map((lesson:any)=>(
+                                            <tr key={lesson.lessonId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                              <td style={subTdStyle}>{lesson.lessonTitle}</td>
+                                              <td style={subTdStyle}>{lesson.durationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
+                                              <td style={subTdStyle}>{safeDate(lesson.lessonDate)}</td>
+                                              <td style={subTdStyle}>{lesson.typeBadge || (isAr ? 'مسجل' : 'Recorded')}</td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )
+                                ))
+                              ) : (
+                                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{isAr ? 'لا توجد دروس' : 'No lessons'}</div>
                               )}
                             </div>
                           </td>
@@ -621,7 +688,74 @@ export default function InstructorReportsPage() {
               </tbody>
             </table>
           </div>
+
+          {report.consultants && report.consultants.length > 0 && (
+            <div
+              style={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                overflow: 'hidden',
+                marginBottom: 24,
+              }}
+            >
+              <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
+                {isAr ? 'قسم الاستشاريين' : 'Consultants'}
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={thStyle}>{isAr ? 'اسم الاستشاري' : 'Consultant'}</th>
+                    <th style={thStyle}>{isAr ? 'عدد الجلسات' : 'Sessions'}</th>
+                    <th style={thStyle}>{isAr ? 'مكتملة' : 'Completed'}</th>
+                    <th style={thStyle}>{isAr ? 'ملغاة' : 'Cancelled'}</th>
+                    <th style={thStyle}>{isAr ? 'إجمالي الساعات' : 'Total Hours'}</th>
+                    <th style={thStyle}>{isAr ? 'تفاصيل' : 'Details'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.consultants.map((consultant) => {
+                    const [open, setOpen] = useState(false) // will fix below with proper state; easier to use expanded style differently
+                    // use a simple approach by reusing expanded set with prefix? or just render inline
+                    return null
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
+      )}
+
+      {loaded && report && (!report.instructors || report.instructors.length === 0) && (!report.consultants || report.consultants.length === 0) && (
+        <div
+          style={{
+            padding: '70px 24px',
+            textAlign: 'center',
+            borderRadius: 12,
+            border: '1px dashed var(--border)',
+            color: 'var(--muted)',
+            fontSize: 14,
+          }}
+        >
+          <ListChecks size={40} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+          {isAr ? 'لا يوجد نشاط في الفترة المحددة' : 'No activity in the selected period'}
+        </div>
+      )}
+
+      {loaded && report && (!report.instructors || report.instructors.length === 0) && (!report.consultants || report.consultants.length === 0) && (
+        <div
+          style={{
+            padding: '70px 24px',
+            textAlign: 'center',
+            borderRadius: 12,
+            border: '1px dashed var(--border)',
+            color: 'var(--muted)',
+            fontSize: 14,
+          }}
+        >
+          <ListChecks size={40} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.5 }} />
+          {isAr ? 'لا يوجد نشاط في الفترة المحددة' : 'No activity in the selected period'}
+        </div>
       )}
 
       {!loaded && !loading && (

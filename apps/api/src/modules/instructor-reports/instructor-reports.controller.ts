@@ -46,16 +46,27 @@ export class InstructorReportsController {
   @Get('report/export/pdf')
   @ApiOperation({ summary: 'Export instructor report as PDF' })
   async exportPdf(@Query() filter: ReportFilterDto, @Res() res: Response) {
-    const dateFrom = filter.dateFrom ?? filter.from;
-    const dateTo = filter.dateTo ?? filter.to;
-    const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo });
-    const buffer = await this.pdfService.build(report.instructors, dateFrom, dateTo);
-    res.set({
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="instructor-report-${Date.now()}.pdf"`,
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
+    try {
+      const t0 = Date.now();
+      console.log('[PDF] export start');
+      const dateFrom = filter.dateFrom ?? filter.from;
+      const dateTo = filter.dateTo ?? filter.to;
+      const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo });
+      console.log('[PDF] data fetched in', Date.now() - t0, 'ms');
+      const buffer = await this.pdfService.build(report.instructors, dateFrom, dateTo);
+      console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="instructor-report-${Date.now()}.pdf"`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (e: any) {
+      console.error('[PDF] export error:', e);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: e?.message || 'PDF export failed' });
+      }
+    }
   }
 
   @Get('report/export/xlsx')

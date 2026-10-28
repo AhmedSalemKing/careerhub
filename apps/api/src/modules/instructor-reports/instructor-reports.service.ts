@@ -5,13 +5,46 @@ import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { ReportFilterDto } from './dto/report-filter.dto';
 
+export interface LessonDetail {
+  lessonId: string;
+  lessonTitle: string;
+  durationMinutes: number;
+  lessonDate: string | Date | null;
+  lessonStatus?: string;
+  typeBadge?: string;
+}
+
+export interface LiveSessionDetail {
+  sessionId: string;
+  sessionTitle: string;
+  sessionDate: string | Date | null;
+  actualDurationMinutes: number;
+  sessionStatus: string;
+}
+
 export interface CourseReport {
   courseId: string;
   courseName: string;
-  lectureCount: number;
-  totalMinutes: number;
+  courseTitle?: string;
+  courseStatus?: string;
+  coursePrice?: number;
+  courseCurrency?: string;
+  lessonCount: number;
+  liveSessionCount?: number;
+  enrolledStudents?: number;
+  paidEnrollments?: number;
+  freeEnrollments?: number;
+  grossSales?: number;
+  refunds?: number;
+  netRevenue?: number;
+  publishedAt?: Date | string | null;
+  createdAt?: Date | string | null;
+  lectureCount: number; // backward compat
+  totalMinutes: number; // backward compat
   hoursDisplay: string;
   lastDeliveredAt: Date | null;
+  lessons?: LessonDetail[];
+  liveSessions?: LiveSessionDetail[];
 }
 
 export interface InstructorReport {
@@ -19,10 +52,50 @@ export interface InstructorReport {
   nameAr: string;
   nameEn: string;
   email: string;
+  courseCount?: number;
+  totalLessons?: number;
+  totalLiveSessions?: number;
+  totalTeachingMinutes?: number;
+  totalStudents?: number;
+  totalRevenue?: number;
   courses: CourseReport[];
-  totalLectures: number;
+  totalLectures: number; // backward compat
   totalMinutes: number;
   hoursDisplay: string;
+}
+
+export interface ConsultantSessionDetail {
+  sessionId: string;
+  sessionTitle: string;
+  topic?: string;
+  clientName?: string;
+  scheduledAt?: string | Date | null;
+  actualStartedAt?: string | Date | null;
+  actualEndedAt?: string | Date | null;
+  actualDurationMinutes: number;
+  sessionStatus: string;
+  sessionPrice?: number;
+  currency?: string;
+  paymentStatus?: string;
+  paidAmount?: number;
+  refundAmount?: number;
+}
+
+export interface ConsultantReport {
+  consultantId: string;
+  nameAr: string;
+  nameEn: string;
+  email: string;
+  sessionCount: number;
+  completedCount: number;
+  cancelledCount: number;
+  totalActualMinutes: number;
+  hoursDisplay: string;
+  totalClients: number;
+  grossCollected: number;
+  refunds: number;
+  netAmount: number;
+  sessions: ConsultantSessionDetail[];
 }
 
 export interface CollectiveReport {
@@ -32,6 +105,8 @@ export interface CollectiveReport {
   totalMinutes: number;
   totalCourses: number;
   instructors: InstructorReport[];
+  consultants?: ConsultantReport[];
+  totalConsultants?: number;
 }
 
 export interface InstructorLectureItem {
@@ -167,9 +242,12 @@ export class InstructorReportsService {
   ): CourseReport {
     let c = instructor.courses.find((x) => x.courseId === courseId);
     if (!c) {
-      c = { courseId, courseName, lectureCount: 0, totalMinutes: 0, hoursDisplay: '', lastDeliveredAt: null };
+      c = { courseId, courseName, courseTitle: courseName, lessonCount: 0, lectureCount: 0, totalMinutes: 0, hoursDisplay: '', lastDeliveredAt: null, lessons: [], liveSessions: [] } as any;
       instructor.courses.push(c);
     }
+    if ((c as any).lessonCount === undefined) (c as any).lessonCount = (c as any).lessons?.length || c.lectureCount || 0;
+    if (!(c as any).lessons) (c as any).lessons = [];
+    if (!(c as any).liveSessions) (c as any).liveSessions = [];
     return c;
   }
 
@@ -326,6 +404,7 @@ export class InstructorReportsService {
    */
   async getCollectiveReport(filter: ReportFilterDto): Promise<CollectiveReport> {
     const { from, to } = this.resolveDates(filter);
+    console.log('[REPORT] getCollectiveReport called with filter:', JSON.stringify(filter));
 
     try {
       // ── Step 1: Pre-populate ALL active instructors/consultants ───────────
@@ -343,6 +422,8 @@ export class InstructorReportsService {
           profile: { select: { firstName: true, lastName: true } },
         },
       });
+      console.log('[REPORT] all active instructors/consultants:', allUsers.length);
+      allUsers.forEach(u => console.log(`  - ${u.email} (${u.accountType}) id=${u.id}`));
 
       const instructorMap = new Map<string, InstructorReport>();
       for (const user of allUsers) {
@@ -353,15 +434,18 @@ export class InstructorReportsService {
       const pubCourseWhere: any = {
         status: CourseStatus.PUBLISHED,
         instructorId: { not: null },
-        instructor: { accountType: 'INSTRUCTOR', status: 'ACTIVE' },
       };
       if (filter.instructorId) pubCourseWhere.instructorId = filter.instructorId;
       if (filter.courseId) pubCourseWhere.id = filter.courseId;
 
       const pubCourses = await this.prisma.course.findMany({
         where: pubCourseWhere,
-        select: { id: true, titleAr: true, titleEn: true, instructorId: true },
+        select: { id: true, titleAr: true, titleEn: true, instructorId: true, status: true, price: true, currency: true, createdAt: true },
       });
+      console.log('[REPORT] found published courses:', pubCourses.length);
+      for (const pc of pubCourses) {
+        console.log(`  course ${pc.id} by ${pc.instructorId} title:${pc.titleEn || pc.titleAr}`);
+      }
       const pubCourseMap = new Map(pubCourses.map((c) => [c.id, c]));
       const pubCourseIds = [...pubCourseMap.keys()];
 
@@ -373,30 +457,54 @@ export class InstructorReportsService {
             { section: { courseId: { in: pubCourseIds } } },
           ],
         };
-        if (from || to) lessonWhere.createdAt = this.dateRange(from, to);
+        // For accounting report of courses/lessons, do not filter lessons by date range by default
+        // if (from || to) lessonWhere.createdAt = this.dateRange(from, to);
+        console.log('[REPORT] fetching lessons for courses:', pubCourseIds);
 
         const lessons = await this.prisma.lesson.findMany({
           where: lessonWhere,
           select: {
             id: true,
+            title: true,
             videoDuration: true,
             createdAt: true,
+            isPublished: true,
+            type: true,
             module: { select: { courseId: true } },
             section: { select: { courseId: true } },
           },
         });
+        console.log('[REPORT] found lessons:', lessons.length);
 
         for (const lesson of lessons) {
           const courseId = lesson.module?.courseId ?? lesson.section?.courseId;
           if (!courseId) continue;
           const course = pubCourseMap.get(courseId);
           if (!course?.instructorId) continue;
-          if (!instructorMap.has(course.instructorId)) continue;
+          if (!instructorMap.has(course.instructorId)) {
+            // ensure it exists
+            this.ensureInstructor(instructorMap, course.instructorId, '', null);
+          }
 
           const inst = instructorMap.get(course.instructorId)!;
           const courseName = course.titleAr || course.titleEn || courseId;
           const courseEntry = this.ensureCourse(inst, courseId, courseName);
+          // enhance course entry
+          (courseEntry as any).courseTitle = courseName;
+          (courseEntry as any).courseStatus = course.status;
+          (courseEntry as any).coursePrice = course.price;
+          (courseEntry as any).courseCurrency = course.currency;
+          (courseEntry as any).createdAt = course.createdAt;
+          if (!(courseEntry as any).lessons) (courseEntry as any).lessons = [];
           const mins = this.resolveLessonDuration(lesson.videoDuration);
+          (courseEntry as any).lessons.push({
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            durationMinutes: mins,
+            lessonDate: lesson.createdAt,
+            lessonStatus: lesson.isPublished ? 'published' : 'draft',
+            typeBadge: lesson.type === 'LIVE' || lesson.type === 'live' ? 'بث' : 'مسجل',
+          });
           this.addEntry(inst, courseEntry, mins, lesson.createdAt);
         }
       }
@@ -470,8 +578,7 @@ export class InstructorReportsService {
         this.addEntry(inst, course, mins, deliveredAt);
       }
 
-      // ── Step 5: ConsultingSession (any non-pending state) ────────────
-      // Filter on createdAt (always set).
+      // ── Step 5: ConsultingSession (any non-pending/future state) ────────────
       const consultingWhere: any = { status: { notIn: ['PENDING', 'SCHEDULED'] } };
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
       if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
@@ -484,29 +591,154 @@ export class InstructorReportsService {
           duration: true,
           scheduledAt: true,
           completedAt: true,
+          startedAt: true,
+          endedAt: true,
+          topic: true,
+          sessionName: true,
+          status: true,
+          price: true,
+          paymentStatus: true,
+          paidAt: true,
         },
-      });
+      } as any);
+      console.log('[REPORT] consulting sessions found:', consultingSessions.length);
 
+      // Build consultant reports separately
+      const consultantMap = new Map<string, ConsultantReport>();
+      for (const user of allUsers) {
+        if (user.accountType === 'CONSULTANT') {
+          const names = this.instructorName(user.profile, user.email);
+          consultantMap.set(user.id, {
+            consultantId: user.id,
+            nameAr: names.nameAr,
+            nameEn: names.nameEn,
+            email: user.email,
+            sessionCount: 0,
+            completedCount: 0,
+            cancelledCount: 0,
+            totalActualMinutes: 0,
+            hoursDisplay: formatHours(0),
+            totalClients: 0,
+            grossCollected: 0,
+            refunds: 0,
+            netAmount: 0,
+            sessions: [],
+          });
+        }
+      }
+
+      const clientSet = new Set<string>();
+      for (const session of consultingSessions as any[]) {
+        if (!consultantMap.has(session.consultantId)) {
+          // ensure exists
+          const user = allUsers.find(u => u.id === session.consultantId);
+          if (user) {
+            const names = this.instructorName(user.profile, user.email);
+            consultantMap.set(user.id, {
+              consultantId: user.id,
+              nameAr: names.nameAr,
+              nameEn: names.nameEn,
+              email: user.email,
+              sessionCount: 0,
+              completedCount: 0,
+              cancelledCount: 0,
+              totalActualMinutes: 0,
+              hoursDisplay: formatHours(0),
+              totalClients: 0,
+              grossCollected: 0,
+              refunds: 0,
+              netAmount: 0,
+              sessions: [],
+            });
+          } else {
+            continue;
+          }
+        }
+        const cons = consultantMap.get(session.consultantId)!;
+        const mins = this.resolveDuration(session.duration || 0, session.startedAt || null, session.endedAt || null) || session.duration || 0;
+        cons.sessionCount += 1;
+        const st = (session.status || '').toUpperCase();
+        if (st === 'COMPLETED') cons.completedCount += 1;
+        if (st === 'CANCELLED' || st === 'NO_SHOW') cons.cancelledCount += 1;
+        cons.totalActualMinutes += mins;
+        if ((session as any).studentId) clientSet.add((session as any).studentId);
+        cons.sessions.push({
+          sessionId: session.id,
+          sessionTitle: session.sessionName || session.topic || 'جلسة استشارية',
+          topic: session.topic,
+          clientName: undefined,
+          scheduledAt: session.scheduledAt,
+          actualStartedAt: session.startedAt,
+          actualEndedAt: session.endedAt,
+          actualDurationMinutes: mins,
+          sessionStatus: st === 'COMPLETED' ? 'مكتملة' : st === 'CANCELLED' || st === 'NO_SHOW' ? 'ملغاة' : st === 'IN_PROGRESS' ? 'جارية' : 'مكتملة',
+          sessionPrice: session.price || 0,
+          currency: 'SAR',
+          paymentStatus: session.paymentStatus,
+          paidAmount: session.paymentStatus === 'PAID' ? (session.price || 0) : 0,
+          refundAmount: 0,
+        });
+        if (session.paymentStatus === 'PAID') {
+          cons.grossCollected += session.price || 0;
+          cons.netAmount += session.price || 0;
+        }
+      }
+      for (const c of consultantMap.values()) {
+        c.totalClients = c.sessions.length;
+        c.hoursDisplay = formatHours(c.totalActualMinutes);
+      }
+
+      // Also add consulting sessions to instructor map as before for backward compat? The requirement says separate sections.
       for (const session of consultingSessions) {
-        if (!instructorMap.has(session.consultantId)) continue;
-        const inst = instructorMap.get(session.consultantId)!;
-        const course = this.ensureCourse(inst, CONSULTING_COURSE_ID, CONSULTING_COURSE_NAME);
-        const deliveredAt = this.resolveDate(session.completedAt, session.scheduledAt);
-        const mins = session.duration ?? 60;
-        this.addEntry(inst, course, mins, deliveredAt);
+        if (instructorMap.has((session as any).consultantId)) {
+          const inst = instructorMap.get((session as any).consultantId)!;
+          const course = this.ensureCourse(inst, CONSULTING_COURSE_ID, CONSULTING_COURSE_NAME);
+          const deliveredAt = this.resolveDate((session as any).completedAt, (session as any).scheduledAt);
+          const mins = this.resolveDuration((session as any).duration ?? 60, (session as any).startedAt || null, (session as any).endedAt || null);
+          this.addEntry(inst, course, mins, deliveredAt);
+        }
       }
 
       // ── Finalize ────────────────────────────────────────────────────────
       const { instructors, totalLectures, totalMinutes, totalCourses } =
         this.finalizeMap(instructorMap);
 
+      // enhance instructor summaries
+      for (const inst of instructors) {
+        let totalLessons = 0;
+        let totalLiveSessions = 0;
+        let totalTeachingMinutes = inst.totalMinutes;
+        for (const c of inst.courses) {
+          totalLessons += (c as any).lessons?.length || c.lectureCount || 0;
+          totalLiveSessions += (c as any).liveSessions?.length || 0;
+        }
+        (inst as any).courseCount = inst.courses.filter(c => c.courseId !== CONSULTING_COURSE_ID).length;
+        (inst as any).totalLessons = totalLessons;
+        (inst as any).totalLiveSessions = totalLiveSessions;
+        (inst as any).totalTeachingMinutes = totalTeachingMinutes;
+        (inst as any).totalStudents = 0;
+        (inst as any).totalRevenue = 0;
+        // add lessons/liveSessions details
+        for (const c of inst.courses) {
+          if (!(c as any).lessons) (c as any).lessons = [];
+          if (!(c as any).liveSessions) (c as any).liveSessions = [];
+          c.lessonCount = (c as any).lessons.length || c.lectureCount;
+        }
+      }
+
+      const consultants = Array.from(consultantMap.values());
+
+      console.log('[REPORT] done. instructors:', instructors.length, 'consultants:', consultants.length);
+
       return {
         generatedAt: new Date(),
-        totalInstructors: instructorMap.size,
+        totalInstructors: instructors.filter(i=> (i as any).courseCount > 0 || i.totalLectures > 0 || i.courses.length > 0).length || instructorMap.size,
         totalLectures,
         totalMinutes,
         totalCourses,
         instructors,
+        consultants,
+        totalConsultants: consultants.length,
       };
     } catch (e: any) {
       throw new InternalServerErrorException('Report query failed: ' + e.message);

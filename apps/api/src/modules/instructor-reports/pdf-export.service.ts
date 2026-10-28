@@ -8,6 +8,8 @@ export class PdfExportService {
     dateFrom?: string,
     dateTo?: string,
   ): Promise<Buffer> {
+    console.log('[PDF] export start');
+    const t0 = Date.now();
     const pdfMakeModule = await import('pdfmake/build/pdfmake');
     const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
     const pdfMake: any = (pdfMakeModule as any).default ?? pdfMakeModule;
@@ -15,6 +17,7 @@ export class PdfExportService {
       (pdfFontsModule as any).default?.pdfMake?.vfs ??
       (pdfFontsModule as any).pdfMake?.vfs ??
       (pdfFontsModule as any).vfs;
+    console.log('[PDF] pdfmake loaded in', Date.now() - t0, 'ms');
 
     const dateRange =
       dateFrom && dateTo
@@ -137,8 +140,13 @@ export class PdfExportService {
 
     return new Promise((resolve, reject) => {
       try {
-        pdfMake.createPdf(doc).getBuffer((buf: Buffer) => resolve(buf));
+        const tBuild = Date.now();
+        pdfMake.createPdf(doc).getBuffer((buf: Buffer) => {
+          console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
+          resolve(buf);
+        });
       } catch (e) {
+        console.error('[PDF] error', e);
         reject(e);
       }
     });
