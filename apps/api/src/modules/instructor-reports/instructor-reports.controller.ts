@@ -9,6 +9,7 @@ import {
   Query,
   Res,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -49,6 +50,16 @@ export class InstructorReportsController {
     await this.sendExcel(res, filter);
   }
 
+  @Get('export/excel/consultant/:consultantId')
+  @ApiOperation({ summary: 'Export single consultant report as Excel' })
+  async exportExcelConsultant(
+    @Param('consultantId') consultantId: string,
+    @Query() filter: ReportFilterDto,
+    @Res() res: Response,
+  ) {
+    await this.sendConsultantExcel(res, filter, consultantId);
+  }
+
   @Get('export/excel/:instructorId')
   @ApiOperation({ summary: 'Export single instructor report as Excel' })
   async exportExcelSingle(
@@ -63,6 +74,16 @@ export class InstructorReportsController {
   @ApiOperation({ summary: 'Export collective instructor report as PDF' })
   async exportPdf(@Query() filter: ReportFilterDto, @Res() res: Response) {
     await this.sendPdf(res, filter);
+  }
+
+  @Get('export/pdf/consultant/:consultantId')
+  @ApiOperation({ summary: 'Export single consultant report as PDF' })
+  async exportPdfConsultant(
+    @Param('consultantId') consultantId: string,
+    @Query() filter: ReportFilterDto,
+    @Res() res: Response,
+  ) {
+    await this.sendConsultantPdf(res, filter, consultantId);
   }
 
   @Get('export/pdf/:instructorId')
@@ -119,6 +140,46 @@ export class InstructorReportsController {
       console.error('[PDF] export error:', e);
       if (!res.headersSent) {
         res.status(500).json({ success: false, message: e?.message || 'PDF export failed' });
+      }
+    }
+  }
+
+  private async sendConsultantExcel(res: Response, filter: ReportFilterDto, consultantId: string) {
+    try {
+      const buffer = await this.excelService.generateConsultantExcel(filter, consultantId);
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="consultant-report-${consultantId}-${Date.now()}.xlsx"`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (e: any) {
+      console.error('[Excel] consultant export error:', e);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: e?.message || 'Consultant Excel export failed' });
+      }
+    }
+  }
+
+  private async sendConsultantPdf(res: Response, filter: ReportFilterDto, consultantId: string) {
+    try {
+      const dateFrom = filter.dateFrom ?? filter.from;
+      const dateTo = filter.dateTo ?? filter.to;
+      const consultant = await this.reportService.getConsultantReport(consultantId, filter);
+      if (!consultant) {
+        throw new NotFoundException('Consultant not found or has no sessions in the selected range');
+      }
+      const buffer = await this.pdfService.buildConsultant(consultant, dateFrom, dateTo);
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="consultant-report-${consultantId}-${Date.now()}.pdf"`,
+        'Content-Length': buffer.length,
+      });
+      res.end(buffer);
+    } catch (e: any) {
+      console.error('[PDF] consultant export error:', e);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: e?.message || 'Consultant PDF export failed' });
       }
     }
   }

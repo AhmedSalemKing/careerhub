@@ -68,6 +68,109 @@ export class ExcelExportService {
     return Buffer.from(buffer);
   }
 
+  async generateConsultantExcel(filter: ReportFilterDto, consultantId: string): Promise<Buffer> {
+    const consultant = await this.reportService.getConsultantReport(consultantId, filter);
+    if (!consultant) {
+      throw new Error('Consultant not found or has no sessions in the selected range');
+    }
+
+    const country = filter.country ?? undefined;
+    const egpRate = country === 'EG'
+      ? await this.exchangeRateService.getSARtoEGPRate().catch(() => 15.0027)
+      : null;
+
+    const dateFrom = filter.dateFrom ?? filter.from;
+    const dateTo = filter.dateTo ?? filter.to;
+    const dateRangeText = dateFrom && dateTo
+      ? `من ${dateFrom} إلى ${dateTo}`
+      : dateFrom
+        ? `من ${dateFrom}`
+        : dateTo
+          ? `حتى ${dateTo}`
+          : 'كل الفترات';
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'DeveWay';
+    workbook.created = new Date();
+    workbook.lastModifiedBy = 'DeveWay';
+
+    const ws = workbook.addWorksheet('تقرير استشاري');
+    ws.views = [{ rightToLeft: true, state: 'frozen', xSplit: 0, ySplit: 4 }];
+
+    const titleRow = ws.addRow(['تقرير استشاري - DeveWay']);
+    ws.mergeCells(titleRow.number, 1, titleRow.number, 6);
+    titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    titleRow.font = { name: 'Arial', bold: true, size: 16, color: { argb: WHITE } };
+    titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: PRIMARY } };
+    titleRow.height = 32;
+
+    const rangeRow = ws.addRow([dateRangeText]);
+    ws.mergeCells(rangeRow.number, 1, rangeRow.number, 6);
+    rangeRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    rangeRow.font = { name: 'Arial', size: 11, color: { argb: WHITE } };
+    rangeRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ACCENT } };
+    rangeRow.height = 22;
+
+    ws.addRow([]);
+
+    const infoHeaders = ['البيان', 'القيمة'];
+    ws.columns = [
+      { key: 'label', width: 28 },
+      { key: 'value', width: 40 },
+    ];
+    this.addHeaderRow(ws, infoHeaders);
+    [
+      { label: 'اسم الاستشاري', value: consultant.nameAr || consultant.nameEn || consultant.email },
+      { label: 'البريد الإلكتروني', value: consultant.email },
+      { label: 'عدد الجلسات', value: consultant.sessionCount },
+      { label: 'الجلسات المكتملة', value: consultant.completedCount },
+      { label: 'الجلسات الملغاة', value: consultant.cancelledCount },
+      { label: 'إجمالي الساعات', value: consultant.hoursDisplay },
+      { label: 'إجمالي المبالغ المحصلة', value: this.formatCurrency(consultant.grossCollected, country, egpRate) },
+    ].forEach((r, idx) => {
+      const row = ws.addRow([r.label, r.value]);
+      row.alignment = { horizontal: 'right', vertical: 'middle' };
+      row.font = { name: 'Arial', size: 11, color: { argb: DARK_TEXT } };
+      this.styleDataRow(row, idx);
+    });
+
+    ws.addRow([]);
+    ws.addRow(['تفصيل الجلسات']);
+    const sessionRows = ws.rowCount;
+    const sessionHeaderRow = ws.getRow(sessionRows);
+    ws.mergeCells(sessionRows, 1, sessionRows, 6);
+    sessionHeaderRow.alignment = { horizontal: 'right', vertical: 'middle' };
+    sessionHeaderRow.font = { name: 'Arial', bold: true, size: 12, color: { argb: WHITE } };
+    sessionHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ACCENT } };
+
+    const sessionHeaders = ['المبلغ', 'الحالة', 'المدة', 'التاريخ', 'الموضوع', 'عنوان الجلسة'];
+    ws.columns = [
+      { key: 'amount', width: 16 },
+      { key: 'status', width: 14 },
+      { key: 'duration', width: 14 },
+      { key: 'date', width: 18 },
+      { key: 'topic', width: 28 },
+      { key: 'session', width: 32 },
+    ];
+    this.addHeaderRow(ws, sessionHeaders);
+
+    (consultant.sessions ?? []).forEach((s, idx) => {
+      const row = ws.addRow({
+        amount: this.toCurrencyValue(s.paidAmount ?? 0, country, egpRate),
+        status: s.sessionStatus,
+        duration: `${s.actualDurationMinutes} دقيقة`,
+        date: this.formatDate(s.scheduledAt),
+        topic: s.topic || '—',
+        session: s.sessionTitle,
+      });
+      this.styleDataRow(row, idx);
+      row.getCell(1).numFmt = this.currencyNumFmt(country);
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+
   private buildSummarySheet(
     workbook: ExcelJS.Workbook,
     instructors: InstructorReport[],

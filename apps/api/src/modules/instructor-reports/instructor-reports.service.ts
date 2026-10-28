@@ -554,14 +554,24 @@ export class InstructorReportsService {
         // No isPublished filter: count ALL lessons of published courses.
         // Lesson.isPublished defaults false and is not reliably set to true on publish,
         // so filtering by it yields 0 results for all instructors.
-        // No date filter: date range applies to activity (LiveSession, ConsultingSession,
-        // InstructorLecture), not to course content.
+        // Date range filters lessons by createdAt/liveStartTime so only activity within
+        // the range contributes to the report.
         const lessonWhere: any = {
-          OR: [
-            { module: { courseId: { in: pubCourseIds } } },
-            { section: { courseId: { in: pubCourseIds } } },
+          AND: [
+            {
+              OR: [
+                { module: { courseId: { in: pubCourseIds } } },
+                { section: { courseId: { in: pubCourseIds } } },
+              ],
+            },
           ],
         };
+        if (from || to) {
+          const lessonRange = this.dateRange(from, to);
+          lessonWhere.AND.push({
+            OR: [{ createdAt: lessonRange }, { liveStartTime: lessonRange }],
+          });
+        }
         console.log('[REPORT] fetching lessons for courses:', pubCourseIds);
 
         const lessons = await this.prisma.lesson.findMany({
@@ -643,12 +653,20 @@ export class InstructorReportsService {
       }
 
       // ── Step 4: LiveSession (any started state — exclude only SCHEDULED) ──
-      // Date filter uses createdAt (never null), not startedAt (nullable).
+      // Date filter checks startedAt, endedAt, or createdAt so only sessions that
+      // actually occurred within the range are counted.
       const liveWhere: any = {
         status: { in: [LiveSessionStatus.STARTING, LiveSessionStatus.LIVE, LiveSessionStatus.ENDING, LiveSessionStatus.ENDED] },
       };
       if (filter.instructorId) liveWhere.instructorId = filter.instructorId;
-      if (from || to) liveWhere.createdAt = this.dateRange(from, to);
+      if (from || to) {
+        const liveRange = this.dateRange(from, to);
+        liveWhere.OR = [
+          { startedAt: liveRange },
+          { endedAt: liveRange },
+          { createdAt: liveRange },
+        ];
+      }
 
       const liveSessions = await this.prisma.liveSession.findMany({ where: liveWhere });
 
@@ -817,6 +835,23 @@ export class InstructorReportsService {
       const { instructors, totalLectures, totalMinutes } =
         this.finalizeMap(instructorMap);
 
+      // Drop courses that had no activity within the date range so the report
+      // only shows courses with delivered/completed content in the period.
+      const activeCourseIds = new Set<string>();
+      for (const inst of instructors) {
+        inst.courses = inst.courses.filter((c) => {
+          if (filter.courseId) return true;
+          const hasActivity = c.lectureCount > 0 || c.totalMinutes > 0;
+          if (hasActivity && c.courseId !== CONSULTING_COURSE_ID) {
+            activeCourseIds.add(c.courseId);
+          }
+          return hasActivity;
+        });
+        inst.totalLectures = inst.courses.reduce((s, c) => s + c.lectureCount, 0);
+        inst.totalMinutes = inst.courses.reduce((s, c) => s + c.totalMinutes, 0);
+        inst.hoursDisplay = formatHours(inst.totalMinutes);
+      }
+
       // enhance instructor summaries
       for (const inst of instructors) {
         let totalLessons = 0;
@@ -863,7 +898,7 @@ export class InstructorReportsService {
         totalInstructors: instructors.length,
         totalLectures,
         totalMinutes: totalMinutes + totalConsultingMinutes,
-        totalCourses: directCourseCount,
+        totalCourses: activeCourseIds.size,
         instructors,
         consultants,
         totalConsultants: consultants.length,
@@ -925,11 +960,21 @@ export class InstructorReportsService {
 
     if (instrCourseIds.length > 0) {
       const lessonDetailWhere: any = {
-        OR: [
-          { module: { courseId: { in: instrCourseIds } } },
-          { section: { courseId: { in: instrCourseIds } } },
+        AND: [
+          {
+            OR: [
+              { module: { courseId: { in: instrCourseIds } } },
+              { section: { courseId: { in: instrCourseIds } } },
+            ],
+          },
         ],
       };
+      if (from || to) {
+        const lessonRange = this.dateRange(from, to);
+        lessonDetailWhere.AND.push({
+          OR: [{ createdAt: lessonRange }, { liveStartTime: lessonRange }],
+        });
+      }
 
       const rawLessons = await this.prisma.lesson.findMany({
         where: lessonDetailWhere,
@@ -1088,6 +1133,14 @@ export class InstructorReportsService {
       instructor,
       lectures,
     };
+  }
+
+  async getConsultantReport(
+    consultantId: string,
+    filter: ReportFilterDto,
+  ): Promise<ConsultantReport | null> {
+    const report = await this.getCollectiveReport({ ...filter, instructorId: consultantId });
+    return report.consultants?.find((c) => c.consultantId === consultantId) ?? null;
   }
 
   async backfillVideoDurations(): Promise<{ updated: number; failed: number; skipped: number }> {
