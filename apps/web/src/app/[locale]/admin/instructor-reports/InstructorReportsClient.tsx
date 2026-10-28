@@ -633,7 +633,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                     <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
                                     <th style={subThStyle}>{isAr ? 'الطلاب' : 'Students'}</th>
                                     <th style={subThStyle}>{isAr ? 'الإيرادات' : 'Revenue'}</th>
-                                    <th style={subThStyle}>{isAr ? 'تاريخ النشر' : 'Published'}</th>
+                                    <th style={subThStyle}>{isAr ? 'تاريخ الإنشاء' : 'Created'}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -671,7 +671,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                           {course.lessons.map((lesson:any)=>(
                                             <tr key={lesson.lessonId} style={{ borderBottom: '1px solid var(--border)' }}>
                                               <td style={subTdStyle}>{lesson.lessonTitle}</td>
-                                              <td style={subTdStyle}>{lesson.durationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
+                                              <td style={subTdStyle}>{lesson.durationMinutes > 0 ? `${lesson.durationMinutes} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
                                               <td style={subTdStyle}>{safeDate(lesson.lessonDate)}</td>
                                               <td style={subTdStyle}>{lesson.typeBadge || (isAr ? 'مسجل' : 'Recorded')}</td>
                                             </tr>
@@ -705,7 +705,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                         <tr key={lec.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                           <td style={subTdStyle}>{lec.title || lec.courseName}</td>
                                           <td style={subTdStyle}>{safeDate(lec.deliveredAt)}</td>
-                                          <td style={subTdStyle}>{lec.durationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
+                                          <td style={subTdStyle}>{lec.durationMinutes > 0 ? `${lec.durationMinutes} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
                                           <td style={subTdStyle}>{lec.activityLabel || lec.type || '—'}</td>
                                           <td style={subTdStyle}>{lec.status}</td>
                                         </tr>
@@ -818,7 +818,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                         <td style={subTdStyle}>{session.sessionTitle}</td>
                                         <td style={subTdStyle}>{session.topic || '—'}</td>
                                         <td style={subTdStyle}>{safeDate(session.scheduledAt as string | null)}</td>
-                                        <td style={subTdStyle}>{session.actualDurationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
+                                        <td style={subTdStyle}>{session.actualDurationMinutes > 0 ? `${session.actualDurationMinutes} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
                                         <td style={subTdStyle}>{session.sessionStatus}</td>
                                         <td style={subTdStyle}>{formatMoney(session.paidAmount, session.paidAmountDisplay)}</td>
                                       </tr>
