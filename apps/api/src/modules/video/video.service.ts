@@ -296,6 +296,57 @@ export class VideoService {
     this.logger.log(`Video status updated via webhook: ${streamId} -> ${newStatus}${updateData.duration != null ? `, duration: ${updateData.duration}s` : ''}`);
   }
 
+  async handleBunnyWebhook(data: { VideoLibraryId?: number; VideoGuid?: string; Status?: number }) {
+    const { VideoGuid, Status } = data;
+
+    if (!VideoGuid) {
+      throw new BadRequestException('Invalid Bunny webhook: missing VideoGuid');
+    }
+
+    // Bunny status codes: 0=Queued, 1=Processing, 2=Encoding, 3=Finished, 4=Resolution finished, 5=Failed
+    // Only save duration once encoding is done
+    if (Status == null || Status < 3 || Status === 5) {
+      this.logger.log(`Bunny webhook: ${VideoGuid} status=${Status} — not ready, skip`);
+      return { status: 'ignored', reason: 'not ready' };
+    }
+
+    const libraryId = this.configService.get<string>('BUNNY_LIBRARY_ID');
+    const apiKey = this.configService.get<string>('BUNNY_API_KEY');
+    const cdnHostname = (this.configService.get<string>('BUNNY_CDN_HOSTNAME') || '')
+      .replace(/^https?:\/\//, '')
+      .replace(/\/+$/, '');
+
+    if (!libraryId || !apiKey || !cdnHostname) {
+      this.logger.warn('Bunny env vars not configured, cannot process webhook');
+      return { status: 'ignored', reason: 'bunny not configured' };
+    }
+
+    let length: number | null = null;
+    try {
+      const res = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${VideoGuid}`, {
+        headers: { AccessKey: apiKey },
+      });
+      const videoData: any = await res.json();
+      length = typeof videoData?.length === 'number' ? videoData.length : null;
+    } catch (e: any) {
+      this.logger.error(`Bunny API call failed for ${VideoGuid}: ${e?.message}`);
+    }
+
+    if (!length || length <= 0) {
+      this.logger.log(`Bunny webhook: ${VideoGuid} — no duration from API, skip`);
+      return { status: 'ignored', reason: 'no duration' };
+    }
+
+    const videoUrl = `https://${cdnHostname}/${VideoGuid}/playlist.m3u8`;
+    const result = await this.prisma.lesson.updateMany({
+      where: { videoUrl, OR: [{ videoDuration: null }, { videoDuration: 0 }] },
+      data: { videoDuration: Math.round(length) },
+    });
+
+    this.logger.log(`Bunny webhook: ${VideoGuid} length=${Math.round(length)}s — updated ${result.count} lesson(s)`);
+    return { status: 'ok', durationSeconds: Math.round(length), lessonsUpdated: result.count };
+  }
+
   async getLessonVideo(userId: string, lessonId: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id: lessonId },

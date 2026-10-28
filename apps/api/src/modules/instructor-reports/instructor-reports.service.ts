@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
-import { CloudflareService } from '../video/cloudflare.service';
 import { LectureStatus, LiveSessionStatus, CourseStatus } from '@prisma/client';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
@@ -154,7 +153,6 @@ export class InstructorReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly exchangeRateService: ExchangeRateService,
-    private readonly cloudflareService: CloudflareService,
   ) {}
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -1066,35 +1064,48 @@ export class InstructorReportsService {
   }
 
   async backfillVideoDurations(): Promise<{ updated: number; failed: number; skipped: number }> {
-    const videos = await this.prisma.videoContent.findMany({
+    const libraryId = process.env.BUNNY_LIBRARY_ID;
+    const apiKey = process.env.BUNNY_API_KEY;
+
+    if (!libraryId || !apiKey) {
+      throw new Error('Bunny env vars not configured (BUNNY_LIBRARY_ID, BUNNY_API_KEY)');
+    }
+
+    // Find lessons with a Bunny HLS URL but no duration yet
+    const lessons = await this.prisma.lesson.findMany({
       where: {
-        OR: [{ duration: null }, { duration: 0 }],
+        videoUrl: { contains: '/playlist.m3u8' },
+        OR: [{ videoDuration: null }, { videoDuration: 0 }],
       },
-      select: { id: true, streamId: true },
+      select: { id: true, videoUrl: true },
     });
 
-    this.logger.log(`Backfill: found ${videos.length} VideoContent records with missing duration`);
+    this.logger.log(`Backfill: found ${lessons.length} lesson(s) with a Bunny URL and missing duration`);
 
     let updated = 0, failed = 0, skipped = 0;
 
-    for (const video of videos) {
+    for (const lesson of lessons) {
+      // HLS URL format: https://{CDN}/{videoId}/playlist.m3u8
+      const match = lesson.videoUrl?.match(/\/([0-9a-f-]{36})\/playlist\.m3u8$/i);
+      if (!match) { skipped++; continue; }
+      const videoId = match[1];
+
       try {
-        const result = await this.cloudflareService.getVideoStatus(video.streamId);
-        const durationSeconds: number | null =
-          typeof result?.duration === 'number' ? result.duration : null;
+        const res = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${videoId}`, {
+          headers: { AccessKey: apiKey },
+        });
+        const data: any = await res.json();
+        const length: number | null = typeof data?.length === 'number' ? data.length : null;
 
-        if (!durationSeconds || durationSeconds <= 0) {
-          skipped++;
-          continue;
-        }
+        if (!length || length <= 0) { skipped++; continue; }
 
-        await this.prisma.videoContent.update({
-          where: { id: video.id },
-          data: { duration: Math.round(durationSeconds) },
+        await this.prisma.lesson.update({
+          where: { id: lesson.id },
+          data: { videoDuration: Math.round(length) },
         });
         updated++;
       } catch (e: any) {
-        this.logger.warn(`Backfill failed for video ${video.id}: ${e?.message}`);
+        this.logger.warn(`Backfill failed for lesson ${lesson.id} (${videoId}): ${e?.message}`);
         failed++;
       }
 

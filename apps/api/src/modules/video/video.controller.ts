@@ -80,6 +80,13 @@ export class VideoController {
     return this.videoService.handleWebhook(data);
   }
 
+  @Post('webhook/bunny')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bunny Stream webhook' })
+  async handleBunnyWebhook(@Body() data: any) {
+    return this.videoService.handleBunnyWebhook(data);
+  }
+
   @Get('lesson/:lessonId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get video by lesson' })
