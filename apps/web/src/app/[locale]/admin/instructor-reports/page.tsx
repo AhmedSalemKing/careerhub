@@ -196,6 +196,7 @@ export default function InstructorReportsPage() {
   const [filterTo, setFilterTo] = useState(() => new Date().toISOString().slice(0, 10))
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [expandedConsultants, setExpandedConsultants] = useState<Set<string>>(new Set())
   const [lecturesByInstructor, setLecturesByInstructor] = useState<Record<string, LectureItem[]>>({})
   const [loadingLectures, setLoadingLectures] = useState<string | null>(null)
 
@@ -715,9 +716,81 @@ export default function InstructorReportsPage() {
                 </thead>
                 <tbody>
                   {report.consultants.map((consultant) => {
-                    const [open, setOpen] = useState(false) // will fix below with proper state; easier to use expanded style differently
-                    // use a simple approach by reusing expanded set with prefix? or just render inline
-                    return null
+                    const isOpen = expandedConsultants.has(consultant.consultantId)
+                    const toggleConsultant = () =>
+                      setExpandedConsultants((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(consultant.consultantId)) next.delete(consultant.consultantId)
+                        else next.add(consultant.consultantId)
+                        return next
+                      })
+                    return (
+                      <>
+                        <tr key={consultant.consultantId} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={tdStyle}>
+                            <div style={{ fontWeight: 700 }}>{consultant.nameAr || consultant.nameEn}</div>
+                            <div style={{ fontSize: 12, color: 'var(--muted)' }}>{consultant.email}</div>
+                          </td>
+                          <td style={tdStyle}>{consultant.sessionCount}</td>
+                          <td style={tdStyle}>{consultant.completedCount}</td>
+                          <td style={tdStyle}>{consultant.cancelledCount}</td>
+                          <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{consultant.hoursDisplay}</td>
+                          <td style={tdStyle}>
+                            <button
+                              onClick={toggleConsultant}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '6px 10px',
+                                borderRadius: 8,
+                                background: 'var(--surface)',
+                                border: '1px solid var(--border)',
+                                color: 'var(--foreground)',
+                                cursor: 'pointer',
+                                fontSize: 12,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {isOpen ? (isAr ? 'إخفاء' : 'Hide') : isAr ? 'عرض' : 'Show'}
+                              {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          </td>
+                        </tr>
+                        {isOpen && consultant.sessions && consultant.sessions.length > 0 && (
+                          <tr>
+                            <td colSpan={6} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
+                              <div style={{ padding: '14px 18px' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                  <thead>
+                                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                      <th style={subThStyle}>{isAr ? 'عنوان الجلسة' : 'Session'}</th>
+                                      <th style={subThStyle}>{isAr ? 'الموضوع' : 'Topic'}</th>
+                                      <th style={subThStyle}>{isAr ? 'التاريخ' : 'Date'}</th>
+                                      <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
+                                      <th style={subThStyle}>{isAr ? 'الحالة' : 'Status'}</th>
+                                      <th style={subThStyle}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {consultant.sessions.map((session) => (
+                                      <tr key={session.sessionId} style={{ borderBottom: '1px solid var(--border)' }}>
+                                        <td style={subTdStyle}>{session.sessionTitle}</td>
+                                        <td style={subTdStyle}>{session.topic || '—'}</td>
+                                        <td style={subTdStyle}>{safeDate(session.scheduledAt as string | null)}</td>
+                                        <td style={subTdStyle}>{session.actualDurationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
+                                        <td style={subTdStyle}>{session.sessionStatus}</td>
+                                        <td style={subTdStyle}>{session.paidAmount ?? 0} {session.currency || ''}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )
                   })}
                 </tbody>
               </table>
