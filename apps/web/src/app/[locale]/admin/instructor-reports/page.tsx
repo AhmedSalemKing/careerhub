@@ -176,6 +176,20 @@ function safeDate(value: string | null | undefined): string {
   return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+function formatAmount(amount: number | undefined | null, currency = 'USD'): string {
+  if (!amount || amount <= 0) return '—'
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount)
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`
+  }
+}
+
 export default function InstructorReportsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -359,7 +373,7 @@ export default function InstructorReportsPage() {
     const sessionsCount = report.consultants?.reduce((sum, c) => sum + (c.sessionCount || 0), 0) || 0
     return {
       instructors: report.totalInstructors || report.instructors?.length || 0,
-      courses: instructorCourses,
+      courses: report.totalCourses ?? instructorCourses,
       sessions: sessionsCount,
       minutes: report.totalMinutes,
     }
@@ -587,7 +601,7 @@ export default function InstructorReportsPage() {
                         <td style={tdStyle}>{totalLessons}</td>
                         <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
                         <td style={tdStyle}>{totalStudents}</td>
-                        <td style={tdStyle}>{totalRevenue}</td>
+                        <td style={tdStyle}>{totalRevenue > 0 ? formatAmount(totalRevenue) : '—'}</td>
                         <td style={tdStyle}>
                           <button
                             onClick={() => toggleDetails(instructor.instructorId)}
@@ -638,7 +652,7 @@ export default function InstructorReportsPage() {
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
                                       <td style={subTdStyle}>{course.enrolledStudents ?? 0}</td>
                                       <td style={subTdStyle}>{course.paidEnrollments ?? 0}</td>
-                                      <td style={subTdStyle}>{course.grossSales ?? course.netRevenue ?? 0}</td>
+                                      <td style={subTdStyle}>{formatAmount(course.grossSales ?? course.netRevenue, course.courseCurrency || 'USD')}</td>
                                       <td style={subTdStyle}>{safeDate(course.publishedAt || course.lastDeliveredAt)}</td>
                                     </tr>
                                   ))}
@@ -780,7 +794,7 @@ export default function InstructorReportsPage() {
                                         <td style={subTdStyle}>{safeDate(session.scheduledAt as string | null)}</td>
                                         <td style={subTdStyle}>{session.actualDurationMinutes} {isAr ? 'دقيقة' : 'min'}</td>
                                         <td style={subTdStyle}>{session.sessionStatus}</td>
-                                        <td style={subTdStyle}>{session.paidAmount ?? 0} {session.currency || ''}</td>
+                                        <td style={subTdStyle}>{formatAmount(session.paidAmount, session.currency || 'SAR')}</td>
                                       </tr>
                                     ))}
                                   </tbody>

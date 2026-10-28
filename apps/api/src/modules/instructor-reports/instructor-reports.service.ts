@@ -442,16 +442,43 @@ export class InstructorReportsService {
       if (filter.instructorId) pubCourseWhere.instructorId = filter.instructorId;
       if (filter.courseId) pubCourseWhere.id = filter.courseId;
 
-      const pubCourses = await this.prisma.course.findMany({
-        where: pubCourseWhere,
-        select: { id: true, titleAr: true, titleEn: true, instructorId: true, status: true, price: true, currency: true, createdAt: true },
-      });
-      console.log('[REPORT] found published courses:', pubCourses.length);
+      const [pubCourses, directCourseCount] = await Promise.all([
+        this.prisma.course.findMany({
+          where: pubCourseWhere,
+          select: { id: true, titleAr: true, titleEn: true, instructorId: true, status: true, price: true, currency: true, createdAt: true },
+        }),
+        this.prisma.course.count({ where: { status: CourseStatus.PUBLISHED } }),
+      ]);
+      console.log('[REPORT] found published courses:', pubCourses.length, '/ total published:', directCourseCount);
       for (const pc of pubCourses) {
         console.log(`  course ${pc.id} by ${pc.instructorId} title:${pc.titleEn || pc.titleAr}`);
       }
       const pubCourseMap = new Map(pubCourses.map((c) => [c.id, c]));
       const pubCourseIds = [...pubCourseMap.keys()];
+
+      // Enrollment counts and completed payment totals per course
+      const enrollmentMap = new Map<string, number>();
+      const paymentMap = new Map<string, number>();
+      if (pubCourseIds.length > 0) {
+        const [enrollments, payments] = await Promise.all([
+          this.prisma.enrollment.findMany({
+            where: { courseId: { in: pubCourseIds } },
+            select: { courseId: true },
+          }),
+          this.prisma.payment.findMany({
+            where: { courseId: { in: pubCourseIds }, status: 'COMPLETED' },
+            select: { courseId: true, amount: true },
+          }),
+        ]);
+        for (const e of enrollments) {
+          enrollmentMap.set(e.courseId, (enrollmentMap.get(e.courseId) ?? 0) + 1);
+        }
+        for (const p of payments) {
+          if (p.courseId) {
+            paymentMap.set(p.courseId, (paymentMap.get(p.courseId) ?? 0) + p.amount);
+          }
+        }
+      }
 
       // Pre-populate every published course into its instructor's courses array.
       // Without this, instructors whose courses have no published lessons show 0 courses.
@@ -598,10 +625,12 @@ export class InstructorReportsService {
         this.addEntry(inst, course, mins, deliveredAt);
       }
 
-      // ── Step 5: ConsultingSession (any non-pending/future state) ────────────
-      const consultingWhere: any = { status: { notIn: ['PENDING', 'SCHEDULED'] } };
+      // ── Step 5: ConsultingSession — ALL statuses within date range ──────────
+      // No status filter: include PENDING/SCHEDULED/COMPLETED/CANCELLED in session count.
+      // Date range uses scheduledAt (when the session is booked) not createdAt.
+      const consultingWhere: any = {};
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
-      if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
+      if (from || to) consultingWhere.scheduledAt = this.dateRange(from, to);
 
       const consultingSessions = await this.prisma.consultingSession.findMany({
         where: consultingWhere,
@@ -679,16 +708,17 @@ export class InstructorReportsService {
         if (st === 'COMPLETED') cons.completedCount += 1;
         if (st === 'CANCELLED' || st === 'NO_SHOW') cons.cancelledCount += 1;
         cons.totalActualMinutes += mins;
+        const resolvedScheduledAt = this.resolveDate(session.scheduledAt, session.completedAt, session.paidAt);
         cons.sessions.push({
           sessionId: session.id,
           sessionTitle: session.sessionName || session.topic || 'جلسة استشارية',
           topic: session.topic,
           clientName: undefined,
-          scheduledAt: session.scheduledAt,
+          scheduledAt: resolvedScheduledAt,
           actualStartedAt: null,
           actualEndedAt: null,
           actualDurationMinutes: mins,
-          sessionStatus: st === 'COMPLETED' ? 'مكتملة' : st === 'CANCELLED' || st === 'NO_SHOW' ? 'ملغاة' : st === 'IN_PROGRESS' ? 'جارية' : 'مكتملة',
+          sessionStatus: st === 'COMPLETED' ? 'مكتملة' : st === 'CANCELLED' || st === 'NO_SHOW' ? 'ملغاة' : st === 'PENDING' ? 'معلقة' : st === 'SCHEDULED' ? 'مجدولة' : st === 'IN_PROGRESS' ? 'جارية' : st || 'غير محدد',
           sessionPrice: session.price || 0,
           currency: 'SAR',
           paymentStatus: session.paymentStatus,
@@ -705,6 +735,12 @@ export class InstructorReportsService {
         c.hoursDisplay = formatHours(c.totalActualMinutes);
       }
 
+      // Total consulting minutes (for the overall hours summary card)
+      let totalConsultingMinutes = 0;
+      for (const c of consultantMap.values()) {
+        totalConsultingMinutes += c.totalActualMinutes;
+      }
+
       // Also add consulting sessions to instructor map as before for backward compat? The requirement says separate sections.
       for (const session of consultingSessions) {
         if (instructorMap.has((session as any).consultantId)) {
@@ -717,7 +753,7 @@ export class InstructorReportsService {
       }
 
       // ── Finalize ────────────────────────────────────────────────────────
-      const { instructors, totalLectures, totalMinutes, totalCourses } =
+      const { instructors, totalLectures, totalMinutes } =
         this.finalizeMap(instructorMap);
 
       // enhance instructor summaries
@@ -733,8 +769,20 @@ export class InstructorReportsService {
         (inst as any).totalLessons = totalLessons;
         (inst as any).totalLiveSessions = totalLiveSessions;
         (inst as any).totalTeachingMinutes = totalTeachingMinutes;
-        (inst as any).totalStudents = 0;
-        (inst as any).totalRevenue = 0;
+        let totalStudents = 0;
+        let totalRevenue = 0;
+        for (const c of inst.courses) {
+          if (c.courseId === CONSULTING_COURSE_ID) continue;
+          const students = enrollmentMap.get(c.courseId) ?? 0;
+          const revenue = paymentMap.get(c.courseId) ?? 0;
+          (c as any).enrolledStudents = students;
+          (c as any).grossSales = revenue;
+          (c as any).netRevenue = revenue;
+          totalStudents += students;
+          totalRevenue += revenue;
+        }
+        (inst as any).totalStudents = totalStudents;
+        (inst as any).totalRevenue = totalRevenue;
         // add lessons/liveSessions details
         for (const c of inst.courses) {
           if (!(c as any).lessons) (c as any).lessons = [];
@@ -749,10 +797,10 @@ export class InstructorReportsService {
 
       return {
         generatedAt: new Date(),
-        totalInstructors: instructors.filter(i => (i as any).courseCount > 0).length,
+        totalInstructors: instructors.length,
         totalLectures,
-        totalMinutes,
-        totalCourses,
+        totalMinutes: totalMinutes + totalConsultingMinutes,
+        totalCourses: directCourseCount,
         instructors,
         consultants,
         totalConsultants: consultants.length,
