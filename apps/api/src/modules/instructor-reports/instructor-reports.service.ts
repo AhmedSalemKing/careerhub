@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { LectureStatus, LiveSessionStatus } from '@prisma/client';
+import { LectureStatus, LiveSessionStatus, CourseStatus } from '@prisma/client';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { ReportFilterDto } from './dto/report-filter.dto';
@@ -43,9 +43,10 @@ export interface InstructorLectureItem {
   durationMinutes: number;
   hoursDisplay: string;
   status: LectureStatus;
-  type: 'live' | 'consulting' | 'manual';
+  type: 'live' | 'consulting' | 'manual' | 'lesson';
   activityLabel: string;
   instructorRole: string;
+  sessionStatus: string;
 }
 
 export interface InstructorDetailReport {
@@ -113,6 +114,12 @@ export class InstructorReportsService {
     }
     // Epoch sentinel: frontend safeDate() renders this as '—'
     return '1970-01-01T00:00:00.000Z';
+  }
+
+  // Lesson videoDuration is stored in seconds — convert to minutes.
+  private resolveLessonDuration(videoDuration: number | null | undefined): number {
+    if (!videoDuration || videoDuration <= 0) return 0;
+    return Math.round(videoDuration / 60);
   }
 
   // Calculate duration in minutes from timestamps, falling back to provided value.
@@ -342,8 +349,60 @@ export class InstructorReportsService {
         this.ensureInstructor(instructorMap, user.id, user.email, user.profile);
       }
 
-      // ── Step 2: Manual InstructorLecture entries ───────────────────────
-      const manualWhere: any = { status: LectureStatus.COMPLETED };
+      // ── Step 2: Lessons in published courses (INSTRUCTOR users only) ────
+      const pubCourseWhere: any = {
+        status: CourseStatus.PUBLISHED,
+        instructorId: { not: null },
+        instructor: { accountType: 'INSTRUCTOR', status: 'ACTIVE' },
+      };
+      if (filter.instructorId) pubCourseWhere.instructorId = filter.instructorId;
+      if (filter.courseId) pubCourseWhere.id = filter.courseId;
+
+      const pubCourses = await this.prisma.course.findMany({
+        where: pubCourseWhere,
+        select: { id: true, titleAr: true, titleEn: true, instructorId: true },
+      });
+      const pubCourseMap = new Map(pubCourses.map((c) => [c.id, c]));
+      const pubCourseIds = [...pubCourseMap.keys()];
+
+      if (pubCourseIds.length > 0) {
+        const lessonWhere: any = {
+          isPublished: true,
+          OR: [
+            { module: { courseId: { in: pubCourseIds } } },
+            { section: { courseId: { in: pubCourseIds } } },
+          ],
+        };
+        if (from || to) lessonWhere.createdAt = this.dateRange(from, to);
+
+        const lessons = await this.prisma.lesson.findMany({
+          where: lessonWhere,
+          select: {
+            id: true,
+            videoDuration: true,
+            createdAt: true,
+            module: { select: { courseId: true } },
+            section: { select: { courseId: true } },
+          },
+        });
+
+        for (const lesson of lessons) {
+          const courseId = lesson.module?.courseId ?? lesson.section?.courseId;
+          if (!courseId) continue;
+          const course = pubCourseMap.get(courseId);
+          if (!course?.instructorId) continue;
+          if (!instructorMap.has(course.instructorId)) continue;
+
+          const inst = instructorMap.get(course.instructorId)!;
+          const courseName = course.titleAr || course.titleEn || courseId;
+          const courseEntry = this.ensureCourse(inst, courseId, courseName);
+          const mins = this.resolveLessonDuration(lesson.videoDuration);
+          this.addEntry(inst, courseEntry, mins, lesson.createdAt);
+        }
+      }
+
+      // ── Step 3: Manual InstructorLecture entries ───────────────────────
+      const manualWhere: any = { status: { in: [LectureStatus.COMPLETED, LectureStatus.CANCELLED] } };
       if (filter.instructorId) manualWhere.instructorId = filter.instructorId;
       if (filter.courseId) manualWhere.courseId = filter.courseId;
       if (from || to) manualWhere.deliveredAt = this.dateRange(from, to);
@@ -371,9 +430,11 @@ export class InstructorReportsService {
         this.addEntry(inst, course, row.durationMinutes, row.deliveredAt);
       }
 
-      // ── Step 3: LiveSession (status=ENDED) ────────────────────────────
+      // ── Step 4: LiveSession (any started state — exclude only SCHEDULED) ──
       // Date filter uses createdAt (never null), not startedAt (nullable).
-      const liveWhere: any = { status: LiveSessionStatus.ENDED };
+      const liveWhere: any = {
+        status: { in: [LiveSessionStatus.STARTING, LiveSessionStatus.LIVE, LiveSessionStatus.ENDING, LiveSessionStatus.ENDED] },
+      };
       if (filter.instructorId) liveWhere.instructorId = filter.instructorId;
       if (from || to) liveWhere.createdAt = this.dateRange(from, to);
 
@@ -409,9 +470,9 @@ export class InstructorReportsService {
         this.addEntry(inst, course, mins, deliveredAt);
       }
 
-      // ── Step 4: ConsultingSession (completed, for CONSULTANT users) ────
-      // Filter on createdAt (always set), not scheduledAt (nullable/unreliable).
-      const consultingWhere: any = { completedAt: { not: null } };
+      // ── Step 5: ConsultingSession (any non-pending state) ────────────
+      // Filter on createdAt (always set).
+      const consultingWhere: any = { status: { notIn: ['PENDING', 'SCHEDULED'] } };
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
       if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
 
@@ -480,8 +541,68 @@ export class InstructorReportsService {
         hoursDisplay: formatHours(0),
       } as InstructorReport);
 
+    // ── Lesson detail list (published courses of this instructor) ────────
+    const instrCoursesForLessons = await this.prisma.course.findMany({
+      where: {
+        status: CourseStatus.PUBLISHED,
+        instructorId,
+        instructor: { accountType: 'INSTRUCTOR', status: 'ACTIVE' },
+      },
+      select: { id: true, titleAr: true, titleEn: true },
+    });
+    const instrCourseMap = new Map(instrCoursesForLessons.map((c) => [c.id, c]));
+    const instrCourseIds = [...instrCourseMap.keys()];
+
+    let lessonRows: Array<{
+      id: string;
+      title: string;
+      videoDuration: number | null;
+      createdAt: Date;
+      courseId: string;
+      courseName: string;
+    }> = [];
+
+    if (instrCourseIds.length > 0) {
+      const lessonDetailWhere: any = {
+        isPublished: true,
+        OR: [
+          { module: { courseId: { in: instrCourseIds } } },
+          { section: { courseId: { in: instrCourseIds } } },
+        ],
+      };
+      if (from || to) lessonDetailWhere.createdAt = this.dateRange(from, to);
+
+      const rawLessons = await this.prisma.lesson.findMany({
+        where: lessonDetailWhere,
+        select: {
+          id: true,
+          title: true,
+          videoDuration: true,
+          createdAt: true,
+          module: { select: { courseId: true } },
+          section: { select: { courseId: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      lessonRows = rawLessons.flatMap((lesson) => {
+        const courseId = lesson.module?.courseId ?? lesson.section?.courseId;
+        if (!courseId) return [];
+        const course = instrCourseMap.get(courseId);
+        if (!course) return [];
+        return [{
+          id: lesson.id,
+          title: lesson.title,
+          videoDuration: lesson.videoDuration,
+          createdAt: lesson.createdAt,
+          courseId,
+          courseName: course.titleAr || course.titleEn || courseId,
+        }];
+      });
+    }
+
     // ── Manual lecture detail list ────────────────────────────────────────
-    const manualWhere: any = { status: LectureStatus.COMPLETED, instructorId };
+    const manualWhere: any = { status: { in: [LectureStatus.COMPLETED, LectureStatus.CANCELLED] }, instructorId };
     if (from || to) manualWhere.deliveredAt = this.dateRange(from, to);
 
     const manualRows = await this.prisma.instructorLecture.findMany({
@@ -491,7 +612,10 @@ export class InstructorReportsService {
     });
 
     // ── LiveSession detail list ───────────────────────────────────────────
-    const liveWhere: any = { status: LiveSessionStatus.ENDED, instructorId };
+    const liveWhere: any = {
+      status: { in: [LiveSessionStatus.STARTING, LiveSessionStatus.LIVE, LiveSessionStatus.ENDING, LiveSessionStatus.ENDED] },
+      instructorId,
+    };
     if (from || to) liveWhere.createdAt = this.dateRange(from, to);
 
     const liveRows = await this.prisma.liveSession.findMany({
@@ -509,7 +633,7 @@ export class InstructorReportsService {
     const courseById = new Map(liveCourseRecords.map((c) => [c.id, c]));
 
     // ── ConsultingSession detail list ─────────────────────────────────────
-    const consultingDetailWhere: any = { completedAt: { not: null }, consultantId: instructorId };
+    const consultingDetailWhere: any = { status: { notIn: ['PENDING', 'SCHEDULED'] }, consultantId: instructorId };
     if (from || to) consultingDetailWhere.createdAt = this.dateRange(from, to);
 
     const consultingRows = await this.prisma.consultingSession.findMany({
@@ -522,12 +646,30 @@ export class InstructorReportsService {
         completedAt: true,
         topic: true,
         sessionName: true,
+        status: true,
       },
       orderBy: { scheduledAt: 'desc' },
     });
 
     // ── Merge and sort all lecture items ──────────────────────────────────
     const lectures: InstructorLectureItem[] = [
+      ...lessonRows.map((lesson) => {
+        const mins = this.resolveLessonDuration(lesson.videoDuration);
+        return {
+          id: lesson.id,
+          courseId: lesson.courseId,
+          courseName: lesson.courseName,
+          title: lesson.title,
+          deliveredAt: this.resolveDate(lesson.createdAt),
+          durationMinutes: mins,
+          hoursDisplay: formatHours(mins),
+          status: LectureStatus.COMPLETED,
+          type: 'lesson' as const,
+          activityLabel: 'كورس',
+          instructorRole: 'INSTRUCTOR',
+          sessionStatus: 'منشورة',
+        };
+      }),
       ...manualRows.map((row) => ({
         id: row.id,
         courseId: row.courseId,
@@ -540,6 +682,7 @@ export class InstructorReportsService {
         type: 'manual' as const,
         activityLabel: 'كورس',
         instructorRole: isConsultant ? 'CONSULTANT' : 'INSTRUCTOR',
+        sessionStatus: row.status === LectureStatus.CANCELLED ? 'ملغاة' : 'مكتملة',
       })),
       ...liveRows.map((session) => {
         const c = courseById.get(session.courseId);
@@ -556,6 +699,7 @@ export class InstructorReportsService {
           type: 'live' as const,
           activityLabel: 'كورس',
           instructorRole: 'INSTRUCTOR',
+          sessionStatus: session.status === LiveSessionStatus.ENDED ? 'مكتملة' : 'جارية',
         };
       }),
       ...consultingRows.map((session) => ({
@@ -570,6 +714,10 @@ export class InstructorReportsService {
         type: 'consulting' as const,
         activityLabel: 'جلسة',
         instructorRole: 'CONSULTANT',
+        sessionStatus:
+          session.status === 'COMPLETED' ? 'مكتملة' :
+          ['CANCELLED', 'NO_SHOW'].includes(session.status) ? 'ملغاة' :
+          session.status === 'IN_PROGRESS' ? 'جارية' : 'مكتملة',
       })),
     ].sort((a, b) => new Date(b.deliveredAt).getTime() - new Date(a.deliveredAt).getTime());
 

@@ -53,9 +53,10 @@ interface LectureItem {
   durationMinutes: number
   hoursDisplay: string
   status: string
-  type?: 'live' | 'consulting' | 'manual'
+  type?: 'live' | 'consulting' | 'manual' | 'lesson'
   activityLabel?: string
   instructorRole?: string
+  sessionStatus?: string
 }
 
 interface InstructorOption {
@@ -555,6 +556,7 @@ export default function InstructorReportsPage() {
                                       <th style={subThStyle}>{isAr ? 'الدورة / نوع النشاط' : 'Course / Type'}</th>
                                       <th style={subThStyle}>{isAr ? 'العنوان' : 'Title'}</th>
                                       <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
+                                      <th style={subThStyle}>{isAr ? 'الحالة' : 'Status'}</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -564,19 +566,46 @@ export default function InstructorReportsPage() {
                                         <td style={subTdStyle}>{lecture.courseName}</td>
                                         <td style={subTdStyle}>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                            {(lecture.activityLabel === 'جلسة' || (!lecture.activityLabel && lecture.type === 'consulting')) ? (
+                                            {lecture.type === 'consulting' ? (
                                               <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.12)', color: '#065f46', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                {lecture.activityLabel || 'جلسة'}
+                                                جلسة
+                                              </span>
+                                            ) : lecture.type === 'live' ? (
+                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                بث مباشر
                                               </span>
                                             ) : (
                                               <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                {lecture.activityLabel || 'كورس'}
+                                                كورس
                                               </span>
                                             )}
                                             {lecture.title || ''}
                                           </div>
                                         </td>
                                         <td style={subTdStyle}>{lecture.hoursDisplay}</td>
+                                        <td style={subTdStyle}>
+                                          {lecture.sessionStatus && (
+                                            <span style={{
+                                              padding: '2px 8px',
+                                              borderRadius: 12,
+                                              fontSize: 11,
+                                              fontWeight: 700,
+                                              whiteSpace: 'nowrap',
+                                              background:
+                                                lecture.sessionStatus === 'مكتملة' ? 'rgba(16,185,129,0.12)' :
+                                                lecture.sessionStatus === 'ملغاة' ? 'rgba(239,68,68,0.12)' :
+                                                lecture.sessionStatus === 'منشورة' ? 'rgba(99,102,241,0.12)' :
+                                                'rgba(245,158,11,0.12)',
+                                              color:
+                                                lecture.sessionStatus === 'مكتملة' ? '#065f46' :
+                                                lecture.sessionStatus === 'ملغاة' ? '#991b1b' :
+                                                lecture.sessionStatus === 'منشورة' ? '#3730a3' :
+                                                '#92400e',
+                                            }}>
+                                              {lecture.sessionStatus}
+                                            </span>
+                                          )}
+                                        </td>
                                       </tr>
                                     ))}
                                   </tbody>
