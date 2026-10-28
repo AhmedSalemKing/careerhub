@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
+import { CloudflareService } from '../video/cloudflare.service';
 import { LectureStatus, LiveSessionStatus, CourseStatus } from '@prisma/client';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
@@ -148,9 +149,12 @@ const CONSULTING_COURSE_NAME = 'جلسات استشارية';
 
 @Injectable()
 export class InstructorReportsService {
+  private readonly logger = new Logger(InstructorReportsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly exchangeRateService: ExchangeRateService,
+    private readonly cloudflareService: CloudflareService,
   ) {}
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -1059,5 +1063,45 @@ export class InstructorReportsService {
       instructor,
       lectures,
     };
+  }
+
+  async backfillVideoDurations(): Promise<{ updated: number; failed: number; skipped: number }> {
+    const videos = await this.prisma.videoContent.findMany({
+      where: {
+        OR: [{ duration: null }, { duration: 0 }],
+      },
+      select: { id: true, streamId: true },
+    });
+
+    this.logger.log(`Backfill: found ${videos.length} VideoContent records with missing duration`);
+
+    let updated = 0, failed = 0, skipped = 0;
+
+    for (const video of videos) {
+      try {
+        const result = await this.cloudflareService.getVideoStatus(video.streamId);
+        const durationSeconds: number | null =
+          typeof result?.duration === 'number' ? result.duration : null;
+
+        if (!durationSeconds || durationSeconds <= 0) {
+          skipped++;
+          continue;
+        }
+
+        await this.prisma.videoContent.update({
+          where: { id: video.id },
+          data: { duration: Math.round(durationSeconds) },
+        });
+        updated++;
+      } catch (e: any) {
+        this.logger.warn(`Backfill failed for video ${video.id}: ${e?.message}`);
+        failed++;
+      }
+
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    this.logger.log(`Backfill complete: updated=${updated} failed=${failed} skipped=${skipped}`);
+    return { updated, failed, skipped };
   }
 }

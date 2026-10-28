@@ -126,4 +126,11 @@ export class InstructorReportsController {
     const data = await this.reportService.getInstructors();
     return { success: true, data };
   }
+
+  @Post('backfill-video-durations')
+  @ApiOperation({ summary: 'Backfill VideoContent.duration from Cloudflare Stream for records with null/0 duration (admin only)' })
+  async backfillVideoDurations() {
+    const result = await this.reportService.backfillVideoDurations();
+    return { success: true, data: result };
+  }
 }
