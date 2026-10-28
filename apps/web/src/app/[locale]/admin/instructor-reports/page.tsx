@@ -103,8 +103,11 @@ export default function InstructorReportsPage() {
   const [exportingPdf, setExportingPdf] = useState(false)
 
   const [filterInstructor, setFilterInstructor] = useState('')
-  const [filterFrom, setFilterFrom] = useState('')
-  const [filterTo, setFilterTo] = useState('')
+  const [filterFrom, setFilterFrom] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+  })
+  const [filterTo, setFilterTo] = useState(() => new Date().toISOString().slice(0, 10))
 
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [lecturesByInstructor, setLecturesByInstructor] = useState<Record<string, LectureItem[]>>({})
