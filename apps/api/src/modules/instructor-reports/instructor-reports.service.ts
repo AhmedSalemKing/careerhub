@@ -472,7 +472,7 @@ export class InstructorReportsService {
       const [pubCourses, directCourseCount] = await Promise.all([
         this.prisma.course.findMany({
           where: pubCourseWhere,
-          select: { id: true, titleAr: true, titleEn: true, instructorId: true, status: true, price: true, currency: true, createdAt: true },
+          select: { id: true, titleAr: true, titleEn: true, instructorId: true, status: true, price: true, currency: true, createdAt: true, publishedAt: true },
         }),
         this.prisma.course.count({ where: { status: CourseStatus.PUBLISHED } }),
       ]);
@@ -519,7 +519,7 @@ export class InstructorReportsService {
         (ce as any).coursePrice = pc.price;
         (ce as any).courseCurrency = pc.currency;
         (ce as any).createdAt = pc.createdAt;
-        (ce as any).publishedAt = pc.createdAt;
+        (ce as any).publishedAt = pc.publishedAt ?? pc.createdAt;
       }
 
       if (pubCourseIds.length > 0) {
@@ -571,7 +571,7 @@ export class InstructorReportsService {
           (courseEntry as any).coursePrice = course.price;
           (courseEntry as any).courseCurrency = course.currency;
           (courseEntry as any).createdAt = course.createdAt;
-          (courseEntry as any).publishedAt = course.createdAt;
+          (courseEntry as any).publishedAt = course.publishedAt ?? course.createdAt;
           if (!(courseEntry as any).lessons) (courseEntry as any).lessons = [];
           const mins = this.resolveLessonDuration(lesson.videoDuration ?? lesson.videoContent?.duration);
           (courseEntry as any).lessons.push({

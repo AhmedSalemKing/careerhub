@@ -249,7 +249,7 @@ export class AdminController {
   async publishDraftCourses() {
     const result = await this.prisma.course.updateMany({
       where: { status: 'DRAFT' },
-      data: { status: 'PUBLISHED' }
+      data: { status: 'PUBLISHED', publishedAt: new Date() }
     })
     return { success: true, updated: result.count }
   }

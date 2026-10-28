@@ -1319,7 +1319,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
   async publishCourse(id: string) {
     const course = await this.prisma.course.update({
       where: { id },
-      data: { status: 'PUBLISHED' },
+      data: { status: 'PUBLISHED', publishedAt: new Date() },
     });
 
     this.logger.log(`Course published: ${course.titleEn}`);

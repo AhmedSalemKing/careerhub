@@ -633,7 +633,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                     <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
                                     <th style={subThStyle}>{isAr ? 'الطلاب' : 'Students'}</th>
                                     <th style={subThStyle}>{isAr ? 'الإيرادات' : 'Revenue'}</th>
-                                    <th style={subThStyle}>{isAr ? 'تاريخ الإنشاء' : 'Created'}</th>
+                                    <th style={subThStyle}>{isAr ? 'تاريخ النشر' : 'Published'}</th>
                                   </tr>
                                 </thead>
                                 <tbody>

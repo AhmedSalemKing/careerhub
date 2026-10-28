@@ -795,7 +795,7 @@ export class AdminService {
   async approveCourse(id: string) {
     const course = await this.prisma.course.update({
       where: { id },
-      data: { status: 'PUBLISHED', updatedAt: new Date() },
+      data: { status: 'PUBLISHED', publishedAt: new Date(), updatedAt: new Date() },
     });
 
     if (course.instructorId) {

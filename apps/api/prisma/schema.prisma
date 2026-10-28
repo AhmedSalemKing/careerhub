@@ -357,6 +357,7 @@ model Course {
   certificateEnabled  Boolean      @default(true)
   isCompleted         Boolean      @default(false)
   completedAt         DateTime?
+  publishedAt         DateTime?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
@@ -1212,16 +1213,21 @@ model SecurityLog {
 }
 
 model Conversation {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title     String      @default("محادثة جديدة")
-  context   String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  messages  AiMessage[]
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title             String      @default("محادثة جديدة")
+  context           String?
+  report            Json?
+  reportGeneratedAt DateTime?
+  interviewStage    String?     @default("ORIENTATION")
+  evidenceLog       Json?       @default("[]")
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  messages          AiMessage[]
 
   @@index([userId])
+  @@index([context])
   @@map("conversations")
 }
 

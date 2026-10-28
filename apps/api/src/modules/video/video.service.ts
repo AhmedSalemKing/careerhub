@@ -240,7 +240,7 @@ export class VideoService {
   async handleWebhook(webhookData: any) {
     this.logger.log(`Received Cloudflare webhook: ${JSON.stringify(webhookData)}`);
 
-    const { uid: streamId, status } = webhookData;
+    const { uid: streamId, status, duration } = webhookData;
 
     if (!streamId || !status) {
       throw new BadRequestException('Invalid webhook data');
@@ -270,12 +270,17 @@ export class VideoService {
         break;
     }
 
+    const updateData: any = { status: newStatus };
+    if (status === 'ready' && duration != null) {
+      updateData.duration = Math.round(duration);
+    }
+
     await this.prisma.videoContent.update({
       where: { id: videoContent.id },
-      data: { status: newStatus },
+      data: updateData,
     });
 
-    this.logger.log(`Video status updated via webhook: ${streamId} -> ${newStatus}`);
+    this.logger.log(`Video status updated via webhook: ${streamId} -> ${newStatus}${updateData.duration != null ? `, duration: ${updateData.duration}s` : ''}`);
   }
 
   async getLessonVideo(userId: string, lessonId: string) {
