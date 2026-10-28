@@ -583,7 +583,7 @@ export class InstructorReportsService {
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
       if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
 
-      const consultingSessions = await ((this.prisma as any).consultingSession || (this.prisma as any).ConsultingSession).findMany({
+      const consultingSessions = await this.prisma.consultingSession.findMany({
         where: consultingWhere,
         select: {
           id: true,
@@ -591,8 +591,6 @@ export class InstructorReportsService {
           duration: true,
           scheduledAt: true,
           completedAt: true,
-          startedAt: true,
-          endedAt: true,
           topic: true,
           sessionName: true,
           status: true,
@@ -600,7 +598,7 @@ export class InstructorReportsService {
           paymentStatus: true,
           paidAt: true,
         },
-      } as any);
+      });
       console.log('[REPORT] consulting sessions found:', consultingSessions.length);
 
       // Build consultant reports separately
@@ -655,21 +653,20 @@ export class InstructorReportsService {
           }
         }
         const cons = consultantMap.get(session.consultantId)!;
-        const mins = this.resolveDuration(session.duration || 0, session.startedAt || null, session.endedAt || null) || session.duration || 0;
+        const mins = session.duration || 0;
         cons.sessionCount += 1;
         const st = (session.status || '').toUpperCase();
         if (st === 'COMPLETED') cons.completedCount += 1;
         if (st === 'CANCELLED' || st === 'NO_SHOW') cons.cancelledCount += 1;
         cons.totalActualMinutes += mins;
-        if ((session as any).studentId) clientSet.add((session as any).studentId);
         cons.sessions.push({
           sessionId: session.id,
           sessionTitle: session.sessionName || session.topic || 'جلسة استشارية',
           topic: session.topic,
           clientName: undefined,
           scheduledAt: session.scheduledAt,
-          actualStartedAt: session.startedAt,
-          actualEndedAt: session.endedAt,
+          actualStartedAt: null,
+          actualEndedAt: null,
           actualDurationMinutes: mins,
           sessionStatus: st === 'COMPLETED' ? 'مكتملة' : st === 'CANCELLED' || st === 'NO_SHOW' ? 'ملغاة' : st === 'IN_PROGRESS' ? 'جارية' : 'مكتملة',
           sessionPrice: session.price || 0,
@@ -694,7 +691,7 @@ export class InstructorReportsService {
           const inst = instructorMap.get((session as any).consultantId)!;
           const course = this.ensureCourse(inst, CONSULTING_COURSE_ID, CONSULTING_COURSE_NAME);
           const deliveredAt = this.resolveDate((session as any).completedAt, (session as any).scheduledAt);
-          const mins = this.resolveDuration((session as any).duration ?? 60, (session as any).startedAt || null, (session as any).endedAt || null);
+          const mins = (session as any).duration ?? 60;
           this.addEntry(inst, course, mins, deliveredAt);
         }
       }
