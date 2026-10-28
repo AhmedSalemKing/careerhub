@@ -139,7 +139,7 @@ export class CloudflareService {
         return {
           status: video.status,
           thumbnailUrl,
-          duration: video.duration?.duration,
+          duration: typeof video.duration === 'number' ? video.duration : null,
           availableQualities: video.maxResolution?.height ? [`${video.maxResolution.height}p`] : ['720p'],
         };
       } else {

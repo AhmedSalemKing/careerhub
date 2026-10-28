@@ -240,11 +240,18 @@ export class VideoService {
   async handleWebhook(webhookData: any) {
     this.logger.log(`Received Cloudflare webhook: ${JSON.stringify(webhookData)}`);
 
-    const { uid: streamId, status, duration } = webhookData;
+    const { uid: streamId, status, duration, readyToStream } = webhookData;
 
-    if (!streamId || !status) {
-      throw new BadRequestException('Invalid webhook data');
+    if (!streamId) {
+      throw new BadRequestException('Invalid webhook data: missing uid');
     }
+
+    // Cloudflare Stream sends status as either a string ("ready") or an object
+    // ({ state: "ready", pctComplete: "100" }). Normalise to a plain string.
+    const statusState: string =
+      typeof status === 'object' && status !== null
+        ? (status.state ?? '')
+        : (status ?? '');
 
     const videoContent = await this.prisma.videoContent.findUnique({
       where: { streamId },
@@ -255,13 +262,13 @@ export class VideoService {
       return;
     }
 
-    // Update video status based on webhook
     let newStatus = videoContent.status;
 
-    switch (status) {
+    switch (statusState) {
       case 'ready':
         newStatus = 'READY';
         break;
+      case 'inprogress':
       case 'uploaded':
         newStatus = 'PROCESSING';
         break;
@@ -270,8 +277,14 @@ export class VideoService {
         break;
     }
 
+    // Also treat readyToStream=true as a ready signal (some webhook versions omit state)
+    if (readyToStream === true) {
+      newStatus = 'READY';
+    }
+
     const updateData: any = { status: newStatus };
-    if (status === 'ready' && duration != null) {
+    const isReady = newStatus === 'READY';
+    if (isReady && duration != null && duration > 0) {
       updateData.duration = Math.round(duration);
     }
 
