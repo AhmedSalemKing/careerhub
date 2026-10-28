@@ -7,7 +7,6 @@ import {
   Users,
   BookOpen,
   Clock,
-  GraduationCap,
   FileSpreadsheet,
   Plus,
   X,
@@ -54,6 +53,7 @@ interface LectureItem {
   durationMinutes: number
   hoursDisplay: string
   status: string
+  type?: 'live' | 'consulting' | 'manual'
 }
 
 interface InstructorOption {
@@ -88,6 +88,13 @@ function formatHours(totalMinutes: number) {
   if (mins === 0) return `${hours} ساعة`
   if (hours === 0) return `${mins} دقيقة`
   return `${hours} ساعة و${mins} دقيقة`
+}
+
+function safeDate(value: string | null | undefined, arabic: boolean): string {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(arabic ? 'ar-EG' : 'en-GB')
 }
 
 export default function InstructorReportsPage() {
@@ -257,12 +264,11 @@ export default function InstructorReportsPage() {
   }
 
   const totals = useMemo(() => {
-    if (!report) return { instructors: 0, lectures: 0, minutes: 0, courses: 0 }
+    if (!report) return { instructors: 0, lectures: 0, minutes: 0 }
     return {
       instructors: report.totalInstructors,
       lectures: report.totalLectures,
       minutes: report.totalMinutes,
-      courses: report.totalCourses,
     }
   }, [report])
 
@@ -433,7 +439,6 @@ export default function InstructorReportsPage() {
               label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
               value={formatHours(totals.minutes)}
             />
-            <StatCard icon={GraduationCap} label={isAr ? 'عدد الدورات' : 'Courses'} value={totals.courses} />
           </div>
 
           <div
@@ -448,7 +453,6 @@ export default function InstructorReportsPage() {
               <thead>
                 <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
                   <th style={thStyle}>{isAr ? 'اسم المحاضر' : 'Instructor'}</th>
-                  <th style={thStyle}>{isAr ? 'عدد الدورات' : 'Courses'}</th>
                   <th style={thStyle}>{isAr ? 'عدد المحاضرات' : 'Lectures'}</th>
                   <th style={thStyle}>{isAr ? 'إجمالي الساعات' : 'Total Hours'}</th>
                   <th style={thStyle}>{isAr ? 'تفاصيل' : 'Details'}</th>
@@ -457,7 +461,7 @@ export default function InstructorReportsPage() {
               <tbody>
                 {report.instructors.length === 0 && (
                   <tr>
-                    <td colSpan={5} style={{ padding: 56, textAlign: 'center', color: 'var(--muted)' }}>
+                    <td colSpan={4} style={{ padding: 56, textAlign: 'center', color: 'var(--muted)' }}>
                       {isAr ? 'لا توجد محاضرات مكتملة في هذه الفترة' : 'No completed lectures in this period'}
                     </td>
                   </tr>
@@ -474,7 +478,6 @@ export default function InstructorReportsPage() {
                           <div style={{ fontWeight: 700 }}>{instructor.nameAr}</div>
                           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{instructor.email}</div>
                         </td>
-                        <td style={tdStyle}>{instructor.courses.length}</td>
                         <td style={tdStyle}>{instructor.totalLectures}</td>
                         <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
                         <td style={tdStyle}>
@@ -502,7 +505,7 @@ export default function InstructorReportsPage() {
 
                       {isOpen && (
                         <tr>
-                          <td colSpan={5} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
+                          <td colSpan={4} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
                             <div style={{ padding: '14px 18px' }}>
                               <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>
                                 {isAr ? 'تفصيل الدورات' : 'Course breakdown'}
@@ -522,11 +525,7 @@ export default function InstructorReportsPage() {
                                       <td style={subTdStyle}>{course.courseName}</td>
                                       <td style={subTdStyle}>{course.lectureCount}</td>
                                       <td style={subTdStyle}>{course.hoursDisplay}</td>
-                                      <td style={subTdStyle}>
-                                        {course.lastDeliveredAt
-                                          ? new Date(course.lastDeliveredAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB')
-                                          : '-'}
-                                      </td>
+                                      <td style={subTdStyle}>{safeDate(course.lastDeliveredAt, isAr)}</td>
                                     </tr>
                                   ))}
                                 </tbody>
@@ -550,7 +549,7 @@ export default function InstructorReportsPage() {
                                   <thead>
                                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                       <th style={subThStyle}>{isAr ? 'التاريخ' : 'Date'}</th>
-                                      <th style={subThStyle}>{isAr ? 'الدورة' : 'Course'}</th>
+                                      <th style={subThStyle}>{isAr ? 'الدورة / نوع النشاط' : 'Course / Type'}</th>
                                       <th style={subThStyle}>{isAr ? 'العنوان' : 'Title'}</th>
                                       <th style={subThStyle}>{isAr ? 'المدة' : 'Duration'}</th>
                                     </tr>
@@ -558,13 +557,22 @@ export default function InstructorReportsPage() {
                                   <tbody>
                                     {lectures.map((lecture) => (
                                       <tr key={lecture.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={subTdStyle}>
-                                          {lecture.deliveredAt
-                                            ? new Date(lecture.deliveredAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB')
-                                            : '—'}
-                                        </td>
+                                        <td style={subTdStyle}>{safeDate(lecture.deliveredAt, isAr)}</td>
                                         <td style={subTdStyle}>{lecture.courseName}</td>
-                                        <td style={subTdStyle}>{lecture.title || '-'}</td>
+                                        <td style={subTdStyle}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                            {lecture.type === 'consulting' ? (
+                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(16,185,129,0.12)', color: '#065f46', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                {isAr ? 'جلسة استشارية' : 'Consulting'}
+                                              </span>
+                                            ) : (
+                                              <span style={{ padding: '2px 8px', borderRadius: 12, background: 'rgba(99,102,241,0.12)', color: '#3730a3', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                {isAr ? 'محاضرة' : 'Lecture'}
+                                              </span>
+                                            )}
+                                            {lecture.title || ''}
+                                          </div>
+                                        </td>
                                         <td style={subTdStyle}>{lecture.hoursDisplay}</td>
                                       </tr>
                                     ))}

@@ -43,6 +43,7 @@ export interface InstructorLectureItem {
   durationMinutes: number;
   hoursDisplay: string;
   status: LectureStatus;
+  type: 'live' | 'consulting' | 'manual';
 }
 
 export interface InstructorDetailReport {
@@ -104,7 +105,7 @@ export class InstructorReportsService {
     ...candidates: (Date | null | undefined)[]
   ): Date {
     for (const d of candidates) {
-      if (d) return d;
+      if (d && !isNaN(d.getTime())) return d;
     }
     return new Date();
   }
@@ -402,10 +403,10 @@ export class InstructorReportsService {
       }
 
       // ── Step 4: ConsultingSession (completed, for CONSULTANT users) ────
-      // consultedAt is nullable; filter using scheduledAt (always present).
+      // Filter on createdAt (always set), not scheduledAt (nullable/unreliable).
       const consultingWhere: any = { completedAt: { not: null } };
       if (filter.instructorId) consultingWhere.consultantId = filter.instructorId;
-      if (from || to) consultingWhere.scheduledAt = this.dateRange(from, to);
+      if (from || to) consultingWhere.createdAt = this.dateRange(from, to);
 
       const consultingSessions = await this.prisma.consultingSession.findMany({
         where: consultingWhere,
@@ -495,7 +496,7 @@ export class InstructorReportsService {
 
     // ── ConsultingSession detail list ─────────────────────────────────────
     const consultingDetailWhere: any = { completedAt: { not: null }, consultantId: instructorId };
-    if (from || to) consultingDetailWhere.scheduledAt = this.dateRange(from, to);
+    if (from || to) consultingDetailWhere.createdAt = this.dateRange(from, to);
 
     const consultingRows = await this.prisma.consultingSession.findMany({
       where: consultingDetailWhere,
@@ -522,6 +523,7 @@ export class InstructorReportsService {
         durationMinutes: row.durationMinutes,
         hoursDisplay: formatHours(row.durationMinutes),
         status: row.status,
+        type: 'manual' as const,
       })),
       ...liveRows.map((session) => {
         const c = courseById.get(session.courseId);
@@ -535,6 +537,7 @@ export class InstructorReportsService {
           durationMinutes: mins,
           hoursDisplay: formatHours(mins),
           status: LectureStatus.COMPLETED,
+          type: 'live' as const,
         };
       }),
       ...consultingRows.map((session) => ({
@@ -546,6 +549,7 @@ export class InstructorReportsService {
         durationMinutes: session.duration ?? 60,
         hoursDisplay: formatHours(session.duration ?? 60),
         status: LectureStatus.COMPLETED,
+        type: 'consulting' as const,
       })),
     ].sort((a, b) => b.deliveredAt.getTime() - a.deliveredAt.getTime());
 
