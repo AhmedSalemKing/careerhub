@@ -559,7 +559,9 @@ export default function InstructorReportsPage() {
                                     {lectures.map((lecture) => (
                                       <tr key={lecture.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                         <td style={subTdStyle}>
-                                          {new Date(lecture.deliveredAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB')}
+                                          {lecture.deliveredAt
+                                            ? new Date(lecture.deliveredAt).toLocaleDateString(isAr ? 'ar-EG' : 'en-GB')
+                                            : '—'}
                                         </td>
                                         <td style={subTdStyle}>{lecture.courseName}</td>
                                         <td style={subTdStyle}>{lecture.title || '-'}</td>
