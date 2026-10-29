@@ -183,7 +183,7 @@ export default function ScheduleClient() {
     const start = new Date(selected.scheduledAt)
     const end = new Date(start.getTime() + selected.duration * 60000)
     const minutesUntil = (start.getTime() - Date.now()) / 60000
-    const canStart = selected.status === 'CONFIRMED' && minutesUntil <= 15 && minutesUntil >= -120
+    const canStart = selected.status === 'CONFIRMED' || selected.status === 'IN_PROGRESS'
     const isLive = selected.status === 'IN_PROGRESS'
 
     return (
