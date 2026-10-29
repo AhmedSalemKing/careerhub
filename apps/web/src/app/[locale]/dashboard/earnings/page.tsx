@@ -14,6 +14,15 @@ function parseSessionDate(raw: unknown): Date | null {
   return null
 }
 
+function parseAnyDate(s: any): Date | null {
+  const candidates = [s.scheduledAt, s.date, s.startAt, s.sessionDate, s.createdAt]
+  for (const raw of candidates) {
+    const d = parseSessionDate(raw)
+    if (d) return d
+  }
+  return null
+}
+
 const Ic = {
   dollar: (p: { size?: number; color?: string }) => (
     <svg width={p.size ?? 15} height={p.size ?? 15} viewBox="0 0 24 24" fill="none" stroke={p.color ?? 'currentColor'} strokeWidth="2" strokeLinecap="round">
@@ -65,17 +74,25 @@ interface RecentSession {
   studentName?: string | null
   amount?: number | null
   price?: number | null
+  priceDisplay?: string | null
+  amountDisplay?: string | null
   status?: string | null
   paymentStatus?: string | null
   date?: string | null
   scheduledAt?: string | null
+  startAt?: string | null
+  sessionDate?: string | null
+  createdAt?: string | null
 }
 
 interface EarningsData {
   totalEarned: number
+  totalEarnedDisplay?: string | null
   pendingEarnings: number
+  pendingDisplay?: string | null
   refunded: number
   available: number
+  availableDisplay?: string | null
   sessionsCount: number
   recentSessions: RecentSession[]
 }
@@ -93,9 +110,12 @@ function normaliseEarnings(raw: any): EarningsData {
 
   return {
     totalEarned,
+    totalEarnedDisplay: raw?.totalEarnedDisplay ?? raw?.totalEarningsDisplay ?? null,
     pendingEarnings,
+    pendingDisplay: raw?.pendingDisplay ?? raw?.pendingAmountDisplay ?? null,
     refunded,
     available: Math.max(0, available),
+    availableDisplay: raw?.availableDisplay ?? raw?.availableBalanceDisplay ?? null,
     sessionsCount: Number(raw?.sessionsCount ?? recentSessions.filter((s) => s.status === 'COMPLETED').length) || 0,
     recentSessions,
   }
@@ -122,7 +142,7 @@ export default function EarningsPage() {
   const [transferring, setTransferring] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const money = useCallback((amount: number) => formatMoney(amount), [])
+  const money = useCallback((amount: number, display?: string | null) => formatMoney(amount, display ?? undefined), [])
 
   const fetchEarnings = useCallback(async () => {
     setError(null)
@@ -183,21 +203,21 @@ export default function EarningsPage() {
     () => [
       {
         label: isAr ? 'إجمالي الأرباح' : 'Total earned',
-        value: money(data?.totalEarned || 0),
+        value: money(data?.totalEarned || 0, data?.totalEarnedDisplay),
         color: 'var(--primary)',
         background: 'var(--primary-subtle)',
         icon: <Ic.dollar size={15} />,
       },
       {
         label: isAr ? 'الرصيد المتاح' : 'Available to transfer',
-        value: money(data?.available || 0),
+        value: money(data?.available || 0, data?.availableDisplay),
         color: 'var(--accent)',
         background: 'var(--accent-light)',
         icon: <Ic.wallet size={15} />,
       },
       {
         label: isAr ? 'قيد الانتظار' : 'Pending',
-        value: money(data?.pendingEarnings || 0),
+        value: money(data?.pendingEarnings || 0, data?.pendingDisplay),
         color: 'var(--warning)',
         background: 'var(--warning-subtle)',
         icon: <Ic.clock size={15} />,
@@ -314,8 +334,8 @@ export default function EarningsPage() {
             onChange={(event) => setTransferAmount(event.target.value)}
             placeholder={
               isAr
-                ? `الحد الأقصى: ${money(data?.available || 0)}`
-                : `Max: ${money(data?.available || 0)}`
+                ? `الحد الأقصى: ${money(data?.available || 0, data?.availableDisplay)}`
+                : `Max: ${money(data?.available || 0, data?.availableDisplay)}`
             }
             className="min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm outline-none"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
@@ -380,14 +400,14 @@ export default function EarningsPage() {
                       {session.clientName || session.studentName || (isAr ? 'عميل' : 'Client')}
                     </p>
                     <span className="shrink-0 text-xs" style={{ color: 'var(--accent)', fontWeight: 300 }}>
-                      {money(Number(session.amount ?? session.price ?? 0))}
+                      {money(Number(session.amount ?? session.price ?? 0), session.amountDisplay ?? session.priceDisplay)}
                     </span>
                   </div>
                   <p className="truncate text-[11px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
                     {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                   </p>
                   <p className="mt-1 text-[10px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-                    {formatSessionDate(session.scheduledAt ?? session.date ?? (session as any).createdAt, isAr)}
+                    {formatSessionDate(parseAnyDate(session), isAr)}
                   </p>
                 </div>
               ))}
@@ -425,7 +445,7 @@ export default function EarningsPage() {
                         {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                       </td>
                       <td className="p-3 text-center" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-                        {formatSessionDate(session.scheduledAt ?? session.date ?? (session as any).createdAt, isAr)}
+                        {formatSessionDate(parseAnyDate(session), isAr)}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -442,7 +462,7 @@ export default function EarningsPage() {
                       </td>
                       <td className="p-3 text-center" style={{ color: 'var(--accent)', fontWeight: 300 }}>
                         {Number(session.amount ?? session.price ?? 0) > 0
-                          ? money(Number(session.amount ?? session.price ?? 0))
+                          ? money(Number(session.amount ?? session.price ?? 0), session.amountDisplay ?? session.priceDisplay)
                           : isAr
                             ? 'مجاني'
                             : 'Free'}
@@ -456,7 +476,7 @@ export default function EarningsPage() {
                       {isAr ? 'الإجمالي' : 'Total'}
                     </td>
                     <td className="p-3 text-center text-sm" style={{ color: 'var(--primary)', fontWeight: 300 }}>
-                      {money(data?.totalEarned || 0)}
+                      {money(data?.totalEarned || 0, data?.totalEarnedDisplay)}
                     </td>
                   </tr>
                 </tfoot>
