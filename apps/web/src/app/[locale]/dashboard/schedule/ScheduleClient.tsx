@@ -203,12 +203,12 @@ export default function ScheduleClient() {
   /* ---------------------------------------------------------------- */
   const weekSessions = sessions.length
   const upcomingSessions = sessions.filter(
-    (s) => s.status === 'CONFIRMED' && new Date(s.scheduledAt) > now,
+    (s: Session) => s.status === 'CONFIRMED' && new Date(s.scheduledAt) > now,
   ).length
   const completedHours = (
     sessions
-      .filter((s) => s.status === 'COMPLETED')
-      .reduce((sum, s) => sum + (s.duration || 0), 0) / 60
+      .filter((s: Session) => s.status === 'COMPLETED')
+      .reduce((sum: number, s: Session) => sum + (s.duration || 0), 0) / 60
   ).toFixed(1)
 
   /* ---------------------------------------------------------------- */
@@ -216,10 +216,9 @@ export default function ScheduleClient() {
   /* ---------------------------------------------------------------- */
   function blockTop(scheduledAt: string): number {
     const d = new Date(scheduledAt)
-    return Math.max(
-      0,
-      ((d.getHours() - GRID_START_HOUR) * 60 + d.getMinutes()) / 60 * ROW_HEIGHT,
-    )
+    const h = d.getHours()
+    if (h < GRID_START_HOUR) return 0
+    return ((h - GRID_START_HOUR) * 60 + d.getMinutes()) / 60 * ROW_HEIGHT
   }
 
   function blockHeight(duration: number): number {
@@ -250,13 +249,13 @@ export default function ScheduleClient() {
   /* Mobile day sessions                                               */
   /* ---------------------------------------------------------------- */
   const mobileDaySessions = useMemo(() => {
-    const s = new Date(mobileDay)
-    s.setHours(0, 0, 0, 0)
-    const e = new Date(mobileDay)
-    e.setHours(23, 59, 59, 999)
-    return sessions.filter((x) => {
+    return sessions.filter((x: Session) => {
       const t = new Date(x.scheduledAt)
-      return t >= s && t <= e
+      return (
+        t.getFullYear() === mobileDay.getFullYear() &&
+        t.getMonth() === mobileDay.getMonth() &&
+        t.getDate() === mobileDay.getDate()
+      )
     })
   }, [sessions, mobileDay])
 
@@ -942,7 +941,7 @@ export default function ScheduleClient() {
             minWidth: 700,
             border: '1px solid var(--border)',
             borderRadius: 12,
-            overflow: 'hidden',
+            overflow: 'visible',
             background: 'var(--card)',
           }}
         >
@@ -1060,9 +1059,13 @@ export default function ScheduleClient() {
               dayStart.setHours(0, 0, 0, 0)
               const dayEnd = new Date(day)
               dayEnd.setHours(23, 59, 59, 999)
-              const daySessions = sessions.filter((s) => {
+              const daySessions = sessions.filter((s: Session) => {
                 const t = new Date(s.scheduledAt)
-                return t >= dayStart && t <= dayEnd
+                return (
+                  t.getFullYear() === day.getFullYear() &&
+                  t.getMonth() === day.getMonth() &&
+                  t.getDate() === day.getDate()
+                )
               })
 
               return (
@@ -1124,6 +1127,8 @@ export default function ScheduleClient() {
 
                   {/* Session blocks */}
                   {daySessions.map((s) => {
+                    const sessionHour = new Date(s.scheduledAt).getHours()
+                    if (sessionHour < GRID_START_HOUR || sessionHour >= GRID_END_HOUR) return null
                     const top = blockTop(s.scheduledAt)
                     const height = blockHeight(s.duration)
                     const st = blockStyle(s.status)
