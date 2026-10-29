@@ -9,6 +9,7 @@ import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
 import { RealTimeClock } from '../../../components/RealTimeClock'
+import FloatingCareerOrb from '../../../components/FloatingCareerOrb'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
@@ -57,6 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     
     if (accountType === 'CONSULTANT') return [
       { icon: LayoutDashboard, labelAr: 'الرئيسية', labelEn: 'Home', href: `/${locale}/dashboard` },
+      { icon: CalendarDays, labelAr: 'جدول المواعيد', labelEn: 'Schedule', href: `/${locale}/dashboard/schedule` },
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Users, labelAr: 'جلسات عملائي', labelEn: 'Client Sessions', href: `/${locale}/dashboard/client-sessions` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
@@ -288,6 +290,8 @@ return [
       {/* Bottom Dock */}
       <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
       <RealTimeClock locale={locale} />
+      {/* Floating Career Orb — students/consultants/instructors only */}
+      {accountType !== 'ADMIN' && <FloatingCareerOrb />}
     </div>
   )
 }

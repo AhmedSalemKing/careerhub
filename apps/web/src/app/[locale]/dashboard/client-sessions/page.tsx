@@ -5,7 +5,16 @@ import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
-import { browserTimeZone, formatTimeOnly, localDateTimeToISO } from '@/lib/time'
+import {
+  formatFullDate,
+  formatShortDate,
+  formatTimeOnly,
+  formatTimeRange,
+  formatTimeSafe,
+  localDateTimeToISO,
+  parseDate,
+  type DateLike,
+} from '@/lib/time'
 import {
   AlertTriangle,
   CalendarDays,
@@ -19,6 +28,7 @@ import {
   Video,
   X,
 } from 'lucide-react'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
 
@@ -116,29 +126,40 @@ function clientName(session: any): string {
   return `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
 }
 
-function shortDate(value: string | undefined, locale: string): string {
-  if (!value) return ''
-  return new Date(value).toLocaleDateString(
-    locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
-    { weekday: 'short', day: 'numeric', month: 'short', timeZone: browserTimeZone(), calendar: 'gregory' },
-  )
+/**
+ * Sessions created before the rebuild can carry a legacy field name or no date
+ * at all, which is what produced "Invalid Date" on the cards. Resolve the value
+ * once, then always format through the null-safe helpers.
+ */
+function scheduledAtOf(session: any): DateLike {
+  return session?.scheduledAt ?? session?.scheduled_at ?? session?.startTime ?? session?.date ?? null
+}
+
+function durationOf(session: any): number {
+  const value = Number(session?.duration ?? session?.durationMinutes ?? 60)
+  return isNaN(value) || value <= 0 ? 60 : value
+}
+
+function normalize(row: any) {
+  return { ...row, scheduledAt: scheduledAtOf(row), duration: durationOf(row) }
 }
 
 async function loadClientSessions(): Promise<any[]> {
   try {
     const response = await get('/consulting/sessions')
     const data = response.data?.data
-    if (Array.isArray(data?.clientSessions)) return data.clientSessions
-    if (Array.isArray(data)) return data
+    if (Array.isArray(data?.clientSessions)) return data.clientSessions.map(normalize)
+    if (Array.isArray(data)) return data.map(normalize)
   } catch (error) {
     console.warn('[client-sessions] /consulting/sessions unavailable, falling back', error)
   }
 
   const response = await get('/sessions/my-sessions')
   const data = response.data?.data
-  const list: any[] = Array.isArray(data) ? data : []
+  const list: any[] = Array.isArray(data) ? data : Array.isArray(data?.sessions) ? data.sessions : []
   const userId = useAuthStore.getState().user?.id
-  return userId ? list.filter((session) => session.consultantId === userId) : list
+  const filtered = userId ? list.filter((session) => session.consultantId === userId) : list
+  return filtered.map(normalize)
 }
 
 export default function ClientSessionsPage() {
@@ -248,11 +269,19 @@ export default function ClientSessionsPage() {
       toast.error(error?.response?.data?.message || (isAr ? 'تعذر إرسال الطلب' : 'Failed to send request')),
   })
 
-  const startWindow = (scheduledAt?: string) => {
-    if (!scheduledAt) return false
-    const start = new Date(scheduledAt).getTime()
-    const now = Date.now()
-    return now >= start - 15 * 60 * 1000 && now <= start + 2 * 60 * 60 * 1000
+  /**
+   * Minutes until the session starts. `NaN` means the row has no usable date,
+   * in which case no start/join affordance is shown.
+   */
+  const minutesUntilStart = (scheduledAt: DateLike): number => {
+    const start = parseDate(scheduledAt)
+    if (!start) return Number.NaN
+    return (start.getTime() - Date.now()) / 60000
+  }
+
+  const canStart = (scheduledAt: DateLike) => {
+    const minutes = minutesUntilStart(scheduledAt)
+    return Number.isFinite(minutes) && minutes <= 15 && minutes >= -120
   }
 
   return (
@@ -399,12 +428,14 @@ export default function ClientSessionsPage() {
               const status = displayStatus(session.status)
               const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING_APPROVAL
               const name = clientName(session)
-              const soon = startWindow(session.scheduledAt) && status === 'CONFIRMED'
+              const scheduledAt: DateLike = session.scheduledAt
+              const minutesUntil = minutesUntilStart(scheduledAt)
+              const soon = status === 'CONFIRMED' && canStart(scheduledAt)
               const rescheduleWaiting = status === 'RESCHEDULE_REQUESTED'
               const isCompleted = status === 'COMPLETED'
-              const duration = isCompleted
-                ? session.actualDuration || session.duration
-                : session.duration
+              const isLive = status === 'IN_PROGRESS'
+              const baseDuration = durationOf(session)
+              const duration = isCompleted ? session.actualDuration || baseDuration : baseDuration
               const canReschedule = ['PENDING_APPROVAL', 'AWAITING_PAYMENT', 'CONFIRMED', 'RESCHEDULE_REQUESTED'].includes(
                 status,
               )
@@ -426,7 +457,13 @@ export default function ClientSessionsPage() {
                       style={{ background: 'var(--primary-subtle)', borderColor: 'var(--primary-border)', color: 'var(--primary)' }}
                     >
                       <Video size={13} />
-                      {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than an hour'}
+                      {minutesUntil > 1
+                        ? isAr
+                          ? `تبدأ خلال ${Math.round(minutesUntil)} دقيقة`
+                          : `Starts in ${Math.round(minutesUntil)} minutes`
+                        : isAr
+                          ? 'بدأ وقت الجلسة'
+                          : 'Session time is now'}
                     </div>
                   )}
 
@@ -438,7 +475,7 @@ export default function ClientSessionsPage() {
                       <AlertTriangle size={13} />
                       {isAr ? 'بانتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for the new time'}
                       <span style={{ color: 'var(--foreground)' }}>
-                        {shortDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt, locale)}
+                        {formatFullDate(session.proposedAt, locale)} — {formatTimeSafe(session.proposedAt, locale)}
                       </span>
                     </div>
                   )}
@@ -484,7 +521,7 @@ export default function ClientSessionsPage() {
                           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
                         >
                           <CalendarDays size={10} />
-                          {shortDate(session.scheduledAt, locale)}
+                          {formatShortDate(scheduledAt, locale)}
                         </span>
                       </div>
                     </div>
