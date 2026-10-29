@@ -13,9 +13,11 @@ interface UserRef {
 }
 interface Session {
   id: string
-  scheduledAt: string
+  scheduledAt?: unknown   // may come back as string, Date object, {}, or null
   duration: number
   status: string
+  studentId?: string
+  consultantId?: string
   topic?: string
   sessionName?: string
   description?: string
@@ -29,11 +31,64 @@ interface Session {
 /* ─── Constants ───────────────────────────────────────────────────── */
 const DAYS_AR    = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
 const MONTHS_AR  = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-const HOURS      = Array.from({ length: 13 }, (_: unknown, i: number) => i + 8) // 8am–8pm
+const HOURS      = Array.from({ length: 13 }, (_: unknown, i: number) => i + 8)
 const ROW_H      = 64
 const GRID_START = 8
 
-/* ─── Helpers ─────────────────────────────────────────────────────── */
+/* ─── Date helper — handles any serialization format ─────────────── */
+function getSessionDate(s: Session): Date | null {
+  // Try all possible field name variants and serialization formats
+  const raw = s as unknown as Record<string, unknown>
+  const candidates = [
+    raw.scheduledAt,
+    raw.date,
+    raw.startAt,
+    raw.sessionDate,
+    raw.startTime,
+    raw.bookedAt,
+  ]
+  for (const raw of candidates) {
+    if (!raw) continue
+    // Already a Date object (Prisma Date leaking through)
+    if (raw instanceof Date) {
+      if (!isNaN(raw.getTime())) return raw
+      continue
+    }
+    // ISO string
+    if (typeof raw === 'string' && raw.length > 0) {
+      const d = new Date(raw)
+      if (!isNaN(d.getTime())) return d
+      continue
+    }
+    // Number (Unix ms)
+    if (typeof raw === 'number') {
+      const d = new Date(raw)
+      if (!isNaN(d.getTime())) return d
+      continue
+    }
+    // Object with $date (MongoDB style) or nested date
+    if (typeof raw === 'object' && raw !== null) {
+      const obj = raw as Record<string, unknown>
+      // {$date: "..."} MongoDB
+      if (obj.$date) {
+        const d = new Date(String(obj.$date))
+        if (!isNaN(d.getTime())) return d
+        continue
+      }
+      // Try converting to string via valueOf / toString
+      try {
+        const str = String(raw)
+        if (str !== '[object Object]') {
+          const d = new Date(str)
+          if (!isNaN(d.getTime())) return d
+        }
+      } catch { /* ignore */ }
+    }
+  }
+  return null
+}
+
+/* ─── Other helpers ───────────────────────────────────────────────── */
 function addDays(d: Date, n: number): Date {
   const r = new Date(d); r.setDate(r.getDate() + n); return r
 }
@@ -60,16 +115,18 @@ function fmt12(d: Date): string {
 function fmtDateAr(d: Date): string {
   return `${DAYS_AR[d.getDay()]}، ${d.getDate()} ${MONTHS_AR[d.getMonth()]} ${d.getFullYear()}`
 }
-function sameDay(iso: string, day: Date): boolean {
-  const t = new Date(iso)
+// Accepts Date, ISO string, or null — handles all safely
+function sameDay(a: Date | string | null | undefined, b: Date): boolean {
+  if (!a) return false
+  const d = typeof a === 'string' ? new Date(a) : a
+  if (isNaN(d.getTime())) return false
   return (
-    t.getFullYear() === day.getFullYear() &&
-    t.getMonth()    === day.getMonth()    &&
-    t.getDate()     === day.getDate()
+    d.getFullYear() === b.getFullYear() &&
+    d.getMonth()    === b.getMonth()    &&
+    d.getDate()     === b.getDate()
   )
 }
-function blockTop(iso: string): number {
-  const d = new Date(iso)
+function blockTop(d: Date): number {
   return Math.max(0, (d.getHours() - GRID_START) * ROW_H + (d.getMinutes() / 60) * ROW_H)
 }
 function blockH(duration: number): number {
@@ -141,12 +198,18 @@ export default function ScheduleClient() {
     [weekStart],
   )
 
-  /* ── Load all sessions once ──────────────────────────────────────── */
+  /* ── Load all sessions ───────────────────────────────────────────── */
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res  = await api.get('/consulting/sessions')
+
+      // RAW diagnostic log — shows exact shape before any parsing
       const body = res.data?.data ?? res.data ?? {}
+      const firstMs = (body.mySessions    ?? [])[0]
+      const firstCs = (body.clientSessions ?? [])[0]
+      console.log('[RAW mySessions[0]]',    JSON.stringify(firstMs,    null, 2))
+      console.log('[RAW clientSessions[0]]', JSON.stringify(firstCs, null, 2))
 
       const ms: Session[] = body.mySessions     ?? []
       const cs: Session[] = body.clientSessions ?? []
@@ -157,17 +220,27 @@ export default function ScheduleClient() {
 
       console.log('[Schedule] loaded:', all.length, 'sessions')
       all.forEach((s: Session) => {
-        const d = new Date(s.scheduledAt)
-        console.log(`  ${s.id.slice(0,8)} | ${s.status} | ${d.toLocaleDateString('ar-EG')} | hour=${d.getHours()} | ${s.topic || '—'}`)
+        const d = getSessionDate(s)
+        const rawS = s as unknown as Record<string, unknown>
+        console.log(
+          `  ${s.id.slice(0,8)} | ${s.status}`,
+          `| date=${d ? d.toLocaleDateString('ar-EG') : 'NO DATE'}`,
+          `| hour=${d ? d.getHours() : 'N/A'}`,
+          `| rawScheduledAt=${JSON.stringify(rawS.scheduledAt)}`,
+          `| topic=${rawS.topic ?? '—'}`,
+        )
       })
 
       setSessions(all)
 
-      // Auto-navigate to the week that contains the nearest session
-      if (all.length > 0) {
-        const sorted = [...all].sort((a: Session, b: Session) => {
-          const ta = new Date(a.scheduledAt).getTime()
-          const tb = new Date(b.scheduledAt).getTime()
+      // Auto-navigate to the week of the nearest session with a valid date
+      const validSessions = all.filter((s: Session) => getSessionDate(s) !== null)
+      console.log('[Schedule] sessions with valid date:', validSessions.length, '/', all.length)
+
+      if (validSessions.length > 0) {
+        const sorted = [...validSessions].sort((a: Session, b: Session) => {
+          const ta = getSessionDate(a)!.getTime()
+          const tb = getSessionDate(b)!.getTime()
           const nowMs = Date.now()
           const aFuture = ta >= nowMs
           const bFuture = tb >= nowMs
@@ -176,10 +249,16 @@ export default function ScheduleClient() {
           if (aFuture && bFuture) return ta - tb
           return tb - ta
         })
-        const targetSession = sorted[0]
-        const targetWeek = startOfWeekSun(new Date(targetSession.scheduledAt))
+        const target     = sorted[0]
+        const targetDate = getSessionDate(target)!
+        const targetWeek = startOfWeekSun(targetDate)
         setWeekStart(targetWeek)
-        console.log('[Schedule] auto-navigated to week of:', targetSession.scheduledAt)
+        console.log('[Schedule] auto-navigated to:', targetDate.toLocaleDateString())
+      } else {
+        console.warn('[Schedule] 0 sessions with valid dates — all scheduledAt are null/invalid')
+        if (all.length > 0) {
+          console.warn('[Schedule] first session raw:', JSON.stringify(all[0]))
+        }
       }
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: unknown }; message?: string }
@@ -208,7 +287,10 @@ export default function ScheduleClient() {
 
   /* ── Derived stats ───────────────────────────────────────────────── */
   const weekSessions = useMemo(
-    () => sessions.filter((s: Session) => weekDays.some((d: Date) => sameDay(s.scheduledAt, d))),
+    () => sessions.filter((s: Session) => {
+      const d = getSessionDate(s)
+      return d && weekDays.some((day: Date) => sameDay(d, day))
+    }),
     [sessions, weekDays],
   )
   const activeWeekSessions = useMemo(
@@ -216,10 +298,11 @@ export default function ScheduleClient() {
     [weekSessions],
   )
   const upcomingCount = useMemo(
-    () => sessions.filter((s: Session) =>
-      new Date(s.scheduledAt) > now &&
-      ['PENDING','PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','IN_PROGRESS'].includes(s.status),
-    ).length,
+    () => sessions.filter((s: Session) => {
+      const d = getSessionDate(s)
+      return d && d > now &&
+        ['PENDING','PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','IN_PROGRESS'].includes(s.status)
+    }).length,
     [sessions, now],
   )
   const doneHours = useMemo(
@@ -231,7 +314,7 @@ export default function ScheduleClient() {
   )
 
   /* ── Current time line ───────────────────────────────────────────── */
-  const todayIdx = weekDays.findIndex((d: Date) => sameDay(now.toISOString(), d))
+  const todayIdx = weekDays.findIndex((d: Date) => sameDay(now, d))
   const nowTop   = (now.getHours() - GRID_START) * ROW_H + (now.getMinutes() / 60) * ROW_H
 
   /* ── Week range label ────────────────────────────────────────────── */
@@ -244,9 +327,9 @@ export default function ScheduleClient() {
   function SessionModal() {
     if (!selected) return null
     const s         = selected
-    const startD    = new Date(s.scheduledAt)
-    const endD      = new Date(startD.getTime() + (s.duration ?? 60) * 60_000)
-    const minsUntil = (startD.getTime() - now.getTime()) / 60_000
+    const startD    = getSessionDate(s)
+    const endD      = startD ? new Date(startD.getTime() + (s.duration ?? 60) * 60_000) : null
+    const minsUntil = startD ? (startD.getTime() - now.getTime()) / 60_000 : -Infinity
     const canAct    = (s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS') && minsUntil >= -240
     const isLive    = s.status === 'IN_PROGRESS'
     const other     = getOtherPerson(s)
@@ -282,8 +365,8 @@ export default function ScheduleClient() {
           {/* Info */}
           <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 14px', marginBottom:14, fontSize:12, display:'flex', flexDirection:'column', gap:6 }}>
             {(s.topic || s.sessionName) && <div><span style={{ color:'var(--muted)', fontWeight:700 }}>الموضوع: </span>{s.topic || s.sessionName}</div>}
-            <div><span style={{ color:'var(--muted)', fontWeight:700 }}>التاريخ: </span>{fmtDateAr(startD)}</div>
-            <div><span style={{ color:'var(--muted)', fontWeight:700 }}>الوقت: </span>{fmt12(startD)} — {fmt12(endD)}</div>
+            {startD && <div><span style={{ color:'var(--muted)', fontWeight:700 }}>التاريخ: </span>{fmtDateAr(startD)}</div>}
+            {startD && endD && <div><span style={{ color:'var(--muted)', fontWeight:700 }}>الوقت: </span>{fmt12(startD)} — {fmt12(endD)}</div>}
             <div><span style={{ color:'var(--muted)', fontWeight:700 }}>المدة: </span>{s.duration ?? 60} دقيقة</div>
             {s.meetingLink && <div><span style={{ color:'var(--muted)', fontWeight:700 }}>رابط: </span><a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'var(--primary)' }}>فتح الرابط</a></div>}
           </div>
@@ -321,14 +404,18 @@ export default function ScheduleClient() {
     )
   }
 
-  /* ── List view ───────────────────────────────────────────────────── */
+  /* ── List view — shows ALL sessions, even those with no valid date ─ */
   function ListView() {
-    const sorted = [...sessions].sort((a: Session, b: Session) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+    const sorted = [...sessions].sort((a: Session, b: Session) => {
+      const ta = getSessionDate(a)?.getTime() ?? 0
+      const tb = getSessionDate(b)?.getTime() ?? 0
+      return tb - ta
+    })
     return (
       <div style={{ display:'flex', flexDirection:'column', gap:8, marginTop:8 }}>
         {sorted.map((s: Session) => {
-          const startD = new Date(s.scheduledAt)
-          const endD   = new Date(startD.getTime() + (s.duration ?? 60) * 60_000)
+          const startD = getSessionDate(s)
+          const endD   = startD ? new Date(startD.getTime() + (s.duration ?? 60) * 60_000) : null
           const st     = blockStyle(s.status)
           const other  = getOtherPerson(s)
           return (
@@ -343,7 +430,9 @@ export default function ScheduleClient() {
                   {s.topic || s.sessionName || 'جلسة استشارية'}
                 </div>
                 <div style={{ fontSize:11, color:'var(--muted)' }}>
-                  {userName(other)} · {fmtDateAr(startD)} · {fmt12(startD)} — {fmt12(endD)}
+                  {userName(other)}
+                  {startD ? ` · ${fmtDateAr(startD)}` : ' · تاريخ غير محدد'}
+                  {startD && endD ? ` · ${fmt12(startD)} — ${fmt12(endD)}` : ''}
                 </div>
               </div>
               <span style={{ background:st.bg, border:`1px solid ${st.border}`, color:st.color, borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:800, flexShrink:0 }}>
@@ -439,8 +528,11 @@ export default function ScheduleClient() {
               <div style={{ display:'grid', gridTemplateColumns:'64px repeat(7,1fr)', borderBottom:'1px solid var(--border)' }}>
                 <div style={{ height:56, borderRight:'1px solid var(--border)' }} />
                 {weekDays.map((d: Date, i: number) => {
-                  const isToday = sameDay(now.toISOString(), d)
-                  const hasSess = sessions.some((s: Session) => sameDay(s.scheduledAt, d) && !['CANCELLED','REJECTED'].includes(s.status))
+                  const isToday = sameDay(now, d)
+                  const hasSess = sessions.some((s: Session) => {
+                    const sd = getSessionDate(s)
+                    return sd && sameDay(sd, d) && !['CANCELLED','REJECTED'].includes(s.status)
+                  })
                   return (
                     <div key={i} style={{ padding:'8px 4px', textAlign:'center', borderRight:i<6 ? '1px solid var(--border)' : undefined }}>
                       <div style={{ fontSize:10, fontWeight:700, color:'var(--muted)', marginBottom:3 }}>{DAYS_AR[d.getDay()]}</div>
@@ -470,7 +562,10 @@ export default function ScheduleClient() {
                 {/* Day columns */}
                 {weekDays.map((day: Date, di: number) => {
                   const isToday     = di === todayIdx
-                  const daySessions = sessions.filter((s: Session) => sameDay(s.scheduledAt, day))
+                  const daySessions = sessions.filter((s: Session) => {
+                    const d = getSessionDate(s)
+                    return d && sameDay(d, day)
+                  })
 
                   return (
                     <div
@@ -500,11 +595,13 @@ export default function ScheduleClient() {
 
                       {/* SESSION BLOCKS */}
                       {daySessions.map((s: Session) => {
-                        const sd = new Date(s.scheduledAt)
-                        const h  = sd.getHours()
+                        const sd = getSessionDate(s)
+                        if (!sd) return null   // guard: skip sessions with no valid date
+
+                        const h = sd.getHours()
                         if (h < GRID_START || h >= GRID_START + HOURS.length) return null
 
-                        const top  = blockTop(s.scheduledAt)
+                        const top  = blockTop(sd)
                         const ht   = blockH(s.duration ?? 60)
                         const st   = blockStyle(s.status)
                         const endD = new Date(sd.getTime() + (s.duration ?? 60) * 60_000)
@@ -569,16 +666,21 @@ export default function ScheduleClient() {
             </div>
           </div>
 
-          {/* No sessions this week → show jump buttons */}
+          {/* No sessions this week → show week jump buttons */}
           {activeWeekSessions.length === 0 && sessions.length > 0 && (() => {
             const weekMap = new Map<string, Date>()
             sessions
-              .filter((s: Session) => !['CANCELLED','REJECTED'].includes(s.status))
+              .filter((s: Session) => {
+                const d = getSessionDate(s)
+                return d && !['CANCELLED','REJECTED'].includes(s.status)
+              })
               .forEach((s: Session) => {
-                const w = startOfWeekSun(new Date(s.scheduledAt))
+                const d = getSessionDate(s)!
+                const w = startOfWeekSun(d)
                 if (!weekMap.has(w.toISOString())) weekMap.set(w.toISOString(), w)
               })
             const uniqueWeeks: Date[] = Array.from(weekMap.values()).sort((a: Date, b: Date) => a.getTime() - b.getTime()).slice(0, 8)
+            if (uniqueWeeks.length === 0) return null
             return (
               <div style={{ marginTop:16, padding:16, background:'var(--surface)', borderRadius:12, border:'1px dashed var(--border)' }}>
                 <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, textAlign:'center', fontWeight:700 }}>
@@ -588,9 +690,10 @@ export default function ScheduleClient() {
                   {uniqueWeeks.map((w: Date) => {
                     const end = addDays(w, 6)
                     const label = `${w.getDate()} ${MONTHS_AR[w.getMonth()]} — ${end.getDate()} ${MONTHS_AR[end.getMonth()]}`
-                    const sessCount = sessions.filter((s: Session) =>
-                      new Date(s.scheduledAt) >= w && new Date(s.scheduledAt) < addDays(w, 7)
-                    ).length
+                    const sessCount = sessions.filter((s: Session) => {
+                      const d = getSessionDate(s)
+                      return d && d >= w && d < addDays(w, 7)
+                    }).length
                     return (
                       <button
                         key={w.toISOString()}
@@ -605,6 +708,22 @@ export default function ScheduleClient() {
               </div>
             )
           })()}
+
+          {/* Sessions exist but none have valid dates */}
+          {activeWeekSessions.length === 0 && sessions.length > 0 &&
+            sessions.filter((s: Session) => getSessionDate(s) !== null).length === 0 && (
+            <div style={{ marginTop:16, padding:16, background:'rgba(255,149,0,0.08)', borderRadius:12, border:'1px dashed var(--warning)', textAlign:'center' }}>
+              <div style={{ fontSize:13, color:'var(--warning)', fontWeight:700, marginBottom:6 }}>
+                تنبيه: {sessions.length} جلسة موجودة لكن بدون تاريخ صالح
+              </div>
+              <div style={{ fontSize:11, color:'var(--muted)' }}>
+                يرجى استخدام عرض القائمة لمشاهدة جميع الجلسات
+              </div>
+              <button onClick={() => setView('list')} style={{ marginTop:10, padding:'6px 18px', borderRadius:8, border:'1px solid var(--warning)', background:'transparent', color:'var(--warning)', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+                عرض القائمة
+              </button>
+            </div>
+          )}
 
           {/* Completely empty */}
           {sessions.length === 0 && !loading && (
