@@ -66,4 +66,22 @@ git commit --amend --reset-author -F /tmp/clean_msg.txt
 
 Then push as above. The PAT is provided by the user at push time.
 
+## Vercel Deployment — Always Run After Push
+
+After every successful push to master, deploy to production:
+
+```bash
+cd apps/web
+npx vercel --prod
+```
+
+Wait for "Ready" confirmation before reporting the task as done. The deployment URL will be `https://www.deveways.com`.
+
+Full sequence after every change:
+1. `git config user.name "AhmedSalemKing"` + `git config user.email "ahmedsalem1forever@gmail.com"`
+2. `git add <files>` + `git commit -m "..."`
+3. Push to master + feature branch with PAT
+4. `cd apps/web && npx vercel --prod`
+5. Confirm "Ready" then report done
+
 <!-- MANUAL ADDITIONS END -->
