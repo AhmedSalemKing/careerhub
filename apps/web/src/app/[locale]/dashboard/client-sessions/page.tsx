@@ -234,10 +234,12 @@ export default function ClientSessionsPage() {
   }
 
   const startRoomMutation = useMutation({
-    mutationFn: (id: string) => post(`/consulting/sessions/${id}/start-room`, {}),
-    onSuccess: (response: any) => {
-      const roomUrl = response?.data?.data?.roomUrl
-      if (roomUrl) window.open(roomUrl, '_blank')
+    mutationFn: async (id: string) => {
+      const response = await post(`/consulting/sessions/${id}/start-room`, {})
+      return { id, response }
+    },
+    onSuccess: ({ id }: { id: string }) => {
+      router.push(`/${locale}/dashboard/consulting/${id}/go-live`)
       toast.success(isAr ? 'تم بدء الجلسة' : 'Session started')
       invalidate()
     },
@@ -246,10 +248,12 @@ export default function ClientSessionsPage() {
   })
 
   const joinRoomMutation = useMutation({
-    mutationFn: (id: string) => post(`/consulting/sessions/${id}/join-room`, {}),
-    onSuccess: (response: any) => {
-      const roomUrl = response?.data?.data?.roomUrl
-      if (roomUrl) window.open(roomUrl, '_blank')
+    mutationFn: async (id: string) => {
+      const response = await post(`/consulting/sessions/${id}/join-room`, {})
+      return { id, response }
+    },
+    onSuccess: ({ id }: { id: string }) => {
+      router.push(`/${locale}/dashboard/consulting/${id}/go-live`)
     },
     onError: (error: any) =>
       toast.error(error?.response?.data?.message || (isAr ? 'تعذر الانضمام للجلسة' : 'Failed to join session')),
@@ -281,10 +285,7 @@ export default function ClientSessionsPage() {
     return (start.getTime() - Date.now()) / 60000
   }
 
-  const canStart = (scheduledAt: DateLike) => {
-    const minutes = minutesUntilStart(scheduledAt)
-    return Number.isFinite(minutes) && minutes <= 15 && minutes >= -120
-  }
+  const canStart = (_scheduledAt: DateLike) => true
 
   return (
     <div

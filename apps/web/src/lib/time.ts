@@ -93,36 +93,49 @@ export function getNow(): string {
 
 export type DateLike = string | Date | null | undefined
 
-export function formatFullDate(date: DateLike, locale?: string): string {
-  if (!date) return '—'
-  const d = date instanceof Date ? date : new Date(date)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
+export function parseDate(d: DateLike): Date | null {
+  if (!d) return null
+  const dt = d instanceof Date ? d : new Date(d)
+  return isNaN(dt.getTime()) ? null : dt
+}
+
+/** e.g. "الثلاثاء، ٢٩ أكتوبر ٢٠٢٦" or "Tuesday, October 29, 2026" */
+export function formatFullDate(d: DateLike, locale = 'en'): string {
+  const dt = parseDate(d)
+  if (!dt) return '—'
+  const loc = locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory'
+  return dt.toLocaleDateString(loc, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    timeZone: browserTimeZone(),
+    timeZone: browserTimeZone(), calendar: 'gregory',
   })
 }
 
-export function formatShortDate(date: DateLike, locale?: string): string {
-  if (!date) return '—'
-  const d = date instanceof Date ? date : new Date(date)
-  if (isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    timeZone: browserTimeZone(),
+/** e.g. "٢٩ أكتوبر" or "Oct 29" */
+export function formatShortDate(d: DateLike, locale = 'en'): string {
+  const dt = parseDate(d)
+  if (!dt) return '—'
+  const loc = locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory'
+  return dt.toLocaleDateString(loc, {
+    month: 'short', day: 'numeric',
+    timeZone: browserTimeZone(), calendar: 'gregory',
   })
 }
 
-export function formatTimeSafe(date: DateLike, locale?: string, fallback = '—'): string {
-  if (!date) return fallback
-  const d = date instanceof Date ? date : new Date(date)
-  if (isNaN(d.getTime())) return fallback
-  return d.toLocaleTimeString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
-    hour: '2-digit', minute: '2-digit', hour12: true,
-    timeZone: browserTimeZone(),
+/** Time-safe: returns fallback string instead of crashing on null dates */
+export function formatTimeSafe(d: DateLike, locale = 'en', fallback = '—'): string {
+  const dt = parseDate(d)
+  if (!dt) return fallback
+  const loc = locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory'
+  return dt.toLocaleTimeString(loc, {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+    timeZone: browserTimeZone(), calendar: 'gregory',
   })
 }
 
-export function formatTimeRange(start: DateLike, end: DateLike, locale?: string): string {
-  return `${formatTimeSafe(start, locale)} — ${formatTimeSafe(end, locale)}`
+/** "3:00 م – 4:00 م" or "3:00 PM – 4:00 PM" */
+export function formatTimeRange(d: DateLike, durationMinutes: number, locale = 'en'): string {
+  const dt = parseDate(d)
+  if (!dt) return '—'
+  const end = new Date(dt.getTime() + durationMinutes * 60000)
+  return `${formatTimeSafe(dt, locale)} – ${formatTimeSafe(end, locale)}`
 }
