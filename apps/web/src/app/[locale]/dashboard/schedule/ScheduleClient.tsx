@@ -3,8 +3,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { api } from '../../../../lib/api'
+import { get } from '@/lib/api'
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Filter,
+  Search,
+  Users,
+  Video,
+  X,
+} from 'lucide-react'
 
+/* ------------------------------------------------------------------ */
+/* Types                                                                 */
+/* ------------------------------------------------------------------ */
 interface Session {
   id: string
   scheduledAt: string
@@ -25,76 +39,15 @@ interface Session {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Constants                                                             */
+/* ------------------------------------------------------------------ */
 const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 const DAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const HOURS = Array.from({ length: 14 }, (_, i) => i + 8) // 8am–9pm
 const ROW_HEIGHT = 60
 const GRID_START_HOUR = 8
-
-function addDays(d: Date, n: number): Date {
-  const next = new Date(d)
-  next.setDate(next.getDate() + n)
-  return next
-}
-
-function startOfWeekSun(d: Date): Date {
-  const start = new Date(d)
-  start.setDate(start.getDate() - start.getDay()) // Sunday = 0
-  start.setHours(0, 0, 0, 0)
-  return start
-}
-
-function blockStyle(status: string): React.CSSProperties {
-  switch (status) {
-    case 'PENDING_APPROVAL':
-    case 'PENDING':
-      return {
-        background: 'color-mix(in srgb, var(--primary) 22%, transparent)',
-        border: '1.5px dashed var(--primary)',
-        color: 'var(--primary)',
-      }
-    case 'AWAITING_PAYMENT':
-      return {
-        background: 'color-mix(in srgb, var(--warning) 20%, transparent)',
-        border: '1.5px solid var(--warning)',
-        color: 'var(--warning)',
-      }
-    case 'CONFIRMED':
-      return { background: 'var(--primary)', border: '1.5px solid var(--primary)', color: 'white' }
-    case 'IN_PROGRESS':
-      return { background: 'var(--accent)', border: '1.5px solid var(--accent)', color: 'white' }
-    case 'COMPLETED':
-      return {
-        background: 'var(--surface)',
-        border: '1.5px solid var(--border)',
-        color: 'var(--muted)',
-        textDecoration: 'line-through',
-      }
-    case 'CANCELLED':
-    case 'RESCHEDULE_REQUESTED':
-      return {
-        background: 'repeating-linear-gradient(45deg, color-mix(in srgb, var(--border) 80%, transparent), color-mix(in srgb, var(--border) 80%, transparent) 3px, transparent 3px, transparent 9px)',
-        border: '1.5px solid var(--border)',
-        color: 'var(--muted)',
-      }
-    default:
-      return { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }
-  }
-}
-
-function badgeStyle(status: string): React.CSSProperties {
-  const base = blockStyle(status)
-  return {
-    borderRadius: 20,
-    padding: '3px 10px',
-    fontSize: 11,
-    fontWeight: 800,
-    display: 'inline-block',
-    background: base.background,
-    border: base.border,
-    color: base.color,
-  }
-}
+const GRID_END_HOUR = 21
+const HOURS = Array.from({ length: GRID_END_HOUR - GRID_START_HOUR }, (_, i) => i + GRID_START_HOUR)
 
 const STATUS_AR: Record<string, string> = {
   PENDING_APPROVAL: 'بانتظار الموافقة',
@@ -107,14 +60,88 @@ const STATUS_AR: Record<string, string> = {
   RESCHEDULE_REQUESTED: 'تغيير موعد',
 }
 
-function userName(u?: { profile?: { firstName?: string; lastName?: string } }): string {
+/* ------------------------------------------------------------------ */
+/* Helpers                                                               */
+/* ------------------------------------------------------------------ */
+function addDays(d: Date, n: number): Date {
+  const next = new Date(d)
+  next.setDate(next.getDate() + n)
+  return next
+}
+
+function startOfWeekSun(d: Date): Date {
+  const start = new Date(d)
+  start.setDate(start.getDate() - start.getDay())
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+
+function fmt12(d: Date, isAr: boolean): string {
+  return d.toLocaleTimeString(
+    isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
+    {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+  )
+}
+
+function fmtFullDate(d: Date, isAr: boolean): string {
+  return d.toLocaleDateString(
+    isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', calendar: 'gregory' },
+  )
+}
+
+function hourLabel(h: number): string {
+  if (h < 12) return `${h}:00 ص`
+  if (h === 12) return '12:00 م'
+  return `${h - 12}:00 م`
+}
+
+function personName(s: Session): string {
+  const u = s.user ?? s.consultant
   return `${u?.profile?.firstName || ''} ${u?.profile?.lastName || ''}`.trim() || '—'
 }
 
-function locFmt(d: Date, isAr: boolean, opts: Intl.DateTimeFormatOptions): string {
-  return d.toLocaleString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', opts)
+/* ------------------------------------------------------------------ */
+/* Status colours                                                        */
+/* ------------------------------------------------------------------ */
+function blockStyle(status: string): React.CSSProperties {
+  switch (status) {
+    case 'CONFIRMED':
+      return { background: 'var(--primary)', border: '1.5px solid var(--primary)', color: '#fff' }
+    case 'IN_PROGRESS':
+      return { background: 'var(--accent)', border: '1.5px solid var(--accent)', color: '#fff' }
+    case 'COMPLETED':
+      return {
+        background: 'var(--accent-light)',
+        border: '1.5px solid var(--accent)',
+        color: 'var(--accent)',
+        textDecoration: 'line-through' as const,
+      }
+    case 'CANCELLED':
+      return { background: 'var(--error-subtle)', border: '1.5px solid var(--error)', color: 'var(--error)' }
+    case 'RESCHEDULE_REQUESTED':
+      return { background: 'var(--warning-subtle)', border: '1.5px solid var(--warning)', color: 'var(--warning)' }
+    case 'PENDING':
+    case 'PENDING_APPROVAL':
+    case 'AWAITING_PAYMENT':
+      return {
+        background: 'var(--primary-subtle)',
+        border: '1.5px dashed var(--primary-border)',
+        color: 'var(--primary)',
+      }
+    default:
+      return { background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }
+  }
 }
 
+/* ------------------------------------------------------------------ */
+/* Component                                                             */
+/* ------------------------------------------------------------------ */
 export default function ScheduleClient() {
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -124,10 +151,19 @@ export default function ScheduleClient() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Session | null>(null)
-  const [acting, setActing] = useState(false)
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => new Date())
+  const [now, setNow] = useState(() => new Date())
+  const [view, setView] = useState<'day' | 'week' | 'month'>('week')
 
+  /* Current-time line — update every minute */
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  /* Mobile breakpoint */
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
@@ -135,247 +171,991 @@ export default function ScheduleClient() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart])
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
+    [weekStart],
+  )
 
+  /* ---------------------------------------------------------------- */
+  /* Data loading                                                       */
+  /* ---------------------------------------------------------------- */
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get('/consulting/sessions')
-      const clientSessions = (res.data?.data?.clientSessions || []) as Session[]
-      const mySessions = (res.data?.data?.mySessions || []) as Session[]
-      setSessions([...clientSessions, ...mySessions])
+      const from = weekStart.toISOString()
+      const to = addDays(weekStart, 7).toISOString()
+      const res = await get(`/consulting/sessions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+      const client = (res.data?.data?.clientSessions ?? []) as Session[]
+      const mine = (res.data?.data?.mySessions ?? []) as Session[]
+      const map = new Map<string, Session>()
+      for (const s of [...mine, ...client]) map.set(s.id, s)
+      setSessions(Array.from(map.values()))
     } catch (e) {
       console.error('[Schedule] load error', e)
     }
     setLoading(false)
-  }, [])
+  }, [weekStart])
 
   useEffect(() => { load() }, [load])
 
-  async function handleStartRoom(sessionId: string) {
-    setActing(true)
-    try {
-      router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
-    } catch (e) {
-      console.error('[Schedule] start room error', e)
-    }
-    setActing(false)
-  }
+  /* ---------------------------------------------------------------- */
+  /* Stats                                                              */
+  /* ---------------------------------------------------------------- */
+  const weekSessions = sessions.length
+  const upcomingSessions = sessions.filter(
+    (s) => s.status === 'CONFIRMED' && new Date(s.scheduledAt) > now,
+  ).length
+  const completedHours = (
+    sessions
+      .filter((s) => s.status === 'COMPLETED')
+      .reduce((sum, s) => sum + (s.duration || 0), 0) / 60
+  ).toFixed(1)
 
-  async function handleJoinRoom(sessionId: string) {
-    router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
-  }
-
+  /* ---------------------------------------------------------------- */
+  /* Block positioning                                                  */
+  /* ---------------------------------------------------------------- */
   function blockTop(scheduledAt: string): number {
     const d = new Date(scheduledAt)
-    return Math.max(0, ((d.getHours() - GRID_START_HOUR) * 60 + d.getMinutes()) / 60 * ROW_HEIGHT)
+    return Math.max(
+      0,
+      ((d.getHours() - GRID_START_HOUR) * 60 + d.getMinutes()) / 60 * ROW_HEIGHT,
+    )
   }
 
   function blockHeight(duration: number): number {
-    return Math.max(ROW_HEIGHT / 2, (duration / 60) * ROW_HEIGHT)
+    return Math.max(30, (duration / 60) * ROW_HEIGHT)
   }
 
+  /* ---------------------------------------------------------------- */
+  /* Current-time line                                                  */
+  /* ---------------------------------------------------------------- */
+  const nowTop =
+    ((now.getHours() - GRID_START_HOUR) * 60 + now.getMinutes()) / 60 * ROW_HEIGHT
+  const showTimeLine =
+    now.getHours() >= GRID_START_HOUR && now.getHours() < GRID_END_HOUR
+
+  /* ---------------------------------------------------------------- */
+  /* Date range label                                                   */
+  /* ---------------------------------------------------------------- */
+  const weekEnd = addDays(weekStart, 6)
+  const dateRangeLabel = (() => {
+    const endStr = weekEnd.toLocaleDateString(
+      isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+      { month: 'long', year: 'numeric', calendar: 'gregory' },
+    )
+    return `${weekStart.getDate()} - ${weekEnd.getDate()} ${endStr}`
+  })()
+
+  /* ---------------------------------------------------------------- */
+  /* Mobile day sessions                                               */
+  /* ---------------------------------------------------------------- */
   const mobileDaySessions = useMemo(() => {
-    const s = new Date(mobileDay); s.setHours(0, 0, 0, 0)
-    const e = addDays(s, 1)
-    return sessions.filter(x => { const t = new Date(x.scheduledAt); return t >= s && t < e })
+    const s = new Date(mobileDay)
+    s.setHours(0, 0, 0, 0)
+    const e = new Date(mobileDay)
+    e.setHours(23, 59, 59, 999)
+    return sessions.filter((x) => {
+      const t = new Date(x.scheduledAt)
+      return t >= s && t <= e
+    })
   }, [sessions, mobileDay])
 
-  // Session detail modal
-  const modal = selected ? (() => {
-    const start = new Date(selected.scheduledAt)
-    const end = new Date(start.getTime() + selected.duration * 60000)
-    const minutesUntil = (start.getTime() - Date.now()) / 60000
-    const canStart = selected.status === 'CONFIRMED' || selected.status === 'IN_PROGRESS'
-    const isLive = selected.status === 'IN_PROGRESS'
+  /* ---------------------------------------------------------------- */
+  /* Details panel                                                      */
+  /* ---------------------------------------------------------------- */
+  function closePanel() {
+    setSelected(null)
+    setPanelPos(null)
+  }
 
-    return (
-      <div
-        onClick={e => { if (e.target === e.currentTarget) setSelected(null) }}
-        style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'color-mix(in srgb, var(--foreground) 40%, transparent)', padding: 16 }}
-      >
-        <div style={{ width: '100%', maxWidth: 400, borderRadius: 16, border: '1px solid var(--border)', background: 'var(--card)', padding: 24, boxShadow: '0 24px 64px color-mix(in srgb, var(--foreground) 20%, transparent)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 900, margin: 0 }}>{isAr ? 'تفاصيل الجلسة' : 'Session details'}</h2>
-            <button onClick={() => setSelected(null)} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
-          </div>
+  const detailPanel = selected
+    ? (() => {
+        const start = new Date(selected.scheduledAt)
+        const end = new Date(start.getTime() + (selected.duration || 0) * 60_000)
+        const canAct =
+          selected.status === 'CONFIRMED' || selected.status === 'IN_PROGRESS'
+        const isLive = selected.status === 'IN_PROGRESS'
+        const name = personName(selected)
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, flexShrink: 0 }}>
-              {userName(selected.user ?? selected.consultant).charAt(0) || '?'}
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: 14 }}>{userName(selected.user ?? selected.consultant)}</div>
-              {(selected.user?.email || selected.consultant?.email) && (
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {selected.user?.email || selected.consultant?.email}
-                </div>
-              )}
-            </div>
-          </div>
+        const panelStyle: React.CSSProperties = {
+          position: 'fixed',
+          width: 300,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          padding: 20,
+          zIndex: 100,
+        }
 
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div><span style={{ color: 'var(--muted)', fontWeight: 700 }}>{isAr ? 'التاريخ: ' : 'Date: '}</span>{locFmt(start, isAr, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
-            <div><span style={{ color: 'var(--muted)', fontWeight: 700 }}>{isAr ? 'الوقت: ' : 'Time: '}</span>{locFmt(start, isAr, { hour: '2-digit', minute: '2-digit' })} — {locFmt(end, isAr, { hour: '2-digit', minute: '2-digit' })}</div>
-            <div><span style={{ color: 'var(--muted)', fontWeight: 700 }}>{isAr ? 'المدة: ' : 'Duration: '}</span>{selected.duration} {isAr ? 'دقيقة' : 'min'}</div>
-            <div><span style={{ color: 'var(--muted)', fontWeight: 700 }}>{isAr ? 'الموضوع: ' : 'Topic: '}</span>{selected.topic || selected.sessionName || '—'}</div>
-          </div>
+        if (panelPos) {
+          const safeTop = Math.max(
+            16,
+            Math.min(panelPos.top, (typeof window !== 'undefined' ? window.innerHeight : 800) - 460),
+          )
+          const safeLeft = Math.max(
+            16,
+            Math.min(
+              panelPos.left,
+              (typeof window !== 'undefined' ? window.innerWidth : 1200) - 316,
+            ),
+          )
+          panelStyle.top = safeTop
+          panelStyle.left = safeLeft
+        } else {
+          panelStyle.top = '50%'
+          panelStyle.left = '50%'
+          panelStyle.transform = 'translate(-50%, -50%)'
+        }
 
-          <div style={{ marginBottom: 14 }}>
-            <span style={badgeStyle(selected.status)}>{STATUS_AR[selected.status] || selected.status}</span>
-          </div>
+        const bs = blockStyle(selected.status)
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(canStart || isLive) && (
-              <button
-                onClick={() => isLive ? handleJoinRoom(selected.id) : handleStartRoom(selected.id)}
-                disabled={acting}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: 'none', cursor: acting ? 'not-allowed' : 'pointer', background: isLive ? 'var(--accent)' : 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13, opacity: acting ? 0.7 : 1 }}
+        return (
+          <>
+            <div
+              onClick={closePanel}
+              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            />
+            <div style={panelStyle}>
+              {/* Header */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 14,
+                }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                </svg>
-                {isLive ? (isAr ? 'متابعة الجلسة' : 'Rejoin session') : (isAr ? 'بدء الجلسة' : 'Start session')}
-              </button>
-            )}
-            {selected.status === 'CONFIRMED' && !canStart && minutesUntil > 15 && (
-              <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'center' }}>
-                {isAr ? `تبدأ خلال ${Math.round(minutesUntil)} دقيقة` : `Starts in ${Math.round(minutesUntil)} min`}
+                <span style={{ fontSize: 14, fontWeight: 800 }}>
+                  {isAr ? 'تفاصيل الجلسة' : 'Session Details'}
+                </span>
+                <button
+                  onClick={closePanel}
+                  style={{
+                    width: 30,
+                    height: 30,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 8,
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    color: 'var(--muted)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <X size={14} />
+                </button>
               </div>
-            )}
-            <button onClick={() => setSelected(null)} style={{ padding: '10px 20px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-              {isAr ? 'إغلاق' : 'Close'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  })() : null
 
-  // Mobile single-day view
+              {/* Client row */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginBottom: 12,
+                }}
+              >
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    background: 'var(--primary-subtle)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    fontWeight: 900,
+                    flexShrink: 0,
+                  }}
+                >
+                  {name.charAt(0) || '?'}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 13 }}>{name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)' }}>
+                    {isAr ? 'عميل' : 'Client'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Info block */}
+              <div
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  marginBottom: 12,
+                  fontSize: 12,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Calendar size={13} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  <span>{fmtFullDate(start, isAr)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Clock size={13} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                  <span>
+                    {fmt12(start, isAr)} – {fmt12(end, isAr)}
+                  </span>
+                </div>
+                <div>
+                  <span
+                    style={{
+                      ...bs,
+                      borderRadius: 20,
+                      padding: '2px 10px',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      display: 'inline-block',
+                    }}
+                  >
+                    {STATUS_AR[selected.status] || selected.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {canAct && (
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/${locale}/dashboard/consulting/${selected.id}/go-live`,
+                      )
+                    }
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '10px 16px',
+                      borderRadius: 10,
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: isLive ? 'var(--accent)' : 'var(--primary)',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: 13,
+                    }}
+                  >
+                    <Video size={14} />
+                    {isLive
+                      ? isAr
+                        ? 'متابعة الجلسة'
+                        : 'Rejoin session'
+                      : isAr
+                        ? 'بدء الجلسة'
+                        : 'Start session'}
+                  </button>
+                )}
+                <button
+                  onClick={() =>
+                    router.push(`/${locale}/dashboard/my-sessions`)
+                  }
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: 10,
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    color: 'var(--foreground)',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  {isAr ? 'عرض التفاصيل' : 'View details'}
+                </button>
+                <button
+                  onClick={closePanel}
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--muted)',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 12,
+                  }}
+                >
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      })()
+    : null
+
+  /* ---------------------------------------------------------------- */
+  /* Mobile view                                                        */
+  /* ---------------------------------------------------------------- */
   if (isMobile) {
     return (
-      <div dir="rtl" style={{ background: 'var(--background)', color: 'var(--foreground)', minHeight: '100vh', padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>{isAr ? 'جدول مواعيدي' : 'My Schedule'}</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button onClick={() => setMobileDay(d => addDays(d, -1))} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', cursor: 'pointer', fontWeight: 800 }}>{'<'}</button>
-            <span style={{ fontSize: 12, fontWeight: 600, minWidth: 130, textAlign: 'center', color: 'var(--foreground)' }}>
-              {locFmt(mobileDay, isAr, { weekday: 'long', day: 'numeric', month: 'long' })}
-            </span>
-            <button onClick={() => setMobileDay(d => addDays(d, 1))} style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', cursor: 'pointer', fontWeight: 800 }}>{'>'}</button>
-          </div>
+      <div
+        dir="rtl"
+        style={{
+          background: 'var(--background)',
+          color: 'var(--foreground)',
+          minHeight: '100vh',
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <h1 style={{ fontSize: 18, fontWeight: 900, margin: 0 }}>
+            {isAr ? 'جدول مواعيدي' : 'My Schedule'}
+          </h1>
+          <button
+            onClick={() => setMobileDay(new Date())}
+            style={{
+              height: 32,
+              padding: '0 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--primary)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            {isAr ? 'اليوم' : 'Today'}
+          </button>
         </div>
 
-        {loading && <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</div>}
+        {/* Day navigation */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
+          <button
+            onClick={() => setMobileDay((d) => addDays(d, isAr ? 1 : -1))}
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronRight size={16} />
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>
+            {mobileDay.toLocaleDateString(
+              isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+              { weekday: 'long', day: 'numeric', month: 'long', calendar: 'gregory' },
+            )}
+          </span>
+          <button
+            onClick={() => setMobileDay((d) => addDays(d, isAr ? -1 : 1))}
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+        </div>
+
+        {loading && (
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>
+            {isAr ? 'جاري التحميل...' : 'Loading...'}
+          </div>
+        )}
 
         {mobileDaySessions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--muted)', fontSize: 14 }}>
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '48px 0',
+              color: 'var(--muted)',
+              fontSize: 14,
+            }}
+          >
             {isAr ? 'لا توجد جلسات هذا اليوم' : 'No sessions today'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {mobileDaySessions.map(s => {
+            {mobileDaySessions.map((s) => {
               const start = new Date(s.scheduledAt)
-              const end = new Date(start.getTime() + s.duration * 60000)
+              const end = new Date(start.getTime() + s.duration * 60_000)
               const st = blockStyle(s.status)
               return (
-                <div key={s.id} onClick={() => setSelected(s)} style={{ borderRadius: 12, padding: '12px 16px', cursor: 'pointer', ...st }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{userName(s.user ?? s.consultant)}</div>
-                  <div style={{ fontSize: 12, opacity: 0.85 }}>
-                    {locFmt(start, isAr, { hour: '2-digit', minute: '2-digit' })} — {locFmt(end, isAr, { hour: '2-digit', minute: '2-digit' })}
+                <div
+                  key={s.id}
+                  onClick={() => { setSelected(s); setPanelPos(null) }}
+                  style={{ borderRadius: 12, padding: '12px 16px', cursor: 'pointer', ...st }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                    {personName(s)}
                   </div>
-                  <div style={{ fontSize: 11, marginTop: 3, opacity: 0.8 }}>{s.duration} {isAr ? 'دقيقة' : 'min'} · {STATUS_AR[s.status] || s.status}</div>
+                  <div style={{ fontSize: 12, opacity: 0.85 }}>
+                    {fmt12(start, isAr)} – {fmt12(end, isAr)}
+                  </div>
+                  <div style={{ fontSize: 11, marginTop: 3, opacity: 0.8 }}>
+                    {s.duration} {isAr ? 'دقيقة' : 'min'} · {STATUS_AR[s.status] || s.status}
+                  </div>
                 </div>
               )
             })}
           </div>
         )}
 
-        {modal}
+        {detailPanel}
       </div>
     )
   }
 
-  // Desktop weekly calendar
+  /* ---------------------------------------------------------------- */
+  /* Desktop weekly calendar                                            */
+  /* ---------------------------------------------------------------- */
   return (
-    <div dir="rtl" style={{ background: 'var(--background)', color: 'var(--foreground)', padding: 16, minHeight: '100vh' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 900, margin: 0 }}>{isAr ? 'جدول مواعيدي' : 'My Schedule'}</h1>
+    <div
+      dir="rtl"
+      style={{
+        background: 'var(--background)',
+        color: 'var(--foreground)',
+        padding: '24px 20px',
+        minHeight: '100vh',
+      }}
+    >
+      {/* [A] Page header */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <h1
+            style={{ fontSize: 22, fontWeight: 900, margin: 0, lineHeight: 1.2 }}
+          >
+            {isAr ? 'جدول مواعيدي' : 'My Schedule'}
+          </h1>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--muted)',
+              margin: '4px 0 0',
+              fontWeight: 500,
+            }}
+          >
+            {isAr
+              ? 'نظم جلساتك ومواعيدك بسهولة'
+              : 'Organize your sessions easily'}
+          </p>
+        </div>
+        <button
+          onClick={() => router.push(`/${locale}/dashboard/my-sessions`)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            height: 36,
+            padding: '0 16px',
+            borderRadius: 10,
+            border: 'none',
+            background: 'var(--primary)',
+            color: '#fff',
+            fontWeight: 700,
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 400 }}>+</span>
+          {isAr ? 'موعد جديد' : 'New session'}
+        </button>
+      </div>
+
+      {/* [B] Stat cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        {(
+          [
+            {
+              icon: <Calendar size={20} />,
+              iconBg: 'var(--accent-light)',
+              iconColor: 'var(--accent)',
+              label: isAr ? 'جلسات هذا الأسبوع' : 'This week',
+              value: weekSessions,
+            },
+            {
+              icon: <Clock size={20} />,
+              iconBg: 'var(--primary-subtle)',
+              iconColor: 'var(--primary)',
+              label: isAr ? 'مواعيد قادمة' : 'Upcoming',
+              value: upcomingSessions,
+            },
+            {
+              icon: <Users size={20} />,
+              iconBg: 'var(--accent-light)',
+              iconColor: 'var(--accent)',
+              label: isAr ? 'ساعات مكتملة' : 'Completed hours',
+              value: completedHours,
+            },
+          ] as const
+        ).map((card, i) => (
+          <div
+            key={i}
+            style={{
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 12,
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: card.iconBg,
+                color: card.iconColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {card.icon}
+            </div>
+            <div>
+              <div
+                style={{ fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}
+              >
+                {card.value}
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--muted)',
+                  fontWeight: 600,
+                  marginTop: 2,
+                }}
+              >
+                {card.label}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* [C] Calendar toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 12,
+        }}
+      >
+        {/* Left group */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button onClick={() => setWeekStart(w => addDays(w, -7))} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', cursor: 'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <button
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <Search size={14} />
           </button>
-          <button onClick={() => setWeekStart(startOfWeekSun(new Date()))} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--primary)', color: 'white', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+          <button
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+            }}
+          >
+            <Filter size={14} />
+          </button>
+
+          {/* Prev week (in RTL layout, this is the right-pointing chevron = go back) */}
+          <button
+            onClick={() => setWeekStart((w) => addDays(w, -7))}
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronRight size={16} />
+          </button>
+
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{dateRangeLabel}</span>
+
+          {/* Next week */}
+          <button
+            onClick={() => setWeekStart((w) => addDays(w, 7))}
+            style={{
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+              cursor: 'pointer',
+            }}
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <button
+            onClick={() => setWeekStart(startOfWeekSun(new Date()))}
+            style={{
+              height: 32,
+              padding: '0 14px',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--primary)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
             {isAr ? 'اليوم' : 'Today'}
           </button>
-          <button onClick={() => setWeekStart(w => addDays(w, 7))} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', cursor: 'pointer' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
-          </button>
+        </div>
+
+        {/* Right group — view switcher */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            background: 'var(--surface)',
+            borderRadius: 10,
+            padding: 3,
+            border: '1px solid var(--border)',
+          }}
+        >
+          {(['day', 'week', 'month'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setView(v)}
+              style={{
+                height: 32,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: 'none',
+                background: view === v ? 'var(--primary)' : 'transparent',
+                color: view === v ? '#fff' : 'var(--muted)',
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              {v === 'day'
+                ? isAr
+                  ? 'يوم'
+                  : 'Day'
+                : v === 'week'
+                  ? isAr
+                    ? 'أسبوع'
+                    : 'Week'
+                  : isAr
+                    ? 'شهر'
+                    : 'Month'}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12, fontWeight: 600, textAlign: 'center' }}>
-        {locFmt(weekStart, isAr, { day: 'numeric', month: 'long' })} — {locFmt(addDays(weekStart, 6), isAr, { day: 'numeric', month: 'long', year: 'numeric' })}
-      </div>
+      {loading && (
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+          {isAr ? 'جاري التحميل...' : 'Loading...'}
+        </div>
+      )}
 
-      {loading && <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>{isAr ? 'جاري التحميل...' : 'Loading...'}</div>}
-
+      {/* [D] Weekly calendar grid */}
       <div style={{ overflowX: 'auto' }}>
-        <div style={{ minWidth: 760, border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', background: 'var(--card)' }}>
-          {/* Day header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ height: 48, borderRight: '1px solid var(--border)' }} />
+        <div
+          style={{
+            minWidth: 700,
+            border: '1px solid var(--border)',
+            borderRadius: 12,
+            overflow: 'hidden',
+            background: 'var(--card)',
+          }}
+        >
+          {/* D1 — Day header row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '80px repeat(7, 1fr)',
+              borderBottom: '1px solid var(--border)',
+            }}
+          >
+            {/* Time column header */}
+            <div
+              style={{
+                height: 68,
+                borderRight: '1px solid var(--border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 10,
+                color: 'var(--muted)',
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? 'الوقت' : 'Time'}
+            </div>
+
             {weekDays.map((d, i) => {
               const isToday = d.toDateString() === new Date().toDateString()
               return (
-                <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderRight: i < 6 ? '1px solid var(--border)' : undefined }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)' }}>{isAr ? DAYS_AR[d.getDay()] : DAYS_EN[d.getDay()]}</div>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', margin: '2px auto 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, background: isToday ? 'var(--primary)' : 'transparent', color: isToday ? 'white' : 'var(--foreground)' }}>
+                <div
+                  key={i}
+                  style={{
+                    height: 68,
+                    padding: '8px 4px',
+                    textAlign: 'center',
+                    borderRight:
+                      i < 6 ? '1px solid var(--border)' : undefined,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    {isAr ? DAYS_AR[d.getDay()] : DAYS_EN[d.getDay()]}
+                  </div>
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 14,
+                      fontWeight: 900,
+                      background: isToday ? 'var(--primary)' : 'transparent',
+                      color: isToday ? '#fff' : 'var(--foreground)',
+                    }}
+                  >
                     {d.getDate()}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--muted)' }}>
+                    {d.toLocaleDateString(
+                      isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
+                      { month: 'short', day: 'numeric' },
+                    )}
                   </div>
                 </div>
               )
             })}
           </div>
 
-          {/* Time grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)' }}>
-            {/* Time labels */}
+          {/* D2 — Time grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '80px repeat(7, 1fr)',
+            }}
+          >
+            {/* Time labels column */}
             <div style={{ borderRight: '1px solid var(--border)' }}>
-              {HOURS.map(h => (
-                <div key={h} style={{ height: ROW_HEIGHT, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 4, fontSize: 10, color: 'var(--muted)', borderBottom: '1px solid var(--border)', boxSizing: 'border-box' }}>
-                  {String(h).padStart(2, '0')}:00
+              {HOURS.map((h) => (
+                <div
+                  key={h}
+                  style={{
+                    height: ROW_HEIGHT,
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'center',
+                    paddingTop: 4,
+                    fontSize: 10,
+                    color: 'var(--muted)',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {hourLabel(h)}
                 </div>
               ))}
             </div>
 
-            {/* Day columns */}
+            {/* 7 day columns */}
             {weekDays.map((day, di) => {
-              const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0)
-              const dayEnd = addDays(dayStart, 1)
-              const daySessions = sessions.filter(s => { const t = new Date(s.scheduledAt); return t >= dayStart && t < dayEnd })
+              const isToday = day.toDateString() === new Date().toDateString()
+              const dayStart = new Date(day)
+              dayStart.setHours(0, 0, 0, 0)
+              const dayEnd = new Date(day)
+              dayEnd.setHours(23, 59, 59, 999)
+              const daySessions = sessions.filter((s) => {
+                const t = new Date(s.scheduledAt)
+                return t >= dayStart && t <= dayEnd
+              })
 
               return (
-                <div key={di} style={{ position: 'relative', borderRight: di < 6 ? '1px solid var(--border)' : undefined }}>
-                  {HOURS.map(h => (
-                    <div key={h} style={{ height: ROW_HEIGHT, borderBottom: '1px solid var(--border)', boxSizing: 'border-box' }} />
+                <div
+                  key={di}
+                  style={{
+                    position: 'relative',
+                    borderRight:
+                      di < 6 ? '1px solid var(--border)' : undefined,
+                    background: isToday
+                      ? 'rgba(81,32,200,0.03)'
+                      : undefined,
+                  }}
+                >
+                  {/* Hour grid lines */}
+                  {HOURS.map((h) => (
+                    <div
+                      key={h}
+                      style={{
+                        height: ROW_HEIGHT,
+                        borderBottom: '1px solid var(--border)',
+                        boxSizing: 'border-box',
+                      }}
+                    />
                   ))}
-                  {daySessions.map(s => {
+
+                  {/* Current-time line — today only */}
+                  {isToday && showTimeLine && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: nowTop,
+                        left: 0,
+                        right: 0,
+                        zIndex: 2,
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          right: 0,
+                          top: -3,
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          background: 'var(--primary)',
+                        }}
+                      />
+                      <div
+                        style={{
+                          height: 2,
+                          background: 'var(--primary)',
+                          opacity: 0.8,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Session blocks */}
+                  {daySessions.map((s) => {
+                    const top = blockTop(s.scheduledAt)
+                    const height = blockHeight(s.duration)
                     const st = blockStyle(s.status)
+                    const start = new Date(s.scheduledAt)
+                    const end = new Date(
+                      start.getTime() + s.duration * 60_000,
+                    )
+                    const topic =
+                      s.topic || s.sessionName || personName(s)
+                    const clientName = personName(s)
+
                     return (
                       <button
                         key={s.id}
-                        onClick={() => setSelected(s)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const rect =
+                            e.currentTarget.getBoundingClientRect()
+                          setPanelPos({
+                            top: rect.top,
+                            left: rect.left - 316,
+                          })
+                          setSelected(s)
+                        }}
                         style={{
                           position: 'absolute',
-                          top: blockTop(s.scheduledAt) + 1,
+                          top: top + 1,
                           left: 3,
                           right: 3,
-                          height: blockHeight(s.duration) - 2,
+                          height: height - 2,
                           borderRadius: 6,
-                          padding: '3px 6px',
+                          padding: '4px 6px',
                           fontSize: 10,
                           textAlign: 'right',
                           cursor: 'pointer',
@@ -383,12 +1163,51 @@ export default function ScheduleClient() {
                           fontWeight: 700,
                           zIndex: 1,
                           lineHeight: 1.3,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
                           ...st,
                         }}
                       >
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName(s.user ?? s.consultant)}</div>
-                        {blockHeight(s.duration) > 44 && (
-                          <div style={{ opacity: 0.8, fontSize: 9 }}>{s.duration} {isAr ? 'د' : 'm'}</div>
+                        <div
+                          style={{
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {topic}
+                        </div>
+                        {height > 30 && topic !== clientName && (
+                          <div
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              opacity: 0.85,
+                            }}
+                          >
+                            {clientName}
+                          </div>
+                        )}
+                        {height > 50 && (
+                          <div style={{ opacity: 0.75, fontSize: 9 }}>
+                            {fmt12(start, isAr)} – {fmt12(end, isAr)}
+                          </div>
+                        )}
+                        {height > 70 && (
+                          <div
+                            style={{
+                              fontSize: 9,
+                              borderRadius: 10,
+                              padding: '1px 5px',
+                              background: 'rgba(255,255,255,0.15)',
+                              display: 'inline-block',
+                              alignSelf: 'flex-end',
+                            }}
+                          >
+                            {STATUS_AR[s.status] || s.status}
+                          </div>
                         )}
                       </button>
                     )
@@ -400,7 +1219,43 @@ export default function ScheduleClient() {
         </div>
       </div>
 
-      {modal}
+      {/* [F] Status legend */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          marginTop: 12,
+          flexWrap: 'wrap',
+          fontSize: 12,
+          color: 'var(--muted)',
+        }}
+      >
+        {[
+          { color: 'var(--error)', label: isAr ? 'ملغي' : 'Cancelled' },
+          { color: 'var(--accent)', label: isAr ? 'مكتملة' : 'Completed' },
+          { color: 'var(--primary)', label: isAr ? 'محجوز' : 'Confirmed' },
+          { color: 'var(--success)', label: isAr ? 'متاح' : 'Available' },
+        ].map((item) => (
+          <div
+            key={item.label}
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: item.color,
+                flexShrink: 0,
+              }}
+            />
+            {item.label}
+          </div>
+        ))}
+      </div>
+
+      {detailPanel}
     </div>
   )
 }
