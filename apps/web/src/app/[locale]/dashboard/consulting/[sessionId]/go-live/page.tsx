@@ -26,8 +26,9 @@ export default function ConsultingGoLivePage() {
 
   useEffect(() => {
     if (!sessionId) return
-    async function startRoom() {
+    async function enterRoom() {
       try {
+        // Consultant path: start the room and mark it IN_PROGRESS
         const res = await post(`/consulting/sessions/${sessionId}/start-room`, {})
         const data = res.data?.data
         const roomUrl = data?.roomUrl || data?.dailyRoomUrl
@@ -35,21 +36,36 @@ export default function ConsultingGoLivePage() {
           setError(isAr ? 'لم يتم إرجاع رابط الجلسة' : 'No room URL returned')
           return
         }
-        setRoomData({
-          roomUrl,
-          token: data?.token ?? null,
-          topic: data?.session?.topic,
-        })
-      } catch (e: any) {
-        setError(
-          e?.response?.data?.message ||
-          (isAr ? 'تعذر بدء الجلسة' : 'Failed to start session')
-        )
+        setRoomData({ roomUrl, token: data?.token ?? null, topic: data?.session?.topic })
+      } catch (startErr: any) {
+        if (startErr?.response?.status === 403) {
+          // Student path: join an already-running room
+          try {
+            const res = await post(`/consulting/sessions/${sessionId}/join-room`, {})
+            const data = res.data?.data
+            const roomUrl = data?.roomUrl || data?.dailyRoomUrl
+            if (!roomUrl) {
+              setError(isAr ? 'الجلسة لم تبدأ بعد' : 'Session has not started yet')
+              return
+            }
+            setRoomData({ roomUrl, token: data?.token ?? null })
+          } catch (joinErr: any) {
+            setError(
+              joinErr?.response?.data?.message ||
+              (isAr ? 'لم تبدأ الجلسة بعد — انتظر المستشار' : 'Session not started yet — wait for the consultant')
+            )
+          }
+        } else {
+          setError(
+            startErr?.response?.data?.message ||
+            (isAr ? 'تعذر بدء الجلسة' : 'Failed to start session')
+          )
+        }
       } finally {
         setLoading(false)
       }
     }
-    startRoom()
+    enterRoom()
   }, [sessionId])
 
   async function handleEnd() {

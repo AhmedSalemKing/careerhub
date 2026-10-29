@@ -631,12 +631,11 @@ export default function ClientSessionsPage() {
                       {status === 'IN_PROGRESS' && (
                         <button
                           type="button"
-                          onClick={() => joinRoomMutation.mutate(session.id)}
-                          disabled={joinRoomMutation.isPending}
+                          onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
-                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: joinRoomMutation.isPending ? 0.7 : 1 }}
+                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer' }}
                         >
-                          <ExternalLink size={12} />
+                          <Video size={12} />
                           {isAr ? 'انضم للجلسة' : 'Join session'}
                         </button>
                       )}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { api } from '../../../../lib/api'
 
 interface Session {
@@ -117,12 +118,12 @@ function locFmt(d: Date, isAr: boolean, opts: Intl.DateTimeFormatOptions): strin
 export default function ScheduleClient() {
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const router = useRouter()
 
   const [weekStart, setWeekStart] = useState(() => startOfWeekSun(new Date()))
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Session | null>(null)
-  const [acting, setActing] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => new Date())
 
@@ -152,28 +153,14 @@ export default function ScheduleClient() {
 
   useEffect(() => { load() }, [load])
 
-  async function handleStartRoom(sessionId: string) {
-    setActing(true)
-    try {
-      const res = await api.post(`/consulting/sessions/${sessionId}/start-room`)
-      const { roomUrl } = res.data?.data || {}
-      if (roomUrl) window.open(roomUrl, '_blank', 'noopener,noreferrer')
-      setSelected(null)
-      load()
-    } catch (e) {
-      console.error('[Schedule] start room error', e)
-    }
-    setActing(false)
+  function handleStartRoom(sessionId: string) {
+    setSelected(null)
+    router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
   }
 
-  async function handleJoinRoom(sessionId: string) {
-    try {
-      const res = await api.post(`/consulting/sessions/${sessionId}/join-room`)
-      const { roomUrl } = res.data?.data || {}
-      if (roomUrl) window.open(roomUrl, '_blank', 'noopener,noreferrer')
-    } catch (e) {
-      console.error('[Schedule] join room error', e)
-    }
+  function handleJoinRoom(sessionId: string) {
+    setSelected(null)
+    router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
   }
 
   function blockTop(scheduledAt: string): number {
@@ -239,13 +226,12 @@ export default function ScheduleClient() {
             {(canStart || isLive) && (
               <button
                 onClick={() => isLive ? handleJoinRoom(selected.id) : handleStartRoom(selected.id)}
-                disabled={acting}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: 'none', cursor: acting ? 'wait' : 'pointer', background: isLive ? 'var(--accent)' : 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13, opacity: acting ? 0.7 : 1 }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', background: isLive ? 'var(--accent)' : 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                 </svg>
-                {acting ? (isAr ? 'جاري...' : 'Starting...') : isLive ? (isAr ? 'متابعة الجلسة' : 'Rejoin session') : (isAr ? 'بدء الجلسة' : 'Start session')}
+                {isLive ? (isAr ? 'متابعة الجلسة' : 'Rejoin session') : (isAr ? 'بدء الجلسة' : 'Start session')}
               </button>
             )}
             {selected.status === 'CONFIRMED' && !canStart && minutesUntil > 15 && (
