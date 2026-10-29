@@ -1,85 +1,198 @@
 'use client'
-import { useState } from 'react'
-import { useTheme } from 'next-themes'
+
+import { useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
+import { browserTimeZone, formatTimeOnly, localDateTimeToISO } from '@/lib/time'
 import {
-  Calendar, Clock, Video, CheckCircle2, XCircle,
-  ExternalLink, RefreshCw, X, DollarSign,
-  AlertTriangle, Users, Play
+  AlertTriangle,
+  CalendarDays,
+  Check,
+  Clock,
+  ExternalLink,
+  Mail,
+  Play,
+  RefreshCw,
+  Users,
+  Video,
+  X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
-import { formatDate, formatTimeOnly, localDateTimeToISO } from '@/lib/time'
 
-const STATUS_CONFIG: Record<string, any> = {
-  PENDING:              { ar: 'بانتظار الموافقة', en: 'Pending Approval',   color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
-  PENDING_APPROVAL:     { ar: 'بانتظار الموافقة', en: 'Pending Approval',   color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
-  AWAITING_PAYMENT:     { ar: 'بانتظار الدفع',    en: 'Awaiting Payment',   color: '#FF9800', bg: 'rgba(255,152,0,0.12)' },
-  CONFIRMED:            { ar: 'مؤكدة',             en: 'Confirmed',          color: '#1B4F72', bg: 'rgba(27,79,114,0.12)' },
-  IN_PROGRESS:          { ar: 'جارية',             en: 'In Progress',        color: '#27AE60', bg: 'rgba(39,174,96,0.12)' },
-  COMPLETED:            { ar: 'مكتملة',            en: 'Completed',          color: '#95A5A6', bg: 'rgba(149,165,166,0.12)' },
-  CANCELLED:            { ar: 'ملغاة',             en: 'Cancelled',          color: '#E74C3C', bg: 'rgba(231,76,60,0.12)' },
-  RESCHEDULE_REQUESTED: { ar: 'تغيير موعد',        en: 'Reschedule Pending', color: '#9B59B6', bg: 'rgba(155,89,182,0.12)' },
+interface StatusStyle {
+  ar: string
+  en: string
+  color: string
+  subtle: string
+}
+
+const STATUS_CONFIG: Record<string, StatusStyle> = {
+  PENDING_APPROVAL: {
+    ar: 'بانتظار الموافقة',
+    en: 'Pending approval',
+    color: 'var(--warning)',
+    subtle: 'var(--warning-subtle)',
+  },
+  AWAITING_PAYMENT: {
+    ar: 'بانتظار الدفع',
+    en: 'Awaiting payment',
+    color: 'var(--warning)',
+    subtle: 'var(--warning-subtle)',
+  },
+  CONFIRMED: {
+    ar: 'مؤكدة',
+    en: 'Confirmed',
+    color: 'var(--primary)',
+    subtle: 'var(--primary-subtle)',
+  },
+  IN_PROGRESS: {
+    ar: 'جارية',
+    en: 'In progress',
+    color: 'var(--accent)',
+    subtle: 'var(--accent-light)',
+  },
+  COMPLETED: {
+    ar: 'مكتملة',
+    en: 'Completed',
+    color: 'var(--muted)',
+    subtle: 'var(--surface-2)',
+  },
+  CANCELLED: {
+    ar: 'ملغاة',
+    en: 'Cancelled',
+    color: 'var(--error)',
+    subtle: 'var(--error-subtle)',
+  },
+  RESCHEDULE_REQUESTED: {
+    ar: 'تغيير موعد',
+    en: 'Reschedule requested',
+    color: 'var(--accent)',
+    subtle: 'var(--accent-light)',
+  },
 }
 
 type TabKey = 'pending_approval' | 'awaiting_payment' | 'upcoming' | 'completed' | 'cancelled'
 
 const TABS: { key: TabKey; ar: string; en: string; statuses: string[] }[] = [
-  { key: 'pending_approval', ar: 'بانتظار موافقتي', en: 'Pending Approval', statuses: ['PENDING', 'PENDING_APPROVAL'] },
-  { key: 'awaiting_payment', ar: 'انتظار الدفع',    en: 'Awaiting Payment', statuses: ['AWAITING_PAYMENT'] },
-  { key: 'upcoming',         ar: 'القادمة',          en: 'Upcoming',         statuses: ['CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_REQUESTED'] },
-  { key: 'completed',        ar: 'المكتملة',         en: 'Completed',        statuses: ['COMPLETED'] },
-  { key: 'cancelled',        ar: 'الملغاة',          en: 'Cancelled',        statuses: ['CANCELLED'] },
+  { key: 'pending_approval', ar: 'بانتظار موافقتي', en: 'Pending approval', statuses: ['PENDING_APPROVAL'] },
+  { key: 'awaiting_payment', ar: 'انتظار الدفع', en: 'Awaiting payment', statuses: ['AWAITING_PAYMENT'] },
+  {
+    key: 'upcoming',
+    ar: 'القادمة',
+    en: 'Upcoming',
+    statuses: ['CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_REQUESTED'],
+  },
+  { key: 'completed', ar: 'المكتملة', en: 'Completed', statuses: ['COMPLETED'] },
+  { key: 'cancelled', ar: 'الملغاة', en: 'Cancelled', statuses: ['CANCELLED'] },
 ]
 
+/**
+ * Map every status a legacy row may carry onto the rebuilt flow.
+ * Old rows created before the rebuild use PENDING, RESCHEDULED or REJECTED.
+ */
+function displayStatus(status?: string | null): string {
+  switch (status) {
+    case 'PENDING':
+      return 'PENDING_APPROVAL'
+    case 'RESCHEDULED':
+      return 'RESCHEDULE_REQUESTED'
+    case 'REJECTED':
+    case 'EXPIRED':
+      return 'CANCELLED'
+    case undefined:
+    case null:
+    case '':
+      return 'PENDING_APPROVAL'
+    default:
+      return status
+  }
+}
+
+function clientName(session: any): string {
+  const profile = session?.user?.profile
+  return `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
+}
+
+function shortDate(value: string | undefined, locale: string): string {
+  if (!value) return ''
+  return new Date(value).toLocaleDateString(
+    locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+    { weekday: 'short', day: 'numeric', month: 'short', timeZone: browserTimeZone(), calendar: 'gregory' },
+  )
+}
+
+async function loadClientSessions(): Promise<any[]> {
+  try {
+    const response = await get('/consulting/sessions')
+    const data = response.data?.data
+    if (Array.isArray(data?.clientSessions)) return data.clientSessions
+    if (Array.isArray(data)) return data
+  } catch (error) {
+    console.warn('[client-sessions] /consulting/sessions unavailable, falling back', error)
+  }
+
+  const response = await get('/sessions/my-sessions')
+  const data = response.data?.data
+  const list: any[] = Array.isArray(data) ? data : []
+  const userId = useAuthStore.getState().user?.id
+  return userId ? list.filter((session) => session.consultantId === userId) : list
+}
+
 export default function ClientSessionsPage() {
-  const { theme } = useTheme()
-  const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
-  const qc = useQueryClient()
+  const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending_approval')
   const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [startLoadingId, setStartLoadingId] = useState<string | null>(null)
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean; title: string; message: string;
-    onConfirm: () => void; destructive?: boolean;
-  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
-  const [rescheduleModal, setRescheduleModal] = useState<any>(null)
+  const [rescheduleSession, setRescheduleSession] = useState<any | null>(null)
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    onConfirm: () => void
+    destructive?: boolean
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
-  const cardBg = isDark ? '#111111' : '#ffffff'
-  const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
-  const subtext = isDark ? '#94a3b8' : '#6b7280'
-
-  const { data: sessionsData, isLoading, refetch } = useQuery({
+  const { data: sessions = [], isLoading, refetch } = useQuery<any[]>({
     queryKey: ['client-sessions'],
-    queryFn: async () => {
-      const r = await get('/consulting/sessions')
-      return r.data?.data?.clientSessions ?? []
-    },
+    queryFn: loadClientSessions,
     refetchInterval: 30000,
   })
 
-  const sessions: any[] = sessionsData ?? []
+  const counts = useMemo(() => {
+    const byStatus: Record<string, number> = {}
+    for (const session of sessions) {
+      const status = displayStatus(session.status)
+      byStatus[status] = (byStatus[status] || 0) + 1
+    }
+    return byStatus
+  }, [sessions])
 
-  const filtered = sessions.filter((s: any) => TABS.find(t => t.key === activeTab)?.statuses.includes(s.status))
+  const filtered = useMemo(
+    () =>
+      sessions.filter((session) =>
+        TABS.find((tab) => tab.key === activeTab)?.statuses.includes(displayStatus(session.status)),
+      ),
+    [sessions, activeTab],
+  )
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['client-sessions'] })
 
   const handleApprove = async (sessionId: string) => {
     try {
       setLoadingId(sessionId)
       await patch(`/consulting/sessions/${sessionId}/approve`, {})
       toast.success(isAr ? 'تمت الموافقة على الجلسة' : 'Session approved')
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
-    } catch {
-      toast.error(isAr ? 'حدث خطأ' : 'Error')
+      invalidate()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || (isAr ? 'تعذرت الموافقة على الجلسة' : 'Failed to approve session'))
     } finally {
       setLoadingId(null)
     }
@@ -90,9 +203,9 @@ export default function ClientSessionsPage() {
       setLoadingId(sessionId)
       await patch(`/consulting/sessions/${sessionId}/cancel`, {})
       toast.success(isAr ? 'تم رفض الجلسة' : 'Session rejected')
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
-    } catch {
-      toast.error(isAr ? 'حدث خطأ' : 'Error')
+      invalidate()
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || (isAr ? 'تعذر رفض الجلسة' : 'Failed to reject session'))
     } finally {
       setLoadingId(null)
     }
@@ -100,294 +213,582 @@ export default function ClientSessionsPage() {
 
   const startRoomMutation = useMutation({
     mutationFn: (id: string) => post(`/consulting/sessions/${id}/start-room`, {}),
-    onSuccess: (res: any) => {
-      const roomUrl = res?.data?.data?.roomUrl
+    onSuccess: (response: any) => {
+      const roomUrl = response?.data?.data?.roomUrl
       if (roomUrl) window.open(roomUrl, '_blank')
       toast.success(isAr ? 'تم بدء الجلسة' : 'Session started')
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+      invalidate()
     },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل بدء الجلسة' : 'Failed to start session')),
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || (isAr ? 'تعذر بدء الجلسة' : 'Failed to start session')),
   })
 
   const joinRoomMutation = useMutation({
     mutationFn: (id: string) => post(`/consulting/sessions/${id}/join-room`, {}),
-    onSuccess: (res: any) => {
-      const roomUrl = res?.data?.data?.roomUrl
+    onSuccess: (response: any) => {
+      const roomUrl = response?.data?.data?.roomUrl
       if (roomUrl) window.open(roomUrl, '_blank')
     },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل الانضمام' : 'Failed to join')),
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || (isAr ? 'تعذر الانضمام للجلسة' : 'Failed to join session')),
   })
 
   const requestRescheduleMutation = useMutation({
-    mutationFn: ({ id, proposedAt, reason }: any) =>
+    mutationFn: ({ id, proposedAt, reason }: { id: string; proposedAt: string; reason?: string }) =>
       patch(`/consulting/sessions/${id}/request-reschedule`, { proposedAt, reason }),
     onSuccess: () => {
       toast.success(isAr ? 'تم إرسال طلب تغيير الموعد' : 'Reschedule request sent')
-      setRescheduleModal(null)
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+      setRescheduleSession(null)
+      setNewDate('')
+      setNewTime('')
+      setRescheduleReason('')
+      invalidate()
     },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
+    onError: (error: any) =>
+      toast.error(error?.response?.data?.message || (isAr ? 'تعذر إرسال الطلب' : 'Failed to send request')),
   })
 
-  const isSoon = (d: string) => {
-    const diff = new Date(d).getTime() - Date.now()
-    return diff > 0 && diff < 3600000
-  }
-
-  const formatTimeSlot = (time: string) => {
-    const [h, m] = time.split(':').map(Number)
-    const period = h >= 12 ? 'PM' : 'AM'
-    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-    const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
-    return isAr ? formatted.replace('AM', 'ص').replace('PM', 'م') : formatted
+  const startWindow = (scheduledAt?: string) => {
+    if (!scheduledAt) return false
+    const start = new Date(scheduledAt).getTime()
+    const now = Date.now()
+    return now >= start - 15 * 60 * 1000 && now <= start + 2 * 60 * 60 * 1000
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
-      <div style={{ padding: '26px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(27,79,114,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={19} color="#1B4F72" />
+    <div
+      dir="rtl"
+      className="min-h-screen pb-20"
+      style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}
+    >
+      <header
+        className="border-b px-4 pb-0 pt-6 sm:px-6"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      >
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+              >
+                <Users size={20} />
               </div>
               <div>
-                <h1 style={{ color: text, fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
-                  {isAr ? 'جلسات عملائي' : 'Client Sessions'}
+                <h1 className="text-lg font-black sm:text-xl" style={{ fontFamily: 'var(--font-madinet)' }}>
+                  {isAr ? 'جلسات عملائي' : 'Client sessions'}
                 </h1>
-                <p style={{ color: subtext, fontSize: 11, margin: 0 }}>
+                <p className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
                   {isAr ? `${sessions.length} جلسة من العملاء` : `${sessions.length} sessions from clients`}
                 </p>
               </div>
             </div>
-            <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-              <RefreshCw size={12} />{isAr ? 'تحديث' : 'Refresh'}
+
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold transition-colors"
+              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--muted)' }}
+            >
+              <RefreshCw size={12} />
+              {isAr ? 'تحديث' : 'Refresh'}
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+          <div className="mb-4 flex flex-wrap gap-2">
             {[
-              { val: sessions.filter((s: any) => ['PENDING','PENDING_APPROVAL'].includes(s.status)).length, ar: 'بانتظار الموافقة', en: 'Pending Approval', color: '#FFC107', bg: 'rgba(255,193,7,0.08)' },
-              { val: sessions.filter((s: any) => s.status === 'AWAITING_PAYMENT').length, ar: 'بانتظار الدفع', en: 'Awaiting Payment', color: '#FF9800', bg: 'rgba(255,152,0,0.08)' },
-              { val: sessions.filter((s: any) => ['CONFIRMED','IN_PROGRESS'].includes(s.status)).length, ar: 'قادمة', en: 'Upcoming', color: '#1B4F72', bg: 'rgba(27,79,114,0.08)' },
-            ].map((s, i) => (
-              <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : s.bg, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: s.color, fontSize: 18, fontWeight: 900 }}>{s.val}</span>
-                <span style={{ color: subtext, fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
+              {
+                value: counts.PENDING_APPROVAL || 0,
+                ar: 'بانتظار الموافقة',
+                en: 'Pending approval',
+                color: 'var(--warning)',
+                subtle: 'var(--warning-subtle)',
+              },
+              {
+                value: counts.AWAITING_PAYMENT || 0,
+                ar: 'بانتظار الدفع',
+                en: 'Awaiting payment',
+                color: 'var(--warning)',
+                subtle: 'var(--warning-subtle)',
+              },
+              {
+                value: (counts.CONFIRMED || 0) + (counts.IN_PROGRESS || 0),
+                ar: 'قادمة',
+                en: 'Upcoming',
+                color: 'var(--primary)',
+                subtle: 'var(--primary-subtle)',
+              },
+            ].map((item) => (
+              <div
+                key={item.en}
+                className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                style={{ borderColor: 'var(--border)', background: item.subtle }}
+              >
+                <span className="text-base font-black" style={{ color: item.color }}>
+                  {item.value}
+                </span>
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+                  {isAr ? item.ar : item.en}
+                </span>
               </div>
             ))}
           </div>
 
-          <div style={{ display: 'flex' }}>
-            {TABS.map(tab => {
-              const count = sessions.filter((s: any) => tab.statuses.includes(s.status)).length
+          <div className="-mb-px flex overflow-x-auto">
+            {TABS.map((tab) => {
+              const count = sessions.filter((session) =>
+                tab.statuses.includes(displayStatus(session.status)),
+              ).length
+              const active = activeTab === tab.key
               return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: activeTab === tab.key ? '#1B4F72' : subtext, borderBottom: `2px solid ${activeTab === tab.key ? '#1B4F72' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-bold transition-colors"
+                  style={{
+                    borderColor: active ? 'var(--primary)' : 'transparent',
+                    color: active ? 'var(--primary)' : 'var(--muted)',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                  }}
+                >
                   {isAr ? tab.ar : tab.en}
-                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 800, background: activeTab === tab.key ? '#1B4F72' : 'rgba(107,114,128,0.15)', color: activeTab === tab.key ? '#ffffff' : subtext }}>{count}</span>}
+                  {count > 0 && (
+                    <span
+                      className="min-w-[18px] rounded-full px-1.5 py-0.5 text-[9px] font-black"
+                      style={{
+                        background: active ? 'var(--primary)' : 'var(--surface-2)',
+                        color: active ? 'var(--primary-foreground)' : 'var(--muted)',
+                      }}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </button>
               )
             })}
           </div>
         </div>
-      </div>
+      </header>
 
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '22px 24px 80px' }}>
+      <main className="mx-auto mt-5 max-w-3xl px-4 sm:px-6">
         {isLoading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[1,2,3].map(i => <div key={i} style={{ height: 180, borderRadius: 16, animation: 'pulse 1.5s infinite', background: isDark ? '#1a1a1a' : '#f4f4f8' }}>
-              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}`}</style>
-            </div>)}
+          <div className="space-y-3">
+            {[1, 2, 3].map((item) => (
+              <div
+                key={item}
+                className="h-44 animate-pulse rounded-2xl border"
+                style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+              />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <Users size={48} color={subtext} style={{ marginBottom: 16, opacity: 0.4 }} />
-            <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
-              {isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}
-            </h3>
-            <p style={{ color: subtext, fontSize: 13 }}>
-              {isAr ? 'ستظهر هنا الجلسات التي يحجزها العملاء معك' : 'Sessions booked with you by clients will appear here'}
+          <div className="rounded-2xl border px-6 py-16 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+            <Users size={44} style={{ color: 'var(--muted)', opacity: 0.4, margin: '0 auto 14px' }} />
+            <h3 className="mb-2 text-base font-black">{isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}</h3>
+            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+              {isAr
+                ? 'ستظهر هنا الجلسات التي يحجزها العملاء معك'
+                : 'Sessions booked with you by clients will appear here'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {filtered.map((session: any) => {
-              const conf = STATUS_CONFIG[session.status] || STATUS_CONFIG.PENDING_APPROVAL
-              const soon = isSoon(session.scheduledAt)
-              const isPaid = session.paymentStatus === 'PAID'
-              const isRescheduleReq = session.status === 'RESCHEDULE_REQUESTED'
-              const client = session.user
-              const clientName = `${client?.profile?.firstName || ''} ${client?.profile?.lastName || ''}`.trim() || ''
+          <div className="space-y-3.5">
+            {filtered.map((session) => {
+              const status = displayStatus(session.status)
+              const config = STATUS_CONFIG[status] || STATUS_CONFIG.PENDING_APPROVAL
+              const name = clientName(session)
+              const soon = startWindow(session.scheduledAt) && status === 'CONFIRMED'
+              const rescheduleWaiting = status === 'RESCHEDULE_REQUESTED'
+              const isCompleted = status === 'COMPLETED'
+              const duration = isCompleted
+                ? session.actualDuration || session.duration
+                : session.duration
+              const canReschedule = ['PENDING_APPROVAL', 'AWAITING_PAYMENT', 'CONFIRMED', 'RESCHEDULE_REQUESTED'].includes(
+                status,
+              )
+              const canCancel = canReschedule
 
               return (
-                <div key={session.id} style={{
-                  background: cardBg, borderRadius: 18,
-                  border: `1.5px solid ${soon ? 'rgba(27,79,114,0.5)' : isRescheduleReq ? 'rgba(155,89,182,0.4)' : border}`,
-                  overflow: 'hidden', transition: 'all 0.2s',
-                  boxShadow: soon ? '0 0 0 4px rgba(27,79,114,0.06)' : 'none',
-                }}>
+                <article
+                  key={session.id}
+                  className="overflow-hidden rounded-2xl border transition-shadow"
+                  style={{
+                    background: 'var(--card)',
+                    borderColor: soon ? 'var(--primary-border)' : rescheduleWaiting ? 'var(--accent)' : 'var(--border)',
+                    boxShadow: soon ? '0 6px 20px var(--primary-subtle)' : 'none',
+                  }}
+                >
                   {soon && (
-                    <div style={{ padding: '8px 20px', background: 'rgba(27,79,114,0.1)', borderBottom: '1px solid rgba(27,79,114,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Video size={13} color="#1B4F72" />
-                      <span style={{ color: '#1B4F72', fontSize: 12, fontWeight: 700 }}>
-                        {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than 1 hour'}
+                    <div
+                      className="flex items-center gap-2 border-b px-4 py-2 text-[11px] font-bold"
+                      style={{ background: 'var(--primary-subtle)', borderColor: 'var(--primary-border)', color: 'var(--primary)' }}
+                    >
+                      <Video size={13} />
+                      {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than an hour'}
+                    </div>
+                  )}
+
+                  {rescheduleWaiting && session.proposedAt && (
+                    <div
+                      className="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-[11px] font-bold"
+                      style={{ background: 'var(--accent-light)', borderColor: 'var(--accent)', color: 'var(--accent)' }}
+                    >
+                      <AlertTriangle size={13} />
+                      {isAr ? 'بانتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for the new time'}
+                      <span style={{ color: 'var(--foreground)' }}>
+                        {shortDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt, locale)}
                       </span>
                     </div>
                   )}
 
-                  {isRescheduleReq && (
-                    <div style={{ padding: '8px 20px', background: 'rgba(155,89,182,0.08)', borderBottom: '1px solid rgba(155,89,182,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <AlertTriangle size={13} color="#9B59B6" />
-                      <span style={{ color: '#9B59B6', fontSize: 12, fontWeight: 700 }}>
-                        {isAr ? 'في انتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for new schedule'}
-                        {session.proposedAt && <span style={{ marginRight: isAr ? 8 : 0, marginLeft: isAr ? 0 : 8, color: '#1B4F72' }}> {formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}</span>}
-                      </span>
-                    </div>
-                  )}
-
-                  <div style={{ padding: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        {client?.profile?.avatar
-                          ? <img src={client.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(27,79,114,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1B4F72', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{clientName?.[0] || '?'}</div>}
-                        <div>
-                          <div style={{ color: subtext, fontSize: 11, fontWeight: 600, marginBottom: 1 }}>{isAr ? 'العميل' : 'Client'}</div>
-                          <div style={{ color: text, fontSize: 15, fontWeight: 800 }}>{clientName}</div>
-                          {session.sessionName && (
-                            <div style={{ color: subtext, fontSize: 11, marginTop: 2 }}>
-                              <span style={{ color: text, fontWeight: 600 }}>{session.sessionName}</span>
-                            </div>
-                          )}
-                          {session.topic && <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'الموضوع: ' : 'Topic: '}{session.topic}</div>}
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                        <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}30`, color: conf.color, fontSize: 11, fontWeight: 700 }}>
-                          {isAr ? conf.ar : conf.en}
-                        </div>
-                        {session.status !== 'COMPLETED' && session.status !== 'CANCELLED' && (
-                          <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${isPaid ? 'rgba(22,163,74,0.2)' : 'rgba(245,158,11,0.2)'}`, color: isPaid ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <DollarSign size={10} />
-                            {isPaid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'غير مدفوعة' : 'Unpaid')}
+                  <div className="p-4">
+                    <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        {session.user?.profile?.avatar ? (
+                          <img
+                            src={session.user.profile.avatar}
+                            alt={name}
+                            className="h-11 w-11 rounded-xl object-cover"
+                            style={{ border: '1px solid var(--border)' }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-base font-black"
+                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+                          >
+                            {name.charAt(0) || '?'}
                           </div>
                         )}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black">{name || (isAr ? 'عميل' : 'Client')}</p>
+                          {session.user?.email && (
+                            <p className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+                              <Mail size={10} />
+                              <span className="truncate">{session.user.email}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className="rounded-full border px-2.5 py-1 text-[10px] font-black"
+                          style={{ background: config.subtle, borderColor: config.color, color: config.color }}
+                        >
+                          {isAr ? config.ar : config.en}
+                        </span>
+                        <span
+                          className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold"
+                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                        >
+                          <CalendarDays size={10} />
+                          {shortDate(session.scheduledAt, locale)}
+                        </span>
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', border: `1px solid ${border}`, marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt, locale)}</span></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatTimeOnly(session.scheduledAt)}</span></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Video size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>Daily.co</span></div>
-                      {session.duration && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={12} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{session.duration} {isAr ? 'دقيقة' : 'min'}</span></div>}
+                    <div
+                      className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border px-3 py-2"
+                      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                    >
+                      <span className="flex items-center gap-1 text-[11px] font-bold">
+                        <Clock size={11} style={{ color: 'var(--muted)' }} />
+                        {formatTimeOnly(session.scheduledAt, locale)}
+                      </span>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+                        <Video size={11} />
+                        {duration} {isAr ? 'دقيقة' : 'min'}
+                      </span>
+                      {isCompleted && (
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+                          {isAr ? 'انتهت' : 'Ended'}
+                          {duration ? ` — ${duration} ${isAr ? 'دقيقة' : 'min'}` : ''}
+                        </span>
+                      )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                      {session.status === 'PENDING_APPROVAL' && (
+                    <div className="mb-3">
+                      <p className="text-[10px] font-bold" style={{ color: 'var(--muted)' }}>
+                        {isAr ? 'الموضوع' : 'Topic'}
+                      </p>
+                      <p className="text-xs font-semibold">
+                        {session.topic || session.sessionName || session.description || (isAr ? '—' : '—')}
+                      </p>
+                      {session.notes && (
+                        <p className="mt-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+                          {session.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {status === 'PENDING_APPROVAL' && (
                         <>
-                          <button onClick={() => handleApprove(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
-                            <CheckCircle2 size={12} />{isAr ? 'الموافقة على الجلسة' : 'Approve Session'}
+                          <button
+                            type="button"
+                            onClick={() => handleApprove(session.id)}
+                            disabled={loadingId === session.id}
+                            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black transition-opacity"
+                            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: loadingId === session.id ? 0.6 : 1 }}
+                          >
+                            <Check size={12} />
+                            {isAr ? 'موافقة' : 'Approve'}
                           </button>
-                          <button onClick={() => handleReject(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'transparent', color: '#dc2626', border: '1.5px solid #dc2626', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
-                            <X size={12} />{isAr ? 'رفض' : 'Reject'}
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRescheduleSession(session)
+                              setNewDate('')
+                              setNewTime('')
+                              setRescheduleReason('')
+                            }}
+                            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
+                            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)', cursor: 'pointer' }}
+                          >
+                            <Clock size={12} />
+                            {isAr ? 'إعادة الجدولة' : 'Reschedule'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setConfirmModal({
+                                isOpen: true,
+                                title: isAr ? 'رفض الجلسة' : 'Reject session',
+                                message: isAr
+                                  ? 'هل أنت متأكد من رفض طلب هذه الجلسة؟'
+                                  : 'Are you sure you want to reject this session request?',
+                                destructive: true,
+                                onConfirm: () => {
+                                  setConfirmModal((previous) => ({ ...previous, isOpen: false }))
+                                  handleReject(session.id)
+                                },
+                              })
+                            }}
+                            className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
+                            style={{ background: 'var(--error-subtle)', borderColor: 'var(--error)', color: 'var(--error)', cursor: 'pointer' }}
+                          >
+                            <X size={12} />
+                            {isAr ? 'رفض' : 'Reject'}
                           </button>
                         </>
                       )}
 
-                      {session.status === 'CONFIRMED' && (
+                      {status === 'CONFIRMED' && soon && (
                         <button
+                          type="button"
                           onClick={() => startRoomMutation.mutate(session.id)}
-                          disabled={startLoadingId === session.id || startRoomMutation.isPending}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#27AE60', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: startRoomMutation.isPending ? 0.7 : 1 }}
+                          disabled={startRoomMutation.isPending}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
+                          style={{ background: 'var(--accent)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: startRoomMutation.isPending ? 0.7 : 1 }}
                         >
-                          <Play size={12} />{isAr ? 'بدء الجلسة' : 'Start Session'}
+                          <Play size={12} />
+                          {isAr ? 'بدء الجلسة' : 'Start session'}
                         </button>
                       )}
 
-                      {session.status === 'IN_PROGRESS' && (
+                      {status === 'IN_PROGRESS' && (
                         <button
+                          type="button"
                           onClick={() => joinRoomMutation.mutate(session.id)}
                           disabled={joinRoomMutation.isPending}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#1B4F72', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: joinRoomMutation.isPending ? 0.7 : 1 }}
+                          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
+                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: joinRoomMutation.isPending ? 0.7 : 1 }}
                         >
-                          <ExternalLink size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}
+                          <ExternalLink size={12} />
+                          {isAr ? 'انضم للجلسة' : 'Join session'}
                         </button>
                       )}
 
-                      {['PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','RESCHEDULE_REQUESTED'].includes(session.status) && (
-                        <button onClick={() => { setRescheduleModal(session); setNewDate(''); setNewTime(''); setRescheduleReason('') }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                          <Clock size={11} />{isAr ? 'تغيير الموعد' : 'Reschedule'}
+                      {canReschedule && status !== 'PENDING_APPROVAL' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRescheduleSession(session)
+                            setNewDate('')
+                            setNewTime('')
+                            setRescheduleReason('')
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
+                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
+                        >
+                          <Clock size={12} />
+                          {isAr ? 'إعادة الجدولة' : 'Reschedule'}
                         </button>
                       )}
 
-                      {['PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','RESCHEDULE_REQUESTED'].includes(session.status) && (
-                        <button onClick={() => {
-                          setConfirmModal({
-                            isOpen: true,
-                            title: isAr ? 'إلغاء الجلسة' : 'Cancel Session',
-                            message: isAr ? 'هل أنت متأكد من إلغاء هذه الجلسة؟' : 'Are you sure you want to cancel this session?',
-                            destructive: true,
-                            onConfirm: () => {
-                              setConfirmModal(prev => ({ ...prev, isOpen: false }))
-                              handleReject(session.id)
-                            },
-                          })
-                        }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.04)', color: '#dc2626', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                          <XCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
+                      {canCancel && status !== 'PENDING_APPROVAL' && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setConfirmModal({
+                              isOpen: true,
+                              title: isAr ? 'إلغاء الجلسة' : 'Cancel session',
+                              message: isAr
+                                ? 'هل أنت متأكد من إلغاء هذه الجلسة؟'
+                                : 'Are you sure you want to cancel this session?',
+                              destructive: true,
+                              onConfirm: () => {
+                                setConfirmModal((previous) => ({ ...previous, isOpen: false }))
+                                handleReject(session.id)
+                              },
+                            })
+                          }
+                          className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
+                          style={{ background: 'transparent', borderColor: 'var(--error)', color: 'var(--error)', cursor: 'pointer' }}
+                        >
+                          <X size={12} />
+                          {isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       )}
                     </div>
                   </div>
-                </div>
+                </article>
               )
             })}
           </div>
         )}
-      </div>
+      </main>
 
-      {rescheduleModal && (
+      {rescheduleSession && (
         <>
-          <div onClick={() => setRescheduleModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, backdropFilter: 'blur(4px)' }} />
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(420px,calc(100vw - 24px))', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', zIndex: 201, padding: '22px', direction: isAr ? 'rtl' : 'ltr' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'طلب تغيير الموعد' : 'Request Reschedule'}</h3>
-              <button onClick={() => setRescheduleModal(null)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
+          <div
+            onClick={() => setRescheduleSession(null)}
+            className="fixed inset-0 z-[200]"
+            style={{ background: 'color-mix(in srgb, var(--foreground) 45%, transparent)' }}
+          />
+          <div
+            dir="rtl"
+            className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-5"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--foreground) 25%, transparent)' }}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-black">{isAr ? 'طلب تغيير الموعد' : 'Request reschedule'}</h3>
+              <button
+                type="button"
+                onClick={() => setRescheduleSession(null)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border"
+                style={{ borderColor: 'var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }}
+              >
+                <X size={14} />
+              </button>
             </div>
-            <p style={{ color: '#d97706', fontSize: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: 14 }}>
-              {isAr ? 'سيتم إرسال إشعار للعميل للموافقة' : 'Client will be notified to approve'}
+
+            <p
+              className="mb-4 rounded-lg border px-3 py-2 text-[11px] font-semibold"
+              style={{ background: 'var(--warning-subtle)', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+            >
+              {isAr ? 'سيتم إرسال إشعار للعميل للموافقة على الموعد الجديد' : 'The client will be notified to approve the new time'}
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+            <div className="space-y-3">
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'التاريخ الجديد' : 'New Date'} *</label>
-                <input type="date" min={new Date().toISOString().split('T')[0]} value={newDate} onChange={e => setNewDate(e.target.value)}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${newDate ? '#1B4F72' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                <label className="mb-1.5 block text-[11px] font-bold" htmlFor="reschedule-date">
+                  {isAr ? 'التاريخ الجديد' : 'New date'} *
+                </label>
+                <input
+                  id="reschedule-date"
+                  type="date"
+                  min={new Date().toISOString().split('T')[0]}
+                  value={newDate}
+                  onChange={(event) => setNewDate(event.target.value)}
+                  className="w-full rounded-lg border px-3 py-2.5 text-xs outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--foreground)' }}
+                />
               </div>
+
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'الوقت الجديد' : 'New Time'} *</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                  {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
-                    .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
-                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#1B4F72' : border}`, background: newTime === t ? 'rgba(27,79,114,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#1B4F72' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t)}</button>)}
+                <label className="mb-1.5 block text-[11px] font-bold">{isAr ? 'الوقت الجديد' : 'New time'} *</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00']
+                    .filter(
+                      (time) =>
+                        !newDate ||
+                        newDate !== new Date().toISOString().split('T')[0] ||
+                        parseInt(time, 10) > new Date().getHours() + 1,
+                    )
+                    .map((time) => {
+                      const active = newTime === time
+                      return (
+                        <button
+                          key={time}
+                          type="button"
+                          onClick={() => setNewTime(time)}
+                          className="rounded-lg border py-2 text-[11px] font-bold"
+                          style={{
+                            borderColor: active ? 'var(--primary)' : 'var(--border)',
+                            background: active ? 'var(--primary-subtle)' : 'var(--surface)',
+                            color: active ? 'var(--primary)' : 'var(--muted)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {time}
+                        </button>
+                      )
+                    })}
                 </div>
               </div>
+
               <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>
-                <input type="text" placeholder={isAr ? 'مثال: ارتباط طارئ...' : 'e.g. Emergency...'} value={rescheduleReason} onChange={e => setRescheduleReason(e.target.value)}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                <label className="mb-1.5 block text-[11px] font-bold" htmlFor="reschedule-reason">
+                  {isAr ? 'السبب (اختياري)' : 'Reason (optional)'}
+                </label>
+                <input
+                  id="reschedule-reason"
+                  type="text"
+                  value={rescheduleReason}
+                  onChange={(event) => setRescheduleReason(event.target.value)}
+                  placeholder={isAr ? 'مثال: ارتباط طارئ' : 'e.g. Emergency'}
+                  className="w-full rounded-lg border px-3 py-2.5 text-xs outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--foreground)' }}
+                />
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setRescheduleModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
-                <button disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
-                  onClick={() => requestRescheduleMutation.mutate({ id: rescheduleModal.id, proposedAt: localDateTimeToISO(newDate, newTime), reason: rescheduleReason })}
-                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#1B4F72', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
-                  {requestRescheduleMutation.isPending ? (isAr ? 'جاري...' : 'Sending...') : (isAr ? 'إرسال الطلب' : 'Send Request')}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setRescheduleSession(null)}
+                  className="flex-1 rounded-lg border py-2.5 text-xs font-bold"
+                  style={{ borderColor: 'var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }}
+                >
+                  {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
+                  onClick={() =>
+                    requestRescheduleMutation.mutate({
+                      id: rescheduleSession.id,
+                      proposedAt: localDateTimeToISO(newDate, newTime),
+                      reason: rescheduleReason || undefined,
+                    })
+                  }
+                  className="flex-[2] rounded-lg py-2.5 text-xs font-black"
+                  style={{
+                    background: 'var(--primary)',
+                    color: 'var(--primary-foreground)',
+                    border: 'none',
+                    cursor: !newDate || !newTime ? 'not-allowed' : 'pointer',
+                    opacity: !newDate || !newTime || requestRescheduleMutation.isPending ? 0.5 : 1,
+                  }}
+                >
+                  {requestRescheduleMutation.isPending
+                    ? isAr
+                      ? 'جاري الإرسال...'
+                      : 'Sending...'
+                    : isAr
+                      ? 'إرسال الطلب'
+                      : 'Send request'}
                 </button>
               </div>
             </div>
           </div>
         </>
       )}
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
@@ -396,7 +797,7 @@ export default function ClientSessionsPage() {
         cancelLabel={isAr ? 'إلغاء' : 'Cancel'}
         confirmDestructive={confirmModal.destructive}
         onConfirm={confirmModal.onConfirm}
-        onCancel={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setConfirmModal((previous) => ({ ...previous, isOpen: false }))}
       />
     </div>
   )

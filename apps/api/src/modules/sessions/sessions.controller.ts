@@ -6,6 +6,13 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { PrismaService } from '../../prisma/prisma.service'
 import { DailyService } from '../live/daily.service'
+import {
+  buildConsultingSessionSelect,
+  consultingSessionBaseSelect,
+  filterConsultingSessionData,
+  getConsultingSessionColumns,
+  isMissingColumnError,
+} from '../consulting/consulting-columns'
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard)
@@ -71,7 +78,7 @@ export class SessionsController {
       consultantId: string
       scheduledAt: string
       duration?: number
-      meetingType: string
+      meetingType?: string
       topic?: string
       notes?: string
     }
@@ -89,39 +96,81 @@ export class SessionsController {
       throw new BadRequestException('Session must be scheduled in the future')
     }
 
+    // Only select columns that have existed since the first release. Reading
+    // every scalar here is what made this endpoint 500 while the optional
+    // consulting columns were still missing in production.
     const conflict = await this.prisma.consultingSession.findFirst({
       where: {
         consultantId: body.consultantId,
-        status: { in: ['PENDING', 'CONFIRMED'] },
+        status: { in: ['PENDING', 'PENDING_APPROVAL', 'AWAITING_PAYMENT', 'CONFIRMED', 'IN_PROGRESS'] },
         scheduledAt: {
           gte: new Date(scheduledAt.getTime() - 60 * 60 * 1000),
           lte: new Date(scheduledAt.getTime() + 60 * 60 * 1000),
         }
-      }
+      },
+      select: { id: true, scheduledAt: true, duration: true },
     })
     if (conflict) throw new BadRequestException('This time slot is not available')
 
-    const price = consultant.hourlyRate || consultant.profile?.sessionPrice || 0
+    const price = Number(consultant.hourlyRate || consultant.profile?.sessionPrice || 0)
     const duration = body.duration || 60
+    const topic = body.topic?.trim() || 'استشارة مهنية'
 
-    const session = await this.prisma.consultingSession.create({
-      data: {
-        studentId: userId,
-        consultantId: body.consultantId,
-        scheduledAt,
-        duration,
-        meetingType: body.meetingType,
-        topic: body.topic,
-        description: body.notes,
-        status: 'PENDING',
-        price,
-        paymentStatus: price > 0 ? 'UNPAID' : 'PAID',
+    const relations = {
+      consultant: {
+        select: {
+          id: true,
+          email: true,
+          speciality: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } },
+        },
       },
-      include: {
-        consultant: { include: { profile: true } },
-        user: { include: { profile: true } },
-      }
-    })
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } },
+        },
+      },
+    }
+    const columns = await getConsultingSessionColumns(this.prisma)
+    const payload = filterConsultingSessionData({
+      studentId: userId,
+      consultantId: body.consultantId,
+      sessionName: topic,
+      scheduledAt,
+      duration,
+      meetingType: body.meetingType || 'daily',
+      topic,
+      notes: body.notes ?? null,
+      description: body.notes ?? '',
+      status: 'PENDING_APPROVAL',
+      price,
+      currency: 'SAR',
+      paymentStatus: price > 0 ? 'UNPAID' : 'PAID',
+    }, columns)
+    const select = buildConsultingSessionSelect(columns)
+
+    let session: any
+    try {
+      session = await this.prisma.consultingSession.create({
+        data: payload as any,
+        ...(select ? { select: { ...select, ...relations } } : { include: relations }),
+      } as any)
+    } catch (error: any) {
+      if (!isMissingColumnError(error)) throw error
+      console.error('[Sessions/book] retrying with base columns:', error?.message)
+      session = await this.prisma.consultingSession.create({
+        data: {
+          studentId: userId,
+          consultantId: body.consultantId,
+          scheduledAt,
+          duration,
+          status: 'PENDING_APPROVAL',
+        } as any,
+        select: { ...consultingSessionBaseSelect(), ...relations },
+      } as any)
+    }
 
     const consultantName = session.consultant?.profile
       ? `${session.consultant.profile.firstName || ''} ${session.consultant.profile.lastName || ''}`.trim()
@@ -158,69 +207,140 @@ export class SessionsController {
       OR: [{ studentId: userId }, { consultantId: userId }]
     }
     if (status && status !== 'ALL') {
-      where.status = status
+      // Rows created before the rebuild still carry the old status values.
+      // Query both spellings so legacy sessions never disappear.
+      if (status === 'PENDING_APPROVAL') {
+        where.status = { in: ['PENDING_APPROVAL', 'PENDING'] }
+      } else if (status === 'CANCELLED') {
+        where.status = { in: ['CANCELLED', 'REJECTED'] }
+      } else if (status === 'RESCHEDULE_REQUESTED') {
+        where.status = { in: ['RESCHEDULE_REQUESTED', 'RESCHEDULED'] }
+      } else {
+        where.status = status
+      }
     }
 
-    const sessions = await this.prisma.consultingSession.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            profile: { select: { firstName: true, lastName: true, avatar: true } }
-          }
-        },
-        consultant: {
-          select: {
-            id: true,
-            email: true,
-            speciality: true,
-            hourlyRate: true,
-            profile: { select: { firstName: true, lastName: true, avatar: true } }
-          }
-        },
+    const relationSelect = {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } }
+        }
       },
-      orderBy: { scheduledAt: 'desc' }
-    })
+      consultant: {
+        select: {
+          id: true,
+          email: true,
+          speciality: true,
+          hourlyRate: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } }
+        }
+      },
+    }
 
-    console.log('[Sessions] Found sessions:', sessions.length, 'for userId:', userId)
-    return { success: true, data: sessions }
+    // Never select a column that production has not migrated yet.
+    const columns = await getConsultingSessionColumns(this.prisma)
+    const select = buildConsultingSessionSelect(columns) ?? consultingSessionBaseSelect()
+
+    try {
+      const sessions = await this.prisma.consultingSession.findMany({
+        where,
+        select: { ...select, ...relationSelect } as any,
+        orderBy: { scheduledAt: 'desc' }
+      })
+
+      console.log('[Sessions] Found sessions:', sessions.length, 'for userId:', userId)
+      return { success: true, data: sessions }
+    } catch (error: any) {
+      if (!isMissingColumnError(error)) throw error
+      const freshColumns = await getConsultingSessionColumns(this.prisma, { force: true })
+      const freshSelect = buildConsultingSessionSelect(freshColumns) ?? consultingSessionBaseSelect()
+      try {
+        const sessions = await this.prisma.consultingSession.findMany({
+          where,
+          select: { ...freshSelect, ...relationSelect } as any,
+          orderBy: { scheduledAt: 'desc' }
+        })
+        return { success: true, data: sessions }
+      } catch (retryError: any) {
+        console.error('[Sessions] my-sessions retry failed:', retryError?.message)
+        return { success: true, data: [] }
+      }
+    }
   }
 
   @Get('my-earnings')
   async getMyEarnings(@Request() req: any) {
-    const userId = req.user.sub
-    
+    const userId = req.user?.sub || req.user?.id
+
+    const columns = await getConsultingSessionColumns(this.prisma)
+    const earningsFields = [
+      'id', 'studentId', 'consultantId', 'sessionName', 'topic', 'scheduledAt',
+      'duration', 'status', 'price', 'paymentStatus', 'createdAt',
+    ]
+    const scalarSelect: Record<string, boolean> = { id: true }
+    for (const field of earningsFields) {
+      // When the column lookup is unavailable assume the base earning fields
+      // (they existed before the rebuild) and let the catch below contain it.
+      if (!columns || columns.has(field)) scalarSelect[field] = true
+    }
+
     const sessions = await this.prisma.consultingSession.findMany({
       where: { consultantId: userId },
-      include: {
-        user: { select: { profile: { select: { firstName: true, lastName: true } } } }
-      },
+      select: {
+        ...scalarSelect,
+        user: { select: { profile: { select: { firstName: true, lastName: true } } } },
+      } as any,
       orderBy: { createdAt: 'desc' }
-    }).catch(() => [])
-    
+    }).catch((error: any) => {
+      console.error('[Sessions] my-earnings query failed:', error?.message)
+      return []
+    })
+
     const completed = sessions.filter((s: any) => s.status === 'COMPLETED')
-    const confirmed = sessions.filter((s: any) => s.status === 'CONFIRMED')
-    const cancelled = sessions.filter((s: any) => s.status === 'CANCELLED')
-    
-    const total = completed.reduce((sum: number, s: any) => sum + ((s as any).price || 0), 0)
-    const pending = confirmed.reduce((sum: number, s: any) => sum + ((s as any).price || 0), 0)
-    const refunded = cancelled.reduce((sum: number, s: any) => sum + ((s as any).price || 0), 0)
-    
+    const pendingSessions = sessions.filter((s: any) => ['CONFIRMED', 'IN_PROGRESS'].includes(s.status))
+    // Legacy rows used REJECTED instead of CANCELLED.
+    const cancelled = sessions.filter((s: any) => ['CANCELLED', 'REJECTED'].includes(s.status))
+
+    const total = completed.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0)
+    const pending = pendingSessions.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0)
+    const refunded = cancelled.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0)
+
+    const recentSessions = sessions.map((s: any) => ({
+      id: s.id,
+      sessionName: (s as any).sessionName || (s as any).topic || null,
+      studentName: (s as any).user?.profile
+        ? `${(s as any).user.profile.firstName || ''} ${(s as any).user.profile.lastName || ''}`.trim()
+        : 'طالب',
+      clientName: (s as any).user?.profile
+        ? `${(s as any).user.profile.firstName || ''} ${(s as any).user.profile.lastName || ''}`.trim()
+        : 'طالب',
+      amount: Number((s as any).price) || 0,
+      price: Number((s as any).price) || 0,
+      status: s.status,
+      paymentStatus: (s as any).paymentStatus || 'UNPAID',
+      date: (s as any).scheduledAt || s.createdAt,
+      scheduledAt: (s as any).scheduledAt || null,
+    }))
+
     return {
       success: true,
       data: {
-        total,
-        pending,
+        // New shape used by the earnings dashboard.
+        totalEarned: total,
+        pendingEarnings: pending,
         refunded,
         available: total - refunded,
-        sessions: completed.map((s: any) => ({
-          id: s.id,
-          studentName: (s as any).user?.profile ? `${(s as any).user.profile.firstName} ${(s as any).user.profile.lastName}` : 'طالب',
-          amount: (s as any).price,
-          date: s.createdAt,
-        }))
+        sessionsCount: completed.length,
+        recentSessions,
+        // Backwards-compatible aliases for older clients.
+        total,
+        pending,
+        totalEarnings: total,
+        pendingAmount: pending,
+        availableBalance: total - refunded,
+        sessions: recentSessions,
       }
     }
   }

@@ -181,6 +181,7 @@ input:-webkit-autofill:active {
 	/* ── Typography ── */
 	--font-display: "Plus Jakarta Sans", sans-serif;
 	--font-body: "PingARLT", "Arial Black", "sans-serif";
+	--font-madinet: "PingARLT", "Cairo", sans-serif;
 	--font-brand: "PingARLT", "Arial Black", sans-serif;
 
 	/* ── Radius ── */

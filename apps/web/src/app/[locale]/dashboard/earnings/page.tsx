@@ -1,237 +1,427 @@
 'use client'
-import { useState, useEffect } from 'react'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
-import { DollarSign, Clock, Wallet, Loader2, ArrowDownLeft, CheckCircle } from 'lucide-react'
-import { post } from '@/lib/api'
-import { getCountryClient } from '@/lib/market'
+import { get, post } from '@/lib/api'
+import { formatMoney } from '@/lib/market'
+import { browserTimeZone } from '@/lib/time'
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  CheckCircle2,
+  Clock,
+  DollarSign,
+  Loader2,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react'
+
+interface RecentSession {
+  id: string
+  sessionName?: string | null
+  clientName?: string | null
+  studentName?: string | null
+  amount?: number | null
+  price?: number | null
+  status?: string | null
+  paymentStatus?: string | null
+  date?: string | null
+  scheduledAt?: string | null
+}
+
+interface EarningsData {
+  totalEarned: number
+  pendingEarnings: number
+  refunded: number
+  available: number
+  sessionsCount: number
+  recentSessions: RecentSession[]
+}
+
+function normaliseEarnings(raw: any): EarningsData {
+  const totalEarned = Number(raw?.totalEarned ?? raw?.totalEarnings ?? raw?.total ?? 0) || 0
+  const pendingEarnings = Number(raw?.pendingEarnings ?? raw?.pendingAmount ?? raw?.pending ?? 0) || 0
+  const refunded = Number(raw?.refunded ?? 0) || 0
+  const available = Number(raw?.available ?? raw?.availableBalance ?? totalEarned - refunded) || 0
+  const recentSessions: RecentSession[] = Array.isArray(raw?.recentSessions)
+    ? raw.recentSessions
+    : Array.isArray(raw?.sessions)
+      ? raw.sessions
+      : []
+
+  return {
+    totalEarned,
+    pendingEarnings,
+    refunded,
+    available: Math.max(0, available),
+    sessionsCount: Number(raw?.sessionsCount ?? recentSessions.filter((s) => s.status === 'COMPLETED').length) || 0,
+    recentSessions,
+  }
+}
 
 export default function EarningsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
-  const [data, setData] = useState<any>(null)
+
+  const [data, setData] = useState<EarningsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [transferAmount, setTransferAmount] = useState('')
   const [transferring, setTransferring] = useState(false)
-  const [msg, setMsg] = useState<{type:'success'|'error', text:string} | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  const fetchEarnings = async () => {
+  const money = useCallback((amount: number) => formatMoney(amount), [])
+
+  const fetchEarnings = useCallback(async () => {
+    setError(null)
     try {
-      const token = localStorage.getItem('deveway_token') || localStorage.getItem('token') || ''
-      const countryParam = getCountryClient() === 'EG' ? '?country=EG' : ''
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/wallet/coach-earnings${countryParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      const res = await r.json()
-      setData(res?.data || res)
-    } catch(e) {
-      console.error(e)
+      const response = await get('/sessions/my-earnings')
+      setData(normaliseEarnings(response.data?.data ?? response.data))
+    } catch (requestError: any) {
+      const message =
+        requestError?.response?.data?.message ||
+        (isAr ? 'تعذر تحميل بيانات الأرباح' : 'Failed to load earnings')
+      setError(Array.isArray(message) ? message.join(' - ') : message)
+      setData(normaliseEarnings(null))
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAr])
 
   useEffect(() => {
     setMounted(true)
-    fetchEarnings()
-  }, [])
+    void fetchEarnings()
+  }, [fetchEarnings])
 
   const handleTransfer = async () => {
-    const amount = parseFloat(transferAmount)
+    const amount = Number(transferAmount)
     if (!amount || amount <= 0) return
-    const maxTransfer = data?.availableBalance || data?.totalEarnings || 0
-    if (amount > maxTransfer) {
-      setMsg({ type: 'error', text: isAr ? 'المبلغ أكبر من أرباحك المتاحة' : 'Amount exceeds available earnings' })
+
+    if (amount > (data?.available || 0)) {
+      setMessage({
+        type: 'error',
+        text: isAr ? 'المبلغ أكبر من أرباحك المتاحة' : 'Amount exceeds your available earnings',
+      })
       return
     }
+
     setTransferring(true)
     try {
       await post('/wallet/transfer-from-earnings', { amount })
-      const amountStr = `${Number(amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
-      setMsg({ type: 'success', text: `${isAr ? 'تم تحويل' : 'Transferred'} ${amountStr} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}` })
+      setMessage({
+        type: 'success',
+        text: `${isAr ? 'تم تحويل' : 'Transferred'} ${money(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}`,
+      })
       setTransferAmount('')
       await fetchEarnings()
-    } catch(e: any) {
-      setMsg({ type: 'error', text: e.response?.data?.message || (isAr ? 'فشل التحويل' : 'Transfer failed') })
+    } catch (transferError: any) {
+      setMessage({
+        type: 'error',
+        text:
+          transferError?.response?.data?.message ||
+          (isAr ? 'فشل تحويل المبلغ' : 'Transfer failed'),
+      })
     } finally {
       setTransferring(false)
-      setTimeout(() => setMsg(null), 4000)
+      window.setTimeout(() => setMessage(null), 4000)
     }
   }
 
+  const stats = useMemo(
+    () => [
+      {
+        label: isAr ? 'إجمالي الأرباح' : 'Total earned',
+        value: money(data?.totalEarned || 0),
+        color: 'var(--primary)',
+        background: 'var(--primary-subtle)',
+        icon: DollarSign,
+      },
+      {
+        label: isAr ? 'الرصيد المتاح' : 'Available to transfer',
+        value: money(data?.available || 0),
+        color: 'var(--accent)',
+        background: 'var(--accent-light)',
+        icon: Wallet,
+      },
+      {
+        label: isAr ? 'قيد الانتظار' : 'Pending',
+        value: money(data?.pendingEarnings || 0),
+        color: 'var(--warning)',
+        background: 'var(--warning-subtle)',
+        icon: Clock,
+      },
+      {
+        label: isAr ? 'الجلسات المكتملة' : 'Completed sessions',
+        value: String(data?.sessionsCount || 0),
+        color: 'var(--foreground)',
+        background: 'var(--surface)',
+        icon: TrendingUp,
+      },
+    ],
+    [data, isAr, money],
+  )
+
   if (!mounted || loading) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        <Loader2 size={24} className="inline animate-spin mb-2" />
-        <p>{isAr ? 'جاري التحميل...' : 'Loading...'}</p>
+      <div
+        dir="rtl"
+        className="flex min-h-[50vh] flex-col items-center justify-center gap-2"
+        style={{ background: 'var(--background)', color: 'var(--muted)', fontFamily: 'var(--font-body)' }}
+      >
+        <Loader2 size={24} className="animate-spin" />
+        <p className="text-sm font-semibold">{isAr ? 'جاري تحميل الأرباح...' : 'Loading earnings...'}</p>
       </div>
     )
   }
 
-  const sessions = data?.transactions || []
+  const sessions = data?.recentSessions ?? []
 
   return (
-    <div className="p-6 max-w-5xl mx-auto" style={{ width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      <h1 className="text-2xl font-bold mb-2">
-        {isAr ? 'أرباحي' : 'My Earnings'}
-      </h1>
-      <p className="text-gray-400 text-sm mb-6">
-        {isAr ? 'إيراداتك من الجلسات الاستشارية المؤكدة' : 'Revenue from confirmed consulting sessions'}
-      </p>
+    <div
+      dir="rtl"
+      className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
+      style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}
+    >
+      <header className="mb-6">
+        <h1 className="text-2xl font-black sm:text-3xl" style={{ fontFamily: 'var(--font-madinet)' }}>
+          {isAr ? 'أرباحي' : 'My earnings'}
+        </h1>
+        <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+          {isAr
+            ? 'إيراداتك من الجلسات الاستشارية، محدثة من سجل الجلسات'
+            : 'Your consulting revenue, sourced from the sessions ledger'}
+        </p>
+      </header>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 w-full mb-6">
-        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
-          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
-            {isAr ? 'إجمالي الأرباح' : 'Total Earnings'}
-          </p>
-          <p className="font-bold text-purple-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.totalEarningsDisplay ?? `${Number(data?.totalEarnings ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
-          </p>
+      {error && (
+        <div
+          className="mb-5 flex items-start gap-2 rounded-xl border p-3 text-sm font-semibold"
+          style={{ background: 'var(--error-subtle)', borderColor: 'var(--error)', color: 'var(--error)' }}
+          role="alert"
+        >
+          <AlertCircle size={17} className="mt-0.5 shrink-0" />
+          <span className="break-words">{error}</span>
         </div>
-        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
-          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
-            {isAr ? 'الرصيد المتاح للسحب' : 'Available to Transfer'}
-          </p>
-          <p className="font-bold text-green-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.availableBalanceDisplay ?? `${Number(data?.availableBalance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
-          </p>
-        </div>
-        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
-          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
-            {isAr ? 'قيد الانتظار' : 'Pending'}
-          </p>
-          <p className="font-bold text-yellow-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {data?.pendingAmountDisplay ?? `${Number(data?.pendingAmount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
-          </p>
-        </div>
-        <div className="bg-gray-900 rounded-xl border border-gray-800" style={{ width: '100%', boxSizing: 'border-box', padding: 'clamp(12px, 3vw, 20px)' }}>
-          <p className="text-gray-400 mb-1" style={{ fontSize: 'clamp(10px, 2.5vw, 13px)' }}>
-            {isAr ? 'الجلسات المكتملة' : 'Completed Sessions'}
-          </p>
-          <p className="font-bold text-blue-400" style={{ fontSize: 'clamp(16px, 4vw, 22px)' }}>
-            {sessions.length}
-          </p>
-        </div>
-      </div>
+      )}
 
-      {/* Transfer to Wallet */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 p-5 mb-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <ArrowDownLeft size={18} className="text-purple-400" />
-          {isAr ? 'تحويل إلى المحفظة' : 'Transfer to Wallet'}
-        </h3>
+      {message && (
+        <div
+          className="mb-5 flex items-center gap-2 rounded-xl border p-3 text-sm font-semibold"
+          style={{
+            background: message.type === 'success' ? 'var(--accent-light)' : 'var(--error-subtle)',
+            borderColor: message.type === 'success' ? 'var(--accent)' : 'var(--error)',
+            color: message.type === 'success' ? 'var(--accent)' : 'var(--error)',
+          }}
+        >
+          {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          {message.text}
+        </div>
+      )}
 
-        {msg && (
-          <div className={`p-3 rounded-lg mb-4 text-sm font-semibold flex items-center gap-2 ${
-            msg.type === 'success'
-              ? 'bg-green-900/30 text-green-400 border border-green-800'
-              : 'bg-red-900/30 text-red-400 border border-red-800'
-          }`}>
-            {msg.type === 'success' ? <CheckCircle size={16} /> : null}
-            {msg.text}
-          </div>
-        )}
+      <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon
+          return (
+            <div
+              key={stat.label}
+              className="rounded-2xl border p-3 sm:p-4"
+              style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+            >
+              <div className="mb-2 flex items-center gap-2">
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ background: stat.background, color: stat.color }}
+                >
+                  <Icon size={15} />
+                </span>
+                <p className="text-[10px] font-bold leading-tight sm:text-[11px]" style={{ color: 'var(--muted)' }}>
+                  {stat.label}
+                </p>
+              </div>
+              <p className="break-words text-sm font-black sm:text-base" style={{ color: stat.color }}>
+                {stat.value}
+              </p>
+            </div>
+          )
+        })}
+      </section>
 
-        <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+      <section
+        className="mb-5 rounded-2xl border p-4 sm:p-5"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      >
+        <h2 className="mb-4 flex items-center gap-2 text-sm font-black">
+          <ArrowDownLeft size={17} style={{ color: 'var(--primary)' }} />
+          {isAr ? 'تحويل إلى المحفظة' : 'Transfer to wallet'}
+        </h2>
+
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input
             type="number"
+            min="0"
+            step="0.01"
             value={transferAmount}
-            onChange={e => setTransferAmount(e.target.value)}
-            placeholder={isAr
-              ? `الحد الأقصى: ${data?.availableBalanceDisplay ?? `${Number(data?.availableBalance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}`
-              : `Max: ${data?.availableBalanceDisplay ?? `${Number(data?.availableBalance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}`}
-            className="px-4 py-3 rounded-xl bg-gray-800 text-white border border-gray-700 text-sm outline-none focus:border-purple-500 transition-colors"
-            style={{ flex: 1, minWidth: 0, boxSizing: 'border-box' }}
+            onChange={(event) => setTransferAmount(event.target.value)}
+            placeholder={
+              isAr
+                ? `الحد الأقصى: ${money(data?.available || 0)}`
+                : `Max: ${money(data?.available || 0)}`
+            }
+            className="min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm outline-none"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
           />
           <button
+            type="button"
             onClick={handleTransfer}
             disabled={transferring || !transferAmount}
-            className="py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-purple-600 hover:bg-purple-500 text-white"
-            style={{ flexShrink: 0, whiteSpace: 'nowrap', padding: '0 16px' }}
+            className="flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black"
+            style={{
+              background: 'var(--primary)',
+              color: 'var(--primary-foreground)',
+              border: 'none',
+              cursor: transferring || !transferAmount ? 'not-allowed' : 'pointer',
+              opacity: transferring || !transferAmount ? 0.5 : 1,
+            }}
           >
-            {transferring ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <Wallet size={16} />
-            )}
-            {transferring
-              ? (isAr ? 'جاري التحويل...' : 'Transferring...')
-              : (isAr ? 'تحويل' : 'Transfer')}
+            {transferring ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+            {transferring ? (isAr ? 'جاري التحويل...' : 'Transferring...') : isAr ? 'تحويل' : 'Transfer'}
           </button>
         </div>
-        <p className="text-gray-500 text-xs mt-3">
-          {isAr ? 'سيتم تحويل المبلغ من أرباحك إلى محفظتك فورا' : 'Amount will be transferred from earnings to your wallet immediately'}
-        </p>
-      </div>
 
-      {/* Sessions Table */}
-      <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-        <div className="p-4 border-b border-gray-800">
-          <h2 className="font-semibold flex items-center gap-2">
-            <DollarSign size={18} className="text-purple-400" />
-            {isAr ? 'سجل الجلسات' : 'Sessions History'}
+        <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)' }}>
+          {isAr
+            ? 'يتم تحويل المبلغ من الأرباح المتاحة إلى محفظتك فوراً'
+            : 'The amount moves from available earnings into your wallet immediately'}
+        </p>
+      </section>
+
+      <section
+        className="overflow-hidden rounded-2xl border"
+        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'var(--border)' }}>
+          <h2 className="flex items-center gap-2 text-sm font-black">
+            <DollarSign size={17} style={{ color: 'var(--primary)' }} />
+            {isAr ? 'سجل الجلسات' : 'Sessions history'}
           </h2>
+          <span className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+            {isAr ? `${sessions.length} جلسة` : `${sessions.length} sessions`}
+          </span>
         </div>
+
         {sessions.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            <DollarSign size={40} className="mx-auto mb-3 opacity-30" />
-            <p>{isAr ? 'لا توجد جلسات مكتملة بعد' : 'No completed sessions yet'}</p>
+          <div className="px-6 py-14 text-center">
+            <DollarSign size={40} style={{ color: 'var(--muted)', opacity: 0.3, margin: '0 auto 12px' }} />
+            <p className="text-sm font-semibold" style={{ color: 'var(--muted)' }}>
+              {isAr ? 'لا توجد جلسات بعد' : 'No sessions yet'}
+            </p>
           </div>
         ) : (
-          <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            <table style={{ minWidth: '500px', width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr className="border-b border-gray-800 text-gray-400 text-sm">
-                  <th className="p-4 text-right">{isAr ? 'العميل' : 'Client'}</th>
-                  <th className="p-4 text-right">{isAr ? 'الجلسة' : 'Session'}</th>
-                  <th className="p-4 text-center">{isAr ? 'التاريخ' : 'Date'}</th>
-                  <th className="p-4 text-center">{isAr ? 'المبلغ' : 'Amount'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.map((session: any) => (
-                  <tr key={session.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-purple-900 flex items-center justify-center text-purple-300 font-bold text-sm flex-shrink-0">
-                          {session.clientName?.charAt(0)?.toUpperCase() || '?'}
+          <>
+            {/* Mobile cards */}
+            <div className="divide-y sm:hidden" style={{ borderColor: 'var(--border)' }}>
+              {sessions.map((session) => (
+                <div key={session.id} className="p-4">
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-black">
+                      {session.clientName || session.studentName || (isAr ? 'عميل' : 'Client')}
+                    </p>
+                    <span className="shrink-0 text-xs font-black" style={{ color: 'var(--accent)' }}>
+                      {money(Number(session.amount ?? session.price ?? 0))}
+                    </span>
+                  </div>
+                  <p className="truncate text-[11px]" style={{ color: 'var(--muted)' }}>
+                    {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
+                  </p>
+                  <p className="mt-1 text-[10px]" style={{ color: 'var(--muted)' }}>
+                    {session.date || session.scheduledAt
+                      ? new Date(session.date || session.scheduledAt || '').toLocaleDateString(
+                          isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+                          { year: 'numeric', month: 'short', day: 'numeric', timeZone: browserTimeZone(), calendar: 'gregory' },
+                        )
+                      : '—'}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full border-collapse text-right">
+                <thead>
+                  <tr className="border-b text-[11px]" style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}>
+                    <th className="p-3 font-bold">{isAr ? 'العميل' : 'Client'}</th>
+                    <th className="p-3 font-bold">{isAr ? 'الجلسة' : 'Session'}</th>
+                    <th className="p-3 text-center font-bold">{isAr ? 'التاريخ' : 'Date'}</th>
+                    <th className="p-3 text-center font-bold">{isAr ? 'الحالة' : 'Status'}</th>
+                    <th className="p-3 text-center font-bold">{isAr ? 'المبلغ' : 'Amount'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessions.map((session) => (
+                    <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'var(--border)' }}>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black"
+                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
+                          >
+                            {(session.clientName || session.studentName || '?').charAt(0).toUpperCase()}
+                          </span>
+                          <span className="font-bold">
+                            {session.clientName || session.studentName || (isAr ? 'عميل' : 'Client')}
+                          </span>
                         </div>
-                        <span className="text-sm font-medium">{session.clientName || (isAr ? 'عميل' : 'Client')}</span>
-                      </div>
+                      </td>
+                      <td className="max-w-[220px] truncate p-3" style={{ color: 'var(--muted)' }}>
+                        {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
+                      </td>
+                      <td className="p-3 text-center" style={{ color: 'var(--muted)' }}>
+                        {session.date || session.scheduledAt
+                          ? new Date(session.date || session.scheduledAt || '').toLocaleDateString(
+                              isAr ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory',
+                              { year: 'numeric', month: 'short', day: 'numeric', timeZone: browserTimeZone(), calendar: 'gregory' },
+                            )
+                          : '—'}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span
+                          className="rounded-full border px-2 py-0.5 text-[10px] font-bold"
+                          style={{
+                            borderColor: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--border)',
+                            background: session.status === 'COMPLETED' ? 'var(--accent-light)' : 'var(--surface)',
+                            color: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--muted)',
+                          }}
+                        >
+                          {session.status || '—'}
+                        </span>
+                      </td>
+                      <td className="p-3 text-center font-black" style={{ color: 'var(--accent)' }}>
+                        {Number(session.amount ?? session.price ?? 0) > 0
+                          ? money(Number(session.amount ?? session.price ?? 0))
+                          : isAr
+                            ? 'مجاني'
+                            : 'Free'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: 'var(--surface)' }}>
+                    <td className="p-3 text-xs font-black" colSpan={4}>
+                      {isAr ? 'الإجمالي' : 'Total'}
                     </td>
-                    <td className="p-4 text-sm text-gray-300">{session.sessionName || '—'}</td>
-                    <td className="p-4 text-center text-sm text-gray-400 max-w-[120px]">
-                      {session.date
-                        ? new Date(session.date).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
-                            year: 'numeric', month: 'short', day: 'numeric'
-                          })
-                        : '—'}
-                    </td>
-                    <td className="p-4 text-center">
-                      <span className={`font-bold ${session.amount > 0 ? 'text-green-400' : 'text-gray-500'}`}>
-                        {session.amount > 0
-                          ? session.amountDisplay ?? `${Number(session.amount ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
-                          : (isAr ? 'مجاني' : 'Free')}
-                      </span>
+                    <td className="p-3 text-center text-sm font-black" style={{ color: 'var(--primary)' }}>
+                      {money(data?.totalEarned || 0)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-800/50">
-                  <td className="p-4 font-bold" colSpan={3}>
-                    {isAr ? 'الإجمالي' : 'Total'}
-                  </td>
-                  <td className="p-4 text-center text-purple-400 font-bold text-lg">
-                    {data?.totalEarningsDisplay ?? `${Number(data?.totalEarnings ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </tfoot>
+              </table>
+            </div>
+          </>
         )}
-      </div>
+      </section>
     </div>
   )
 }

@@ -3,6 +3,13 @@ import { PrismaService } from '../../prisma/prisma.service'
 import { ActivityService } from '../../common/services/activity.service'
 import { DailyService } from '../live/daily.service'
 import { NotificationsService } from '../notifications/notifications.service'
+import {
+  buildConsultingSessionSelect,
+  consultingSessionBaseSelect,
+  filterConsultingSessionData,
+  getConsultingSessionColumns,
+  isMissingColumnError,
+} from './consulting-columns'
 
 export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   tech: ['برمجة','تقنية','software','tech','engineering','هندسة','developer','مطور','web','mobile','fullstack','frontend','backend','python','javascript','react','node','java','php','flutter','تطوير','كود','code','programming','ويب','موبايل','api','database','قاعدة بيانات','devops','cloud','سحابة','aws','azure','docker','kubernetes','linux','network','شبكات','typescript','vue','angular','spring','laravel'],
@@ -28,6 +35,9 @@ const LOCKED_STATUSES = [
   ConsultingStatus.CONFIRMED,
   ConsultingStatus.IN_PROGRESS,
   ConsultingStatus.AWAITING_PAYMENT,
+  // Legacy value written by the pre-rebuild SessionsController. The slot is
+  // still held while the student decides on the proposed time.
+  'RESCHEDULED',
 ]
 
 function formatName(profile?: { firstName?: string | null; lastName?: string | null } | null): string {
@@ -147,15 +157,23 @@ export class ConsultingService {
 
     const slotDuration = durationMinutes || (consultant.profile?.sessionDuration as number) || 60
 
-    // Locked sessions in range
-    const locked = await this.prisma.consultingSession.findMany({
-      where: {
-        consultantId,
-        status: { in: LOCKED_STATUSES },
-        scheduledAt: { gte: from, lte: to },
-      },
-      select: { id: true, scheduledAt: true, duration: true, status: true },
-    })
+    // Locked sessions in range. If the database is missing a column used by the
+    // default select, degrade to showing the slot as free instead of failing the
+    // whole booking page with a 500.
+    let locked: Array<{ id: string; scheduledAt: Date; duration: number; status: string }> = []
+    try {
+      locked = await this.prisma.consultingSession.findMany({
+        where: {
+          consultantId,
+          status: { in: LOCKED_STATUSES },
+          scheduledAt: { gte: from, lte: to },
+        },
+        select: { id: true, scheduledAt: true, duration: true, status: true },
+      })
+    } catch (error: any) {
+      console.error('[getAvailableSlots] could not load locked sessions:', error?.message)
+      locked = []
+    }
 
     const lockedRanges = locked.map(s => ({
       id: s.id,
@@ -196,6 +214,7 @@ export class ConsultingService {
     consultantId: string
     sessionName?: string
     topic: string
+    notes?: string
     description?: string
     scheduledAt: string
     duration?: number
@@ -212,15 +231,23 @@ export class ConsultingService {
     if (!consultant) throw new NotFoundException('Consultant not found')
 
     const duration = data.duration || (consultant.profile?.sessionDuration as number) || 60
-    const sessionPrice = Number(consultant.profile?.sessionPrice || consultant.hourlyRate || 0)
+    const baseDuration = (consultant.profile?.sessionDuration as number) || 60
+    const basePrice = Number(consultant.profile?.sessionPrice || consultant.hourlyRate || 0)
+    // The stored profile price is the price of the default session length.
+    // Scale it to the duration the student picked so the summary, the stored
+    // price and the payment amount always match.
+    const sessionPrice = Number(((basePrice * duration) / baseDuration).toFixed(2))
 
     // Slot locking: reject if the consultant already has a locked session overlapping this time.
+    // Select only columns that have existed since the first release so this check
+    // cannot 500 while the optional columns are still being migrated.
     const existing = await this.prisma.consultingSession.findFirst({
       where: {
         consultantId: data.consultantId,
         status: { in: LOCKED_STATUSES },
         scheduledAt: { lt: addMinutes(scheduledAt, duration) },
       },
+      select: { id: true, scheduledAt: true, duration: true },
     })
     if (existing) {
       const existingEnd = addMinutes(existing.scheduledAt, existing.duration || duration)
@@ -229,27 +256,22 @@ export class ConsultingService {
       }
     }
 
-    const session = await this.prisma.consultingSession.create({
-      data: {
-        studentId: userId,
-        consultantId: data.consultantId,
-        sessionName: data.sessionName || data.topic,
-        topic: data.topic,
-        description: data.description || '',
-        scheduledAt,
-        duration,
-        price: sessionPrice,
-        currency: 'SAR',
-        status: ConsultingStatus.PENDING_APPROVAL,
-        paymentStatus: sessionPrice > 0 ? 'UNPAID' : 'PAID',
-        userApproved: true,
-        consultantApproved: false,
-        meetingType: 'daily',
-      },
-      include: {
-        user: { select: { profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-        consultant: { select: { profile: { select: { firstName: true, lastName: true } } } },
-      },
+    const session = await this.createSessionSafely({
+      studentId: userId,
+      consultantId: data.consultantId,
+      sessionName: data.sessionName || data.topic,
+      topic: data.topic,
+      notes: data.notes ?? data.description ?? null,
+      description: data.description || data.notes || '',
+      scheduledAt,
+      duration: duration ?? 60,
+      price: sessionPrice,
+      currency: 'SAR',
+      status: ConsultingStatus.PENDING_APPROVAL,
+      paymentStatus: sessionPrice > 0 ? 'UNPAID' : 'PAID',
+      userApproved: true,
+      consultantApproved: false,
+      meetingType: 'daily',
     })
 
     await this.notify(data.consultantId, {
@@ -265,23 +287,8 @@ export class ConsultingService {
 
   async getSessions(userId: string) {
     try {
-      const mySessions = await this.prisma.consultingSession.findMany({
-        where: { studentId: userId },
-        include: {
-          user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-          consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
-        },
-        orderBy: { scheduledAt: 'desc' },
-      })
-
-      const clientSessions = await this.prisma.consultingSession.findMany({
-        where: { consultantId: userId },
-        include: {
-          user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-          consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } } } },
-        },
-        orderBy: { scheduledAt: 'desc' },
-      })
+      const mySessions = await this.findSessionsSafely({ studentId: userId })
+      const clientSessions = await this.findSessionsSafely({ consultantId: userId })
 
       return {
         success: true,
@@ -298,13 +305,10 @@ export class ConsultingService {
   }
 
   async getSession(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        user: { select: { id: true, profile: { select: { firstName: true, lastName: true, avatar: true } } } },
-        consultant: { select: { id: true, isVerified: true, profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true, sessionPrice: true } } } },
-      }
-    })
+    // Reuse the schema-tolerant read so a missing optional column never turns a
+    // session detail request into a 500.
+    const sessions = await this.findSessionsSafely({ id: sessionId })
+    const session = sessions.find((row: any) => row.id === sessionId)
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
     return { success: true, data: session }
@@ -760,6 +764,114 @@ export class ConsultingService {
     })
 
     return updated
+  }
+
+  // ---------------------------------------------------------------------------
+  // Schema-tolerance helpers
+  //
+  // The consulting table has been rebuilt a few times and some deployments can
+  // lag behind the Prisma schema. These helpers keep reads and the booking
+  // write working until the SQL in
+  // prisma/migrations/20261029130000_complete_consulting_session_columns has run.
+  //
+  // Important: filtering only the *input* is not enough. Prisma also builds a
+  // RETURNING clause from every scalar in the model, so a read of a column that
+  // is absent in Postgres fails even for a minimal insert. The helpers below
+  // therefore derive the `select` from the live `information_schema` too.
+  // ---------------------------------------------------------------------------
+
+  private async createSessionSafely(data: Record<string, any>) {
+    const relations = {
+      user: { select: { profile: { select: { firstName: true, lastName: true, avatar: true } } } },
+      consultant: { select: { profile: { select: { firstName: true, lastName: true } } } },
+    }
+
+    const columns = await getConsultingSessionColumns(this.prisma)
+    const payload = filterConsultingSessionData(data, columns)
+    const select = buildConsultingSessionSelect(columns)
+
+    try {
+      return await this.prisma.consultingSession.create({
+        data: payload as any,
+        ...(select ? { select: { ...select, ...relations } } : { include: relations }),
+      } as any)
+    } catch (error: any) {
+      if (!isMissingColumnError(error)) throw error
+
+      // Last-resort path: only columns that have existed since the first
+      // release of consulting sessions, on both the write and the read side.
+      console.error('[bookSession] retrying with base columns:', error?.message)
+      return await this.prisma.consultingSession.create({
+        data: {
+          studentId: data.studentId,
+          consultantId: data.consultantId,
+          scheduledAt: data.scheduledAt,
+          duration: data.duration ?? 60,
+          status: data.status,
+        } as any,
+        select: { ...consultingSessionBaseSelect(), ...relations },
+      } as any)
+    }
+  }
+
+  private async findSessionsSafely(where: Record<string, any>) {
+    const relationSelect = {
+      user: {
+        select: {
+          id: true,
+          email: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true } },
+        },
+      },
+      consultant: {
+        select: {
+          id: true,
+          email: true,
+          isVerified: true,
+          profile: { select: { firstName: true, lastName: true, avatar: true, speciality: true } },
+        },
+      },
+    }
+
+    const columns = await getConsultingSessionColumns(this.prisma)
+    const select = buildConsultingSessionSelect(columns)
+    const effectiveSelect = select
+      ? { ...select, ...relationSelect }
+      : { ...consultingSessionBaseSelect(), ...relationSelect }
+
+    try {
+      return await this.prisma.consultingSession.findMany({
+        where,
+        select: effectiveSelect as any,
+        orderBy: { scheduledAt: 'desc' },
+      })
+    } catch (error: any) {
+      if (!isMissingColumnError(error)) {
+        console.error('[ConsultingService] session query failed:', error?.message)
+        return []
+      }
+
+      // The cached column list may be stale. Refresh it and retry once with the
+      // intersection of model and database columns.
+      const freshColumns = await getConsultingSessionColumns(this.prisma, { force: true })
+      const freshSelect = buildConsultingSessionSelect(freshColumns)
+
+      if (!freshSelect) {
+        console.error('[ConsultingService] cannot determine consulting columns:', error?.message)
+        return []
+      }
+
+      try {
+        return await this.prisma.consultingSession.findMany({
+          where,
+          select: { ...freshSelect, ...relationSelect } as any,
+          orderBy: { scheduledAt: 'desc' },
+        })
+      } catch (retryError: any) {
+        console.error('[ConsultingService] session query retry failed:', retryError?.message)
+        return []
+      }
+    }
   }
 
   private async notify(userId: string, payload: {
