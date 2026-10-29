@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { ActivityService } from '../../common/services/activity.service'
+import { DailyService } from '../live/daily.service'
+import { NotificationsService } from '../notifications/notifications.service'
 
 export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   tech: ['برمجة','تقنية','software','tech','engineering','هندسة','developer','مطور','web','mobile','fullstack','frontend','backend','python','javascript','react','node','java','php','flutter','تطوير','كود','code','programming','ويب','موبايل','api','database','قاعدة بيانات','devops','cloud','سحابة','aws','azure','docker','kubernetes','linux','network','شبكات','typescript','vue','angular','spring','laravel'],
@@ -11,19 +13,44 @@ export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   business: ['أعمال','business','management','إدارة','ريادة','entrepreneur','startup','مبيعات','sales','تجارة','finance','مالية','hr','موارد بشرية','project manager','product manager','scrum','agile','strategy','استراتيجية','consulting','استشارات','operations','accounting','محاسبة','investment','استثمار'],
 }
 
+// Status values used throughout the consulting flow.
+export const ConsultingStatus = {
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  AWAITING_PAYMENT: 'AWAITING_PAYMENT',
+  CONFIRMED: 'CONFIRMED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  RESCHEDULE_REQUESTED: 'RESCHEDULE_REQUESTED',
+} as const
+
+const LOCKED_STATUSES = [
+  ConsultingStatus.CONFIRMED,
+  ConsultingStatus.IN_PROGRESS,
+  ConsultingStatus.AWAITING_PAYMENT,
+]
+
+function formatName(profile?: { firstName?: string | null; lastName?: string | null } | null): string {
+  return `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
+}
+
+function addMinutes(date: Date, minutes: number): Date {
+  return new Date(date.getTime() + minutes * 60000)
+}
+
 @Injectable()
 export class ConsultingService {
   constructor(
     private prisma: PrismaService,
     private readonly activityService: ActivityService,
+    private readonly dailyService: DailyService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async getConsultants(query: { filter?: string; search?: string; sort?: string; limit?: number }) {
     try {
       const users = await this.prisma.user.findMany({
-        where: {
-          accountType: 'CONSULTANT',
-        },
+        where: { accountType: 'CONSULTANT' },
         include: {
           profile: {
             select: {
@@ -70,12 +97,8 @@ export class ConsultingService {
         return { ...u, _score: score, _count: { consultantSessions: 0 } }
       })
 
-      if (query.filter && query.filter !== 'all') {
-        scored = scored.filter(u => u._score > 0)
-      }
-      if (query.search) {
-        scored = scored.filter(u => u._score > 0)
-      }
+      if (query.filter && query.filter !== 'all') scored = scored.filter(u => u._score > 0)
+      if (query.search) scored = scored.filter(u => u._score > 0)
 
       switch(query.sort) {
         case 'price-low': scored.sort((a: any,b: any) => parseFloat(a.profile?.sessionPrice||'0') - parseFloat(b.profile?.sessionPrice||'0')); break
@@ -91,71 +114,157 @@ export class ConsultingService {
     }
   }
 
-  async bookSession(userId: string, data: {
-    consultantId: string
-    sessionName: string
-    topic: string
-    description?: string
-    scheduledAt: string
-    meetingType: 'zoom' | 'meet'
-    duration?: number
-  }) {
-    const scheduledAt = new Date(data.scheduledAt)
-    if (scheduledAt <= new Date()) throw new BadRequestException('Cannot book a session in the past')
-    if (!['zoom', 'meet'].includes(data.meetingType)) throw new BadRequestException('Only zoom or meet allowed')
-    if (!data.sessionName?.trim()) throw new BadRequestException('Session name is required')
-    if (!data.topic?.trim()) throw new BadRequestException('Session goal/topic is required')
-
+  async getConsultant(consultantId: string) {
     const consultant = await this.prisma.user.findUnique({
-      where: { id: data.consultantId },
-      include: { profile: true }
+      where: { id: consultantId, accountType: 'CONSULTANT' },
+      include: {
+        profile: {
+          select: {
+            firstName: true, lastName: true, avatar: true, bio: true,
+            speciality: true, yearsExperience: true,
+            qualifications: true, consultingAreas: true,
+            linkedinUrl: true, sessionPrice: true, sessionDuration: true,
+          },
+        },
+      },
+    })
+    if (!consultant) throw new NotFoundException('Consultant not found')
+    return { success: true, data: consultant }
+  }
+
+  async getAvailableSlots(consultantId: string, fromStr: string, toStr: string, durationMinutes = 60) {
+    const consultant = await this.prisma.user.findUnique({
+      where: { id: consultantId, accountType: 'CONSULTANT' },
+      include: { profile: { select: { sessionDuration: true } } },
     })
     if (!consultant) throw new NotFoundException('Consultant not found')
 
-    const sessionPrice = Number(consultant.hourlyRate || consultant.profile?.sessionPrice || 0)
+    const from = new Date(fromStr)
+    const to = new Date(toStr)
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      throw new BadRequestException('Invalid date range')
+    }
+
+    const slotDuration = durationMinutes || (consultant.profile?.sessionDuration as number) || 60
+
+    // Locked sessions in range
+    const locked = await this.prisma.consultingSession.findMany({
+      where: {
+        consultantId,
+        status: { in: LOCKED_STATUSES },
+        scheduledAt: { gte: from, lte: to },
+      },
+      select: { id: true, scheduledAt: true, duration: true, status: true },
+    })
+
+    const lockedRanges = locked.map(s => ({
+      id: s.id,
+      status: s.status,
+      start: s.scheduledAt,
+      end: addMinutes(s.scheduledAt, s.duration || slotDuration),
+    }))
+
+    // Build slots every 30 minutes, 9am to 9pm local time, for each day in range
+    const slots: { time: string; available: boolean; sessionId?: string; status?: string }[] = []
+    const cursor = new Date(from)
+    cursor.setHours(0, 0, 0, 0)
+
+    while (cursor < to) {
+      for (let hour = 9; hour < 21; hour++) {
+        for (const minute of [0, 30]) {
+          const slotStart = new Date(cursor)
+          slotStart.setHours(hour, minute, 0, 0)
+          if (slotStart < from || slotStart >= to || slotStart < new Date()) continue
+
+          const slotEnd = addMinutes(slotStart, slotDuration)
+          const conflict = lockedRanges.find(r => slotStart < r.end && slotEnd > r.start)
+          slots.push({
+            time: slotStart.toISOString(),
+            available: !conflict,
+            sessionId: conflict?.id,
+            status: conflict?.status,
+          })
+        }
+      }
+      cursor.setDate(cursor.getDate() + 1)
+    }
+
+    return { success: true, data: { slots, duration: slotDuration } }
+  }
+
+  async bookSession(userId: string, data: {
+    consultantId: string
+    sessionName?: string
+    topic: string
+    description?: string
+    scheduledAt: string
+    duration?: number
+    meetingType?: 'daily'
+  }) {
+    const scheduledAt = new Date(data.scheduledAt)
+    if (scheduledAt <= new Date()) throw new BadRequestException('Cannot book a session in the past')
+    if (!data.topic?.trim()) throw new BadRequestException('Session goal/topic is required')
+
+    const consultant = await this.prisma.user.findUnique({
+      where: { id: data.consultantId, accountType: 'CONSULTANT' },
+      include: { profile: true },
+    })
+    if (!consultant) throw new NotFoundException('Consultant not found')
+
+    const duration = data.duration || (consultant.profile?.sessionDuration as number) || 60
+    const sessionPrice = Number(consultant.profile?.sessionPrice || consultant.hourlyRate || 0)
+
+    // Slot locking: reject if the consultant already has a locked session overlapping this time.
+    const existing = await this.prisma.consultingSession.findFirst({
+      where: {
+        consultantId: data.consultantId,
+        status: { in: LOCKED_STATUSES },
+        scheduledAt: { lt: addMinutes(scheduledAt, duration) },
+      },
+    })
+    if (existing) {
+      const existingEnd = addMinutes(existing.scheduledAt, existing.duration || duration)
+      if (existingEnd > scheduledAt) {
+        throw new BadRequestException('This time slot is already booked')
+      }
+    }
 
     const session = await this.prisma.consultingSession.create({
       data: {
         studentId: userId,
         consultantId: data.consultantId,
-        sessionName: data.sessionName,
+        sessionName: data.sessionName || data.topic,
         topic: data.topic,
         description: data.description || '',
         scheduledAt,
-        meetingType: data.meetingType,
-        duration: data.duration || (consultant.profile?.sessionDuration as number) || 60,
+        duration,
         price: sessionPrice,
-        status: 'PENDING',
+        currency: 'SAR',
+        status: ConsultingStatus.PENDING_APPROVAL,
         paymentStatus: sessionPrice > 0 ? 'UNPAID' : 'PAID',
         userApproved: true,
         consultantApproved: false,
+        meetingType: 'daily',
       },
       include: {
         user: { select: { profile: { select: { firstName: true, lastName: true, avatar: true } } } },
         consultant: { select: { profile: { select: { firstName: true, lastName: true } } } },
-      }
+      },
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: data.consultantId,
-          titleEn: 'New Session Booking Request',
-          titleAr: 'طلب حجز جلسة جديد',
-          contentEn: `${(session as any).user?.profile?.firstName} ${(session as any).user?.profile?.lastName} requested a session: "${data.sessionName}"`,
-          contentAr: `${(session as any).user?.profile?.firstName} ${(session as any).user?.profile?.lastName} طلب جلسة: "${data.sessionName}"`,
-          type: 'SESSION_BOOKED',
-          isRead: false,
-        }
-      })
-    } catch(e) {}
+    await this.notify(data.consultantId, {
+      titleEn: 'New Session Booking Request',
+      titleAr: 'طلب حجز جلسة جديد',
+      contentEn: `${formatName((session as any).user?.profile)} requested a session: "${data.sessionName || data.topic}"`,
+      contentAr: `${formatName((session as any).user?.profile)} طلب جلسة: "${data.sessionName || data.topic}"`,
+      type: 'SESSION_BOOKED',
+    })
 
     return { success: true, data: session }
   }
 
   async getSessions(userId: string) {
     try {
-      // Sessions this user booked (as client)
       const mySessions = await this.prisma.consultingSession.findMany({
         where: { studentId: userId },
         include: {
@@ -165,7 +274,6 @@ export class ConsultingService {
         orderBy: { scheduledAt: 'desc' },
       })
 
-      // Sessions where this user is the consultant (clients booked with them)
       const clientSessions = await this.prisma.consultingSession.findMany({
         where: { consultantId: userId },
         include: {
@@ -175,26 +283,12 @@ export class ConsultingService {
         orderBy: { scheduledAt: 'desc' },
       })
 
-      console.log(`[getSessions] userId=${userId} mySessions=${mySessions.length} clientSessions=${clientSessions.length}`)
-
-      const now = new Date()
-      const allSessions = [...mySessions, ...clientSessions]
-      for (const s of allSessions) {
-        if (['PENDING','CONFIRMED','SCHEDULED'].includes(s.status)) {
-          const endTime = new Date(s.scheduledAt).getTime() + (s.duration || 60) * 60000 + 1800000
-          if (endTime < now.getTime()) {
-            await this.prisma.consultingSession.update({ where: { id: s.id }, data: { status: 'EXPIRED' } }).catch(() => {})
-            s.status = 'EXPIRED'
-          }
-        }
-      }
-
       return {
         success: true,
         data: {
           mySessions,
           clientSessions,
-          isConsultant: clientSessions.length > 0,
+          isConsultant: clientSessions.length > 0 || (await this.prisma.user.count({ where: { id: userId, accountType: 'CONSULTANT' } })) > 0,
         }
       }
     } catch(e: any) {
@@ -216,6 +310,44 @@ export class ConsultingService {
     return { success: true, data: session }
   }
 
+  async approveSession(sessionId: string, consultantId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId, consultantId },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+    if (![ConsultingStatus.PENDING_APPROVAL, 'PENDING', ConsultingStatus.RESCHEDULE_REQUESTED].includes(session.status)) {
+      throw new BadRequestException('Session cannot be approved')
+    }
+
+    const isFree = (session.price || 0) === 0
+    const nextStatus = isFree ? ConsultingStatus.CONFIRMED : ConsultingStatus.AWAITING_PAYMENT
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: {
+        status: nextStatus,
+        consultantApproved: true,
+        userApproved: true,
+        paymentStatus: isFree ? 'PAID' : session.paymentStatus,
+        paidAt: isFree ? new Date() : session.paidAt,
+      },
+    })
+
+    await this.notify(session.studentId, {
+      titleEn: isFree ? 'Session Confirmed' : 'Session Approved - Payment Required',
+      titleAr: isFree ? 'تم تأكيد الجلسة' : 'تمت الموافقة على الجلسة — يرجى الدفع',
+      contentEn: isFree
+        ? `Your session "${session.sessionName || session.topic}" has been confirmed`
+        : `Your session "${session.sessionName || session.topic}" was approved. Please complete payment.`,
+      contentAr: isFree
+        ? `تم تأكيد جلستك "${session.sessionName || session.topic}"`
+        : `تمت الموافقة على جلستك "${session.sessionName || session.topic}" — يرجى إتمام الدفع.`,
+      type: 'SESSION_APPROVED',
+    })
+
+    return { success: true, data: updated }
+  }
+
   async requestReschedule(sessionId: string, consultantId: string, data: { proposedAt: string; reason?: string }) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
@@ -226,20 +358,21 @@ export class ConsultingService {
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: { status: 'RESCHEDULE_REQUESTED', proposedAt, proposedBy: 'CONSULTANT', consultantApproved: true, userApproved: false }
+      data: {
+        status: ConsultingStatus.RESCHEDULE_REQUESTED,
+        proposedAt,
+        proposedBy: 'CONSULTANT',
+        originalScheduledAt: session.originalScheduledAt || session.scheduledAt,
+      },
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.studentId,
-          type: 'SYSTEM_ANNOUNCEMENT',
-          contentEn: `The consultant proposes a new time: ${proposedAt.toLocaleDateString('en')} ${proposedAt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
-          contentAr: `المستشار يقترح موعداً جديداً: ${proposedAt.toLocaleDateString('ar')} ${proposedAt.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
-          isRead: false,
-        } as any,
-      })
-    } catch(e) {}
+    await this.notify(session.studentId, {
+      titleEn: 'Reschedule Requested',
+      titleAr: 'طلب تغيير موعد',
+      contentEn: `The consultant proposes a new time: ${proposedAt.toLocaleDateString('en')} ${proposedAt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
+      contentAr: `المستشار يقترح موعداً جديداً: ${proposedAt.toLocaleDateString('ar')} ${proposedAt.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
+      type: 'SYSTEM_ANNOUNCEMENT',
+    })
 
     return { success: true, data: updated }
   }
@@ -254,24 +387,21 @@ export class ConsultingService {
       where: { id: sessionId },
       data: {
         scheduledAt: session.proposedAt,
-        rescheduledFrom: session.scheduledAt,
-        proposedAt: null, proposedBy: null,
-        status: 'CONFIRMED', userApproved: true, consultantApproved: true,
-      }
+        rescheduledFrom: session.originalScheduledAt || session.scheduledAt,
+        proposedAt: null,
+        proposedBy: null,
+        originalScheduledAt: null,
+        status: session.paymentStatus === 'PAID' ? ConsultingStatus.CONFIRMED : ConsultingStatus.AWAITING_PAYMENT,
+      },
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.consultantId,
-          titleEn: 'Reschedule Approved',
-          titleAr: 'تمت الموافقة على الموعد الجديد',
-          contentEn: 'The user approved the new session time',
-          contentAr: 'وافق المستخدم على الموعد الجديد للجلسة',
-          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
-        }
-      })
-    } catch(e) {}
+    await this.notify(session.consultantId, {
+      titleEn: 'Reschedule Approved',
+      titleAr: 'تمت الموافقة على الموعد الجديد',
+      contentEn: 'The user approved the new session time',
+      contentAr: 'وافق المستخدم على الموعد الجديد للجلسة',
+      type: 'SYSTEM_ANNOUNCEMENT',
+    })
 
     return { success: true, data: updated }
   }
@@ -283,21 +413,21 @@ export class ConsultingService {
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: { status: 'CONFIRMED', proposedAt: null, proposedBy: null, userApproved: true, consultantApproved: true }
+      data: {
+        status: session.paymentStatus === 'PAID' ? ConsultingStatus.CONFIRMED : ConsultingStatus.AWAITING_PAYMENT,
+        proposedAt: null,
+        proposedBy: null,
+        originalScheduledAt: null,
+      },
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.consultantId,
-          titleEn: 'Reschedule Rejected',
-          titleAr: 'رُفض طلب تغيير الموعد',
-          contentEn: 'The user rejected the time change, original time remains',
-          contentAr: 'رفض المستخدم تغيير الموعد، الموعد الأصلي سارٍ',
-          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
-        }
-      })
-    } catch(e) {}
+    await this.notify(session.consultantId, {
+      titleEn: 'Reschedule Rejected',
+      titleAr: 'رُفض طلب تغيير الموعد',
+      contentEn: 'The user rejected the time change, original time remains',
+      contentAr: 'رفض المستخدم تغيير الموعد، الموعد الأصلي سارٍ',
+      type: 'SYSTEM_ANNOUNCEMENT',
+    })
 
     return { success: true, data: updated }
   }
@@ -305,166 +435,68 @@ export class ConsultingService {
   async paySession(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
-      include: { consultant: { include: { profile: true } } }
+      include: { consultant: { include: { profile: true } } },
     })
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.status !== ConsultingStatus.AWAITING_PAYMENT && session.status !== ConsultingStatus.PENDING_APPROVAL) {
+      throw new BadRequestException('Session is not awaiting payment')
+    }
     if (session.paymentStatus === 'PAID') throw new BadRequestException('Already paid')
 
-    const price = session.price || parseFloat((session.consultant?.profile?.sessionPrice as any)?.toString() || '0')
+    const price = session.price || 0
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
+      data: { paymentStatus: 'PAID', paidAt: new Date(), status: ConsultingStatus.CONFIRMED },
     })
 
     if (price > 0) {
       await this.prisma.user.update({
         where: { id: session.consultantId },
-        data: { earningsBalance: { increment: price } }
+        data: { earningsBalance: { increment: price } },
       }).catch(() => {})
     }
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.consultantId,
-          titleEn: 'Payment Received - Add Meeting Link',
-          titleAr: 'تم الدفع - أضف رابط الاجتماع',
-          contentEn: `Session fees paid${price > 0 ? ` (${price} SAR)` : ''}. Please add the meeting link.`,
-          contentAr: `تم دفع رسوم الجلسة${price > 0 ? ` (${price} ر.س)` : ''}. الرجاء إضافة رابط الاجتماع.`,
-          type: 'PAYMENT_CONFIRMED', isRead: false,
-        }
-      })
-    } catch(e) {}
-
-    return { success: true, data: updated }
-  }
-
-  async addMeetingLink(sessionId: string, consultantId: string, data: { meetingLink: string }) {
-    const isZoom = data.meetingLink?.includes('zoom.us')
-    const isMeet = data.meetingLink?.includes('meet.google.com')
-    if (!isZoom && !isMeet) throw new BadRequestException('Only Zoom or Google Meet links allowed')
-
-    const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
-    if (!session) throw new NotFoundException('Session not found')
-    if (session.consultantId !== consultantId) throw new ForbiddenException('Not authorized')
-    if (session.paymentStatus !== 'PAID') throw new BadRequestException('Session must be paid first')
-
-    const meetingLinkExpiresAt = new Date(
-      new Date(session.scheduledAt).getTime() + (session.duration || 60) * 60000 + 3600000
-    )
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { meetingLink: data.meetingLink, meetingType: isZoom ? 'zoom' : 'meet', meetingLinkExpiresAt, status: 'SCHEDULED' }
+    await this.notify(session.consultantId, {
+      titleEn: 'Payment Confirmed - Session Locked',
+      titleAr: 'تم الدفع — الجلسة مؤكدة',
+      contentEn: `Session "${session.sessionName || session.topic}" has been paid${price > 0 ? ` (${price} SAR)` : ''}. You can start the room when the time comes.`,
+      contentAr: `تم دفع جلستك "${session.sessionName || session.topic}"${price > 0 ? ` (${price} ر.س)` : ''}. يمكنك بدء الجلسة عند حلول الموعد.`,
+      type: 'PAYMENT_CONFIRMED',
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.studentId,
-          titleEn: `Session Link Ready - ${isZoom ? 'Zoom' : 'Google Meet'}`,
-          titleAr: 'رابط الجلسة جاهز',
-          contentEn: `${isZoom ? 'Zoom' : 'Google Meet'} link added. Click to join.`,
-          contentAr: `تم إضافة رابط ${isZoom ? 'Zoom' : 'Google Meet'}. انقر للانضمام.`,
-          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
-        }
-      })
-    } catch(e) {}
-
-    return { success: true, data: updated }
-  }
-
-  async completeSession(sessionId: string, userId: string) {
-    const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
-    if (!session) throw new NotFoundException('Session not found')
-    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { status: 'COMPLETED', completedBy: userId, completedAt: new Date() }
-    })
-
-    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: notifyId,
-          titleEn: 'Session Completed',
-          titleAr: 'تمت الجلسة بنجاح',
-          contentEn: 'The consulting session has been marked as completed',
-          contentAr: 'تم تأكيد اكتمال الجلسة الاستشارية',
-          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
-        }
-      })
-    } catch(e) {}
-
-    return { success: true, data: updated }
-  }
-
-  async cancelSession(sessionId: string, userId: string, data: { reason?: string }) {
-    const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
-    if (!session) throw new NotFoundException('Session not found')
-    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
-    if (session.paymentStatus === 'PAID') throw new BadRequestException('Cannot cancel a paid session')
-
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { status: 'CANCELLED', cancelReason: data.reason || '' }
-    })
-
-    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: notifyId,
-          titleEn: `Session Cancelled${data.reason ? ': ' + data.reason : ''}`,
-          titleAr: 'تم إلغاء الجلسة',
-          contentEn: `The session has been cancelled${data.reason ? ': ' + data.reason : ''}`,
-          contentAr: `تم إلغاء الجلسة${data.reason ? ': ' + data.reason : ''}`,
-          type: 'SESSION_CANCELLED', isRead: false,
-        }
-      })
-    } catch(e) {}
-    
     return { success: true, data: updated }
   }
 
   async createPaymentIntent(sessionId: string, userId: string) {
     const session = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
-      include: { consultant: { include: { profile: true } } }
+      include: { consultant: { include: { profile: true } } },
     })
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = session.price || session.consultant?.hourlyRate || parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = session.price || parseFloat(session.consultant?.profile?.sessionPrice?.toString() || '0')
 
-    // Free session - mark as paid directly (no Stripe needed)
     if (price === 0) {
       await this.prisma.consultingSession.update({
         where: { id: sessionId },
-        data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
+        data: { paymentStatus: 'PAID', paidAt: new Date(), status: ConsultingStatus.CONFIRMED },
       })
-      await this.prisma.notification.create({
-        data: {
-          userId: session.consultantId,
-          titleEn: 'Free Session Confirmed',
-          titleAr: 'تم تأكيد الجلسة المجانية',
-          contentEn: `Free session "${session.sessionName || session.topic}" confirmed`,
-          contentAr: `تم تأكيد الجلسة المجانية "${session.sessionName || session.topic}"`,
-          type: 'PAYMENT_CONFIRMED', isRead: false,
-        }
+      await this.notify(session.consultantId, {
+        titleEn: 'Free Session Confirmed',
+        titleAr: 'تم تأكيد الجلسة المجانية',
+        contentEn: `Free session "${session.sessionName || session.topic}" confirmed`,
+        contentAr: `تم تأكيد الجلسة المجانية "${session.sessionName || session.topic}"`,
+        type: 'PAYMENT_CONFIRMED',
       }).catch(() => {})
       return { success: true, free: true }
     }
 
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-
-    // Create Stripe PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(price * 100), // in cents/halalas
+      amount: Math.round(price * 100),
       currency: 'sar',
       metadata: { sessionId, userId, consultantId: session.consultantId },
       description: `Consulting session - ${session.sessionName || session.topic}`,
@@ -488,19 +520,18 @@ export class ConsultingService {
   async confirmPayment(sessionId: string, userId: string, paymentIntentId?: string) {
     const existingSession = await this.prisma.consultingSession.findUnique({
       where: { id: sessionId },
-      include: { consultant: { include: { profile: true } } }
+      include: { consultant: { include: { profile: true } } },
     })
     if (!existingSession) throw new NotFoundException('Session not found')
     if (existingSession.studentId !== userId) throw new ForbiddenException('Not authorized')
 
-    const price = existingSession.price || (existingSession as any).consultant?.hourlyRate || parseFloat((existingSession as any).consultant?.profile?.sessionPrice?.toString() || '0')
+    const price = existingSession.price || parseFloat(existingSession.consultant?.profile?.sessionPrice?.toString() || '0')
     const isFree = price === 0
 
-    // Free session - confirm directly without Stripe
     if (isFree || paymentIntentId === 'free') {
       await this.prisma.consultingSession.update({
         where: { id: sessionId },
-        data: { paymentStatus: 'PAID', paidAt: new Date(), status: 'CONFIRMED' }
+        data: { paymentStatus: 'PAID', paidAt: new Date(), status: ConsultingStatus.CONFIRMED },
       })
       await this.activityService.track({
         userId,
@@ -510,30 +541,24 @@ export class ConsultingService {
         metadata: {
           amount: price,
           type: 'consultation',
-          consultantName: `${existingSession.consultant?.profile?.firstName || ''} ${existingSession.consultant?.profile?.lastName || ''}`.trim(),
+          consultantName: formatName(existingSession.consultant?.profile),
         },
       })
-      try {
-        await this.prisma.notification.create({
-          data: {
-            userId: existingSession.consultantId,
-            titleEn: isFree ? 'Free Session Confirmed' : 'Session Confirmed',
-            titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم تأكيد الجلسة',
-            contentEn: isFree
-              ? `Free session "${existingSession.sessionName || existingSession.topic}" confirmed`
-              : `Session "${existingSession.sessionName || existingSession.topic}" confirmed for ${price} SAR`,
-            contentAr: isFree
-              ? `تم تأكيد الجلسة المجانية "${existingSession.sessionName || existingSession.topic}"`
-              : `تم تأكيد جلستك "${existingSession.sessionName || existingSession.topic}" بمبلغ ${price} ر.س`,
-            type: 'PAYMENT_CONFIRMED', isRead: false,
-          }
-        })
-      } catch(e) {}
+      await this.notify(existingSession.consultantId, {
+        titleEn: isFree ? 'Free Session Confirmed' : 'Session Confirmed',
+        titleAr: isFree ? 'تم تأكيد الجلسة المجانية' : 'تم تأكيد الجلسة',
+        contentEn: isFree
+          ? `Free session "${existingSession.sessionName || existingSession.topic}" confirmed`
+          : `Session "${existingSession.sessionName || existingSession.topic}" confirmed for ${price} SAR`,
+        contentAr: isFree
+          ? `تم تأكيد الجلسة المجانية "${existingSession.sessionName || existingSession.topic}"`
+          : `تم تأكيد جلستك "${existingSession.sessionName || existingSession.topic}" بمبلغ ${price} ر.س`,
+        type: 'PAYMENT_CONFIRMED',
+      })
       return { success: true, data: existingSession }
     }
 
     const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
-
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId!)
     if (paymentIntent.status !== 'succeeded') {
       throw new BadRequestException('Payment not completed')
@@ -555,12 +580,8 @@ export class ConsultingService {
 
     const session = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: {
-        paymentStatus: 'PAID',
-        paidAt: new Date(),
-        status: 'CONFIRMED',
-      },
-      include: { consultant: { include: { profile: true } } }
+      data: { paymentStatus: 'PAID', paidAt: new Date(), status: ConsultingStatus.CONFIRMED },
+      include: { consultant: { include: { profile: true } } },
     })
 
     await this.activityService.track({
@@ -571,7 +592,7 @@ export class ConsultingService {
       metadata: {
         amount: price,
         type: 'consultation',
-        consultantName: `${session.consultant?.profile?.firstName || ''} ${session.consultant?.profile?.lastName || ''}`.trim(),
+        consultantName: formatName(session.consultant?.profile),
       },
     })
 
@@ -579,49 +600,180 @@ export class ConsultingService {
       const consultantId = (session as any).consultant?.id || existingSession.consultantId
       await this.prisma.user.update({
         where: { id: consultantId },
-        data: { earningsBalance: { increment: price } }
+        data: { earningsBalance: { increment: price } },
       }).catch(() => {})
     }
 
     const consultantId = (session as any).consultant?.id || existingSession.consultantId
-    await this.prisma.notification.create({
-      data: {
-        userId: consultantId,
-        titleEn: 'Payment Received - Add Meeting Link',
-        titleAr: 'تم الدفع - أضف رابط الاجتماع',
-        contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}". Please add the meeting link.`,
-        contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}". الرجاء إضافة رابط الاجتماع.`,
-        type: 'PAYMENT_CONFIRMED', isRead: false,
-      }
-    }).catch(() => {})
+    await this.notify(consultantId, {
+      titleEn: 'Payment Received - Session Confirmed',
+      titleAr: 'تم استلام الدفع — الجلسة مؤكدة',
+      contentEn: `Payment of ${price > 0 ? price + ' SAR' : ''} received for "${existingSession.sessionName || existingSession.topic}".`,
+      contentAr: `تم دفع ${price > 0 ? price + ' ر.س' : ''} للجلسة "${existingSession.sessionName || existingSession.topic}".`,
+      type: 'PAYMENT_CONFIRMED',
+    })
 
     return { success: true, data: session }
   }
 
-  async confirmSessionByConsultant(sessionId: string, consultantId: string) {
-    const session = await this.prisma.consultingSession.findFirst({
-      where: { id: sessionId, consultantId },
+  async startRoom(sessionId: string, consultantId: string) {
+    const session = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      include: { user: { include: { profile: true } }, consultant: { include: { profile: true } } },
     })
     if (!session) throw new NotFoundException('Session not found')
+    if (session.consultantId !== consultantId) throw new ForbiddenException('Not authorized')
+    if (session.status !== ConsultingStatus.CONFIRMED) {
+      throw new BadRequestException('Session must be confirmed and paid before starting')
+    }
+
+    const roomName = session.dailyRoomName || `consulting-${sessionId}-${Date.now()}`
+    let roomUrl = session.dailyRoomUrl
+
+    if (!roomUrl) {
+      const room = await this.dailyService.createConsultingRoom(sessionId)
+      roomUrl = room.roomUrl
+      await this.prisma.consultingSession.update({
+        where: { id: sessionId },
+        data: { dailyRoomName: room.roomName, dailyRoomUrl: room.roomUrl },
+      })
+    }
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: { status: 'CONFIRMED', consultantApproved: true }
+      data: { status: ConsultingStatus.IN_PROGRESS, startedAt: new Date() },
     })
 
-    try {
-      await this.prisma.notification.create({
-        data: {
-          userId: session.studentId,
-          titleEn: 'Session Approved by Consultant',
-          titleAr: 'تمت الموافقة على الجلسة من قبل المستشار',
-          contentEn: `Your session "${session.sessionName || session.topic}" has been approved by the consultant`,
-          contentAr: `تمت الموافقة على جلستك "${session.sessionName || session.topic}" من قبل المستشار`,
-          type: 'SYSTEM_ANNOUNCEMENT', isRead: false,
-        }
-      })
-    } catch(e) {}
+    const consultantToken = await this.dailyService.createToken(roomName, true)
+
+    await this.notify(session.studentId, {
+      titleEn: 'Your Session is Starting',
+      titleAr: 'جلستك ستبدأ الآن',
+      contentEn: `${formatName(session.consultant?.profile)} started the session — join now.`,
+      contentAr: `${formatName(session.consultant?.profile)} بدأ الجلسة — انضم الآن.`,
+      type: 'LIVE_STARTED',
+      data: { sessionId, roomUrl, roomName },
+    })
+
+    return { success: true, data: { roomUrl, token: consultantToken, roomName, session: updated } }
+  }
+
+  async joinRoom(sessionId: string, userId: string) {
+    const session = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      include: { user: { include: { profile: true } }, consultant: { include: { profile: true } } },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
+    if (!session.dailyRoomName || !session.dailyRoomUrl) {
+      throw new BadRequestException('Room has not been started yet')
+    }
+
+    const token = await this.dailyService.createToken(session.dailyRoomName, false)
+    return { success: true, data: { roomUrl: session.dailyRoomUrl, token, roomName: session.dailyRoomName } }
+  }
+
+  async completeSession(sessionId: string, userId: string) {
+    const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: { status: ConsultingStatus.COMPLETED, completedBy: userId, completedAt: new Date() },
+    })
+
+    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
+    await this.notify(notifyId, {
+      titleEn: 'Session Completed',
+      titleAr: 'تمت الجلسة بنجاح',
+      contentEn: 'The consulting session has been marked as completed',
+      contentAr: 'تم تأكيد اكتمال الجلسة الاستشارية',
+      type: 'SYSTEM_ANNOUNCEMENT',
+    })
 
     return { success: true, data: updated }
+  }
+
+  async cancelSession(sessionId: string, userId: string, data: { reason?: string }) {
+    const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.status === ConsultingStatus.COMPLETED || session.status === ConsultingStatus.CANCELLED) {
+      throw new BadRequestException('Session already finished')
+    }
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: sessionId },
+      data: { status: ConsultingStatus.CANCELLED, cancelReason: data.reason || '' },
+    })
+
+    const notifyId = session.studentId === userId ? session.consultantId : session.studentId
+    await this.notify(notifyId, {
+      titleEn: `Session Cancelled${data.reason ? ': ' + data.reason : ''}`,
+      titleAr: 'تم إلغاء الجلسة',
+      contentEn: `The session has been cancelled${data.reason ? ': ' + data.reason : ''}`,
+      contentAr: `تم إلغاء الجلسة${data.reason ? ': ' + data.reason : ''}`,
+      type: 'SESSION_CANCELLED',
+    })
+
+    return { success: true, data: updated }
+  }
+
+  async confirmSessionByConsultant(sessionId: string, consultantId: string) {
+    return this.approveSession(sessionId, consultantId)
+  }
+
+  // Webhook completion handler used by the webhook controller.
+  async completeSessionFromWebhook(roomName: string, durationSeconds: number) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { dailyRoomName: roomName },
+      include: { user: { include: { profile: true } }, consultant: { include: { profile: true } } },
+    })
+    if (!session) return null
+
+    const actualDuration = durationSeconds > 0 ? Math.round(durationSeconds / 60) : session.duration
+
+    const updated = await this.prisma.consultingSession.update({
+      where: { id: session.id },
+      data: {
+        status: ConsultingStatus.COMPLETED,
+        actualDuration,
+        endedAt: new Date(),
+      },
+    })
+
+    await this.notify(session.consultantId, {
+      titleEn: 'Session Ended',
+      titleAr: 'انتهت الجلسة',
+      contentEn: `The session with ${formatName(session.user?.profile)} ended. Duration: ${actualDuration} minutes.`,
+      contentAr: `انتهت الجلسة مع ${formatName(session.user?.profile)}. المدة: ${actualDuration} دقيقة.`,
+      type: 'LIVE_ENDED',
+    })
+
+    await this.notify(session.studentId, {
+      titleEn: 'Session Ended',
+      titleAr: 'انتهت الجلسة',
+      contentEn: `Your session with ${formatName(session.consultant?.profile)} ended. Duration: ${actualDuration} minutes.`,
+      contentAr: `انتهت جلستك مع ${formatName(session.consultant?.profile)}. المدة: ${actualDuration} دقيقة.`,
+      type: 'LIVE_ENDED',
+    })
+
+    return updated
+  }
+
+  private async notify(userId: string, payload: {
+    titleEn: string
+    titleAr: string
+    contentEn: string
+    contentAr: string
+    type: string
+    data?: Record<string, any>
+  }) {
+    try {
+      await this.notificationsService.createNotification({ ...payload, userId, channels: ['PUSH'] })
+    } catch (e) {
+      console.error('[ConsultingService] notification failed:', e)
+    }
   }
 }

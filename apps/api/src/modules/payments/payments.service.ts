@@ -95,6 +95,13 @@ export class PaymentsService {
     })
     if (!consultingSession) throw new NotFoundException('Session not found')
     if (consultingSession.studentId !== userId) throw new BadRequestException('Not authorized')
+    if (consultingSession.status !== 'AWAITING_PAYMENT') {
+      throw new BadRequestException(
+        consultingSession.status === 'PENDING_APPROVAL'
+          ? 'Consultant approval required before payment'
+          : 'Session is not awaiting payment'
+      )
+    }
 
     const price = parseFloat(consultingSession.consultant?.profile?.sessionPrice?.toString() || '0')
     if (price <= 0) throw new BadRequestException('Session is free')

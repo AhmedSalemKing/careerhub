@@ -3,9 +3,11 @@ import { ConsultingController } from './consulting.controller'
 import { ConsultingService } from './consulting.service'
 import { PrismaModule } from '../../prisma/prisma.module'
 import { AuditModule } from '../../common/services/audit.module'
+import { LiveModule } from '../live/live.module'
+import { NotificationsModule } from '../notifications/notifications.module'
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [PrismaModule, AuditModule, LiveModule, NotificationsModule],
   controllers: [ConsultingController],
   providers: [ConsultingService],
   exports: [ConsultingService],

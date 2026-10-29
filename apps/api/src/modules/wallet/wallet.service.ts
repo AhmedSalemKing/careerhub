@@ -317,7 +317,7 @@ export class WalletService {
       where: {
         consultantId: userId,
         paymentStatus: 'PAID',
-        status: { not: 'CANCELLED' },
+        status: 'COMPLETED',
       },
       include: {
         user: {
@@ -337,8 +337,8 @@ export class WalletService {
     const pendingAgg = await this.prisma.consultingSession.aggregate({
       where: {
         consultantId: userId,
-        status: 'CONFIRMED',
-        paymentStatus: { not: 'PAID' },
+        status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
+        paymentStatus: 'PAID',
       },
       _sum: { price: true },
     })

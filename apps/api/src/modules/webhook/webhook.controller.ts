@@ -1,11 +1,11 @@
 import { Controller, Post, Body, Logger, HttpCode, HttpStatus } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { ConsultingService } from '../consulting/consulting.service';
 
 @Controller('webhooks')
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly consultingService: ConsultingService) {}
 
   @Post('daily')
   @HttpCode(HttpStatus.OK)
@@ -29,34 +29,12 @@ export class WebhookController {
       }
 
       try {
-        const session = await this.prisma.consultingSession.findFirst({
-          where: { dailyRoomName: roomName },
-          select: { id: true, status: true },
-        });
-
-        if (session) {
-          const actualDuration =
-            durationSec != null && durationSec > 0
-              ? Math.round(durationSec / 60)
-              : null;
-
-          const updateData: any = {};
-          if (actualDuration != null) updateData.actualDuration = actualDuration;
-          if (session.status !== 'COMPLETED') {
-            updateData.status = 'COMPLETED';
-            updateData.completedAt = new Date();
-          }
-
-          if (Object.keys(updateData).length > 0) {
-            await this.prisma.consultingSession.update({
-              where: { id: session.id },
-              data: updateData,
-            });
-          }
-
-          this.logger.log(
-            `meeting.ended: session ${session.id} actualDuration=${actualDuration ?? 'unknown'}min`,
+        if (roomName.startsWith('consulting-')) {
+          await this.consultingService.completeSessionFromWebhook(
+            roomName,
+            durationSec ?? 0,
           );
+          this.logger.log(`meeting.ended: consulting session for room ${roomName}`);
         }
         // else: course live session — handled separately by LiveService
       } catch (e: any) {

@@ -3,7 +3,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { localDateTimeToISO } from '@/lib/time'
 import { formatMoney } from '@/lib/market'
 import {
   Search, X, ChevronRight, Briefcase, Clock,
@@ -42,7 +41,6 @@ export default function CoachingPage() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [sortBy, setSortBy] = useState('score')
   const [detailConsultant, setDetailConsultant] = useState<any>(null)
-  const [bookingConsultant, setBookingConsultant] = useState<any>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const bg = 'var(--background)'
@@ -244,7 +242,7 @@ export default function CoachingPage() {
                           onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.color = text }}>
                           {isAr ? 'التفاصيل' : 'Details'}
                         </button>
-                        <button onClick={() => setBookingConsultant(c)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        <button onClick={() => router.push(`/${locale}/coaching/${c.id}/book`)} style={{ width: '100%', padding: '6px 4px', borderRadius: 9, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 'clamp(10px, 2.5vw, 12px)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                           onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
                           onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
                           {isAr ? 'احجز' : 'Book'}<ChevronRight size={12} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
@@ -318,7 +316,7 @@ export default function CoachingPage() {
                 <div style={{ color: '#5120c8', fontSize: 18, fontWeight: 700 }}>{(detailConsultant.hourlyRate || parseFloat(detailConsultant.profile?.sessionPrice || '0')) > 0 ? formatMoney(detailConsultant.hourlyRate || detailConsultant.profile?.sessionPrice, detailConsultant.hourlyRateDisplay || detailConsultant.profile?.sessionPriceDisplay) : (isAr ? 'مجاني' : 'Free')}</div>
                 <div style={{ color: subtext, fontSize: 10 }}>{isAr ? 'للجلسة' : 'per session'}</div>
               </div>
-              <button onClick={() => { setDetailConsultant(null); setBookingConsultant(detailConsultant) }} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+              <button onClick={() => router.push(`/${locale}/coaching/${detailConsultant.id}/book`)} style={{ flex: 2, padding: '12px', borderRadius: 11, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                 <Calendar size={14} />{isAr ? 'احجز الآن' : 'Book Now'}
               </button>
             </div>
@@ -326,185 +324,6 @@ export default function CoachingPage() {
         </>
       )}
 
-      {bookingConsultant && (
-        <BookingModal consultant={bookingConsultant} isAr={isAr} locale={locale} onClose={() => setBookingConsultant(null)} onSuccess={() => { setBookingConsultant(null); router.push(`/${locale}/dashboard/my-sessions`) }} cardBg={cardBg} border={border} text={text} subtext={subtext} />
-      )}
     </div>
-  )
-}
-
-function formatTimeSlot(time: string, locale: string): string {
-  const [h, m] = time.split(':').map(Number)
-  const period = h >= 12 ? 'PM' : 'AM'
-  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-  const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
-  if (locale === 'ar') {
-    return formatted.replace('AM', 'ص').replace('PM', 'م')
-  }
-  return formatted
-}
-
-function BookingModal({ consultant, isAr, locale, onClose, onSuccess, cardBg, border, text, subtext }: any) {
-  const [step, setStep] = useState<1|2|3>(1)
-  const [loading, setLoading] = useState(false)
-  const [form, setForm] = useState({ sessionName: '', topic: '', description: '', date: '', time: '', meetingType: 'zoom' as 'zoom'|'meet' })
-
-  const today = new Date().toISOString().split('T')[0]
-  const isToday = form.date === today
-  const slots = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'].filter(t => !isToday || parseInt(t) > new Date().getHours() + 1)
-  const step1Ok = form.sessionName.trim() && form.topic.trim() && form.date && form.time
-
-  const handleBook = async () => {
-    setLoading(true)
-    try {
-      const token = localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token') || ''
-      const scheduledAt = localDateTimeToISO(form.date, form.time)
-
-      const res = await fetch('https://api.deveways.com/api/consulting/sessions/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ consultantId: consultant.id, sessionName: form.sessionName, topic: form.topic, description: form.description, scheduledAt, meetingType: form.meetingType, duration: consultant.profile?.sessionDuration || 60 })
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Failed')
-    } catch(e: any) { console.error('[Booking] error:', e.message) }
-    setLoading(false)
-    onSuccess()
-  }
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 200, backdropFilter: 'blur(6px)' }} />
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(480px,calc(100vw - 24px))', maxHeight: '92vh', overflowY: 'auto', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.5)', zIndex: 201, direction: isAr ? 'rtl' : 'ltr' }}>
-        <div style={{ padding: '18px 22px', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: cardBg, borderRadius: '20px 20px 0 0', zIndex: 10 }}>
-          <div>
-            <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: 0 }}>{isAr ? 'احجز جلسة' : 'Book Session'}</h3>
-            <p style={{ color: '#5120c8', fontSize: 11, margin: '2px 0 0', fontWeight: 600 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</p>
-          </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
-        </div>
-
-        <div style={{ padding: '14px 22px', borderBottom: `1px solid ${border}`, display: 'flex', gap: 8, alignItems: 'center' }}>
-          {[{n:1,ar:'تفاصيل الجلسة',en:'Session Details'},{n:2,ar:'نوع الاجتماع',en:'Meeting Type'},{n:3,ar:'تأكيد',en:'Confirm'}].map((s,i) => (
-            <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: i < 2 ? 1 : 'auto', gap: 5 }}>
-              <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: step >= s.n ? '#5120c8' : ('var(--surface)'), border: `2px solid ${step >= s.n ? '#5120c8' : border}` }}>
-                {step > s.n ? <CheckCircle2 size={12} color="#fff" /> : <span style={{ color: step === s.n ? '#fff' : subtext, fontSize: 10, fontWeight: 600 }}>{s.n}</span>}
-              </div>
-              <span style={{ color: step === s.n ? text : subtext, fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap' }}>{isAr ? s.ar : s.en}</span>
-              {i < 2 && <div style={{ flex: 1, height: 1, background: step > s.n ? '#5120c8' : border }} />}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ padding: '20px 22px' }}>
-          {step === 1 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {[
-                { key: 'sessionName', label: isAr ? 'اسم الجلسة' : 'Session Name', placeholder: isAr ? 'مثال: جلسة تطوير المسار المهني' : 'e.g. Career development session', required: true },
-                { key: 'topic', label: isAr ? 'هدف الجلسة' : 'Session Goal', placeholder: isAr ? 'مثال: تطوير مسيرتي في البرمجة...' : 'e.g. Improve my programming career...', required: true },
-              ].map(f => (
-                <div key={f.key}>
-                  <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{f.label} {f.required && '*'}</label>
-                  <input type="text" placeholder={f.placeholder} value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                    style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${(form as any)[f.key] ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-              ))}
-              <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{isAr ? 'وصف إضافي (اختياري)' : 'Additional Details (optional)'}</label>
-                <textarea rows={2} placeholder={isAr ? 'أضف أي تفاصيل...' : 'Add any details...'} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--background)', color: text, fontSize: 12, outline: 'none', boxSizing: 'border-box', resize: 'none', fontFamily: 'inherit' }} />
-              </div>
-              <div>
-                <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 6, display: 'block' }}>{isAr ? 'التاريخ' : 'Date'} *</label>
-                <input type="date" min={today} value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value, time: '' }))}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${form.date ? '#5120c8' : border}`, background: 'var(--background)', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box', cursor: 'pointer' }} />
-              </div>
-              {form.date && (
-                <div>
-                  <label style={{ color: text, fontSize: 12, fontWeight: 500, marginBottom: 8, display: 'block' }}>{isAr ? 'الوقت' : 'Time'} *</label>
-                  {slots.length === 0 ? (
-                    <p style={{ color: '#d97706', fontSize: 12, padding: '8px 12px', borderRadius: 8, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                      {isAr ? 'لا توجد مواعيد اليوم، اختر يوماً آخر' : 'No slots today, choose another date'}
-                    </p>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                      {slots.map(t => <button key={t} onClick={() => setForm(p => ({ ...p, time: t }))} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${form.time === t ? '#5120c8' : border}`, background: form.time === t ? 'rgba(81,32,200,0.08)' : ('var(--surface)'), color: form.time === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 500 }}>{formatTimeSlot(t, locale)}</button>)}
-                    </div>
-                  )}
-                </div>
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 12px', borderRadius: 9, border: `1px solid ${border}`, background: 'var(--surface)' }}>
-                <Clock size={12} color={subtext} />
-                <span style={{ color: subtext, fontSize: 11 }}>{isAr ? `مدة الجلسة: ${consultant.profile?.sessionDuration || 60} دقيقة` : `Duration: ${consultant.profile?.sessionDuration || 60} min`}</span>
-              </div>
-              <button disabled={!step1Ok} onClick={() => setStep(2)} style={{ width: '100%', padding: '12px', borderRadius: 11, background: step1Ok ? '#5120c8' : ('var(--surface)'), color: step1Ok ? '#ffffff' : subtext, border: 'none', cursor: step1Ok ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 600 }}>
-                {isAr ? 'التالي ' : 'Next '}
-              </button>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <h4 style={{ color: text, fontSize: 13, fontWeight: 600, margin: '0 0 4px' }}>{isAr ? 'اختر طريقة الاجتماع' : 'Choose Meeting Type'}</h4>
-              {[
-                { type: 'zoom', label: 'Zoom', desc: isAr ? 'اجتماع عبر Zoom  رابط سيُرسل بعد الدفع' : 'Via Zoom  link sent after payment', color: '#2D8CFF' },
-                { type: 'meet', label: 'Google Meet', desc: isAr ? 'اجتماع عبر Google Meet  رابط سيُرسل بعد الدفع' : 'Via Google Meet  link sent after payment', color: '#00897B' },
-              ].map(m => (
-                <div key={m.type} onClick={() => setForm(p => ({ ...p, meetingType: m.type as 'zoom'|'meet' }))} style={{ padding: '15px', borderRadius: 12, cursor: 'pointer', border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? 'var(--primary-subtle)' : cardBg, display: 'flex', alignItems: 'center', gap: 12, transition: 'all 0.15s' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: m.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Video size={18} color="white" /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: text, fontSize: 13, fontWeight: 600 }}>{m.label}</div>
-                    <div style={{ color: subtext, fontSize: 11, marginTop: 1 }}>{m.desc}</div>
-                  </div>
-                  <div style={{ width: 18, height: 18, borderRadius: '50%', flexShrink: 0, border: `2px solid ${form.meetingType === m.type ? '#5120c8' : border}`, background: form.meetingType === m.type ? '#5120c8' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {form.meetingType === m.type && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                  </div>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <button onClick={() => setStep(1)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>
-                <button onClick={() => setStep(3)} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 12, fontWeight: 600 }}>{isAr ? 'التالي ' : 'Next '}</button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ padding: '14px', borderRadius: 12, border: `1px solid ${border}`, background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  {consultant.profile?.avatar ? <img src={consultant.profile.avatar} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} alt="" /> : <div style={{ width: 34, height: 34, borderRadius: 8, background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 600, fontSize: 13 }}>{consultant.profile?.firstName?.[0]}</div>}
-                  <div><div style={{ color: text, fontSize: 13, fontWeight: 600 }}>{consultant.profile?.firstName} {consultant.profile?.lastName}</div><div style={{ color: '#5120c8', fontSize: 11 }}>{consultant.profile?.speciality}</div></div>
-                </div>
-                <div style={{ height: 1, background: border }} />
-                {[
-                  { ar: 'اسم الجلسة', en: 'Session Name', v: form.sessionName },
-                  { ar: 'الهدف', en: 'Goal', v: form.topic },
-                  { ar: 'التاريخ', en: 'Date', v: form.date },
-                  { ar: 'الوقت', en: 'Time', v: form.time },
-                  { ar: 'المدة', en: 'Duration', v: `${consultant.profile?.sessionDuration || 60} ${isAr ? 'دقيقة' : 'min'}` },
-                  { ar: 'نوع الاجتماع', en: 'Meeting', v: form.meetingType === 'zoom' ? 'Zoom' : 'Google Meet' },
-                ].map((r, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                    <span style={{ color: subtext, fontSize: 12 }}>{isAr ? r.ar : r.en}</span>
-                    <span style={{ color: text, fontSize: 12, fontWeight: 600, textAlign: isAr ? 'left' : 'right', maxWidth: '60%' }}>{r.v}</span>
-                  </div>
-                ))}
-                <div style={{ height: 1, background: border }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: text, fontSize: 13, fontWeight: 500 }}>{isAr ? 'السعر' : 'Price'}</span>
-                  <span style={{ color: '#5120c8', fontSize: 17, fontWeight: 700 }}>{(consultant.hourlyRate || parseFloat(consultant.profile?.sessionPrice || '0')) > 0 ? formatMoney(consultant.hourlyRate || consultant.profile?.sessionPrice, consultant.hourlyRateDisplay || consultant.profile?.sessionPriceDisplay) : (isAr ? 'مجاني' : 'Free')}</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setStep(2)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'رجوع' : 'Back'}</button>
-                <button onClick={handleBook} disabled={loading} style={{ flex: 2, padding: '11px', borderRadius: 10, cursor: loading ? 'wait' : 'pointer', background: '#5120c8', color: '#ffffff', border: 'none', fontSize: 13, fontWeight: 600, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                  {loading ? (isAr ? 'جاري الحجز...' : 'Booking...') : <><CheckCircle2 size={14} />{isAr ? 'تأكيد الحجز' : 'Confirm'}</>}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
   )
 }

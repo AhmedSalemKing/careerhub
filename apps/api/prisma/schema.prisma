@@ -1154,21 +1154,28 @@ model ConsultingSession {
   duration            Int       @default(60)
   actualDuration      Int?
   dailyRoomName       String?
-  status              String    @default("PENDING")
-  meetingType         String    @default("zoom")
+  dailyRoomUrl        String?
+  status              String    @default("PENDING_APPROVAL")
+  meetingType         String    @default("daily")
   meetingLink         String?
   meetingLinkExpiresAt DateTime?
   price               Float     @default(0)
+  currency            String    @default("SAR")
   paymentStatus       String    @default("UNPAID")
+  paymentId           String?
   paidAt              DateTime?
   proposedAt          DateTime?
   proposedBy          String?
   consultantApproved  Boolean   @default(false)
   userApproved        Boolean   @default(true)
+  startedAt           DateTime?
+  endedAt             DateTime?
   completedBy         String?
   completedAt         DateTime?
   cancelReason        String?
   rescheduledFrom     DateTime?
+  originalScheduledAt DateTime?
+  imageUrl            String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
@@ -1179,6 +1186,7 @@ model ConsultingSession {
   @@index([consultantId])
   @@index([status])
   @@index([consultantId, status])
+  @@index([dailyRoomName])
   @@map("consulting_sessions")
 }
 

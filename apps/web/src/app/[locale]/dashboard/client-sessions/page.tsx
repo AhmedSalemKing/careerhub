@@ -6,22 +6,33 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
 import {
   Calendar, Clock, Video, CheckCircle2, XCircle,
-  ExternalLink, RefreshCw, Link2, X, Copy, Check,
-  DollarSign, AlertTriangle, Users, User
+  ExternalLink, RefreshCw, X, DollarSign,
+  AlertTriangle, Users, Play
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
 import { formatDate, formatTimeOnly, localDateTimeToISO } from '@/lib/time'
 
 const STATUS_CONFIG: Record<string, any> = {
-  PENDING:              { ar:'قيد الانتظار',    en:'Pending',            color:'#d97706', bg:'rgba(245,158,11,0.1)' },
-  CONFIRMED:            { ar:'مؤكدة',           en:'Confirmed',          color:'#5120c8', bg:'rgba(81,32,200,0.1)'  },
-  SCHEDULED:            { ar:'مجدولة',          en:'Scheduled',          color:'#0ea5e9', bg:'rgba(14,165,233,0.1)' },
-  COMPLETED:            { ar:'مكتملة',          en:'Completed',          color:'#16a34a', bg:'rgba(22,163,74,0.1)'  },
-  EXPIRED:              { ar:'منتهية',          en:'Expired',            color:'#6b7280', bg:'rgba(107,114,128,0.1)'},
-  CANCELLED:            { ar:'ملغاة',           en:'Cancelled',          color:'#dc2626', bg:'rgba(220,38,38,0.1)'  },
-  RESCHEDULE_REQUESTED: { ar:'طلب تغيير موعد',  en:'Reschedule Pending', color:'#7c3aed', bg:'rgba(124,58,237,0.1)' },
+  PENDING:              { ar: 'بانتظار الموافقة', en: 'Pending Approval',   color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
+  PENDING_APPROVAL:     { ar: 'بانتظار الموافقة', en: 'Pending Approval',   color: '#FFC107', bg: 'rgba(255,193,7,0.12)' },
+  AWAITING_PAYMENT:     { ar: 'بانتظار الدفع',    en: 'Awaiting Payment',   color: '#FF9800', bg: 'rgba(255,152,0,0.12)' },
+  CONFIRMED:            { ar: 'مؤكدة',             en: 'Confirmed',          color: '#1B4F72', bg: 'rgba(27,79,114,0.12)' },
+  IN_PROGRESS:          { ar: 'جارية',             en: 'In Progress',        color: '#27AE60', bg: 'rgba(39,174,96,0.12)' },
+  COMPLETED:            { ar: 'مكتملة',            en: 'Completed',          color: '#95A5A6', bg: 'rgba(149,165,166,0.12)' },
+  CANCELLED:            { ar: 'ملغاة',             en: 'Cancelled',          color: '#E74C3C', bg: 'rgba(231,76,60,0.12)' },
+  RESCHEDULE_REQUESTED: { ar: 'تغيير موعد',        en: 'Reschedule Pending', color: '#9B59B6', bg: 'rgba(155,89,182,0.12)' },
 }
+
+type TabKey = 'pending_approval' | 'awaiting_payment' | 'upcoming' | 'completed' | 'cancelled'
+
+const TABS: { key: TabKey; ar: string; en: string; statuses: string[] }[] = [
+  { key: 'pending_approval', ar: 'بانتظار موافقتي', en: 'Pending Approval', statuses: ['PENDING', 'PENDING_APPROVAL'] },
+  { key: 'awaiting_payment', ar: 'انتظار الدفع',    en: 'Awaiting Payment', statuses: ['AWAITING_PAYMENT'] },
+  { key: 'upcoming',         ar: 'القادمة',          en: 'Upcoming',         statuses: ['CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_REQUESTED'] },
+  { key: 'completed',        ar: 'المكتملة',         en: 'Completed',        statuses: ['COMPLETED'] },
+  { key: 'cancelled',        ar: 'الملغاة',          en: 'Cancelled',        statuses: ['CANCELLED'] },
+]
 
 export default function ClientSessionsPage() {
   const { theme } = useTheme()
@@ -30,19 +41,17 @@ export default function ClientSessionsPage() {
   const isAr = locale === 'ar'
   const qc = useQueryClient()
 
-  const [activeTab, setActiveTab] = useState<'upcoming'|'completed'|'cancelled'>('upcoming')
+  const [activeTab, setActiveTab] = useState<TabKey>('pending_approval')
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [startLoadingId, setStartLoadingId] = useState<string | null>(null)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean; title: string; message: string;
     onConfirm: () => void; destructive?: boolean;
   }>({ isOpen: false, title: '', message: '', onConfirm: () => {} })
-  const [linkModal, setLinkModal] = useState<any>(null)
-  const [linkValue, setLinkValue] = useState('')
   const [rescheduleModal, setRescheduleModal] = useState<any>(null)
   const [newDate, setNewDate] = useState('')
   const [newTime, setNewTime] = useState('')
   const [rescheduleReason, setRescheduleReason] = useState('')
-  const [copied, setCopied] = useState('')
 
   const bg = isDark ? '#0d0d0d' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
@@ -54,61 +63,19 @@ export default function ClientSessionsPage() {
     queryKey: ['client-sessions'],
     queryFn: async () => {
       const r = await get('/consulting/sessions')
-      const data = r.data?.data
-      return data?.clientSessions ?? []
+      return r.data?.data?.clientSessions ?? []
     },
     refetchInterval: 30000,
   })
 
   const sessions: any[] = sessionsData ?? []
 
-  const upcomingStatuses = ['PENDING','CONFIRMED','SCHEDULED','RESCHEDULE_REQUESTED']
-  const completedStatuses = ['COMPLETED','NO_SHOW']
-  const cancelledStatuses = ['CANCELLED','EXPIRED']
-
-  const filtered = sessions.filter((s: any) => {
-    if (activeTab === 'upcoming') return upcomingStatuses.includes(s.status)
-    if (activeTab === 'completed') return completedStatuses.includes(s.status)
-    return cancelledStatuses.includes(s.status)
-  })
-
-  const addLinkMutation = useMutation({
-    mutationFn: ({ id, link }: any) => {
-      if (!link.includes('zoom.us') && !link.includes('meet.google.com'))
-        throw new Error(isAr ? 'يُقبل فقط روابط Zoom أو Google Meet' : 'Only Zoom or Google Meet links allowed')
-      return patch(`/consulting/sessions/${id}/meeting-link`, { meetingLink: link })
-    },
-    onSuccess: () => {
-      toast.success(isAr ? 'تم إضافة رابط الاجتماع' : 'Meeting link added')
-      setLinkModal(null); setLinkValue('')
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
-    },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
-  })
-
-  const requestRescheduleMutation = useMutation({
-    mutationFn: ({ id, proposedAt, reason }: any) =>
-      patch(`/consulting/sessions/${id}/request-reschedule`, { proposedAt, reason }),
-    onSuccess: () => {
-      toast.success(isAr ? 'تم إرسال طلب تغيير الموعد للعميل' : 'Reschedule request sent to client')
-      setRescheduleModal(null)
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
-    },
-    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
-  })
-
-  const completeMutation = useMutation({
-    mutationFn: (id: string) => patch(`/consulting/sessions/${id}/complete`, {}),
-    onSuccess: () => {
-      toast.success(isAr ? 'تم تأكيد اكتمال الجلسة' : 'Session marked as completed')
-      qc.invalidateQueries({ queryKey: ['client-sessions'] })
-    }
-  })
+  const filtered = sessions.filter((s: any) => TABS.find(t => t.key === activeTab)?.statuses.includes(s.status))
 
   const handleApprove = async (sessionId: string) => {
     try {
       setLoadingId(sessionId)
-      await patch(`/consulting/sessions/${sessionId}/confirm`, {})
+      await patch(`/consulting/sessions/${sessionId}/approve`, {})
       toast.success(isAr ? 'تمت الموافقة على الجلسة' : 'Session approved')
       qc.invalidateQueries({ queryKey: ['client-sessions'] })
     } catch {
@@ -131,21 +98,58 @@ export default function ClientSessionsPage() {
     }
   }
 
+  const startRoomMutation = useMutation({
+    mutationFn: (id: string) => post(`/consulting/sessions/${id}/start-room`, {}),
+    onSuccess: (res: any) => {
+      const roomUrl = res?.data?.data?.roomUrl
+      if (roomUrl) window.open(roomUrl, '_blank')
+      toast.success(isAr ? 'تم بدء الجلسة' : 'Session started')
+      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+    },
+    onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل بدء الجلسة' : 'Failed to start session')),
+  })
+
+  const joinRoomMutation = useMutation({
+    mutationFn: (id: string) => post(`/consulting/sessions/${id}/join-room`, {}),
+    onSuccess: (res: any) => {
+      const roomUrl = res?.data?.data?.roomUrl
+      if (roomUrl) window.open(roomUrl, '_blank')
+    },
+    onError: (e: any) => toast.error(e?.message || (isAr ? 'فشل الانضمام' : 'Failed to join')),
+  })
+
+  const requestRescheduleMutation = useMutation({
+    mutationFn: ({ id, proposedAt, reason }: any) =>
+      patch(`/consulting/sessions/${id}/request-reschedule`, { proposedAt, reason }),
+    onSuccess: () => {
+      toast.success(isAr ? 'تم إرسال طلب تغيير الموعد' : 'Reschedule request sent')
+      setRescheduleModal(null)
+      qc.invalidateQueries({ queryKey: ['client-sessions'] })
+    },
+    onError: (e: any) => toast.error(e?.message || (isAr ? 'حدث خطأ' : 'Error'))
+  })
+
   const isSoon = (d: string) => {
     const diff = new Date(d).getTime() - Date.now()
     return diff > 0 && diff < 3600000
   }
-  const isLinkExpired = (s: any) => s.meetingLinkExpiresAt && new Date(s.meetingLinkExpiresAt) < new Date()
+
+  const formatTimeSlot = (time: string) => {
+    const [h, m] = time.split(':').map(Number)
+    const period = h >= 12 ? 'PM' : 'AM'
+    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+    const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
+    return isAr ? formatted.replace('AM', 'ص').replace('PM', 'م') : formatted
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
-
       <div style={{ padding: '26px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Users size={19} color="#5120c8" />
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(27,79,114,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Users size={19} color="#1B4F72" />
               </div>
               <div>
                 <h1 style={{ color: text, fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
@@ -163,9 +167,9 @@ export default function ClientSessionsPage() {
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
             {[
-              { val: sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length, ar: 'جلسات قادمة', en: 'Upcoming', color: '#5120c8', bg: 'rgba(81,32,200,0.08)' },
-              { val: sessions.filter((s: any) => s.paymentStatus === 'PAID' && upcomingStatuses.includes(s.status)).length, ar: 'بانتظار الرابط', en: 'Awaiting Link', color: '#d97706', bg: 'rgba(245,158,11,0.08)' },
-              { val: sessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
+              { val: sessions.filter((s: any) => ['PENDING','PENDING_APPROVAL'].includes(s.status)).length, ar: 'بانتظار الموافقة', en: 'Pending Approval', color: '#FFC107', bg: 'rgba(255,193,7,0.08)' },
+              { val: sessions.filter((s: any) => s.status === 'AWAITING_PAYMENT').length, ar: 'بانتظار الدفع', en: 'Awaiting Payment', color: '#FF9800', bg: 'rgba(255,152,0,0.08)' },
+              { val: sessions.filter((s: any) => ['CONFIRMED','IN_PROGRESS'].includes(s.status)).length, ar: 'قادمة', en: 'Upcoming', color: '#1B4F72', bg: 'rgba(27,79,114,0.08)' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: isDark ? 'rgba(255,255,255,0.03)' : s.bg, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: s.color, fontSize: 18, fontWeight: 900 }}>{s.val}</span>
@@ -175,16 +179,15 @@ export default function ClientSessionsPage() {
           </div>
 
           <div style={{ display: 'flex' }}>
-            {[
-              { key: 'upcoming', ar: 'القادمة', en: 'Upcoming', count: sessions.filter((s: any) => upcomingStatuses.includes(s.status)).length },
-              { key: 'completed', ar: 'المكتملة', en: 'Completed', count: sessions.filter((s: any) => completedStatuses.includes(s.status)).length },
-              { key: 'cancelled', ar: 'الملغاة', en: 'Cancelled', count: sessions.filter((s: any) => cancelledStatuses.includes(s.status)).length },
-            ].map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: activeTab === tab.key ? '#5120c8' : subtext, borderBottom: `2px solid ${activeTab === tab.key ? '#5120c8' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
-                {isAr ? tab.ar : tab.en}
-                {tab.count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 800, background: activeTab === tab.key ? '#5120c8' : 'rgba(107,114,128,0.15)', color: activeTab === tab.key ? '#ffffff' : subtext }}>{tab.count}</span>}
-              </button>
-            ))}
+            {TABS.map(tab => {
+              const count = sessions.filter((s: any) => tab.statuses.includes(s.status)).length
+              return (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: activeTab === tab.key ? '#1B4F72' : subtext, borderBottom: `2px solid ${activeTab === tab.key ? '#1B4F72' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
+                  {isAr ? tab.ar : tab.en}
+                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 800, background: activeTab === tab.key ? '#1B4F72' : 'rgba(107,114,128,0.15)', color: activeTab === tab.key ? '#ffffff' : subtext }}>{count}</span>}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -200,7 +203,7 @@ export default function ClientSessionsPage() {
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
             <Users size={48} color={subtext} style={{ marginBottom: 16, opacity: 0.4 }} />
             <h3 style={{ color: text, fontSize: 18, fontWeight: 800, margin: '0 0 8px' }}>
-              {isAr ? 'لا توجد جلسات من العملاء' : 'No client sessions yet'}
+              {isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}
             </h3>
             <p style={{ color: subtext, fontSize: 13 }}>
               {isAr ? 'ستظهر هنا الجلسات التي يحجزها العملاء معك' : 'Sessions booked with you by clients will appear here'}
@@ -209,56 +212,35 @@ export default function ClientSessionsPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {filtered.map((session: any) => {
-              const conf = STATUS_CONFIG[session.status] || STATUS_CONFIG.PENDING
+              const conf = STATUS_CONFIG[session.status] || STATUS_CONFIG.PENDING_APPROVAL
               const soon = isSoon(session.scheduledAt)
-              const isUpcoming = upcomingStatuses.includes(session.status)
               const isPaid = session.paymentStatus === 'PAID'
               const isRescheduleReq = session.status === 'RESCHEDULE_REQUESTED'
-              const linkExpired = isLinkExpired(session)
               const client = session.user
               const clientName = `${client?.profile?.firstName || ''} ${client?.profile?.lastName || ''}`.trim() || ''
 
               return (
                 <div key={session.id} style={{
                   background: cardBg, borderRadius: 18,
-                  border: `1.5px solid ${soon ? 'rgba(81,32,200,0.5)' : isRescheduleReq ? 'rgba(124,58,237,0.4)' : border}`,
+                  border: `1.5px solid ${soon ? 'rgba(27,79,114,0.5)' : isRescheduleReq ? 'rgba(155,89,182,0.4)' : border}`,
                   overflow: 'hidden', transition: 'all 0.2s',
-                  boxShadow: soon ? '0 0 0 4px rgba(81,32,200,0.06)' : 'none',
+                  boxShadow: soon ? '0 0 0 4px rgba(27,79,114,0.06)' : 'none',
                 }}>
-
                   {soon && (
-                    <div style={{ padding: '8px 20px', background: 'rgba(81,32,200,0.1)', borderBottom: '1px solid rgba(81,32,200,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Video size={13} color="#5120c8" />
-                      <span style={{ color: '#5120c8', fontSize: 12, fontWeight: 700 }}>
+                    <div style={{ padding: '8px 20px', background: 'rgba(27,79,114,0.1)', borderBottom: '1px solid rgba(27,79,114,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Video size={13} color="#1B4F72" />
+                      <span style={{ color: '#1B4F72', fontSize: 12, fontWeight: 700 }}>
                         {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than 1 hour'}
                       </span>
                     </div>
                   )}
 
-                  {isPaid && !session.meetingLink && isUpcoming && !isRescheduleReq && (
-                    <div style={{ padding: '9px 20px', background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <AlertTriangle size={13} color="#d97706" />
-                      <span style={{ color: '#d97706', fontSize: 12, fontWeight: 700 }}>
-                        {isAr ? 'تم الدفع  أضف رابط الاجتماع الآن' : 'Payment received  Add meeting link now'}
-                      </span>
-                    </div>
-                  )}
-
                   {isRescheduleReq && (
-                    <div style={{ padding: '8px 20px', background: 'rgba(124,58,237,0.08)', borderBottom: '1px solid rgba(124,58,237,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <AlertTriangle size={13} color="#7c3aed" />
-                      <span style={{ color: '#7c3aed', fontSize: 12, fontWeight: 700 }}>
+                    <div style={{ padding: '8px 20px', background: 'rgba(155,89,182,0.08)', borderBottom: '1px solid rgba(155,89,182,0.15)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <AlertTriangle size={13} color="#9B59B6" />
+                      <span style={{ color: '#9B59B6', fontSize: 12, fontWeight: 700 }}>
                         {isAr ? 'في انتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for new schedule'}
-                        {session.proposedAt && <span style={{ marginRight: 8, color: '#5120c8' }}> {formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}</span>}
-                      </span>
-                    </div>
-                  )}
-
-                  {linkExpired && session.meetingLink && (
-                    <div style={{ padding: '8px 20px', background: 'rgba(107,114,128,0.06)', borderBottom: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <XCircle size={13} color="#6b7280" />
-                      <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 600 }}>
-                        {isAr ? 'تم انتهاء صلاحية رابط الاجتماع' : 'Meeting link has expired'}
+                        {session.proposedAt && <span style={{ marginRight: isAr ? 8 : 0, marginLeft: isAr ? 0 : 8, color: '#1B4F72' }}> {formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}</span>}
                       </span>
                     </div>
                   )}
@@ -268,7 +250,7 @@ export default function ClientSessionsPage() {
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         {client?.profile?.avatar
                           ? <img src={client.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5120c8', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{clientName?.[0] || '?'}</div>}
+                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'rgba(27,79,114,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1B4F72', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>{clientName?.[0] || '?'}</div>}
                         <div>
                           <div style={{ color: subtext, fontSize: 11, fontWeight: 600, marginBottom: 1 }}>{isAr ? 'العميل' : 'Client'}</div>
                           <div style={{ color: text, fontSize: 15, fontWeight: 800 }}>{clientName}</div>
@@ -277,7 +259,7 @@ export default function ClientSessionsPage() {
                               <span style={{ color: text, fontWeight: 600 }}>{session.sessionName}</span>
                             </div>
                           )}
-                          {session.topic && <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'الهدف: ' : 'Goal: '}{session.topic}</div>}
+                          {session.topic && <div style={{ color: subtext, fontSize: 11 }}>{isAr ? 'الموضوع: ' : 'Topic: '}{session.topic}</div>}
                         </div>
                       </div>
 
@@ -285,7 +267,7 @@ export default function ClientSessionsPage() {
                         <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}30`, color: conf.color, fontSize: 11, fontWeight: 700 }}>
                           {isAr ? conf.ar : conf.en}
                         </div>
-                        {isUpcoming && (
+                        {session.status !== 'COMPLETED' && session.status !== 'CANCELLED' && (
                           <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${isPaid ? 'rgba(22,163,74,0.2)' : 'rgba(245,158,11,0.2)'}`, color: isPaid ? '#16a34a' : '#d97706', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3 }}>
                             <DollarSign size={10} />
                             {isPaid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'غير مدفوعة' : 'Unpaid')}
@@ -297,27 +279,14 @@ export default function ClientSessionsPage() {
                     <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: isDark ? 'rgba(255,255,255,0.03)' : '#fafafa', border: `1px solid ${border}`, marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Calendar size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt, locale)}</span></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{formatTimeOnly(session.scheduledAt)}</span></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Video size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>{session.meetingType === 'zoom' ? 'Zoom' : 'Google Meet'}</span></div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Video size={12} color={subtext} /><span style={{ color: text, fontSize: 12, fontWeight: 600 }}>Daily.co</span></div>
                       {session.duration && <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Clock size={12} color={subtext} /><span style={{ color: subtext, fontSize: 12 }}>{session.duration} {isAr ? 'دقيقة' : 'min'}</span></div>}
                     </div>
 
-                    {session.meetingLink && !linkExpired && (
-                      <div style={{ padding: '9px 12px', borderRadius: 10, marginBottom: 12, background: 'rgba(81,32,200,0.06)', border: '1px solid rgba(81,32,200,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Link2 size={12} color="#5120c8" />
-                        <span style={{ color: '#5120c8', fontSize: 11, fontWeight: 600, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.meetingLink}</span>
-                        <button onClick={() => { navigator.clipboard.writeText(session.meetingLink); setCopied(session.id); setTimeout(() => setCopied(''), 2000) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#5120c8', flexShrink: 0 }}>
-                          {copied === session.id ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
-                        </button>
-                        <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '4px 10px', borderRadius: 7, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
-                          <ExternalLink size={10} />{isAr ? 'انضم' : 'Join'}
-                        </a>
-                      </div>
-                    )}
-
                     <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                      {session.status === 'PENDING' && !isPaid && (
+                      {session.status === 'PENDING_APPROVAL' && (
                         <>
-                          <button onClick={() => handleApprove(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: loadingId === session.id ? 'rgba(147,51,234,0.15)' : 'rgba(22,163,74,0.15)', color: loadingId === session.id ? 'rgb(147,51,234)' : 'rgb(22,163,74)', border: loadingId === session.id ? '1px solid rgba(147,51,234,0.4)' : '1px solid rgba(22,163,74,0.4)', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
+                          <button onClick={() => handleApprove(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.15)', color: 'rgb(22,163,74)', border: '1px solid rgba(22,163,74,0.4)', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
                             <CheckCircle2 size={12} />{isAr ? 'الموافقة على الجلسة' : 'Approve Session'}
                           </button>
                           <button onClick={() => handleReject(session.id)} disabled={loadingId === session.id} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'transparent', color: '#dc2626', border: '1.5px solid #dc2626', cursor: loadingId === session.id ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: loadingId === session.id ? 0.5 : 1 }}>
@@ -326,38 +295,46 @@ export default function ClientSessionsPage() {
                         </>
                       )}
 
-                      {session.meetingLink && !linkExpired && isUpcoming && (
-                        <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#5120c8', color: '#ffffff', textDecoration: 'none', fontSize: 12, fontWeight: 700 }}>
-                          <Video size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}
-                        </a>
-                      )}
-
-                      {isPaid && !session.meetingLink && isUpcoming && (
-                        <button onClick={() => { setLinkModal(session); setLinkValue('') }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, border: '1px solid rgba(81,32,200,0.3)', background: 'rgba(81,32,200,0.06)', color: '#5120c8', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-                          <Link2 size={12} />{isAr ? 'إضافة رابط الاجتماع' : 'Add Meeting Link'}
+                      {session.status === 'CONFIRMED' && (
+                        <button
+                          onClick={() => startRoomMutation.mutate(session.id)}
+                          disabled={startLoadingId === session.id || startRoomMutation.isPending}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#27AE60', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: startRoomMutation.isPending ? 0.7 : 1 }}
+                        >
+                          <Play size={12} />{isAr ? 'بدء الجلسة' : 'Start Session'}
                         </button>
                       )}
 
-                      {isPaid && session.meetingLink && !linkExpired && isUpcoming && (
+                      {session.status === 'IN_PROGRESS' && (
+                        <button
+                          onClick={() => joinRoomMutation.mutate(session.id)}
+                          disabled={joinRoomMutation.isPending}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#1B4F72', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, opacity: joinRoomMutation.isPending ? 0.7 : 1 }}
+                        >
+                          <ExternalLink size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}
+                        </button>
+                      )}
+
+                      {['PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','RESCHEDULE_REQUESTED'].includes(session.status) && (
+                        <button onClick={() => { setRescheduleModal(session); setNewDate(''); setNewTime(''); setRescheduleReason('') }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                          <Clock size={11} />{isAr ? 'تغيير الموعد' : 'Reschedule'}
+                        </button>
+                      )}
+
+                      {['PENDING_APPROVAL','AWAITING_PAYMENT','CONFIRMED','RESCHEDULE_REQUESTED'].includes(session.status) && (
                         <button onClick={() => {
                           setConfirmModal({
                             isOpen: true,
-                            title: isAr ? 'اكتمال الجلسة' : 'Complete Session',
-                            message: isAr ? 'هل أنت متأكد من تأكيد اكتمال الجلسة؟' : 'Confirm session completion?',
-                            destructive: false,
+                            title: isAr ? 'إلغاء الجلسة' : 'Cancel Session',
+                            message: isAr ? 'هل أنت متأكد من إلغاء هذه الجلسة؟' : 'Are you sure you want to cancel this session?',
+                            destructive: true,
                             onConfirm: () => {
                               setConfirmModal(prev => ({ ...prev, isOpen: false }))
-                              completeMutation.mutate(session.id)
+                              handleReject(session.id)
                             },
                           })
-                        }} disabled={completeMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'rgba(22,163,74,0.1)', color: '#16a34a', border: '1px solid rgba(22,163,74,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-                          <CheckCircle2 size={12} />{isAr ? 'أكمل الجلسة' : 'Mark Complete'}
-                        </button>
-                      )}
-
-                      {isUpcoming && !isRescheduleReq && (
-                        <button onClick={() => { setRescheduleModal(session); setNewDate(''); setNewTime(''); setRescheduleReason('') }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 10, border: `1px solid ${border}`, background: 'transparent', color: subtext, cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                          <RefreshCw size={11} />{isAr ? 'تغيير الموعد' : 'Reschedule'}
+                        }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(220,38,38,0.2)', background: 'rgba(220,38,38,0.04)', color: '#dc2626', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                          <XCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       )}
                     </div>
@@ -368,36 +345,6 @@ export default function ClientSessionsPage() {
           </div>
         )}
       </div>
-
-      {linkModal && (
-        <>
-          <div onClick={() => setLinkModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, backdropFilter: 'blur(4px)' }} />
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 'min(420px,calc(100vw - 24px))', background: cardBg, borderRadius: 20, border: `1px solid ${border}`, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', zIndex: 201, padding: '22px', direction: isAr ? 'rtl' : 'ltr' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <h3 style={{ color: text, fontSize: 15, fontWeight: 800, margin: 0 }}>{isAr ? 'إضافة رابط الاجتماع' : 'Add Meeting Link'}</h3>
-              <button onClick={() => setLinkModal(null)} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: subtext }}><X size={14} /></button>
-            </div>
-            <p style={{ color: subtext, fontSize: 12, marginBottom: 12 }}>{isAr ? 'يُقبل فقط روابط Zoom أو Google Meet' : 'Only Zoom or Google Meet links accepted'}</p>
-            <div style={{ display: 'flex', gap: 7, marginBottom: 12 }}>
-              {[{ label: 'Zoom', check: (v: string) => v.includes('zoom.us'), color: '#2D8CFF' }, { label: 'Google Meet', check: (v: string) => v.includes('meet.google.com'), color: '#00897B' }].map(m => (
-                <div key={m.label} style={{ flex: 1, padding: '9px', borderRadius: 9, textAlign: 'center', border: `1.5px solid ${m.check(linkValue) ? m.color : border}`, background: m.check(linkValue) ? `${m.color}15` : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa') }}>
-                  <span style={{ color: m.check(linkValue) ? m.color : subtext, fontSize: 11, fontWeight: 700 }}>{m.label}</span>
-                </div>
-              ))}
-            </div>
-            <input type="url" placeholder="https://zoom.us/j/... or https://meet.google.com/..." value={linkValue} onChange={e => setLinkValue(e.target.value)}
-              style={{ width: '100%', padding: '11px 13px', borderRadius: 9, boxSizing: 'border-box', border: `1.5px solid ${linkValue ? (linkValue.includes('zoom.us') || linkValue.includes('meet.google.com') ? '#16a34a' : '#dc2626') : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 12, outline: 'none', marginBottom: 14 }} />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setLinkModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
-              <button disabled={!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com')) || addLinkMutation.isPending}
-                onClick={() => addLinkMutation.mutate({ id: linkModal.id, link: linkValue })}
-                style={{ flex: 2, padding: '11px', borderRadius: 10, border: 'none', background: '#5120c8', color: '#ffffff', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: (!linkValue || (!linkValue.includes('zoom.us') && !linkValue.includes('meet.google.com')) || addLinkMutation.isPending) ? 0.5 : 1 }}>
-                {addLinkMutation.isPending ? (isAr ? 'جاري...' : 'Adding...') : (isAr ? 'إضافة الرابط' : 'Add Link')}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
 
       {rescheduleModal && (
         <>
@@ -414,26 +361,15 @@ export default function ClientSessionsPage() {
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'التاريخ الجديد' : 'New Date'} *</label>
                 <input type="date" min={new Date().toISOString().split('T')[0]} value={newDate} onChange={e => setNewDate(e.target.value)}
-                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${newDate ? '#5120c8' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+                  style={{ width: '100%', padding: '11px 13px', borderRadius: 9, border: `1.5px solid ${newDate ? '#1B4F72' : border}`, background: isDark ? '#0d0d0d' : '#fafafa', color: text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'الوقت الجديد' : 'New Time'} *</label>
-                {(() => {
-                const fmt = (time: string) => {
-                  const [h, m] = time.split(':').map(Number)
-                  const period = h >= 12 ? 'PM' : 'AM'
-                  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h
-                  const formatted = `${hour12}:${m.toString().padStart(2, '0')} ${period}`
-                  return isAr ? formatted.replace('AM', 'ص').replace('PM', 'م') : formatted
-                }
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
-                    {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
-                      .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
-                      .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#5120c8' : border}`, background: newTime === t ? 'rgba(81,32,200,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#5120c8' : subtext, fontSize: 11, fontWeight: 700 }}>{fmt(t)}</button>)}
-                  </div>
-                )
-              })()}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5 }}>
+                  {['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00']
+                    .filter(t => !newDate || newDate !== new Date().toISOString().split('T')[0] || parseInt(t) > new Date().getHours() + 1)
+                    .map(t => <button key={t} onClick={() => setNewTime(t)} style={{ padding: '8px 2px', borderRadius: 8, cursor: 'pointer', border: `1.5px solid ${newTime === t ? '#1B4F72' : border}`, background: newTime === t ? 'rgba(27,79,114,0.08)' : (isDark ? 'rgba(255,255,255,0.03)' : '#fafafa'), color: newTime === t ? '#1B4F72' : subtext, fontSize: 11, fontWeight: 700 }}>{formatTimeSlot(t)}</button>)}
+                </div>
               </div>
               <div>
                 <label style={{ color: text, fontSize: 12, fontWeight: 700, marginBottom: 7, display: 'block' }}>{isAr ? 'السبب (اختياري)' : 'Reason (optional)'}</label>
@@ -444,7 +380,7 @@ export default function ClientSessionsPage() {
                 <button onClick={() => setRescheduleModal(null)} style={{ flex: 1, padding: '11px', borderRadius: 10, cursor: 'pointer', border: `1px solid ${border}`, background: 'transparent', color: subtext, fontSize: 12, fontWeight: 600 }}>{isAr ? 'إلغاء' : 'Cancel'}</button>
                 <button disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
                   onClick={() => requestRescheduleMutation.mutate({ id: rescheduleModal.id, proposedAt: localDateTimeToISO(newDate, newTime), reason: rescheduleReason })}
-                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#5120c8', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
+                  style={{ flex: 2, padding: '11px', borderRadius: 10, background: '#1B4F72', color: '#ffffff', border: 'none', cursor: (!newDate || !newTime) ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700, opacity: (!newDate || !newTime || requestRescheduleMutation.isPending) ? 0.5 : 1 }}>
                   {requestRescheduleMutation.isPending ? (isAr ? 'جاري...' : 'Sending...') : (isAr ? 'إرسال الطلب' : 'Send Request')}
                 </button>
               </div>

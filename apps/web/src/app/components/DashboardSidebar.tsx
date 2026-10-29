@@ -10,8 +10,11 @@ export function DashboardSidebar() {
   const t = useTranslations('dashboard')
   const nav = useTranslations('nav')
   const logout = useAuthStore((s) => s.logout)
+  const user = useAuthStore((s) => s.user)
+  const isConsultant = user?.accountType === 'CONSULTANT'
 
   const base = `/${locale}/dashboard`
+  const isAr = locale === 'ar'
 
   return (
     <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 border-e border-[color:var(--border)] bg-[color:var(--surface)] md:block">
@@ -21,7 +24,18 @@ export function DashboardSidebar() {
           <Item href={`${base}`} label={t('overview')} />
           <Item href={`${base}/assessment`} label={t('start_assessment')} />
           <Item href={`${base}/career-path`} label={t('my_career')} />
-          <Item href={`${base}/coaching`} label={t('coaching')} />
+          {isConsultant ? (
+            <>
+              <Item href={`${base}/client-sessions`} label={isAr ? 'جلسات عملائي' : 'Client Sessions'} />
+              <Item href={`${base}/schedule`} label={isAr ? 'جدول مواعيدي' : 'My Schedule'} />
+              <Item href={`${base}/earnings`} label={isAr ? 'أرباحي' : 'Earnings'} />
+            </>
+          ) : (
+            <>
+              <Item href={`${base}/my-sessions`} label={isAr ? 'جلساتي' : 'My Sessions'} />
+              <Item href={`${base}/coaching`} label={t('coaching')} />
+            </>
+          )}
           <Item href={`${base}/certificates`} label={t('certificates')} />
           <Item href={`${base}/notifications`} label={t('notifications')} />
           <Item href={`${base}/settings`} label={t('settings')} />
@@ -29,7 +43,7 @@ export function DashboardSidebar() {
 
         <div className="mt-6 text-xs font-bold text-[color:var(--muted)]">{t('courses')}</div>
         <div className="mt-2">
-          {/* ⚠️ LEGAL: External training link only */}
+          {/* External training link only */}
           <a
             href={learnUrlWithToken('/')}
             target="_blank"
