@@ -31,7 +31,7 @@ interface Session {
 /* ─── Constants ───────────────────────────────────────────────────── */
 const DAYS_AR    = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت']
 const MONTHS_AR  = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-const HOURS      = Array.from({ length: 13 }, (_: unknown, i: number) => i + 8)
+const HOURS      = Array.from({ length: 16 }, (_: unknown, i: number) => i + 8)
 const ROW_H      = 64
 const GRID_START = 8
 
@@ -156,17 +156,24 @@ const STATUS_AR: Record<string, string> = {
 }
 function statusConfig(status: string): { bg: string; border: string; text: string; badge: string; badgeText: string } {
   switch (status) {
-    case 'CONFIRMED':        return { bg:'rgba(20,184,166,0.18)',  border:'#14b8a6',              text:'#ccfbf1', badge:'rgba(20,184,166,0.35)',  badgeText:'#14b8a6' }
-    case 'IN_PROGRESS':      return { bg:'rgba(139,92,246,0.22)', border:'#8b5cf6',              text:'#ede9fe', badge:'rgba(139,92,246,0.35)', badgeText:'#a78bfa' }
-    case 'COMPLETED':        return { bg:'rgba(16,185,129,0.20)',  border:'#10b981',              text:'#d1fae5', badge:'rgba(16,185,129,0.35)',  badgeText:'#10b981' }
-    case 'AWAITING_PAYMENT': return { bg:'rgba(245,158,11,0.18)',  border:'#f59e0b',              text:'#fef3c7', badge:'rgba(245,158,11,0.30)',  badgeText:'#fbbf24' }
-    case 'PENDING': case 'PENDING_APPROVAL':
-                             return { bg:'rgba(234,179,8,0.15)',   border:'#eab308',              text:'#fefce8', badge:'rgba(234,179,8,0.28)',   badgeText:'#facc15' }
-    case 'RESCHEDULE_REQUESTED': case 'RESCHEDULED':
-                             return { bg:'rgba(0,122,255,0.12)',   border:'#3b82f6',              text:'#dbeafe', badge:'rgba(0,122,255,0.25)',   badgeText:'#60a5fa' }
-    case 'CANCELLED': case 'REJECTED':
-                             return { bg:'rgba(239,68,68,0.12)',   border:'rgba(239,68,68,0.45)', text:'#fee2e2', badge:'rgba(239,68,68,0.22)',   badgeText:'#f87171' }
-    default:                 return { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.12)', text:'#e2e8f0', badge:'rgba(255,255,255,0.10)', badgeText:'#94a3b8' }
+    case 'CONFIRMED':
+      return { bg:'rgba(59,130,246,0.18)', border:'#3b82f6', text:'#dbeafe', badge:'rgba(59,130,246,0.30)', badgeText:'#60a5fa' }
+    case 'IN_PROGRESS':
+      return { bg:'rgba(139,92,246,0.22)', border:'#8b5cf6', text:'#ede9fe', badge:'rgba(139,92,246,0.35)', badgeText:'#a78bfa' }
+    case 'COMPLETED':
+      return { bg:'rgba(34,197,94,0.18)', border:'#22c55e', text:'#dcfce7', badge:'rgba(34,197,94,0.30)', badgeText:'#4ade80' }
+    case 'AWAITING_PAYMENT':
+      return { bg:'rgba(234,179,8,0.18)', border:'#eab308', text:'#fefce8', badge:'rgba(234,179,8,0.30)', badgeText:'#facc15' }
+    case 'PENDING':
+    case 'PENDING_APPROVAL':
+      return { bg:'rgba(255,255,255,0.06)', border:'rgba(255,255,255,0.30)', text:'#f1f5f9', badge:'rgba(255,255,255,0.12)', badgeText:'#cbd5e1' }
+    case 'CANCELLED':
+    case 'REJECTED':
+      return { bg:'rgba(239,68,68,0.14)', border:'#ef4444', text:'#fee2e2', badge:'rgba(239,68,68,0.25)', badgeText:'#f87171' }
+    case 'EXPIRED':
+      return { bg:'rgba(100,116,139,0.10)', border:'rgba(100,116,139,0.30)', text:'#94a3b8', badge:'rgba(100,116,139,0.20)', badgeText:'#64748b' }
+    default:
+      return { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.12)', text:'#e2e8f0', badge:'rgba(255,255,255,0.10)', badgeText:'#94a3b8' }
   }
 }
 
@@ -749,12 +756,12 @@ export default function ScheduleClient() {
       {/* Legend */}
       <div style={{ display:'flex', alignItems:'center', gap:14, marginTop:14, flexWrap:'wrap' }}>
         {[
-          { label:'مؤكدة',             color:'#14b8a6' },
+          { label:'مؤكدة',             color:'#3b82f6' },
           { label:'جارية الآن',        color:'#8b5cf6' },
-          { label:'مكتملة',            color:'#10b981' },
-          { label:'بانتظار الدفع',    color:'#f59e0b' },
-          { label:'بانتظار الموافقة', color:'#eab308' },
-          { label:'ملغاة',             color:'#f87171' },
+          { label:'مكتملة',            color:'#22c55e' },
+          { label:'بانتظار الدفع',    color:'#eab308' },
+          { label:'بانتظار الموافقة', color:'rgba(255,255,255,0.40)' },
+          { label:'ملغاة',             color:'#ef4444' },
         ].map(({ label, color }: { label: string; color: string }) => (
           <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'rgba(255,255,255,0.4)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
