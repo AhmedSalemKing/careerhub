@@ -40,8 +40,12 @@ export class ConsultingController {
 
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
-  async getSessions(@Request() req: any) {
-    return this.consultingService.getSessions(req.user.id || req.user.sub)
+  async getSessions(
+    @Request() req: any,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.consultingService.getSessions(req.user.id || req.user.sub, { from, to })
   }
 
   @Get('sessions/my')
@@ -96,6 +100,12 @@ export class ConsultingController {
   @UseGuards(JwtAuthGuard)
   async joinRoom(@Param('id') id: string, @Request() req: any) {
     return this.consultingService.joinRoom(id, req.user.id || req.user.sub)
+  }
+
+  @Post('sessions/:id/end')
+  @UseGuards(JwtAuthGuard)
+  async endSession(@Param('id') id: string, @Request() req: any) {
+    return this.consultingService.endSession(id, req.user.id || req.user.sub)
   }
 
   @Patch('sessions/:id/complete')

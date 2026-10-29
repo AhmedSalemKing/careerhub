@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common'
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { ActivityService } from '../../common/services/activity.service'
 import { DailyService } from '../live/daily.service'
@@ -31,14 +37,28 @@ export const ConsultingStatus = {
   RESCHEDULE_REQUESTED: 'RESCHEDULE_REQUESTED',
 } as const
 
+// A slot is held as soon as a request exists: pending approval, awaiting
+// payment, confirmed or running. PENDING and RESCHEDULED are the legacy
+// spellings written before the rebuild; they must keep blocking their slot or
+// two students can book the same time.
 const LOCKED_STATUSES = [
+  ConsultingStatus.PENDING_APPROVAL,
+  ConsultingStatus.AWAITING_PAYMENT,
   ConsultingStatus.CONFIRMED,
   ConsultingStatus.IN_PROGRESS,
-  ConsultingStatus.AWAITING_PAYMENT,
-  // Legacy value written by the pre-rebuild SessionsController. The slot is
-  // still held while the student decides on the proposed time.
+  ConsultingStatus.RESCHEDULE_REQUESTED,
+  'PENDING',
   'RESCHEDULED',
 ]
+
+// Used when a legacy row has no duration stored.
+const DEFAULT_DURATION = 60
+
+function toDate(value: Date | string | null | undefined): Date | null {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return isNaN(date.getTime()) ? null : date
+}
 
 function formatName(profile?: { firstName?: string | null; lastName?: string | null } | null): string {
   return `${profile?.firstName || ''} ${profile?.lastName || ''}`.trim()
@@ -157,16 +177,21 @@ export class ConsultingService {
 
     const slotDuration = durationMinutes || (consultant.profile?.sessionDuration as number) || 60
 
-    // Locked sessions in range. If the database is missing a column used by the
-    // default select, degrade to showing the slot as free instead of failing the
-    // whole booking page with a 500.
+    // Locked sessions in range. The lower bound is widened by the longest
+    // supported duration so a session that starts before `from` but runs into
+    // the range is still detected. If the database is missing a column used by
+    // the default select, degrade to showing the slot as free instead of
+    // failing the whole booking page with a 500.
     let locked: Array<{ id: string; scheduledAt: Date; duration: number; status: string }> = []
     try {
       locked = await this.prisma.consultingSession.findMany({
         where: {
           consultantId,
           status: { in: LOCKED_STATUSES },
-          scheduledAt: { gte: from, lte: to },
+          scheduledAt: {
+            gte: addMinutes(from, -(Math.max(slotDuration, DEFAULT_DURATION) * 2)),
+            lte: addMinutes(to, DEFAULT_DURATION),
+          },
         },
         select: { id: true, scheduledAt: true, duration: true, status: true },
       })
@@ -230,30 +255,65 @@ export class ConsultingService {
     })
     if (!consultant) throw new NotFoundException('Consultant not found')
 
-    const duration = data.duration || (consultant.profile?.sessionDuration as number) || 60
-    const baseDuration = (consultant.profile?.sessionDuration as number) || 60
+    const duration = data.duration || (consultant.profile?.sessionDuration as number) || DEFAULT_DURATION
+    const baseDuration = (consultant.profile?.sessionDuration as number) || DEFAULT_DURATION
     const basePrice = Number(consultant.profile?.sessionPrice || consultant.hourlyRate || 0)
     // The stored profile price is the price of the default session length.
     // Scale it to the duration the student picked so the summary, the stored
     // price and the payment amount always match.
     const sessionPrice = Number(((basePrice * duration) / baseDuration).toFixed(2))
 
-    // Slot locking: reject if the consultant already has a locked session overlapping this time.
-    // Select only columns that have existed since the first release so this check
-    // cannot 500 while the optional columns are still being migrated.
-    const existing = await this.prisma.consultingSession.findFirst({
+    const sessionEnd = addMinutes(scheduledAt, duration)
+
+    // Slot locking. Two writes can race between the check and the insert, so the
+    // check must be as tight as possible: fetch only locked sessions that start
+    // before our end (a session starting after our end cannot overlap) and let
+    // Postgres do the range scan. Only columns that have existed since the first
+    // release are selected so this cannot 500 while optional columns are still
+    // being migrated.
+    const overlapping = await this.prisma.consultingSession.findMany({
       where: {
         consultantId: data.consultantId,
         status: { in: LOCKED_STATUSES },
-        scheduledAt: { lt: addMinutes(scheduledAt, duration) },
+        scheduledAt: {
+          gte: addMinutes(scheduledAt, -(Math.max(duration, DEFAULT_DURATION) * 2)),
+          lt: sessionEnd,
+        },
       },
       select: { id: true, scheduledAt: true, duration: true },
     })
-    if (existing) {
-      const existingEnd = addMinutes(existing.scheduledAt, existing.duration || duration)
-      if (existingEnd > scheduledAt) {
-        throw new BadRequestException('This time slot is already booked')
-      }
+
+    const consultantConflict = overlapping.find((existing) => {
+      const existingStart = toDate(existing.scheduledAt)
+      if (!existingStart) return false
+      const existingEnd = addMinutes(existingStart, existing.duration || duration)
+      return scheduledAt < existingEnd && sessionEnd > existingStart
+    })
+    if (consultantConflict) {
+      throw new ConflictException('هذا الموعد محجوز بالفعل، يرجى اختيار موعد آخر')
+    }
+
+    // The same student must not double-book themselves with any consultant.
+    const userOverlapping = await this.prisma.consultingSession.findMany({
+      where: {
+        studentId: userId,
+        status: { in: LOCKED_STATUSES },
+        scheduledAt: {
+          gte: addMinutes(scheduledAt, -(Math.max(duration, DEFAULT_DURATION) * 2)),
+          lt: sessionEnd,
+        },
+      },
+      select: { id: true, scheduledAt: true, duration: true },
+    })
+
+    const studentConflict = userOverlapping.find((existing) => {
+      const existingStart = toDate(existing.scheduledAt)
+      if (!existingStart) return false
+      const existingEnd = addMinutes(existingStart, existing.duration || duration)
+      return scheduledAt < existingEnd && sessionEnd > existingStart
+    })
+    if (studentConflict) {
+      throw new ConflictException('لديك جلسة أخرى في نفس الوقت')
     }
 
     const session = await this.createSessionSafely({
@@ -285,10 +345,17 @@ export class ConsultingService {
     return { success: true, data: session }
   }
 
-  async getSessions(userId: string) {
+  async getSessions(userId: string, range: { from?: string; to?: string } = {}) {
+    const from = toDate(range.from)
+    const to = toDate(range.to)
+    const scheduledAt = from || to
+      ? { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) }
+      : undefined
+    const dateFilter = scheduledAt ? { scheduledAt } : {}
+
     try {
-      const mySessions = await this.findSessionsSafely({ studentId: userId })
-      const clientSessions = await this.findSessionsSafely({ consultantId: userId })
+      const mySessions = await this.findSessionsSafely({ studentId: userId, ...dateFilter })
+      const clientSessions = await this.findSessionsSafely({ consultantId: userId, ...dateFilter })
 
       return {
         success: true,
@@ -627,37 +694,64 @@ export class ConsultingService {
     })
     if (!session) throw new NotFoundException('Session not found')
     if (session.consultantId !== consultantId) throw new ForbiddenException('Not authorized')
-    if (session.status !== ConsultingStatus.CONFIRMED) {
+
+    // A running session can be re-opened: the consultant may have closed the
+    // tab, or the student is already inside. Rejoining must never create a
+    // second Daily room.
+    if (session.status !== ConsultingStatus.CONFIRMED && session.status !== ConsultingStatus.IN_PROGRESS) {
       throw new BadRequestException('Session must be confirmed and paid before starting')
     }
 
-    const roomName = session.dailyRoomName || `consulting-${sessionId}-${Date.now()}`
+    let roomName = session.dailyRoomName
     let roomUrl = session.dailyRoomUrl
 
-    if (!roomUrl) {
-      const room = await this.dailyService.createConsultingRoom(sessionId)
-      roomUrl = room.roomUrl
-      await this.prisma.consultingSession.update({
-        where: { id: sessionId },
-        data: { dailyRoomName: room.roomName, dailyRoomUrl: room.roomUrl },
-      })
+    if (!roomUrl || !roomName) {
+      try {
+        const room = await this.dailyService.createConsultingRoom(sessionId)
+        roomName = room.roomName
+        roomUrl = room.roomUrl
+      } catch (error: any) {
+        // The room name is deterministic per session, so a "room already
+        // exists" error (or a temporary Daily outage) still leaves a usable
+        // room. Reconstruct the URL instead of failing the start button.
+        roomName = session.dailyRoomName || `consulting-${sessionId}`
+        roomUrl = session.dailyRoomUrl || `https://${process.env.DAILY_DOMAIN || 'deveway'}.daily.co/${roomName}`
+        console.error('[startRoom] could not create Daily room, using existing name:', error?.message)
+      }
+
+      await this.prisma.consultingSession
+        .update({ where: { id: sessionId }, data: { dailyRoomName: roomName, dailyRoomUrl: roomUrl } })
+        .catch((error: any) => console.error('[startRoom] could not persist room:', error?.message))
     }
 
-    const updated = await this.prisma.consultingSession.update({
-      where: { id: sessionId },
-      data: { status: ConsultingStatus.IN_PROGRESS, startedAt: new Date() },
-    })
+    const alreadyRunning = session.status === ConsultingStatus.IN_PROGRESS
+    const updated = alreadyRunning
+      ? session
+      : await this.prisma.consultingSession.update({
+          where: { id: sessionId },
+          data: { status: ConsultingStatus.IN_PROGRESS, startedAt: new Date() },
+        })
 
-    const consultantToken = await this.dailyService.createToken(roomName, true)
+    // A missing Daily key must not block the redirect: the room URL is still
+    // valid and Daily lets participants join without a token when the room is
+    // not locked.
+    let consultantToken: string | null = null
+    try {
+      consultantToken = await this.dailyService.createToken(roomName!, true)
+    } catch (error: any) {
+      console.error('[startRoom] could not create Daily token:', error?.message)
+    }
 
-    await this.notify(session.studentId, {
-      titleEn: 'Your Session is Starting',
-      titleAr: 'جلستك ستبدأ الآن',
-      contentEn: `${formatName(session.consultant?.profile)} started the session — join now.`,
-      contentAr: `${formatName(session.consultant?.profile)} بدأ الجلسة — انضم الآن.`,
-      type: 'LIVE_STARTED',
-      data: { sessionId, roomUrl, roomName },
-    })
+    if (!alreadyRunning) {
+      await this.notify(session.studentId, {
+        titleEn: 'Your Session is Starting',
+        titleAr: 'جلستك ستبدأ الآن',
+        contentEn: `${formatName(session.consultant?.profile)} started the session — join now.`,
+        contentAr: `${formatName(session.consultant?.profile)} بدأ الجلسة — انضم الآن.`,
+        type: 'LIVE_STARTED',
+        data: { sessionId, roomUrl, roomName },
+      })
+    }
 
     return { success: true, data: { roomUrl, token: consultantToken, roomName, session: updated } }
   }
@@ -668,13 +762,34 @@ export class ConsultingService {
       include: { user: { include: { profile: true } }, consultant: { include: { profile: true } } },
     })
     if (!session) throw new NotFoundException('Session not found')
-    if (session.studentId !== userId) throw new ForbiddenException('Not authorized')
+    if (session.studentId !== userId && session.consultantId !== userId) {
+      throw new ForbiddenException('Not authorized')
+    }
     if (!session.dailyRoomName || !session.dailyRoomUrl) {
       throw new BadRequestException('Room has not been started yet')
     }
 
-    const token = await this.dailyService.createToken(session.dailyRoomName, false)
+    let token: string | null = null
+    try {
+      token = await this.dailyService.createToken(session.dailyRoomName, session.consultantId === userId)
+    } catch (error: any) {
+      console.error('[joinRoom] could not create Daily token:', error?.message)
+    }
+
     return { success: true, data: { roomUrl: session.dailyRoomUrl, token, roomName: session.dailyRoomName } }
+  }
+
+  async endSession(sessionId: string, userId: string) {
+    const session = await this.prisma.consultingSession.findFirst({
+      where: { id: sessionId },
+      select: { id: true, status: true, consultantId: true, studentId: true },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.consultantId !== userId && session.studentId !== userId)
+      throw new ForbiddenException('Not a participant')
+    if (!['IN_PROGRESS', 'CONFIRMED'].includes(session.status))
+      throw new BadRequestException(`Cannot end session with status ${session.status}`)
+    return this.completeSession(sessionId, userId)
   }
 
   async completeSession(sessionId: string, userId: string) {

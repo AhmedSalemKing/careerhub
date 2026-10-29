@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -165,6 +166,7 @@ async function loadClientSessions(): Promise<any[]> {
 export default function ClientSessionsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const router = useRouter()
   const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending_approval')
@@ -617,10 +619,9 @@ export default function ClientSessionsPage() {
                       {status === 'CONFIRMED' && (
                         <button
                           type="button"
-                          onClick={() => startRoomMutation.mutate(session.id)}
-                          disabled={startRoomMutation.isPending}
+                          onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
-                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: startRoomMutation.isPending ? 0.7 : 1 }}
+                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer' }}
                         >
                           <Play size={12} />
                           {isAr ? 'بدء الجلسة' : 'Start session'}

@@ -17,6 +17,11 @@ interface Session {
     email?: string
     profile?: { firstName?: string; lastName?: string; avatar?: string }
   }
+  consultant?: {
+    id: string
+    email?: string
+    profile?: { firstName?: string; lastName?: string; avatar?: string }
+  }
 }
 
 const DAYS_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
@@ -136,8 +141,9 @@ export default function ScheduleClient() {
       const from = weekStart.toISOString()
       const to = addDays(weekStart, 7).toISOString()
       const res = await api.get(`/consulting/sessions?from=${from}&to=${to}`)
-      const all = (res.data?.data?.clientSessions || []) as Session[]
-      setSessions(all)
+      const clientSessions = (res.data?.data?.clientSessions || []) as Session[]
+      const mySessions = (res.data?.data?.mySessions || []) as Session[]
+      setSessions([...clientSessions, ...mySessions])
     } catch (e) {
       console.error('[Schedule] load error', e)
     }
@@ -206,11 +212,15 @@ export default function ScheduleClient() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--primary-subtle)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 900, flexShrink: 0 }}>
-              {userName(selected.user).charAt(0) || '?'}
+              {userName(selected.user ?? selected.consultant).charAt(0) || '?'}
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 14 }}>{userName(selected.user)}</div>
-              {selected.user?.email && <div style={{ fontSize: 11, color: 'var(--muted)' }}>{selected.user.email}</div>}
+              <div style={{ fontWeight: 800, fontSize: 14 }}>{userName(selected.user ?? selected.consultant)}</div>
+              {(selected.user?.email || selected.consultant?.email) && (
+                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                  {selected.user?.email || selected.consultant?.email}
+                </div>
+              )}
             </div>
           </div>
 
@@ -281,7 +291,7 @@ export default function ScheduleClient() {
               const st = blockStyle(s.status)
               return (
                 <div key={s.id} onClick={() => setSelected(s)} style={{ borderRadius: 12, padding: '12px 16px', cursor: 'pointer', ...st }}>
-                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{userName(s.user)}</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{userName(s.user ?? s.consultant)}</div>
                   <div style={{ fontSize: 12, opacity: 0.85 }}>
                     {locFmt(start, isAr, { hour: '2-digit', minute: '2-digit' })} — {locFmt(end, isAr, { hour: '2-digit', minute: '2-digit' })}
                   </div>
@@ -386,7 +396,7 @@ export default function ScheduleClient() {
                           ...st,
                         }}
                       >
-                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName(s.user)}</div>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName(s.user ?? s.consultant)}</div>
                         {blockHeight(s.duration) > 44 && (
                           <div style={{ opacity: 0.8, fontSize: 9 }}>{s.duration} {isAr ? 'د' : 'm'}</div>
                         )}
