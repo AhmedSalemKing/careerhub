@@ -139,9 +139,7 @@ export default function ScheduleClient() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const from = weekStart.toISOString()
-      const to = addDays(weekStart, 7).toISOString()
-      const res = await api.get(`/consulting/sessions?from=${from}&to=${to}`)
+      const res = await api.get('/consulting/sessions')
       const clientSessions = (res.data?.data?.clientSessions || []) as Session[]
       const mySessions = (res.data?.data?.mySessions || []) as Session[]
       setSessions([...clientSessions, ...mySessions])
@@ -149,7 +147,7 @@ export default function ScheduleClient() {
       console.error('[Schedule] load error', e)
     }
     setLoading(false)
-  }, [weekStart])
+  }, [])
 
   useEffect(() => { load() }, [load])
 

@@ -308,11 +308,11 @@ export default function MySessionsPage() {
                     <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
                       {session.status === 'IN_PROGRESS' && (
                         <button
-                          onClick={() => joinRoomMutation.mutate(session.id)}
-                          disabled={joinRoomMutation.isPending}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#27AE60', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, opacity: joinRoomMutation.isPending ? 0.7 : 1 }}
+                          onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: '#27AE60', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
                         >
-                          <ExternalLink size={12} />{isAr ? 'انضم للجلسة' : 'Join Session'}
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                          {isAr ? 'انضم للجلسة الآن' : 'Join Session Now'}
                         </button>
                       )}
 
