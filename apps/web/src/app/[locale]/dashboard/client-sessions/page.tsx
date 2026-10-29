@@ -15,20 +15,40 @@ import {
   localDateTimeToISO,
   type DateLike,
 } from '@/lib/time'
-import {
-  AlertTriangle,
-  CalendarDays,
-  Check,
-  Clock,
-  ExternalLink,
-  Mail,
-  Play,
-  RefreshCw,
-  Users,
-  Video,
-  X,
-} from 'lucide-react'
 import Link from 'next/link'
+
+const Ic = {
+  alert: (p: { size?: number }) => (
+    <svg width={p.size??13} height={p.size??13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  ),
+  calendar: (p: { size?: number }) => (
+    <svg width={p.size??10} height={p.size??10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  ),
+  check: (p: { size?: number }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+  ),
+  clock: (p: { size?: number }) => (
+    <svg width={p.size??11} height={p.size??11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  ),
+  mail: (p: { size?: number }) => (
+    <svg width={p.size??10} height={p.size??10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+  ),
+  play: (p: { size?: number }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+  ),
+  refresh: (p: { size?: number }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  ),
+  users: (p: { size?: number }) => (
+    <svg width={p.size??20} height={p.size??20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  ),
+  video: (p: { size?: number }) => (
+    <svg width={p.size??13} height={p.size??13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+  ),
+  x: (p: { size?: number }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  ),
+}
 import toast from 'react-hot-toast'
 import ConfirmModal from '@/components/ConfirmModal'
 
@@ -304,7 +324,7 @@ export default function ClientSessionsPage() {
                 className="flex h-11 w-11 items-center justify-center rounded-xl"
                 style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
               >
-                <Users size={20} />
+                <Ic.users size={20} />
               </div>
               <div>
                 <h1 className="text-lg font-black sm:text-xl" style={{ fontFamily: 'var(--font-madinet)' }}>
@@ -322,7 +342,7 @@ export default function ClientSessionsPage() {
               className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold transition-colors"
               style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--muted)' }}
             >
-              <RefreshCw size={12} />
+              <Ic.refresh size={12} />
               {isAr ? 'تحديث' : 'Refresh'}
             </button>
           </div>
@@ -417,7 +437,7 @@ export default function ClientSessionsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl border px-6 py-16 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-            <Users size={44} style={{ color: 'var(--muted)', opacity: 0.4, margin: '0 auto 14px' }} />
+            <span style={{ color: 'var(--muted)', opacity: 0.4, display: 'block', margin: '0 auto 14px', width: 'fit-content' }}><Ic.users size={44} /></span>
             <h3 className="mb-2 text-base font-black">{isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}</h3>
             <p className="text-xs" style={{ color: 'var(--muted)' }}>
               {isAr
@@ -459,7 +479,7 @@ export default function ClientSessionsPage() {
                       className="flex items-center gap-2 border-b px-4 py-2 text-[11px] font-bold"
                       style={{ background: 'var(--primary-subtle)', borderColor: 'var(--primary-border)', color: 'var(--primary)' }}
                     >
-                      <Video size={13} />
+                      <Ic.video size={13} />
                       {minutesUntil > 1
                         ? isAr
                           ? `تبدأ خلال ${Math.round(minutesUntil)} دقيقة`
@@ -475,7 +495,7 @@ export default function ClientSessionsPage() {
                       className="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-[11px] font-bold"
                       style={{ background: 'var(--accent-light)', borderColor: 'var(--accent)', color: 'var(--accent)' }}
                     >
-                      <AlertTriangle size={13} />
+                      <Ic.alert size={13} />
                       {isAr ? 'بانتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for the new time'}
                       <span style={{ color: 'var(--foreground)' }}>
                         {formatFullDate(session.proposedAt, locale)} — {formatTimeSafe(session.proposedAt, locale)}
@@ -505,7 +525,7 @@ export default function ClientSessionsPage() {
                           <p className="truncate text-sm font-black">{name || (isAr ? 'عميل' : 'Client')}</p>
                           {session.user?.email && (
                             <p className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--muted)' }}>
-                              <Mail size={10} />
+                              <Ic.mail size={10} />
                               <span className="truncate">{session.user.email}</span>
                             </p>
                           )}
@@ -523,7 +543,7 @@ export default function ClientSessionsPage() {
                           className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold"
                           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
                         >
-                          <CalendarDays size={10} />
+                          <Ic.calendar size={10} />
                           {formatShortDate(scheduledAt, locale)}
                         </span>
                       </div>
@@ -534,11 +554,11 @@ export default function ClientSessionsPage() {
                       style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
                     >
                       <span className="flex items-center gap-1 text-[11px] font-bold">
-                        <Clock size={11} style={{ color: 'var(--muted)' }} />
+                        <span style={{ color: 'var(--muted)' }}><Ic.clock size={11} /></span>
                         {formatTimeSafe(session.scheduledAt, locale, '—')}
                       </span>
                       <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
-                        <Video size={11} />
+                        <Ic.video size={11} />
                         {duration} {isAr ? 'دقيقة' : 'min'}
                       </span>
                       {isCompleted && (
@@ -573,7 +593,7 @@ export default function ClientSessionsPage() {
                             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black transition-opacity"
                             style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: loadingId === session.id ? 0.6 : 1 }}
                           >
-                            <Check size={12} />
+                            <Ic.check size={12} />
                             {isAr ? 'موافقة' : 'Approve'}
                           </button>
 
@@ -588,7 +608,7 @@ export default function ClientSessionsPage() {
                             className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)', cursor: 'pointer' }}
                           >
-                            <Clock size={12} />
+                            <Ic.clock size={12} />
                             {isAr ? 'إعادة الجدولة' : 'Reschedule'}
                           </button>
 
@@ -611,7 +631,7 @@ export default function ClientSessionsPage() {
                             className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                             style={{ background: 'var(--error-subtle)', borderColor: 'var(--error)', color: 'var(--error)', cursor: 'pointer' }}
                           >
-                            <X size={12} />
+                            <Ic.x size={12} />
                             {isAr ? 'رفض' : 'Reject'}
                           </button>
                         </>
@@ -624,7 +644,7 @@ export default function ClientSessionsPage() {
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
                           style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer' }}
                         >
-                          <Play size={12} />
+                          <Ic.play size={12} />
                           {isAr ? 'بدء الجلسة' : 'Start session'}
                         </button>
                       )}
@@ -636,7 +656,7 @@ export default function ClientSessionsPage() {
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
                           style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)', border: '1.5px solid var(--accent)', cursor: 'pointer' }}
                         >
-                          <Video size={12} />
+                          <Ic.video size={12} />
                           {isAr ? 'انضم للجلسة' : 'Join session'}
                         </button>
                       )}
@@ -653,7 +673,7 @@ export default function ClientSessionsPage() {
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
                         >
-                          <Clock size={12} />
+                          <Ic.clock size={12} />
                           {isAr ? 'إعادة الجدولة' : 'Reschedule'}
                         </button>
                       )}
@@ -678,7 +698,7 @@ export default function ClientSessionsPage() {
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                           style={{ background: 'transparent', borderColor: 'var(--error)', color: 'var(--error)', cursor: 'pointer' }}
                         >
-                          <X size={12} />
+                          <Ic.x size={12} />
                           {isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       )}
@@ -711,7 +731,7 @@ export default function ClientSessionsPage() {
                 className="flex h-8 w-8 items-center justify-center rounded-lg border"
                 style={{ borderColor: 'var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }}
               >
-                <X size={14} />
+                <Ic.x size={14} />
               </button>
             </div>
 

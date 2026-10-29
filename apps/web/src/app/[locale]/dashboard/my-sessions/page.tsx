@@ -5,14 +5,53 @@ import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, patch, post } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
-import {
-  Calendar, Clock, Video, CheckCircle2, XCircle,
-  ExternalLink, Plus, RefreshCw, CreditCard, DollarSign,
-  AlertTriangle, User
-} from 'lucide-react'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import { formatDate, formatTimeOnly } from '@/lib/time'
+
+function parseSessionDate(raw: unknown): Date | null {
+  if (!raw) return null
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw
+  if (typeof raw === 'string') { const d = new Date(raw); return isNaN(d.getTime()) ? null : d }
+  if (typeof raw === 'object' && (raw as any).$date) { const d = new Date((raw as any).$date); return isNaN(d.getTime()) ? null : d }
+  return null
+}
+
+const Ic = {
+  user: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??19} height={p.size??19} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  ),
+  calendar: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  ),
+  clock: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  ),
+  video: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+  ),
+  check: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+  ),
+  xCircle: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??11} height={p.size??11} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  ),
+  plus: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  ),
+  refresh: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+  ),
+  creditCard: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??12} height={p.size??12} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+  ),
+  dollar: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??10} height={p.size??10} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+  ),
+  alert: (p: { size?: number; color?: string }) => (
+    <svg width={p.size??14} height={p.size??14} viewBox="0 0 24 24" fill="none" stroke={p.color??'currentColor'} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  ),
+}
 
 const STATUS_CONFIG: Record<string, any> = {
   PENDING:              { ar: 'بانتظار موافقة المستشار', en: 'Pending Approval',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
@@ -98,8 +137,10 @@ export default function MySessionsPage() {
     }
   }
 
-  const isSoon = (d: string) => {
-    const diff = new Date(d).getTime() - Date.now()
+  const isSoon = (d: unknown) => {
+    const parsed = parseSessionDate(d)
+    if (!parsed) return false
+    const diff = parsed.getTime() - Date.now()
     return diff > 0 && diff < 3600000
   }
 
@@ -109,8 +150,8 @@ export default function MySessionsPage() {
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={19} color="var(--primary)" />
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                <Ic.user size={19} />
               </div>
               <div>
                 <h1 style={{ color: 'var(--foreground)', fontSize: 19, fontWeight: 700, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
@@ -123,10 +164,10 @@ export default function MySessionsPage() {
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
               <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                <RefreshCw size={12} />{isAr ? 'تحديث' : 'Refresh'}
+                <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
               <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                <Plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
+                <Ic.plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
               </button>
             </div>
           </div>
@@ -166,7 +207,7 @@ export default function MySessionsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '70px 24px' }}>
-            <Calendar size={44} color="var(--muted)" style={{ marginBottom: 14, opacity: 0.4 }} />
+            <span style={{ color: 'var(--muted)', opacity: 0.4, display: 'block', marginBottom: 14 }}><Ic.calendar size={44} /></span>
             <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
             <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 20 }}>
               {activeTab === 'upcoming' ? (isAr ? 'احجز جلستك الأولى' : 'Book your first session') : (isAr ? 'لا توجد جلسات هنا' : 'No sessions here')}
@@ -197,7 +238,7 @@ export default function MySessionsPage() {
                 }}>
                   {soon && !isRescheduleReq && (
                     <div style={{ padding: '8px 20px', background: 'var(--primary-subtle)', borderBottom: '1px solid var(--primary-border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Video size={13} color="var(--primary)" />
+                      <Ic.video size={13} color="var(--primary)" />
                       <span style={{ color: 'var(--primary)', fontSize: 12, fontWeight: 500 }}>
                         {isAr ? 'الجلسة ستبدأ خلال أقل من ساعة' : 'Session starts in less than 1 hour'}
                       </span>
@@ -206,7 +247,7 @@ export default function MySessionsPage() {
 
                   {isRescheduleReq && (
                     <div style={{ padding: '10px 20px', background: 'var(--accent-light)', borderBottom: '1px solid var(--accent)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                      <AlertTriangle size={14} color="var(--accent)" />
+                      <Ic.alert size={14} color="var(--accent)" />
                       <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 500, flex: 1 }}>
                         {isAr ? 'المستشار اقترح موعداً جديداً — هل توافق؟' : 'Consultant proposed a new time — do you approve?'}
                         {session.proposedAt && (
@@ -259,7 +300,7 @@ export default function MySessionsPage() {
                         </div>
                         {session.status !== 'COMPLETED' && session.status !== 'CANCELLED' && (
                           <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'var(--success-subtle)' : 'var(--warning-subtle)', border: `1px solid ${isPaid ? 'var(--success)' : 'var(--warning)'}`, color: isPaid ? 'var(--success)' : 'var(--warning)', fontSize: 11, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <DollarSign size={10} />
+                            <Ic.dollar size={10} />
                             {isPaid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'غير مدفوعة' : 'Unpaid')}
                           </div>
                         )}
@@ -268,20 +309,20 @@ export default function MySessionsPage() {
 
                     <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Calendar size={12} color="var(--muted)" />
+                        <Ic.calendar size={12} color="var(--muted)" />
                         <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt, locale)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Clock size={12} color="var(--muted)" />
+                        <Ic.clock size={12} color="var(--muted)" />
                         <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>{formatTimeOnly(session.scheduledAt)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Video size={12} color="var(--muted)" />
+                        <Ic.video size={12} color="var(--muted)" />
                         <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>Daily.co</span>
                       </div>
                       {session.duration && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Clock size={12} color="var(--muted)" />
+                          <Ic.clock size={12} color="var(--muted)" />
                           <span style={{ color: 'var(--muted)', fontSize: 12 }}>{session.duration} {isAr ? 'دقيقة' : 'min'}</span>
                         </div>
                       )}
@@ -302,7 +343,7 @@ export default function MySessionsPage() {
                         <button onClick={() => paySession(session.id, session.price)}
                           disabled={payingId === session.id}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, opacity: payingId === session.id ? 0.7 : 1 }}>
-                          <CreditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${formatMoney(session.price, (session as any).priceDisplay)}` : `Pay ${formatMoney(session.price, (session as any).priceDisplay)}`)}
+                          <Ic.creditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${formatMoney(session.price, (session as any).priceDisplay)}` : `Pay ${formatMoney(session.price, (session as any).priceDisplay)}`)}
                         </button>
                       )}
 
@@ -318,7 +359,7 @@ export default function MySessionsPage() {
                             }
                           }}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                          <CheckCircle2 size={12} />
+                          <Ic.check size={12} />
                           {isAr ? 'تأكيد الجلسة المجانية' : 'Confirm Free Session'}
                         </button>
                       )}
@@ -337,7 +378,7 @@ export default function MySessionsPage() {
                           })
                         }}
                           style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--error)', background: 'var(--error-subtle)', color: 'var(--error)', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
-                          <XCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
+                          <Ic.xCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       )}
                     </div>

@@ -19,6 +19,14 @@ import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
 import { formatCoursePrice } from '../../../lib/market'
 
+function parseSessionDate(raw: unknown): Date | null {
+  if (!raw) return null
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw
+  if (typeof raw === 'string') { const d = new Date(raw); return isNaN(d.getTime()) ? null : d }
+  if (typeof raw === 'object' && (raw as any).$date) { const d = new Date((raw as any).$date); return isNaN(d.getTime()) ? null : d }
+  return null
+}
+
 function displayTotal(items: any[], displayKey: string, rawTotal: number): string {
   const sample = items.find((item: any) => item[displayKey])?.[displayKey] ?? ''
   const isEGP = sample.includes('ج.م')
@@ -913,7 +921,7 @@ function ConsultantOverview() {
     },
   })
 
-  const pending = (sessions as any[]).filter((s: any) => s.status === 'PENDING')
+  const pending = (sessions as any[]).filter((s: any) => s.status === 'PENDING' || s.status === 'PENDING_APPROVAL')
   const confirmed = (sessions as any[]).filter((s: any) => s.status === 'CONFIRMED')
   const completed = (sessions as any[]).filter((s: any) => s.status === 'COMPLETED')
   const totalRevenue = completed.reduce((sum: number, s: any) => sum + (s.price || 0), 0)
@@ -1133,12 +1141,13 @@ function ConsultantOverview() {
                     {session.sessionName || session.user?.profile?.firstName || (isAr ? 'جلسة' : 'Session')}
                   </p>
                   <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', margin: 0 }}>
-                    {session.scheduledAt
-                      ? new Date(session.scheduledAt).toLocaleDateString(
+                    {(() => {
+                      const d = parseSessionDate(session.scheduledAt)
+                      return d ? d.toLocaleDateString(
                           isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
                           { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-                        )
-                      : (isAr ? 'تاريخ غير محدد' : 'Date TBD')}
+                        ) : (isAr ? 'تاريخ غير محدد' : 'Date TBD')
+                    })()}
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
