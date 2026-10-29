@@ -19,6 +19,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { InstructorReportsService } from './instructor-reports.service';
 import { ExcelExportService } from './excel-export.service';
 import { PdfExportService } from './pdf-export.service';
+import { HtmlExportService } from './html-export.service';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { ReportFilterDto } from './dto/report-filter.dto';
@@ -32,7 +33,7 @@ export class InstructorReportsController {
   constructor(
     private readonly reportService: InstructorReportsService,
     private readonly excelService: ExcelExportService,
-    private readonly pdfService: PdfExportService,
+    private readonly htmlService: HtmlExportService,
   ) {}
 
   // Static routes must be declared before dynamic routes.
@@ -104,6 +105,7 @@ export class InstructorReportsController {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="instructor-report${suffix}-${Date.now()}.xlsx"`,
         'Content-Length': buffer.length,
+        'Cache-Control': 'no-cache',
       });
       res.end(buffer);
     } catch (e: any) {
@@ -116,30 +118,20 @@ export class InstructorReportsController {
 
   private async sendPdf(res: Response, filter: ReportFilterDto, instructorId?: string) {
     try {
-      const t0 = Date.now();
       const dateFrom = filter.dateFrom ?? filter.from;
       const dateTo = filter.dateTo ?? filter.to;
-      const report = await this.reportService.getCollectiveReport({ ...filter, dateFrom, dateTo, instructorId });
-      console.log('[PDF] data fetched in', Date.now() - t0, 'ms');
-      const buffer = await this.pdfService.build(
-        report.instructors,
-        report.consultants ?? [],
-        dateFrom,
-        dateTo,
-        instructorId,
-      );
-      console.log('[PDF] pdf built in', Date.now() - t0, 'ms');
+      const html = await this.htmlService.exportHtmlReport(dateFrom, dateTo, instructorId);
       const suffix = instructorId ? `-${instructorId}` : '';
       res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="instructor-report${suffix}-${Date.now()}.pdf"`,
-        'Content-Length': buffer.length,
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="deveway-report${suffix}-${Date.now()}.html"`,
+        'Cache-Control': 'no-cache',
       });
-      res.end(buffer);
+      res.send(html);
     } catch (e: any) {
-      console.error('[PDF] export error:', e);
+      console.error('[PDF/HTML] export error:', e);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, message: e?.message || 'PDF export failed' });
+        res.status(500).json({ success: false, message: e?.message || 'Report export failed' });
       }
     }
   }
@@ -151,6 +143,7 @@ export class InstructorReportsController {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="consultant-report-${consultantId}-${Date.now()}.xlsx"`,
         'Content-Length': buffer.length,
+        'Cache-Control': 'no-cache',
       });
       res.end(buffer);
     } catch (e: any) {
@@ -165,21 +158,17 @@ export class InstructorReportsController {
     try {
       const dateFrom = filter.dateFrom ?? filter.from;
       const dateTo = filter.dateTo ?? filter.to;
-      const consultant = await this.reportService.getConsultantReport(consultantId, filter);
-      if (!consultant) {
-        throw new NotFoundException('Consultant not found or has no sessions in the selected range');
-      }
-      const buffer = await this.pdfService.buildConsultant(consultant, dateFrom, dateTo);
+      const html = await this.htmlService.exportHtmlReport(dateFrom, dateTo, undefined, consultantId);
       res.set({
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="consultant-report-${consultantId}-${Date.now()}.pdf"`,
-        'Content-Length': buffer.length,
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': `inline; filename="deveway-consultant-report-${consultantId}-${Date.now()}.html"`,
+        'Cache-Control': 'no-cache',
       });
-      res.end(buffer);
+      res.send(html);
     } catch (e: any) {
-      console.error('[PDF] consultant export error:', e);
+      console.error('[PDF/HTML] consultant export error:', e);
       if (!res.headersSent) {
-        res.status(500).json({ success: false, message: e?.message || 'Consultant PDF export failed' });
+        res.status(500).json({ success: false, message: e?.message || 'Consultant report export failed' });
       }
     }
   }

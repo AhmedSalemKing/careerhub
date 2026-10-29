@@ -303,19 +303,7 @@ export default function InstructorReportsClient({ country }: { country: string }
   async function exportPdf() {
     setExportingPdf(true)
     try {
-      const res = await api.get('/instructor-reports/export/pdf', {
-        params: buildParams(),
-        responseType: 'blob',
-      })
-      const blob = new Blob([res.data], { type: 'application/pdf' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `instructor-report-${Date.now()}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      await openHtmlReport('/instructor-reports/export/pdf')
     } catch (e) {
       console.error('[InstructorReports] pdf export error', e)
       alert(isAr ? 'حدث خطأ أثناء تصدير PDF' : 'Error exporting PDF')
@@ -324,27 +312,75 @@ export default function InstructorReportsClient({ country }: { country: string }
     }
   }
 
+  function getAuthToken(): string | null {
+    if (typeof window === 'undefined') return null
+    const match = document.cookie.match(/(?:^|;\\s*)access_token=([^;]*)/)
+    return match
+      ? decodeURIComponent(match[1])
+      : localStorage.getItem('careerhub_token') || localStorage.getItem('deveway_token')
+  }
+
+  function buildExportUrl(url: string): string {
+    const base = api.defaults.baseURL || ''
+    const separator = url.includes('?') ? '&' : '?'
+    const params = new URLSearchParams()
+    params.set('dateFrom', filterFrom)
+    params.set('dateTo', filterTo)
+    if (activeCurrency === 'EGP') params.set('country', 'EG')
+    return `${base}${url}${separator}${params.toString()}`
+  }
+
   async function downloadExport(url: string, filename: string) {
     try {
-      const res = await api.get(url, {
-        params: {
-          dateFrom: filterFrom,
-          dateTo: filterTo,
-          ...(activeCurrency === 'EGP' ? { country: 'EG' } : {}),
-        },
-        responseType: 'blob',
+      const token = getAuthToken()
+      const res = await fetch(buildExportUrl(url), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
-      const blob = new Blob([res.data])
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        console.error('[InstructorReports] export failed:', res.status, text)
+        alert(isAr ? `فشل التصدير: ${res.status}` : `Export failed: ${res.status}`)
+        return
+      }
+      const blob = await res.blob()
+      if (blob.size === 0) {
+        alert(isAr ? 'الملف فارغ — تحقق من console' : 'File is empty — check console')
+        return
+      }
+      const objUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
+      a.href = objUrl
       a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(a.href)
+      setTimeout(() => URL.revokeObjectURL(objUrl), 5000)
     } catch (e) {
       console.error('[InstructorReports] download error', e)
-      alert(isAr ? 'حدث خطأ أثناء التحميل' : 'Download failed')
+      alert(isAr ? 'خطأ في التصدير — تحقق من console' : 'Export error — check console')
+    }
+  }
+
+  async function openHtmlReport(url: string) {
+    try {
+      const token = getAuthToken()
+      const res = await fetch(buildExportUrl(url), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        console.error('[InstructorReports] HTML report failed:', res.status, text)
+        alert(isAr ? `فشل التحميل: ${res.status}` : `Report failed: ${res.status}`)
+        return
+      }
+      const html = await res.text()
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+      const objUrl = URL.createObjectURL(blob)
+      window.open(objUrl, '_blank')
+      setTimeout(() => URL.revokeObjectURL(objUrl), 30000)
+    } catch (e) {
+      console.error('[InstructorReports] HTML report error', e)
+      alert(isAr ? 'خطأ في فتح التقرير — تحقق من console' : 'Report error — check console')
     }
   }
 
@@ -669,12 +705,9 @@ export default function InstructorReportsClient({ country }: { country: string }
                             </button>
                             <button
                               onClick={() =>
-                                downloadExport(
-                                  `/instructor-reports/export/pdf/${instructor.instructorId}`,
-                                  `instructor-report-${instructor.instructorId}-${Date.now()}.pdf`,
-                                )
+                                openHtmlReport(`/instructor-reports/export/pdf/${instructor.instructorId}`)
                               }
-                              title={isAr ? 'تصدير PDF' : 'Export PDF'}
+                              title={isAr ? 'تقرير PDF' : 'PDF Report'}
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -905,12 +938,9 @@ export default function InstructorReportsClient({ country }: { country: string }
                               </button>
                               <button
                                 onClick={() =>
-                                  downloadExport(
-                                    `/instructor-reports/export/pdf/consultant/${consultant.consultantId}`,
-                                    `consultant-report-${consultant.consultantId}-${Date.now()}.pdf`,
-                                  )
+                                  openHtmlReport(`/instructor-reports/export/pdf/consultant/${consultant.consultantId}`)
                                 }
-                                title={isAr ? 'تصدير PDF' : 'Export PDF'}
+                                title={isAr ? 'تقرير PDF' : 'PDF Report'}
                                 style={{
                                   display: 'flex',
                                   alignItems: 'center',
