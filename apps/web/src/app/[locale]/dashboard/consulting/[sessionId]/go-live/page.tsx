@@ -11,6 +11,13 @@ interface RoomData {
   topic?: string
 }
 
+function formatTimer(s: number): string {
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  return [h, m, sec].map(n => String(n).padStart(2, '0')).join(':')
+}
+
 export default function ConsultingGoLivePage() {
   const params = useParams()
   const router = useRouter()
@@ -23,6 +30,8 @@ export default function ConsultingGoLivePage() {
   const [error, setError] = useState<string | null>(null)
   const [ending, setEnding] = useState(false)
   const [ended, setEnded] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [timerStart, setTimerStart] = useState<number | null>(null)
 
   useEffect(() => {
     if (!sessionId) return
@@ -37,6 +46,7 @@ export default function ConsultingGoLivePage() {
           return
         }
         setRoomData({ roomUrl, token: data?.token ?? null, topic: data?.session?.topic })
+        setTimerStart(Date.now())
       } catch (startErr: any) {
         if (startErr?.response?.status === 403) {
           // Student path: join an already-running room
@@ -49,6 +59,7 @@ export default function ConsultingGoLivePage() {
               return
             }
             setRoomData({ roomUrl, token: data?.token ?? null })
+            setTimerStart(Date.now())
           } catch (joinErr: any) {
             setError(
               joinErr?.response?.data?.message ||
@@ -68,14 +79,20 @@ export default function ConsultingGoLivePage() {
     enterRoom()
   }, [sessionId])
 
+  useEffect(() => {
+    if (!timerStart || ended) return
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - timerStart) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [timerStart, ended])
+
   async function handleEnd() {
     if (ending || ended) return
     setEnding(true)
     try {
-      await post(`/consulting/sessions/${sessionId}/end`, {})
-    } catch {
-      // navigate away even if the end-call fails
-    }
+      await post(`/consulting/sessions/${sessionId}/end`, { durationSeconds: elapsed })
+    } catch { }
     setEnded(true)
     router.push(`/${locale}/dashboard/client-sessions`)
   }
@@ -124,6 +141,21 @@ export default function ConsultingGoLivePage() {
               {roomData.topic}
             </span>
           )}
+          {roomData && !ended && (
+            <span
+              style={{
+                background: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                color: 'var(--primary)',
+                padding: '4px 14px',
+                borderRadius: '20px',
+                fontVariantNumeric: 'tabular-nums',
+                fontWeight: 800,
+                fontSize: 15,
+              }}
+            >
+              {formatTimer(elapsed)}
+            </span>
+          )}
         </div>
 
         <button
@@ -135,8 +167,8 @@ export default function ConsultingGoLivePage() {
             gap: '6px',
             background:
               ending || ended
-                ? 'color-mix(in srgb, var(--destructive) 50%, transparent)'
-                : 'var(--destructive)',
+                ? 'color-mix(in srgb, var(--error) 50%, transparent)'
+                : 'var(--error)',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -187,9 +219,9 @@ export default function ConsultingGoLivePage() {
             style={{
               padding: '16px',
               borderRadius: '12px',
-              background: 'color-mix(in srgb, var(--destructive) 15%, transparent)',
-              color: 'var(--destructive)',
-              border: '1px solid color-mix(in srgb, var(--destructive) 30%, transparent)',
+              background: 'color-mix(in srgb, var(--error) 15%, transparent)',
+              color: 'var(--error)',
+              border: '1px solid color-mix(in srgb, var(--error) 30%, transparent)',
               textAlign: 'center',
               marginTop: '40px',
             }}

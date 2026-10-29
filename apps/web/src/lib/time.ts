@@ -90,3 +90,39 @@ export function getNow(): string {
     hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
   })
 }
+
+export type DateLike = string | Date | null | undefined
+
+export function formatFullDate(date: DateLike, locale?: string): string {
+  if (!date) return '—'
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    timeZone: browserTimeZone(),
+  })
+}
+
+export function formatShortDate(date: DateLike, locale?: string): string {
+  if (!date) return '—'
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    timeZone: browserTimeZone(),
+  })
+}
+
+export function formatTimeSafe(date: DateLike, locale?: string, fallback = '—'): string {
+  if (!date) return fallback
+  const d = date instanceof Date ? date : new Date(date)
+  if (isNaN(d.getTime())) return fallback
+  return d.toLocaleTimeString(locale === 'ar' ? 'ar-EG-u-ca-gregory' : 'en-US-u-ca-gregory', {
+    hour: '2-digit', minute: '2-digit', hour12: true,
+    timeZone: browserTimeZone(),
+  })
+}
+
+export function formatTimeRange(start: DateLike, end: DateLike, locale?: string): string {
+  return `${formatTimeSafe(start, locale)} — ${formatTimeSafe(end, locale)}`
+}

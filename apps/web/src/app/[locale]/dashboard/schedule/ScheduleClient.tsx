@@ -124,6 +124,7 @@ export default function ScheduleClient() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Session | null>(null)
+  const [acting, setActing] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [mobileDay, setMobileDay] = useState(() => new Date())
 
@@ -151,13 +152,17 @@ export default function ScheduleClient() {
 
   useEffect(() => { load() }, [load])
 
-  function handleStartRoom(sessionId: string) {
-    setSelected(null)
-    router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
+  async function handleStartRoom(sessionId: string) {
+    setActing(true)
+    try {
+      router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
+    } catch (e) {
+      console.error('[Schedule] start room error', e)
+    }
+    setActing(false)
   }
 
-  function handleJoinRoom(sessionId: string) {
-    setSelected(null)
+  async function handleJoinRoom(sessionId: string) {
     router.push(`/${locale}/dashboard/consulting/${sessionId}/go-live`)
   }
 
@@ -224,7 +229,8 @@ export default function ScheduleClient() {
             {(canStart || isLive) && (
               <button
                 onClick={() => isLive ? handleJoinRoom(selected.id) : handleStartRoom(selected.id)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer', background: isLive ? 'var(--accent)' : 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13 }}
+                disabled={acting}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: 'none', cursor: acting ? 'not-allowed' : 'pointer', background: isLive ? 'var(--accent)' : 'var(--primary)', color: 'white', fontWeight: 800, fontSize: 13, opacity: acting ? 0.7 : 1 }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>

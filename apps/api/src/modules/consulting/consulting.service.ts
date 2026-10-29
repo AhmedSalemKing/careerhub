@@ -699,7 +699,7 @@ export class ConsultingService {
     // tab, or the student is already inside. Rejoining must never create a
     // second Daily room.
     if (session.status !== ConsultingStatus.CONFIRMED && session.status !== ConsultingStatus.IN_PROGRESS) {
-      throw new BadRequestException('Session must be confirmed and paid before starting')
+      throw new BadRequestException('Session must be confirmed before starting')
     }
 
     let roomName = session.dailyRoomName

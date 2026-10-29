@@ -13,7 +13,6 @@ import {
   formatTimeRange,
   formatTimeSafe,
   localDateTimeToISO,
-  parseDate,
   type DateLike,
 } from '@/lib/time'
 import {
@@ -276,8 +275,9 @@ export default function ClientSessionsPage() {
    * in which case no start/join affordance is shown.
    */
   const minutesUntilStart = (scheduledAt: DateLike): number => {
-    const start = parseDate(scheduledAt)
-    if (!start) return Number.NaN
+    if (!scheduledAt) return Number.NaN
+    const start = scheduledAt instanceof Date ? scheduledAt : new Date(scheduledAt as string)
+    if (isNaN(start.getTime())) return Number.NaN
     return (start.getTime() - Date.now()) / 60000
   }
 

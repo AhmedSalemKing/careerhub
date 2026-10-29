@@ -50,10 +50,10 @@ export default function MySessionsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [payingId, setPayingId] = useState<string | null>(null)
 
-  const bg = isDark ? '#0d0d0d' : '#fafafa'
+  const bg = isDark ? 'var(--background)' : '#fafafa'
   const cardBg = isDark ? '#111111' : '#ffffff'
   const border = isDark ? 'rgba(255,255,255,0.07)' : '#e5e7eb'
-  const text = isDark ? '#f1f5f9' : '#0d0d0d'
+  const text = isDark ? 'var(--foreground)' : 'var(--background)'
   const subtext = isDark ? '#94a3b8' : '#6b7280'
 
   const { data: sessionsData, isLoading, refetch } = useQuery({
