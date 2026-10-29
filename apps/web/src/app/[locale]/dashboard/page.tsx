@@ -94,7 +94,7 @@ function InstructorOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 600, color: '#fff',
+            fontSize: '1.4rem', fontWeight: 600, color: 'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -117,7 +117,7 @@ function InstructorOverview() {
         <a href={`/${locale}/dashboard/create-course`} style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           padding: '11px 22px', borderRadius: '10px',
-          background: '#5120c8', color: '#fff',
+          background: '#5120c8', color: 'var(--primary-foreground)',
           fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
           boxShadow: '0 4px 15px rgba(81,32,200,0.3)',
         }}>
@@ -183,15 +183,15 @@ function InstructorOverview() {
           <a key={i} href={stat.href} style={{ textDecoration: 'none' }}>
             <div style={{
               padding: '1.25rem',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.07)',
+              background: 'var(--card)',
+              border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
               borderRadius: '14px',
               display: 'flex', alignItems: 'flex-start', gap: '1rem',
               cursor: 'pointer', transition: 'border-color 0.2s',
               maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
             }}
             onMouseEnter={e => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor='color-mix(in srgb, var(--foreground) 7%, transparent)'}
             >
               <div style={{
                 width: '44px', height: '44px', borderRadius: '12px',
@@ -216,8 +216,8 @@ function InstructorOverview() {
 
       <div className="dashboard-two-col" style={{ marginBottom: '1.5rem', maxWidth: '100%', minWidth: 0 }}>
         <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.07)',
+          background: 'var(--card)',
+          border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
           borderRadius: '14px',
           padding: '1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
@@ -239,7 +239,7 @@ function InstructorOverview() {
               <div style={{
                 display:'flex', alignItems:'center', gap:'12px',
                 padding:'10px 0',
-                borderBottom:'1px solid rgba(255,255,255,0.05)',
+                borderBottom:'1px solid color-mix(in srgb, var(--foreground) 5%, transparent)',
                 minWidth: 0, maxWidth: '100%', overflow: 'hidden',
               }}
               onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
@@ -255,7 +255,7 @@ function InstructorOverview() {
                         background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
                         display:'flex', alignItems:'center', justifyContent:'center' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                          stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+                          stroke="color-mix(in srgb, var(--foreground) 20%, transparent)" strokeWidth="1.5">
                           <rect x="2" y="3" width="20" height="14" rx="2"/>
                           <path d="M8 21h8M12 17v4"/>
                         </svg>
@@ -301,8 +301,8 @@ function InstructorOverview() {
         </div>
 
         <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(255,255,255,0.07)',
+          background: 'var(--card)',
+          border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
           borderRadius: '14px',
           padding: '1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
@@ -481,7 +481,7 @@ function StudentOverview() {
           </p>
           <button onClick={() => refetch()} style={{
             padding:'10px 22px', borderRadius:'10px',
-            background:'#5120c8', color:'#fff',
+            background:'#5120c8', color:'var(--primary-foreground)',
             border:'none', fontSize:'0.875rem', fontWeight:500, cursor:'pointer',
           }}>
             {isAr ? 'إعادة المحاولة' : 'Retry'}
@@ -519,7 +519,7 @@ function StudentOverview() {
             overflow:'hidden', flexShrink:0,
             background:'linear-gradient(135deg,#5120c8,#7c3aed)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:'1.4rem', fontWeight:600, color:'#fff',
+            fontSize:'1.4rem', fontWeight:600, color:'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -544,7 +544,7 @@ function StudentOverview() {
         <a href={learnUrlWithToken(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
           display:'inline-flex', alignItems:'center', gap:'8px',
           padding:'11px 22px', borderRadius:'10px',
-          background:'#5120c8', color:'#fff',
+          background:'#5120c8', color:'var(--primary-foreground)',
           fontWeight:600, fontSize:'0.9rem', textDecoration:'none',
           boxShadow:'0 4px 15px rgba(81,32,200,0.3)',
         }}>
@@ -610,8 +610,8 @@ function StudentOverview() {
           <a key={i} href={stat.href} style={{ textDecoration:'none' }}>
             <div style={{
               padding:'1.25rem',
-              background:'rgba(255,255,255,0.03)',
-              border:'1px solid rgba(255,255,255,0.07)',
+              background:'var(--card)',
+              border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
               borderRadius:'14px',
               display:'flex', alignItems:'flex-start', gap:'1rem',
               transition:'border-color 0.2s',
@@ -619,7 +619,7 @@ function StudentOverview() {
               maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
             }}
             onMouseEnter={(e: any) => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
-            onMouseLeave={(e: any) => e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'}
+            onMouseLeave={(e: any) => e.currentTarget.style.borderColor='color-mix(in srgb, var(--foreground) 7%, transparent)'}
             >
               <div style={{
                 width:'44px', height:'44px', borderRadius:'12px',
@@ -646,8 +646,8 @@ function StudentOverview() {
       <div className="student-two-col" style={{ maxWidth: '100%', minWidth: 0 }}>
         {/* My Courses - recent enrollments */}
         <div style={{
-          background:'rgba(255,255,255,0.02)',
-          border:'1px solid rgba(255,255,255,0.07)',
+          background:'var(--card)',
+          border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
           borderRadius:'14px', padding:'1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
@@ -678,7 +678,7 @@ function StudentOverview() {
                   <div style={{
                     display:'flex', alignItems:'center', gap:'12px',
                     padding:'10px 0',
-                    borderBottom:'1px solid rgba(255,255,255,0.05)',
+                    borderBottom:'1px solid color-mix(in srgb, var(--foreground) 5%, transparent)',
                     transition:'opacity 0.15s',
                     minWidth: 0, maxWidth: '100%', overflow: 'hidden',
                   }}
@@ -696,7 +696,7 @@ function StudentOverview() {
                             background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
                             display:'flex', alignItems:'center', justifyContent:'center' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                              stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+                              stroke="color-mix(in srgb, var(--foreground) 20%, transparent)" strokeWidth="1.5">
                               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
                               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                             </svg>
@@ -716,7 +716,7 @@ function StudentOverview() {
                       {/* Progress bar */}
                       <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
                         <div style={{
-                          flex:1, height:'4px', background:'rgba(255,255,255,0.06)',
+                          flex:1, height:'4px', background:'color-mix(in srgb, var(--foreground) 6%, transparent)',
                           borderRadius:'99px', overflow:'hidden',
                         }}>
                           <div style={{
@@ -766,7 +766,7 @@ function StudentOverview() {
               </p>
               <a href={`/${locale}/courses`} style={{
                 padding:'8px 20px', borderRadius:'8px',
-                background:'#5120c8', color:'#fff',
+                background:'#5120c8', color:'var(--primary-foreground)',
                 textDecoration:'none', fontSize:'0.82rem', fontWeight:600,
               }}>
                 {isAr ? 'ابدأ التعلم' : 'Start Learning'}
@@ -777,8 +777,8 @@ function StudentOverview() {
 
         {/* Quick Actions */}
         <div style={{
-          background:'rgba(255,255,255,0.02)',
-          border:'1px solid rgba(255,255,255,0.07)',
+          background:'var(--card)',
+          border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
           borderRadius:'14px', padding:'1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
@@ -959,7 +959,7 @@ function ConsultantOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#059669,#34d399)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 600, color: '#fff',
+            fontSize: '1.4rem', fontWeight: 600, color: 'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -984,7 +984,7 @@ function ConsultantOverview() {
         <a href={`/${locale}/dashboard/my-sessions`} style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           padding: '11px 22px', borderRadius: '10px',
-          background: '#059669', color: '#fff',
+          background: '#059669', color: 'var(--primary-foreground)',
           fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
           boxShadow: '0 4px 15px rgba(5,150,105,0.3)',
         }}>
@@ -1121,7 +1121,7 @@ function ConsultantOverview() {
               <div key={session.id || i} style={{
                 display: 'flex', alignItems: 'center', gap: '12px',
                 padding: '10px 12px', marginBottom: '6px',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'var(--card)',
                 borderRadius: '12px',
                 border: '1px solid var(--border)',
                 minWidth: 0, maxWidth: '100%', overflow: 'hidden',
@@ -1130,7 +1130,7 @@ function ConsultantOverview() {
                   width: '38px', height: '38px', borderRadius: '50%',
                   background: 'linear-gradient(135deg,#059669,#34d399)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '0.85rem', fontWeight: 600, flexShrink: 0,
+                  color: 'var(--primary-foreground)', fontSize: '0.85rem', fontWeight: 600, flexShrink: 0,
                 }}>
                   {session.user?.profile?.firstName?.[0] || '?'}
                 </div>
@@ -1165,7 +1165,7 @@ function ConsultantOverview() {
                       style={{
                         padding: '4px 10px', borderRadius: '8px', fontSize: '0.68rem',
                         fontWeight: 600, textDecoration: 'none',
-                        background: '#5120c8', color: '#ffffff',
+                        background: '#5120c8', color: 'var(--primary-foreground)',
                       }}>
                       {isAr ? 'انضم' : 'Join'}
                     </a>
@@ -1305,7 +1305,7 @@ export default function DashboardPage() {
 
   const roleCard = useMemo(() => {
     if (accountType === 'ADMIN') return {
-      icon: <Shield size={22} color="#fff"/>,
+      icon: <Shield size={22} color="var(--primary-foreground)"/>,
       title: 'لوحة تحكم الإدارة',
       desc: 'إدارة المستخدمين والكورسات والإعدادات',
       href: `/${locale}/admin`,
@@ -1315,7 +1315,7 @@ export default function DashboardPage() {
       chevronColor: '#5120c8',
     }
     if (accountType === 'INSTRUCTOR') return {
-      icon: <BookOpen size={22} color="#fff"/>,
+      icon: <BookOpen size={22} color="var(--primary-foreground)"/>,
       title: 'إنشاء كورس جديد',
       desc: 'ابدأ في تدريس وإنشاء محتوى تعليمي احترافي',
       href: `/${locale}/dashboard/create-course`,
@@ -1325,7 +1325,7 @@ export default function DashboardPage() {
       chevronColor: '#2BBFA3',
     }
     if (accountType === 'CONSULTANT') return {
-      icon: <Calendar size={22} color="#fff"/>,
+      icon: <Calendar size={22} color="var(--primary-foreground)"/>,
       title: 'جلساتي القادمة',
       desc: 'إدارة مواعيد الجلسات الاستشارية',
       href: `/${locale}/dashboard/my-sessions`,
@@ -1381,7 +1381,7 @@ export default function DashboardPage() {
             {roleCard.icon}
           </div>
           <div style={{flex:1}}>
-            <div style={{color:isAr?'#fff':'#0d0d0d',fontWeight:600,fontSize:15}}>{roleCard.title}</div>
+            <div style={{color:'var(--foreground)',fontWeight:600,fontSize:15}}>{roleCard.title}</div>
             <div style={{color:'#6b7280',fontSize:13,marginTop:2}}>{roleCard.desc}</div>
           </div>
           <ChevronLeft size={18} color={roleCard.chevronColor}/>

@@ -276,7 +276,7 @@ export default function EarningsPage() {
           <div
             key={stat.label}
             className="rounded-2xl border p-3 sm:p-4"
-            style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.10)' }}
+            style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
           >
             <div className="mb-2 flex items-center gap-2">
               <span
@@ -298,7 +298,7 @@ export default function EarningsPage() {
 
       <section
         className="mb-5 rounded-2xl border p-4 sm:p-5"
-        style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.10)' }}
+        style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
       >
         <h2 className="mb-4 flex items-center gap-2 text-sm" style={{ fontWeight: 900 }}>
           <span style={{ color: 'var(--primary)' }}><Ic.arrowDownLeft size={17} /></span>
@@ -348,9 +348,9 @@ export default function EarningsPage() {
 
       <section
         className="overflow-hidden rounded-2xl border"
-        style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.10)' }}
+        style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
       >
-        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'rgba(255,255,255,0.10)' }}>
+        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
           <h2 className="flex items-center gap-2 text-sm" style={{ fontWeight: 900 }}>
             <span style={{ color: 'var(--primary)' }}><Ic.dollar size={17} /></span>
             {isAr ? 'سجل الجلسات' : 'Sessions history'}
@@ -372,7 +372,7 @@ export default function EarningsPage() {
         ) : (
           <>
             {/* Mobile cards */}
-            <div className="divide-y sm:hidden" style={{ borderColor: 'rgba(255,255,255,0.10)' }}>
+            <div className="divide-y sm:hidden" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
               {sessions.map((session) => (
                 <div key={session.id} className="p-4">
                   <div className="mb-1 flex items-center justify-between gap-2">
@@ -387,7 +387,7 @@ export default function EarningsPage() {
                     {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                   </p>
                   <p className="mt-1 text-[10px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-                    {formatSessionDate(session.date || session.scheduledAt, isAr)}
+                    {formatSessionDate(session.scheduledAt ?? session.date ?? (session as any).createdAt, isAr)}
                   </p>
                 </div>
               ))}
@@ -397,7 +397,7 @@ export default function EarningsPage() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full border-collapse text-right">
                 <thead>
-                  <tr className="border-b text-[11px]" style={{ borderColor: 'rgba(255,255,255,0.10)', color: 'var(--muted)' }}>
+                  <tr className="border-b text-[11px]" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)', color: 'var(--muted)' }}>
                     <th className="p-3" style={{ fontWeight: 500 }}>{isAr ? 'العميل' : 'Client'}</th>
                     <th className="p-3" style={{ fontWeight: 500 }}>{isAr ? 'الجلسة' : 'Session'}</th>
                     <th className="p-3 text-center" style={{ fontWeight: 500 }}>{isAr ? 'التاريخ' : 'Date'}</th>
@@ -407,7 +407,7 @@ export default function EarningsPage() {
                 </thead>
                 <tbody>
                   {sessions.map((session) => (
-                    <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'rgba(255,255,255,0.10)' }}>
+                    <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <span
@@ -425,7 +425,7 @@ export default function EarningsPage() {
                         {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                       </td>
                       <td className="p-3 text-center" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-                        {formatSessionDate(session.date || session.scheduledAt, isAr)}
+                        {formatSessionDate(session.scheduledAt ?? session.date ?? (session as any).createdAt, isAr)}
                       </td>
                       <td className="p-3 text-center">
                         <span
@@ -451,7 +451,7 @@ export default function EarningsPage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <tr style={{ background: 'color-mix(in srgb, var(--foreground) 4%, transparent)' }}>
                     <td className="p-3 text-xs" colSpan={4} style={{ fontWeight: 900 }}>
                       {isAr ? 'الإجمالي' : 'Total'}
                     </td>
