@@ -633,7 +633,7 @@ export default function ClientSessionsPage() {
                           type="button"
                           onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
-                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer' }}
+                          style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)', border: '1.5px solid var(--accent)', cursor: 'pointer' }}
                         >
                           <Video size={12} />
                           {isAr ? 'انضم للجلسة' : 'Join session'}
