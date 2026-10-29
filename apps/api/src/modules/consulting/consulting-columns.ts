@@ -94,10 +94,19 @@ export async function getConsultingSessionColumns(
   }
 }
 
+/** Convert camelCase to snake_case for column-name comparison. */
+function toSnakeCase(s: string): string {
+  return s.replace(/[A-Z]/g, c => `_${c.toLowerCase()}`)
+}
+
 /**
  * Build a Prisma `select` containing only the scalar columns that both the
  * model and the live database agree on. Returns `null` when the database
  * columns are unknown.
+ *
+ * Handles both camelCase and snake_case column names so the code works
+ * whether the table was created with quoted identifiers ("scheduledAt") or
+ * with a snake_case migration (scheduled_at).
  */
 export function buildConsultingSessionSelect(
   columns: Set<string> | null,
@@ -106,7 +115,10 @@ export function buildConsultingSessionSelect(
 
   const select: Record<string, boolean> = {}
   for (const field of CONSULTING_SESSION_COLUMNS) {
-    if (columns.has(field)) select[field] = true
+    // Accept either the exact field name OR its snake_case equivalent
+    if (columns.has(field) || columns.has(toSnakeCase(field))) {
+      select[field] = true
+    }
   }
   // `id` is required to address rows later.
   select.id = true

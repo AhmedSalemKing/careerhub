@@ -68,6 +68,25 @@ function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60000)
 }
 
+/**
+ * Recursively convert every Date instance in a value to an ISO-8601 string.
+ * Prisma returns DateTime fields as JavaScript Date objects; without this,
+ * some NestJS serialisation paths (class-transformer, BigInt polyfills, etc.)
+ * can turn them into {} before the JSON response is written.
+ */
+function serializeDates(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
+  if (Array.isArray(value)) return value.map(serializeDates)
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = serializeDates(v)
+    }
+    return out
+  }
+  return value
+}
+
 @Injectable()
 export class ConsultingService {
   constructor(
@@ -360,8 +379,8 @@ export class ConsultingService {
       return {
         success: true,
         data: {
-          mySessions,
-          clientSessions,
+          mySessions: serializeDates(mySessions),
+          clientSessions: serializeDates(clientSessions),
           isConsultant: clientSessions.length > 0 || (await this.prisma.user.count({ where: { id: userId, accountType: 'CONSULTANT' } })) > 0,
         }
       }
