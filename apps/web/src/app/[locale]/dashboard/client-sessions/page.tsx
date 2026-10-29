@@ -532,7 +532,7 @@ export default function ClientSessionsPage() {
                     >
                       <span className="flex items-center gap-1 text-[11px] font-bold">
                         <Clock size={11} style={{ color: 'var(--muted)' }} />
-                        {formatTimeOnly(session.scheduledAt, locale)}
+                        {formatTimeSafe(session.scheduledAt, locale, '—')}
                       </span>
                       <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
                         <Video size={11} />
@@ -614,13 +614,13 @@ export default function ClientSessionsPage() {
                         </>
                       )}
 
-                      {status === 'CONFIRMED' && soon && (
+                      {status === 'CONFIRMED' && (
                         <button
                           type="button"
                           onClick={() => startRoomMutation.mutate(session.id)}
                           disabled={startRoomMutation.isPending}
                           className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] font-black"
-                          style={{ background: 'var(--accent)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: startRoomMutation.isPending ? 0.7 : 1 }}
+                          style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', opacity: startRoomMutation.isPending ? 0.7 : 1 }}
                         >
                           <Play size={12} />
                           {isAr ? 'بدء الجلسة' : 'Start session'}

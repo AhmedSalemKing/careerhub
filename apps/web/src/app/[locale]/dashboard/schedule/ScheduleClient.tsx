@@ -133,8 +133,8 @@ export default function ScheduleClient() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const from = weekStart.toISOString().slice(0, 10)
-      const to = addDays(weekStart, 7).toISOString().slice(0, 10)
+      const from = weekStart.toISOString()
+      const to = addDays(weekStart, 7).toISOString()
       const res = await api.get(`/consulting/sessions?from=${from}&to=${to}`)
       const all = (res.data?.data?.clientSessions || []) as Session[]
       setSessions(all)
