@@ -347,13 +347,13 @@ export default function ScheduleClient() {
 
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <span style={{ fontWeight:900, fontSize:16, color:'#f1f5f9', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>تفاصيل الجلسة</span>
+            <span style={{ fontWeight:500, fontSize:16, color:'#f1f5f9', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>تفاصيل الجلسة</span>
             <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--foreground) 10%, transparent)', background:'color-mix(in srgb, var(--foreground) 5%, transparent)', color:'var(--muted-foreground)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
           </div>
 
           {/* Person */}
           <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18, padding:'12px 14px', background:'color-mix(in srgb, var(--foreground) 4%, transparent)', borderRadius:12, border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)' }}>
-            <div style={{ width:44, height:44, borderRadius:12, background:`rgba(${st.badge},0.3)`, border:`1px solid ${st.border}`, color:st.badgeText, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:900, flexShrink:0 }}>
+            <div style={{ width:44, height:44, borderRadius:12, background:`rgba(${st.badge},0.3)`, border:`1px solid ${st.border}`, color:st.badgeText, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:500, flexShrink:0 }}>
               {other?.profile?.avatar
                 ? <img src={other.profile.avatar} alt="" style={{ width:44, height:44, borderRadius:12, objectFit:'cover' }} />
                 : initials}
@@ -476,7 +476,7 @@ export default function ScheduleClient() {
           <h1 style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>جدول مواعيدي</h1>
           <p style={{ fontSize:12, color:'var(--muted)', margin:0, fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>نظم جلساتك ومواعيدك بسهولة</p>
         </div>
-        <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:700, fontSize:13 }}>
+        <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           إدارة الجلسات
         </button>
@@ -494,7 +494,7 @@ export default function ScheduleClient() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" style={{ opacity:0.8 }}><path d={icon}/></svg>
               <div style={{ fontSize:12, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{label}</div>
             </div>
-            <div style={{ fontSize:28, fontWeight:500, color, lineHeight:1, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{value}</div>
+            <div style={{ fontSize:28, fontWeight:300, color, lineHeight:1, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -505,19 +505,19 @@ export default function ScheduleClient() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
-        <span style={{ fontSize:13, fontWeight:700, minWidth:200, textAlign:'center' }}>{weekLabel}</span>
+        <span style={{ fontSize:13, fontWeight:500, minWidth:200, textAlign:'center' }}>{weekLabel}</span>
 
         <button onClick={() => setWeekStart((w: Date) => addDays(w,7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--foreground)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
 
-        <button onClick={() => setWeekStart(startOfWeekSun(new Date()))} style={{ padding:'5px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+        <button onClick={() => setWeekStart(startOfWeekSun(new Date()))} style={{ padding:'5px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
           اليوم
         </button>
 
         <div style={{ display:'flex', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
           {(['calendar','list'] as const).map((v: 'calendar' | 'list') => (
-            <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:700, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--muted)', transition:'all 0.15s' }}>
+            <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:500, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--muted)', transition:'all 0.15s' }}>
               {v === 'calendar' ? 'أسبوع' : 'قائمة'}
             </button>
           ))}
@@ -698,7 +698,7 @@ export default function ScheduleClient() {
             if (uniqueWeeks.length === 0) return null
             return (
               <div style={{ marginTop:16, padding:16, background:'var(--surface)', borderRadius:12, border:'1px dashed var(--border)' }}>
-                <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, textAlign:'center', fontWeight:700 }}>
+                <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, textAlign:'center', fontWeight:500 }}>
                   لا توجد جلسات في هذا الأسبوع — اختر أسبوعاً من الجلسات الموجودة:
                 </div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center' }}>
@@ -713,7 +713,7 @@ export default function ScheduleClient() {
                       <button
                         key={w.toISOString()}
                         onClick={() => setWeekStart(w)}
-                        style={{ padding:'6px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'rgba(81,32,200,0.08)', color:'var(--primary)', cursor:'pointer', fontSize:12, fontWeight:700 }}
+                        style={{ padding:'6px 14px', borderRadius:8, border:'1px solid var(--primary)', background:'rgba(81,32,200,0.08)', color:'var(--primary)', cursor:'pointer', fontSize:12, fontWeight:500 }}
                       >
                         {label} ({sessCount})
                       </button>
@@ -728,13 +728,13 @@ export default function ScheduleClient() {
           {activeWeekSessions.length === 0 && sessions.length > 0 &&
             sessions.filter((s: Session) => getSessionDate(s) !== null).length === 0 && (
             <div style={{ marginTop:16, padding:16, background:'rgba(255,149,0,0.08)', borderRadius:12, border:'1px dashed var(--warning)', textAlign:'center' }}>
-              <div style={{ fontSize:13, color:'var(--warning)', fontWeight:700, marginBottom:6 }}>
+              <div style={{ fontSize:13, color:'var(--warning)', fontWeight:500, marginBottom:6 }}>
                 تنبيه: {sessions.length} جلسة موجودة لكن بدون تاريخ صالح
               </div>
               <div style={{ fontSize:11, color:'var(--muted)' }}>
                 يرجى استخدام عرض القائمة لمشاهدة جميع الجلسات
               </div>
-              <button onClick={() => setView('list')} style={{ marginTop:10, padding:'6px 18px', borderRadius:8, border:'1px solid var(--warning)', background:'transparent', color:'var(--warning)', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+              <button onClick={() => setView('list')} style={{ marginTop:10, padding:'6px 18px', borderRadius:8, border:'1px solid var(--warning)', background:'transparent', color:'var(--warning)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
                 عرض القائمة
               </button>
             </div>
@@ -746,7 +746,7 @@ export default function ScheduleClient() {
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 12px', display:'block', opacity:0.4 }}>
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              <div style={{ fontWeight:700, fontSize:14, marginBottom:6 }}>لا توجد جلسات</div>
+              <div style={{ fontWeight:500, fontSize:14, marginBottom:6 }}>لا توجد جلسات</div>
               <div style={{ fontSize:12 }}>لم يتم العثور على أي جلسات في حسابك</div>
             </div>
           )}

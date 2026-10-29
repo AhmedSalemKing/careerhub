@@ -94,7 +94,7 @@ function InstructorOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 600, color: 'var(--primary-foreground)',
+            fontSize: '1.4rem', fontWeight: 500, color: 'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -106,7 +106,7 @@ function InstructorOverview() {
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'لوحة التحكم' : 'Dashboard'}
             </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:'0 0 3px' }}>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:900, margin:'0 0 3px' }}>
               {isAr ? `مرحباً، ${user?.profile?.firstName || 'المحاضر'}` : `Welcome, ${user?.profile?.firstName || 'Instructor'}`}
             </h1>
             <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
@@ -118,7 +118,7 @@ function InstructorOverview() {
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           padding: '11px 22px', borderRadius: '10px',
           background: '#5120c8', color: 'var(--primary-foreground)',
-          fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+          fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none',
           boxShadow: '0 4px 15px rgba(81,32,200,0.3)',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -201,7 +201,7 @@ function InstructorOverview() {
                 {stat.icon}
               </div>
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
+                <p style={{ fontSize: '1.6rem', fontWeight: 300, margin: '0 0 2px',
                   color: 'var(--foreground)' }}>
                   {stat.value}
                 </p>
@@ -224,7 +224,7 @@ function InstructorOverview() {
         }}>
           <div style={{ display:'flex', alignItems:'center',
             justifyContent:'space-between', marginBottom:'1rem' }}>
-            <h2 style={{ fontSize:'1rem', fontWeight:700, margin:0 }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:500, margin:0 }}>
               {isAr ? 'آخر الكورسات' : 'Recent Courses'}
             </h2>
             <a href={`/${locale}/dashboard/my-courses`}
@@ -263,7 +263,7 @@ function InstructorOverview() {
                   }
                 </div>
                 <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
-                  <p style={{ fontWeight:600, fontSize:'0.875rem', margin:'0 0 3px',
+                  <p style={{ fontWeight:500, fontSize:'0.875rem', margin:'0 0 3px',
                     overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                     color:'var(--foreground)' }}>
                     {isAr ? course.titleAr : course.titleEn}
@@ -276,7 +276,7 @@ function InstructorOverview() {
                 </div>
                 <div style={{
                   padding:'3px 10px', borderRadius:'20px', fontSize:'0.7rem',
-                  fontWeight:500, flexShrink:0,
+                  fontWeight:300, flexShrink:0,
                   background: course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)',
                   border: `1px solid ${course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)'}`,
                   color: course.status === 'PUBLISHED' ? '#4ade80' : '#fbbf24',
@@ -307,7 +307,7 @@ function InstructorOverview() {
           padding: '1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
-          <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
+          <h2 style={{ fontSize:'1rem', fontWeight:500, margin:'0 0 1rem' }}>
             {isAr ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
           {[
@@ -519,7 +519,7 @@ function StudentOverview() {
             overflow:'hidden', flexShrink:0,
             background:'linear-gradient(135deg,#5120c8,#7c3aed)',
             display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:'1.4rem', fontWeight:600, color:'var(--primary-foreground)',
+            fontSize:'1.4rem', fontWeight:500, color:'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -531,7 +531,7 @@ function StudentOverview() {
             <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
               {isAr ? 'مرحبا بك' : 'Welcome back,'}
             </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:700, margin:'0 0 3px' }}>
+            <h1 style={{ fontSize:'1.4rem', fontWeight:900, margin:'0 0 3px' }}>
               {isAr
                 ? (user?.profile?.firstName || 'الطالب')
                 : (user?.profile?.firstName || 'Student')}
@@ -545,7 +545,7 @@ function StudentOverview() {
           display:'inline-flex', alignItems:'center', gap:'8px',
           padding:'11px 22px', borderRadius:'10px',
           background:'#5120c8', color:'var(--primary-foreground)',
-          fontWeight:600, fontSize:'0.9rem', textDecoration:'none',
+          fontWeight:500, fontSize:'0.9rem', textDecoration:'none',
           boxShadow:'0 4px 15px rgba(81,32,200,0.3)',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -629,7 +629,7 @@ function StudentOverview() {
                 {stat.icon}
               </div>
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize:'1.6rem', fontWeight:800, margin:'0 0 2px',
+                <p style={{ fontSize:'1.6rem', fontWeight:300, margin:'0 0 2px',
                   color:'var(--foreground)' }}>
                   {stat.value}
                 </p>
@@ -653,7 +653,7 @@ function StudentOverview() {
         }}>
           <div style={{ display:'flex', alignItems:'center',
             justifyContent:'space-between', marginBottom:'1rem' }}>
-            <h2 style={{ fontSize:'1rem', fontWeight:700, margin:0 }}>
+            <h2 style={{ fontSize:'1rem', fontWeight:500, margin:0 }}>
               {isAr ? 'كورساتي' : 'My Courses'}
             </h2>
             <a href={`/${locale}/dashboard/my-courses`}
@@ -707,7 +707,7 @@ function StudentOverview() {
                     {/* Info */}
                     <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
                       <p style={{
-                        fontWeight:600, fontSize:'0.875rem', margin:'0 0 4px',
+                        fontWeight:500, fontSize:'0.875rem', margin:'0 0 4px',
                         overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
                         color:'var(--foreground)',
                       }}>
@@ -737,7 +737,7 @@ function StudentOverview() {
                     {/* Status badge */}
                     <div style={{
                       padding:'3px 8px', borderRadius:'20px', fontSize:'0.68rem',
-                      fontWeight:500, flexShrink:0,
+                      fontWeight:300, flexShrink:0,
                       background: progress >= 100
                         ? 'rgba(34,197,94,0.1)' : 'rgba(81,32,200,0.12)',
                       border: progress >= 100
@@ -767,7 +767,7 @@ function StudentOverview() {
               <a href={`/${locale}/courses`} style={{
                 padding:'8px 20px', borderRadius:'8px',
                 background:'#5120c8', color:'var(--primary-foreground)',
-                textDecoration:'none', fontSize:'0.82rem', fontWeight:600,
+                textDecoration:'none', fontSize:'0.82rem', fontWeight:500,
               }}>
                 {isAr ? 'ابدأ التعلم' : 'Start Learning'}
               </a>
@@ -782,7 +782,7 @@ function StudentOverview() {
           borderRadius:'14px', padding:'1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
-          <h2 style={{ fontSize:'1rem', fontWeight:700, margin:'0 0 1rem' }}>
+          <h2 style={{ fontSize:'1rem', fontWeight:500, margin:'0 0 1rem' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
           </h2>
           {[
@@ -959,7 +959,7 @@ function ConsultantOverview() {
             overflow: 'hidden', flexShrink: 0,
             background: 'linear-gradient(135deg,#059669,#34d399)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 600, color: 'var(--primary-foreground)',
+            fontSize: '1.4rem', fontWeight: 500, color: 'var(--primary-foreground)',
           }}>
             {user?.profile?.avatar
               ? <img src={user.profile.avatar} alt=""
@@ -971,7 +971,7 @@ function ConsultantOverview() {
             <p style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 500, margin: '0 0 3px' }}>
               {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
             </p>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 700, margin: '0 0 3px' }}>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 3px' }}>
               {isAr
                 ? `مرحبا ${user?.profile?.firstName || 'المستشار'}`
                 : `Welcome, ${user?.profile?.firstName || 'Coach'}`}
@@ -985,7 +985,7 @@ function ConsultantOverview() {
           display: 'inline-flex', alignItems: 'center', gap: '8px',
           padding: '11px 22px', borderRadius: '10px',
           background: '#059669', color: 'var(--primary-foreground)',
-          fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none',
+          fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none',
           boxShadow: '0 4px 15px rgba(5,150,105,0.3)',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -1083,7 +1083,7 @@ function ConsultantOverview() {
                 )}
               </div>
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 2px',
+                <p style={{ fontSize: '1.6rem', fontWeight: 300, margin: '0 0 2px',
                   color: 'var(--foreground)' }}>
                   {stat.value}
                 </p>
@@ -1107,7 +1107,7 @@ function ConsultantOverview() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center',
             justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 500, margin: 0 }}>
               {isAr ? 'الجلسات القادمة' : 'Upcoming Sessions'}
             </h2>
             <a href={`/${locale}/dashboard/my-sessions`}
@@ -1130,12 +1130,12 @@ function ConsultantOverview() {
                   width: '38px', height: '38px', borderRadius: '50%',
                   background: 'linear-gradient(135deg,#059669,#34d399)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--primary-foreground)', fontSize: '0.85rem', fontWeight: 600, flexShrink: 0,
+                  color: 'var(--primary-foreground)', fontSize: '0.85rem', fontWeight: 500, flexShrink: 0,
                 }}>
                   {session.user?.profile?.firstName?.[0] || '?'}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <p style={{ fontWeight: 600, fontSize: '0.82rem', margin: '0 0 2px',
+                  <p style={{ fontWeight: 500, fontSize: '0.82rem', margin: '0 0 2px',
                     color: 'var(--foreground)', overflow: 'hidden',
                     textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {session.sessionName || session.user?.profile?.firstName || (isAr ? 'جلسة' : 'Session')}
@@ -1153,7 +1153,7 @@ function ConsultantOverview() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <div style={{
                     padding: '3px 8px', borderRadius: '20px', fontSize: '0.65rem',
-                    fontWeight: 500,
+                    fontWeight: 300,
                     background: 'rgba(52,211,153,0.1)',
                     border: '1px solid rgba(52,211,153,0.3)',
                     color: '#34d399',
@@ -1164,7 +1164,7 @@ function ConsultantOverview() {
                     <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
                       style={{
                         padding: '4px 10px', borderRadius: '8px', fontSize: '0.68rem',
-                        fontWeight: 600, textDecoration: 'none',
+                        fontWeight: 500, textDecoration: 'none',
                         background: '#5120c8', color: 'var(--primary-foreground)',
                       }}>
                       {isAr ? 'انضم' : 'Join'}
@@ -1198,7 +1198,7 @@ function ConsultantOverview() {
           borderRadius: '14px', padding: '1.25rem',
           maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
         }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 1rem' }}>
+          <h2 style={{ fontSize: '1rem', fontWeight: 500, margin: '0 0 1rem' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
           </h2>
           {[
@@ -1381,7 +1381,7 @@ export default function DashboardPage() {
             {roleCard.icon}
           </div>
           <div style={{flex:1}}>
-            <div style={{color:'var(--foreground)',fontWeight:600,fontSize:15}}>{roleCard.title}</div>
+            <div style={{color:'var(--foreground)',fontWeight:500,fontSize:15}}>{roleCard.title}</div>
             <div style={{color:'#6b7280',fontSize:13,marginTop:2}}>{roleCard.desc}</div>
           </div>
           <ChevronLeft size={18} color={roleCard.chevronColor}/>

@@ -289,7 +289,7 @@ export default function EarningsPage() {
                 {stat.label}
               </p>
             </div>
-            <p className="break-words text-sm sm:text-base" style={{ color: stat.color, fontWeight: 900 }}>
+            <p className="break-words text-sm sm:text-base" style={{ color: stat.color, fontWeight: 300 }}>
               {stat.value}
             </p>
           </div>
@@ -300,7 +300,7 @@ export default function EarningsPage() {
         className="mb-5 rounded-2xl border p-4 sm:p-5"
         style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
       >
-        <h2 className="mb-4 flex items-center gap-2 text-sm" style={{ fontWeight: 900 }}>
+        <h2 className="mb-4 flex items-center gap-2 text-sm" style={{ fontWeight: 500 }}>
           <span style={{ color: 'var(--primary)' }}><Ic.arrowDownLeft size={17} /></span>
           {isAr ? 'تحويل إلى المحفظة' : 'Transfer to wallet'}
         </h2>
@@ -331,7 +331,7 @@ export default function EarningsPage() {
               border: 'none',
               cursor: transferring || !transferAmount ? 'not-allowed' : 'pointer',
               opacity: transferring || !transferAmount ? 0.5 : 1,
-              fontWeight: 900,
+              fontWeight: 500,
             }}
           >
             {transferring ? <Ic.spinner size={16} /> : <Ic.wallet size={16} />}
@@ -351,7 +351,7 @@ export default function EarningsPage() {
         style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
       >
         <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
-          <h2 className="flex items-center gap-2 text-sm" style={{ fontWeight: 900 }}>
+          <h2 className="flex items-center gap-2 text-sm" style={{ fontWeight: 500 }}>
             <span style={{ color: 'var(--primary)' }}><Ic.dollar size={17} /></span>
             {isAr ? 'سجل الجلسات' : 'Sessions history'}
           </h2>
@@ -376,10 +376,10 @@ export default function EarningsPage() {
               {sessions.map((session) => (
                 <div key={session.id} className="p-4">
                   <div className="mb-1 flex items-center justify-between gap-2">
-                    <p className="truncate text-xs" style={{ fontWeight: 900 }}>
+                    <p className="truncate text-xs" style={{ fontWeight: 500 }}>
                       {session.clientName || session.studentName || (isAr ? 'عميل' : 'Client')}
                     </p>
-                    <span className="shrink-0 text-xs" style={{ color: 'var(--accent)', fontWeight: 900 }}>
+                    <span className="shrink-0 text-xs" style={{ color: 'var(--accent)', fontWeight: 300 }}>
                       {money(Number(session.amount ?? session.price ?? 0))}
                     </span>
                   </div>
@@ -412,7 +412,7 @@ export default function EarningsPage() {
                         <div className="flex items-center gap-2">
                           <span
                             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px]"
-                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 900 }}
+                            style={{ background: 'var(--primary-subtle)', color: 'var(--primary)', fontWeight: 500 }}
                           >
                             {(session.clientName || session.studentName || '?').charAt(0).toUpperCase()}
                           </span>
@@ -434,13 +434,13 @@ export default function EarningsPage() {
                             borderColor: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--border)',
                             background: session.status === 'COMPLETED' ? 'var(--accent-light)' : 'var(--surface)',
                             color: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--muted)',
-                            fontWeight: 500,
+                            fontWeight: 300,
                           }}
                         >
                           {session.status || '—'}
                         </span>
                       </td>
-                      <td className="p-3 text-center" style={{ color: 'var(--accent)', fontWeight: 900 }}>
+                      <td className="p-3 text-center" style={{ color: 'var(--accent)', fontWeight: 300 }}>
                         {Number(session.amount ?? session.price ?? 0) > 0
                           ? money(Number(session.amount ?? session.price ?? 0))
                           : isAr
@@ -452,10 +452,10 @@ export default function EarningsPage() {
                 </tbody>
                 <tfoot>
                   <tr style={{ background: 'color-mix(in srgb, var(--foreground) 4%, transparent)' }}>
-                    <td className="p-3 text-xs" colSpan={4} style={{ fontWeight: 900 }}>
+                    <td className="p-3 text-xs" colSpan={4} style={{ fontWeight: 500 }}>
                       {isAr ? 'الإجمالي' : 'Total'}
                     </td>
-                    <td className="p-3 text-center text-sm" style={{ color: 'var(--primary)', fontWeight: 900 }}>
+                    <td className="p-3 text-center text-sm" style={{ color: 'var(--primary)', fontWeight: 300 }}>
                       {money(data?.totalEarned || 0)}
                     </td>
                   </tr>

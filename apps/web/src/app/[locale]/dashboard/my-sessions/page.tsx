@@ -154,7 +154,7 @@ export default function MySessionsPage() {
                 <Ic.user size={19} />
               </div>
               <div>
-                <h1 style={{ color: 'var(--foreground)', fontSize: 19, fontWeight: 700, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+                <h1 style={{ color: 'var(--foreground)', fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
                   {isAr ? 'جلساتي الاستشارية' : 'My Consulting Sessions'}
                 </h1>
                 <p style={{ color: 'var(--muted)', fontSize: 11, margin: 0 }}>
@@ -163,10 +163,10 @@ export default function MySessionsPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
-              <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
-              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.plus size={12} />{isAr ? 'جلسة جديدة' : 'New Session'}
               </button>
             </div>
@@ -178,7 +178,7 @@ export default function MySessionsPage() {
               { val: mySessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: 'var(--muted)', background: 'var(--surface-2)' },
             ].map((s, i) => (
               <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', background: s.background, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: s.color, fontSize: 18, fontWeight: 800 }}>{s.val}</span>
+                <span style={{ color: s.color, fontSize: 18, fontWeight: 300 }}>{s.val}</span>
                 <span style={{ color: 'var(--muted)', fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
               </div>
             ))}
@@ -188,9 +188,9 @@ export default function MySessionsPage() {
             {TABS.map(tab => {
               const count = mySessions.filter((s: any) => tab.statuses.includes(s.status)).length
               return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: activeTab === tab.key ? 'var(--primary)' : 'var(--muted)', borderBottom: `2px solid ${activeTab === tab.key ? 'var(--primary)' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: activeTab === tab.key ? 'var(--primary)' : 'var(--muted)', borderBottom: `2px solid ${activeTab === tab.key ? 'var(--primary)' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
                   {isAr ? tab.ar : tab.en}
-                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 800, background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface-2)', color: activeTab === tab.key ? 'var(--primary-foreground)' : 'var(--muted)' }}>{count}</span>}
+                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 300, background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface-2)', color: activeTab === tab.key ? 'var(--primary-foreground)' : 'var(--muted)' }}>{count}</span>}
                 </button>
               )
             })}
@@ -208,12 +208,12 @@ export default function MySessionsPage() {
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '70px 24px' }}>
             <span style={{ color: 'var(--muted)', opacity: 0.4, display: 'block', marginBottom: 14 }}><Ic.calendar size={44} /></span>
-            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
+            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
             <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 20 }}>
               {activeTab === 'upcoming' ? (isAr ? 'احجز جلستك الأولى' : 'Book your first session') : (isAr ? 'لا توجد جلسات هنا' : 'No sessions here')}
             </p>
             {activeTab === 'upcoming' && (
-              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ padding: '11px 26px', borderRadius: 11, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+              <button onClick={() => router.push(`/${locale}/coaching`)} style={{ padding: '11px 26px', borderRadius: 11, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
                 {isAr ? 'احجز جلسة' : 'Book a Session'}
               </button>
             )}
@@ -251,16 +251,16 @@ export default function MySessionsPage() {
                       <span style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 500, flex: 1 }}>
                         {isAr ? 'المستشار اقترح موعداً جديداً — هل توافق؟' : 'Consultant proposed a new time — do you approve?'}
                         {session.proposedAt && (
-                          <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: 'var(--primary)', fontWeight: 600 }}>
+                          <span style={{ marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0, color: 'var(--primary)', fontWeight: 300 }}>
                             {' '}{formatDate(session.proposedAt, locale)} {formatTimeOnly(session.proposedAt)}
                           </span>
                         )}
                       </span>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        <button onClick={() => approveRescheduleMutation.mutate(session.id)} disabled={approveRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                           {isAr ? 'موافقة' : 'Approve'}
                         </button>
-                        <button onClick={() => rejectRescheduleMutation.mutate(session.id)} disabled={rejectRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'var(--error)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        <button onClick={() => rejectRescheduleMutation.mutate(session.id)} disabled={rejectRescheduleMutation.isPending} style={{ padding: '5px 12px', borderRadius: 8, background: 'var(--error)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                           {isAr ? 'رفض' : 'Reject'}
                         </button>
                       </div>
@@ -272,18 +272,18 @@ export default function MySessionsPage() {
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                         {consultant?.profile?.avatar
                           ? <img src={consultant.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: 16, fontWeight: 600, flexShrink: 0 }}>{consultantName?.[0] || '?'}</div>}
+                          : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: 16, fontWeight: 500, flexShrink: 0 }}>{consultantName?.[0] || '?'}</div>}
                         <div>
-                          <div style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 600, marginBottom: 1 }}>
+                          <div style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 300, marginBottom: 1 }}>
                             {isAr ? 'المستشار' : 'Consultant'}
                           </div>
-                          <div style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 600 }}>{consultantName}</div>
+                          <div style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 500 }}>{consultantName}</div>
                           {consultant?.profile?.speciality && (
-                            <div style={{ color: 'var(--primary)', fontSize: 11, fontWeight: 600 }}>{consultant.profile.speciality}</div>
+                            <div style={{ color: 'var(--primary)', fontSize: 11, fontWeight: 300 }}>{consultant.profile.speciality}</div>
                           )}
                           {session.sessionName && (
                             <div style={{ color: 'var(--muted)', fontSize: 11, marginTop: 2 }}>
-                              {isAr ? 'الجلسة: ' : 'Session: '}<span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{session.sessionName}</span>
+                              {isAr ? 'الجلسة: ' : 'Session: '}<span style={{ color: 'var(--foreground)', fontWeight: 300 }}>{session.sessionName}</span>
                             </div>
                           )}
                           {session.topic && (
@@ -295,11 +295,11 @@ export default function MySessionsPage() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                        <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}`, color: conf.color, fontSize: 11, fontWeight: 500 }}>
+                        <div style={{ padding: '4px 10px', borderRadius: 20, background: conf.bg, border: `1px solid ${conf.color}`, color: conf.color, fontSize: 11, fontWeight: 300 }}>
                           {isAr ? conf.ar : conf.en}
                         </div>
                         {session.status !== 'COMPLETED' && session.status !== 'CANCELLED' && (
-                          <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'var(--success-subtle)' : 'var(--warning-subtle)', border: `1px solid ${isPaid ? 'var(--success)' : 'var(--warning)'}`, color: isPaid ? 'var(--success)' : 'var(--warning)', fontSize: 11, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
+                          <div style={{ padding: '4px 10px', borderRadius: 20, background: isPaid ? 'var(--success-subtle)' : 'var(--warning-subtle)', border: `1px solid ${isPaid ? 'var(--success)' : 'var(--warning)'}`, color: isPaid ? 'var(--success)' : 'var(--warning)', fontSize: 11, fontWeight: 300, display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Ic.dollar size={10} />
                             {isPaid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'غير مدفوعة' : 'Unpaid')}
                           </div>
@@ -310,15 +310,15 @@ export default function MySessionsPage() {
                     <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <Ic.calendar size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>{formatDate(session.scheduledAt, locale)}</span>
+                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>{formatDate(session.scheduledAt, locale)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <Ic.clock size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>{formatTimeOnly(session.scheduledAt)}</span>
+                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>{formatTimeOnly(session.scheduledAt)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <Ic.video size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 600 }}>Daily.co</span>
+                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>Daily.co</span>
                       </div>
                       {session.duration && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -332,7 +332,7 @@ export default function MySessionsPage() {
                       {session.status === 'IN_PROGRESS' && (
                         <button
                           onClick={() => router.push(`/${locale}/dashboard/consulting/${session.id}/go-live`)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
                           {isAr ? 'انضم للجلسة الآن' : 'Join Session Now'}
@@ -342,7 +342,7 @@ export default function MySessionsPage() {
                       {session.status === 'AWAITING_PAYMENT' && (session.price || 0) > 0 && (
                         <button onClick={() => paySession(session.id, session.price)}
                           disabled={payingId === session.id}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 600, opacity: payingId === session.id ? 0.7 : 1 }}>
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: payingId === session.id ? 'wait' : 'pointer', fontSize: 12, fontWeight: 500, opacity: payingId === session.id ? 0.7 : 1 }}>
                           <Ic.creditCard size={12} />{payingId === session.id ? (isAr ? 'جاري الدفع...' : 'Processing...') : (isAr ? `ادفع ${formatMoney(session.price, (session as any).priceDisplay)}` : `Pay ${formatMoney(session.price, (session as any).priceDisplay)}`)}
                         </button>
                       )}
@@ -358,7 +358,7 @@ export default function MySessionsPage() {
                               toast.error(isAr ? 'حدث خطأ حاول مرة أخرى' : 'Error, please try again')
                             }
                           }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 16px', borderRadius: 10, background: 'var(--success-subtle)', color: 'var(--success)', border: '1px solid var(--success)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                           <Ic.check size={12} />
                           {isAr ? 'تأكيد الجلسة المجانية' : 'Confirm Free Session'}
                         </button>
@@ -377,7 +377,7 @@ export default function MySessionsPage() {
                             },
                           })
                         }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--error)', background: 'var(--error-subtle)', color: 'var(--error)', cursor: 'pointer', fontSize: 11, fontWeight: 600 }}>
+                          style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', borderRadius: 10, border: '1px solid var(--error)', background: 'var(--error-subtle)', color: 'var(--error)', cursor: 'pointer', fontSize: 11, fontWeight: 500 }}>
                           <Ic.xCircle size={11} />{isAr ? 'إلغاء' : 'Cancel'}
                         </button>
                       )}
