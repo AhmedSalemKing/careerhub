@@ -110,27 +110,30 @@ export function useAIChat() {
 
         const u = new SpeechSynthesisUtterance(sentences[index])
         u.lang   = 'ar-EG'
-        u.rate   = 0.78
-        u.pitch  = voiceGender === 'female' ? 1.05 : 0.75
         u.volume = 1.0
+
+        if (voiceGender === 'female') {
+          u.rate  = 0.85
+          u.pitch = 1.05
+        } else {
+          u.rate  = 0.82
+          u.pitch = 0.55
+        }
 
         const allVoices    = synth.getVoices()
         const arabicVoices = allVoices.filter(v => v.lang.startsWith('ar') || v.lang.includes('AR'))
-        console.log('[TTS] Available Arabic voices:', arabicVoices.map(v => `${v.name}/${v.lang}`))
 
         if (arabicVoices.length > 0) {
-          if (voiceGender === 'male') {
-            u.voice = arabicVoices[0]
-            u.pitch = 0.6
-            u.rate  = 0.75
-          } else {
-            u.voice = arabicVoices[0]
-          }
+          const preferred =
+            arabicVoices.find(v => v.name.includes('Hoda')) ||
+            arabicVoices.find(v => v.lang === 'ar-EG') ||
+            arabicVoices[0]
+          u.voice = preferred
         }
 
         u.onend  = () => { index++; speakNext() }
         u.onerror = (e) => {
-          console.warn('[TTS] utterance error:', e.error, 'sentence:', sentences[index])
+          console.warn('[TTS] utterance error:', e.error)
           index++
           speakNext()
         }
@@ -142,7 +145,14 @@ export function useAIChat() {
     }
 
     if (synth.getVoices().length === 0) {
-      synth.addEventListener('voiceschanged', doSpeak, { once: true })
+      let hasFired = false
+      const onVoices = () => {
+        if (hasFired) return
+        hasFired = true
+        doSpeak()
+      }
+      synth.addEventListener('voiceschanged', onVoices, { once: true })
+      setTimeout(onVoices, 500)
     } else {
       doSpeak()
     }
