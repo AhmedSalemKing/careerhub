@@ -514,14 +514,13 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
 }
 
 /* ── Main export ──────────────────────────────────────────── */
-export default function AIInterviewPage({ initialMode }: { initialMode?: string }) {
-  const [mode, setMode] = useState<'select' | 'interview' | 'quiz'>(
-    initialMode === 'interview' ? 'interview'
-      : initialMode === 'quiz' ? 'quiz'
-        : 'select'
-  )
+export default function AIInterviewPage({ mode }: { mode?: string }) {
+  const router = useRouter()
+  const locale = useLocale()
 
-  if (mode === 'interview') return <InterviewMode onEnd={() => setMode('select')} />
-  if (mode === 'quiz')      return <QuizMode      onEnd={() => setMode('select')} />
-  return <ModeSelect onSelect={setMode} />
+  const handleEnd = () => router.push(`/${locale}/dashboard/assessment`)
+
+  if (mode === 'interview') return <InterviewMode onEnd={handleEnd} />
+  if (mode === 'quiz')      return <QuizMode      onEnd={handleEnd} />
+  return <ModeSelect onSelect={m => router.push(`/${locale}/dashboard/assessment?mode=${m}`)} />
 }
