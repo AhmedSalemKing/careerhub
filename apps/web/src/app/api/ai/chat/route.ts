@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
     // Try multiple models in order — latest first
     const models = [
       'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
       'gemini-2.0-flash',
       'gemini-2.0-flash-lite',
       'gemini-1.5-flash-latest',
@@ -123,6 +124,14 @@ export async function POST(req: NextRequest) {
           const errText = await geminiRes.text()
           lastError = `${model} failed: ${geminiRes.status} — ${errText.slice(0, 300)}`
           console.error(`[AI Chat] ${lastError}`)
+
+          // 429 = quota exhausted — no point trying other models with the same key
+          if (geminiRes.status === 429) {
+            return NextResponse.json(
+              { error: 'Quota exceeded', content: 'تم استنفاد حصة الذكاء الاصطناعي اليومية. حاول غداً.' },
+              { status: 429 }
+            )
+          }
 
           // Retry without system_instruction on 400 (some API versions reject it)
           if (geminiRes.status === 400 && errText.includes('system_instruction')) {

@@ -37,6 +37,14 @@ interface WinSpeech {
   webkitSpeechRecognition?: SpeechRecCtor
 }
 
+function clientErrorMsg(status: number): string {
+  if (status === 429) return 'تم استنفاد حصة الذكاء الاصطناعي اليومية. حاول غداً.'
+  if (status === 500) return 'خدمة الذكاء الاصطناعي غير متاحة حالياً. حاول بعد قليل.'
+  if (status === 502) return 'خدمة الذكاء الاصطناعي مشغولة. حاول مجدداً.'
+  if (status === 400) return 'حدث خطأ في البيانات المرسلة. حاول مجدداً.'
+  return 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مجدداً.'
+}
+
 export function useAIChat() {
   const [messages,     setMessages]     = useState<Message[]>([])
   const [isLoading,    setIsLoading]    = useState(false)
@@ -45,29 +53,28 @@ export function useAIChat() {
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
   const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
 
-  const recognitionRef     = useRef<SpeechRec | null>(null)
-  const messagesRef        = useRef<Message[]>([])
-  const audioRef           = useRef<HTMLAudioElement | null>(null)
-  const speakAbortRef      = useRef<AbortController | null>(null)
+  const recognitionRef      = useRef<SpeechRec | null>(null)
+  const messagesRef         = useRef<Message[]>([])
+  const audioRef            = useRef<HTMLAudioElement | null>(null)
+  const speakAbortRef       = useRef<AbortController | null>(null)
   const browserTTSCancelRef = useRef<(() => void) | null>(null)
   const browserTTSActiveRef = useRef<boolean>(false)
+  // Generation counter: every new speak() bumps this; old utterances bail when theirs doesn't match
+  const ttsGenerationRef    = useRef<number>(0)
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
     return () => {
+      ttsGenerationRef.current++ // invalidate all pending utterances
       if (typeof window !== 'undefined') window.speechSynthesis.cancel()
       const audio = audioRef.current
-      if (audio) {
-        audio.pause()
-        audio.src = ''
-        audioRef.current = null
-      }
+      if (audio) { audio.pause(); audio.src = ''; audioRef.current = null }
       const abort = speakAbortRef.current
       if (abort) { abort.abort(); speakAbortRef.current = null }
     }
   }, [])
 
-  /* ── Browser TTS fallback — returns cancel fn ────────────── */
+  /* ── Browser TTS — returns cancel fn, reads generation (doesn't bump it) ── */
   const browserTTS = useCallback((text: string): (() => void) => {
     if (typeof window === 'undefined') return () => { /* noop */ }
     const synth = window.speechSynthesis
@@ -82,12 +89,15 @@ export function useAIChat() {
       return () => { /* noop */ }
     }
 
+    // Read current generation — speak() has already bumped it for this call
+    const myGen   = ttsGenerationRef.current
     let index     = 0
     let cancelled = false
 
     const speakNext = () => {
-      if (cancelled || index >= sentences.length) {
-        if (!cancelled) setIsSpeaking(false)
+      // Bail if a newer speak() was called (generation advanced) or explicitly cancelled
+      if (cancelled || ttsGenerationRef.current !== myGen || index >= sentences.length) {
+        if (!cancelled && ttsGenerationRef.current === myGen) setIsSpeaking(false)
         return
       }
 
@@ -97,23 +107,21 @@ export function useAIChat() {
       u.pitch  = voiceGender === 'female' ? 1.05 : 0.9
       u.volume = 1.0
 
-      const all    = synth.getVoices()
-      const arabic = all.filter(v => v.lang.toLowerCase().startsWith('ar'))
-
-      if (arabic.length > 0) {
+      const voices = synth.getVoices().filter(v => v.lang.toLowerCase().startsWith('ar'))
+      if (voices.length > 0) {
         const pref = voiceGender === 'female'
-          ? ['laila', 'maha', 'tamar', 'zariyah', 'female']
-          : ['maged', 'omar', 'hamed', 'male']
+          ? ['zariyah', 'laila', 'maha', 'tamar', 'hala', 'salma', 'female']
+          : ['hamed', 'maged', 'omar', 'naayf', 'shakir', 'male']
         let best: SpeechSynthesisVoice | null = null
-        for (const name of pref) {
-          const found = arabic.find(v => v.name.toLowerCase().includes(name))
-          if (found) { best = found; break }
+        for (const n of pref) {
+          best = voices.find(v => v.name.toLowerCase().includes(n)) ?? null
+          if (best) break
         }
-        u.voice = best ?? arabic[0]
+        u.voice = best ?? voices[0]
       }
 
-      u.onend  = () => { if (!cancelled) { index++; speakNext() } }
-      u.onerror = () => { if (!cancelled) { index++; speakNext() } }
+      u.onend  = () => { if (!cancelled && ttsGenerationRef.current === myGen) { index++; speakNext() } }
+      u.onerror = () => { if (!cancelled && ttsGenerationRef.current === myGen) { index++; speakNext() } }
       synth.speak(u)
     }
 
@@ -133,21 +141,21 @@ export function useAIChat() {
   const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
-    // Cancel everything in-flight
+    // Bump generation — any browser TTS utterances from the previous speak() will bail
+    ttsGenerationRef.current++
+
+    // Abort in-flight Gemini TTS fetch
     const prevAbort = speakAbortRef.current
     if (prevAbort) { prevAbort.abort(); speakAbortRef.current = null }
 
-    window.speechSynthesis.cancel()
-
+    // Cancel previous browser TTS cancel function + speech synth
     const prevCancel = browserTTSCancelRef.current
     if (prevCancel) { prevCancel(); browserTTSCancelRef.current = null }
+    window.speechSynthesis.cancel()
 
+    // Stop previous Gemini audio element
     const prevAudio = audioRef.current
-    if (prevAudio) {
-      prevAudio.pause()
-      prevAudio.src = ''
-      audioRef.current = null
-    }
+    if (prevAudio) { prevAudio.pause(); prevAudio.src = ''; audioRef.current = null }
 
     browserTTSActiveRef.current = false
 
@@ -164,7 +172,7 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // Phase 1: start browser TTS immediately (zero wait)
+    // Phase 1: start browser TTS immediately (generation already bumped above)
     const cancelBrowser = browserTTS(cleanText)
     browserTTSCancelRef.current = cancelBrowser
     browserTTSActiveRef.current = true
@@ -172,38 +180,29 @@ export function useAIChat() {
     // Phase 2: fetch Gemini TTS in parallel; replace browser TTS when ready
     const controller = new AbortController()
     speakAbortRef.current = controller
+    const capturedCleanText = cleanText
 
     fetch('/api/ai/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: cleanText, gender: voiceGender }),
+      body: JSON.stringify({ text: capturedCleanText, gender: voiceGender }),
       signal: controller.signal,
     })
       .then(async (res) => {
-        if (!res.ok) return // keep browser TTS
+        if (!res.ok) return // browser TTS keeps playing
 
         const blob = await res.blob()
-        if (blob.size < 500) return // keep browser TTS
+        if (blob.size < 500) return // browser TTS keeps playing
 
-        // Cancel browser TTS and take over with Gemini audio
-        const cancelFn = browserTTSCancelRef.current
-        if (cancelFn) { cancelFn(); browserTTSCancelRef.current = null }
-        browserTTSActiveRef.current = false
-        window.speechSynthesis.cancel()
-
-        const prevAudioInner = audioRef.current
-        if (prevAudioInner) {
-          prevAudioInner.pause()
-          prevAudioInner.src = ''
-          audioRef.current = null
-        }
-
+        // Prepare Gemini audio element before cancelling browser TTS
         const url = URL.createObjectURL(blob)
+        const prevAudioInner = audioRef.current
+        if (prevAudioInner) { prevAudioInner.pause(); prevAudioInner.src = ''; audioRef.current = null }
+
         const audio = new Audio()
         audio.preload = 'auto'
         audio.src = url
         audioRef.current = audio
-
         const capturedUrl = url
 
         audio.onended = () => {
@@ -211,15 +210,26 @@ export function useAIChat() {
           audioRef.current = null
           setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
         }
-
         audio.onerror = () => {
           setIsSpeaking(false)
           audioRef.current = null
           setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
         }
 
+        // Hard-kill browser TTS: bump gen, cancel, wait 50ms for Chrome to fully stop
+        const genAtCancel = ++ttsGenerationRef.current
+        window.speechSynthesis.cancel()
+        const cancelFn = browserTTSCancelRef.current
+        if (cancelFn) { cancelFn(); browserTTSCancelRef.current = null }
+        browserTTSActiveRef.current = false
+
+        await new Promise<void>(r => setTimeout(r, 50))
+
+        // If another speak() was called during the 50ms wait, bail out
+        if (ttsGenerationRef.current !== genAtCancel) return
+
         audio.play().catch(() => {
-          // autoplay blocked — browser TTS already running, just clean up
+          // Autoplay blocked — browser TTS was already cancelled, just clean up
           setIsSpeaking(false)
           audioRef.current = null
           setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
@@ -233,14 +243,14 @@ export function useAIChat() {
         // browser TTS keeps playing — nothing to do
       })
       .finally(() => {
-        if (speakAbortRef.current === controller) {
-          speakAbortRef.current = null
-        }
+        if (speakAbortRef.current === controller) speakAbortRef.current = null
       })
   }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
+    ttsGenerationRef.current++ // invalidate all pending utterances
+
     const abort = speakAbortRef.current
     if (abort) { abort.abort(); speakAbortRef.current = null }
 
@@ -251,11 +261,7 @@ export function useAIChat() {
     browserTTSActiveRef.current = false
 
     const audio = audioRef.current
-    if (audio) {
-      audio.pause()
-      audio.src = ''
-      audioRef.current = null
-    }
+    if (audio) { audio.pause(); audio.src = ''; audioRef.current = null }
 
     setIsSpeaking(false)
   }, [])
@@ -307,10 +313,21 @@ export function useAIChat() {
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data      = await res.json() as { content?: string }
-      const aiContent = data.content ?? 'عذراً، لم أتمكن من الرد.'
 
+      // Read body before checking ok — server sends Arabic content in error responses too
+      let data: { content?: string } = {}
+      try { data = await res.json() as { content?: string } } catch { /* non-JSON */ }
+
+      if (!res.ok) {
+        const errContent = data.content ?? clientErrorMsg(res.status)
+        const errMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: errContent, timestamp: new Date() }
+        const withErr = [...messagesRef.current, errMsg]
+        messagesRef.current = withErr
+        setMessages(withErr)
+        return
+      }
+
+      const aiContent = data.content ?? 'عذراً، لم أتمكن من الرد.'
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: aiContent, timestamp: new Date() }
       const withAi = [...messagesRef.current, aiMsg]
       messagesRef.current = withAi
@@ -321,11 +338,12 @@ export function useAIChat() {
       if (autoSpeak) speak(aiContent)
     } catch (err) {
       console.error('sendMessage error:', err)
-      const errMsg: Message = {
-        id: (Date.now() + 1).toString(), role: 'assistant',
-        content: 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مجدداً.',
-        timestamp: new Date(),
-      }
+      const e = err as { message?: string }
+      const isNetwork = typeof e?.message === 'string' && (e.message.toLowerCase().includes('fetch') || e.message.toLowerCase().includes('network') || e.message.toLowerCase().includes('failed'))
+      const errContent = isNetwork
+        ? 'تحقق من اتصالك بالإنترنت وحاول مجدداً.'
+        : 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مجدداً.'
+      const errMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: errContent, timestamp: new Date() }
       const withErr = [...messagesRef.current, errMsg]
       messagesRef.current = withErr
       setMessages(withErr)

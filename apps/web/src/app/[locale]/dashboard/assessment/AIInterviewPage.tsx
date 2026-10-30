@@ -154,7 +154,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const [started,       setStarted]       = useState(false)
   const [elapsed,       setElapsed]       = useState(0)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
-  const messagesEndRef        = useRef<HTMLDivElement>(null)
+  const autoplayUnlockedRef = useRef(false)
+  const messagesEndRef      = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -186,19 +187,28 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   const currentStage = Math.min(Math.floor(messages.length / 2), STAGES.length - 1)
 
-  const handleSend = useCallback(() => {
-    if (!input.trim()) return
+  const unlockAutoplay = useCallback(async () => {
+    if (autoplayUnlockedRef.current) return
+    autoplayUnlockedRef.current = true
     setAudioUnlocked(true)
+    const a = new Audio()
+    a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
+    try { await a.play() } catch { /* ignore */ }
+  }, [])
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim()) return
+    await unlockAutoplay()
     sendMessage(input)
     setInput('')
-  }, [input, sendMessage])
+  }, [input, sendMessage, unlockAutoplay])
 
-  const handleMic = useCallback(() => {
+  const handleMic = useCallback(async () => {
     if (isListening) { stopListening(); return }
-    setAudioUnlocked(true)
+    await unlockAutoplay()
     stopSpeaking()
     startListening(text => sendMessage(text))
-  }, [isListening, stopListening, stopSpeaking, startListening, sendMessage])
+  }, [isListening, stopListening, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />
@@ -300,10 +310,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {!audioUnlocked && (
           <button
             onClick={async () => {
-              setAudioUnlocked(true)
-              const a = new Audio()
-              a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
-              try { await a.play() } catch { /* ignore */ }
+              await unlockAutoplay()
               if (messages.length > 0 && messages[0].role === 'assistant') {
                 speak(messages[0].content)
               }
