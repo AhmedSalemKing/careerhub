@@ -61,65 +61,25 @@ export function useAIChat() {
   useEffect(() => {
     return () => {
       if (typeof window !== 'undefined') window.speechSynthesis.cancel()
-      const audio = audioRef.current
-      if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.src = ''; audioRef.current = null }
+      if (audioRef.current) {
+        try { audioRef.current.pause() } catch { /* ignore */ }
+        audioRef.current = null
+      }
     }
   }, [])
 
-  /* ── Browser TTS — fallback only ────────────────────────── */
-  const browserTTS = useCallback((text: string) => {
-    if (typeof window === 'undefined') return
-    const synth = window.speechSynthesis
-
-    const sentences = text
-      .split(/(?<=[.!?،؛])\s+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 1)
-
-    if (!sentences.length) { setIsSpeaking(false); return }
-
-    let index = 0
-    const speakNext = () => {
-      if (index >= sentences.length) { setIsSpeaking(false); return }
-
-      const u = new SpeechSynthesisUtterance(sentences[index])
-      u.lang   = 'ar-EG'
-      u.volume = 1.0
-
-      if (voiceGender === 'female') {
-        u.rate  = 0.85
-        u.pitch = 1.05
-      } else {
-        u.rate  = 0.82
-        u.pitch = 0.55
-      }
-
-      const arabicVoices = synth.getVoices().filter(v => v.lang.startsWith('ar') || v.lang.includes('AR'))
-      if (arabicVoices.length > 0) {
-        u.voice =
-          arabicVoices.find(v => v.name.includes('Hoda')) ||
-          arabicVoices.find(v => v.lang === 'ar-EG') ||
-          arabicVoices[0]
-      }
-
-      u.onend  = () => { index++; speakNext() }
-      u.onerror = () => { index++; speakNext() }
-      synth.speak(u)
-    }
-
-    speakNext()
-  }, [voiceGender])
-
-  /* ── TTS — OpenAI first, browser fallback ───────────────── */
-  const speak = useCallback(async (text: string) => {
+  /* ── TTS — pure SpeechSynthesis, zero server calls ──────── */
+  const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
+    // ── 1. Hard stop everything currently playing ──
     window.speechSynthesis.cancel()
     if (audioRef.current) {
       try { audioRef.current.pause(); audioRef.current.src = '' } catch { /* ignore */ }
       audioRef.current = null
     }
 
+    // ── 2. Clean text ──
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
       .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
@@ -133,73 +93,116 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    /* STEP 1 — Try OpenAI TTS */
-    try {
-      const res = await fetch('/api/ai/tts', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
-        signal:  AbortSignal.timeout(18000),
-      })
+    const synth = window.speechSynthesis
 
-      if (res.ok) {
-        const contentType = res.headers.get('Content-Type') ?? ''
-        if (contentType.startsWith('audio/')) {
-          const blob = await res.blob()
-          if (blob.size > 1000) {
-            const url = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-            audio.preload = 'auto'
-            audioRef.current = audio
+    // ── 3. Voice selection ──
+    const selectVoice = (): { voice: SpeechSynthesisVoice | null; isMale: boolean } => {
+      const all    = synth.getVoices()
+      const arabic = all.filter(v =>
+        v.lang.toLowerCase().startsWith('ar') || v.lang.toLowerCase().includes('-ar')
+      )
+      if (!arabic.length) return { voice: null, isMale: false }
 
-            await new Promise<void>((resolve) => {
-              audio.onended = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.onerror = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.play().catch((playErr: unknown) => {
-                const e = playErr as { name?: string }
-                console.warn('[TTS] play() rejected:', e?.name)
-                setIsSpeaking(false)
-                audioRef.current = null
-                URL.revokeObjectURL(url)
-                resolve()
-              })
-            })
-            return
-          }
+      if (voiceGender === 'male') {
+        const maleNames = ['hamed', 'naayf', 'maged', 'omar', 'shakir', 'khalid']
+        for (const name of maleNames) {
+          const found = arabic.find(v => v.name.toLowerCase().includes(name))
+          if (found) return { voice: found, isMale: true }
         }
+        // No native male Arabic voice → use Hoda with pitch shift
+        const fallback =
+          arabic.find(v => v.name.includes('Hoda')) ||
+          arabic.find(v => v.lang === 'ar-EG')      ||
+          arabic[0]
+        return { voice: fallback ?? null, isMale: false }
       }
-      console.warn(`[TTS] OpenAI TTS failed (status=${res.status}), falling back to browser TTS`)
-    } catch (err: unknown) {
-      const e = err as { message?: string; name?: string }
-      console.warn('[TTS] OpenAI TTS exception:', e?.message ?? e?.name)
+
+      // Female
+      const femaleNames = ['laila', 'hoda', 'zariyah', 'maha', 'salma', 'amany']
+      for (const name of femaleNames) {
+        const found = arabic.find(v => v.name.toLowerCase().includes(name))
+        if (found) return { voice: found, isMale: false }
+      }
+      return { voice: arabic[0] ?? null, isMale: false }
     }
 
-    /* STEP 2 — Browser fallback */
-    browserTTS(cleanText)
-  }, [voiceGender, browserTTS])
+    // ── 4. Speak sentence by sentence ──
+    const doSpeak = () => {
+      const sentences = cleanText
+        .split(/(?<=[.!?،؛:])\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 1)
+
+      if (!sentences.length) { setIsSpeaking(false); return }
+
+      const { voice, isMale } = selectVoice()
+      let index = 0
+
+      const speakNext = () => {
+        if (index >= sentences.length) { setIsSpeaking(false); return }
+
+        const u    = new SpeechSynthesisUtterance(sentences[index])
+        u.lang     = voice?.lang ?? 'ar-EG'
+        u.voice    = voice
+        u.volume   = 1.0
+
+        if (voiceGender === 'female') {
+          u.rate  = 0.85
+          u.pitch = 1.05
+        } else if (isMale) {
+          // Real male voice found — natural settings
+          u.rate  = 0.9
+          u.pitch = 1.0
+        } else {
+          // No male voice → deep pitch shift on Hoda
+          u.rate  = 0.82
+          u.pitch = 0.55
+        }
+
+        u.onend  = () => { index++; speakNext() }
+        u.onerror = (e) => {
+          if (e.error !== 'interrupted' && e.error !== 'canceled') {
+            console.warn('[TTS] utterance error:', e.error)
+          }
+          index++
+          speakNext()
+        }
+
+        synth.speak(u)
+      }
+
+      speakNext()
+    }
+
+    // ── 5. Ensure voices are loaded ──
+    if (synth.getVoices().length === 0) {
+      let fired = false
+      const onReady = () => {
+        if (fired) return
+        fired = true
+        doSpeak()
+      }
+      synth.addEventListener('voiceschanged', onReady, { once: true })
+      setTimeout(onReady, 600)
+    } else {
+      doSpeak()
+    }
+  }, [voiceGender])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
     if (typeof window !== 'undefined') window.speechSynthesis.cancel()
-    const audio = audioRef.current
-    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.src = ''; audioRef.current = null }
+    if (audioRef.current) {
+      try { audioRef.current.pause(); audioRef.current.src = '' } catch { /* ignore */ }
+      audioRef.current = null
+    }
     setIsSpeaking(false)
   }, [])
 
   /* ── STT ─────────────────────────────────────────────────── */
   const startListening = useCallback((onResult: (text: string) => void) => {
     if (typeof window === 'undefined') return
-    const w = window as unknown as WinSpeech
+    const w  = window as unknown as WinSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
@@ -265,11 +268,15 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) void speak(aiContent)
+      if (autoSpeak) speak(aiContent)
     } catch (err) {
       console.error('sendMessage error:', err)
       const e = err as { message?: string }
-      const isNetwork = typeof e?.message === 'string' && (e.message.toLowerCase().includes('fetch') || e.message.toLowerCase().includes('network') || e.message.toLowerCase().includes('failed'))
+      const isNetwork = typeof e?.message === 'string' && (
+        e.message.toLowerCase().includes('fetch')   ||
+        e.message.toLowerCase().includes('network') ||
+        e.message.toLowerCase().includes('failed')
+      )
       const errContent = isNetwork
         ? 'تحقق من اتصالك بالإنترنت وحاول مجدداً.'
         : 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مجدداً.'
