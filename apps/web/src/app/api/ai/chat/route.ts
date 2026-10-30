@@ -128,8 +128,16 @@ export async function POST(req: NextRequest) {
           // 429 = quota exhausted — no point trying other models with the same key
           if (geminiRes.status === 429) {
             return NextResponse.json(
-              { error: 'Quota exceeded', content: 'تم استنفاد حصة الذكاء الاصطناعي اليومية. حاول غداً.' },
-              { status: 429 }
+              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد لحظة.' },
+              { status: 200 }
+            )
+          }
+
+          // 503 = overloaded — return friendly message immediately
+          if (geminiRes.status === 503) {
+            return NextResponse.json(
+              { content: 'الخدمة تواجه ضغطاً الآن. حاول مجدداً.' },
+              { status: 200 }
             )
           }
 
@@ -179,22 +187,15 @@ export async function POST(req: NextRequest) {
     // All models failed
     console.error('[AI Chat] ALL MODELS FAILED. Last error:', lastError)
     return NextResponse.json(
-      {
-        error: 'All Gemini models failed',
-        details: lastError,
-        content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.',
-      },
-      { status: 502 }
+      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.' },
+      { status: 200 }
     )
   } catch (error: unknown) {
     const e = error as { message?: string }
-    console.error('[AI Chat] Fatal:', e?.message)
+    console.error('[AI Chat] Unexpected error:', e?.message)
     return NextResponse.json(
-      {
-        error: e?.message || 'Unknown',
-        content: 'عذراً، حدث خطأ غير متوقع. حاول مجدداً.',
-      },
-      { status: 500 }
+      { content: 'عذراً، حدث خطأ مؤقت. اكتب رسالتك مرة أخرى.' },
+      { status: 200 }
     )
   }
 }

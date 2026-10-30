@@ -56,25 +56,18 @@ export function useAIChat() {
   const recognitionRef      = useRef<SpeechRec | null>(null)
   const messagesRef         = useRef<Message[]>([])
   const audioRef            = useRef<HTMLAudioElement | null>(null)
-  const speakAbortRef       = useRef<AbortController | null>(null)
   const browserTTSCancelRef = useRef<(() => void) | null>(null)
-  const browserTTSActiveRef = useRef<boolean>(false)
-  // Generation counter: every new speak() bumps this; old utterances bail when theirs doesn't match
-  const ttsGenerationRef    = useRef<number>(0)
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
     return () => {
-      ttsGenerationRef.current++ // invalidate all pending utterances
       if (typeof window !== 'undefined') window.speechSynthesis.cancel()
       const audio = audioRef.current
-      if (audio) { audio.pause(); audio.src = ''; audioRef.current = null }
-      const abort = speakAbortRef.current
-      if (abort) { abort.abort(); speakAbortRef.current = null }
+      if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.src = ''; audioRef.current = null }
     }
   }, [])
 
-  /* ── Browser TTS — returns cancel fn, reads generation (doesn't bump it) ── */
+  /* ── Browser TTS — fallback only ────────────────────────── */
   const browserTTS = useCallback((text: string): (() => void) => {
     if (typeof window === 'undefined') return () => { /* noop */ }
     const synth = window.speechSynthesis
@@ -89,15 +82,12 @@ export function useAIChat() {
       return () => { /* noop */ }
     }
 
-    // Read current generation — speak() has already bumped it for this call
-    const myGen   = ttsGenerationRef.current
     let index     = 0
     let cancelled = false
 
     const speakNext = () => {
-      // Bail if a newer speak() was called (generation advanced) or explicitly cancelled
-      if (cancelled || ttsGenerationRef.current !== myGen || index >= sentences.length) {
-        if (!cancelled && ttsGenerationRef.current === myGen) setIsSpeaking(false)
+      if (cancelled || index >= sentences.length) {
+        if (!cancelled) setIsSpeaking(false)
         return
       }
 
@@ -120,8 +110,8 @@ export function useAIChat() {
         u.voice = best ?? voices[0]
       }
 
-      u.onend  = () => { if (!cancelled && ttsGenerationRef.current === myGen) { index++; speakNext() } }
-      u.onerror = () => { if (!cancelled && ttsGenerationRef.current === myGen) { index++; speakNext() } }
+      u.onend  = () => { if (!cancelled) { index++; speakNext() } }
+      u.onerror = () => { if (!cancelled) { index++; speakNext() } }
       synth.speak(u)
     }
 
@@ -137,27 +127,16 @@ export function useAIChat() {
     }
   }, [voiceGender])
 
-  /* ── TTS — instant browser TTS + parallel Gemini ─────────── */
-  const speak = useCallback((text: string) => {
+  /* ── TTS — sequential: Gemini first, browser fallback ───── */
+  const speak = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return
 
-    // Bump generation — any browser TTS utterances from the previous speak() will bail
-    ttsGenerationRef.current++
-
-    // Abort in-flight Gemini TTS fetch
-    const prevAbort = speakAbortRef.current
-    if (prevAbort) { prevAbort.abort(); speakAbortRef.current = null }
-
-    // Cancel previous browser TTS cancel function + speech synth
+    // Stop everything currently playing
+    window.speechSynthesis.cancel()
     const prevCancel = browserTTSCancelRef.current
     if (prevCancel) { prevCancel(); browserTTSCancelRef.current = null }
-    window.speechSynthesis.cancel()
-
-    // Stop previous Gemini audio element
     const prevAudio = audioRef.current
-    if (prevAudio) { prevAudio.pause(); prevAudio.src = ''; audioRef.current = null }
-
-    browserTTSActiveRef.current = false
+    if (prevAudio) { prevAudio.onended = null; prevAudio.onerror = null; prevAudio.pause(); prevAudio.src = ''; audioRef.current = null }
 
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
@@ -172,96 +151,68 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // Phase 1: start browser TTS immediately (generation already bumped above)
-    const cancelBrowser = browserTTS(cleanText)
-    browserTTSCancelRef.current = cancelBrowser
-    browserTTSActiveRef.current = true
-
-    // Phase 2: fetch Gemini TTS in parallel; replace browser TTS when ready
-    const controller = new AbortController()
-    speakAbortRef.current = controller
-    const capturedCleanText = cleanText
-
-    fetch('/api/ai/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: capturedCleanText, gender: voiceGender }),
-      signal: controller.signal,
-    })
-      .then(async (res) => {
-        if (!res.ok) return // browser TTS keeps playing
-
-        const blob = await res.blob()
-        if (blob.size < 500) return // browser TTS keeps playing
-
-        // Prepare Gemini audio element before cancelling browser TTS
-        const url = URL.createObjectURL(blob)
-        const prevAudioInner = audioRef.current
-        if (prevAudioInner) { prevAudioInner.pause(); prevAudioInner.src = ''; audioRef.current = null }
-
-        const audio = new Audio()
-        audio.preload = 'auto'
-        audio.src = url
-        audioRef.current = audio
-        const capturedUrl = url
-
-        audio.onended = () => {
-          setIsSpeaking(false)
-          audioRef.current = null
-          setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
-        }
-        audio.onerror = () => {
-          setIsSpeaking(false)
-          audioRef.current = null
-          setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
-        }
-
-        // Hard-kill browser TTS: bump gen, cancel, wait 50ms for Chrome to fully stop
-        const genAtCancel = ++ttsGenerationRef.current
-        window.speechSynthesis.cancel()
-        const cancelFn = browserTTSCancelRef.current
-        if (cancelFn) { cancelFn(); browserTTSCancelRef.current = null }
-        browserTTSActiveRef.current = false
-
-        await new Promise<void>(r => setTimeout(r, 50))
-
-        // If another speak() was called during the 50ms wait, bail out
-        if (ttsGenerationRef.current !== genAtCancel) return
-
-        audio.play().catch(() => {
-          // Autoplay blocked — browser TTS was already cancelled, just clean up
-          setIsSpeaking(false)
-          audioRef.current = null
-          setTimeout(() => URL.revokeObjectURL(capturedUrl), 500)
-        })
+    // STEP 1: Try Gemini TTS (server-side, best quality)
+    try {
+      const res = await fetch('/api/ai/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, gender: voiceGender }),
+        signal: AbortSignal.timeout(20000),
       })
-      .catch((err: unknown) => {
-        const e = err as { name?: string }
-        if (e?.name !== 'AbortError') {
-          console.warn('[TTS] Gemini fetch failed, browser TTS continues:', e)
+
+      if (res.ok) {
+        const contentType = res.headers.get('Content-Type') || ''
+        if (contentType.startsWith('audio/')) {
+          const blob = await res.blob()
+          if (blob.size > 1000) {
+            const url = URL.createObjectURL(blob)
+            const audio = new Audio(url)
+            audioRef.current = audio
+
+            await new Promise<void>((resolve) => {
+              audio.onended = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.onerror = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.play().catch(() => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                URL.revokeObjectURL(url)
+                resolve()
+              })
+            })
+            return  // SUCCESS — do NOT fall through to browser TTS
+          }
         }
-        // browser TTS keeps playing — nothing to do
-      })
-      .finally(() => {
-        if (speakAbortRef.current === controller) speakAbortRef.current = null
-      })
+      }
+      console.warn('[TTS] Gemini TTS failed, using browser fallback. Status:', res.status)
+    } catch (err: unknown) {
+      const e = err as { message?: string }
+      console.warn('[TTS] Gemini TTS error:', e?.message)
+    }
+
+    // STEP 2: Fallback — browser Web Speech API (only if Gemini failed)
+    const cancel = browserTTS(cleanText)
+    browserTTSCancelRef.current = cancel
   }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
-    ttsGenerationRef.current++ // invalidate all pending utterances
-
-    const abort = speakAbortRef.current
-    if (abort) { abort.abort(); speakAbortRef.current = null }
-
     if (typeof window !== 'undefined') window.speechSynthesis.cancel()
 
     const cancelFn = browserTTSCancelRef.current
     if (cancelFn) { cancelFn(); browserTTSCancelRef.current = null }
-    browserTTSActiveRef.current = false
 
     const audio = audioRef.current
-    if (audio) { audio.pause(); audio.src = ''; audioRef.current = null }
+    if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.src = ''; audioRef.current = null }
 
     setIsSpeaking(false)
   }, [])
