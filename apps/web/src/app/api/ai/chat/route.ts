@@ -1,145 +1,190 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
+export const maxDuration = 30
 
-const DEVEWAY_SYSTEM_PROMPT = `أنت مساعد DeveWay الذكي المتخصص في التوجيه المهني والكوتشينج.
+const DEVEWAY_SYSTEM_PROMPT = `أنت مساعد DeveWay الذكي المتخصص في التوجيه المهني.
 اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، ذكي، عربي بطلاقة.
 
-مهمتك الوحيدة: مساعدة المستخدمين في اكتشاف مساراتهم المهنية المناسبة في مجال التكنولوجيا والبرمجة.
+مهمتك: مساعدة المستخدمين في اكتشاف مساراتهم المهنية في مجال التكنولوجيا.
 
-المسارات المتاحة في DeveWay:
-- Backend Developer (NestJS, Node.js, databases)
-- Frontend Developer (React, Next.js, UI/UX)
+المسارات المتاحة:
+- Backend Developer
+- Frontend Developer
 - Full Stack Developer
-- Data Engineer / Data Scientist
+- Data Engineer
 - Machine Learning Engineer
-- DevOps / Cloud Engineer
+- DevOps Engineer
 - UI/UX Designer
 - Product Manager
 - Cybersecurity Engineer
-- Mobile Developer (React Native, Flutter)
+- Mobile Developer
 
-قواعد صارمة:
-1. لا تجاوب على أي سؤال خارج نطاق التطوير المهني والتقني والتعليم
-2. لو سألك أحد عن الطعام أو الأفلام أو السياسة أو أي موضوع غير مهني: قل "أنا متخصص في التوجيه المهني فقط، هل نكمل اكتشاف مسارك؟"
-3. اسأل أسئلة متعمقة ومترابطة — مش سكريبت جامد
-4. بعد 6-8 رسائل قدّم توصية مسار مهني مخصصة
-5. تحدث بالعربية دائماً
-6. كن محادثاً طبيعياً مثل مقابلة حقيقية
+قواعد:
+1. لا تجاوب على أسئلة خارج التوجيه المهني والتقني
+2. اسأل أسئلة مترابطة ومتعمقة
+3. بعد 6-8 رسائل قدم توصية مسار مخصصة
+4. تحدث بالعربية دائماً
+5. كن طبيعياً مثل مقابلة حقيقية
 
-عند تقديم التوصية النهائية اتبع هذا الفورمات:
-[CAREER_RESULT]
-{
-  "primaryPath": "اسم المسار",
-  "matchScore": 87,
-  "secondaryPaths": ["مسار 2", "مسار 3"],
-  "strengths": ["نقطة 1", "نقطة 2", "نقطة 3"],
-  "nextSteps": ["خطوة 1", "خطوة 2", "خطوة 3"],
-  "recommendedCourses": ["كورس 1", "كورس 2"],
-  "timeline": "6-9 أشهر"
-}
-[/CAREER_RESULT]
-
-للوضع الاختباري (Quiz)، عند طلب سؤال اختيار من متعدد، استخدم:
-[QUIZ_Q]
-{
-  "question": "نص السؤال",
-  "choices": ["أ) خيار 1", "ب) خيار 2", "ج) خيار 3", "د) خيار 4"],
-  "correct": 0,
-  "explanation": "شرح مختصر للإجابة الصحيحة"
-}
-[/QUIZ_Q]`
+عند التوصية النهائية اتبع هذا الفورمات:
+[CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":[],"strengths":[],"nextSteps":[],"recommendedCourses":[],"timeline":"..."}[/CAREER_RESULT]`
 
 export async function POST(req: NextRequest) {
-  // Check API key first
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    console.error('[AI Chat] GEMINI_API_KEY is not set')
+    console.error('[AI Chat] GEMINI_API_KEY missing from env')
     return NextResponse.json(
-      { error: 'GEMINI_API_KEY not configured', content: 'عذراً، مفتاح API غير مضبوط. يرجى التواصل مع الدعم.' },
+      { error: 'API key not configured', content: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.' },
       { status: 500 }
     )
   }
 
   try {
-    const body = await req.json()
-    const { messages } = body
+    const { messages } = await req.json()
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return NextResponse.json({ error: 'No messages provided' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'No messages', content: 'لم يتم استلام رسالة.' },
+        { status: 400 }
+      )
     }
 
-    // Build contents array for Gemini — must alternate user/model, start with user
-    const rawContents = messages
-      .filter((m: { role: string; content: string }) => m.content?.trim())
-      .map((m: { role: string; content: string }) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content.trim() }],
-      }))
+    // Build valid alternating contents for Gemini (must start with 'user')
+    const validMessages = (messages as { role: string; content: string }[]).filter(
+      (m) => m.content && typeof m.content === 'string' && m.content.trim().length > 0
+    )
 
-    // Deduplicate consecutive same-role messages (keep last)
+    if (validMessages.length === 0) {
+      return NextResponse.json(
+        { error: 'Empty messages', content: 'لم يتم استلام رسالة صالحة.' },
+        { status: 400 }
+      )
+    }
+
     const contents: { role: string; parts: { text: string }[] }[] = []
-    for (const item of rawContents) {
-      if (contents.length > 0 && contents[contents.length - 1].role === item.role) {
-        contents[contents.length - 1] = item
+    let lastRole = ''
+    for (const msg of validMessages) {
+      const role = msg.role === 'assistant' ? 'model' : 'user'
+      if (role === lastRole) {
+        contents[contents.length - 1] = { role, parts: [{ text: msg.content }] }
       } else {
-        contents.push(item)
+        contents.push({ role, parts: [{ text: msg.content }] })
+        lastRole = role
       }
     }
 
-    // Gemini requires first message to be user role
-    if (contents.length === 0 || contents[0].role !== 'user') {
-      contents.unshift({ role: 'user', parts: [{ text: 'مرحباً' }] })
+    if (contents.length > 0 && contents[0].role === 'model') {
+      contents.unshift({ role: 'user', parts: [{ text: 'مرحبا' }] })
+    }
+    if (contents[contents.length - 1].role === 'model') {
+      contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    console.log('[AI Chat] contents length:', contents.length, 'roles:', contents.map(c => c.role).join(','))
+    console.log('[AI Chat] contents count:', contents.length, '| first:', contents[0]?.role, '| last:', contents[contents.length - 1]?.role)
 
-    // Call Gemini REST API directly (no SDK needed)
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: DEVEWAY_SYSTEM_PROMPT }],
-          },
+    // Try multiple models in order — latest first
+    const models = [
+      'gemini-2.0-flash',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-flash',
+      'gemini-1.5-pro-latest',
+    ]
+
+    let lastError = ''
+
+    for (const model of models) {
+      try {
+        console.log(`[AI Chat] trying model: ${model}`)
+
+        const baseBody = {
           contents,
           generationConfig: {
             temperature: 0.8,
-            maxOutputTokens: 1000,
-            topP: 0.95,
+            maxOutputTokens: 800,
           },
-        }),
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+
+        const geminiRes = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...baseBody,
+            system_instruction: {
+              parts: [{ text: DEVEWAY_SYSTEM_PROMPT }],
+            },
+          }),
+        })
+
+        if (!geminiRes.ok) {
+          const errText = await geminiRes.text()
+          lastError = `${model} failed: ${geminiRes.status} — ${errText.slice(0, 300)}`
+          console.error(`[AI Chat] ${lastError}`)
+
+          // Retry without system_instruction on 400 (some API versions reject it)
+          if (geminiRes.status === 400 && errText.includes('system_instruction')) {
+            console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction`)
+            const geminiRes2 = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(baseBody),
+            })
+            if (!geminiRes2.ok) {
+              const errText2 = await geminiRes2.text()
+              lastError = `${model} (no sys) failed: ${geminiRes2.status} — ${errText2.slice(0, 300)}`
+              console.error(`[AI Chat] ${lastError}`)
+              continue
+            }
+            const data2 = await geminiRes2.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+            const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text
+            if (text2) {
+              console.log(`[AI Chat] SUCCESS with ${model} (no sys). length=${text2.length}`)
+              return NextResponse.json({ content: text2 })
+            }
+            continue
+          }
+
+          continue
+        }
+
+        const data = await geminiRes.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+
+        if (text && text.trim().length > 0) {
+          console.log(`[AI Chat] SUCCESS with ${model}. length=${text.length}`)
+          return NextResponse.json({ content: text })
+        }
+
+        lastError = `${model} returned empty text`
+        console.error(`[AI Chat] ${lastError}`)
+      } catch (err: unknown) {
+        const e = err as { message?: string }
+        lastError = `${model} exception: ${e?.message}`
+        console.error(`[AI Chat] ${lastError}`)
       }
+    }
+
+    // All models failed
+    console.error('[AI Chat] ALL MODELS FAILED. Last error:', lastError)
+    return NextResponse.json(
+      {
+        error: 'All Gemini models failed',
+        details: lastError,
+        content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.',
+      },
+      { status: 502 }
     )
-
-    if (!geminiRes.ok) {
-      const errBody = await geminiRes.text()
-      console.error('[AI Chat] Gemini API error:', geminiRes.status, errBody)
-      return NextResponse.json(
-        { error: 'Gemini API error', content: 'عذراً، حدث خطأ في خدمة الذكاء الاصطناعي. حاول مجدداً.' },
-        { status: 502 }
-      )
-    }
-
-    const data = await geminiRes.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-
-    if (!text) {
-      console.error('[AI Chat] No text in response:', JSON.stringify(data))
-      return NextResponse.json(
-        { error: 'Empty response', content: 'لم أستطع توليد رد. حاول مجدداً.' },
-        { status: 502 }
-      )
-    }
-
-    return NextResponse.json({ content: text })
   } catch (error: unknown) {
     const e = error as { message?: string }
-    console.error('[AI Chat] Unexpected error:', e?.message || error)
+    console.error('[AI Chat] Fatal:', e?.message)
     return NextResponse.json(
-      { error: e?.message || 'Unknown error', content: 'عذراً، حدث خطأ غير متوقع.' },
+      {
+        error: e?.message || 'Unknown',
+        content: 'عذراً، حدث خطأ غير متوقع. حاول مجدداً.',
+      },
       { status: 500 }
     )
   }
