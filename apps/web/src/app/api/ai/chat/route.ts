@@ -69,11 +69,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No messages provided' }, { status: 400 })
     }
 
-    // Build contents array for Gemini
-    const contents = messages.map((m: { role: string; content: string }) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }))
+    // Build contents array for Gemini — must alternate user/model, start with user
+    const rawContents = messages
+      .filter((m: { role: string; content: string }) => m.content?.trim())
+      .map((m: { role: string; content: string }) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content.trim() }],
+      }))
+
+    // Deduplicate consecutive same-role messages (keep last)
+    const contents: { role: string; parts: { text: string }[] }[] = []
+    for (const item of rawContents) {
+      if (contents.length > 0 && contents[contents.length - 1].role === item.role) {
+        contents[contents.length - 1] = item
+      } else {
+        contents.push(item)
+      }
+    }
+
+    // Gemini requires first message to be user role
+    if (contents.length === 0 || contents[0].role !== 'user') {
+      contents.unshift({ role: 'user', parts: [{ text: 'مرحباً' }] })
+    }
+
+    console.log('[AI Chat] contents length:', contents.length, 'roles:', contents.map(c => c.role).join(','))
 
     // Call Gemini REST API directly (no SDK needed)
     const geminiRes = await fetch(

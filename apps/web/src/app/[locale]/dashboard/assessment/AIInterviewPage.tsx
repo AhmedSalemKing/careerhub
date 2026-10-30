@@ -146,7 +146,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const {
     messages, isLoading, isListening, isSpeaking,
     careerResult, voiceGender, setVoiceGender,
-    sendMessage, stopSpeaking, startListening, stopListening, clearChat,
+    sendMessage, speak, stopSpeaking, startListening, stopListening, clearChat,
+    addAssistantMessage,
   } = useAIChat()
 
   const [input,   setInput]   = useState('')
@@ -166,7 +167,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   useEffect(() => {
     if (!started) {
       setStarted(true)
-      setTimeout(() => sendMessage(FIRST_MSG, true), 600)
+      setTimeout(() => {
+        addAssistantMessage(FIRST_MSG)
+        speak(FIRST_MSG)
+      }, 600)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

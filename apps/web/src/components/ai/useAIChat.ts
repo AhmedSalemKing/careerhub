@@ -47,14 +47,6 @@ export function useAIChat() {
   const recognitionRef = useRef<SpeechRec | null>(null)
   const messagesRef    = useRef<Message[]>([])
 
-  const updateMessages = useCallback((updater: (prev: Message[]) => Message[]) => {
-    setMessages(prev => {
-      const next = updater(prev)
-      messagesRef.current = next
-      return next
-    })
-  }, [])
-
   /* ── TTS ─────────────────────────────────────────────────── */
   const speak = useCallback((text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
@@ -134,11 +126,14 @@ export function useAIChat() {
     if (!content.trim() || isLoading) return
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
-    updateMessages(prev => [...prev, userMsg])
+    // Update ref synchronously before fetch so API call sees the new message
+    const newMessages = [...messagesRef.current, userMsg]
+    messagesRef.current = newMessages
+    setMessages(newMessages)
     setIsLoading(true)
 
     try {
-      const all = [...messagesRef.current]
+      const all = newMessages
       const res = await fetch('/api/ai/chat', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -149,7 +144,9 @@ export function useAIChat() {
       const aiContent = data.content ?? 'عذراً، لم أتمكن من الرد.'
 
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: aiContent, timestamp: new Date() }
-      updateMessages(prev => [...prev, aiMsg])
+      const withAi = [...messagesRef.current, aiMsg]
+      messagesRef.current = withAi
+      setMessages(withAi)
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
@@ -161,11 +158,20 @@ export function useAIChat() {
         content: 'عذراً، حدث خطأ في الاتصال. تأكد من إضافة GEMINI_API_KEY وحاول مجدداً.',
         timestamp: new Date(),
       }
-      updateMessages(prev => [...prev, errMsg])
+      const withErr = [...messagesRef.current, errMsg]
+      messagesRef.current = withErr
+      setMessages(withErr)
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, updateMessages, extractCareerResult, speak])
+  }, [isLoading, extractCareerResult, speak])
+
+  const addAssistantMessage = useCallback((content: string) => {
+    const msg: Message = { id: Date.now().toString(), role: 'assistant', content, timestamp: new Date() }
+    const next = [...messagesRef.current, msg]
+    messagesRef.current = next
+    setMessages(next)
+  }, [])
 
   const clearChat = useCallback(() => {
     setMessages([])
@@ -180,5 +186,6 @@ export function useAIChat() {
     careerResult, voiceGender, setVoiceGender,
     sendMessage, speak, stopSpeaking,
     startListening, stopListening, clearChat,
+    addAssistantMessage,
   }
 }
