@@ -68,8 +68,85 @@ export function useAIChat() {
     }
   }, [])
 
-  /* ── TTS — pure SpeechSynthesis, zero server calls ──────── */
-  const speak = useCallback((text: string) => {
+  /* ── Browser TTS — fallback only ────────────────────────── */
+  const browserTTS = useCallback((text: string) => {
+    if (typeof window === 'undefined') return
+    const synth = window.speechSynthesis
+
+    const selectVoice = (): { voice: SpeechSynthesisVoice | null; isMale: boolean } => {
+      const all    = synth.getVoices()
+      const arabic = all.filter(v =>
+        v.lang.toLowerCase().startsWith('ar') || v.lang.toLowerCase().includes('-ar')
+      )
+      if (!arabic.length) return { voice: null, isMale: false }
+
+      if (voiceGender === 'male') {
+        const maleNames = ['hamed', 'naayf', 'maged', 'omar', 'shakir', 'khalid']
+        for (const name of maleNames) {
+          const found = arabic.find(v => v.name.toLowerCase().includes(name))
+          if (found) return { voice: found, isMale: true }
+        }
+        const fallback =
+          arabic.find(v => v.name.includes('Hoda')) ||
+          arabic.find(v => v.lang === 'ar-EG')      ||
+          arabic[0]
+        return { voice: fallback ?? null, isMale: false }
+      }
+
+      const femaleNames = ['laila', 'hoda', 'zariyah', 'maha', 'salma', 'amany']
+      for (const name of femaleNames) {
+        const found = arabic.find(v => v.name.toLowerCase().includes(name))
+        if (found) return { voice: found, isMale: false }
+      }
+      return { voice: arabic[0] ?? null, isMale: false }
+    }
+
+    const sentences = text
+      .split(/(?<=[.!?،؛:])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 1)
+
+    if (!sentences.length) { setIsSpeaking(false); return }
+
+    const { voice, isMale } = selectVoice()
+    let index = 0
+
+    const speakNext = () => {
+      if (index >= sentences.length) { setIsSpeaking(false); return }
+
+      const u  = new SpeechSynthesisUtterance(sentences[index])
+      u.lang   = voice?.lang ?? 'ar-EG'
+      u.voice  = voice
+      u.volume = 1.0
+
+      if (voiceGender === 'female') {
+        u.rate  = 0.85
+        u.pitch = 1.05
+      } else if (isMale) {
+        u.rate  = 0.9
+        u.pitch = 1.0
+      } else {
+        u.rate  = 0.82
+        u.pitch = 0.55
+      }
+
+      u.onend  = () => { index++; speakNext() }
+      u.onerror = (e) => {
+        if (e.error !== 'interrupted' && e.error !== 'canceled') {
+          console.warn('[TTS] utterance error:', e.error)
+        }
+        index++
+        speakNext()
+      }
+
+      synth.speak(u)
+    }
+
+    speakNext()
+  }, [voiceGender])
+
+  /* ── TTS — server first, browser fallback ───────────────── */
+  const speak = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return
 
     // ── 1. Hard stop everything currently playing ──
@@ -93,101 +170,59 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    const synth = window.speechSynthesis
+    // ── 3. Try server TTS first ──
+    try {
+      const res = await fetch('/api/ai/tts', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
+        signal:  AbortSignal.timeout(20000),
+      })
 
-    // ── 3. Voice selection ──
-    const selectVoice = (): { voice: SpeechSynthesisVoice | null; isMale: boolean } => {
-      const all    = synth.getVoices()
-      const arabic = all.filter(v =>
-        v.lang.toLowerCase().startsWith('ar') || v.lang.toLowerCase().includes('-ar')
-      )
-      if (!arabic.length) return { voice: null, isMale: false }
+      if (res.ok) {
+        const contentType = res.headers.get('Content-Type') ?? ''
+        if (contentType.startsWith('audio/')) {
+          const blob = await res.blob()
+          if (blob.size > 1000) {
+            const url   = URL.createObjectURL(blob)
+            const audio = new Audio(url)
+            audioRef.current = audio
 
-      if (voiceGender === 'male') {
-        const maleNames = ['hamed', 'naayf', 'maged', 'omar', 'shakir', 'khalid']
-        for (const name of maleNames) {
-          const found = arabic.find(v => v.name.toLowerCase().includes(name))
-          if (found) return { voice: found, isMale: true }
-        }
-        // No native male Arabic voice → use Hoda with pitch shift
-        const fallback =
-          arabic.find(v => v.name.includes('Hoda')) ||
-          arabic.find(v => v.lang === 'ar-EG')      ||
-          arabic[0]
-        return { voice: fallback ?? null, isMale: false }
-      }
-
-      // Female
-      const femaleNames = ['laila', 'hoda', 'zariyah', 'maha', 'salma', 'amany']
-      for (const name of femaleNames) {
-        const found = arabic.find(v => v.name.toLowerCase().includes(name))
-        if (found) return { voice: found, isMale: false }
-      }
-      return { voice: arabic[0] ?? null, isMale: false }
-    }
-
-    // ── 4. Speak sentence by sentence ──
-    const doSpeak = () => {
-      const sentences = cleanText
-        .split(/(?<=[.!?،؛:])\s+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 1)
-
-      if (!sentences.length) { setIsSpeaking(false); return }
-
-      const { voice, isMale } = selectVoice()
-      let index = 0
-
-      const speakNext = () => {
-        if (index >= sentences.length) { setIsSpeaking(false); return }
-
-        const u    = new SpeechSynthesisUtterance(sentences[index])
-        u.lang     = voice?.lang ?? 'ar-EG'
-        u.voice    = voice
-        u.volume   = 1.0
-
-        if (voiceGender === 'female') {
-          u.rate  = 0.85
-          u.pitch = 1.05
-        } else if (isMale) {
-          // Real male voice found — natural settings
-          u.rate  = 0.9
-          u.pitch = 1.0
-        } else {
-          // No male voice → deep pitch shift on Hoda
-          u.rate  = 0.82
-          u.pitch = 0.55
-        }
-
-        u.onend  = () => { index++; speakNext() }
-        u.onerror = (e) => {
-          if (e.error !== 'interrupted' && e.error !== 'canceled') {
-            console.warn('[TTS] utterance error:', e.error)
+            await new Promise<void>((resolve) => {
+              audio.onended = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.onerror = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.play().catch((playErr: unknown) => {
+                const e = playErr as { name?: string }
+                console.warn('[TTS] play() rejected:', e?.name)
+                setIsSpeaking(false)
+                audioRef.current = null
+                URL.revokeObjectURL(url)
+                resolve()
+              })
+            })
+            return // SUCCESS — do NOT fall through to browser TTS
           }
-          index++
-          speakNext()
         }
-
-        synth.speak(u)
       }
-
-      speakNext()
+      console.warn('[TTS] server TTS unavailable (status=' + res.status + '), using browser fallback')
+    } catch (err: unknown) {
+      const e = err as { message?: string; name?: string }
+      console.warn('[TTS] server TTS error:', e?.message ?? e?.name)
     }
 
-    // ── 5. Ensure voices are loaded ──
-    if (synth.getVoices().length === 0) {
-      let fired = false
-      const onReady = () => {
-        if (fired) return
-        fired = true
-        doSpeak()
-      }
-      synth.addEventListener('voiceschanged', onReady, { once: true })
-      setTimeout(onReady, 600)
-    } else {
-      doSpeak()
-    }
-  }, [voiceGender])
+    // ── 4. Fallback — browser Web Speech API ──
+    browserTTS(cleanText)
+  }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
@@ -268,7 +303,7 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) speak(aiContent)
+      if (autoSpeak) void speak(aiContent)
     } catch (err) {
       console.error('sendMessage error:', err)
       const e = err as { message?: string }
