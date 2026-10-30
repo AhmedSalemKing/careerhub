@@ -7,6 +7,10 @@ export function StopSpeechOnNav() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.speechSynthesis.cancel()
+      document.querySelectorAll('audio').forEach(a => {
+        a.pause()
+        a.currentTime = 0
+      })
     }
   }, [pathname])
   return null
