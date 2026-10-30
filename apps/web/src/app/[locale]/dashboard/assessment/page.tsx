@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Sparkles, BarChart3, BookOpen, CheckCircle2, ExternalLink,
   RotateCcw, ArrowLeft, ArrowRight, RefreshCw
@@ -12,15 +12,22 @@ import {
   QUESTION_BANK, selectAdaptiveQuestions,
   calculateResults, type Question, type CareerScore
 } from '@/lib/assessment-engine'
+import AIInterviewPage from './AIInterviewPage'
 
 type Phase = 'intro' | 'questions' | 'analyzing' | 'results'
 
-export default function AssessmentPage() {
+function AssessmentPageContent() {
+  const searchParams = useSearchParams()
+  const mode = searchParams.get('mode')
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+
+  if (mode === 'interview' || mode === 'quiz') {
+    return <AIInterviewPage mode={mode} />
+  }
   
   const [phase, setPhase] = useState<Phase>('intro')
   const [questions, setQuestions] = useState<Question[]>([])
@@ -396,4 +403,12 @@ export default function AssessmentPage() {
   }
 
   return null
+}
+
+export default function AssessmentPage() {
+  return (
+    <Suspense fallback={null}>
+      <AssessmentPageContent />
+    </Suspense>
+  )
 }
