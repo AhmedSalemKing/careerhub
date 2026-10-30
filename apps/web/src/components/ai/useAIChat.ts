@@ -67,7 +67,7 @@ export function useAIChat() {
     const sentences = text
       .split(/[.!?،؛\n]+/)
       .map(s => s.trim())
-      .filter(s => s.length > 2)
+      .filter(s => s.length > 1)
 
     if (!sentences.length) { setIsSpeaking(false); return }
 
@@ -78,23 +78,23 @@ export function useAIChat() {
 
       const u = new SpeechSynthesisUtterance(sentences[index])
       u.lang   = 'ar-SA'
-      u.rate   = 0.82
-      u.pitch  = voiceGender === 'female' ? 1.1 : 0.8
+      u.rate   = 0.85
+      u.pitch  = voiceGender === 'female' ? 1.05 : 0.9
       u.volume = 1.0
 
-      const allVoices    = synth.getVoices()
-      const arabicVoices = allVoices.filter(v => v.lang.startsWith('ar') || v.lang.startsWith('AR'))
+      const all    = synth.getVoices()
+      const arabic = all.filter(v => v.lang.toLowerCase().startsWith('ar'))
 
-      if (arabicVoices.length > 0) {
-        const priority = voiceGender === 'female'
-          ? ['Zariyah', 'Laila', 'Maha', 'Tamar', 'female', 'Female']
-          : ['Hamed', 'Maged', 'Omar', 'male', 'Male']
+      if (arabic.length > 0) {
+        const pref = voiceGender === 'female'
+          ? ['laila', 'maha', 'tamar', 'zariyah', 'female']
+          : ['maged', 'omar', 'hamed', 'male']
         let best: SpeechSynthesisVoice | null = null
-        for (const name of priority) {
-          const found = arabicVoices.find(v => v.name.includes(name))
+        for (const name of pref) {
+          const found = arabic.find(v => v.name.toLowerCase().includes(name))
           if (found) { best = found; break }
         }
-        u.voice = best ?? arabicVoices[0]
+        u.voice = best ?? arabic[0]
       }
 
       u.onend  = () => { index++; speakNext() }
@@ -114,9 +114,10 @@ export function useAIChat() {
     if (typeof window === 'undefined') return
 
     window.speechSynthesis.cancel()
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
+    const existing = audioRef.current
+    if (existing) {
+      existing.pause()
+      existing.src = ''
       audioRef.current = null
     }
 
@@ -141,43 +142,54 @@ export function useAIChat() {
         signal: AbortSignal.timeout(25000),
       })
 
-      const contentType = res.headers.get('Content-Type') ?? ''
-      if (res.ok && contentType.startsWith('audio/')) {
+      if (res.ok) {
         const blob = await res.blob()
-        if (blob.size > 0) {
+        if (blob.size > 100) {
           const url = URL.createObjectURL(blob)
-          const audio = new Audio(url)
+
+          const prev = audioRef.current
+          if (prev) {
+            prev.pause()
+            prev.src = ''
+            audioRef.current = null
+          }
+
+          const audio = new Audio()
+          audio.preload = 'auto'
+          audio.src = url
           audioRef.current = audio
 
-          await new Promise<void>((resolve) => {
-            audio.onended = () => {
-              setIsSpeaking(false)
-              audioRef.current = null
-              setTimeout(() => URL.revokeObjectURL(url), 1000)
-              resolve()
-            }
-            audio.onerror = () => {
-              console.warn('[TTS] Audio playback error, falling back to browser TTS')
-              setIsSpeaking(false)
-              audioRef.current = null
-              setTimeout(() => URL.revokeObjectURL(url), 1000)
-              resolve()
-            }
-            audio.play().catch((playErr) => {
-              console.warn('[TTS] play() failed:', playErr)
-              setIsSpeaking(false)
-              audioRef.current = null
-              setTimeout(() => URL.revokeObjectURL(url), 1000)
-              audioRef.current = null
-              resolve()
-            })
-          })
-          return
+          const currentUrl = url
+
+          audio.onended = () => {
+            setIsSpeaking(false)
+            audioRef.current = null
+            setTimeout(() => URL.revokeObjectURL(currentUrl), 500)
+          }
+
+          audio.onerror = () => {
+            console.warn('[TTS] audio element error, falling back to browser TTS')
+            setIsSpeaking(false)
+            audioRef.current = null
+            setTimeout(() => URL.revokeObjectURL(currentUrl), 500)
+            browserTTS(cleanText)
+          }
+
+          try {
+            await audio.play()
+            return
+          } catch (playErr) {
+            console.warn('[TTS] autoplay blocked:', playErr)
+            audioRef.current = null
+            setTimeout(() => URL.revokeObjectURL(currentUrl), 500)
+            setIsSpeaking(false)
+            return
+          }
         }
       }
 
       const errData = res.ok ? null : await res.json().catch(() => null) as { error?: string } | null
-      console.warn('[TTS] Edge TTS unavailable, using browser TTS. Reason:', errData?.error ?? res.status)
+      console.warn('[TTS] Gemini TTS unavailable, using browser TTS. Reason:', errData?.error ?? res.status)
     } catch (err: unknown) {
       const e = err as { message?: string }
       console.warn('[TTS] Edge TTS exception:', e?.message)

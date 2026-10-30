@@ -260,7 +260,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {/* Top bar */}
         <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', zIndex: 10 }}>
           <button
-            onClick={onEnd}
+            onClick={() => { stopSpeaking(); onEnd() }}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'PingAR', fontWeight: 300 }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
