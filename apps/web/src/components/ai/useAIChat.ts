@@ -120,11 +120,11 @@ export function useAIChat() {
     }
   }, [voiceGender])
 
-  /* ── TTS — Gemini first, browser fallback ───────────────── */
-  const speak = useCallback(async (text: string) => {
+  /* ── TTS — parallel: browser instantly + Gemini in background ── */
+  const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
-    // Stop everything
+    // Stop everything currently playing
     try { window.speechSynthesis.cancel() } catch { /* ignore */ }
     if (audioRef.current) {
       try { audioRef.current.pause() } catch { /* ignore */ }
@@ -145,60 +145,59 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // Try Gemini TTS first (server-side, human quality)
-    try {
-      const res = await fetch('/api/ai/tts', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
-        signal:  AbortSignal.timeout(22000),
-      })
+    // Generation token — if speak() called again, old fetch is discarded
+    const token = Date.now();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (speak as any)._token = token
 
-      if (res.ok) {
-        const ct = res.headers.get('Content-Type') ?? ''
-        if (ct.startsWith('audio/')) {
-          const blob = await res.blob()
-          if (blob.size > 500) {
-            const url   = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-            audioRef.current = audio
-
-            console.log('[TTS] playing gemini audio size=', blob.size, 'type=', ct)
-
-            await new Promise<void>((resolve) => {
-              audio.onended = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 1000)
-                resolve()
-              }
-              audio.onerror = (e) => {
-                console.error('[TTS] audio element error:', e)
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 1000)
-                resolve()
-              }
-              audio.play().catch((e: unknown) => {
-                console.error('[TTS] play() blocked:', e)
-                setIsSpeaking(false)
-                audioRef.current = null
-                URL.revokeObjectURL(url)
-                resolve()
-              })
-            })
-            return // Gemini TTS succeeded
-          }
-        }
-      }
-      console.warn('[TTS] Gemini failed status=', res.status, '— falling back to browser TTS')
-    } catch (err: unknown) {
-      const e = err as { message?: string }
-      console.warn('[TTS] Gemini error:', e?.message, '— falling back to browser TTS')
-    }
-
-    // Fallback: browser Web Speech API
+    // ── STEP A: Start browser TTS immediately (zero latency) ──
     browserTTS(cleanText)
+
+    // ── STEP B: Fetch Gemini TTS in background ──
+    // When it arrives, stop browser TTS and switch to high-quality audio
+    fetch('/api/ai/tts', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
+      signal:  AbortSignal.timeout(18000),
+    })
+      .then(async (res) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((speak as any)._token !== token) return
+        if (!res.ok) return
+        const ct = res.headers.get('Content-Type') ?? ''
+        if (!ct.startsWith('audio/')) return
+        const blob = await res.blob()
+        if (blob.size < 500) return
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((speak as any)._token !== token) return
+
+        // Gemini audio ready — stop browser TTS, switch to high quality
+        try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+
+        const url   = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audioRef.current = audio
+
+        audio.onended = () => {
+          setIsSpeaking(false)
+          audioRef.current = null
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+        }
+        audio.onerror = () => {
+          setIsSpeaking(false)
+          audioRef.current = null
+          setTimeout(() => URL.revokeObjectURL(url), 1000)
+        }
+        audio.play().catch(() => {
+          setIsSpeaking(false)
+          audioRef.current = null
+          URL.revokeObjectURL(url)
+        })
+      })
+      .catch(() => {
+        // Gemini failed — browser TTS is already playing, nothing to do
+      })
   }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */

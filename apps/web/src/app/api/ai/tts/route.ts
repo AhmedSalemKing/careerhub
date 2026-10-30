@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'empty', fallback: true }, { status: 400 })
     }
 
-    const voiceName = gender === 'male' ? 'Charon' : 'Aoede'
+    const voiceName = gender === 'male' ? 'Fenrir' : 'Aoede'
     console.log(`[TTS] gemini voice=${voiceName} len=${clean.length}`)
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-tts:generateContent?key=${apiKey}`,
       {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
