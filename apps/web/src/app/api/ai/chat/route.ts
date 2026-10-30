@@ -1,44 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const DEVEWAY_SYSTEM = `أنت "DeveWay Career AI" — مساعد التوجيه المهني الذكي لمنصة DeveWay.
-شخصيتك: خبير مهني دافئ، محترف، ذكي، يتحدث بالعربية العامية المصرية بشكل طبيعي.
-أنت لست روبوت — أنت مثل صديق خبير يجري مقابلة حقيقية.
+export const runtime = 'nodejs'
 
-هدفك الوحيد: مساعدة المستخدمين في اكتشاف مساراتهم المهنية التقنية.
+const DEVEWAY_SYSTEM_PROMPT = `أنت مساعد DeveWay الذكي المتخصص في التوجيه المهني والكوتشينج.
+اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، ذكي، عربي بطلاقة.
+
+مهمتك الوحيدة: مساعدة المستخدمين في اكتشاف مساراتهم المهنية المناسبة في مجال التكنولوجيا والبرمجة.
 
 المسارات المتاحة في DeveWay:
-- Backend Developer (NestJS, Node.js, Python, databases)
-- Frontend Developer (React, Next.js, Vue, UI/UX)
+- Backend Developer (NestJS, Node.js, databases)
+- Frontend Developer (React, Next.js, UI/UX)
 - Full Stack Developer
-- Data Scientist / Data Engineer
-- Machine Learning Engineer / AI Engineer
-- DevOps / Cloud Engineer (AWS, GCP, Azure)
+- Data Engineer / Data Scientist
+- Machine Learning Engineer
+- DevOps / Cloud Engineer
 - UI/UX Designer
 - Product Manager
 - Cybersecurity Engineer
 - Mobile Developer (React Native, Flutter)
 
-قواعد صارمة جداً:
-1. إذا سألك أحد عن أي موضوع خارج التطوير المهني والتقني والتعليم والكوتشينج المهني، رد بلطف:
-   "أنا متخصص في التوجيه المهني التقني فقط. هل نكمل اكتشاف مسارك؟"
-2. اسأل أسئلة متعمقة ومترابطة — مش سكريبت جامد. كل سؤال يبني على إجابة السابق.
-3. بعد 6-8 تبادلات، قدم توصية مسار مهني مخصصة تماماً.
-4. تحدث بالعربية دائماً ما لم يبدأ المستخدم بالإنجليزية.
-5. كن طبيعياً جداً — مثل محادثة واقعية مع خبير مهني حقيقي.
-6. لا تذكر أبداً أنك "نموذج لغوي" أو "AI" — أنت مساعد DeveWay الذكي.
-7. اسأل سؤالاً واحداً فقط في كل رد — لا تطرح أسئلة متعددة دفعة واحدة.
+قواعد صارمة:
+1. لا تجاوب على أي سؤال خارج نطاق التطوير المهني والتقني والتعليم
+2. لو سألك أحد عن الطعام أو الأفلام أو السياسة أو أي موضوع غير مهني: قل "أنا متخصص في التوجيه المهني فقط، هل نكمل اكتشاف مسارك؟"
+3. اسأل أسئلة متعمقة ومترابطة — مش سكريبت جامد
+4. بعد 6-8 رسائل قدّم توصية مسار مهني مخصصة
+5. تحدث بالعربية دائماً
+6. كن محادثاً طبيعياً مثل مقابلة حقيقية
 
-عند تقديم التوصية النهائية، استخدم هذا الفورمات بالضبط:
+عند تقديم التوصية النهائية اتبع هذا الفورمات:
 [CAREER_RESULT]
 {
   "primaryPath": "اسم المسار",
   "matchScore": 87,
   "secondaryPaths": ["مسار 2", "مسار 3"],
-  "strengths": ["نقطة قوة 1", "نقطة قوة 2", "نقطة قوة 3"],
+  "strengths": ["نقطة 1", "نقطة 2", "نقطة 3"],
   "nextSteps": ["خطوة 1", "خطوة 2", "خطوة 3"],
   "recommendedCourses": ["كورس 1", "كورس 2"],
-  "timeline": "6-9 أشهر",
-  "summary": "ملخص شخصي مخصص للمستخدم"
+  "timeline": "6-9 أشهر"
 }
 [/CAREER_RESULT]
 
@@ -53,56 +51,77 @@ const DEVEWAY_SYSTEM = `أنت "DeveWay Career AI" — مساعد التوجيه
 [/QUIZ_Q]`
 
 export async function POST(req: NextRequest) {
-  try {
-    const { messages } = await req.json()
-    const apiKey = process.env.GEMINI_API_KEY
+  // Check API key first
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    console.error('[AI Chat] GEMINI_API_KEY is not set')
+    return NextResponse.json(
+      { error: 'GEMINI_API_KEY not configured', content: 'عذراً، مفتاح API غير مضبوط. يرجى التواصل مع الدعم.' },
+      { status: 500 }
+    )
+  }
 
-    if (!apiKey) {
-      return NextResponse.json({
-        content: 'مرحباً! خدمة الذكاء الاصطناعي غير مفعّلة حالياً. يرجى إضافة GEMINI_API_KEY في متغيرات البيئة.',
-      })
+  try {
+    const body = await req.json()
+    const { messages } = body
+
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return NextResponse.json({ error: 'No messages provided' }, { status: 400 })
     }
 
-    const history = (messages as { role: string; content: string }[])
-      .slice(0, -1)
-      .map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }))
-    const lastMsg = messages[messages.length - 1] as { role: string; content: string }
+    // Build contents array for Gemini
+    const contents = messages.map((m: { role: string; content: string }) => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }))
 
-    const response = await fetch(
+    // Call Gemini REST API directly (no SDK needed)
+    const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: DEVEWAY_SYSTEM }] },
-          contents: [
-            ...history,
-            { role: 'user', parts: [{ text: lastMsg.content }] },
-          ],
+          system_instruction: {
+            parts: [{ text: DEVEWAY_SYSTEM_PROMPT }],
+          },
+          contents,
           generationConfig: {
-            temperature: 0.85,
-            maxOutputTokens: 1200,
+            temperature: 0.8,
+            maxOutputTokens: 1000,
             topP: 0.95,
           },
         }),
       }
     )
 
-    if (!response.ok) {
-      const err = await response.text()
-      console.error('Gemini error:', err)
-      return NextResponse.json({ error: 'Gemini API error', details: err }, { status: 500 })
+    if (!geminiRes.ok) {
+      const errBody = await geminiRes.text()
+      console.error('[AI Chat] Gemini API error:', geminiRes.status, errBody)
+      return NextResponse.json(
+        { error: 'Gemini API error', content: 'عذراً، حدث خطأ في خدمة الذكاء الاصطناعي. حاول مجدداً.' },
+        { status: 502 }
+      )
     }
 
-    const data = await response.json()
-    const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'عذراً، لم أتمكن من الرد.'
+    const data = await geminiRes.json()
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+
+    if (!text) {
+      console.error('[AI Chat] No text in response:', JSON.stringify(data))
+      return NextResponse.json(
+        { error: 'Empty response', content: 'لم أستطع توليد رد. حاول مجدداً.' },
+        { status: 502 }
+      )
+    }
+
     return NextResponse.json({ content: text })
   } catch (error: unknown) {
     const e = error as { message?: string }
-    console.error('Chat route error:', e)
-    return NextResponse.json({ error: 'Server error', details: e?.message }, { status: 500 })
+    console.error('[AI Chat] Unexpected error:', e?.message || error)
+    return NextResponse.json(
+      { error: e?.message || 'Unknown error', content: 'عذراً، حدث خطأ غير متوقع.' },
+      { status: 500 }
+    )
   }
 }
