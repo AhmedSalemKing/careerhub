@@ -53,10 +53,9 @@ export function useAIChat() {
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
   const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
 
-  const recognitionRef      = useRef<SpeechRec | null>(null)
-  const messagesRef         = useRef<Message[]>([])
-  const audioRef            = useRef<HTMLAudioElement | null>(null)
-  const browserTTSCancelRef = useRef<(() => void) | null>(null)
+  const recognitionRef = useRef<SpeechRec | null>(null)
+  const messagesRef    = useRef<Message[]>([])
+  const audioRef       = useRef<HTMLAudioElement | null>(null)
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
@@ -67,77 +66,16 @@ export function useAIChat() {
     }
   }, [])
 
-  /* ── Browser TTS — fallback only ────────────────────────── */
-  const browserTTS = useCallback((text: string): (() => void) => {
-    if (typeof window === 'undefined') return () => { /* noop */ }
-    const synth = window.speechSynthesis
-
-    const sentences = text
-      .split(/[.!?،؛\n]+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 1)
-
-    if (!sentences.length) {
-      setIsSpeaking(false)
-      return () => { /* noop */ }
-    }
-
-    let index     = 0
-    let cancelled = false
-
-    const speakNext = () => {
-      if (cancelled || index >= sentences.length) {
-        if (!cancelled) setIsSpeaking(false)
-        return
-      }
-
-      const u  = new SpeechSynthesisUtterance(sentences[index])
-      u.lang   = 'ar-SA'
-      u.rate   = 0.85
-      u.pitch  = voiceGender === 'female' ? 1.05 : 0.9
-      u.volume = 1.0
-
-      const arabicVoices = synth.getVoices().filter(v => v.lang.startsWith('ar'))
-      console.log('[TTS] Available Arabic voices:', arabicVoices.map(v => `${v.name}/${v.lang}`))
-      if (arabicVoices.length > 0) {
-        const pref = voiceGender === 'female'
-          ? ['Zariyah', 'Laila', 'Maha', 'Tamar', 'Zira', 'ar-SA', 'ar']
-          : ['Hamed', 'Maged', 'Omar', 'Khalid', 'ar-SA', 'ar']
-        let best: SpeechSynthesisVoice | null = null
-        for (const n of pref) {
-          best = arabicVoices.find(v => v.name.toLowerCase().includes(n.toLowerCase())) ?? null
-          if (best) break
-        }
-        u.voice = best ?? arabicVoices[0]
-      }
-
-      u.onend  = () => { if (!cancelled) { index++; speakNext() } }
-      u.onerror = () => { if (!cancelled) { index++; speakNext() } }
-      synth.speak(u)
-    }
-
-    if (synth.getVoices().length === 0) {
-      synth.addEventListener('voiceschanged', speakNext, { once: true })
-    } else {
-      speakNext()
-    }
-
-    return () => {
-      cancelled = true
-      synth.cancel()
-    }
-  }, [voiceGender])
-
-  /* ── TTS — sequential: Gemini first, browser fallback ───── */
-  const speak = useCallback(async (text: string) => {
+  /* ── TTS — browser Web Speech API only ──────────────────── */
+  const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
-    // Stop everything currently playing
     window.speechSynthesis.cancel()
-    const prevCancel = browserTTSCancelRef.current
-    if (prevCancel) { prevCancel(); browserTTSCancelRef.current = null }
-    const prevAudio = audioRef.current
-    if (prevAudio) { prevAudio.onended = null; prevAudio.onerror = null; prevAudio.pause(); prevAudio.src = ''; audioRef.current = null }
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
 
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
@@ -152,82 +90,69 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // STEP 1: Try Gemini TTS — race against 4s timeout for instant fallback
-    try {
-      const ttsPromise = fetch('/api/ai/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanText, gender: voiceGender }),
-        signal: AbortSignal.timeout(9000),
-      })
+    const synth = window.speechSynthesis
 
-      // Race: TTS fetch vs 4s timeout
-      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000))
-      const winner = await Promise.race([ttsPromise, timeoutPromise])
+    const doSpeak = () => {
+      const sentences = cleanText
+        .split(/(?<=[.!?،؛])\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 1)
 
-      if (winner === null) {
-        // Gemini TTS too slow — use browser TTS immediately
-        console.warn('[TTS] Gemini TTS timeout (4s), using browser TTS')
-        const cancel = browserTTS(cleanText)
-        browserTTSCancelRef.current = cancel
-        ttsPromise.catch(() => {})
-        return
-      }
+      if (!sentences.length) { setIsSpeaking(false); return }
 
-      if (winner.ok) {
-        const contentType = winner.headers.get('Content-Type') || ''
-        if (contentType.startsWith('audio/')) {
-          const blob = await winner.blob()
-          if (blob.size > 1000) {
-            const url = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-            audioRef.current = audio
+      let index = 0
 
-            await new Promise<void>((resolve) => {
-              audio.onended = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.onerror = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.play().catch(() => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                URL.revokeObjectURL(url)
-                resolve()
-              })
-            })
-            return  // SUCCESS — do NOT fall through to browser TTS
+      const speakNext = () => {
+        if (index >= sentences.length) {
+          setIsSpeaking(false)
+          return
+        }
+
+        const u = new SpeechSynthesisUtterance(sentences[index])
+        u.lang   = 'ar-EG'
+        u.rate   = 0.78
+        u.pitch  = voiceGender === 'female' ? 1.05 : 0.75
+        u.volume = 1.0
+
+        const allVoices    = synth.getVoices()
+        const arabicVoices = allVoices.filter(v => v.lang.startsWith('ar') || v.lang.includes('AR'))
+        console.log('[TTS] Available Arabic voices:', arabicVoices.map(v => `${v.name}/${v.lang}`))
+
+        if (arabicVoices.length > 0) {
+          if (voiceGender === 'male') {
+            u.voice = arabicVoices[0]
+            u.pitch = 0.6
+            u.rate  = 0.75
+          } else {
+            u.voice = arabicVoices[0]
           }
         }
+
+        u.onend  = () => { index++; speakNext() }
+        u.onerror = (e) => {
+          console.warn('[TTS] utterance error:', e.error, 'sentence:', sentences[index])
+          index++
+          speakNext()
+        }
+
+        synth.speak(u)
       }
-      console.warn('[TTS] Gemini TTS failed, using browser TTS. Status:', winner.status)
-    } catch (err: unknown) {
-      const e = err as { message?: string }
-      console.warn('[TTS] Gemini TTS error:', e?.message)
+
+      speakNext()
     }
 
-    // STEP 2: Fallback — browser Web Speech API (only if Gemini failed/slow)
-    const cancel = browserTTS(cleanText)
-    browserTTSCancelRef.current = cancel
-  }, [voiceGender, browserTTS])
+    if (synth.getVoices().length === 0) {
+      synth.addEventListener('voiceschanged', doSpeak, { once: true })
+    } else {
+      doSpeak()
+    }
+  }, [voiceGender])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
     if (typeof window !== 'undefined') window.speechSynthesis.cancel()
-
-    const cancelFn = browserTTSCancelRef.current
-    if (cancelFn) { cancelFn(); browserTTSCancelRef.current = null }
-
     const audio = audioRef.current
     if (audio) { audio.onended = null; audio.onerror = null; audio.pause(); audio.src = ''; audioRef.current = null }
-
     setIsSpeaking(false)
   }, [])
 
