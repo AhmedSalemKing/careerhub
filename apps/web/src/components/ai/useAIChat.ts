@@ -66,14 +66,57 @@ export function useAIChat() {
     }
   }, [])
 
-  /* ── TTS — browser Web Speech API only ──────────────────── */
-  const speak = useCallback((text: string) => {
+  /* ── Browser TTS — fallback only ────────────────────────── */
+  const browserTTS = useCallback((text: string) => {
+    if (typeof window === 'undefined') return
+    const synth = window.speechSynthesis
+
+    const sentences = text
+      .split(/(?<=[.!?،؛])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 1)
+
+    if (!sentences.length) { setIsSpeaking(false); return }
+
+    let index = 0
+    const speakNext = () => {
+      if (index >= sentences.length) { setIsSpeaking(false); return }
+
+      const u = new SpeechSynthesisUtterance(sentences[index])
+      u.lang   = 'ar-EG'
+      u.volume = 1.0
+
+      if (voiceGender === 'female') {
+        u.rate  = 0.85
+        u.pitch = 1.05
+      } else {
+        u.rate  = 0.82
+        u.pitch = 0.55
+      }
+
+      const arabicVoices = synth.getVoices().filter(v => v.lang.startsWith('ar') || v.lang.includes('AR'))
+      if (arabicVoices.length > 0) {
+        u.voice =
+          arabicVoices.find(v => v.name.includes('Hoda')) ||
+          arabicVoices.find(v => v.lang === 'ar-EG') ||
+          arabicVoices[0]
+      }
+
+      u.onend  = () => { index++; speakNext() }
+      u.onerror = () => { index++; speakNext() }
+      synth.speak(u)
+    }
+
+    speakNext()
+  }, [voiceGender])
+
+  /* ── TTS — OpenAI first, browser fallback ───────────────── */
+  const speak = useCallback(async (text: string) => {
     if (typeof window === 'undefined') return
 
     window.speechSynthesis.cancel()
     if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.src = ''
+      try { audioRef.current.pause(); audioRef.current.src = '' } catch { /* ignore */ }
       audioRef.current = null
     }
 
@@ -90,73 +133,60 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    const synth = window.speechSynthesis
+    /* STEP 1 — Try OpenAI TTS */
+    try {
+      const res = await fetch('/api/ai/tts', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
+        signal:  AbortSignal.timeout(18000),
+      })
 
-    const doSpeak = () => {
-      const sentences = cleanText
-        .split(/(?<=[.!?،؛])\s+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 1)
+      if (res.ok) {
+        const contentType = res.headers.get('Content-Type') ?? ''
+        if (contentType.startsWith('audio/')) {
+          const blob = await res.blob()
+          if (blob.size > 1000) {
+            const url = URL.createObjectURL(blob)
+            const audio = new Audio(url)
+            audio.preload = 'auto'
+            audioRef.current = audio
 
-      if (!sentences.length) { setIsSpeaking(false); return }
-
-      let index = 0
-
-      const speakNext = () => {
-        if (index >= sentences.length) {
-          setIsSpeaking(false)
-          return
+            await new Promise<void>((resolve) => {
+              audio.onended = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.onerror = () => {
+                setIsSpeaking(false)
+                audioRef.current = null
+                setTimeout(() => URL.revokeObjectURL(url), 500)
+                resolve()
+              }
+              audio.play().catch((playErr: unknown) => {
+                const e = playErr as { name?: string }
+                console.warn('[TTS] play() rejected:', e?.name)
+                setIsSpeaking(false)
+                audioRef.current = null
+                URL.revokeObjectURL(url)
+                resolve()
+              })
+            })
+            return
+          }
         }
-
-        const u = new SpeechSynthesisUtterance(sentences[index])
-        u.lang   = 'ar-EG'
-        u.volume = 1.0
-
-        if (voiceGender === 'female') {
-          u.rate  = 0.85
-          u.pitch = 1.05
-        } else {
-          u.rate  = 0.82
-          u.pitch = 0.55
-        }
-
-        const allVoices    = synth.getVoices()
-        const arabicVoices = allVoices.filter(v => v.lang.startsWith('ar') || v.lang.includes('AR'))
-
-        if (arabicVoices.length > 0) {
-          const preferred =
-            arabicVoices.find(v => v.name.includes('Hoda')) ||
-            arabicVoices.find(v => v.lang === 'ar-EG') ||
-            arabicVoices[0]
-          u.voice = preferred
-        }
-
-        u.onend  = () => { index++; speakNext() }
-        u.onerror = (e) => {
-          console.warn('[TTS] utterance error:', e.error)
-          index++
-          speakNext()
-        }
-
-        synth.speak(u)
       }
-
-      speakNext()
+      console.warn(`[TTS] OpenAI TTS failed (status=${res.status}), falling back to browser TTS`)
+    } catch (err: unknown) {
+      const e = err as { message?: string; name?: string }
+      console.warn('[TTS] OpenAI TTS exception:', e?.message ?? e?.name)
     }
 
-    if (synth.getVoices().length === 0) {
-      let hasFired = false
-      const onVoices = () => {
-        if (hasFired) return
-        hasFired = true
-        doSpeak()
-      }
-      synth.addEventListener('voiceschanged', onVoices, { once: true })
-      setTimeout(onVoices, 500)
-    } else {
-      doSpeak()
-    }
-  }, [voiceGender])
+    /* STEP 2 — Browser fallback */
+    browserTTS(cleanText)
+  }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
@@ -235,7 +265,7 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) speak(aiContent)
+      if (autoSpeak) void speak(aiContent)
     } catch (err) {
       console.error('sendMessage error:', err)
       const e = err as { message?: string }
