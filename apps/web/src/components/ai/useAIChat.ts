@@ -152,21 +152,22 @@ export function useAIChat() {
           await new Promise<void>((resolve) => {
             audio.onended = () => {
               setIsSpeaking(false)
-              URL.revokeObjectURL(url)
               audioRef.current = null
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
               resolve()
             }
             audio.onerror = () => {
               console.warn('[TTS] Audio playback error, falling back to browser TTS')
               setIsSpeaking(false)
-              URL.revokeObjectURL(url)
               audioRef.current = null
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
               resolve()
             }
             audio.play().catch((playErr) => {
               console.warn('[TTS] play() failed:', playErr)
               setIsSpeaking(false)
-              URL.revokeObjectURL(url)
+              audioRef.current = null
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
               audioRef.current = null
               resolve()
             })

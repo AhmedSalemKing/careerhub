@@ -150,9 +150,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     addAssistantMessage,
   } = useAIChat()
 
-  const [input,   setInput]   = useState('')
-  const [started, setStarted] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
+  const [input,         setInput]         = useState('')
+  const [started,       setStarted]       = useState(false)
+  const [elapsed,       setElapsed]       = useState(0)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
   const messagesEndRef        = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -176,7 +177,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       setStarted(true)
       setTimeout(() => {
         addAssistantMessage(FIRST_MSG)
-        speak(FIRST_MSG)
+        // Don't speak on mount — browser blocks autoplay before user interaction
       }, 600)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -187,12 +188,14 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   const handleSend = useCallback(() => {
     if (!input.trim()) return
+    setAudioUnlocked(true)
     sendMessage(input)
     setInput('')
   }, [input, sendMessage])
 
   const handleMic = useCallback(() => {
     if (isListening) { stopListening(); return }
+    setAudioUnlocked(true)
     stopSpeaking()
     startListening(text => sendMessage(text))
   }, [isListening, stopListening, stopSpeaking, startListening, sendMessage])
@@ -292,6 +295,36 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
             ))}
           </div>
         </div>
+
+        {/* Audio unlock button — shown until user interacts */}
+        {!audioUnlocked && (
+          <button
+            onClick={async () => {
+              setAudioUnlocked(true)
+              const a = new Audio()
+              a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
+              try { await a.play() } catch { /* ignore */ }
+              if (messages.length > 0 && messages[0].role === 'assistant') {
+                speak(messages[0].content)
+              }
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 18px', borderRadius: 20,
+              background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+              border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',
+              color: 'var(--primary)',
+              fontFamily: 'PingAR', fontWeight: 300, fontSize: 12,
+              cursor: 'pointer', marginBottom: 8,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+            اضغط لتفعيل الصوت
+          </button>
+        )}
 
         {/* Orb */}
         <div style={{ marginTop: 16, marginBottom: 16, background: 'transparent' }}>
