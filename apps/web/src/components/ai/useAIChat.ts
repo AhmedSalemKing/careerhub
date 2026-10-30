@@ -59,92 +59,47 @@ export function useAIChat() {
     }
   }, [])
 
-  /* ── TTS ─────────────────────────────────────────────────── */
-  const speak = useCallback(async (text: string) => {
+  /* ── Browser TTS fallback ────────────────────────────────── */
+  const browserTTS = useCallback((text: string) => {
     if (typeof window === 'undefined') return
+    const synth = window.speechSynthesis
 
-    // Stop any current speech
-    window.speechSynthesis.cancel()
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
-
-    const cleanText = text
-      .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
-      .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
-      .replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6}\s/g, '')
-      .replace(/DeveWay/gi, 'ديفي واي')
-      .trim()
-
-    if (!cleanText) return
-
-    setIsSpeaking(true)
-
-    try {
-      // Try Google Cloud TTS first
-      const res = await fetch('/api/ai/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: cleanText, gender: voiceGender }),
-      })
-
-      const data = await res.json() as { audio?: string; fallback?: boolean }
-
-      if (res.ok && data.audio) {
-        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`)
-        audioRef.current = audio
-        audio.onended = () => {
-          setIsSpeaking(false)
-          audioRef.current = null
-        }
-        audio.onerror = () => {
-          setIsSpeaking(false)
-          audioRef.current = null
-        }
-        await audio.play()
-        return
-      }
-    } catch (err) {
-      console.warn('[TTS] Google TTS failed, falling back to browser TTS:', err)
-    }
-
-    // Fallback: browser Web Speech API sentence by sentence
-    const sentences = cleanText
+    const sentences = text
       .split(/[.!?،؛\n]+/)
       .map(s => s.trim())
       .filter(s => s.length > 2)
 
-    if (sentences.length === 0) { setIsSpeaking(false); return }
+    if (!sentences.length) { setIsSpeaking(false); return }
 
     let index = 0
-    const synth = window.speechSynthesis
 
     const speakNext = () => {
       if (index >= sentences.length) { setIsSpeaking(false); return }
 
-      const utterance = new SpeechSynthesisUtterance(sentences[index])
-      utterance.lang   = 'ar-SA'
-      utterance.rate   = 0.85
-      utterance.pitch  = voiceGender === 'female' ? 1.1 : 0.85
-      utterance.volume = 1.0
+      const u = new SpeechSynthesisUtterance(sentences[index])
+      u.lang   = 'ar-SA'
+      u.rate   = 0.82
+      u.pitch  = voiceGender === 'female' ? 1.1 : 0.8
+      u.volume = 1.0
 
-      const voices       = synth.getVoices()
-      const arabicVoices = voices.filter(v => v.lang.startsWith('ar'))
+      const allVoices    = synth.getVoices()
+      const arabicVoices = allVoices.filter(v => v.lang.startsWith('ar') || v.lang.startsWith('AR'))
+
       if (arabicVoices.length > 0) {
         const priority = voiceGender === 'female'
-          ? ['Laila', 'Maha', 'Tamar', 'female']
-          : ['Maged', 'Omar', 'male']
+          ? ['Zariyah', 'Laila', 'Maha', 'Tamar', 'female', 'Female']
+          : ['Hamed', 'Maged', 'Omar', 'male', 'Male']
         let best: SpeechSynthesisVoice | null = null
         for (const name of priority) {
-          const found = arabicVoices.find(v => v.name.toLowerCase().includes(name.toLowerCase()))
+          const found = arabicVoices.find(v => v.name.includes(name))
           if (found) { best = found; break }
         }
-        utterance.voice = best ?? arabicVoices[0]
+        u.voice = best ?? arabicVoices[0]
       }
-      utterance.onend   = () => { index++; speakNext() }
-      utterance.onerror = () => { index++; speakNext() }
-      synth.speak(utterance)
+
+      u.onend  = () => { index++; speakNext() }
+      u.onerror = () => { index++; speakNext() }
+      synth.speak(u)
     }
 
     if (synth.getVoices().length === 0) {
@@ -154,10 +109,87 @@ export function useAIChat() {
     }
   }, [voiceGender])
 
+  /* ── TTS ─────────────────────────────────────────────────── */
+  const speak = useCallback(async (text: string) => {
+    if (typeof window === 'undefined') return
+
+    window.speechSynthesis.cancel()
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+
+    const cleanText = text
+      .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
+      .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/#{1,6}\s+/g, '')
+      .replace(/DeveWay/gi, 'ديفي واي')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    if (!cleanText) return
+    setIsSpeaking(true)
+
+    try {
+      const res = await fetch('/api/ai/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText, gender: voiceGender }),
+        signal: AbortSignal.timeout(25000),
+      })
+
+      if (res.ok && res.headers.get('Content-Type')?.includes('audio')) {
+        const blob = await res.blob()
+        if (blob.size > 0) {
+          const url = URL.createObjectURL(blob)
+          const audio = new Audio(url)
+          audioRef.current = audio
+
+          await new Promise<void>((resolve) => {
+            audio.onended = () => {
+              setIsSpeaking(false)
+              URL.revokeObjectURL(url)
+              audioRef.current = null
+              resolve()
+            }
+            audio.onerror = () => {
+              console.warn('[TTS] Audio playback error, falling back to browser TTS')
+              setIsSpeaking(false)
+              URL.revokeObjectURL(url)
+              audioRef.current = null
+              resolve()
+            }
+            audio.play().catch((playErr) => {
+              console.warn('[TTS] play() failed:', playErr)
+              setIsSpeaking(false)
+              URL.revokeObjectURL(url)
+              audioRef.current = null
+              resolve()
+            })
+          })
+          return
+        }
+      }
+
+      const errData = res.ok ? null : await res.json().catch(() => null) as { error?: string } | null
+      console.warn('[TTS] Edge TTS unavailable, using browser TTS. Reason:', errData?.error ?? res.status)
+    } catch (err: unknown) {
+      const e = err as { message?: string }
+      console.warn('[TTS] Edge TTS exception:', e?.message)
+    }
+
+    browserTTS(cleanText)
+  }, [voiceGender, browserTTS])
+
+  /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
     if (typeof window !== 'undefined') window.speechSynthesis.cancel()
     if (audioRef.current) {
       audioRef.current.pause()
+      audioRef.current.src = ''
       audioRef.current = null
     }
     setIsSpeaking(false)

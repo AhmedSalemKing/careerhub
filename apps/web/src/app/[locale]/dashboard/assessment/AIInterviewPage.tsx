@@ -162,9 +162,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   useEffect(() => {
     return () => {
+      stopSpeaking()
       if (typeof window !== 'undefined') window.speechSynthesis.cancel()
     }
-  }, [])
+  }, [stopSpeaking])
 
   const timeLeft = Math.max(0, 30 * 60 - elapsed)
   const mm       = String(Math.floor(timeLeft / 60)).padStart(2, '0')
