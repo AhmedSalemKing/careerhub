@@ -10,6 +10,7 @@ import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
 import { RealTimeClock } from '../../../components/RealTimeClock'
 import { FloatingAIButton } from '../../../components/ai/FloatingAIButton'
+import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
@@ -292,6 +293,7 @@ return [
       <RealTimeClock locale={locale} />
       {/* Floating AI Button — students/consultants/instructors only */}
       {accountType !== 'ADMIN' && <FloatingAIButton />}
+      <StopSpeechOnNav />
     </div>
   )
 }

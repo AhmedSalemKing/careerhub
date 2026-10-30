@@ -1,5 +1,5 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface Message {
   id: string
@@ -47,40 +47,90 @@ export function useAIChat() {
   const recognitionRef = useRef<SpeechRec | null>(null)
   const messagesRef    = useRef<Message[]>([])
 
+  /* ── Unmount cleanup — stop speech when hook's component tree unmounts ── */
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [])
+
   /* ── TTS ─────────────────────────────────────────────────── */
   const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    if (typeof window === 'undefined') return
     const synth = window.speechSynthesis
     synth.cancel()
-    const clean = text
+
+    const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
       .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
+      .replace(/\*\*/g, '')
+      .replace(/\*/g, '')
+      .replace(/#{1,6}\s/g, '')
+      .replace(/DeveWay/gi, 'ديفي واي')
+      .replace(/دیفیوی/g, 'ديفي واي')
       .trim()
-    if (!clean) return
 
-    const utter   = new SpeechSynthesisUtterance(clean)
-    utter.lang    = 'ar-SA'
-    utter.rate    = 0.88
-    utter.pitch   = voiceGender === 'female' ? 1.15 : 0.82
-    utter.volume  = 1
+    if (!cleanText) return
 
-    const trySpeak = () => {
-      const voices   = synth.getVoices()
-      const arVoices = voices.filter(v => v.lang.startsWith('ar'))
-      if (arVoices.length > 0) {
-        const pick = voiceGender === 'female'
-          ? arVoices.find(v => /female|laila|hala|zira/i.test(v.name)) ?? arVoices[0]
-          : arVoices.find(v => /male|maged|tarik/i.test(v.name))       ?? arVoices[0]
-        utter.voice = pick
+    const sentences = cleanText
+      .split(/[.!?،؛\n]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 2)
+
+    if (sentences.length === 0) return
+
+    let index = 0
+
+    const speakNext = () => {
+      if (index >= sentences.length) {
+        setIsSpeaking(false)
+        return
       }
-      utter.onstart = () => setIsSpeaking(true)
-      utter.onend   = () => setIsSpeaking(false)
-      utter.onerror = () => setIsSpeaking(false)
-      synth.speak(utter)
+
+      const utterance = new SpeechSynthesisUtterance(sentences[index])
+      utterance.lang   = 'ar-SA'
+      utterance.rate   = 0.85
+      utterance.pitch  = voiceGender === 'female' ? 1.1 : 0.85
+      utterance.volume = 1.0
+
+      const voices       = synth.getVoices()
+      const arabicVoices = voices.filter(v => v.lang.startsWith('ar') || v.lang.startsWith('AR'))
+
+      if (arabicVoices.length > 0) {
+        const voicePriority = voiceGender === 'female'
+          ? ['Laila', 'Maha', 'Tamar', 'Leila', 'female', 'Female']
+          : ['Maged', 'Omar', 'Hamed', 'male', 'Male']
+
+        let selectedVoice: SpeechSynthesisVoice | null = null
+        for (const name of voicePriority) {
+          const found = arabicVoices.find(v => v.name.toLowerCase().includes(name.toLowerCase()))
+          if (found) { selectedVoice = found; break }
+        }
+        utterance.voice = selectedVoice ?? arabicVoices[0]
+      }
+
+      if (index === 0) setIsSpeaking(true)
+
+      utterance.onend = () => {
+        index++
+        speakNext()
+      }
+      utterance.onerror = (e) => {
+        console.warn('[TTS] sentence error:', e.error)
+        index++
+        speakNext()
+      }
+
+      synth.speak(utterance)
     }
 
-    if (synth.getVoices().length > 0) trySpeak()
-    else synth.onvoiceschanged = trySpeak
+    if (synth.getVoices().length === 0) {
+      synth.addEventListener('voiceschanged', () => speakNext(), { once: true })
+    } else {
+      speakNext()
+    }
   }, [voiceGender])
 
   const stopSpeaking = useCallback(() => {
