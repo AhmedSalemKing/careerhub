@@ -4,80 +4,81 @@ export const runtime = 'nodejs'
 export const maxDuration = 30
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { text, gender } = body as { text?: string; gender?: string }
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    return NextResponse.json({ error: 'API key missing', fallback: true }, { status: 500 })
+  }
 
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-      return NextResponse.json({ error: 'No text provided', fallback: true }, { status: 400 })
-    }
+  try {
+    const { text, gender } = await req.json() as { text?: string; gender?: string }
+    if (!text) return NextResponse.json({ error: 'No text', fallback: true }, { status: 400 })
 
     const clean = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
       .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/#{1,6}\s+/g, '')
+      .replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6}\s+/g, '')
       .replace(/DeveWay/gi, 'ديفي واي')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 800)
+      .replace(/\s+/g, ' ').trim().slice(0, 800)
 
-    if (!clean) {
-      return NextResponse.json({ error: 'Empty after cleaning', fallback: true }, { status: 400 })
+    if (!clean) return NextResponse.json({ error: 'Empty', fallback: true }, { status: 400 })
+
+    const voiceName = gender === 'male' ? 'Charon' : 'Aoede'
+
+    console.log(`[TTS] Gemini TTS voice=${voiceName} length=${clean.length}`)
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: clean }] }],
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName },
+              },
+            },
+          },
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      const err = await res.text()
+      console.error('[TTS] Gemini TTS error:', res.status, err)
+      return NextResponse.json({ error: err, fallback: true }, { status: 502 })
     }
 
-    const voice = gender === 'male' ? 'ar-SA-HamedNeural' : 'ar-SA-ZariyahNeural'
-
-    console.log(`[TTS] voice=${voice} text_length=${clean.length}`)
-
-    const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts')
-
-    const tts = new MsEdgeTTS()
-    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3)
-
-    const chunks: Buffer[] = []
-
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('TTS timeout after 20s')), 20000)
-
-      const { audioStream } = tts.toStream(clean)
-
-      audioStream.on('data', (chunk: Buffer) => {
-        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
-      })
-      audioStream.on('end', () => {
-        clearTimeout(timeout)
-        resolve()
-      })
-      audioStream.on('error', (err: Error) => {
-        clearTimeout(timeout)
-        reject(err)
-      })
-    })
-
-    if (chunks.length === 0) {
-      return NextResponse.json({ error: 'No audio chunks received', fallback: true }, { status: 502 })
+    const data = await res.json() as {
+      candidates?: Array<{
+        content?: { parts?: Array<{ inlineData?: { data?: string; mimeType?: string } }> }
+      }>
     }
 
-    const audio = Buffer.concat(chunks)
-    console.log(`[TTS] success, audio size=${audio.length} bytes`)
+    const audioData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data
+    const mimeType  = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType ?? 'audio/wav'
 
-    return new NextResponse(audio, {
+    if (!audioData) {
+      console.error('[TTS] No audio in response:', JSON.stringify(data))
+      return NextResponse.json({ error: 'No audio data', fallback: true }, { status: 502 })
+    }
+
+    const audioBuffer = Buffer.from(audioData, 'base64')
+    console.log(`[TTS] success size=${audioBuffer.length} mime=${mimeType}`)
+
+    return new NextResponse(audioBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': audio.length.toString(),
+        'Content-Type': mimeType,
+        'Content-Length': audioBuffer.length.toString(),
         'Cache-Control': 'no-store',
-        'X-TTS-Voice': voice,
       },
     })
   } catch (error: unknown) {
     const e = error as { message?: string }
     console.error('[TTS] Error:', e?.message || error)
-    return NextResponse.json(
-      { error: e?.message || 'TTS failed', fallback: true },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: e?.message || 'TTS failed', fallback: true }, { status: 500 })
   }
 }

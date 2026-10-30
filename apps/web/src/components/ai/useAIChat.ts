@@ -141,7 +141,8 @@ export function useAIChat() {
         signal: AbortSignal.timeout(25000),
       })
 
-      if (res.ok && res.headers.get('Content-Type')?.includes('audio')) {
+      const contentType = res.headers.get('Content-Type') ?? ''
+      if (res.ok && contentType.startsWith('audio/')) {
         const blob = await res.blob()
         if (blob.size > 0) {
           const url = URL.createObjectURL(blob)
