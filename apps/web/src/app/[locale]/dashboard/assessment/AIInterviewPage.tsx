@@ -225,6 +225,16 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   return (
     <div dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
 
+      <div style={{
+        position: 'fixed', top: 0, left: 0,
+        background: '#e00', color: '#fff',
+        padding: '2px 6px', fontSize: 9,
+        zIndex: 99999, fontFamily: 'monospace',
+        pointerEvents: 'none',
+      }}>
+        TTS-FINAL-v4
+      </div>
+
       {/* Timer */}
       <div style={{ position: 'absolute', bottom: 100, right: 24, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)' }}>

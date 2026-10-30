@@ -68,95 +68,18 @@ export function useAIChat() {
     }
   }, [])
 
-  /* ── Browser TTS — fallback only ────────────────────────── */
-  const browserTTS = useCallback((text: string) => {
-    if (typeof window === 'undefined') return
-    const synth = window.speechSynthesis
-
-    const selectVoice = (): { voice: SpeechSynthesisVoice | null; isMale: boolean } => {
-      const all    = synth.getVoices()
-      const arabic = all.filter(v =>
-        v.lang.toLowerCase().startsWith('ar') || v.lang.toLowerCase().includes('-ar')
-      )
-      if (!arabic.length) return { voice: null, isMale: false }
-
-      if (voiceGender === 'male') {
-        const maleNames = ['hamed', 'naayf', 'maged', 'omar', 'shakir', 'khalid']
-        for (const name of maleNames) {
-          const found = arabic.find(v => v.name.toLowerCase().includes(name))
-          if (found) return { voice: found, isMale: true }
-        }
-        const fallback =
-          arabic.find(v => v.name.includes('Hoda')) ||
-          arabic.find(v => v.lang === 'ar-EG')      ||
-          arabic[0]
-        return { voice: fallback ?? null, isMale: false }
-      }
-
-      const femaleNames = ['laila', 'hoda', 'zariyah', 'maha', 'salma', 'amany']
-      for (const name of femaleNames) {
-        const found = arabic.find(v => v.name.toLowerCase().includes(name))
-        if (found) return { voice: found, isMale: false }
-      }
-      return { voice: arabic[0] ?? null, isMale: false }
-    }
-
-    const sentences = text
-      .split(/(?<=[.!?،؛:])\s+/)
-      .map(s => s.trim())
-      .filter(s => s.length > 1)
-
-    if (!sentences.length) { setIsSpeaking(false); return }
-
-    const { voice, isMale } = selectVoice()
-    let index = 0
-
-    const speakNext = () => {
-      if (index >= sentences.length) { setIsSpeaking(false); return }
-
-      const u  = new SpeechSynthesisUtterance(sentences[index])
-      u.lang   = voice?.lang ?? 'ar-EG'
-      u.voice  = voice
-      u.volume = 1.0
-
-      if (voiceGender === 'female') {
-        u.rate  = 0.85
-        u.pitch = 1.05
-      } else if (isMale) {
-        u.rate  = 0.9
-        u.pitch = 1.0
-      } else {
-        u.rate  = 0.82
-        u.pitch = 0.55
-      }
-
-      u.onend  = () => { index++; speakNext() }
-      u.onerror = (e) => {
-        if (e.error !== 'interrupted' && e.error !== 'canceled') {
-          console.warn('[TTS] utterance error:', e.error)
-        }
-        index++
-        speakNext()
-      }
-
-      synth.speak(u)
-    }
-
-    speakNext()
-  }, [voiceGender])
-
-  /* ── TTS — server first, browser fallback ───────────────── */
-  const speak = useCallback(async (text: string) => {
+  /* ── TTS — browser Web Speech API only ─────────────────── */
+  const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
-    // ── 1. Hard stop everything currently playing ──
-    window.speechSynthesis.cancel()
+    // Stop everything
+    try { window.speechSynthesis.cancel() } catch { /* ignore */ }
     if (audioRef.current) {
-      try { audioRef.current.pause(); audioRef.current.src = '' } catch { /* ignore */ }
+      try { audioRef.current.pause() } catch { /* ignore */ }
+      audioRef.current.src = ''
       audioRef.current = null
     }
 
-    // ── 2. Clean text ──
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
       .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
@@ -170,59 +93,70 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // ── 3. Try server TTS first ──
-    try {
-      const res = await fetch('/api/ai/tts', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
-        signal:  AbortSignal.timeout(20000),
-      })
+    const doSpeak = (voices: SpeechSynthesisVoice[]) => {
+      const sentences = cleanText
+        .split(/(?<=[.!?،؛\n])\s*/)
+        .map(s => s.trim())
+        .filter(s => s.length > 1)
 
-      if (res.ok) {
-        const contentType = res.headers.get('Content-Type') ?? ''
-        if (contentType.startsWith('audio/')) {
-          const blob = await res.blob()
-          if (blob.size > 1000) {
-            const url   = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-            audioRef.current = audio
+      if (!sentences.length) { setIsSpeaking(false); return }
 
-            await new Promise<void>((resolve) => {
-              audio.onended = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.onerror = () => {
-                setIsSpeaking(false)
-                audioRef.current = null
-                setTimeout(() => URL.revokeObjectURL(url), 500)
-                resolve()
-              }
-              audio.play().catch((playErr: unknown) => {
-                const e = playErr as { name?: string }
-                console.warn('[TTS] play() rejected:', e?.name)
-                setIsSpeaking(false)
-                audioRef.current = null
-                URL.revokeObjectURL(url)
-                resolve()
-              })
-            })
-            return // SUCCESS — do NOT fall through to browser TTS
-          }
+      const arabicVoices = voices.filter(v =>
+        v.lang.startsWith('ar') || v.lang.toLowerCase().includes('ar')
+      )
+      const bestVoice = arabicVoices[0] ?? null
+
+      console.log('[TTS] voices available:', voices.length, 'arabic:', arabicVoices.length, 'best:', bestVoice?.name)
+
+      let index = 0
+      const speakNext = () => {
+        if (index >= sentences.length) { setIsSpeaking(false); return }
+
+        const u    = new SpeechSynthesisUtterance(sentences[index])
+        u.lang     = 'ar-EG'
+        u.rate     = 0.80
+        u.volume   = 1.0
+
+        if (bestVoice) {
+          u.voice = bestVoice
+          u.pitch = voiceGender === 'female' ? 1.0 : 0.6
+        } else {
+          u.pitch = voiceGender === 'female' ? 1.1 : 0.7
         }
+
+        u.onend  = () => { index++; speakNext() }
+        u.onerror = (e) => {
+          console.warn('[TTS] utterance error:', e.error, sentences[index])
+          index++
+          speakNext()
+        }
+        window.speechSynthesis.speak(u)
       }
-      console.warn('[TTS] server TTS unavailable (status=' + res.status + '), using browser fallback')
-    } catch (err: unknown) {
-      const e = err as { message?: string; name?: string }
-      console.warn('[TTS] server TTS error:', e?.message ?? e?.name)
+      speakNext()
     }
 
-    // ── 4. Fallback — browser Web Speech API ──
-    browserTTS(cleanText)
-  }, [voiceGender, browserTTS])
+    // CRITICAL: getVoices() returns [] on first call in Chrome/Edge
+    const voices = window.speechSynthesis.getVoices()
+    if (voices.length > 0) {
+      doSpeak(voices)
+    } else {
+      let fired = false
+      const handler = () => {
+        if (fired) return
+        fired = true
+        doSpeak(window.speechSynthesis.getVoices())
+      }
+      window.speechSynthesis.addEventListener('voiceschanged', handler, { once: true })
+      // Fallback: if voiceschanged never fires, speak anyway after 3s
+      setTimeout(() => {
+        if (!fired) {
+          fired = true
+          window.speechSynthesis.removeEventListener('voiceschanged', handler)
+          doSpeak(window.speechSynthesis.getVoices())
+        }
+      }, 3000)
+    }
+  }, [voiceGender])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
@@ -303,7 +237,7 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) void speak(aiContent)
+      if (autoSpeak) speak(aiContent)
     } catch (err) {
       console.error('sendMessage error:', err)
       const e = err as { message?: string }
