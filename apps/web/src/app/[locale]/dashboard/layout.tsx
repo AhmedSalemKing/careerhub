@@ -9,7 +9,7 @@ import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
 import { RealTimeClock } from '../../../components/RealTimeClock'
-import FloatingCareerOrb from '../../../components/FloatingCareerOrb'
+import { FloatingAIButton } from '../../../components/ai/FloatingAIButton'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
   Calendar, CalendarDays, DollarSign, Wallet,
@@ -290,8 +290,8 @@ return [
       {/* Bottom Dock */}
       <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
       <RealTimeClock locale={locale} />
-      {/* Floating Career Orb — students/consultants/instructors only */}
-      {accountType !== 'ADMIN' && <FloatingCareerOrb />}
+      {/* Floating AI Button — students/consultants/instructors only */}
+      {accountType !== 'ADMIN' && <FloatingAIButton />}
     </div>
   )
 }

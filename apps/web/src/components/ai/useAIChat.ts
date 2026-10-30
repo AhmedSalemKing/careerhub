@@ -16,27 +16,37 @@ export interface CareerResult {
   nextSteps: string[]
   recommendedCourses: string[]
   timeline: string
+  summary?: string
 }
 
-export interface QuizQuestion {
-  question: string
-  choices: string[]
-  correct: number
-  explanation: string
+interface SpeechRec {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  onstart: (() => void) | null
+  onresult: ((e: { results: { [i: number]: { [i: number]: { transcript: string } } } }) => void) | null
+  onend: (() => void) | null
+  onerror: (() => void) | null
+  start(): void
+  stop(): void
+}
+type SpeechRecCtor = new () => SpeechRec
+
+interface WinSpeech {
+  SpeechRecognition?: SpeechRecCtor
+  webkitSpeechRecognition?: SpeechRecCtor
 }
 
-export function useAIChat(mode: 'interview' | 'quiz' = 'interview') {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const [isSpeaking, setIsSpeaking] = useState(false)
+export function useAIChat() {
+  const [messages,     setMessages]     = useState<Message[]>([])
+  const [isLoading,    setIsLoading]    = useState(false)
+  const [isListening,  setIsListening]  = useState(false)
+  const [isSpeaking,   setIsSpeaking]   = useState(false)
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
-  const [currentQuiz, setCurrentQuiz] = useState<QuizQuestion | null>(null)
-  const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female')
-  const recognitionRef = useRef<any>(null)
-  const messagesRef = useRef<Message[]>([])
+  const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
+  const recognitionRef = useRef<SpeechRec | null>(null)
+  const messagesRef    = useRef<Message[]>([])
 
-  // Keep ref in sync with state for use inside callbacks
   const updateMessages = useCallback((updater: (prev: Message[]) => Message[]) => {
     setMessages(prev => {
       const next = updater(prev)
@@ -45,54 +55,40 @@ export function useAIChat(mode: 'interview' | 'quiz' = 'interview') {
     })
   }, [])
 
+  /* ── TTS ─────────────────────────────────────────────────── */
   const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
     const synth = window.speechSynthesis
     synth.cancel()
-    const cleanText = text
+    const clean = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
       .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
       .trim()
-    if (!cleanText) return
+    if (!clean) return
 
-    const utterance = new SpeechSynthesisUtterance(cleanText)
-    utterance.lang = 'ar-SA'
-    utterance.rate = 0.9
-    utterance.pitch = voiceGender === 'female' ? 1.2 : 0.8
+    const utter   = new SpeechSynthesisUtterance(clean)
+    utter.lang    = 'ar-SA'
+    utter.rate    = 0.88
+    utter.pitch   = voiceGender === 'female' ? 1.15 : 0.82
+    utter.volume  = 1
 
-    const loadVoices = () => {
-      const voices = synth.getVoices()
-      const arabicVoices = voices.filter(v => v.lang.startsWith('ar'))
-      if (arabicVoices.length > 0) {
-        if (voiceGender === 'female') {
-          const femaleVoice = arabicVoices.find(v =>
-            v.name.toLowerCase().includes('female') ||
-            v.name.includes('Laila') ||
-            v.name.includes('Salma') ||
-            v.name.includes('Amira')
-          )
-          utterance.voice = femaleVoice || arabicVoices[0]
-        } else {
-          const maleVoice = arabicVoices.find(v =>
-            v.name.includes('Maged') ||
-            v.name.includes('Tarik') ||
-            v.name.toLowerCase().includes('male')
-          )
-          utterance.voice = maleVoice || arabicVoices[0]
-        }
+    const trySpeak = () => {
+      const voices   = synth.getVoices()
+      const arVoices = voices.filter(v => v.lang.startsWith('ar'))
+      if (arVoices.length > 0) {
+        const pick = voiceGender === 'female'
+          ? arVoices.find(v => /female|laila|hala|zira/i.test(v.name)) ?? arVoices[0]
+          : arVoices.find(v => /male|maged|tarik/i.test(v.name))       ?? arVoices[0]
+        utter.voice = pick
       }
+      utter.onstart = () => setIsSpeaking(true)
+      utter.onend   = () => setIsSpeaking(false)
+      utter.onerror = () => setIsSpeaking(false)
+      synth.speak(utter)
     }
 
-    if (synth.getVoices().length > 0) {
-      loadVoices()
-    } else {
-      synth.onvoiceschanged = loadVoices
-    }
-
-    utterance.onstart = () => setIsSpeaking(true)
-    utterance.onend = () => setIsSpeaking(false)
-    utterance.onerror = () => setIsSpeaking(false)
-    synth.speak(utterance)
+    if (synth.getVoices().length > 0) trySpeak()
+    else synth.onvoiceschanged = trySpeak
   }, [voiceGender])
 
   const stopSpeaking = useCallback(() => {
@@ -102,138 +98,87 @@ export function useAIChat(mode: 'interview' | 'quiz' = 'interview') {
     }
   }, [])
 
+  /* ── STT ─────────────────────────────────────────────────── */
   const startListening = useCallback((onResult: (text: string) => void) => {
     if (typeof window === 'undefined') return
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
+    const w = window as unknown as WinSpeech
+    const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
+    if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'ar-SA'
-    recognition.continuous = false
-    recognition.interimResults = false
-
-    recognition.onstart = () => setIsListening(true)
-    recognition.onresult = (event: any) => {
-      const text = event.results[0][0].transcript
-      onResult(text)
-    }
-    recognition.onend = () => setIsListening(false)
-    recognition.onerror = () => setIsListening(false)
-
-    recognitionRef.current = recognition
-    recognition.start()
+    const rec          = new SR()
+    rec.lang           = 'ar-SA'
+    rec.continuous     = false
+    rec.interimResults = false
+    rec.onstart        = () => setIsListening(true)
+    rec.onresult       = e => { onResult(e.results[0][0].transcript); rec.stop() }
+    rec.onend          = () => setIsListening(false)
+    rec.onerror        = () => setIsListening(false)
+    recognitionRef.current = rec
+    rec.start()
   }, [])
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop()
-      setIsListening(false)
-    }
+    recognitionRef.current?.stop()
+    setIsListening(false)
   }, [])
 
+  /* ── Parse career result ─────────────────────────────────── */
   const extractCareerResult = useCallback((text: string): CareerResult | null => {
-    const match = text.match(/\[CAREER_RESULT\]([\s\S]*?)\[\/CAREER_RESULT\]/)
-    if (!match) return null
-    try {
-      return JSON.parse(match[1].trim())
-    } catch {
-      return null
-    }
+    const m = text.match(/\[CAREER_RESULT\]([\s\S]*?)\[\/CAREER_RESULT\]/)
+    if (!m) return null
+    try { return JSON.parse(m[1].trim()) as CareerResult } catch { return null }
   }, [])
 
-  const extractQuizQuestion = useCallback((text: string): QuizQuestion | null => {
-    const match = text.match(/\[QUIZ_Q\]([\s\S]*?)\[\/QUIZ_Q\]/)
-    if (!match) return null
-    try {
-      return JSON.parse(match[1].trim())
-    } catch {
-      return null
-    }
-  }, [])
-
+  /* ── Send message ────────────────────────────────────────── */
   const sendMessage = useCallback(async (content: string, autoSpeak = true) => {
     if (!content.trim() || isLoading) return
 
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content,
-      timestamp: new Date(),
-    }
-
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
     updateMessages(prev => [...prev, userMsg])
     setIsLoading(true)
 
     try {
-      const allMessages = [...messagesRef.current, userMsg]
+      const all = [...messagesRef.current]
       const res = await fetch('/api/ai/chat', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: allMessages.map(m => ({ role: m.role, content: m.content })),
-          mode,
-        }),
+        body:    JSON.stringify({ messages: all.map(m => ({ role: m.role, content: m.content })) }),
       })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data      = await res.json() as { content?: string }
+      const aiContent = data.content ?? 'عذراً، لم أتمكن من الرد.'
 
-      if (!res.ok) throw new Error('API error ' + res.status)
-      const data = await res.json()
-      const aiContent: string = data.content
-
-      const aiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiContent,
-        timestamp: new Date(),
-      }
-
+      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: aiContent, timestamp: new Date() }
       updateMessages(prev => [...prev, aiMsg])
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-
-      const quiz = extractQuizQuestion(aiContent)
-      if (quiz) setCurrentQuiz(quiz)
-
       if (autoSpeak) speak(aiContent)
-    } catch (error) {
-      console.error('[useAIChat] error:', error)
+    } catch (err) {
+      console.error('sendMessage error:', err)
       const errMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.',
+        id: (Date.now() + 1).toString(), role: 'assistant',
+        content: 'عذراً، حدث خطأ في الاتصال. تأكد من إضافة GEMINI_API_KEY وحاول مجدداً.',
         timestamp: new Date(),
       }
       updateMessages(prev => [...prev, errMsg])
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, mode, speak, extractCareerResult, extractQuizQuestion, updateMessages])
+  }, [isLoading, updateMessages, extractCareerResult, speak])
 
   const clearChat = useCallback(() => {
     setMessages([])
     messagesRef.current = []
     setCareerResult(null)
-    setCurrentQuiz(null)
     stopSpeaking()
     stopListening()
   }, [stopSpeaking, stopListening])
 
   return {
-    messages,
-    isLoading,
-    isListening,
-    isSpeaking,
-    careerResult,
-    currentQuiz,
-    setCurrentQuiz,
-    voiceGender,
-    setVoiceGender,
-    sendMessage,
-    speak,
-    stopSpeaking,
-    startListening,
-    stopListening,
-    clearChat,
+    messages, isLoading, isListening, isSpeaking,
+    careerResult, voiceGender, setVoiceGender,
+    sendMessage, speak, stopSpeaking,
+    startListening, stopListening, clearChat,
   }
 }

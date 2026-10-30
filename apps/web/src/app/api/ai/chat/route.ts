@@ -1,126 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// NOTE: Set GEMINI_API_KEY in apps/web/.env.local
-// Get your key from https://makersuite.google.com/app/apikey
-const GEMINI_KEY = process.env.GEMINI_API_KEY
-const GROQ_KEY = process.env.GROQ_API_KEY
+const DEVEWAY_SYSTEM = `أنت "DeveWay Career AI" — مساعد التوجيه المهني الذكي لمنصة DeveWay.
+شخصيتك: خبير مهني دافئ، محترف، ذكي، يتحدث بالعربية العامية المصرية بشكل طبيعي.
+أنت لست روبوت — أنت مثل صديق خبير يجري مقابلة حقيقية.
 
-const CAREER_SYSTEM_PROMPT = `أنت مساعد DeveWay الذكي المتخصص في التوجيه المهني والكوتشينج.
-اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، ذكي، عربي بطلاقة.
-
-مهمتك الوحيدة: مساعدة المستخدمين في اكتشاف مساراتهم المهنية المناسبة.
+هدفك الوحيد: مساعدة المستخدمين في اكتشاف مساراتهم المهنية التقنية.
 
 المسارات المتاحة في DeveWay:
-- Backend Developer (NestJS, Node.js, databases)
-- Frontend Developer (React, Next.js, UI/UX)
+- Backend Developer (NestJS, Node.js, Python, databases)
+- Frontend Developer (React, Next.js, Vue, UI/UX)
 - Full Stack Developer
-- Data Engineer / Data Scientist
-- Machine Learning Engineer
-- DevOps / Cloud Engineer
+- Data Scientist / Data Engineer
+- Machine Learning Engineer / AI Engineer
+- DevOps / Cloud Engineer (AWS, GCP, Azure)
 - UI/UX Designer
 - Product Manager
 - Cybersecurity Engineer
 - Mobile Developer (React Native, Flutter)
 
-قواعد صارمة:
-1. لا تجاوب على أي سؤال خارج نطاق التطوير المهني والتقني والتعليم والكوتشينج
-2. لو سألك أحد عن الطعام، الأفلام، الرياضة، السياسة أو أي موضوع غير مهني: قل بلطف "أنا متخصص في التوجيه المهني فقط، هل تريد أن نكمل اكتشاف مسارك؟"
-3. اسأل أسئلة متعمقة ومترابطة — مش سكريبت جامد
-4. بعد 6-8 رسائل من المحادثة، قدّم توصية مسار مهني مخصصة بناءً على ما فهمته
-5. تحدث بالعربية دائماً ما لم يبدأ المستخدم بالإنجليزية
-6. كن محادثاً طبيعياً مثل مقابلة عمل حقيقية، ليس استبياناً
+قواعد صارمة جداً:
+1. إذا سألك أحد عن أي موضوع خارج التطوير المهني والتقني والتعليم والكوتشينج المهني، رد بلطف:
+   "أنا متخصص في التوجيه المهني التقني فقط. هل نكمل اكتشاف مسارك؟"
+2. اسأل أسئلة متعمقة ومترابطة — مش سكريبت جامد. كل سؤال يبني على إجابة السابق.
+3. بعد 6-8 تبادلات، قدم توصية مسار مهني مخصصة تماماً.
+4. تحدث بالعربية دائماً ما لم يبدأ المستخدم بالإنجليزية.
+5. كن طبيعياً جداً — مثل محادثة واقعية مع خبير مهني حقيقي.
+6. لا تذكر أبداً أنك "نموذج لغوي" أو "AI" — أنت مساعد DeveWay الذكي.
+7. اسأل سؤالاً واحداً فقط في كل رد — لا تطرح أسئلة متعددة دفعة واحدة.
 
-عند تقديم التوصية النهائية، اتبع هذا الفورمات بالضبط:
+عند تقديم التوصية النهائية، استخدم هذا الفورمات بالضبط:
 [CAREER_RESULT]
 {
-  "primaryPath": "اسم المسار الأساسي",
+  "primaryPath": "اسم المسار",
   "matchScore": 87,
-  "secondaryPaths": ["مسار ثانوي 1", "مسار ثانوي 2"],
+  "secondaryPaths": ["مسار 2", "مسار 3"],
   "strengths": ["نقطة قوة 1", "نقطة قوة 2", "نقطة قوة 3"],
   "nextSteps": ["خطوة 1", "خطوة 2", "خطوة 3"],
   "recommendedCourses": ["كورس 1", "كورس 2"],
-  "timeline": "6-9 أشهر"
+  "timeline": "6-9 أشهر",
+  "summary": "ملخص شخصي مخصص للمستخدم"
 }
-[/CAREER_RESULT]`
+[/CAREER_RESULT]
 
-const QUIZ_SYSTEM_PROMPT = `${CAREER_SYSTEM_PROMPT}
-
-وضع الاختبار التفاعلي:
-عند توليد الأسئلة، استخدم هذا الفورمات بالضبط:
+للوضع الاختباري (Quiz)، عند طلب سؤال اختيار من متعدد، استخدم:
 [QUIZ_Q]
 {
   "question": "نص السؤال",
-  "choices": ["أ) ...", "ب) ...", "ج) ...", "د) ..."],
+  "choices": ["أ) خيار 1", "ب) خيار 2", "ج) خيار 3", "د) خيار 4"],
   "correct": 0,
-  "explanation": "شرح قصير للإجابة الصحيحة"
+  "explanation": "شرح مختصر للإجابة الصحيحة"
 }
-[/QUIZ_Q]
-
-ولّد سؤالاً واحداً في كل مرة. بعد 8 أسئلة، قدّم التوصية النهائية بفورمات [CAREER_RESULT].`
-
-async function callGemini(messages: any[], mode: string): Promise<string> {
-  if (!GEMINI_KEY) throw new Error('GEMINI_API_KEY not set')
-
-  const genAI = new GoogleGenerativeAI(GEMINI_KEY)
-  const systemPrompt = mode === 'quiz' ? QUIZ_SYSTEM_PROMPT : CAREER_SYSTEM_PROMPT
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    systemInstruction: systemPrompt,
-    generationConfig: { temperature: 0.8, maxOutputTokens: 1200 },
-  })
-
-  const history = messages.slice(0, -1).map((m: any) => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }))
-
-  const chat = model.startChat({ history })
-  const lastMessage = messages[messages.length - 1]
-  const result = await chat.sendMessage(lastMessage.content)
-  return result.response.text()
-}
-
-async function callGroq(messages: any[], mode: string): Promise<string> {
-  if (!GROQ_KEY) throw new Error('Neither GEMINI_API_KEY nor GROQ_API_KEY is set')
-
-  const systemPrompt = mode === 'quiz' ? QUIZ_SYSTEM_PROMPT : CAREER_SYSTEM_PROMPT
-  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages.map((m: any) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
-      ],
-      max_tokens: 1200,
-      temperature: 0.8,
-    }),
-  })
-  if (!resp.ok) throw new Error('Groq API error: ' + resp.status)
-  const data = await resp.json()
-  return data.choices?.[0]?.message?.content ?? ''
-}
+[/QUIZ_Q]`
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, mode = 'interview' } = await req.json()
-    if (!messages?.length) {
-      return NextResponse.json({ error: 'messages required' }, { status: 400 })
+    const { messages } = await req.json()
+    const apiKey = process.env.GEMINI_API_KEY
+
+    if (!apiKey) {
+      return NextResponse.json({
+        content: 'مرحباً! خدمة الذكاء الاصطناعي غير مفعّلة حالياً. يرجى إضافة GEMINI_API_KEY في متغيرات البيئة.',
+      })
     }
 
-    let content: string
-    if (GEMINI_KEY) {
-      content = await callGemini(messages, mode)
-    } else {
-      content = await callGroq(messages, mode)
+    const history = (messages as { role: string; content: string }[])
+      .slice(0, -1)
+      .map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
+    const lastMsg = messages[messages.length - 1] as { role: string; content: string }
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: DEVEWAY_SYSTEM }] },
+          contents: [
+            ...history,
+            { role: 'user', parts: [{ text: lastMsg.content }] },
+          ],
+          generationConfig: {
+            temperature: 0.85,
+            maxOutputTokens: 1200,
+            topP: 0.95,
+          },
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.text()
+      console.error('Gemini error:', err)
+      return NextResponse.json({ error: 'Gemini API error', details: err }, { status: 500 })
     }
 
-    return NextResponse.json({ content })
-  } catch (error: any) {
-    console.error('[AI chat route]', error?.message)
-    return NextResponse.json({ error: 'AI service error', details: error?.message }, { status: 500 })
+    const data = await response.json()
+    const text: string = data.candidates?.[0]?.content?.parts?.[0]?.text ?? 'عذراً، لم أتمكن من الرد.'
+    return NextResponse.json({ content: text })
+  } catch (error: unknown) {
+    const e = error as { message?: string }
+    console.error('Chat route error:', e)
+    return NextResponse.json({ error: 'Server error', details: e?.message }, { status: 500 })
   }
 }
