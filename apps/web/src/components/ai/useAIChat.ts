@@ -97,17 +97,18 @@ export function useAIChat() {
       u.pitch  = voiceGender === 'female' ? 1.05 : 0.9
       u.volume = 1.0
 
-      const voices = synth.getVoices().filter(v => v.lang.toLowerCase().startsWith('ar'))
-      if (voices.length > 0) {
+      const arabicVoices = synth.getVoices().filter(v => v.lang.startsWith('ar'))
+      console.log('[TTS] Available Arabic voices:', arabicVoices.map(v => `${v.name}/${v.lang}`))
+      if (arabicVoices.length > 0) {
         const pref = voiceGender === 'female'
-          ? ['zariyah', 'laila', 'maha', 'tamar', 'hala', 'salma', 'female']
-          : ['hamed', 'maged', 'omar', 'naayf', 'shakir', 'male']
+          ? ['Zariyah', 'Laila', 'Maha', 'Tamar', 'Zira', 'ar-SA', 'ar']
+          : ['Hamed', 'Maged', 'Omar', 'Khalid', 'ar-SA', 'ar']
         let best: SpeechSynthesisVoice | null = null
         for (const n of pref) {
-          best = voices.find(v => v.name.toLowerCase().includes(n)) ?? null
+          best = arabicVoices.find(v => v.name.toLowerCase().includes(n.toLowerCase())) ?? null
           if (best) break
         }
-        u.voice = best ?? voices[0]
+        u.voice = best ?? arabicVoices[0]
       }
 
       u.onend  = () => { if (!cancelled) { index++; speakNext() } }
@@ -151,19 +152,32 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // STEP 1: Try Gemini TTS (server-side, best quality)
+    // STEP 1: Try Gemini TTS — race against 4s timeout for instant fallback
     try {
-      const res = await fetch('/api/ai/tts', {
+      const ttsPromise = fetch('/api/ai/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: cleanText, gender: voiceGender }),
-        signal: AbortSignal.timeout(20000),
+        signal: AbortSignal.timeout(9000),
       })
 
-      if (res.ok) {
-        const contentType = res.headers.get('Content-Type') || ''
+      // Race: TTS fetch vs 4s timeout
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000))
+      const winner = await Promise.race([ttsPromise, timeoutPromise])
+
+      if (winner === null) {
+        // Gemini TTS too slow — use browser TTS immediately
+        console.warn('[TTS] Gemini TTS timeout (4s), using browser TTS')
+        const cancel = browserTTS(cleanText)
+        browserTTSCancelRef.current = cancel
+        ttsPromise.catch(() => {})
+        return
+      }
+
+      if (winner.ok) {
+        const contentType = winner.headers.get('Content-Type') || ''
         if (contentType.startsWith('audio/')) {
-          const blob = await res.blob()
+          const blob = await winner.blob()
           if (blob.size > 1000) {
             const url = URL.createObjectURL(blob)
             const audio = new Audio(url)
@@ -193,13 +207,13 @@ export function useAIChat() {
           }
         }
       }
-      console.warn('[TTS] Gemini TTS failed, using browser fallback. Status:', res.status)
+      console.warn('[TTS] Gemini TTS failed, using browser TTS. Status:', winner.status)
     } catch (err: unknown) {
       const e = err as { message?: string }
       console.warn('[TTS] Gemini TTS error:', e?.message)
     }
 
-    // STEP 2: Fallback — browser Web Speech API (only if Gemini failed)
+    // STEP 2: Fallback — browser Web Speech API (only if Gemini failed/slow)
     const cancel = browserTTS(cleanText)
     browserTTSCancelRef.current = cancel
   }, [voiceGender, browserTTS])

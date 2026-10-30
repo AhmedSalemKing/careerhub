@@ -55,21 +55,25 @@ export async function POST(req: NextRequest) {
       .replace(/DeveWay/gi, 'ديفي واي')
       .replace(/\s+/g, ' ')
       .trim()
-      .slice(0, 800)
+      .slice(0, 150)
 
     if (!clean) {
       return NextResponse.json({ error: 'Empty after cleaning', fallback: true }, { status: 400 })
     }
 
-    const voiceName = gender === 'male' ? 'Charon' : 'Aoede'
+    const voiceName = gender === 'male' ? 'Fenrir' : 'Aoede'
 
-    console.log(`[TTS] gemini-tts voice=${voiceName} length=${clean.length}`)
+    console.log(`[TTS] gemini-tts voice=${voiceName} gender=${gender} length=${clean.length}`)
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
 
     const geminiRes = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           contents: [{ parts: [{ text: clean }] }],
           generationConfig: {
@@ -83,6 +87,7 @@ export async function POST(req: NextRequest) {
         }),
       }
     )
+    clearTimeout(timeout)
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text()
@@ -113,7 +118,10 @@ export async function POST(req: NextRequest) {
     console.log(`[TTS] Gemini returned mimeType=${mimeType}`)
 
     const rawPcm = Buffer.from(inlineData.data, 'base64')
-    console.log(`[TTS] raw PCM bytes=${rawPcm.length}`)
+    console.log(`[TTS] voice=${voiceName} gender=${gender} audioSize=${rawPcm.length}`)
+    if (rawPcm.length < 5000) {
+      console.warn('[TTS] Audio too small, may be silent. Voice:', voiceName)
+    }
 
     const rateMatch = mimeType.match(/rate=(\d+)/)
     const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000
