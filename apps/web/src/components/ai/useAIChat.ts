@@ -32,9 +32,10 @@ interface SpeechRec {
   onstart: (() => void) | null
   onresult: ((e: { resultIndex: number; results: { [i: number]: SpeechResult } }) => void) | null
   onend: (() => void) | null
-  onerror: (() => void) | null
+  onerror: ((e: { error?: string }) => void) | null
   start(): void
   stop(): void
+  abort(): void
 }
 type SpeechRecCtor = new () => SpeechRec
 
@@ -79,6 +80,13 @@ export function useAIChat() {
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
     return () => {
+      // Tear down any live recognizer so a stale session cannot fire callbacks
+      // into an unmounted component or block the next mount's microphone.
+      const rec = recognitionRef.current
+      recognitionRef.current = null
+      if (rec) {
+        try { rec.abort() } catch { /* already stopped */ }
+      }
       // STT cleanup only — streaming TTS cleans up via its own effect
       if (typeof window !== 'undefined') {
         try { window.speechSynthesis.cancel() } catch { /* ignore */ }
@@ -109,34 +117,80 @@ export function useAIChat() {
   }, [ttsStop])
 
   /* ── STT ─────────────────────────────────────────────────── */
-  const startListening = useCallback((onResult: (text: string) => void) => {
+  const startListening = useCallback((onResult: (text: string) => void, onError?: (errCode: string) => void) => {
     if (typeof window === 'undefined') return
     const w  = window as unknown as WinSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
+    // Tear down any previous recognizer first. Two live sessions would race on
+    // state updates and can leave the browser mic locked ("already started").
+    const previous = recognitionRef.current
+    if (previous) {
+      recognitionRef.current = null
+      try {
+        previous.onstart  = null
+        previous.onresult = null
+        previous.onend    = null
+        previous.onerror  = null
+        previous.abort()
+      } catch { /* already finished */ }
+    }
+
     submittedRef.current = false
     const rec          = new SR()
-    rec.lang           = 'ar-SA'
+    // ar-EG: Egyptian Arabic — matches the UI dialect and handles mixed Arabic/English terms.
+    rec.lang           = 'ar-EG'
     rec.continuous     = false
     rec.interimResults = false
-    rec.onstart        = () => { setIsListening(true); setMicState('listening') }
+
+    // Only the newest recognizer may mutate state or invoke callbacks. A late
+    // event from a torn-down session is ignored instead of clobbering the mic.
+    const isCurrent = () => recognitionRef.current === rec
+
+    rec.onstart        = () => {
+      if (!isCurrent()) return
+      setIsListening(true); setMicState('listening')
+    }
     rec.onresult       = e => {
+      if (!isCurrent()) return
       const result = e.results[e.resultIndex]
       if (!result.isFinal || submittedRef.current) return
       submittedRef.current = true
       setMicState('processing')
       onResult(result[0].transcript)
-      rec.stop()
+      try { rec.stop() } catch { /* already stopped */ }
     }
-    rec.onend          = () => { setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s) }
-    rec.onerror        = () => { setIsListening(false); setMicState('idle') }
+    rec.onend          = () => {
+      if (!isCurrent()) return
+      recognitionRef.current = null
+      setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s)
+    }
+    rec.onerror        = (e) => {
+      if (!isCurrent()) return
+      recognitionRef.current = null
+      setIsListening(false); setMicState('idle')
+      if (onError) onError(e.error ?? 'unknown')
+    }
     recognitionRef.current = rec
-    rec.start()
+    try {
+      rec.start()
+    } catch (e) {
+      if (isCurrent()) recognitionRef.current = null
+      setIsListening(false)
+      setMicState('idle')
+      if (onError) onError((e as Error)?.message?.includes('already started') ? 'already-started' : 'start-failed')
+    }
   }, [])
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop()
+    // Detach the ref before stopping so the recognizer's own onend/onerror
+    // handlers are treated as stale and cannot override this reset.
+    const rec = recognitionRef.current
+    recognitionRef.current = null
+    if (rec) {
+      try { rec.stop() } catch { try { rec.abort() } catch { /* already finished */ } }
+    }
     setIsListening(false)
     setMicState('idle')
   }, [])

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { productionCb } from './circuit-breaker'
+import { classifyRateLimit } from './gemini-error'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -31,6 +33,27 @@ UI/UX Designer | Product Manager | Cybersecurity Engineer | Mobile Developer
 عند التوصية النهائية، اشرح سبب اختيارك بالعامية ثم أضف الفورمات ده مباشرةً:
 [CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":["..."],"strengths":["...","...","..."],"nextSteps":["...","...","..."],"recommendedCourses":["..."],"timeline":"6-12 شهراً","summary":"..."}[/CAREER_RESULT]`
 
+// ── Timeouts ────────────────────────────────────────────────────────────────
+// Each deadline covers fetch() AND response-body consumption for that attempt.
+// The abort signal passed to fetch() propagates to the response body stream,
+// so text()/json() will throw AbortError if the deadline fires during body read.
+//
+// Primary fails fast (7s) so the fallback can start promptly.
+// Fallback timeout is capped separately but the shared TOTAL_BUDGET_MS is the
+// hard ceiling — prevents a 7s primary + 18s fallback = 25s combined wait.
+const PRIMARY_TIMEOUT_MS  = 7_000
+const FALLBACK_TIMEOUT_MS = 14_000
+const TOTAL_BUDGET_MS     = 24_000  // shared across all attempts; maxDuration = 30s
+
+const cb = productionCb
+const cbIsOpen         = (m: string)                    => cb.isOpen(m)
+const cbRecordSuccess  = (m: string)                    => cb.recordSuccess(m)
+const cbRecordFailure  = (m: string, q: boolean)        => cb.recordFailure(m, q)
+
+// Shown when the provider is rate limited / out of quota. Deliberately generic:
+// no provider names, quota ids, project numbers or credentials.
+const BUSY_MESSAGE = 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.'
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -41,7 +64,8 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const reqId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+  const reqId  = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+  const tStart = Date.now()
 
   try {
     const { messages } = await req.json()
@@ -53,7 +77,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Build valid alternating contents for Gemini (must start with 'user')
     const validMessages = (messages as { role: string; content: string }[]).filter(
       (m) => m.content && typeof m.content === 'string' && m.content.trim().length > 0
     )
@@ -85,128 +108,183 @@ export async function POST(req: NextRequest) {
       contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    console.log(`[AI Chat] req=${reqId} contents=${contents.length} first=${contents[0]?.role} last=${contents[contents.length - 1]?.role}`)
+    console.log(`[AI Chat] req=${reqId} msgs=${validMessages.length} turns=${contents.length}`)
 
-    // Try models in order — skip 404 (model retired), continue on 503 (try fallback)
-    const models = [
-      'gemini-3.8-flash',
-      'gemini-3.5-flash-lite',
-    ]
+    const models      = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+    const budgetStart = Date.now()
+    let lastError     = ''
 
-    let lastError = ''
+    for (let mi = 0; mi < models.length; mi++) {
+      const model   = models[mi]
+      const isRetry = mi > 0
 
-    for (const model of models) {
+      // Check the shared budget BEFORE claiming a half-open probe slot, so an
+      // exhausted budget can never strand the circuit breaker in probing state.
+      const elapsed   = Date.now() - budgetStart
+      const remaining = TOTAL_BUDGET_MS - elapsed
+      if (remaining <= 500) {
+        console.warn(`[AI Chat] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
+        break
+      }
+
+      if (cbIsOpen(model)) {
+        const cbState = cb.getState(model)
+        console.warn(`[AI Chat] req=${reqId} cb_open model=${model} openUntil=${new Date(cbState.openUntil).toISOString()}`)
+        lastError = `${model} skipped (circuit open)`
+        continue
+      }
+
+      const attemptTimeout = Math.max(
+        250,
+        isRetry
+          ? Math.min(remaining - 300, FALLBACK_TIMEOUT_MS)
+          : Math.min(remaining - 300, PRIMARY_TIMEOUT_MS)
+      )
+
+      const tAttempt = Date.now()
+      const baseBody  = {
+        contents,
+        generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
+      }
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
+
+      console.log(`[AI Chat] req=${reqId} model=${model} timeout=${attemptTimeout}ms${isRetry ? ' (fallback)' : ''}`)
+
+      // The abort controller deadline covers fetch() AND body consumption.
+      // ctrl.signal is passed to fetch(); the response body stream inherits it,
+      // so text()/json() will throw AbortError if the deadline fires mid-read.
+      const ctrl  = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), attemptTimeout)
+
       try {
-        console.log(`[AI Chat] req=${reqId} trying model: ${model}`)
+        const geminiRes = await fetch(url, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal:  ctrl.signal,
+          body:    JSON.stringify({
+            ...baseBody,
+            system_instruction: { parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
+          }),
+        })
 
-        const baseBody = {
-          contents,
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 800,
-          },
-        }
-
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-
-        const ctrl  = new AbortController()
-        const timer = setTimeout(() => ctrl.abort(), 25000)
-
-        let geminiRes: Response
-        try {
-          geminiRes = await fetch(url, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal:  ctrl.signal,
-            body: JSON.stringify({
-              ...baseBody,
-              system_instruction: { parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
-            }),
-          })
-        } finally {
-          clearTimeout(timer)
-        }
+        const attemptMs = Date.now() - tAttempt
 
         if (!geminiRes.ok) {
+          // Body read is still under ctrl.signal — times out if the deadline fires.
           const errText = await geminiRes.text()
-          lastError = `${model} failed: ${geminiRes.status} — ${errText.slice(0, 300)}`
-          console.error(`[AI Chat] ${lastError}`)
+          lastError = `${model} http=${geminiRes.status} ms=${attemptMs}`
+          console.error(`[AI Chat] req=${reqId} ${lastError}`)
 
-          // 429 = quota exhausted — same key, no point trying other models
           if (geminiRes.status === 429) {
+            // Distinguish a model-scoped limit (fallback helps) from a
+            // project/account-wide quota (fallback cannot help). Ambiguous
+            // bodies are handled conservatively.
+            const limit = classifyRateLimit(errText)
+            console.warn(
+              `[AI Chat] req=${reqId} rate_limited model=${model} scope=${limit.scope} ` +
+              `reason=${limit.reason} retryAfterMs=${limit.retryAfterMs ?? 'n/a'}`
+            )
+            cbRecordFailure(model, true)
+
+            const fallbackAppropriate =
+              limit.scope === 'model' && !isRetry && mi < models.length - 1
+
+            if (fallbackAppropriate) continue
+
             return NextResponse.json(
-              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد قليل.', isError: true },
+              { content: BUSY_MESSAGE, isError: true },
               { status: 200 }
             )
           }
+          if (geminiRes.status === 401 || geminiRes.status === 403) {
+            // Auth error — same key on fallback; no point retrying.
+            // Does NOT count as a qualifying circuit-breaker failure (key issue, not model issue).
+            cbRecordFailure(model, false)
+            return NextResponse.json(
+              { content: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.', isError: true },
+              { status: 200 }
+            )
+          }
+          if (geminiRes.status === 404) { cbRecordFailure(model, true); continue }
+          if (geminiRes.status === 503) { cbRecordFailure(model, true); continue }
 
-          // 404 = model retired/unavailable — skip to next
-          if (geminiRes.status === 404) { continue }
-
-          // 503 = model overloaded — try the next fallback
-          if (geminiRes.status === 503) { continue }
-
-          // Retry without system_instruction on 400 (some API versions reject it)
-          // Inject system context as a synthetic user/model exchange so the model keeps its role.
+          // On 400 with system_instruction rejection: retry without it via synthetic exchange.
           if (geminiRes.status === 400 && errText.includes('system_instruction')) {
-            console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction (injecting as synthetic exchange)`)
+            console.log(`[AI Chat] req=${reqId} retrying ${model} without system_instruction (synthetic exchange)`)
             const syntheticPrefix = [
               { role: 'user',  parts: [{ text: 'أنت من؟ وما دورك؟' }] },
               { role: 'model', parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
             ]
             const contentsWithPrefix = [...syntheticPrefix, ...contents]
-            const ctrl2  = new AbortController()
-            const timer2 = setTimeout(() => ctrl2.abort(), 25000)
-            let geminiRes2: Response
+
+            const rem2    = TOTAL_BUDGET_MS - (Date.now() - budgetStart)
+            const ctrl2   = new AbortController()
+            const timer2  = setTimeout(
+              () => ctrl2.abort(),
+              Math.max(250, Math.min(rem2 - 300, FALLBACK_TIMEOUT_MS))
+            )
             try {
-              geminiRes2 = await fetch(url, {
+              const geminiRes2 = await fetch(url, {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal:  ctrl2.signal,
                 body:    JSON.stringify({ ...baseBody, contents: contentsWithPrefix }),
               })
+              if (!geminiRes2.ok) {
+                // Consume the body under the same abort signal, then discard it.
+                await geminiRes2.text()
+                lastError = `${model}(nosys) http=${geminiRes2.status}`
+                console.error(`[AI Chat] req=${reqId} ${lastError}`)
+                cbRecordFailure(model, true)
+                continue
+              }
+              const data2 = await geminiRes2.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
+              const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text
+              if (text2) {
+                cbRecordSuccess(model)
+                console.log(`[AI Chat] req=${reqId} SUCCESS model=${model}(nosys) len=${text2.length} totalMs=${Date.now()-tStart}`)
+                return NextResponse.json({ content: text2 })
+              }
+              cbRecordFailure(model, true)
+              continue
             } finally {
               clearTimeout(timer2)
             }
-            if (!geminiRes2.ok) {
-              const errText2 = await geminiRes2.text()
-              lastError = `${model} (no sys) failed: ${geminiRes2.status} — ${errText2.slice(0, 300)}`
-              console.error(`[AI Chat] ${lastError}`)
-              continue
-            }
-            const data2 = await geminiRes2.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
-            const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text
-            if (text2) {
-              console.log(`[AI Chat] SUCCESS with ${model} (no sys). length=${text2.length}`)
-              return NextResponse.json({ content: text2 })
-            }
-            continue
           }
 
+          cbRecordFailure(model, true)
           continue
         }
 
+        // Body read is still under ctrl.signal.
         const data = await geminiRes.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (text && text.trim().length > 0) {
-          console.log(`[AI Chat] req=${reqId} SUCCESS model=${model} len=${text.length}`)
+          cbRecordSuccess(model)
+          console.log(`[AI Chat] req=${reqId} SUCCESS model=${model} attemptMs=${attemptMs} totalMs=${Date.now()-tStart} turns=${contents.length}${isRetry ? ' (fallback)' : ''}`)
           return NextResponse.json({ content: text })
         }
 
-        lastError = `${model} returned empty text`
+        lastError = `${model} empty response`
         console.error(`[AI Chat] req=${reqId} ${lastError}`)
+        cbRecordFailure(model, true)
+
       } catch (err: unknown) {
-        const e = err as { name?: string; message?: string }
-        lastError = e?.name === 'AbortError' ? `${model} timeout 25s` : `${model} exception: ${e?.message}`
+        const e       = err as { name?: string; message?: string }
+        const isAbort = e?.name === 'AbortError'
+        lastError     = isAbort ? `${model} timeout ${attemptTimeout}ms` : `${model} exception: ${e?.message}`
         console.error(`[AI Chat] req=${reqId} ${lastError}`)
+        cbRecordFailure(model, isAbort)
+      } finally {
+        // Clear AFTER all body reads complete (or after an exception/abort).
+        clearTimeout(timer)
       }
     }
 
-    // All models failed
-    console.error(`[AI Chat] req=${reqId} ALL MODELS FAILED. Last error:`, lastError)
+    console.error(`[AI Chat] req=${reqId} ALL_MODELS_FAILED last=${lastError} totalMs=${Date.now()-tStart}`)
     return NextResponse.json(
-      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
+      { content: BUSY_MESSAGE, isError: true },
       { status: 200 }
     )
   } catch (error: unknown) {

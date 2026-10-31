@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
+import { computeDiscoveryStage } from './career-signals'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -151,11 +152,17 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     addAssistantMessage,
   } = useAIChat()
 
-  const [input,   setInput]   = useState('')
-  const [started, setStarted] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
+  const [input,            setInput]            = useState('')
+  const [started,          setStarted]          = useState(false)
+  const [elapsed,          setElapsed]          = useState(0)
+  const [handsFreeEnabled, setHandsFreeEnabled] = useState(false)
+  const [handsFreePaused,  setHandsFreePaused]  = useState(false)
+  const [micError,         setMicError]         = useState<string | null>(null)
   const messagesEndRef    = useRef<HTMLDivElement>(null)
   const spokenInitialRef  = useRef(false)
+  const hasSpokeRef        = useRef(false)
+  const autoListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cbRef              = useRef({ startListening, sendMessage })
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -165,6 +172,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   useEffect(() => {
     return () => {
       stopSpeaking()
+      if (autoListenTimerRef.current) clearTimeout(autoListenTimerRef.current)
       if (typeof window !== 'undefined') window.speechSynthesis.cancel()
     }
   }, [stopSpeaking])
@@ -185,12 +193,45 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  const currentStage = Math.min(Math.floor(messages.length / 2), STAGES.length - 1)
+  // Evidence-based discovery-dimension tracker.
+  // Dimensions are AREAS, not sequential steps — may be revisited freely.
+  // Only meaningful USER messages count as evidence; assistant wording never
+  // advances the tracker. The final stage only appears when careerResult arrives.
+  const currentStage = computeDiscoveryStage(messages, STAGES.length)
 
   const unlockAutoplay = useCallback(async () => {
     await unlockAudio()
     // Speaking is handled by the effect below — not here
   }, [unlockAudio])
+
+  const handleEnableHandsFree = useCallback(async () => {
+    setMicError(null)
+    await unlockAutoplay()
+    setHandsFreeEnabled(true)
+    setHandsFreePaused(false)
+  }, [unlockAutoplay])
+
+  // Single source of truth for hands-free pause/resume. Used by the status
+  // banner, the orb and the mic button so all manual resume controls behave
+  // identically — including clearing a previous microphone error.
+  const toggleHandsFreePause = useCallback(() => {
+    if (handsFreePaused) {
+      setMicError(null)
+      setHandsFreePaused(false)
+      return
+    }
+    setHandsFreePaused(true)
+  }, [handsFreePaused])
+
+  // Permission denial and startup failures pause hands-free mode so the auto
+  // effect cannot spin in a retry loop. `already-started` is NOT fatal: the
+  // recognizer layer now tears down any previous session before starting.
+  const handleListenError = useCallback((err: string) => {
+    if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'start-failed') {
+      setMicError('not-allowed')
+      setHandsFreePaused(true)
+    }
+  }, [])
 
   // Speak the initial interview question exactly once after audio is unlocked.
   // Guard via ref: prevents re-speaking when voiceGender changes or messages update.
@@ -202,6 +243,33 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     speak(firstMsg.content)
   }, [audioUnlocked, messages, speak])
 
+  // Keep stable refs to callbacks so the auto-listen timer never has stale closures
+  useEffect(() => { cbRef.current = { startListening, sendMessage } }, [startListening, sendMessage])
+
+  // Hands-free auto-listen: restart listening each time TTS finishes speaking
+  useEffect(() => {
+    if (autoListenTimerRef.current) { clearTimeout(autoListenTimerRef.current); autoListenTimerRef.current = null }
+    if (!handsFreeEnabled || handsFreePaused || !audioUnlocked) return
+    // TTS is running — mark that at least one TTS cycle has started
+    if (isSpeaking) { hasSpokeRef.current = true; return }
+    // Don't auto-listen before the first TTS plays (prevents immediate mic on mount)
+    if (!hasSpokeRef.current) return
+    // Already active or busy — don't double-start
+    if (isListening || isLoading || micState !== 'idle') return
+
+    autoListenTimerRef.current = setTimeout(() => {
+      autoListenTimerRef.current = null
+      cbRef.current.startListening(
+        text => cbRef.current.sendMessage(text),
+        handleListenError
+      )
+    }, 400)
+
+    return () => {
+      if (autoListenTimerRef.current) { clearTimeout(autoListenTimerRef.current); autoListenTimerRef.current = null }
+    }
+  }, [isSpeaking, handsFreeEnabled, handsFreePaused, audioUnlocked, isListening, isLoading, micState, handleListenError])
+
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     await unlockAutoplay()
@@ -210,12 +278,23 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   }, [input, sendMessage, unlockAutoplay])
 
   const handleMic = useCallback(async () => {
+    if (handsFreeEnabled) {
+      // In hands-free mode the orb/mic button pauses or resumes auto-listening.
+      // toggleHandsFreePause clears a previous permission error on resume, so
+      // every pause/resume control shares one code path.
+      if (isListening) stopListening()
+      toggleHandsFreePause()
+      return
+    }
     if (isListening) { stopListening(); return }
     if (micState === 'processing' || isLoading) return
     await unlockAutoplay()
     stopSpeaking()
-    startListening(text => sendMessage(text))
-  }, [isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+    startListening(
+      text => sendMessage(text),
+      handleListenError
+    )
+  }, [handsFreeEnabled, toggleHandsFreePause, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay, handleListenError])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />
@@ -227,7 +306,12 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
     .trim() ?? ''
 
-  const orbStatus = micState === 'listening' ? 'يسمع الآن' : micState === 'processing' ? 'يعالج' : isLoading ? 'يفكر' : isSpeaking ? 'يتحدث' : 'جاهز'
+  const orbStatus = micState === 'listening' ? 'يسمع الآن'
+    : micState === 'processing' ? 'يعالج'
+    : isLoading ? 'يفكر'
+    : isSpeaking ? 'يتحدث'
+    : handsFreeEnabled && !handsFreePaused && hasSpokeRef.current ? 'ينتظر'
+    : 'جاهز'
 
   return (
     <div dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
@@ -313,26 +397,46 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
           </div>
         </div>
 
-        {/* Audio unlock button — shown until user interacts */}
+        {/* Audio unlock — offer hands-free or manual mode */}
         {!audioUnlocked && (
-          <button
-            onClick={unlockAutoplay}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 18px', borderRadius: 20,
-              background: 'color-mix(in srgb, var(--primary) 10%, transparent)',
-              border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',
-              color: 'var(--primary)',
-              fontFamily: 'PingAR', fontWeight: 300, fontSize: 12,
-              cursor: 'pointer', marginBottom: 8,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
-            </svg>
-            اضغط لتفعيل الصوت
-          </button>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              onClick={handleEnableHandsFree}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 18px', borderRadius: 20,
+                background: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--primary) 40%, transparent)',
+                color: 'var(--primary)',
+                fontFamily: 'PingAR', fontWeight: 500, fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              </svg>
+              محادثة صوتية تلقائية
+            </button>
+            <button
+              onClick={unlockAutoplay}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 20,
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                color: 'var(--muted-foreground)',
+                fontFamily: 'PingAR', fontWeight: 300, fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+              كتابة / صوت يدوي
+            </button>
+          </div>
         )}
 
         {/* Orb */}
@@ -358,6 +462,41 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
           <span>{orbStatus}...</span>
         </div>
         <style>{`@keyframes _dot{from{transform:translateY(0)}to{transform:translateY(-5px)}}`}</style>
+
+        {/* Hands-free mode indicator — tap to pause/resume */}
+        {handsFreeEnabled && (
+          <div
+            onClick={toggleHandsFreePause}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, marginBottom: 10, cursor: 'pointer',
+              background: handsFreePaused ? 'color-mix(in srgb, var(--foreground) 8%, transparent)' : 'color-mix(in srgb, var(--primary) 12%, transparent)',
+              border: `1px solid ${handsFreePaused ? 'var(--border)' : 'color-mix(in srgb, var(--primary) 35%, transparent)'}`,
+            }}
+          >
+            {handsFreePaused
+              ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/></svg>
+            }
+            <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: handsFreePaused ? 'var(--muted-foreground)' : 'var(--primary)' }}>
+              {handsFreePaused ? 'موقف مؤقتاً — انقر للاستئناف' : 'محادثة صوتية تلقائية — انقر للإيقاف المؤقت'}
+            </span>
+          </div>
+        )}
+
+        {/* Mic permission denied error */}
+        {micError === 'not-allowed' && (
+          <div style={{ maxWidth: 460, width: '90%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, marginBottom: 10,
+            background: 'color-mix(in srgb, var(--error, #ef4444) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--error, #ef4444) 25%, transparent)',
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error, #ef4444)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style={{ flex: 1, fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
+              تعذر الوصول للميكروفون. تحقق من إعدادات المتصفح وأعط الإذن.
+            </span>
+            <button onClick={() => setMicError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: 2, display: 'flex' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        )}
 
         {/* TTS error banner — shown when voice is unavailable; interview continues via text */}
         {ttsError && (
@@ -393,11 +532,26 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
             />
             <button
               onClick={handleMic}
-              style={{ width: 46, height: 46, borderRadius: '50%', border: 'none', background: isListening ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)', color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .2s', boxShadow: isListening ? '0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent)' : undefined }}
+              title={handsFreeEnabled ? (handsFreePaused ? 'استئناف الاستماع' : 'إيقاف مؤقت') : (isListening ? 'إيقاف' : 'تحدث')}
+              style={{
+                width: 46, height: 46, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .2s',
+                background: handsFreeEnabled
+                  ? (handsFreePaused ? 'color-mix(in srgb, var(--foreground) 10%, transparent)' : 'color-mix(in srgb, var(--primary) 20%, transparent)')
+                  : (isListening ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)'),
+                color: handsFreeEnabled
+                  ? (handsFreePaused ? 'var(--muted-foreground)' : 'var(--primary)')
+                  : (isListening ? 'var(--primary-foreground, white)' : 'var(--foreground)'),
+                boxShadow: (isListening || (handsFreeEnabled && !handsFreePaused)) ? '0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent)' : undefined,
+              }}
             >
-              {isListening
-                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-foreground, white)" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              {handsFreeEnabled
+                ? (handsFreePaused
+                  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>)
+                : (isListening
+                  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>)
               }
             </button>
             <button
