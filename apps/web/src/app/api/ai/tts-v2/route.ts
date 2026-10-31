@@ -92,26 +92,32 @@ export async function POST(req: NextRequest) {
     const errText = await geminiRes.text()
     const ms = Date.now() - t0
 
-    // Parse quota details from Gemini error body
-    let errorLabel = 'provider_error'
+    // Default label by HTTP status — parse Gemini body for richer logging
+    let errorLabel =
+      geminiRes.status === 429               ? 'quota_exceeded' :
+      geminiRes.status === 400               ? 'bad_request'    :
+      (geminiRes.status === 401 || geminiRes.status === 403) ? 'auth_error' : 'provider_error'
+
+    let geminiStatus = ''
+    let geminiReason = ''
     let retryAfterSec: number | null = null
     try {
       const errJson = JSON.parse(errText) as {
-        error?: { details?: { '@type'?: string; retryDelay?: string; violations?: { quotaId?: string }[] }[] }
+        error?: {
+          status?:  string
+          message?: string
+          details?: { '@type'?: string; reason?: string; retryDelay?: string }[]
+        }
       }
-      const details = errJson?.error?.details ?? []
-      const quotaFail = details.find(d => d['@type']?.includes('QuotaFailure'))
-      const retryInfo = details.find(d => d['@type']?.includes('RetryInfo'))
-      if (quotaFail) errorLabel = 'quota_exceeded'
-      if (retryInfo?.retryDelay) {
-        retryAfterSec = parseInt(retryInfo.retryDelay) || null
-      }
-    } catch { /* not JSON */ }
+      geminiStatus = errJson?.error?.status ?? ''
+      geminiReason = errJson?.error?.details?.find(d => d.reason)?.reason ?? ''
+      const retryInfo = errJson?.error?.details?.find(d => d['@type']?.includes('RetryInfo'))
+      if (retryInfo?.retryDelay) retryAfterSec = parseInt(retryInfo.retryDelay) || null
+      // RESOURCE_EXHAUSTED from Gemini always means quota, even if HTTP status differs
+      if (geminiStatus === 'RESOURCE_EXHAUSTED') errorLabel = 'quota_exceeded'
+    } catch { /* non-JSON body */ }
 
-    if (geminiRes.status === 400) errorLabel = 'bad_request'
-    if (geminiRes.status === 401 || geminiRes.status === 403) errorLabel = 'auth_error'
-
-    console.error(`[TTS-V2] Gemini ${geminiRes.status} (${errorLabel}) after ${ms}ms`)
+    console.error(`[TTS-V2] Gemini ${geminiRes.status} (${errorLabel}) status=${geminiStatus} reason=${geminiReason} model=${MODEL} ms=${ms}`)
     return NextResponse.json(
       { error: errorLabel, retryAfterSec },
       { status: geminiRes.status === 429 ? 429 : geminiRes.status === 400 ? 400 : 503 }

@@ -146,7 +146,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const {
     messages, isLoading, isListening, micState, isSpeaking,
     careerResult, voiceGender, setVoiceGender,
-    audioUnlocked, unlockAudio,
+    ttsError, audioUnlocked, unlockAudio,
     sendMessage, speak, stopSpeaking, startListening, stopListening, clearChat,
     addAssistantMessage,
   } = useAIChat()
@@ -154,7 +154,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const [input,   setInput]   = useState('')
   const [started, setStarted] = useState(false)
   const [elapsed, setElapsed] = useState(0)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef    = useRef<HTMLDivElement>(null)
+  const spokenInitialRef  = useRef(false)
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -188,7 +189,18 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   const unlockAutoplay = useCallback(async () => {
     await unlockAudio()
+    // Speaking is handled by the effect below — not here
   }, [unlockAudio])
+
+  // Speak the initial interview question exactly once after audio is unlocked.
+  // Guard via ref: prevents re-speaking when voiceGender changes or messages update.
+  useEffect(() => {
+    if (!audioUnlocked || spokenInitialRef.current) return
+    const firstMsg = messages.find(m => m.role === 'assistant')
+    if (!firstMsg) return
+    spokenInitialRef.current = true
+    speak(firstMsg.content)
+  }, [audioUnlocked, messages, speak])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
@@ -303,12 +315,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {/* Audio unlock button — shown until user interacts */}
         {!audioUnlocked && (
           <button
-            onClick={async () => {
-              await unlockAutoplay()
-              if (messages.length > 0 && messages[0].role === 'assistant') {
-                speak(messages[0].content)
-              }
-            }}
+            onClick={unlockAutoplay}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '8px 18px', borderRadius: 20,
@@ -339,7 +346,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         </div>
 
         {/* Status */}
-        <div style={{ fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', marginBottom: ttsError ? 8 : 20, display: 'flex', alignItems: 'center', gap: 8 }}>
           {(isListening || isSpeaking || isLoading) && (
             <span style={{ display: 'inline-flex', gap: 3 }}>
               {[0, 1, 2].map(i => (
@@ -350,6 +357,20 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
           <span>{orbStatus}...</span>
         </div>
         <style>{`@keyframes _dot{from{transform:translateY(0)}to{transform:translateY(-5px)}}`}</style>
+
+        {/* TTS error banner — shown when voice is unavailable; interview continues via text */}
+        {ttsError && (
+          <div style={{ maxWidth: 460, width: '90%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--error, #ef4444) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--error, #ef4444) 25%, transparent)', marginBottom: 14 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error, #ef4444)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
+              {ttsError === 'quota_exceeded'
+                ? 'تم استنفاد حصة الصوت اليومية. يمكنك متابعة المقابلة نصياً.'
+                : ttsError === 'timeout'
+                ? 'انتهت مهلة خدمة الصوت. تابع نصياً.'
+                : 'خدمة الصوت غير متاحة حالياً. تابع المقابلة نصياً.'}
+            </span>
+          </div>
+        )}
 
         {/* Last AI message */}
         {cleanAI && (
