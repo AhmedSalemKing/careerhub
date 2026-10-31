@@ -149,8 +149,8 @@ export function useAIChat() {
   }, [])
 
   /* ── Send message ────────────────────────────────────────── */
-  const sendMessage = useCallback(async (content: string, autoSpeak = true) => {
-    if (!content.trim() || isLoadingRef.current) return
+  const sendMessage = useCallback(async (content: string, autoSpeak = true): Promise<boolean> => {
+    if (!content.trim() || isLoadingRef.current) return false
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
     const newMessages = [...messagesRef.current, userMsg]
@@ -167,8 +167,8 @@ export function useAIChat() {
       })
 
       // Read body before checking ok — server sends Arabic content in error responses too
-      let data: { content?: string } = {}
-      try { data = await res.json() as { content?: string } } catch { /* non-JSON */ }
+      let data: { content?: string; isError?: boolean } = {}
+      try { data = await res.json() as { content?: string; isError?: boolean } } catch { /* non-JSON */ }
 
       if (!res.ok) {
         const errContent = data.content ?? clientErrorMsg(res.status)
@@ -176,7 +176,7 @@ export function useAIChat() {
         const withErr = [...messagesRef.current, errMsg]
         messagesRef.current = withErr
         setMessages(withErr)
-        return
+        return false
       }
 
       const aiContent = data.content ?? 'عذراً، لم أتمكن من الرد.'
@@ -185,9 +185,13 @@ export function useAIChat() {
       messagesRef.current = withAi
       setMessages(withAi)
 
+      // isError: true means the server returned an apology — show it but don't speak it
+      if (data.isError) return false
+
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
       if (autoSpeak) void speak(aiContent)
+      return true
     } catch (err) {
       console.error('sendMessage error:', err)
       const e = err as { message?: string }
@@ -203,6 +207,7 @@ export function useAIChat() {
       const withErr = [...messagesRef.current, errMsg]
       messagesRef.current = withErr
       setMessages(withErr)
+      return false
     } finally {
       isLoadingRef.current = false
       setIsLoading(false)

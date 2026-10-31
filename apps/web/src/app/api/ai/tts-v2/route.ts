@@ -3,10 +3,17 @@
  *
  * Models tried in order:
  *   1. gemini-3.8-flash-lite-tts  (primary — lower quota usage, faster)
- *   2. gemini-3.8-flash-tts       (secondary — same key; 404/503/timeout fallback only)
+ *   2. gemini-3.8-flash-tts       (secondary — tried on quota/404/503/timeout)
  *
- * Immediate fail (no secondary attempt):
- *   quota_exceeded (429 / RESOURCE_EXHAUSTED), auth_error, bad_request
+ * Immediate fail, no secondary attempt:
+ *   auth_error (401/403), bad_request (400) — same key/payload, secondary cannot help
+ *
+ * Secondary IS tried once for:
+ *   quota_exceeded (429/RESOURCE_EXHAUSTED) — models have per-model quota pools
+ *   provider_error (404/503)               — model unavailable, secondary may be up
+ *   timeout / network_error                — transient failure, worth one more try
+ *
+ * Total time budget: 22 s across all attempts (maxDuration = 25 s)
  *
  * Client receives:  audio/l16; rate=24000; channels=1 binary stream
  * Errors:           JSON before stream starts (clear error boundary)
@@ -47,8 +54,8 @@ function parseGeminiError(errText: string, httpStatus: number): {
   geminiReason:  string
   retryAfterSec: number | null
 } {
+  // Start from HTTP status alone — body details refine this below
   let label: ErrorLabel =
-    httpStatus === 429               ? 'quota_exceeded' :
     httpStatus === 400               ? 'bad_request'    :
     (httpStatus === 401 || httpStatus === 403) ? 'auth_error' : 'provider_error'
 
@@ -68,15 +75,26 @@ function parseGeminiError(errText: string, httpStatus: number): {
     geminiReason = errJson?.error?.details?.find(d => d.reason)?.reason ?? ''
     const retryInfo = errJson?.error?.details?.find(d => d['@type']?.includes('RetryInfo'))
     if (retryInfo?.retryDelay) retryAfterSec = parseInt(retryInfo.retryDelay) || null
-    if (geminiStatus === 'RESOURCE_EXHAUSTED') label = 'quota_exceeded'
+
+    // Body-driven quota classification: covers RESOURCE_EXHAUSTED (daily) and RATE_LIMIT_EXCEEDED (RPM)
+    if (geminiStatus === 'RESOURCE_EXHAUSTED' || geminiStatus === 'RATE_LIMIT_EXCEEDED') {
+      label = 'quota_exceeded'
+    }
   } catch { /* non-JSON body */ }
+
+  // HTTP 429 fallback: body was non-JSON or carried an unrecognised status — still a rate-limit
+  if (httpStatus === 429 && label === 'provider_error') label = 'quota_exceeded'
 
   return { label, geminiStatus, geminiReason, retryAfterSec }
 }
 
-/** Returns true for errors where trying a second model with the same key is pointless */
+/**
+ * Returns true for errors where a secondary model with the same key is guaranteed to fail.
+ * quota_exceeded is NOT included: Gemini enforces quota per-model, so exhausting
+ * gemini-3.8-flash-lite-tts does NOT mean gemini-3.8-flash-tts is also exhausted.
+ */
 function isFinalError(label: ErrorLabel): boolean {
-  return label === 'quota_exceeded' || label === 'auth_error' || label === 'bad_request'
+  return label === 'auth_error' || label === 'bad_request'
 }
 
 export async function POST(req: NextRequest) {
@@ -118,12 +136,32 @@ export async function POST(req: NextRequest) {
 
   const models: string[] = [PRIMARY_MODEL, SECONDARY_MODEL]
 
+  // Wall-clock budget shared across all model attempts — stays within maxDuration=25s.
+  // Fast failures (quota/404/503) resolve in <1s so the secondary gets nearly the full budget.
+  // If the primary genuinely times out the secondary gets only the leftover ms, which may
+  // be insufficient for a full TTS stream — that is acceptable: a double-timeout is
+  // already an extreme failure and the client falls back to text-only.
+  const BUDGET_MS   = 22000
+  const budgetStart = Date.now()
+
+  // Remember the primary's error for a more informative final response when both models fail.
+  let firstModelError: { label: ErrorLabel; retryAfterSec: number | null } | null = null
+
   for (let mi = 0; mi < models.length; mi++) {
     const model      = models[mi]
     const isRetry    = mi > 0
 
+    const elapsed   = Date.now() - budgetStart
+    const remaining = BUDGET_MS - elapsed
+    if (remaining <= 500) {
+      // Budget nearly spent — no point starting another attempt
+      console.warn(`[TTS-V2] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
+      break
+    }
+    const attemptMs = Math.min(remaining - 300, 20000)
+
     const abortCtrl = new AbortController()
-    const timer     = setTimeout(() => abortCtrl.abort(), 22000)
+    const timer     = setTimeout(() => abortCtrl.abort(), attemptMs)
 
     // ── Fetch Gemini SSE stream ──────────────────────────────────────────
     let geminiRes: Response
@@ -158,22 +196,32 @@ export async function POST(req: NextRequest) {
 
       console.error(`[TTS-V2] req=${reqId} model=${model} http=${geminiRes.status} label=${label} gemini_status=${geminiStatus} reason=${geminiReason} ms=${ms}${isRetry ? ' (secondary)' : ''}`)
 
-      // Quota / auth / bad-request: secondary won't help
+      if (!isRetry) firstModelError = { label, retryAfterSec }
+
+      // auth_error and bad_request: same key / same content — secondary cannot help
       if (isFinalError(label)) {
         return NextResponse.json(
           { error: label, retryAfterSec },
-          { status: geminiRes.status === 429 ? 429 : geminiRes.status === 400 ? 400 : 503 }
+          { status: geminiRes.status === 400 ? 400 : 503 }
         )
       }
 
-      // 404 / 503 / other: try secondary if available
+      // quota_exceeded, provider_error, timeout, network_error: try secondary if available
       if (mi + 1 < models.length) {
         console.warn(`[TTS-V2] req=${reqId} model=${model} failed (${label}), trying secondary`)
         continue
       }
 
-      // All models exhausted
-      return NextResponse.json({ error: label, retryAfterSec }, { status: 503 })
+      // Both models exhausted — prefer the primary's quota error over secondary's provider_error
+      const finalLabel = (label === 'provider_error' && firstModelError?.label === 'quota_exceeded')
+        ? 'quota_exceeded'
+        : label
+      const finalRetryAfterSec = finalLabel === firstModelError?.label
+        ? firstModelError.retryAfterSec
+        : retryAfterSec
+      const finalStatus = finalLabel === 'quota_exceeded' ? 429 : 503
+      console.error(`[TTS-V2] req=${reqId} all_models_exhausted primary=${firstModelError?.label} final=${finalLabel}`)
+      return NextResponse.json({ error: finalLabel, retryAfterSec: finalRetryAfterSec }, { status: finalStatus })
     }
 
     // ── Success: relay PCM binary stream to client ───────────────────────

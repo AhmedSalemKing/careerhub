@@ -205,16 +205,17 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     await unlockAutoplay()
-    sendMessage(input)
-    setInput('')
+    const ok = await sendMessage(input)
+    if (ok) setInput('')
   }, [input, sendMessage, unlockAutoplay])
 
   const handleMic = useCallback(async () => {
     if (isListening) { stopListening(); return }
+    if (micState === 'processing' || isLoading) return
     await unlockAutoplay()
     stopSpeaking()
     startListening(text => sendMessage(text))
-  }, [isListening, stopListening, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+  }, [isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />
