@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
+import { computeDiscoveryStage } from './career-signals'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -192,11 +193,11 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  // Stage progress based on user-message count, not total messages.
-  // Cap at STAGES.length-2 (index 4 = "التوصية والخطة") while interview is active —
-  // the final stage "مراجعة النتائج" is only meaningful when careerResult arrives.
-  const userMessageCount = messages.filter(m => m.role === 'user').length
-  const currentStage = Math.min(Math.floor(userMessageCount / 2), STAGES.length - 2)
+  // Evidence-based discovery-dimension tracker.
+  // Dimensions are AREAS, not sequential steps — may be revisited freely.
+  // Final stage "مراجعة النتائج" only appears when careerResult arrives.
+  const allConversationText = messages.map(m => m.content).join('\n')
+  const currentStage        = computeDiscoveryStage(allConversationText, STAGES.length)
 
   const unlockAutoplay = useCallback(async () => {
     await unlockAudio()
@@ -238,7 +239,12 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       autoListenTimerRef.current = null
       cbRef.current.startListening(
         text => cbRef.current.sendMessage(text),
-        err  => { if (err === 'not-allowed') setMicError('not-allowed') }
+        err  => {
+          if (err === 'not-allowed' || err === 'start-failed' || err === 'already-started') {
+            setMicError('not-allowed')
+            setHandsFreePaused(true)   // stop auto-restart after permission denial or start failure
+          }
+        }
       )
     }, 400)
 
@@ -256,8 +262,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   const handleMic = useCallback(async () => {
     if (handsFreeEnabled) {
-      // In hands-free mode the orb/mic button pauses or resumes auto-listening
+      // In hands-free mode the orb/mic button pauses or resumes auto-listening.
+      // Clear a previous permission error when the user explicitly chooses to resume.
       if (isListening) stopListening()
+      if (handsFreePaused) setMicError(null)
       setHandsFreePaused(p => !p)
       return
     }
@@ -269,7 +277,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       text => sendMessage(text),
       err  => { if (err === 'not-allowed') setMicError('not-allowed') }
     )
-  }, [handsFreeEnabled, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+  }, [handsFreeEnabled, handsFreePaused, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />

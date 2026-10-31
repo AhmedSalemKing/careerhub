@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { productionCb } from './circuit-breaker'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -43,60 +44,10 @@ const PRIMARY_TIMEOUT_MS  = 7_000
 const FALLBACK_TIMEOUT_MS = 14_000
 const TOTAL_BUDGET_MS     = 24_000  // shared across all attempts; maxDuration = 30s
 
-// ── In-memory circuit breaker ────────────────────────────────────────────────
-// NOTE: Next.js on Vercel runs each serverless invocation in an isolated process.
-// This breaker is PER-INSTANCE ONLY — warm instances handling sequential requests
-// from the same user session get protection; separate cold-start instances do not
-// share state. This is not a global circuit breaker.
-//
-// Half-open probe: after halfOpenAt, a single probe is allowed through.
-// The probe slot (cb.probing) is set synchronously in the Node.js event loop,
-// preventing two concurrent in-process requests from both becoming probes.
-// The slot is released on success, failure, timeout, or exception.
-interface CircuitBreakerState {
-  consecutiveFailures: number
-  openUntil:           number   // epoch ms; 0 = closed
-  halfOpenAt:          number   // single probe allowed after this epoch ms
-  probing:             boolean  // probe slot occupied
-}
-const _cbState: Record<string, CircuitBreakerState> = {}
-const CB_FAILURE_THRESHOLD = 3
-const CB_OPEN_DURATION_MS  = 30_000
-const CB_HALF_OPEN_AFTER   = 20_000
-
-function getCb(model: string): CircuitBreakerState {
-  if (!_cbState[model]) _cbState[model] = { consecutiveFailures: 0, openUntil: 0, halfOpenAt: 0, probing: false }
-  return _cbState[model]
-}
-
-function cbIsOpen(model: string): boolean {
-  const cb  = getCb(model)
-  const now = Date.now()
-  if (cb.openUntil === 0) return false
-  if (now >= cb.halfOpenAt && !cb.probing) {
-    cb.probing = true  // take probe slot — synchronous, safe in single-threaded event loop
-    return false
-  }
-  return true
-}
-
-function cbRecordSuccess(model: string) {
-  const cb = getCb(model)
-  cb.consecutiveFailures = 0; cb.openUntil = 0; cb.halfOpenAt = 0; cb.probing = false
-}
-
-function cbRecordFailure(model: string, qualifying: boolean) {
-  if (!qualifying) return
-  const cb = getCb(model)
-  cb.probing = false  // release probe slot on any qualifying failure
-  cb.consecutiveFailures++
-  if (cb.consecutiveFailures >= CB_FAILURE_THRESHOLD) {
-    const now = Date.now()
-    cb.openUntil  = now + CB_OPEN_DURATION_MS
-    cb.halfOpenAt = now + CB_HALF_OPEN_AFTER
-    console.warn(`[AI Chat] circuit_breaker OPEN model=${model} until=${new Date(cb.openUntil).toISOString()}`)
-  }
-}
+const cb = productionCb
+const cbIsOpen         = (m: string)                    => cb.isOpen(m)
+const cbRecordSuccess  = (m: string)                    => cb.recordSuccess(m)
+const cbRecordFailure  = (m: string, q: boolean)        => cb.recordFailure(m, q)
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
@@ -163,8 +114,8 @@ export async function POST(req: NextRequest) {
       const isRetry = mi > 0
 
       if (cbIsOpen(model)) {
-        const cb = getCb(model)
-        console.warn(`[AI Chat] req=${reqId} cb_open model=${model} openUntil=${new Date(cb.openUntil).toISOString()}`)
+        const cbState = cb.getState(model)
+        console.warn(`[AI Chat] req=${reqId} cb_open model=${model} openUntil=${new Date(cbState.openUntil).toISOString()}`)
         lastError = `${model} skipped (circuit open)`
         continue
       }
