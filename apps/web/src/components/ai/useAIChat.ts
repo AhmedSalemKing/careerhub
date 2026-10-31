@@ -30,7 +30,7 @@ interface SpeechRec {
   continuous: boolean
   interimResults: boolean
   onstart: (() => void) | null
-  onresult: ((e: { resultIndex: number; results: { [i: number]: SpeechResult } }) => void) | null
+  onresult: ((e: { resultIndex: number; results: { length: number; [i: number]: SpeechResult } }) => void) | null
   onend: (() => void) | null
   onerror: ((e: { error?: string }) => void) | null
   start(): void
@@ -53,6 +53,11 @@ function clientErrorMsg(status: number): string {
 
 export type MicState = 'idle' | 'listening' | 'processing'
 
+// Silence duration before auto-submitting accumulated speech (ms).
+// 2.5 s covers natural thinking pauses in Egyptian Arabic while remaining
+// responsive; if the user consistently gets cut off, increase toward 3500.
+const SILENCE_TIMEOUT_MS = 2500
+
 export function useAIChat() {
   const [messages,     setMessages]     = useState<Message[]>([])
   const [isLoading,    setIsLoading]    = useState(false)
@@ -65,6 +70,8 @@ export function useAIChat() {
   const messagesRef    = useRef<Message[]>([])
   const isLoadingRef   = useRef(false)
   const submittedRef   = useRef(false)
+  // TTS dedup: track the last message ID spoken per gender to avoid re-speaking
+  const lastSpokenRef  = useRef<{ msgId: string; gender: string } | null>(null)
 
   // Streaming TTS — Web Audio API, Gemini SSE, no browser speech synthesis fallback
   const {
@@ -87,7 +94,7 @@ export function useAIChat() {
   }, [])
 
   /* ── speak ───────────────────────────────────────────────── */
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, msgId?: string) => {
     if (typeof window === 'undefined') return
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
@@ -99,7 +106,16 @@ export function useAIChat() {
       .replace(/\s+/g, ' ')
       .trim()
     if (!cleanText) return
-    console.log(`[TTS] speak voice=${voiceGender} len=${cleanText.length}`)
+    // Dedup: skip if this exact message+voice was already started this session
+    if (msgId) {
+      const key = `${msgId}:${voiceGender}`
+      if (lastSpokenRef.current?.msgId === msgId && lastSpokenRef.current?.gender === voiceGender) {
+        console.log(`[TTS] dedup skip msgId=${msgId}`)
+        return
+      }
+      lastSpokenRef.current = { msgId, gender: voiceGender }
+    }
+    console.log(`[TTS] speak voice=${voiceGender} len=${cleanText.length}${msgId ? ` msgId=${msgId}` : ''}`)
     ttsSpeak(cleanText, voiceGender)
   }, [ttsSpeak, voiceGender])
 
@@ -108,7 +124,18 @@ export function useAIChat() {
     ttsStop()
   }, [ttsStop])
 
-  /* ── STT ─────────────────────────────────────────────────── */
+  /* ── STT — continuous mode with silence-based end-of-speech ─ */
+  //
+  // Design:
+  //   - continuous=true / interimResults=true so the browser keeps the session
+  //     alive across natural thinking pauses (prevents premature cutoff at 5s).
+  //   - Final results accumulate in a closure variable (accText).
+  //   - A SILENCE_TIMEOUT_MS timer resets on every new final result.
+  //     When the timer fires (silence detected) the accumulated text is submitted.
+  //   - rec.onend is a safety net: if the browser stops the session for any reason
+  //     (network timeout, max-duration, manual rec.stop()), any pending accumulated
+  //     text is flushed and submitted so no answer is ever lost.
+  //   - Callers (hands-free + manual mic) keep the same API surface.
   const startListening = useCallback((onResult: (text: string) => void, onError?: (errCode: string) => void) => {
     if (typeof window === 'undefined') return
     const w  = window as unknown as WinSpeech
@@ -116,22 +143,60 @@ export function useAIChat() {
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
     submittedRef.current = false
-    const rec          = new SR()
-    // ar-EG: Egyptian Arabic — matches the UI dialect and handles mixed Arabic/English terms.
-    rec.lang           = 'ar-EG'
-    rec.continuous     = false
-    rec.interimResults = false
-    rec.onstart        = () => { setIsListening(true); setMicState('listening') }
-    rec.onresult       = e => {
-      const result = e.results[e.resultIndex]
-      if (!result.isFinal || submittedRef.current) return
+    let accText      = ''
+    let silenceTimer: ReturnType<typeof setTimeout> | null = null
+
+    const submit = () => {
+      if (submittedRef.current) return
+      const text = accText.trim()
+      if (!text) return
       submittedRef.current = true
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      accText = ''
       setMicState('processing')
-      onResult(result[0].transcript)
-      rec.stop()
+      onResult(text)
+      try { rec.stop() } catch { /* already stopped */ }
     }
-    rec.onend          = () => { setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s) }
-    rec.onerror        = (e) => { setIsListening(false); setMicState('idle'); if (onError) onError(e.error ?? 'unknown') }
+
+    const rec          = new SR()
+    rec.lang           = 'ar-EG'
+    rec.continuous     = true    // keep session alive across thinking pauses
+    rec.interimResults = true    // receive partial results (we only act on finals)
+    rec.onstart        = () => { setIsListening(true); setMicState('listening') }
+
+    rec.onresult       = e => {
+      let newFinal = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) newFinal += (e.results[i][0]?.transcript ?? '') + ' '
+      }
+      if (!newFinal.trim()) return
+      accText = (accText + ' ' + newFinal).trim()
+      // Reset silence timer on every new confirmed word
+      if (silenceTimer) clearTimeout(silenceTimer)
+      silenceTimer = setTimeout(submit, SILENCE_TIMEOUT_MS)
+    }
+
+    // Safety net: flush any pending text if the browser stops recognition for any reason
+    rec.onend = () => {
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      setIsListening(false)
+      setMicState(s => s === 'listening' ? 'idle' : s)
+      if (!submittedRef.current && accText.trim()) {
+        submittedRef.current = true
+        const text = accText.trim()
+        accText = ''
+        setMicState('processing')
+        onResult(text)
+      }
+    }
+
+    rec.onerror = e => {
+      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      setIsListening(false)
+      setMicState('idle')
+      if (onError) onError(e.error ?? 'unknown')
+    }
+
     recognitionRef.current = rec
     try {
       rec.start()
@@ -143,9 +208,10 @@ export function useAIChat() {
   }, [])
 
   const stopListening = useCallback(() => {
+    // Stopping the recognition triggers rec.onend, which flushes accumulated text.
     recognitionRef.current?.stop()
     setIsListening(false)
-    setMicState('idle')
+    setMicState(s => s === 'listening' ? 'idle' : s)
   }, [])
 
   /* ── Parse career result ─────────────────────────────────── */
@@ -156,7 +222,7 @@ export function useAIChat() {
   }, [])
 
   /* ── Send message ────────────────────────────────────────── */
-  const sendMessage = useCallback(async (content: string, autoSpeak = true): Promise<boolean> => {
+  const sendMessage = useCallback(async (content: string, autoSpeak = true, userName?: string, memoryContext?: string): Promise<boolean> => {
     if (!content.trim() || isLoadingRef.current) return false
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
@@ -167,10 +233,13 @@ export function useAIChat() {
     setIsLoading(true)
 
     try {
+      const body: Record<string, unknown> = { messages: newMessages.map(m => ({ role: m.role, content: m.content })) }
+      if (userName) body.userName = userName
+      if (memoryContext) body.memoryContext = memoryContext
       const res = await fetch('/api/ai/chat', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, content: m.content })) }),
+        body:    JSON.stringify(body),
       })
 
       // Read body before checking ok — server sends Arabic content in error responses too
@@ -197,7 +266,7 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) void speak(aiContent)
+      if (autoSpeak) void speak(aiContent, aiMsg.id)
       return true
     } catch (err) {
       console.error('sendMessage error:', err)

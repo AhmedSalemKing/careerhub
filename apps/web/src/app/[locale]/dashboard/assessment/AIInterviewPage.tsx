@@ -6,6 +6,8 @@ import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
 import { computeDiscoveryStage, type ChatMessage } from './career-signals'
+import { useAuthStore } from '@/stores/authStore'
+import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -152,6 +154,11 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     addAssistantMessage,
   } = useAIChat()
 
+  const authUser   = useAuthStore(s => s.user)
+  const userName   = authUser?.profile?.firstName ?? undefined
+  const userId     = authUser?.id ?? undefined
+  const { load: loadMemory, saveResult: saveCareerResult } = useCareerMemory(userId)
+
   const [input,            setInput]            = useState('')
   const [started,          setStarted]          = useState(false)
   const [elapsed,          setElapsed]          = useState(0)
@@ -162,7 +169,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const spokenInitialRef  = useRef(false)
   const hasSpokeRef        = useRef(false)
   const autoListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const cbRef              = useRef({ startListening, sendMessage })
+  const cbRef              = useRef({ startListening, sendMessage, userName })
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -192,6 +199,18 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  // Save career result to localStorage when it first arrives
+  useEffect(() => {
+    if (careerResult) saveCareerResult(careerResult)
+  }, [careerResult, saveCareerResult])
+
+  // Build memory context once on mount for the first sendMessage call
+  const memoryContextRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    const memory = loadMemory()
+    memoryContextRef.current = buildMemoryContext(memory) || undefined
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Evidence-based discovery-dimension tracker.
   // Dimensions are AREAS, not sequential steps — may be revisited freely.
@@ -226,7 +245,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   }, [audioUnlocked, messages, speak])
 
   // Keep stable refs to callbacks so the auto-listen timer never has stale closures
-  useEffect(() => { cbRef.current = { startListening, sendMessage } }, [startListening, sendMessage])
+  useEffect(() => { cbRef.current = { startListening, sendMessage, userName } }, [startListening, sendMessage, userName])
 
   // Hands-free auto-listen: restart listening each time TTS finishes speaking
   useEffect(() => {
@@ -242,7 +261,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     autoListenTimerRef.current = setTimeout(() => {
       autoListenTimerRef.current = null
       cbRef.current.startListening(
-        text => cbRef.current.sendMessage(text),
+        text => cbRef.current.sendMessage(text, true, cbRef.current.userName, memoryContextRef.current),
         err  => {
           if (err === 'not-allowed' || err === 'start-failed' || err === 'already-started') {
             setMicError('not-allowed')
@@ -260,9 +279,9 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     await unlockAutoplay()
-    const ok = await sendMessage(input)
+    const ok = await sendMessage(input, true, userName, memoryContextRef.current)
     if (ok) setInput('')
-  }, [input, sendMessage, unlockAutoplay])
+  }, [input, sendMessage, unlockAutoplay, userName])
 
   const handleMic = useCallback(async () => {
     if (handsFreeEnabled) {
@@ -276,10 +295,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     await unlockAutoplay()
     stopSpeaking()
     startListening(
-      text => sendMessage(text),
+      text => sendMessage(text, true, userName, memoryContextRef.current),
       err  => { if (err === 'not-allowed') setMicError('not-allowed') }
     )
-  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay, userName])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />

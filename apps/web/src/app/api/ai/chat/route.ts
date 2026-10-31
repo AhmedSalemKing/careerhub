@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   const tStart = Date.now()
 
   try {
-    const { messages } = await req.json()
+    const { messages, userName, memoryContext } = await req.json() as { messages: unknown; userName?: string; memoryContext?: string }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -104,7 +104,17 @@ export async function POST(req: NextRequest) {
       contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    console.log(`[AI Chat] req=${reqId} msgs=${validMessages.length} turns=${contents.length}`)
+    const safeUserName = typeof userName === 'string' && userName.trim().length > 0
+      ? userName.trim().slice(0, 50)
+      : null
+    const safeMemory = typeof memoryContext === 'string' && memoryContext.trim().length > 0
+      ? memoryContext.trim().slice(0, 500)
+      : null
+    let systemPrompt = DEVEWAY_SYSTEM_PROMPT
+    if (safeUserName) systemPrompt += `\n\nاسم المستخدم: ${safeUserName}. خاطبه باسمه بشكل طبيعي في المحادثة.`
+    if (safeMemory)   systemPrompt += safeMemory
+
+    console.log(`[AI Chat] req=${reqId} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
     const models      = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
     const budgetStart = Date.now()
@@ -153,7 +163,7 @@ export async function POST(req: NextRequest) {
           signal:  ctrl.signal,
           body:    JSON.stringify({
             ...baseBody,
-            system_instruction: { parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
+            system_instruction: { parts: [{ text: systemPrompt }] },
           }),
         })
 
@@ -196,7 +206,7 @@ export async function POST(req: NextRequest) {
             console.log(`[AI Chat] req=${reqId} retrying ${model} without system_instruction (synthetic exchange)`)
             const syntheticPrefix = [
               { role: 'user',  parts: [{ text: 'أنت من؟ وما دورك؟' }] },
-              { role: 'model', parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
+              { role: 'model', parts: [{ text: systemPrompt }] },
             ]
             const contentsWithPrefix = [...syntheticPrefix, ...contents]
 
