@@ -73,14 +73,66 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
   // Active fetch abort controller
   const abortRef = useRef<AbortController | null>(null)
 
+  // Browser speechSynthesis fallback — active utterance for cancellation
+  const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
+  // Pending text for the fallback — set before the async fetch so fallback can use it
+  const pendingTextRef = useRef<string>('')
+
+  /* ── Browser speechSynthesis fallback ───────────────────── */
+  // Activated only when primary TTS fails (non-abort errors or no audio produced).
+  // Handles unavailable synthesis gracefully — wrapped in try/catch throughout.
+  const trySynthesisFallback = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    try {
+      window.speechSynthesis.cancel()
+      const utter = new SpeechSynthesisUtterance(text.slice(0, 1000))
+      utter.lang = 'ar-EG'
+      utter.rate = 0.9
+      synthRef.current = utter
+      utter.onend = () => {
+        if (synthRef.current === utter) {
+          synthRef.current = null
+          setIsSpeaking(false)
+        }
+      }
+      utter.onerror = () => {
+        if (synthRef.current === utter) {
+          synthRef.current = null
+          setIsSpeaking(false)
+        }
+      }
+      setIsSpeaking(true)
+      window.speechSynthesis.speak(utter)
+    } catch {
+      // speechSynthesis broken in this browser — stay silent
+      setIsSpeaking(false)
+    }
+  }, [])
+
+  const cancelSynthesis = useCallback(() => {
+    synthRef.current = null
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+    }
+  }, [])
+
   /* ── Unmount cleanup ──────────────────────────────────────── */
   useEffect(() => {
+    const reqRef     = reqIdRef
+    const srcRef     = sourcesRef
+    const abortCtRef = abortRef
+    const audioRef   = audioCtxRef
+    const synRef     = synthRef
     return () => {
-      ++reqIdRef.current
-      sourcesRef.current.forEach(s => { try { s.stop() } catch { /* ignore */ } })
-      sourcesRef.current = []
-      if (abortRef.current) { try { abortRef.current.abort() } catch { /* ignore */ } }
-      if (audioCtxRef.current) { try { audioCtxRef.current.close() } catch { /* ignore */ } }
+      ++reqRef.current
+      srcRef.current.forEach(s => { try { s.stop() } catch { /* ignore */ } })
+      srcRef.current = []
+      if (abortCtRef.current) { try { abortCtRef.current.abort() } catch { /* ignore */ } }
+      if (audioRef.current) { try { audioRef.current.close() } catch { /* ignore */ } }
+      synRef.current = null
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+      }
     }
   }, [])
 
@@ -137,22 +189,28 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
   const stopSpeaking = useCallback(() => {
     ++reqIdRef.current
     cancelAll()
+    cancelSynthesis()
     setIsSpeaking(false)
-  }, [cancelAll])
+  }, [cancelAll, cancelSynthesis])
 
   /* ── Speak ───────────────────────────────────────────────── */
   const speak = useCallback((text: string, gender: 'female' | 'male' = 'female') => {
     if (typeof window === 'undefined') return
 
-    // Cancel prior request
+    // Cancel prior request (primary + fallback synthesis)
     cancelAll()
+    cancelSynthesis()
     ++reqIdRef.current
     const reqId    = reqIdRef.current
     const isActive = () => reqIdRef.current === reqId
 
+    // Store text so the fallback can access it from async continuations
+    pendingTextRef.current = text
+
     const ctx = getAudioContext()
     if (!ctx) {
       setLastError('audio_context')
+      trySynthesisFallback(text)
       return
     }
 
@@ -268,14 +326,18 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           } catch { /* ignore */ }
           if (isActive()) {
             setLastError(errLabel)
-            setIsSpeaking(false)
+            // Activate synthesis fallback — TTS failure must not silence the response
+            trySynthesisFallback(pendingTextRef.current)
           }
           return
         }
 
         const ct = res.headers.get('content-type') ?? ''
         if (!ct.startsWith('audio/l16') && !ct.startsWith('audio/L16')) {
-          if (isActive()) { setLastError('bad_audio'); setIsSpeaking(false) }
+          if (isActive()) {
+            setLastError('bad_audio')
+            trySynthesisFallback(pendingTextRef.current)
+          }
           return
         }
 
@@ -300,10 +362,10 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           const ms = Math.round(performance.now() - t0)
           setTotalMs(ms)
 
-          // If nothing was scheduled at all, treat as error
+          // If nothing was scheduled at all, activate fallback
           if (!firstChunkArrived) {
             setLastError('bad_audio')
-            setIsSpeaking(false)
+            trySynthesisFallback(pendingTextRef.current)
           }
           // isSpeaking will be cleared by the last source's onended
         }
@@ -313,15 +375,19 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           if (e?.name !== 'AbortError') {
             console.error('[useStreamingTTS] fetch error:', e?.message)
             setLastError('network_error')
+            // Non-abort failure: activate synthesis fallback
+            trySynthesisFallback(pendingTextRef.current)
+          } else {
+            // User-initiated abort: no fallback, just stop
+            setIsSpeaking(false)
           }
-          setIsSpeaking(false)
         }
       } finally {
         if (abortRef.current === abortCtrl) abortRef.current = null
         void streamDone  // suppress unused warning
       }
     })()
-  }, [getAudioContext, cancelAll])
+  }, [getAudioContext, cancelAll, cancelSynthesis, trySynthesisFallback])
 
   return {
     isSpeaking, lastError, firstChunkMs, totalMs,

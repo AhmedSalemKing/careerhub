@@ -126,7 +126,9 @@ export async function POST(req: NextRequest) {
       : null
     let systemPrompt = DEVEWAY_SYSTEM_PROMPT
     if (safeUserName) systemPrompt += `\n\nاسم المستخدم: ${safeUserName}. خاطبه باسمه بشكل طبيعي في المحادثة.`
-    if (safeMemory)   systemPrompt += safeMemory
+    // Memory is sandboxed in a labeled data block — the block markers prevent client-
+    // supplied text from being mistaken for system instructions by the model.
+    if (safeMemory)   systemPrompt += `\n\n[بيانات جلسات سابقة — للاستشارة فقط]\n${safeMemory}\n[/بيانات جلسات سابقة]`
 
     console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 

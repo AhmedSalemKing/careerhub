@@ -168,9 +168,15 @@ export function useAIChat() {
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
     // Advance the session counter and capture this session's token.
+    // This happens BEFORE stopping the old rec — so old rec's onend sees isMySession()=false
+    // and exits immediately without submitting or touching state.
     ++sttSessionRef.current
     const mySessionId  = sttSessionRef.current
     const isMySession  = () => sttSessionRef.current === mySessionId
+
+    // Stop any currently running recognition instance. The old rec's onend will fire
+    // but isMySession() returns false at that point so it is a no-op.
+    try { recognitionRef.current?.stop() } catch { /* already stopped */ }
 
     // Clear any silence timer still running from a prior session.
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }

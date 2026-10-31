@@ -4,6 +4,7 @@ import type { CareerResult } from './useAIChat'
 
 const MEMORY_KEY_PREFIX = 'deveway_career_memory_'
 const MAX_SESSION_SUMMARIES = 5
+const SERVER_MEMORY_URL = '/api/ai/memory'
 
 export interface SessionSummary {
   date: string
@@ -57,10 +58,48 @@ function emptyMemory(userId: string): CareerMemory {
   }
 }
 
+// ── Server sync helpers (module-level, no React dependency) ──────────────────
+
+async function fetchMemoryFromServer(): Promise<CareerMemory | null> {
+  try {
+    const res = await fetch(SERVER_MEMORY_URL, { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json() as { memory?: CareerMemory | null }
+    return data.memory ?? null
+  } catch {
+    return null
+  }
+}
+
+async function pushMemoryToServer(memory: CareerMemory): Promise<void> {
+  try {
+    await fetch(SERVER_MEMORY_URL, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(memory),
+    })
+  } catch {
+    // Server unavailable — localStorage copy is still valid
+  }
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 export function useCareerMemory(userId: string | undefined) {
   const load = useCallback((): CareerMemory | null => {
     if (!userId) return null
     return readMemory(userId)
+  }, [userId])
+
+  // Fetch from server and update localStorage if server has newer data.
+  // Non-blocking: resolves null on any failure.
+  const loadFromServer = useCallback(async (): Promise<CareerMemory | null> => {
+    if (!userId) return null
+    const serverMemory = await fetchMemoryFromServer()
+    if (!serverMemory || serverMemory.userId !== userId) return null
+    // Update localStorage with the authoritative server copy
+    writeMemory(serverMemory)
+    return serverMemory
   }, [userId])
 
   const saveResult = useCallback((result: CareerResult) => {
@@ -79,6 +118,8 @@ export function useCareerMemory(userId: string | undefined) {
       lastUpdated: new Date().toISOString(),
     }
     writeMemory(updated)
+    // Non-blocking server sync — failure leaves localStorage intact
+    void pushMemoryToServer(updated)
   }, [userId])
 
   const clear = useCallback(() => {
@@ -86,7 +127,7 @@ export function useCareerMemory(userId: string | undefined) {
     try { localStorage.removeItem(storageKey(userId)) } catch { /* ignore */ }
   }, [userId])
 
-  return { load, saveResult, clear }
+  return { load, loadFromServer, saveResult, clear }
 }
 
 // Builds a compact context string to inject into the system prompt

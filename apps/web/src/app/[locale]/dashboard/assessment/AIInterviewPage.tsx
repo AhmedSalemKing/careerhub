@@ -156,7 +156,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   const authUser   = useAuthStore(s => s.user)
   const userId     = authUser?.id ?? undefined
-  const { load: loadMemory, saveResult: saveCareerResult } = useCareerMemory(userId)
+  const { load: loadMemory, loadFromServer: loadMemoryFromServer, saveResult: saveCareerResult } = useCareerMemory(userId)
 
   const [input,            setInput]            = useState('')
   const [started,          setStarted]          = useState(false)
@@ -187,6 +187,15 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const mm       = String(Math.floor(timeLeft / 60)).padStart(2, '0')
   const ss       = String(timeLeft % 60).padStart(2, '0')
 
+  // When the 30-minute session window closes, pause hands-free auto-listen.
+  // The interview can still continue manually; this prevents the mic from
+  // auto-restarting indefinitely after the intended session duration.
+  useEffect(() => {
+    if (timeLeft === 0 && handsFreeEnabled && !handsFreePaused) {
+      setHandsFreePaused(true)
+    }
+  }, [timeLeft, handsFreeEnabled, handsFreePaused])
+
   useEffect(() => {
     if (!started) {
       setStarted(true)
@@ -204,11 +213,21 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     if (careerResult) saveCareerResult(careerResult)
   }, [careerResult, saveCareerResult])
 
-  // Build memory context once on mount for the first sendMessage call
+  // Build memory context for sendMessage calls.
+  // Phase 1 (sync): loads from localStorage immediately for the first message.
+  // Phase 2 (async): fetches from server and updates the ref; subsequent
+  //   messages in the same session will use the authoritative server copy.
   const memoryContextRef = useRef<string | undefined>(undefined)
   useEffect(() => {
-    const memory = loadMemory()
-    memoryContextRef.current = buildMemoryContext(memory) || undefined
+    const localMemory = loadMemory()
+    memoryContextRef.current = buildMemoryContext(localMemory) || undefined
+
+    // Non-blocking server load — update ref when it arrives
+    loadMemoryFromServer().then(serverMemory => {
+      if (serverMemory) {
+        memoryContextRef.current = buildMemoryContext(serverMemory) || undefined
+      }
+    }).catch(() => { /* server unavailable — local memory is still set */ })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Evidence-based discovery-dimension tracker.

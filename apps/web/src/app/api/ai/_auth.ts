@@ -29,10 +29,7 @@ export async function verifyRequest(req: NextRequest): Promise<AuthUser | null> 
 
   try {
     const res = await fetch(`${API_BASE}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(4000),
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore — Next.js fetch extension
