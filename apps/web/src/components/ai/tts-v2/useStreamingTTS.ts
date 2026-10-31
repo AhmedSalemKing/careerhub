@@ -332,7 +332,11 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           return
         }
 
-        const ct = res.headers.get('content-type') ?? ''
+        const ct    = res.headers.get('content-type') ?? ''
+        const srvId = res.headers.get('x-tts-request-id') ?? ''
+        const srvModel = res.headers.get('x-tts-model') ?? ''
+        if (srvId) console.log(`[useStreamingTTS] server_req=${srvId} model=${srvModel}`)
+
         if (!ct.startsWith('audio/l16') && !ct.startsWith('audio/L16')) {
           if (isActive()) {
             setLastError('bad_audio')

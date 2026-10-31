@@ -140,6 +140,15 @@ export async function POST(req: NextRequest) {
       const model   = models[mi]
       const isRetry = mi > 0
 
+      // Check the shared budget BEFORE claiming a half-open probe slot, so an
+      // exhausted budget can never strand the circuit breaker in probing state.
+      const elapsed   = Date.now() - budgetStart
+      const remaining = TOTAL_BUDGET_MS - elapsed
+      if (remaining <= 500) {
+        console.warn(`[AI Chat] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
+        break
+      }
+
       if (cbIsOpen(model)) {
         const cbState = cb.getState(model)
         console.warn(`[AI Chat] req=${reqId} cb_open model=${model} openUntil=${new Date(cbState.openUntil).toISOString()}`)
@@ -147,15 +156,12 @@ export async function POST(req: NextRequest) {
         continue
       }
 
-      const elapsed   = Date.now() - budgetStart
-      const remaining = TOTAL_BUDGET_MS - elapsed
-      if (remaining <= 500) {
-        console.warn(`[AI Chat] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
-        break
-      }
-      const attemptTimeout = isRetry
-        ? Math.min(remaining - 300, FALLBACK_TIMEOUT_MS)
-        : Math.min(remaining - 300, PRIMARY_TIMEOUT_MS)
+      const attemptTimeout = Math.max(
+        250,
+        isRetry
+          ? Math.min(remaining - 300, FALLBACK_TIMEOUT_MS)
+          : Math.min(remaining - 300, PRIMARY_TIMEOUT_MS)
+      )
 
       const tAttempt = Date.now()
       const baseBody  = {

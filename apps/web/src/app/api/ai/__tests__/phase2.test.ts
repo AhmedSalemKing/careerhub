@@ -240,7 +240,7 @@ describe('TTS — speechSynthesis fallback', () => {
       if (typeof window === 'undefined' || !('speechSynthesis' in (typeof window !== 'undefined' ? window : {}))) return
       // would call window.speechSynthesis.speak — but since we're in Node, we skip
     }
-    expect(() => tryFallbackSafe('text')).not.toThrow()
+    expect(() => (tryFallbackSafe as (t: string) => void)('text')).not.toThrow()
   })
 
   test('T46 — synthesis.speak() throws → caught, isSpeaking goes false', () => {
