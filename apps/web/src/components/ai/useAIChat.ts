@@ -45,6 +45,10 @@ function clientErrorMsg(status: number): string {
   return 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مجدداً.'
 }
 
+// How long to wait for Gemini before committing to browser fallback.
+// Gemini quota-429 returns in <1s; a healthy response in ~2-5s; 8s is a safe ceiling.
+const GEMINI_TIMEOUT_MS = 8000
+
 export function useAIChat() {
   const [messages,     setMessages]     = useState<Message[]>([])
   const [isLoading,    setIsLoading]    = useState(false)
@@ -56,20 +60,33 @@ export function useAIChat() {
   const recognitionRef = useRef<SpeechRec | null>(null)
   const messagesRef    = useRef<Message[]>([])
   const audioRef       = useRef<HTMLAudioElement | null>(null)
+  // Monotonic request counter — every async continuation checks this before acting.
+  const ttsIdRef       = useRef(0)
+  // AbortController for the in-flight Gemini fetch, if any.
+  const ttsAbortRef    = useRef<AbortController | null>(null)
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
     return () => {
-      if (typeof window !== 'undefined') window.speechSynthesis.cancel()
+      ++ttsIdRef.current                          // invalidate any active request
+      if (typeof window !== 'undefined') {
+        try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+      }
       if (audioRef.current) {
         try { audioRef.current.pause() } catch { /* ignore */ }
         audioRef.current = null
+      }
+      if (ttsAbortRef.current) {
+        try { ttsAbortRef.current.abort() } catch { /* ignore */ }
+        ttsAbortRef.current = null
       }
     }
   }, [])
 
   /* ── Browser TTS — fallback only ────────────────────────── */
-  const browserTTS = useCallback((text: string) => {
+  // isActive() must return true for the iterator to continue speaking.
+  // When a new speak() fires, isActive() becomes false and the old iterator stops silently.
+  const browserTTS = useCallback((text: string, isActive: () => boolean) => {
     if (typeof window === 'undefined') return
     const synth = window.speechSynthesis
     try { synth.cancel() } catch { /* ignore */ }
@@ -79,7 +96,10 @@ export function useAIChat() {
       .map(s => s.trim())
       .filter(s => s.length > 1)
 
-    if (!sentences.length) { setIsSpeaking(false); return }
+    if (!sentences.length) {
+      if (isActive()) setIsSpeaking(false)
+      return
+    }
 
     const doSpeak = (voices: SpeechSynthesisVoice[]) => {
       const arabicVoices = voices.filter(v =>
@@ -89,6 +109,8 @@ export function useAIChat() {
       let index = 0
 
       const next = () => {
+        // Guard: stop iterating if this request was superseded or stopped
+        if (!isActive()) return
         if (index >= sentences.length) { setIsSpeaking(false); return }
         const u    = new SpeechSynthesisUtterance(sentences[index])
         u.lang     = 'ar-EG'
@@ -120,16 +142,30 @@ export function useAIChat() {
     }
   }, [voiceGender])
 
-  /* ── TTS — parallel: browser instantly + Gemini in background ── */
+  /* ── speak — sequential: Gemini first, browser fallback on failure/timeout ── */
+  //
+  // Invariant: for any single speak() call, at most one engine produces audio.
+  //
+  // State machine (per request):
+  //   requesting_gemini  →  playing_gemini     (Gemini success within timeout)
+  //   requesting_gemini  →  playing_browser    (Gemini error OR timeout)
+  //   playing_*          →  stopped            (stopSpeaking / new speak / unmount)
+  //
+  // The `committed` flag locks in whichever engine starts first.
+  // A late Gemini response arriving after `committed=true` is discarded.
   const speak = useCallback((text: string) => {
     if (typeof window === 'undefined') return
 
-    // Stop everything currently playing
+    // ── Cancel all current playback ──
     try { window.speechSynthesis.cancel() } catch { /* ignore */ }
     if (audioRef.current) {
       try { audioRef.current.pause() } catch { /* ignore */ }
       audioRef.current.src = ''
       audioRef.current = null
+    }
+    if (ttsAbortRef.current) {
+      try { ttsAbortRef.current.abort() } catch { /* ignore */ }
+      ttsAbortRef.current = null
     }
 
     const cleanText = text
@@ -145,67 +181,105 @@ export function useAIChat() {
     if (!cleanText) return
     setIsSpeaking(true)
 
-    // Generation token — if speak() called again, old fetch is discarded
-    const token = Date.now();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (speak as any)._token = token
+    const reqId    = ++ttsIdRef.current
+    const isActive = () => ttsIdRef.current === reqId
 
-    // ── STEP A: Start browser TTS immediately (zero latency) ──
-    browserTTS(cleanText)
+    const controller = new AbortController()
+    ttsAbortRef.current = controller
 
-    // ── STEP B: Fetch Gemini TTS in background ──
-    // When it arrives, stop browser TTS and switch to high-quality audio
+    // Once true, the winning engine is locked; the other must not start.
+    let committed = false
+
+    const startFallback = () => {
+      if (committed || !isActive()) return
+      committed = true
+      ttsAbortRef.current = null
+      browserTTS(cleanText, isActive)
+    }
+
+    // Timeout: if Gemini hasn't responded, commit to browser fallback
+    const timeoutId = setTimeout(() => {
+      if (!isActive()) return
+      try { controller.abort() } catch { /* ignore */ }
+      startFallback()
+    }, GEMINI_TIMEOUT_MS)
+
+    // ── Gemini TTS request ──
     fetch('/api/ai/tts', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ text: cleanText, gender: voiceGender }),
-      signal:  AbortSignal.timeout(18000),
+      signal:  controller.signal,
     })
       .then(async (res) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((speak as any)._token !== token) return
-        if (!res.ok) return
-        const ct = res.headers.get('Content-Type') ?? ''
-        if (!ct.startsWith('audio/')) return
-        const blob = await res.blob()
-        if (blob.size < 500) return
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if ((speak as any)._token !== token) return
+        clearTimeout(timeoutId)
 
-        // Gemini audio ready — stop browser TTS, switch to high quality
-        try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+        // Stale request (new speak() was called)
+        if (!isActive()) return
+
+        // Timeout already committed to browser fallback — discard this late response
+        if (committed) return
+
+        if (!res.ok) { startFallback(); return }
+
+        const ct = res.headers.get('Content-Type') ?? ''
+        if (!ct.startsWith('audio/')) { startFallback(); return }
+
+        const blob = await res.blob()
+
+        // Re-check after async blob decode
+        if (!isActive() || committed) return
+
+        if (blob.size < 500) { startFallback(); return }
+
+        // ── Gemini audio is valid — lock it in ──
+        committed = true
+        ttsAbortRef.current = null
 
         const url   = URL.createObjectURL(blob)
         const audio = new Audio(url)
         audioRef.current = audio
 
         audio.onended = () => {
-          setIsSpeaking(false)
+          if (isActive()) setIsSpeaking(false)
           audioRef.current = null
           setTimeout(() => URL.revokeObjectURL(url), 1000)
         }
         audio.onerror = () => {
-          setIsSpeaking(false)
+          if (isActive()) setIsSpeaking(false)
           audioRef.current = null
           setTimeout(() => URL.revokeObjectURL(url), 1000)
         }
         audio.play().catch(() => {
-          setIsSpeaking(false)
+          // Autoplay blocked — unlock and fall back to browser TTS
           audioRef.current = null
           URL.revokeObjectURL(url)
+          committed = false
+          startFallback()
         })
       })
       .catch(() => {
-        // Gemini failed — browser TTS is already playing, nothing to do
+        clearTimeout(timeoutId)
+        if (!isActive()) return
+        // AbortError from timeout or network error — start fallback if not already committed
+        startFallback()
       })
   }, [voiceGender, browserTTS])
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
-    if (typeof window !== 'undefined') window.speechSynthesis.cancel()
+    // Invalidate the active request so browser TTS iterators stop on next tick
+    ++ttsIdRef.current
+    if (typeof window !== 'undefined') {
+      try { window.speechSynthesis.cancel() } catch { /* ignore */ }
+    }
     if (audioRef.current) {
       try { audioRef.current.pause(); audioRef.current.src = '' } catch { /* ignore */ }
       audioRef.current = null
+    }
+    if (ttsAbortRef.current) {
+      try { ttsAbortRef.current.abort() } catch { /* ignore */ }
+      ttsAbortRef.current = null
     }
     setIsSpeaking(false)
   }, [])
