@@ -146,16 +146,15 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const {
     messages, isLoading, isListening, isSpeaking,
     careerResult, voiceGender, setVoiceGender,
+    audioUnlocked, unlockAudio,
     sendMessage, speak, stopSpeaking, startListening, stopListening, clearChat,
     addAssistantMessage,
   } = useAIChat()
 
-  const [input,         setInput]         = useState('')
-  const [started,       setStarted]       = useState(false)
-  const [elapsed,       setElapsed]       = useState(0)
-  const [audioUnlocked, setAudioUnlocked] = useState(false)
-  const autoplayUnlockedRef = useRef(false)
-  const messagesEndRef      = useRef<HTMLDivElement>(null)
+  const [input,   setInput]   = useState('')
+  const [started, setStarted] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -188,13 +187,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const currentStage = Math.min(Math.floor(messages.length / 2), STAGES.length - 1)
 
   const unlockAutoplay = useCallback(async () => {
-    if (autoplayUnlockedRef.current) return
-    autoplayUnlockedRef.current = true
-    setAudioUnlocked(true)
-    const a = new Audio()
-    a.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
-    try { await a.play() } catch { /* ignore */ }
-  }, [])
+    await unlockAudio()
+  }, [unlockAudio])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
@@ -224,16 +218,6 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   return (
     <div dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
-
-      <div style={{
-        position: 'fixed', top: 0, left: 0,
-        background: '#e00', color: '#fff',
-        padding: '2px 6px', fontSize: 9,
-        zIndex: 99999, fontFamily: 'monospace',
-        pointerEvents: 'none',
-      }}>
-        TTS-FINAL-v4
-      </div>
 
       {/* Timer */}
       <div style={{ position: 'absolute', bottom: 100, right: 24, zIndex: 10 }}>
