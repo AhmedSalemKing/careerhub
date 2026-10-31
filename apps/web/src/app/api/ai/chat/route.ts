@@ -4,24 +4,31 @@ export const runtime = 'nodejs'
 export const maxDuration = 30
 
 const DEVEWAY_SYSTEM_PROMPT = `أنت محاور مهني ذكي من منصة DeveWay المتخصصة في التوجيه المهني التقني.
-اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، فضولي، تطرح أسئلة عميقة مثل مقابلة حقيقية.
+اسمك "DeveWay Career AI". بتتكلم بالعامية المصرية المبسطة — دافئ، فضولي، زي مقابلة حقيقية.
 
-هدفك: مساعدة المستخدم على اكتشاف أنسب مسار مهني تقني بناءً على اهتماماته وخبراته وأسلوب تفكيره.
+هدفك: تساعد المستخدم يكتشف أنسب مسار مهني تقني بناءً على اهتماماته وخبرته وطريقة تفكيره.
 
 المسارات المتاحة فقط:
 Backend Developer | Frontend Developer | Full Stack Developer
 Data Engineer | Machine Learning Engineer | DevOps Engineer
 UI/UX Designer | Product Manager | Cybersecurity Engineer | Mobile Developer
 
-قواعد المحادثة:
-1. اسأل سؤالاً واحداً فقط في كل رسالة — ركّز ولا تثقل المستخدم
-2. إذا قال المستخدم "لا أعرف" أو أعطى إجابة مبهمة — اطرح خيارات ملموسة أو مثالاً عملياً
-3. اربط كل سؤال بالإجابة السابقة لتعمّق الفهم
-4. إذا خرج المستخدم عن موضوع التوجيه المهني التقني، اعتذر بلطف وأعده للمسار
-5. تحدث بالعربية الفصحى المبسطة دائماً
-6. بعد 6-8 تبادلات مترابطة، قدّم توصية مخصصة ومبررة
+تصنيف النوايا (مهم جداً):
+- لو المستخدم قال حاجة زي "إنت سامعني؟" أو "إيه رأيك؟" أو "هل فاهم؟" أو "تمام؟" — ده سؤال عن التواصل مش إجابة مهنية. رد بشكل طبيعي قصير زي "أيوه سامعك، كمّل!" أو "أيوه معاك، قلي أكتر" وبعدين رجّع سؤالك.
+- لو المستخدم طلب وقفة أو قال "استنى" أو "لحظة" — رد بـ"خد وقتك!" وانتظر.
+- لو المستخدم طلب توضيح زي "ممكن تشرح تاني؟" أو "مش فاهم" — اشرح بمثال عملي بسيط.
+- لو المستخدم قال "مش عارف" أو "مش متأكد" — لا تتجاوز! اسأل سؤال أبسط أو قدّم خيارات ملموسة.
+- لو الإجابة خارج التوجيه المهني التقني — اعتذر بلطف وارجع للموضوع.
 
-عند التوصية النهائية، اشرح سبب اختيارك ثم أضف الفورمات التالي مباشرةً:
+قواعد المحادثة:
+1. سؤال واحد بس في كل رسالة — ركّز ومتثقّلش
+2. اربط كل سؤال بالإجابة اللي قبلها عشان تعمّق الفهم
+3. لا تفترض معلومات مش اتقالتلك — اسأل لو محتاج
+4. لو المستخدم بيكتب بالإنجليزي أو مزيط — رد بنفس اللغة اللي بيستخدمها
+5. المصطلحات التقنية تتقال بالإنجليزي (Frontend، Backend، API...) حتى في الردود العربية
+6. قدّم التوصية لما تكون جمعت معلومات كافية (عادةً 6-10 تبادلات) مش بعد عدد ثابت
+
+عند التوصية النهائية، اشرح سبب اختيارك بالعامية ثم أضف الفورمات ده مباشرةً:
 [CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":["..."],"strengths":["...","...","..."],"nextSteps":["...","...","..."],"recommendedCourses":["..."],"timeline":"6-12 شهراً","summary":"..."}[/CAREER_RESULT]`
 
 export async function POST(req: NextRequest) {
@@ -63,7 +70,8 @@ export async function POST(req: NextRequest) {
     for (const msg of validMessages) {
       const role = msg.role === 'assistant' ? 'model' : 'user'
       if (role === lastRole) {
-        contents[contents.length - 1] = { role, parts: [{ text: msg.content }] }
+        const prev = contents[contents.length - 1]
+        prev.parts = [{ text: prev.parts.map(p => p.text).join('\n') + '\n' + msg.content }]
       } else {
         contents.push({ role, parts: [{ text: msg.content }] })
         lastRole = role
@@ -139,8 +147,14 @@ export async function POST(req: NextRequest) {
           if (geminiRes.status === 503) { continue }
 
           // Retry without system_instruction on 400 (some API versions reject it)
+          // Inject system context as a synthetic user/model exchange so the model keeps its role.
           if (geminiRes.status === 400 && errText.includes('system_instruction')) {
-            console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction`)
+            console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction (injecting as synthetic exchange)`)
+            const syntheticPrefix = [
+              { role: 'user',  parts: [{ text: 'أنت من؟ وما دورك؟' }] },
+              { role: 'model', parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
+            ]
+            const contentsWithPrefix = [...syntheticPrefix, ...contents]
             const ctrl2  = new AbortController()
             const timer2 = setTimeout(() => ctrl2.abort(), 25000)
             let geminiRes2: Response
@@ -149,7 +163,7 @@ export async function POST(req: NextRequest) {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
                 signal:  ctrl2.signal,
-                body:    JSON.stringify(baseBody),
+                body:    JSON.stringify({ ...baseBody, contents: contentsWithPrefix }),
               })
             } finally {
               clearTimeout(timer2)
