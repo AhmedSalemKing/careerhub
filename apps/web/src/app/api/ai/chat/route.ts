@@ -31,6 +31,54 @@ UI/UX Designer | Product Manager | Cybersecurity Engineer | Mobile Developer
 عند التوصية النهائية، اشرح سبب اختيارك بالعامية ثم أضف الفورمات ده مباشرةً:
 [CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":["..."],"strengths":["...","...","..."],"nextSteps":["...","...","..."],"recommendedCourses":["..."],"timeline":"6-12 شهراً","summary":"..."}[/CAREER_RESULT]`
 
+// ── Timeouts ────────────────────────────────────────────────────────────────
+// Primary gets a short budget: falls back immediately on 503 or on timeout
+// instead of the previous 25s that caused observed P99 ~35s latency.
+const PRIMARY_TIMEOUT_MS  = 7_000   // was 25 000
+const FALLBACK_TIMEOUT_MS = 18_000
+const TOTAL_BUDGET_MS     = 24_000  // shared across all attempts; maxDuration = 30s
+
+// ── In-memory circuit breaker ────────────────────────────────────────────────
+// NOTE: Next.js on Vercel / serverless creates isolated function instances.
+// This breaker operates per-instance only — it cannot coordinate across concurrent
+// cold-start instances. It provides meaningful protection for warm instances
+// handling sequential requests from the same user session.
+interface CircuitBreakerState {
+  consecutiveFailures: number
+  openUntil:           number   // epoch ms; 0 = closed
+  halfOpenAt:          number   // allow a probe after this epoch ms
+}
+const _cbState: Record<string, CircuitBreakerState> = {}
+const CB_FAILURE_THRESHOLD = 3
+const CB_OPEN_DURATION_MS  = 30_000
+const CB_HALF_OPEN_AFTER   = 20_000
+
+function getCb(model: string): CircuitBreakerState {
+  if (!_cbState[model]) _cbState[model] = { consecutiveFailures: 0, openUntil: 0, halfOpenAt: 0 }
+  return _cbState[model]
+}
+function cbIsOpen(model: string): boolean {
+  const cb = getCb(model); const now = Date.now()
+  if (cb.openUntil === 0) return false
+  if (now >= cb.halfOpenAt) return false  // half-open: let one probe through
+  return true
+}
+function cbRecordSuccess(model: string) {
+  const cb = getCb(model)
+  cb.consecutiveFailures = 0; cb.openUntil = 0; cb.halfOpenAt = 0
+}
+function cbRecordFailure(model: string, qualifying: boolean) {
+  if (!qualifying) return  // auth/bad-request don't count
+  const cb = getCb(model)
+  cb.consecutiveFailures++
+  if (cb.consecutiveFailures >= CB_FAILURE_THRESHOLD) {
+    const now = Date.now()
+    cb.openUntil = now + CB_OPEN_DURATION_MS
+    cb.halfOpenAt = now + CB_HALF_OPEN_AFTER
+    console.warn(`[AI Chat] circuit_breaker OPEN model=${model} until=${new Date(cb.openUntil).toISOString()}`)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
@@ -41,7 +89,8 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const reqId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+  const reqId  = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+  const tStart = Date.now()
 
   try {
     const { messages } = await req.json()
@@ -53,7 +102,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Build valid alternating contents for Gemini (must start with 'user')
     const validMessages = (messages as { role: string; content: string }[]).filter(
       (m) => m.content && typeof m.content === 'string' && m.content.trim().length > 0
     )
@@ -85,32 +133,47 @@ export async function POST(req: NextRequest) {
       contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    console.log(`[AI Chat] req=${reqId} contents=${contents.length} first=${contents[0]?.role} last=${contents[contents.length - 1]?.role}`)
+    console.log(`[AI Chat] req=${reqId} msgs=${validMessages.length} turns=${contents.length}`)
 
-    // Try models in order — skip 404 (model retired), continue on 503 (try fallback)
-    const models = [
-      'gemini-3.8-flash',
-      'gemini-3.5-flash-lite',
-    ]
+    const models     = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
+    const budgetStart = Date.now()
+    let lastError    = ''
 
-    let lastError = ''
+    for (let mi = 0; mi < models.length; mi++) {
+      const model   = models[mi]
+      const isRetry = mi > 0
 
-    for (const model of models) {
+      // Circuit breaker: skip if open (unless half-open probe allowed)
+      if (cbIsOpen(model)) {
+        const cb = getCb(model)
+        console.warn(`[AI Chat] req=${reqId} cb_open model=${model} openUntil=${new Date(cb.openUntil).toISOString()}`)
+        lastError = `${model} skipped (circuit open)`
+        continue
+      }
+
+      const elapsed   = Date.now() - budgetStart
+      const remaining = TOTAL_BUDGET_MS - elapsed
+      if (remaining <= 500) {
+        console.warn(`[AI Chat] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
+        break
+      }
+      const attemptTimeout = isRetry
+        ? Math.min(remaining - 300, FALLBACK_TIMEOUT_MS)
+        : Math.min(remaining - 300, PRIMARY_TIMEOUT_MS)
+
+      const tAttempt = Date.now()
+
       try {
-        console.log(`[AI Chat] req=${reqId} trying model: ${model}`)
+        console.log(`[AI Chat] req=${reqId} model=${model} timeout=${attemptTimeout}ms${isRetry ? ' (fallback)' : ''}`)
 
         const baseBody = {
           contents,
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 800,
-          },
+          generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
         }
-
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
         const ctrl  = new AbortController()
-        const timer = setTimeout(() => ctrl.abort(), 25000)
+        const timer = setTimeout(() => ctrl.abort(), attemptTimeout)
 
         let geminiRes: Response
         try {
@@ -118,7 +181,7 @@ export async function POST(req: NextRequest) {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             signal:  ctrl.signal,
-            body: JSON.stringify({
+            body:    JSON.stringify({
               ...baseBody,
               system_instruction: { parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
             }),
@@ -127,36 +190,42 @@ export async function POST(req: NextRequest) {
           clearTimeout(timer)
         }
 
+        const attemptMs = Date.now() - tAttempt
+
         if (!geminiRes.ok) {
           const errText = await geminiRes.text()
-          lastError = `${model} failed: ${geminiRes.status} — ${errText.slice(0, 300)}`
-          console.error(`[AI Chat] ${lastError}`)
+          lastError = `${model} http=${geminiRes.status} ms=${attemptMs}`
+          console.error(`[AI Chat] req=${reqId} ${lastError}`)
 
-          // 429 = quota exhausted — same key, no point trying other models
           if (geminiRes.status === 429) {
+            // Same key — quota shared, no point trying fallback model on same key
             return NextResponse.json(
               { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد قليل.', isError: true },
               { status: 200 }
             )
           }
+          if (geminiRes.status === 401 || geminiRes.status === 403) {
+            // Auth error — same key on fallback, fail fast
+            cbRecordFailure(model, false)
+            return NextResponse.json(
+              { content: 'عذراً، خدمة الذكاء الاصطناعي غير متاحة حالياً.', isError: true },
+              { status: 200 }
+            )
+          }
+          if (geminiRes.status === 404) { cbRecordFailure(model, true); continue }
+          if (geminiRes.status === 503) { cbRecordFailure(model, true); continue }
 
-          // 404 = model retired/unavailable — skip to next
-          if (geminiRes.status === 404) { continue }
-
-          // 503 = model overloaded — try the next fallback
-          if (geminiRes.status === 503) { continue }
-
-          // Retry without system_instruction on 400 (some API versions reject it)
-          // Inject system context as a synthetic user/model exchange so the model keeps its role.
+          // Retry without system_instruction on 400 — inject system context as synthetic exchange
           if (geminiRes.status === 400 && errText.includes('system_instruction')) {
-            console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction (injecting as synthetic exchange)`)
+            console.log(`[AI Chat] req=${reqId} retrying ${model} without system_instruction (synthetic exchange)`)
             const syntheticPrefix = [
               { role: 'user',  parts: [{ text: 'أنت من؟ وما دورك؟' }] },
               { role: 'model', parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
             ]
             const contentsWithPrefix = [...syntheticPrefix, ...contents]
+            const rem2   = TOTAL_BUDGET_MS - (Date.now() - budgetStart)
             const ctrl2  = new AbortController()
-            const timer2 = setTimeout(() => ctrl2.abort(), 25000)
+            const timer2 = setTimeout(() => ctrl2.abort(), Math.min(rem2 - 300, FALLBACK_TIMEOUT_MS))
             let geminiRes2: Response
             try {
               geminiRes2 = await fetch(url, {
@@ -170,19 +239,23 @@ export async function POST(req: NextRequest) {
             }
             if (!geminiRes2.ok) {
               const errText2 = await geminiRes2.text()
-              lastError = `${model} (no sys) failed: ${geminiRes2.status} — ${errText2.slice(0, 300)}`
-              console.error(`[AI Chat] ${lastError}`)
+              lastError = `${model}(nosys) http=${geminiRes2.status}`
+              console.error(`[AI Chat] req=${reqId} ${lastError} — ${errText2.slice(0, 200)}`)
+              cbRecordFailure(model, true)
               continue
             }
             const data2 = await geminiRes2.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
             const text2 = data2?.candidates?.[0]?.content?.parts?.[0]?.text
             if (text2) {
-              console.log(`[AI Chat] SUCCESS with ${model} (no sys). length=${text2.length}`)
+              cbRecordSuccess(model)
+              console.log(`[AI Chat] req=${reqId} SUCCESS model=${model}(nosys) len=${text2.length} totalMs=${Date.now()-tStart}`)
               return NextResponse.json({ content: text2 })
             }
+            cbRecordFailure(model, true)
             continue
           }
 
+          cbRecordFailure(model, true)
           continue
         }
 
@@ -190,21 +263,25 @@ export async function POST(req: NextRequest) {
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (text && text.trim().length > 0) {
-          console.log(`[AI Chat] req=${reqId} SUCCESS model=${model} len=${text.length}`)
+          cbRecordSuccess(model)
+          console.log(`[AI Chat] req=${reqId} SUCCESS model=${model} attemptMs=${attemptMs} totalMs=${Date.now()-tStart} turns=${contents.length}${isRetry ? ' (fallback)' : ''}`)
           return NextResponse.json({ content: text })
         }
 
-        lastError = `${model} returned empty text`
+        lastError = `${model} empty response`
         console.error(`[AI Chat] req=${reqId} ${lastError}`)
+        cbRecordFailure(model, true)
+
       } catch (err: unknown) {
-        const e = err as { name?: string; message?: string }
-        lastError = e?.name === 'AbortError' ? `${model} timeout 25s` : `${model} exception: ${e?.message}`
+        const e       = err as { name?: string; message?: string }
+        const isAbort = e?.name === 'AbortError'
+        lastError     = isAbort ? `${model} timeout ${attemptTimeout}ms` : `${model} exception: ${e?.message}`
         console.error(`[AI Chat] req=${reqId} ${lastError}`)
+        cbRecordFailure(model, isAbort)
       }
     }
 
-    // All models failed
-    console.error(`[AI Chat] req=${reqId} ALL MODELS FAILED. Last error:`, lastError)
+    console.error(`[AI Chat] req=${reqId} ALL_MODELS_FAILED last=${lastError} totalMs=${Date.now()-tStart}`)
     return NextResponse.json(
       { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
       { status: 200 }

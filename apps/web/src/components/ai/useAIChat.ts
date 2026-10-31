@@ -32,7 +32,7 @@ interface SpeechRec {
   onstart: (() => void) | null
   onresult: ((e: { resultIndex: number; results: { [i: number]: SpeechResult } }) => void) | null
   onend: (() => void) | null
-  onerror: (() => void) | null
+  onerror: ((e: { error?: string }) => void) | null
   start(): void
   stop(): void
 }
@@ -109,7 +109,7 @@ export function useAIChat() {
   }, [ttsStop])
 
   /* ── STT ─────────────────────────────────────────────────── */
-  const startListening = useCallback((onResult: (text: string) => void) => {
+  const startListening = useCallback((onResult: (text: string) => void, onError?: (errCode: string) => void) => {
     if (typeof window === 'undefined') return
     const w  = window as unknown as WinSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
@@ -130,7 +130,7 @@ export function useAIChat() {
       rec.stop()
     }
     rec.onend          = () => { setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s) }
-    rec.onerror        = () => { setIsListening(false); setMicState('idle') }
+    rec.onerror        = (e) => { setIsListening(false); setMicState('idle'); if (onError) onError(e.error ?? 'unknown') }
     recognitionRef.current = rec
     rec.start()
   }, [])
