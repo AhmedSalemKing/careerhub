@@ -44,6 +44,7 @@ interface WinSpeech {
 }
 
 function clientErrorMsg(status: number): string {
+  if (status === 401) return 'انتهت جلستك. يرجى تسجيل الدخول مجدداً.'
   if (status === 429) return 'تم استنفاد حصة الذكاء الاصطناعي اليومية. حاول غداً.'
   if (status === 500) return 'خدمة الذكاء الاصطناعي غير متاحة حالياً. حاول بعد قليل.'
   if (status === 502) return 'خدمة الذكاء الاصطناعي مشغولة. حاول مجدداً.'
@@ -66,12 +67,20 @@ export function useAIChat() {
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
   const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
 
-  const recognitionRef = useRef<SpeechRec | null>(null)
-  const messagesRef    = useRef<Message[]>([])
-  const isLoadingRef   = useRef(false)
-  const submittedRef   = useRef(false)
+  const recognitionRef  = useRef<SpeechRec | null>(null)
+  const messagesRef     = useRef<Message[]>([])
+  const isLoadingRef    = useRef(false)
+  // Per-session counter: incremented on every startListening call.
+  // Each session closure captures its own snapshot; stale onend / onresult handlers
+  // bail out via isMySession() — prevents stale sessions from submitting after a
+  // new session starts (the old submittedRef race condition).
+  const sttSessionRef   = useRef(0)
+  // Hook-level silence timer ref — accessible from unmount cleanup and from
+  // startListening across re-renders (the local closure variable was unreachable
+  // from the unmount effect, causing a timer leak on fast unmounts).
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // TTS dedup: track the last message ID spoken per gender to avoid re-speaking
-  const lastSpokenRef  = useRef<{ msgId: string; gender: string } | null>(null)
+  const lastSpokenRef   = useRef<{ msgId: string; gender: string } | null>(null)
 
   // Streaming TTS — Web Audio API, Gemini SSE, no browser speech synthesis fallback
   const {
@@ -85,8 +94,23 @@ export function useAIChat() {
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
+    // Capture refs at effect registration time to satisfy react-hooks/exhaustive-deps.
+    // These are stable mutable objects — copying the ref object, not .current.
+    const sessionRef  = sttSessionRef
+    const silenceRef  = silenceTimerRef
+    const recRef      = recognitionRef
     return () => {
-      // STT cleanup only — streaming TTS cleans up via its own effect
+      // Invalidate any running STT session so stale onend/onresult handlers no-op.
+      ++sessionRef.current
+      // Clear the hook-level silence timer (the closure variable inside
+      // startListening was unreachable from here — that was the leak).
+      if (silenceRef.current) {
+        clearTimeout(silenceRef.current)
+        silenceRef.current = null
+      }
+      // Stop recognition; this triggers rec.onend but isMySession() returns false
+      // so the handler exits immediately without touching state.
+      try { recRef.current?.stop() } catch { /* ignore */ }
       if (typeof window !== 'undefined') {
         try { window.speechSynthesis.cancel() } catch { /* ignore */ }
       }
@@ -108,7 +132,6 @@ export function useAIChat() {
     if (!cleanText) return
     // Dedup: skip if this exact message+voice was already started this session
     if (msgId) {
-      const key = `${msgId}:${voiceGender}`
       if (lastSpokenRef.current?.msgId === msgId && lastSpokenRef.current?.gender === voiceGender) {
         console.log(`[TTS] dedup skip msgId=${msgId}`)
         return
@@ -127,31 +150,38 @@ export function useAIChat() {
   /* ── STT — continuous mode with silence-based end-of-speech ─ */
   //
   // Design:
-  //   - continuous=true / interimResults=true so the browser keeps the session
-  //     alive across natural thinking pauses (prevents premature cutoff at 5s).
+  //   - continuous=true / interimResults=true keeps the session alive across
+  //     natural thinking pauses (prevents premature 5-second cutoff).
   //   - Final results accumulate in a closure variable (accText).
-  //   - A SILENCE_TIMEOUT_MS timer resets on every new final result.
+  //   - silenceTimerRef (hook-level) resets on every new final result.
   //     When the timer fires (silence detected) the accumulated text is submitted.
-  //   - rec.onend is a safety net: if the browser stops the session for any reason
-  //     (network timeout, max-duration, manual rec.stop()), any pending accumulated
-  //     text is flushed and submitted so no answer is ever lost.
-  //   - Callers (hands-free + manual mic) keep the same API surface.
+  //   - rec.onend is a safety net: flushes any pending text if the browser stops
+  //     recognition for any reason (network timeout, max-duration, manual stop).
+  //   - Per-session token (sttSessionRef): each call increments the counter and
+  //     captures its snapshot. All async callbacks bail out via isMySession() if a
+  //     newer session has started — prevents the stale-session race condition where
+  //     an old rec.onend steals the submission slot after the counter was reset.
   const startListening = useCallback((onResult: (text: string) => void, onError?: (errCode: string) => void) => {
     if (typeof window === 'undefined') return
     const w  = window as unknown as WinSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
-    submittedRef.current = false
-    let accText      = ''
-    let silenceTimer: ReturnType<typeof setTimeout> | null = null
+    // Advance the session counter and capture this session's token.
+    ++sttSessionRef.current
+    const mySessionId  = sttSessionRef.current
+    const isMySession  = () => sttSessionRef.current === mySessionId
+
+    // Clear any silence timer still running from a prior session.
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+
+    let accText = ''
 
     const submit = () => {
-      if (submittedRef.current) return
+      if (!isMySession()) return
       const text = accText.trim()
       if (!text) return
-      submittedRef.current = true
-      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
       accText = ''
       setMicState('processing')
       onResult(text)
@@ -164,7 +194,8 @@ export function useAIChat() {
     rec.interimResults = true    // receive partial results (we only act on finals)
     rec.onstart        = () => { setIsListening(true); setMicState('listening') }
 
-    rec.onresult       = e => {
+    rec.onresult = e => {
+      if (!isMySession()) return
       let newFinal = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) newFinal += (e.results[i][0]?.transcript ?? '') + ' '
@@ -172,17 +203,18 @@ export function useAIChat() {
       if (!newFinal.trim()) return
       accText = (accText + ' ' + newFinal).trim()
       // Reset silence timer on every new confirmed word
-      if (silenceTimer) clearTimeout(silenceTimer)
-      silenceTimer = setTimeout(submit, SILENCE_TIMEOUT_MS)
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = setTimeout(submit, SILENCE_TIMEOUT_MS)
     }
 
-    // Safety net: flush any pending text if the browser stops recognition for any reason
+    // Safety net: flush any pending text if the browser stops recognition for any reason.
+    // isMySession() guards against a stale session's onend firing after a new session started.
     rec.onend = () => {
-      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+      if (!isMySession()) return
       setIsListening(false)
       setMicState(s => s === 'listening' ? 'idle' : s)
-      if (!submittedRef.current && accText.trim()) {
-        submittedRef.current = true
+      if (accText.trim()) {
         const text = accText.trim()
         accText = ''
         setMicState('processing')
@@ -191,7 +223,8 @@ export function useAIChat() {
     }
 
     rec.onerror = e => {
-      if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
+      if (!isMySession()) return
       setIsListening(false)
       setMicState('idle')
       if (onError) onError(e.error ?? 'unknown')
@@ -222,7 +255,10 @@ export function useAIChat() {
   }, [])
 
   /* ── Send message ────────────────────────────────────────── */
-  const sendMessage = useCallback(async (content: string, autoSpeak = true, userName?: string, memoryContext?: string): Promise<boolean> => {
+  // userName is no longer a parameter — it is derived server-side from the verified JWT.
+  // memoryContext is still accepted from the client (authenticated user passing their own
+  // career context only affects their own session; the server validates the JWT first).
+  const sendMessage = useCallback(async (content: string, autoSpeak = true, memoryContext?: string): Promise<boolean> => {
     if (!content.trim() || isLoadingRef.current) return false
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
@@ -234,7 +270,6 @@ export function useAIChat() {
 
     try {
       const body: Record<string, unknown> = { messages: newMessages.map(m => ({ role: m.role, content: m.content })) }
-      if (userName) body.userName = userName
       if (memoryContext) body.memoryContext = memoryContext
       const res = await fetch('/api/ai/chat', {
         method:  'POST',

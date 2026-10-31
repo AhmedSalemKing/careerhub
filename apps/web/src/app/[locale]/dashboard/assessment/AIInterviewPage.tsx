@@ -155,7 +155,6 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   } = useAIChat()
 
   const authUser   = useAuthStore(s => s.user)
-  const userName   = authUser?.profile?.firstName ?? undefined
   const userId     = authUser?.id ?? undefined
   const { load: loadMemory, saveResult: saveCareerResult } = useCareerMemory(userId)
 
@@ -169,7 +168,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const spokenInitialRef  = useRef(false)
   const hasSpokeRef        = useRef(false)
   const autoListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const cbRef              = useRef({ startListening, sendMessage, userName })
+  const cbRef              = useRef({ startListening, sendMessage })
 
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -245,7 +244,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   }, [audioUnlocked, messages, speak])
 
   // Keep stable refs to callbacks so the auto-listen timer never has stale closures
-  useEffect(() => { cbRef.current = { startListening, sendMessage, userName } }, [startListening, sendMessage, userName])
+  useEffect(() => { cbRef.current = { startListening, sendMessage } }, [startListening, sendMessage])
 
   // Hands-free auto-listen: restart listening each time TTS finishes speaking
   useEffect(() => {
@@ -261,7 +260,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     autoListenTimerRef.current = setTimeout(() => {
       autoListenTimerRef.current = null
       cbRef.current.startListening(
-        text => cbRef.current.sendMessage(text, true, cbRef.current.userName, memoryContextRef.current),
+        text => cbRef.current.sendMessage(text, true, memoryContextRef.current),
         err  => {
           if (err === 'not-allowed' || err === 'start-failed' || err === 'already-started') {
             setMicError('not-allowed')
@@ -279,9 +278,9 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     await unlockAutoplay()
-    const ok = await sendMessage(input, true, userName, memoryContextRef.current)
+    const ok = await sendMessage(input, true, memoryContextRef.current)
     if (ok) setInput('')
-  }, [input, sendMessage, unlockAutoplay, userName])
+  }, [input, sendMessage, unlockAutoplay])
 
   const handleMic = useCallback(async () => {
     if (handsFreeEnabled) {
@@ -295,10 +294,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     await unlockAutoplay()
     stopSpeaking()
     startListening(
-      text => sendMessage(text, true, userName, memoryContextRef.current),
+      text => sendMessage(text, true, memoryContextRef.current),
       err  => { if (err === 'not-allowed') setMicError('not-allowed') }
     )
-  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay, userName])
+  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />

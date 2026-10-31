@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { productionCb } from './circuit-breaker'
 import { classify429Body } from './gemini-utils'
+import { verifyRequest } from '../_auth'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -51,6 +52,15 @@ const cbRecordSuccess  = (m: string)                    => cb.recordSuccess(m)
 const cbRecordFailure  = (m: string, q: boolean)        => cb.recordFailure(m, q)
 
 export async function POST(req: NextRequest) {
+  // ── Authentication ────────────────────────────────────────────────────────────
+  const authUser = await verifyRequest(req)
+  if (!authUser) {
+    return NextResponse.json(
+      { error: 'Unauthorized', content: 'يرجى تسجيل الدخول لاستخدام هذه الخدمة.' },
+      { status: 401 }
+    )
+  }
+
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     console.error('[AI Chat] GEMINI_API_KEY missing from env')
@@ -64,7 +74,10 @@ export async function POST(req: NextRequest) {
   const tStart = Date.now()
 
   try {
-    const { messages, userName, memoryContext } = await req.json() as { messages: unknown; userName?: string; memoryContext?: string }
+    // userName is derived server-side from the verified JWT — never trusted from client body.
+    // memoryContext may still come from the client: an authenticated user passing their own
+    // memory context only affects their own session; prompt injection risk is low and bounded.
+    const { messages, memoryContext } = await req.json() as { messages: unknown; memoryContext?: string }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -104,8 +117,9 @@ export async function POST(req: NextRequest) {
       contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    const safeUserName = typeof userName === 'string' && userName.trim().length > 0
-      ? userName.trim().slice(0, 50)
+    // Use server-verified first name; ignore any userName supplied in the request body.
+    const safeUserName = authUser.firstName && authUser.firstName.trim().length > 0
+      ? authUser.firstName.trim().slice(0, 50)
       : null
     const safeMemory = typeof memoryContext === 'string' && memoryContext.trim().length > 0
       ? memoryContext.trim().slice(0, 500)
@@ -114,7 +128,7 @@ export async function POST(req: NextRequest) {
     if (safeUserName) systemPrompt += `\n\nاسم المستخدم: ${safeUserName}. خاطبه باسمه بشكل طبيعي في المحادثة.`
     if (safeMemory)   systemPrompt += safeMemory
 
-    console.log(`[AI Chat] req=${reqId} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
+    console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
     const models      = ['gemini-3.8-flash', 'gemini-3.5-flash-lite']
     const budgetStart = Date.now()

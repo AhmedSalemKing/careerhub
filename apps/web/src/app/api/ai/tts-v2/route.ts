@@ -21,6 +21,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyRequest } from '../_auth'
 
 export const runtime     = 'nodejs'
 export const dynamic     = 'force-dynamic'
@@ -98,6 +99,12 @@ function isFinalError(label: ErrorLabel): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Authentication ────────────────────────────────────────────────────────────
+  const authUser = await verifyRequest(req)
+  if (!authUser) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     console.error('[TTS-V2] GEMINI_API_KEY not set')
