@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { productionCb } from './circuit-breaker'
+import { classify429Body } from './gemini-utils'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -165,8 +166,16 @@ export async function POST(req: NextRequest) {
           console.error(`[AI Chat] req=${reqId} ${lastError} body=${errText.slice(0, 120)}`)
 
           if (geminiRes.status === 429) {
-            // 429 can be a per-model rate limit, not necessarily an account-wide quota.
-            // Record as a qualifying failure and try the fallback model before giving up.
+            const quotaType = classify429Body(errText)
+            if (quotaType === 'account_quota') {
+              // Daily / free-tier quota — fallback model will also fail with the same key.
+              cbRecordFailure(model, false)
+              return NextResponse.json(
+                { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
+                { status: 200 }
+              )
+            }
+            // model_rate_limit or unknown → try fallback (unknown: conservative, preserves fallback benefit)
             cbRecordFailure(model, true)
             continue
           }

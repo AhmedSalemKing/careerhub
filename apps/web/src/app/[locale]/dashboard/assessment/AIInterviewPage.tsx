@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
-import { computeDiscoveryStage } from './career-signals'
+import { computeDiscoveryStage, type ChatMessage } from './career-signals'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -196,8 +196,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   // Evidence-based discovery-dimension tracker.
   // Dimensions are AREAS, not sequential steps — may be revisited freely.
   // Final stage "مراجعة النتائج" only appears when careerResult arrives.
-  const allConversationText = messages.map(m => m.content).join('\n')
-  const currentStage        = computeDiscoveryStage(allConversationText, STAGES.length)
+  const currentStage = computeDiscoveryStage(messages as ChatMessage[], STAGES.length)
 
   const unlockAutoplay = useCallback(async () => {
     await unlockAudio()
@@ -210,6 +209,11 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     setHandsFreeEnabled(true)
     setHandsFreePaused(false)
   }, [unlockAutoplay])
+
+  const handleHandsFreeToggle = useCallback(() => {
+    if (handsFreePaused) setMicError(null)
+    setHandsFreePaused(p => !p)
+  }, [handsFreePaused])
 
   // Speak the initial interview question exactly once after audio is unlocked.
   // Guard via ref: prevents re-speaking when voiceGender changes or messages update.
@@ -263,10 +267,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const handleMic = useCallback(async () => {
     if (handsFreeEnabled) {
       // In hands-free mode the orb/mic button pauses or resumes auto-listening.
-      // Clear a previous permission error when the user explicitly chooses to resume.
       if (isListening) stopListening()
-      if (handsFreePaused) setMicError(null)
-      setHandsFreePaused(p => !p)
+      handleHandsFreeToggle()
       return
     }
     if (isListening) { stopListening(); return }
@@ -277,7 +279,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       text => sendMessage(text),
       err  => { if (err === 'not-allowed') setMicError('not-allowed') }
     )
-  }, [handsFreeEnabled, handsFreePaused, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />
@@ -449,7 +451,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {/* Hands-free mode indicator — tap to pause/resume */}
         {handsFreeEnabled && (
           <div
-            onClick={() => setHandsFreePaused(p => !p)}
+            onClick={handleHandsFreeToggle}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, marginBottom: 10, cursor: 'pointer',
               background: handsFreePaused ? 'color-mix(in srgb, var(--foreground) 8%, transparent)' : 'color-mix(in srgb, var(--primary) 12%, transparent)',
               border: `1px solid ${handsFreePaused ? 'var(--border)' : 'color-mix(in srgb, var(--primary) 35%, transparent)'}`,
