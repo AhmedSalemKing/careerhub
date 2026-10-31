@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const reqId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
+
   try {
     const { messages } = await req.json()
 
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest) {
       contents.push({ role: 'user', parts: [{ text: 'أكمل' }] })
     }
 
-    console.log('[AI Chat] contents count:', contents.length, '| first:', contents[0]?.role, '| last:', contents[contents.length - 1]?.role)
+    console.log(`[AI Chat] req=${reqId} contents=${contents.length} first=${contents[0]?.role} last=${contents[contents.length - 1]?.role}`)
 
     // Try models in order — skip 404 (model retired), continue on 503 (try fallback)
     const models = [
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     for (const model of models) {
       try {
-        console.log(`[AI Chat] trying model: ${model}`)
+        console.log(`[AI Chat] req=${reqId} trying model: ${model}`)
 
         const baseBody = {
           contents,
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
           // 429 = quota exhausted — same key, no point trying other models
           if (geminiRes.status === 429) {
             return NextResponse.json(
-              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد قليل.' },
+              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد قليل.', isError: true },
               { status: 200 }
             )
           }
@@ -174,30 +176,30 @@ export async function POST(req: NextRequest) {
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
 
         if (text && text.trim().length > 0) {
-          console.log(`[AI Chat] SUCCESS with ${model}. length=${text.length}`)
+          console.log(`[AI Chat] req=${reqId} SUCCESS model=${model} len=${text.length}`)
           return NextResponse.json({ content: text })
         }
 
         lastError = `${model} returned empty text`
-        console.error(`[AI Chat] ${lastError}`)
+        console.error(`[AI Chat] req=${reqId} ${lastError}`)
       } catch (err: unknown) {
         const e = err as { name?: string; message?: string }
         lastError = e?.name === 'AbortError' ? `${model} timeout 25s` : `${model} exception: ${e?.message}`
-        console.error(`[AI Chat] ${lastError}`)
+        console.error(`[AI Chat] req=${reqId} ${lastError}`)
       }
     }
 
     // All models failed
-    console.error('[AI Chat] ALL MODELS FAILED. Last error:', lastError)
+    console.error(`[AI Chat] req=${reqId} ALL MODELS FAILED. Last error:`, lastError)
     return NextResponse.json(
-      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.' },
+      { content: 'عذراً، خدمة الذكاء الاصطناعي مشغولة حالياً. يرجى المحاولة بعد قليل.', isError: true },
       { status: 200 }
     )
   } catch (error: unknown) {
     const e = error as { message?: string }
     console.error('[AI Chat] Unexpected error:', e?.message)
     return NextResponse.json(
-      { content: 'عذراً، حدث خطأ مؤقت. اكتب رسالتك مرة أخرى.' },
+      { content: 'عذراً، حدث خطأ مؤقت. اكتب رسالتك مرة أخرى.', isError: true },
       { status: 200 }
     )
   }
