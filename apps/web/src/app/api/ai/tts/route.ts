@@ -25,17 +25,34 @@ function pcmToWav(pcm: Buffer, sampleRate = 24000, channels = 1, bitDepth = 16):
   return buf
 }
 
+function geminiErrorStatus(geminiStatus: number): number {
+  if (geminiStatus === 429) return 429 // quota exhausted — client can fall back gracefully
+  if (geminiStatus === 400) return 400 // bad request — likely invalid text or config
+  if (geminiStatus === 401 || geminiStatus === 403) return 503 // auth/permission — server config issue
+  if (geminiStatus === 404) return 503 // model not found
+  return 503                           // 500/503/other — provider failure
+}
+
+function geminiErrorLabel(geminiStatus: number): string {
+  if (geminiStatus === 429) return 'quota_exceeded'
+  if (geminiStatus === 400) return 'bad_request'
+  if (geminiStatus === 401) return 'unauthorized'
+  if (geminiStatus === 403) return 'forbidden'
+  if (geminiStatus === 404) return 'model_not_found'
+  return 'provider_error'
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     console.error('[TTS] GEMINI_API_KEY not set')
-    return NextResponse.json({ error: 'no key', fallback: true }, { status: 503 })
+    return NextResponse.json({ error: 'no_key', fallback: true }, { status: 503 })
   }
 
   try {
     const { text, gender } = await req.json() as { text?: string; gender?: string }
     if (!text || typeof text !== 'string') {
-      return NextResponse.json({ error: 'no text', fallback: true }, { status: 400 })
+      return NextResponse.json({ error: 'no_text', fallback: true }, { status: 400 })
     }
 
     const clean = text
@@ -46,15 +63,16 @@ export async function POST(req: NextRequest) {
       .replace(/\s+/g, ' ').trim().slice(0, 800)
 
     if (!clean) {
-      return NextResponse.json({ error: 'empty', fallback: true }, { status: 400 })
+      return NextResponse.json({ error: 'empty_text', fallback: true }, { status: 400 })
     }
 
     const voiceName = gender === 'male' ? 'Fenrir' : 'Aoede'
-    console.log(`[TTS] gemini voice=${voiceName} len=${clean.length}`)
+    console.log(`[TTS] request voice=${voiceName} len=${clean.length}`)
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 20000)
 
+    const t0  = Date.now()
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
       {
@@ -71,11 +89,14 @@ export async function POST(req: NextRequest) {
       }
     )
     clearTimeout(timer)
+    const apiMs = Date.now() - t0
 
     if (!res.ok) {
-      const err = await res.text()
-      console.error('[TTS] Gemini error:', res.status, err.slice(0, 200))
-      return NextResponse.json({ error: 'gemini failed', fallback: true }, { status: 503 })
+      const errBody  = await res.text()
+      const label    = geminiErrorLabel(res.status)
+      const outStatus = geminiErrorStatus(res.status)
+      console.error(`[TTS] Gemini ${res.status} (${label}) after ${apiMs}ms:`, errBody.slice(0, 300))
+      return NextResponse.json({ error: label, fallback: true }, { status: outStatus })
     }
 
     const json = await res.json() as {
@@ -84,15 +105,12 @@ export async function POST(req: NextRequest) {
 
     const part = json?.candidates?.[0]?.content?.parts?.[0]
     if (!part?.inlineData?.data) {
-      console.error('[TTS] No audio in response:', JSON.stringify(json).slice(0, 300))
-      return NextResponse.json({ error: 'no audio data', fallback: true }, { status: 503 })
+      console.error('[TTS] No audio in response after', apiMs, 'ms:', JSON.stringify(json).slice(0, 300))
+      return NextResponse.json({ error: 'no_audio_data', fallback: true }, { status: 503 })
     }
 
-    const mimeType: string  = part.inlineData.mimeType ?? 'audio/L16;rate=24000'
-    const audioBase64       = part.inlineData.data
-    const pcmBuffer         = Buffer.from(audioBase64, 'base64')
-
-    console.log(`[TTS] success mimeType=${mimeType} size=${pcmBuffer.length}`)
+    const mimeType: string = part.inlineData.mimeType ?? 'audio/L16;rate=24000'
+    const pcmBuffer        = Buffer.from(part.inlineData.data, 'base64')
 
     let responseBuffer: Buffer
     let contentType: string
@@ -102,10 +120,11 @@ export async function POST(req: NextRequest) {
       const sampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000
       responseBuffer   = pcmToWav(pcmBuffer, sampleRate)
       contentType      = 'audio/wav'
-      console.log(`[TTS] converted PCM to WAV sampleRate=${sampleRate}`)
+      console.log(`[TTS] ok voice=${voiceName} pcm→wav sampleRate=${sampleRate} size=${responseBuffer.length} apiMs=${apiMs}`)
     } else {
       responseBuffer = pcmBuffer
       contentType    = mimeType.split(';')[0]
+      console.log(`[TTS] ok voice=${voiceName} mimeType=${contentType} size=${responseBuffer.length} apiMs=${apiMs}`)
     }
 
     return new NextResponse(new Uint8Array(responseBuffer), {
@@ -119,7 +138,10 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const e       = err as { name?: string; message?: string }
     const isAbort = e?.name === 'AbortError'
-    console.error('[TTS] error:', isAbort ? 'timeout' : e?.message)
-    return NextResponse.json({ error: isAbort ? 'timeout' : 'server error', fallback: true }, { status: 503 })
+    console.error('[TTS] error:', isAbort ? 'timeout_20s' : e?.message)
+    return NextResponse.json(
+      { error: isAbort ? 'timeout' : 'server_error', fallback: true },
+      { status: 503 }
+    )
   }
 }
