@@ -3,32 +3,26 @@ import { NextRequest, NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-const DEVEWAY_SYSTEM_PROMPT = `أنت مساعد DeveWay الذكي المتخصص في التوجيه المهني.
-اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، ذكي، عربي بطلاقة.
+const DEVEWAY_SYSTEM_PROMPT = `أنت محاور مهني ذكي من منصة DeveWay المتخصصة في التوجيه المهني التقني.
+اسمك "DeveWay Career AI". شخصيتك: محترف، دافئ، فضولي، تطرح أسئلة عميقة مثل مقابلة حقيقية.
 
-مهمتك: مساعدة المستخدمين في اكتشاف مساراتهم المهنية في مجال التكنولوجيا.
+هدفك: مساعدة المستخدم على اكتشاف أنسب مسار مهني تقني بناءً على اهتماماته وخبراته وأسلوب تفكيره.
 
-المسارات المتاحة:
-- Backend Developer
-- Frontend Developer
-- Full Stack Developer
-- Data Engineer
-- Machine Learning Engineer
-- DevOps Engineer
-- UI/UX Designer
-- Product Manager
-- Cybersecurity Engineer
-- Mobile Developer
+المسارات المتاحة فقط:
+Backend Developer | Frontend Developer | Full Stack Developer
+Data Engineer | Machine Learning Engineer | DevOps Engineer
+UI/UX Designer | Product Manager | Cybersecurity Engineer | Mobile Developer
 
-قواعد:
-1. لا تجاوب على أسئلة خارج التوجيه المهني والتقني
-2. اسأل أسئلة مترابطة ومتعمقة
-3. بعد 6-8 رسائل قدم توصية مسار مخصصة
-4. تحدث بالعربية دائماً
-5. كن طبيعياً مثل مقابلة حقيقية
+قواعد المحادثة:
+1. اسأل سؤالاً واحداً فقط في كل رسالة — ركّز ولا تثقل المستخدم
+2. إذا قال المستخدم "لا أعرف" أو أعطى إجابة مبهمة — اطرح خيارات ملموسة أو مثالاً عملياً
+3. اربط كل سؤال بالإجابة السابقة لتعمّق الفهم
+4. إذا خرج المستخدم عن موضوع التوجيه المهني التقني، اعتذر بلطف وأعده للمسار
+5. تحدث بالعربية الفصحى المبسطة دائماً
+6. بعد 6-8 تبادلات مترابطة، قدّم توصية مخصصة ومبررة
 
-عند التوصية النهائية اتبع هذا الفورمات:
-[CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":[],"strengths":[],"nextSteps":[],"recommendedCourses":[],"timeline":"..."}[/CAREER_RESULT]`
+عند التوصية النهائية، اشرح سبب اختيارك ثم أضف الفورمات التالي مباشرةً:
+[CAREER_RESULT]{"primaryPath":"...","matchScore":87,"secondaryPaths":["..."],"strengths":["...","...","..."],"nextSteps":["...","...","..."],"recommendedCourses":["..."],"timeline":"6-12 شهراً","summary":"..."}[/CAREER_RESULT]`
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.GEMINI_API_KEY
@@ -83,14 +77,10 @@ export async function POST(req: NextRequest) {
 
     console.log('[AI Chat] contents count:', contents.length, '| first:', contents[0]?.role, '| last:', contents[contents.length - 1]?.role)
 
-    // Try multiple models in order — latest first
+    // Try models in order — skip 404 (model retired), continue on 503 (try fallback)
     const models = [
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-1.5-flash-latest',
-      'gemini-1.5-pro-latest',
+      'gemini-3.8-flash',
+      'gemini-3.5-flash-lite',
     ]
 
     let lastError = ''
@@ -109,46 +99,59 @@ export async function POST(req: NextRequest) {
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
-        const geminiRes = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...baseBody,
-            system_instruction: {
-              parts: [{ text: DEVEWAY_SYSTEM_PROMPT }],
-            },
-          }),
-        })
+        const ctrl  = new AbortController()
+        const timer = setTimeout(() => ctrl.abort(), 25000)
+
+        let geminiRes: Response
+        try {
+          geminiRes = await fetch(url, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal:  ctrl.signal,
+            body: JSON.stringify({
+              ...baseBody,
+              system_instruction: { parts: [{ text: DEVEWAY_SYSTEM_PROMPT }] },
+            }),
+          })
+        } finally {
+          clearTimeout(timer)
+        }
 
         if (!geminiRes.ok) {
           const errText = await geminiRes.text()
           lastError = `${model} failed: ${geminiRes.status} — ${errText.slice(0, 300)}`
           console.error(`[AI Chat] ${lastError}`)
 
-          // 429 = quota exhausted — no point trying other models with the same key
+          // 429 = quota exhausted — same key, no point trying other models
           if (geminiRes.status === 429) {
             return NextResponse.json(
-              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد لحظة.' },
+              { content: 'عذراً، الخدمة مشغولة الآن. حاول مجدداً بعد قليل.' },
               { status: 200 }
             )
           }
 
-          // 503 = overloaded — return friendly message immediately
-          if (geminiRes.status === 503) {
-            return NextResponse.json(
-              { content: 'الخدمة تواجه ضغطاً الآن. حاول مجدداً.' },
-              { status: 200 }
-            )
-          }
+          // 404 = model retired/unavailable — skip to next
+          if (geminiRes.status === 404) { continue }
+
+          // 503 = model overloaded — try the next fallback
+          if (geminiRes.status === 503) { continue }
 
           // Retry without system_instruction on 400 (some API versions reject it)
           if (geminiRes.status === 400 && errText.includes('system_instruction')) {
             console.log(`[AI Chat] retrying ${model} WITHOUT system_instruction`)
-            const geminiRes2 = await fetch(url, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(baseBody),
-            })
+            const ctrl2  = new AbortController()
+            const timer2 = setTimeout(() => ctrl2.abort(), 25000)
+            let geminiRes2: Response
+            try {
+              geminiRes2 = await fetch(url, {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal:  ctrl2.signal,
+                body:    JSON.stringify(baseBody),
+              })
+            } finally {
+              clearTimeout(timer2)
+            }
             if (!geminiRes2.ok) {
               const errText2 = await geminiRes2.text()
               lastError = `${model} (no sys) failed: ${geminiRes2.status} — ${errText2.slice(0, 300)}`
@@ -178,8 +181,8 @@ export async function POST(req: NextRequest) {
         lastError = `${model} returned empty text`
         console.error(`[AI Chat] ${lastError}`)
       } catch (err: unknown) {
-        const e = err as { message?: string }
-        lastError = `${model} exception: ${e?.message}`
+        const e = err as { name?: string; message?: string }
+        lastError = e?.name === 'AbortError' ? `${model} timeout 25s` : `${model} exception: ${e?.message}`
         console.error(`[AI Chat] ${lastError}`)
       }
     }

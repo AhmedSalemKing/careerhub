@@ -20,12 +20,17 @@ export interface CareerResult {
   summary?: string
 }
 
+interface SpeechResult {
+  readonly isFinal: boolean
+  readonly [i: number]: { transcript: string }
+}
+
 interface SpeechRec {
   lang: string
   continuous: boolean
   interimResults: boolean
   onstart: (() => void) | null
-  onresult: ((e: { results: { [i: number]: { [i: number]: { transcript: string } } } }) => void) | null
+  onresult: ((e: { resultIndex: number; results: { [i: number]: SpeechResult } }) => void) | null
   onend: (() => void) | null
   onerror: (() => void) | null
   start(): void
@@ -46,15 +51,20 @@ function clientErrorMsg(status: number): string {
   return 'عذراً، حدث خطأ غير متوقع. يرجى المحاولة مجدداً.'
 }
 
+export type MicState = 'idle' | 'listening' | 'processing'
+
 export function useAIChat() {
   const [messages,     setMessages]     = useState<Message[]>([])
   const [isLoading,    setIsLoading]    = useState(false)
   const [isListening,  setIsListening]  = useState(false)
+  const [micState,     setMicState]     = useState<MicState>('idle')
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
   const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
 
   const recognitionRef = useRef<SpeechRec | null>(null)
   const messagesRef    = useRef<Message[]>([])
+  const isLoadingRef   = useRef(false)
+  const submittedRef   = useRef(false)
 
   // Streaming TTS — Web Audio API, Gemini SSE, no browser speech synthesis fallback
   const {
@@ -105,14 +115,22 @@ export function useAIChat() {
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
+    submittedRef.current = false
     const rec          = new SR()
     rec.lang           = 'ar-SA'
     rec.continuous     = false
     rec.interimResults = false
-    rec.onstart        = () => setIsListening(true)
-    rec.onresult       = e => { onResult(e.results[0][0].transcript); rec.stop() }
-    rec.onend          = () => setIsListening(false)
-    rec.onerror        = () => setIsListening(false)
+    rec.onstart        = () => { setIsListening(true); setMicState('listening') }
+    rec.onresult       = e => {
+      const result = e.results[e.resultIndex]
+      if (!result.isFinal || submittedRef.current) return
+      submittedRef.current = true
+      setMicState('processing')
+      onResult(result[0].transcript)
+      rec.stop()
+    }
+    rec.onend          = () => { setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s) }
+    rec.onerror        = () => { setIsListening(false); setMicState('idle') }
     recognitionRef.current = rec
     rec.start()
   }, [])
@@ -120,6 +138,7 @@ export function useAIChat() {
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop()
     setIsListening(false)
+    setMicState('idle')
   }, [])
 
   /* ── Parse career result ─────────────────────────────────── */
@@ -131,12 +150,13 @@ export function useAIChat() {
 
   /* ── Send message ────────────────────────────────────────── */
   const sendMessage = useCallback(async (content: string, autoSpeak = true) => {
-    if (!content.trim() || isLoading) return
+    if (!content.trim() || isLoadingRef.current) return
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', content, timestamp: new Date() }
     const newMessages = [...messagesRef.current, userMsg]
     messagesRef.current = newMessages
     setMessages(newMessages)
+    isLoadingRef.current = true
     setIsLoading(true)
 
     try {
@@ -184,9 +204,11 @@ export function useAIChat() {
       messagesRef.current = withErr
       setMessages(withErr)
     } finally {
+      isLoadingRef.current = false
       setIsLoading(false)
+      setMicState('idle')
     }
-  }, [isLoading, extractCareerResult, speak])
+  }, [extractCareerResult, speak])
 
   const addAssistantMessage = useCallback((content: string) => {
     const msg: Message = { id: Date.now().toString(), role: 'assistant', content, timestamp: new Date() }
@@ -204,7 +226,7 @@ export function useAIChat() {
   }, [stopSpeaking, stopListening])
 
   return {
-    messages, isLoading, isListening, isSpeaking,
+    messages, isLoading, isListening, micState, isSpeaking,
     careerResult, voiceGender, setVoiceGender,
     ttsError, audioUnlocked, unlockAudio,
     sendMessage, speak, stopSpeaking,

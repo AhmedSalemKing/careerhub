@@ -144,7 +144,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
 /* ── Interview Mode ───────────────────────────────────────── */
 function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const {
-    messages, isLoading, isListening, isSpeaking,
+    messages, isLoading, isListening, micState, isSpeaking,
     careerResult, voiceGender, setVoiceGender,
     audioUnlocked, unlockAudio,
     sendMessage, speak, stopSpeaking, startListening, stopListening, clearChat,
@@ -214,7 +214,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     .replace(/\[QUIZ_Q\][\s\S]*?\[\/QUIZ_Q\]/g, '')
     .trim() ?? ''
 
-  const orbStatus = isListening ? 'يسمع الآن' : isLoading ? 'يفكر' : isSpeaking ? 'يتحدث' : 'جاهز'
+  const orbStatus = micState === 'listening' ? 'يسمع الآن' : micState === 'processing' ? 'يعالج' : isLoading ? 'يفكر' : isSpeaking ? 'يتحدث' : 'جاهز'
 
   return (
     <div dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
@@ -366,7 +366,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               placeholder="اكتب إجابتك..."
-              disabled={isLoading || isListening}
+              disabled={isLoading || micState !== 'idle'}
               style={{ flex: 1, padding: '12px 18px', borderRadius: 24, border: '1px solid var(--border)', background: 'color-mix(in srgb, var(--foreground) 5%, transparent)', color: 'var(--foreground)', fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, outline: 'none', direction: 'rtl' }}
             />
             <button
