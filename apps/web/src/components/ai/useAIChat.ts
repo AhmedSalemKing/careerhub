@@ -117,7 +117,8 @@ export function useAIChat() {
 
     submittedRef.current = false
     const rec          = new SR()
-    rec.lang           = 'ar-SA'
+    // ar-EG: Egyptian Arabic — matches the UI dialect and handles mixed Arabic/English terms.
+    rec.lang           = 'ar-EG'
     rec.continuous     = false
     rec.interimResults = false
     rec.onstart        = () => { setIsListening(true); setMicState('listening') }
@@ -132,7 +133,13 @@ export function useAIChat() {
     rec.onend          = () => { setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s) }
     rec.onerror        = (e) => { setIsListening(false); setMicState('idle'); if (onError) onError(e.error ?? 'unknown') }
     recognitionRef.current = rec
-    rec.start()
+    try {
+      rec.start()
+    } catch (e) {
+      setIsListening(false)
+      setMicState('idle')
+      if (onError) onError((e as Error)?.message?.includes('already started') ? 'already-started' : 'start-failed')
+    }
   }, [])
 
   const stopListening = useCallback(() => {
