@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { get, post } from '@/lib/api'
+import { safeDate } from '@/lib/formatDate'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, ArrowRight, CreditCard, History, TrendingUp, TrendingDown, Receipt } from 'lucide-react'
@@ -390,7 +391,7 @@ export default function WalletPage() {
                       {tx.description || (tx.type === 'TOPUP' ? (isAr ? 'شحن رصيد' : 'Top Up') : (isAr ? 'دفع مشتريات' : 'Purchase Payment'))}
                     </div>
                     <div style={{ color: textSecondary, fontSize: 12 }}>
-                      {new Date(tx.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {safeDate(tx.createdAt)?.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) ?? '—'}
                     </div>
                   </div>
                   <div style={{

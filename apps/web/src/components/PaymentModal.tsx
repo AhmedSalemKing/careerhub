@@ -5,6 +5,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { X, CreditCard, Lock, CheckCircle2, AlertCircle } from 'lucide-react'
 import { get, post } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
+import { safeDate } from '@/lib/formatDate'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '')
 
@@ -117,9 +118,9 @@ function PaymentForm({ session, isDark, isAr, onClose, onSuccess, cardBg, border
               {session.sessionName || session.topic}
             </div>
             <div style={{ color: subtext, fontSize: 12 }}>
-              {new Date(session.scheduledAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {safeDate(session.scheduledAt)?.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'long', month: 'long', day: 'numeric' }) ?? '—'}
               {'  '}
-              {new Date(session.scheduledAt).toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+              {safeDate(session.scheduledAt)?.toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { hour: '2-digit', minute: '2-digit' }) ?? ''}
             </div>
           </div>
           <div style={{ color: '#5120c8', fontSize: 22, fontWeight: 900, flexShrink: 0 }}>

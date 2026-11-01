@@ -8,6 +8,7 @@ import { Search, Ban, CheckCircle, Trash2, ChevronLeft, ChevronRight, UserPlus, 
 import { getMediaUrl } from '../../../../lib/media'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
 import ConfirmModal from '@/components/ConfirmModal'
+import { safeDate } from '../../../../lib/formatDate'
 
 type AdminUser = {
   id: string
@@ -336,7 +337,7 @@ export default function AdminUsersPage() {
                         {u.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">{new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}</td>
+                    <td className="px-4 py-3 text-[color:var(--muted)] text-xs">{safeDate(u.createdAt)?.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US') ?? '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1 flex-wrap">
                         <a

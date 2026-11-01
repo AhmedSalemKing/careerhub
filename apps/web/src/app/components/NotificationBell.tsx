@@ -1,11 +1,10 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useLocale } from 'next-intl'
 import { Bell, CheckCircle, XCircle, AlertTriangle, Info, Award, CreditCard, User, Clock } from 'lucide-react'
 import { get, patch } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
-import { formatRelative } from '../../lib/time'
+import { timeAgoAr } from '../../lib/formatDate'
 
 type Notification = {
   id: string
@@ -71,8 +70,6 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null)
   const qc = useQueryClient()
   const token = useAuthStore((s) => s.token)
-
-  const locale = useLocale()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -171,7 +168,7 @@ export function NotificationBell() {
                           {n.contentAr || n.contentEn}
                         </p>
                         <p className="text-xs text-[color:var(--muted)] mt-1 opacity-60 mr-6">
-                          {formatRelative(n.createdAt, locale)}
+                          {timeAgoAr(n.createdAt)}
                         </p>
                       </div>
                       {!n.isRead && (

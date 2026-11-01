@@ -9,6 +9,7 @@ import { DashboardShell } from '../../../components/DashboardShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../../lib/toast'
 import { Button } from '../../../components/ui/Button'
+import { formatDateTimeAr } from '../../../../lib/formatDate'
 
 type NotificationItem = {
   id: string
@@ -95,7 +96,7 @@ export default function DashboardNotificationsPage() {
                   <div>
                     <div className="text-sm font-extrabold text-foreground">{n.titleAr || n.titleEn || '-'}</div>
                     <div className="mt-2 text-sm text-[color:var(--muted)]">{n.contentAr || n.contentEn || '-'}</div>
-                    <div className="mt-2 text-xs text-[color:var(--muted)]">{n.createdAt || '-'}</div>
+                    <div className="mt-2 text-xs text-[color:var(--muted)]">{formatDateTimeAr(n.createdAt)}</div>
                   </div>
                   {!n.isRead ? (
                     <Button

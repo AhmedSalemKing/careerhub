@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
+import { safeDate } from '../../../../lib/formatDate'
 import { Calendar, ChevronLeft } from 'lucide-react'
 import { useAuthStore } from '../../../../stores/authStore'
 
@@ -98,7 +99,7 @@ export default function DashboardCoachingPage() {
                   <div>
                     <p className="font-medium text-foreground text-sm">{name}</p>
                     <p className="text-xs text-[color:var(--muted)] mt-0.5">
-                      {new Date(s.scheduledAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      {safeDate(s.scheduledAt)?.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }) ?? '—'}
                       {s.topic ? ` — ${s.topic}` : ''}
                     </p>
                   </div>

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
 import { get } from '../../../../../lib/api'
+import { safeDate } from '../../../../../lib/formatDate'
 import {
   ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Wallet, Briefcase,
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
@@ -98,7 +99,9 @@ function displayTotal(items: any[], displayKey: string, rawTotal: number, egpPro
 
 function formatDate(date: string | Date | null | undefined, isAr: boolean) {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
+  const d = safeDate(date)
+  if (!d) return '-'
+  return d.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
