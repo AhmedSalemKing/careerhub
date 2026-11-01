@@ -261,7 +261,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       autoListenTimerRef.current = null
       cbRef.current.startListening(
         text => cbRef.current.sendMessage(text),
-        handleListenError
+        handleListenError,
+        { autoSubmit: true },        // hands-free: silence ends the answer
       )
     }, 400)
 
@@ -292,7 +293,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     stopSpeaking()
     startListening(
       text => sendMessage(text),
-      handleListenError
+      handleListenError,
+      { autoSubmit: false },       // push-to-talk: only stop submits
     )
   }, [handsFreeEnabled, toggleHandsFreePause, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay, handleListenError])
 
@@ -507,6 +509,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
                 ? 'تم استنفاد حصة الصوت اليومية. يمكنك متابعة المقابلة نصياً.'
                 : ttsError === 'timeout'
                 ? 'انتهت مهلة خدمة الصوت. تابع نصياً.'
+                : ttsError === 'auth_error'
+                ? 'خدمة الصوت غير متاحة بسبب مشكلة في الإعدادات. تابع نصياً.'
                 : 'خدمة الصوت غير متاحة حالياً. تابع المقابلة نصياً.'}
             </span>
           </div>

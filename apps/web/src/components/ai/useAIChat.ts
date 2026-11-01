@@ -1,6 +1,8 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useStreamingTTS } from './tts-v2/useStreamingTTS'
+import { createSttController } from './stt-controller'
+import type { SttController, SttCommitReason } from './stt-controller'
 
 export interface Message {
   id: string
@@ -30,12 +32,11 @@ interface SpeechRec {
   continuous: boolean
   interimResults: boolean
   onstart: (() => void) | null
-  onresult: ((e: { resultIndex: number; results: { [i: number]: SpeechResult } }) => void) | null
+  onresult: ((e: { resultIndex: number; results: { length: number; [i: number]: SpeechResult } }) => void) | null
   onend: (() => void) | null
   onerror: ((e: { error?: string }) => void) | null
   start(): void
   stop(): void
-  abort(): void
 }
 type SpeechRecCtor = new () => SpeechRec
 
@@ -44,7 +45,20 @@ interface WinSpeech {
   webkitSpeechRecognition?: SpeechRecCtor
 }
 
+/** Options for a single listening session. */
+export interface ListenOptions {
+  /**
+   * true  → silence may commit the utterance (hands-free needs this).
+   * false → only an explicit stopListening() submits (push-to-talk mode).
+   * Defaults to true so callers that pass no options keep working.
+   */
+  autoSubmit?: boolean
+  /** Override the silence window used before an automatic commit. */
+  silenceMs?: number
+}
+
 function clientErrorMsg(status: number): string {
+  if (status === 401) return 'انتهت جلستك. يرجى تسجيل الدخول مجدداً.'
   if (status === 429) return 'تم استنفاد حصة الذكاء الاصطناعي اليومية. حاول غداً.'
   if (status === 500) return 'خدمة الذكاء الاصطناعي غير متاحة حالياً. حاول بعد قليل.'
   if (status === 502) return 'خدمة الذكاء الاصطناعي مشغولة. حاول مجدداً.'
@@ -62,12 +76,18 @@ export function useAIChat() {
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
   const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
 
-  const recognitionRef = useRef<SpeechRec | null>(null)
-  const messagesRef    = useRef<Message[]>([])
-  const isLoadingRef   = useRef(false)
-  const submittedRef   = useRef(false)
+  const messagesRef     = useRef<Message[]>([])
+  const isLoadingRef    = useRef(false)
+  // Owns the whole SpeechRecognition lifecycle (session restarts, silence
+  // decision, stale-session isolation). Framework-free and unit-tested.
+  const sttControllerRef = useRef<SttController | null>(null)
+  // Text kept after a recognizer died without the user finishing — it is
+  // re-seeded into the next session instead of being submitted or dropped.
+  const carryOverRef     = useRef('')
+  // TTS dedup: track the last message ID spoken per gender to avoid re-speaking
+  const lastSpokenRef   = useRef<{ msgId: string; gender: string } | null>(null)
 
-  // Streaming TTS — Web Audio API, Gemini SSE, no browser speech synthesis fallback
+  // Streaming TTS — Web Audio API, Gemini SSE, browser speechSynthesis fallback on quota
   const {
     isSpeaking,
     lastError:    ttsError,
@@ -79,15 +99,12 @@ export function useAIChat() {
 
   /* ── Unmount cleanup ─────────────────────────────────────── */
   useEffect(() => {
+    const controllerRef = sttControllerRef
     return () => {
-      // Tear down any live recognizer so a stale session cannot fire callbacks
-      // into an unmounted component or block the next mount's microphone.
-      const rec = recognitionRef.current
-      recognitionRef.current = null
-      if (rec) {
-        try { rec.abort() } catch { /* already stopped */ }
-      }
-      // STT cleanup only — streaming TTS cleans up via its own effect
+      // Silent teardown: clears session timers and stops the recognizer
+      // without submitting anything into a chat that is being unmounted.
+      controllerRef.current?.cancel()
+      controllerRef.current = null
       if (typeof window !== 'undefined') {
         try { window.speechSynthesis.cancel() } catch { /* ignore */ }
       }
@@ -95,7 +112,7 @@ export function useAIChat() {
   }, [])
 
   /* ── speak ───────────────────────────────────────────────── */
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, msgId?: string) => {
     if (typeof window === 'undefined') return
     const cleanText = text
       .replace(/\[CAREER_RESULT\][\s\S]*?\[\/CAREER_RESULT\]/g, '')
@@ -107,7 +124,15 @@ export function useAIChat() {
       .replace(/\s+/g, ' ')
       .trim()
     if (!cleanText) return
-    console.log(`[TTS] speak voice=${voiceGender} len=${cleanText.length}`)
+    // Dedup: skip if this exact message+voice was already started this session
+    if (msgId) {
+      if (lastSpokenRef.current?.msgId === msgId && lastSpokenRef.current?.gender === voiceGender) {
+        console.log(`[TTS] dedup skip msgId=${msgId}`)
+        return
+      }
+      lastSpokenRef.current = { msgId, gender: voiceGender }
+    }
+    console.log(`[TTS] speak voice=${voiceGender} len=${cleanText.length}${msgId ? ` msgId=${msgId}` : ''}`)
     ttsSpeak(cleanText, voiceGender)
   }, [ttsSpeak, voiceGender])
 
@@ -116,83 +141,76 @@ export function useAIChat() {
     ttsStop()
   }, [ttsStop])
 
-  /* ── STT ─────────────────────────────────────────────────── */
-  const startListening = useCallback((onResult: (text: string) => void, onError?: (errCode: string) => void) => {
+  /* ── STT — utterance lifecycle owned by stt-controller ───── */
+  //
+  // Split of responsibilities:
+  //   • stt-controller.ts decides when speech starts/ends, restarts the
+  //     recognizer after an unexpected `onend`, merges finals across sessions,
+  //     keeps interim text, and decides whether a silence may commit.
+  //   • this hook only mirrors its state into React and forwards the result.
+  //
+  // `onend` never submits. Silence commits only when autoSubmit is enabled AND
+  // the recognizer finalised the last phrase AND the text is not a fragment.
+  // Manual push-to-talk callers pass `{ autoSubmit: false }` so the answer is
+  // sent only when the user presses stop.
+  const startListening = useCallback((
+    onResult: (text: string) => void,
+    onError?: (errCode: string) => void,
+    options?: ListenOptions,
+  ) => {
     if (typeof window === 'undefined') return
     const w  = window as unknown as WinSpeech
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
-    // Tear down any previous recognizer first. Two live sessions would race on
-    // state updates and can leave the browser mic locked ("already started").
-    const previous = recognitionRef.current
-    if (previous) {
-      recognitionRef.current = null
-      try {
-        previous.onstart  = null
-        previous.onresult = null
-        previous.onend    = null
-        previous.onerror  = null
-        previous.abort()
-      } catch { /* already finished */ }
-    }
+    // Retire the previous utterance (timers + recognizer) before starting a new one.
+    sttControllerRef.current?.cancel()
+    sttControllerRef.current = null
 
-    submittedRef.current = false
-    const rec          = new SR()
-    // ar-EG: Egyptian Arabic — matches the UI dialect and handles mixed Arabic/English terms.
-    rec.lang           = 'ar-EG'
-    rec.continuous     = false
-    rec.interimResults = false
+    // Text kept from a session that died without the user finishing.
+    const seed = carryOverRef.current
+    carryOverRef.current = ''
 
-    // Only the newest recognizer may mutate state or invoke callbacks. A late
-    // event from a torn-down session is ignored instead of clobbering the mic.
-    const isCurrent = () => recognitionRef.current === rec
+    const controller = createSttController({
+      recognizer: () => new SR(),
+      lang: 'ar-EG',
+      autoSubmit: options?.autoSubmit ?? true,
+      silenceMs: options?.silenceMs,
+      onStateChange: next => {
+        setIsListening(next === 'listening')
+        setMicState(next)
+      },
+      onCommit: (text: string, reason: SttCommitReason) => {
+        console.log(`[STT] commit reason=${reason} chars=${text.length}`)
+        setMicState('processing')
+        onResult(text)
+        // Safety net: if the consumer refuses the text (e.g. a request is still
+        // loading) the mic must not stay stuck in 'processing' forever.
+        setTimeout(() => {
+          if (sttControllerRef.current !== controller) return
+          setMicState(s => (s === 'processing' ? 'idle' : s))
+        }, 1_200)
+      },
+      onError: code => { if (onError) onError(code) },
+      onRestartExhausted: kept => {
+        console.warn(`[STT] restart budget exhausted — kept ${kept.length} chars`)
+        carryOverRef.current = kept
+      },
+    })
 
-    rec.onstart        = () => {
-      if (!isCurrent()) return
-      setIsListening(true); setMicState('listening')
-    }
-    rec.onresult       = e => {
-      if (!isCurrent()) return
-      const result = e.results[e.resultIndex]
-      if (!result.isFinal || submittedRef.current) return
-      submittedRef.current = true
-      setMicState('processing')
-      onResult(result[0].transcript)
-      try { rec.stop() } catch { /* already stopped */ }
-    }
-    rec.onend          = () => {
-      if (!isCurrent()) return
-      recognitionRef.current = null
-      setIsListening(false); setMicState(s => s === 'listening' ? 'idle' : s)
-    }
-    rec.onerror        = (e) => {
-      if (!isCurrent()) return
-      recognitionRef.current = null
-      setIsListening(false); setMicState('idle')
-      if (onError) onError(e.error ?? 'unknown')
-    }
-    recognitionRef.current = rec
-    try {
-      rec.start()
-    } catch (e) {
-      if (isCurrent()) recognitionRef.current = null
-      setIsListening(false)
-      setMicState('idle')
-      if (onError) onError((e as Error)?.message?.includes('already started') ? 'already-started' : 'start-failed')
-    }
+    sttControllerRef.current = controller
+    controller.begin(seed)
   }, [])
 
   const stopListening = useCallback(() => {
-    // Detach the ref before stopping so the recognizer's own onend/onerror
-    // handlers are treated as stale and cannot override this reset.
-    const rec = recognitionRef.current
-    recognitionRef.current = null
-    if (rec) {
-      try { rec.stop() } catch { try { rec.abort() } catch { /* already finished */ } }
+    const controller = sttControllerRef.current
+    if (!controller) {
+      setIsListening(false)
+      setMicState(s => (s === 'listening' ? 'idle' : s))
+      return
     }
-    setIsListening(false)
-    setMicState('idle')
+    // Explicit stop is the only thing that submits in manual mode.
+    controller.stop()
   }, [])
 
   /* ── Parse career result ─────────────────────────────────── */
@@ -244,7 +262,7 @@ export function useAIChat() {
 
       const result = extractCareerResult(aiContent)
       if (result) setCareerResult(result)
-      if (autoSpeak) void speak(aiContent)
+      if (autoSpeak) void speak(aiContent, aiMsg.id)
       return true
     } catch (err) {
       console.error('sendMessage error:', err)
@@ -277,12 +295,19 @@ export function useAIChat() {
   }, [])
 
   const clearChat = useCallback(() => {
+    // Silent teardown: nothing captured mid-utterance may be submitted into the
+    // freshly cleared interview.
+    sttControllerRef.current?.cancel()
+    sttControllerRef.current = null
+    carryOverRef.current = ''
+    lastSpokenRef.current = null
     setMessages([])
     messagesRef.current = []
     setCareerResult(null)
+    setIsListening(false)
+    setMicState('idle')
     stopSpeaking()
-    stopListening()
-  }, [stopSpeaking, stopListening])
+  }, [stopSpeaking])
 
   return {
     messages, isLoading, isListening, micState, isSpeaking,

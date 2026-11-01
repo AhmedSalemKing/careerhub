@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.ts'],
+  testMatch: ['**/__tests__/**/*.test.ts?(x)'],
   moduleNameMapper: {
     '^next/server$': '<rootDir>/__mocks__/next-server.ts',
   },
