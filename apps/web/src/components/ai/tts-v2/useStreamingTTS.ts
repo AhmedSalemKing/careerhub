@@ -1,4 +1,19 @@
 'use client'
+// Female voice name fragments — used to skip browser synthesis voices that are female.
+// If no male Arabic voice is found, the browser fallback is skipped entirely.
+const ARABIC_FEMALE_NAME_FRAGMENTS = ['layla', 'female', 'mona', 'zainab', 'hala', 'salma', 'rana', 'noura', 'nora', 'fatima', 'taraneh', 'mariam', 'sara', 'lyla']
+
+function findMaleArabicVoice(): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null
+  const voices = window.speechSynthesis.getVoices()
+  const arabicVoices = voices.filter(v => v.lang.startsWith('ar'))
+  if (arabicVoices.length === 0) return null
+  return arabicVoices.find(v => {
+    const lc = v.name.toLowerCase()
+    return !ARABIC_FEMALE_NAME_FRAGMENTS.some(f => lc.includes(f))
+  }) ?? null
+}
+
 /**
  * PROTOTYPE hook — isolated from useAIChat.ts.
  * Uses /api/ai/tts-v2 (streaming PCM) instead of /api/ai/tts (unary WAV).
@@ -137,13 +152,21 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
 
   /* ── Browser speechSynthesis fallback ───────────────────── */
   // Activated only for recoverable failures (quota / timeout / 5xx / network).
+  // Uses male Arabic voice only — skips entirely if no male voice is available.
   // `guard` makes sure a cancelled or superseded request never starts talking.
   const trySynthesisFallback = useCallback((text: string, guard?: () => boolean) => {
     if (guard && !guard()) return
     // From here on the HTTP stream is not the active audio source.
     streamSettledRef.current = true
     if (typeof window === 'undefined' || !hasBrowserSynthesis(window)) {
-      // Can't fall back — clear the speaking state so the interview doesn't stall.
+      setIsSpeaking(false)
+      disarmWatchdog()
+      return
+    }
+    const maleVoice = findMaleArabicVoice()
+    if (!maleVoice) {
+      // No male Arabic voice available — skip browser TTS, continue textually.
+      console.warn('[TTS] browser fallback: no male Arabic voice, skipping')
       setIsSpeaking(false)
       disarmWatchdog()
       return
@@ -152,6 +175,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
       window.speechSynthesis.cancel()
       const utter = new SpeechSynthesisUtterance(text.slice(0, 1000))
       utter.lang = 'ar-EG'
+      utter.voice = maleVoice
       utter.rate = 0.9
       synthRef.current = utter
       synthStartedAtRef.current = Date.now()
@@ -266,7 +290,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
   }, [cancelAll, cancelSynthesis, disarmWatchdog])
 
   /* ── Speak ───────────────────────────────────────────────── */
-  const speak = useCallback((text: string, gender: 'female' | 'male' = 'female') => {
+  const speak = useCallback((text: string, gender: 'female' | 'male' = 'male') => {
     if (typeof window === 'undefined') return
 
     // Cancel prior request (primary + fallback synthesis)

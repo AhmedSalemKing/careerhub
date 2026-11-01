@@ -1,23 +1,25 @@
 /**
  * TTS v2 — Streaming PCM via Gemini SSE.
  *
- * Models tried in order:
- *   1. gemini-3.8-flash-lite-tts  (primary — lower quota usage, faster)
- *   2. gemini-3.8-flash-tts       (secondary — tried on quota/404/503/timeout)
+ * Model: gemini-2.5-flash-preview-tts (dedicated TTS model).
+ * Two attempts are made with the same model to handle transient network
+ * failures. quota_exceeded on attempt 1 means quota is exhausted for this
+ * model — a second attempt with the same model cannot recover from that.
  *
- * Immediate fail, no secondary attempt:
- *   auth_error (401/403), bad_request (400) — same key/payload, secondary cannot help
+ * Immediate fail, no retry:
+ *   auth_error (401/403), bad_request (400) — same key/payload, retry cannot help
  *
- * Secondary IS tried once for:
- *   quota_exceeded (429/RESOURCE_EXHAUSTED) — models have per-model quota pools
- *   provider_error (404/503)               — model unavailable, secondary may be up
- *   timeout / network_error                — transient failure, worth one more try
+ * Retry IS attempted for:
+ *   timeout / network_error — transient failure, one more try is worth it
+ *   provider_error (503)    — transient provider unavailability
  *
  * Total time budget: 22 s across all attempts (maxDuration = 25 s)
  *
  * Client receives:  audio/l16; rate=24000; channels=1 binary stream
  * Errors:           JSON before stream starts (clear error boundary)
  * No PCM→WAV conversion — client uses Web Audio API (decodeL16PCM in useStreamingTTS)
+ *
+ * Voice: always Charon (male Arabic). Female voice is not offered.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -27,8 +29,8 @@ export const runtime     = 'nodejs'
 export const dynamic     = 'force-dynamic'
 export const maxDuration = 25
 
-const PRIMARY_MODEL   = 'gemini-3.8-flash-lite-tts'
-const SECONDARY_MODEL = 'gemini-3.8-flash-tts'
+const PRIMARY_MODEL   = 'gemini-2.5-flash-preview-tts'
+const SECONDARY_MODEL = 'gemini-2.5-flash-preview-tts'
 
 function streamUrl(model: string, apiKey: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${apiKey}&alt=sse`
@@ -91,8 +93,8 @@ function parseGeminiError(errText: string, httpStatus: number): {
 
 /**
  * Returns true for errors where a secondary model with the same key is guaranteed to fail.
- * quota_exceeded is NOT included: Gemini enforces quota per-model, so exhausting
- * gemini-3.8-flash-lite-tts does NOT mean gemini-3.8-flash-tts is also exhausted.
+ * quota_exceeded is NOT included: a transient rate-limit may clear quickly,
+ * so a second attempt on the same model is worth one retry.
  */
 function isFinalError(label: ErrorLabel): boolean {
   return label === 'auth_error' || label === 'bad_request'
@@ -128,7 +130,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'empty_text' }, { status: 400 })
   }
 
-  const voiceName = gender === 'male' ? 'Fenrir' : 'Aoede'
+  // Always male voice — female option is not offered by this service.
+  // Charon: male Arabic prebuilt voice (language-adaptive, works for Arabic and English).
+  const voiceName = 'Charon'
+  void gender  // parameter kept for API compatibility; value is ignored
   const t0        = Date.now()
   const reqId     = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
   console.log(`[TTS-V2] req=${reqId} voice=${voiceName} len=${clean.length}`)

@@ -27,7 +27,7 @@ const STAGES = [
   'مراجعة النتائج',
 ]
 
-const FIRST_MSG = `مرحباً! أنا مساعدك في ديفي واي لاكتشاف مسارك المهني.
+const FIRST_MSG = `مرحباً! أنا رشيد، مستشارك المهني في ديفي واي لاكتشاف مسارك المهني.
 خلينا نبدأ — إيه أكثر حاجة استمتعت بيها لما اشتغلت على مشروع تقني أو حاولت تحل مشكلة؟
 احكيلي عن مثال حقيقي، حتى لو كان مشروعاً صغيراً.`
 
@@ -397,7 +397,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-foreground, white)" strokeWidth="1.8"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--foreground)' }}>DeveWay Career AI</div>
+              <div style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--foreground)' }}>رشيد · DeveWay</div>
               <div style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--success, #22c55e)', fontFamily: 'PingAR', fontWeight: 300 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success, #22c55e)' }} />
                 متصل الآن
@@ -407,17 +407,15 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>الصوت:</span>
-            {(['female', 'male'] as const).map(g => (
-              <button key={g} onClick={() => setVoiceGender(g)} style={{
-                padding: '4px 12px', borderRadius: 20, border: '1px solid',
-                borderColor: voiceGender === g ? 'color-mix(in srgb, var(--primary) 60%, transparent)' : 'var(--border)',
-                background: voiceGender === g ? 'color-mix(in srgb, var(--primary) 15%, transparent)' : 'transparent',
-                color: voiceGender === g ? 'var(--primary)' : 'var(--muted-foreground)',
-                fontSize: 11, fontFamily: 'PingAR', fontWeight: voiceGender === g ? 500 : 300, cursor: 'pointer',
-              }}>
-                {g === 'female' ? 'أنثى' : 'ذكر'}
-              </button>
-            ))}
+            <span style={{
+              padding: '4px 12px', borderRadius: 20,
+              border: '1px solid color-mix(in srgb, var(--primary) 60%, transparent)',
+              background: 'color-mix(in srgb, var(--primary) 15%, transparent)',
+              color: 'var(--primary)',
+              fontSize: 11, fontFamily: 'PingAR', fontWeight: 500,
+            }}>
+              رشيد · ذكر
+            </span>
           </div>
         </div>
 

@@ -481,15 +481,30 @@ describe('TTS route — model fallback', () => {
       body:    pcmStream(),
     } as unknown as Response)
 
-    const res = await POST(makeTtsReq({ text: 'مرحبا', gender: 'female' }))
+    const res = await POST(makeTtsReq({ text: 'مرحبا', gender: 'male' }))
 
     expect(res.status).toBe(200)
     expect(res.headers.get('Content-Type')).toMatch(/audio\/l16/)
     expect(mockFetch).toHaveBeenCalledTimes(1)
-    expect(mockFetch.mock.calls[0][0]).toContain('gemini-3.8-flash-lite-tts')
+    expect(mockFetch.mock.calls[0][0]).toContain('gemini-2.5-flash-preview-tts')
   })
 
-  test('14 — primary 429 → secondary model is attempted', async () => {
+  test('13b — voice is always Charon regardless of gender parameter', async () => {
+    const { POST } = await import('../tts-v2/route')
+
+    mockFetch.mockResolvedValueOnce({
+      ok:      true,
+      headers: { get: (h: string) => h === 'content-type' ? 'text/event-stream' : null },
+      body:    pcmStream(),
+    } as unknown as Response)
+
+    await POST(makeTtsReq({ text: 'مرحبا', gender: 'female' }))
+
+    const reqBody = JSON.parse(mockFetch.mock.calls[0][1]?.body as string ?? '{}')
+    expect(reqBody.generationConfig?.speechConfig?.voiceConfig?.prebuiltVoiceConfig?.voiceName).toBe('Charon')
+  })
+
+  test('14 — primary 429 → retry is attempted', async () => {
     const { POST } = await import('../tts-v2/route')
 
     mockFetch
@@ -504,12 +519,12 @@ describe('TTS route — model fallback', () => {
         body:    pcmStream(),
       } as unknown as Response)
 
-    const res = await POST(makeTtsReq({ text: 'اختبار', gender: 'female' }))
+    const res = await POST(makeTtsReq({ text: 'اختبار', gender: 'male' }))
 
     expect(res.status).toBe(200)
     expect(mockFetch).toHaveBeenCalledTimes(2)
-    expect(mockFetch.mock.calls[0][0]).toContain('gemini-3.8-flash-lite-tts')
-    expect(mockFetch.mock.calls[1][0]).toContain('gemini-3.8-flash-tts')
+    expect(mockFetch.mock.calls[0][0]).toContain('gemini-2.5-flash-preview-tts')
+    expect(mockFetch.mock.calls[1][0]).toContain('gemini-2.5-flash-preview-tts')
   })
 
   test('15 — primary 429 → secondary 429 → error JSON (quota_exceeded)', async () => {

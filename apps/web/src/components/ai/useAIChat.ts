@@ -74,7 +74,7 @@ export function useAIChat() {
   const [isListening,  setIsListening]  = useState(false)
   const [micState,     setMicState]     = useState<MicState>('idle')
   const [careerResult, setCareerResult] = useState<CareerResult | null>(null)
-  const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('female')
+  const [voiceGender,  setVoiceGender]  = useState<'female' | 'male'>('male')
 
   const messagesRef     = useRef<Message[]>([])
   const isLoadingRef    = useRef(false)
