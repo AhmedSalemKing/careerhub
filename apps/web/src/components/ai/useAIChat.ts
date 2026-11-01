@@ -1,5 +1,6 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { getToken } from '@/lib/auth'
 import { useStreamingTTS } from './tts-v2/useStreamingTTS'
 import { createSttController } from './stt-controller'
 import type { SttController, SttCommitReason } from './stt-controller'
@@ -240,9 +241,13 @@ export function useAIChat() {
     try {
       const body: Record<string, unknown> = { messages: newMessages.map(m => ({ role: m.role, content: m.content })) }
       if (memoryContext) body.memoryContext = memoryContext
+      const chatToken = getToken()
       const res = await fetch('/api/ai/chat', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(chatToken ? { Authorization: `Bearer ${chatToken}` } : {}),
+        },
         body:    JSON.stringify(body),
       })
 

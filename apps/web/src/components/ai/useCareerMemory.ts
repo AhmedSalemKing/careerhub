@@ -1,5 +1,6 @@
 'use client'
 import { useCallback } from 'react'
+import { getToken } from '@/lib/auth'
 import type { CareerResult } from './useAIChat'
 
 const MEMORY_KEY_PREFIX = 'deveway_career_memory_'
@@ -60,9 +61,17 @@ function emptyMemory(userId: string): CareerMemory {
 
 // ── Server sync helpers (module-level, no React dependency) ──────────────────
 
+function authHeader(): Record<string, string> {
+  const token = getToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function fetchMemoryFromServer(): Promise<CareerMemory | null> {
   try {
-    const res = await fetch(SERVER_MEMORY_URL, { cache: 'no-store' })
+    const res = await fetch(SERVER_MEMORY_URL, {
+      cache:   'no-store',
+      headers: authHeader(),
+    })
     if (!res.ok) return null
     const data = await res.json() as { memory?: CareerMemory | null }
     return data.memory ?? null
@@ -75,7 +84,7 @@ async function pushMemoryToServer(memory: CareerMemory): Promise<void> {
   try {
     await fetch(SERVER_MEMORY_URL, {
       method:  'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
       body:    JSON.stringify(memory),
     })
   } catch {

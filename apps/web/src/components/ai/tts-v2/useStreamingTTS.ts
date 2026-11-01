@@ -1,4 +1,5 @@
 'use client'
+import { getToken } from '@/lib/auth'
 // Female voice name fragments — used to skip browser synthesis voices that are female.
 // If no male Arabic voice is found, the browser fallback is skipped entirely.
 const ARABIC_FEMALE_NAME_FRAGMENTS = ['layla', 'female', 'mona', 'zainab', 'hala', 'salma', 'rana', 'noura', 'nora', 'fatima', 'taraneh', 'mariam', 'sara', 'lyla']
@@ -406,9 +407,13 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
 
     ;(async () => {
       try {
+        const ttsToken = getToken()
         const res = await fetch('/api/ai/tts-v2', {
           method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type':  'application/json',
+            ...(ttsToken ? { Authorization: `Bearer ${ttsToken}` } : {}),
+          },
           body:    JSON.stringify({ text, gender }),
           signal:  abortCtrl.signal,
         })
