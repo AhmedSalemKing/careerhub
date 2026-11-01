@@ -91,3 +91,26 @@ export function hasBrowserSynthesis(win: unknown): boolean {
   return typeof value === 'object' && value !== null
 }
 
+export interface WorkersDoneSnapshot {
+  /** AudioBufferSourceNodes not yet ended for the current pipeline. */
+  liveSources: number
+  /** True when synthRef.current !== null (browser TTS fallback is active). */
+  synthActive: boolean
+}
+
+/**
+ * Returns true when the pipeline's Promise.all completion callback should
+ * call setIsSpeaking(false).
+ *
+ * Two situations must keep isSpeaking=true after workers finish:
+ *   1. liveSources > 0 — Web Audio nodes are still scheduled/playing.
+ *   2. synthActive — a recoverable segment-0 failure triggered the browser
+ *      TTS fallback; clearing isSpeaking here would allow hands-free
+ *      auto-listen to start while the browser is still reading the answer.
+ * isSpeaking is cleared later by source.onended (case 1) or the SpeechSynthesis
+ * utterance.onend / watchdog (case 2).
+ */
+export function shouldClearOnWorkersDone(s: WorkersDoneSnapshot): boolean {
+  return s.liveSources === 0 && !s.synthActive
+}
+
