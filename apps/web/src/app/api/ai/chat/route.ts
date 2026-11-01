@@ -164,9 +164,14 @@ export async function POST(req: NextRequest) {
       )
 
       const tAttempt = Date.now()
-      const baseBody  = {
+      const generationConfig = {
+        temperature: 0.8,
+        maxOutputTokens: 800,
+        ...(model === 'gemini-3.8-flash' ? { thinkingConfig: { thinkingLevel: 'LOW' } } : {}),
+      }
+      const baseBody = {
         contents,
-        generationConfig: { temperature: 0.8, maxOutputTokens: 800 },
+        generationConfig,
       }
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
 
