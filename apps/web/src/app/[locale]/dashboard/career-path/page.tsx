@@ -426,20 +426,16 @@ const [confirmModal, setConfirmModal] = useState<{
 
       // 1. Direct slug match
       if (pSlug === fieldSlug) return true
-      // 2. Slug contains/is-contained
-      if (fieldSlug && (pSlug.includes(fieldSlug) || fieldSlug.includes(pSlug))) return true
+      // 2. Path slug contains field slug only (not vice-versa — prevents short slugs like "software" from matching "software-engineer")
+      if (fieldSlug && pSlug.includes(fieldSlug)) return true
 
-      // 3. jobTitlesAr array — primary match for Arabic assessment results
+      // 3. jobTitlesAr — job title must contain the full field title (not vice-versa)
       const jobTitlesAr: string[] = Array.isArray(p.jobTitlesAr) ? p.jobTitlesAr : []
-      if (fieldTitleAr && jobTitlesAr.some(t =>
-        t.includes(fieldTitleAr) || fieldTitleAr.includes(t)
-      )) return true
+      if (fieldTitleAr && jobTitlesAr.some(t => t.includes(fieldTitleAr))) return true
 
-      // 4. jobTitlesEn array
+      // 4. jobTitlesEn — job title must contain the full field title (not vice-versa — prevents "Developer" from matching "Frontend Developer")
       const jobTitlesEn: string[] = Array.isArray(p.jobTitlesEn) ? p.jobTitlesEn : []
-      if (fieldTitleEn && jobTitlesEn.some(t =>
-        t.toLowerCase().includes(fieldTitleEn) || fieldTitleEn.includes(t.toLowerCase())
-      )) return true
+      if (fieldTitleEn && jobTitlesEn.some(t => t.toLowerCase().includes(fieldTitleEn))) return true
 
       // 5. descriptionAr fallback
       const pDescAr = (p.descriptionAr || '').toLowerCase()

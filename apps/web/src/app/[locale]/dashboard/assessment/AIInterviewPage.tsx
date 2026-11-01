@@ -711,6 +711,12 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
             {result.topCareers[selectedCareerIdx] ? `ابدأ مسار ${result.topCareers[selectedCareerIdx].name}` : 'ابدأ مسارك مع DeveWay'} ←
           </button>
           <button
+            onClick={() => router.push(`/${locale}/careers`)}
+            style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
+          >
+            اختر مساراً مختلفاً
+          </button>
+          <button
             onClick={onRestart}
             style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
           >
