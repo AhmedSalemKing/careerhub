@@ -4,16 +4,11 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
 const AIInterviewPage = dynamic(() => import('./AIInterviewPage'), { ssr: false })
-const CompassFlow = dynamic(() => import('./compass/CompassFlow').then(m => ({ default: m.CompassFlow })), { ssr: false })
 
 function AssessmentContent() {
   const params = useSearchParams()
   const mode   = params.get('mode') ?? undefined
   const router = useRouter()
-
-  if (mode === 'compass') {
-    return <CompassFlow />
-  }
 
   if (mode === 'interview' || mode === 'quiz') {
     return <AIInterviewPage mode={mode} />
@@ -62,7 +57,7 @@ function AssessmentContent() {
       </div>
 
       {/* Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 16, width: '100%', maxWidth: 760 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 16, width: '100%', maxWidth: 640 }}>
 
         {/* Interview Card */}
         <div style={{
@@ -152,53 +147,6 @@ function AssessmentContent() {
           </button>
         </div>
 
-        {/* Compass Card */}
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: 22, padding: '26px 22px',
-          display: 'flex', flexDirection: 'column',
-        }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: 'color-mix(in srgb, var(--foreground) 6%, transparent)',
-            border: '1px solid color-mix(in srgb, var(--foreground) 12%, transparent)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            marginBottom: 16,
-          }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-            </svg>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 900, margin: 0, color: 'var(--foreground)', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>
-              بوصلة المسار
-            </h2>
-            <span style={{
-              padding: '2px 10px', borderRadius: 20, fontSize: 10,
-              fontWeight: 500, fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
-              background: 'color-mix(in srgb, var(--foreground) 8%, transparent)',
-              color: 'var(--muted-foreground)',
-              border: '1px solid color-mix(in srgb, var(--foreground) 12%, transparent)',
-            }}>جديد</span>
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.7, flex: 1, fontWeight: 300, fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>
-            تقييم منهجي متعدد الأبعاد يقيس اهتماماتك ومهاراتك ودوافعك لبناء خارطة طريق دقيقة.
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 18 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span style={{ fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 300, fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>المدة التقريبية: 20-25 دقيقة</span>
-          </div>
-          <button
-            onClick={() => router.push('?mode=compass')}
-            style={{ padding: '12px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontWeight: 300, fontSize: 14, cursor: 'pointer', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}
-          >
-            ابدأ البوصلة
-          </button>
-        </div>
       </div>
 
       <div style={{ marginTop: 28, display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 11, color: 'var(--muted-foreground)', fontWeight: 300, fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif', maxWidth: 480, textAlign: 'center' }}>
