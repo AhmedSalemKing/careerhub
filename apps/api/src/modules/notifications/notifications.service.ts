@@ -186,7 +186,7 @@ export class NotificationsService {
       where.isRead = isRead;
     }
 
-    const [notifications, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
@@ -195,6 +195,11 @@ export class NotificationsService {
       }),
       this.prisma.notification.count({ where }),
     ]);
+
+    const notifications = rows.map(n => ({
+      ...n,
+      createdAt: n.createdAt instanceof Date ? n.createdAt.toISOString() : n.createdAt,
+    }));
 
     return {
       notifications,
