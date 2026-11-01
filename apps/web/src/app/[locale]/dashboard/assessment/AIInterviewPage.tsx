@@ -5,11 +5,9 @@ import { useLocale } from 'next-intl'
 import { VoiceOrb }  from '@/components/ai/VoiceOrb'
 import { useAIChat } from '@/components/ai/useAIChat'
 import type { CareerResult } from '@/components/ai/useAIChat'
-import { computeDiscoveryStage, type ChatMessage } from './career-signals'
-import { useAuthStore } from '@/stores/authStore'
-import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
+import { computeDiscoveryStage } from './career-signals'
 
-/* ── Types ────────────────────────────────────────────────── */
+/* ── Types ─────────────────────────────────────────────── */
 interface QuizQuestion {
   question: string
   choices:  string[]
@@ -17,7 +15,7 @@ interface QuizQuestion {
   explanation: string
 }
 
-/* ── Constants ────────────────────────────────────────────── */
+/* ── Constants ───────────────────────────────────────────── */
 const STAGES = [
   'فهم تجربتك الحالية',
   'اكتشاف الاهتمامات',
@@ -36,7 +34,7 @@ const QUIZ_START = `ابدأ الاختبار التفاعلي الآن. أنش�
 [QUIZ_Q]{"question":"...","choices":["أ) ...","ب) ...","ج) ...","د) ..."],"correct":0,"explanation":"..."}[/QUIZ_Q]
 ثم أضف جملة تشجيعية قصيرة قبل السؤال.`
 
-/* ── Career Result Card ───────────────────────────────────── */
+/* ── Career Result Card ────────────────────────────────────── */
 function CareerResultCard({ result, onRestart }: { result: CareerResult; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
@@ -154,10 +152,6 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     addAssistantMessage,
   } = useAIChat()
 
-  const authUser   = useAuthStore(s => s.user)
-  const userId     = authUser?.id ?? undefined
-  const { load: loadMemory, loadFromServer: loadMemoryFromServer, saveResult: saveCareerResult } = useCareerMemory(userId)
-
   const [input,            setInput]            = useState('')
   const [started,          setStarted]          = useState(false)
   const [elapsed,          setElapsed]          = useState(0)
@@ -187,15 +181,6 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const mm       = String(Math.floor(timeLeft / 60)).padStart(2, '0')
   const ss       = String(timeLeft % 60).padStart(2, '0')
 
-  // When the 30-minute session window closes, pause hands-free auto-listen.
-  // The interview can still continue manually; this prevents the mic from
-  // auto-restarting indefinitely after the intended session duration.
-  useEffect(() => {
-    if (timeLeft === 0 && handsFreeEnabled && !handsFreePaused) {
-      setHandsFreePaused(true)
-    }
-  }, [timeLeft, handsFreeEnabled, handsFreePaused])
-
   useEffect(() => {
     if (!started) {
       setStarted(true)
@@ -208,32 +193,11 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
-  // Save career result to localStorage when it first arrives
-  useEffect(() => {
-    if (careerResult) saveCareerResult(careerResult)
-  }, [careerResult, saveCareerResult])
-
-  // Build memory context for sendMessage calls.
-  // Phase 1 (sync): loads from localStorage immediately for the first message.
-  // Phase 2 (async): fetches from server and updates the ref; subsequent
-  //   messages in the same session will use the authoritative server copy.
-  const memoryContextRef = useRef<string | undefined>(undefined)
-  useEffect(() => {
-    const localMemory = loadMemory()
-    memoryContextRef.current = buildMemoryContext(localMemory) || undefined
-
-    // Non-blocking server load — update ref when it arrives
-    loadMemoryFromServer().then(serverMemory => {
-      if (serverMemory) {
-        memoryContextRef.current = buildMemoryContext(serverMemory) || undefined
-      }
-    }).catch(() => { /* server unavailable — local memory is still set */ })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   // Evidence-based discovery-dimension tracker.
   // Dimensions are AREAS, not sequential steps — may be revisited freely.
-  // Final stage "مراجعة النتائج" only appears when careerResult arrives.
-  const currentStage = computeDiscoveryStage(messages as ChatMessage[], STAGES.length)
+  // Only meaningful USER messages count as evidence; assistant wording never
+  // advances the tracker. The final stage only appears when careerResult arrives.
+  const currentStage = computeDiscoveryStage(messages, STAGES.length)
 
   const unlockAutoplay = useCallback(async () => {
     await unlockAudio()
@@ -247,10 +211,27 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     setHandsFreePaused(false)
   }, [unlockAutoplay])
 
-  const handleHandsFreeToggle = useCallback(() => {
-    if (handsFreePaused) setMicError(null)
-    setHandsFreePaused(p => !p)
+  // Single source of truth for hands-free pause/resume. Used by the status
+  // banner, the orb and the mic button so all manual resume controls behave
+  // identically — including clearing a previous microphone error.
+  const toggleHandsFreePause = useCallback(() => {
+    if (handsFreePaused) {
+      setMicError(null)
+      setHandsFreePaused(false)
+      return
+    }
+    setHandsFreePaused(true)
   }, [handsFreePaused])
+
+  // Permission denial and startup failures pause hands-free mode so the auto
+  // effect cannot spin in a retry loop. `already-started` is NOT fatal: the
+  // recognizer layer now tears down any previous session before starting.
+  const handleListenError = useCallback((err: string) => {
+    if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'start-failed') {
+      setMicError('not-allowed')
+      setHandsFreePaused(true)
+    }
+  }, [])
 
   // Speak the initial interview question exactly once after audio is unlocked.
   // Guard via ref: prevents re-speaking when voiceGender changes or messages update.
@@ -279,33 +260,30 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     autoListenTimerRef.current = setTimeout(() => {
       autoListenTimerRef.current = null
       cbRef.current.startListening(
-        text => cbRef.current.sendMessage(text, true, memoryContextRef.current),
-        err  => {
-          if (err === 'not-allowed' || err === 'start-failed' || err === 'already-started') {
-            setMicError('not-allowed')
-            setHandsFreePaused(true)   // stop auto-restart after permission denial or start failure
-          }
-        }
+        text => cbRef.current.sendMessage(text),
+        handleListenError
       )
     }, 400)
 
     return () => {
       if (autoListenTimerRef.current) { clearTimeout(autoListenTimerRef.current); autoListenTimerRef.current = null }
     }
-  }, [isSpeaking, handsFreeEnabled, handsFreePaused, audioUnlocked, isListening, isLoading, micState])
+  }, [isSpeaking, handsFreeEnabled, handsFreePaused, audioUnlocked, isListening, isLoading, micState, handleListenError])
 
   const handleSend = useCallback(async () => {
     if (!input.trim()) return
     await unlockAutoplay()
-    const ok = await sendMessage(input, true, memoryContextRef.current)
+    const ok = await sendMessage(input)
     if (ok) setInput('')
   }, [input, sendMessage, unlockAutoplay])
 
   const handleMic = useCallback(async () => {
     if (handsFreeEnabled) {
       // In hands-free mode the orb/mic button pauses or resumes auto-listening.
+      // toggleHandsFreePause clears a previous permission error on resume, so
+      // every pause/resume control shares one code path.
       if (isListening) stopListening()
-      handleHandsFreeToggle()
+      toggleHandsFreePause()
       return
     }
     if (isListening) { stopListening(); return }
@@ -313,10 +291,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     await unlockAutoplay()
     stopSpeaking()
     startListening(
-      text => sendMessage(text, true, memoryContextRef.current),
-      err  => { if (err === 'not-allowed') setMicError('not-allowed') }
+      text => sendMessage(text),
+      handleListenError
     )
-  }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
+  }, [handsFreeEnabled, toggleHandsFreePause, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay, handleListenError])
 
   if (careerResult) {
     return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false) }} />
@@ -488,7 +466,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {/* Hands-free mode indicator — tap to pause/resume */}
         {handsFreeEnabled && (
           <div
-            onClick={handleHandsFreeToggle}
+            onClick={toggleHandsFreePause}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, marginBottom: 10, cursor: 'pointer',
               background: handsFreePaused ? 'color-mix(in srgb, var(--foreground) 8%, transparent)' : 'color-mix(in srgb, var(--primary) 12%, transparent)',
               border: `1px solid ${handsFreePaused ? 'var(--border)' : 'color-mix(in srgb, var(--primary) 35%, transparent)'}`,
@@ -590,7 +568,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   )
 }
 
-/* ── Quiz Mode ────────────────────────────────────────────── */
+/* ── Quiz Mode ─────────────────────────────────────────── */
 function QuizMode({ onEnd }: { onEnd: () => void }) {
   const { messages, isLoading, careerResult, sendMessage, clearChat } = useAIChat()
   const [currentQ, setCurrentQ] = useState<QuizQuestion | null>(null)
@@ -712,7 +690,7 @@ function QuizMode({ onEnd }: { onEnd: () => void }) {
   )
 }
 
-/* ── Mode Select ──────────────────────────────────────────── */
+/* ── Mode Select ────────────────────────────────────────── */
 function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void }) {
   return (
     <div dir="rtl" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--background)' }}>
@@ -771,7 +749,7 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
   )
 }
 
-/* ── Main export ──────────────────────────────────────────── */
+/* ── Main export ───────────────────────────────────────────── */
 export default function AIInterviewPage({ mode }: { mode?: string }) {
   const router = useRouter()
   const locale = useLocale()
