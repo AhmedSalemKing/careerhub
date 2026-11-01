@@ -1,7 +1,7 @@
 'use client'
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { getToken } from '@/lib/auth'
-import { useSentencePipeline as useStreamingTTS } from './tts-v2/useSentencePipeline'
+import { useStreamingTTS } from './tts-v2/useStreamingTTS'
 import { createSttController } from './stt-controller'
 import type { SttController, SttCommitReason } from './stt-controller'
 
