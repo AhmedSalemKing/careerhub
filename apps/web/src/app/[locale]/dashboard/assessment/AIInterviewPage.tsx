@@ -642,6 +642,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
+  const [selectedCareerIdx, setSelectedCareerIdx] = useState(0)
   return (
     <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', overflowY: 'auto', padding: '24px 16px 60px' }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
@@ -656,7 +657,7 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
         </div>
 
         {result.topCareers.map((career, i) => (
-          <div key={i} style={{ padding: '18px 20px', borderRadius: 14, marginBottom: 12, background: 'var(--card)', border: i === 0 ? '1.5px solid color-mix(in srgb, var(--primary) 40%, transparent)' : '1px solid var(--border)' }}>
+          <div key={i} onClick={() => setSelectedCareerIdx(i)} style={{ padding: '18px 20px', borderRadius: 14, marginBottom: 12, cursor: 'pointer', background: selectedCareerIdx === i ? 'color-mix(in srgb, var(--primary) 6%, var(--card))' : 'var(--card)', border: selectedCareerIdx === i ? '1.5px solid color-mix(in srgb, var(--primary) 50%, transparent)' : '1px solid var(--border)', transition: 'all 0.15s' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div>
                 <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>{career.name}</div>
@@ -689,10 +690,25 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button
-            onClick={() => router.push(`/${locale}/dashboard/career-path`)}
+            onClick={() => {
+              try {
+                localStorage.setItem('rasheed_quiz_result', JSON.stringify(result))
+                const ar = result.topCareers.map(c => ({
+                  track: c.nameEn.toLowerCase().replace(/\s+/g, '-'),
+                  score: c.match, normalized: c.match, titleAr: c.name, titleEn: c.nameEn,
+                }))
+                localStorage.setItem('assessmentResults', JSON.stringify(ar))
+                const sel = result.topCareers[selectedCareerIdx]
+                if (sel) localStorage.setItem('rasheed_selected_career', JSON.stringify({
+                  track: sel.nameEn.toLowerCase().replace(/\s+/g, '-'),
+                  score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
+                }))
+              } catch {}
+              router.push(`/${locale}/dashboard/career-path`)
+            }}
             style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
           >
-            ابدأ مسارك مع DeveWay ←
+            {result.topCareers[selectedCareerIdx] ? `ابدأ مسار ${result.topCareers[selectedCareerIdx].name}` : 'ابدأ مسارك مع DeveWay'} ←
           </button>
           <button
             onClick={onRestart}

@@ -76,6 +76,7 @@ const [myPathIds, setMyPathIds] = useState<Set<string>>(() => {
   return new Set()
 })
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
+const [rasheedResult, setRasheedResult] = useState<{ summary: string; topCareers: { name: string; nameEn: string; match: number }[] } | null>(null)
 const [allPaths, setAllPaths] = useState<any[]>([])
 const [allCourses, setAllCourses] = useState<any[]>([])
 const [coursesLoading, setCoursesLoading] = useState(false)
@@ -83,6 +84,7 @@ const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
 const [busyPaths, setBusyPaths] = useState<Set<string>>(new Set())
   const fetchSeqRef = useRef(0)
+  const rasheedAutoAddRef = useRef(false)
 const MAX_PATHS = 5
 
 const [confirmModal, setConfirmModal] = useState<{
@@ -114,6 +116,13 @@ const [confirmModal, setConfirmModal] = useState<{
       if (savedResults) setAssessmentResults(JSON.parse(savedResults))
       else if (!savedResults) setActiveTab('assessment')
     } catch(e) {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('rasheed_quiz_result')
+      if (raw) setRasheedResult(JSON.parse(raw))
+    } catch {}
   }, [])
 
   useEffect(() => {
@@ -167,6 +176,18 @@ const [confirmModal, setConfirmModal] = useState<{
   useEffect(() => {
     fetchMyPaths()
   }, [fetchMyPaths])
+
+  useEffect(() => {
+    if (allPaths.length === 0 || rasheedAutoAddRef.current) return
+    try {
+      const raw = localStorage.getItem('rasheed_selected_career')
+      if (!raw) return
+      rasheedAutoAddRef.current = true
+      const career = JSON.parse(raw)
+      localStorage.removeItem('rasheed_selected_career')
+      handleAddAssessmentPath(career)
+    } catch {}
+  }, [allPaths]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setCoursesLoading(true)
@@ -514,6 +535,45 @@ const [confirmModal, setConfirmModal] = useState<{
                 <button onClick={() => setActiveTab('assessment')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(81,32,200,0.3)', background: 'transparent', color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
                   <RefreshCw size={12} />
                   {isAr ? 'أعد الاختبار' : 'Retake'}
+                </button>
+              </div>
+            )}
+
+            {rasheedResult && (
+              <div style={{
+                padding: '16px 20px', borderRadius: 14, marginBottom: 24,
+                border: '1px solid rgba(81,32,200,0.15)',
+                background: isDark ? 'rgba(81,32,200,0.04)' : 'rgba(81,32,200,0.02)',
+                display: 'flex', alignItems: 'flex-start', gap: 14,
+              }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(81,32,200,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5120c8" strokeWidth="1.7"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: text, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+                    {isAr ? 'تقرير رشيد · المسارات المقترحة' : "Rasheed's Report · Suggested Paths"}
+                  </div>
+                  <div style={{ color: subtext, fontSize: 12, lineHeight: 1.6, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {rasheedResult.summary}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {rasheedResult.topCareers.slice(0, 3).map((c, i) => (
+                      <span key={i} style={{
+                        padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500,
+                        background: i === 0 ? '#5120c8' : 'rgba(81,32,200,0.08)',
+                        color: i === 0 ? '#ffffff' : '#5120c8',
+                        border: i === 0 ? 'none' : '1px solid rgba(81,32,200,0.2)',
+                      }}>
+                        {c.name} {c.match}%
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={() => { try { localStorage.removeItem('rasheed_quiz_result') } catch {} setRasheedResult(null) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: subtext, padding: 4, flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                >
+                  <X size={14} />
                 </button>
               </div>
             )}
