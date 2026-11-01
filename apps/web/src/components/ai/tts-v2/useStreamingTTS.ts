@@ -82,7 +82,11 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
   // Activated only when primary TTS fails (non-abort errors or no audio produced).
   // Handles unavailable synthesis gracefully — wrapped in try/catch throughout.
   const trySynthesisFallback = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      // Can't fall back — clear the speaking state so the interview doesn't stall.
+      setIsSpeaking(false)
+      return
+    }
     try {
       window.speechSynthesis.cancel()
       const utter = new SpeechSynthesisUtterance(text.slice(0, 1000))

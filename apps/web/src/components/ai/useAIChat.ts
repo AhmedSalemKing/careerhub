@@ -79,6 +79,10 @@ export function useAIChat() {
   // startListening across re-renders (the local closure variable was unreachable
   // from the unmount effect, causing a timer leak on fast unmounts).
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Explicit-stop flag: set by submit() and stopListening() so that rec.onend
+  // knows not to restart after a deliberate end. Reset to false at the start of
+  // every new startListening call.
+  const stopRequestedRef = useRef(false)
   // TTS dedup: track the last message ID spoken per gender to avoid re-speaking
   const lastSpokenRef   = useRef<{ msgId: string; gender: string } | null>(null)
 
@@ -167,6 +171,8 @@ export function useAIChat() {
     const SR = w.SpeechRecognition ?? w.webkitSpeechRecognition
     if (!SR) { alert('متصفحك لا يدعم التعرف على الصوت. جرب Chrome.'); return }
 
+    // Reset explicit-stop flag for this new session before advancing the counter.
+    stopRequestedRef.current = false
     // Advance the session counter and capture this session's token.
     // This happens BEFORE stopping the old rec — so old rec's onend sees isMySession()=false
     // and exits immediately without submitting or touching state.
@@ -181,7 +187,9 @@ export function useAIChat() {
     // Clear any silence timer still running from a prior session.
     if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
 
-    let accText = ''
+    let accText      = ''
+    let restartCount = 0
+    const MAX_RESTARTS = 20  // ~2–3 min of continuous speech at one browser reset per 7 s
 
     const submit = () => {
       if (!isMySession()) return
@@ -189,6 +197,7 @@ export function useAIChat() {
       if (!text) return
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
       accText = ''
+      stopRequestedRef.current = true  // prevent restart when rec.stop() fires onend
       setMicState('processing')
       onResult(text)
       try { rec.stop() } catch { /* already stopped */ }
@@ -202,22 +211,34 @@ export function useAIChat() {
 
     rec.onresult = e => {
       if (!isMySession()) return
-      let newFinal = ''
+      let newFinal    = ''
+      let hasActivity = false
       for (let i = e.resultIndex; i < e.results.length; i++) {
+        hasActivity = true
         if (e.results[i].isFinal) newFinal += (e.results[i][0]?.transcript ?? '') + ' '
+      }
+      // Reset silence timer on ANY speech activity — interim OR final.
+      // Without this, a final result followed by interim-only events would let the
+      // 2.5 s timer fire while the user is still actively speaking.
+      if (hasActivity) {
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
+        silenceTimerRef.current = setTimeout(submit, SILENCE_TIMEOUT_MS)
       }
       if (!newFinal.trim()) return
       accText = (accText + ' ' + newFinal).trim()
-      // Reset silence timer on every new confirmed word
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current)
-      silenceTimerRef.current = setTimeout(submit, SILENCE_TIMEOUT_MS)
     }
 
-    // Safety net: flush any pending text if the browser stops recognition for any reason.
-    // isMySession() guards against a stale session's onend firing after a new session started.
+    // Chrome fires onend after ~5–7 s on Arabic even with continuous=true.
+    // Restart recognition so the user can speak for 20–60 s without cutoff.
+    // Only restart when the user hasn't explicitly stopped (stopRequestedRef)
+    // and within the restart budget (MAX_RESTARTS).
     rec.onend = () => {
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
       if (!isMySession()) return
+      if (!stopRequestedRef.current && restartCount < MAX_RESTARTS) {
+        restartCount++
+        try { rec.start(); return } catch { /* restart failed — fall through to finalize */ }
+      }
       setIsListening(false)
       setMicState(s => s === 'listening' ? 'idle' : s)
       if (accText.trim()) {
@@ -231,6 +252,10 @@ export function useAIChat() {
     rec.onerror = e => {
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null }
       if (!isMySession()) return
+      // Permanent errors: mic permission denied or hardware unavailable.
+      // Mark stop-requested so the onend that always follows does not attempt a restart.
+      const isPermanent = ['not-allowed', 'audio-capture', 'service-not-allowed'].includes(e.error ?? '')
+      if (isPermanent) stopRequestedRef.current = true
       setIsListening(false)
       setMicState('idle')
       if (onError) onError(e.error ?? 'unknown')
@@ -247,6 +272,8 @@ export function useAIChat() {
   }, [])
 
   const stopListening = useCallback(() => {
+    // Mark explicit stop so onend flushes accumulated text without attempting a restart.
+    stopRequestedRef.current = true
     // Stopping the recognition triggers rec.onend, which flushes accumulated text.
     recognitionRef.current?.stop()
     setIsListening(false)
