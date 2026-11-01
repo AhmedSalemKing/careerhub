@@ -245,6 +245,8 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           return null
         }
       }
+      // Log actual rate — mismatch means the browser resamples from PCM_SAMPLE_RATE
+      console.log(`[TTS] ctx created sampleRate=${audioCtxRef.current.sampleRate} pcmRate=${PCM_SAMPLE_RATE} match=${audioCtxRef.current.sampleRate === PCM_SAMPLE_RATE}`)
     }
     if (audioCtxRef.current.state === 'suspended') {
       audioCtxRef.current.resume().catch(() => { /* ignore */ })
@@ -351,55 +353,12 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
       }
     }
 
-    // Accumulator for partial byte reads (handle chunk boundaries)
-    let remainder = new Uint8Array(0)
-
-    const processBytes = (incoming: Uint8Array) => {
-      if (!isActive()) return
-
-      // Concatenate with any leftover bytes from previous read
-      let bytes: Uint8Array
-      if (remainder.length > 0) {
-        bytes = new Uint8Array(remainder.length + incoming.length)
-        bytes.set(remainder)
-        bytes.set(incoming, remainder.length)
-        remainder = new Uint8Array(0)
-      } else {
-        bytes = incoming
-      }
-
-      // Keep at least PCM_MIN_BYTES per decode to avoid scheduling overhead
-      const PCM_MIN_BYTES = 1920  // 40ms @ 24kHz 16-bit mono
-
-      // Process complete chunks
-      let offset = 0
-      while (offset + PCM_MIN_BYTES <= bytes.length) {
-        const chunkSize = Math.min(PCM_MIN_BYTES * 4, bytes.length - offset)
-        const chunk = bytes.subarray(offset, offset + chunkSize)
-        try {
-          const audioBuf = decodeL16PCM(chunk, ctx)
-          scheduleBuffer(audioBuf)
-        } catch (e) {
-          console.error('[useStreamingTTS] decode error:', e)
-        }
-        offset += chunkSize
-      }
-
-      // Save leftover bytes (< PCM_MIN_BYTES)
-      if (offset < bytes.length) {
-        remainder = bytes.slice(offset)
-      }
-    }
-
-    const flushRemainder = () => {
-      if (remainder.length >= 2 && isActive()) {
-        try {
-          const audioBuf = decodeL16PCM(remainder, ctx)
-          scheduleBuffer(audioBuf)
-        } catch { /* ignore tiny leftover */ }
-        remainder = new Uint8Array(0)
-      }
-    }
+    // Collect all PCM bytes — decode as ONE buffer after stream ends.
+    // Gemini TTS delivers all audio in a single SSE event (chunks=1).
+    // Scheduling ~100 small AudioBufferSourceNodes caused micro-gaps and
+    // clicks at node boundaries. One buffer → one source → no artifacts.
+    const allChunks: Uint8Array[] = []
+    let totalPCMBytes = 0
 
     const t0 = performance.now()
     let firstChunkArrived = false
@@ -477,21 +436,39 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
               const ms = Math.round(performance.now() - t0)
               setFirstChunkMs(ms)
             }
-            processBytes(value)
+            allChunks.push(value)
+            totalPCMBytes += value.length
           }
         }
 
         if (isActive()) {
-          flushRemainder()
           const ms = Math.round(performance.now() - t0)
           setTotalMs(ms)
 
-          // If nothing was scheduled at all, activate fallback
-          if (!firstChunkArrived) {
+          if (totalPCMBytes >= 2) {
+            // Concatenate all network chunks into one contiguous buffer
+            const fullPCM = new Uint8Array(totalPCMBytes)
+            let off = 0
+            for (const c of allChunks) { fullPCM.set(c, off); off += c.length }
+            try {
+              const audioBuf = decodeL16PCM(fullPCM, ctx)
+              // Diagnostic: log amplitude range to detect endianness/silence issues
+              const ch = audioBuf.getChannelData(0)
+              let maxAmp = 0
+              for (let si = 0; si < ch.length; si++) { const a = Math.abs(ch[si]); if (a > maxAmp) maxAmp = a }
+              console.log(`[TTS] decoded bytes=${totalPCMBytes} samples=${audioBuf.length} dur=${audioBuf.duration.toFixed(2)}s maxAmp=${maxAmp.toFixed(3)} ctxRate=${ctx.sampleRate}`)
+              scheduleBuffer(audioBuf)
+            } catch (e) {
+              console.error('[useStreamingTTS] decode error:', e)
+              setLastError('bad_audio')
+              trySynthesisFallback(pendingTextRef.current, isActive)
+            }
+          } else {
+            // Stream produced no audio data
             setLastError('bad_audio')
             trySynthesisFallback(pendingTextRef.current, isActive)
           }
-          // isSpeaking will be cleared by the last source's onended
+          // isSpeaking will be cleared by the source's onended
         }
       } catch (err: unknown) {
         const e = err as { name?: string; message?: string }
