@@ -164,6 +164,7 @@ model User {
   walletTransactions   WalletTransaction[]
   coachingCredits      CoachingCredit[]
   instructorLectures   InstructorLecture[] @relation("InstructorLectures")
+  compassSessions      CompassSession[]
 
   @@index([email])
   @@index([role])
@@ -1407,6 +1408,224 @@ model WebhookEvent {
   processed   Boolean   @default(false)
   processedAt DateTime?
   createdAt   DateTime  @default(now())
+}
+
+// ─── Career Compass ────────────────────────────────────────────────────────────
+// Additive only. No existing models modified except User (relation field only).
+
+enum CompassDimension {
+  CONTEXT              // Stage 1: Personal & Academic Profile — not scored
+  INTERESTS
+  SKILLS
+  BEHAVIORAL_INDICATORS
+  MOTIVATION
+  WORK_PREFERENCES
+  MARKET_READINESS
+}
+
+enum CompassQuestionType {
+  SINGLE_CHOICE
+  MULTI_SELECT
+  RANKING
+  RATING_SCALE
+  SHORT_TEXT
+  SCENARIO
+  PRACTICAL_MINI
+}
+
+enum CompassSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  ABANDONED
+}
+
+enum CompassQuestionStatus {
+  PENDING
+  PRESENTED
+  ANSWERED
+  SKIPPED
+}
+
+model CompassVersion {
+  id          String    @id @default(cuid())
+  version     String    @unique
+  isActive    Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  stages      CompassStage[]
+  questions   CompassQuestion[]
+  sessions    CompassSession[]
+  @@index([isActive])
+  @@map("compass_versions")
+}
+
+model CompassStage {
+  id          String   @id @default(cuid())
+  versionId   String
+  stageNumber Int
+  titleAr     String
+  titleEn     String
+  version     CompassVersion   @relation(fields: [versionId], references: [id])
+  questions   CompassQuestion[]
+  @@unique([versionId, stageNumber])
+  @@map("compass_stages")
+}
+
+model CompassQuestion {
+  id               String              @id @default(cuid())
+  versionId        String
+  stageId          String
+  dimension        CompassDimension
+  type             CompassQuestionType
+  textAr           String
+  textEn           String
+  hintAr           String?
+  hintEn           String?
+  isBaseline       Boolean             @default(true)
+  order            Int
+  minAnswers       Int?
+  maxAnswers       Int?
+  maxFollowUpDepth Int                 @default(1)
+  version          CompassVersion      @relation(fields: [versionId], references: [id])
+  stage            CompassStage        @relation(fields: [stageId], references: [id])
+  options          CompassOption[]
+  triggersRules    CompassFollowUpRule[] @relation("TriggerQuestion")
+  asFollowUp       CompassFollowUpRule[] @relation("FollowUpQuestion")
+  answers          CompassAnswer[]
+  sessionQuestions CompassSessionQuestion[]
+  @@index([versionId])
+  @@index([dimension])
+  @@index([stageId, isBaseline])
+  @@map("compass_questions")
+}
+
+model CompassOption {
+  id            String   @id @default(cuid())
+  questionId    String
+  textAr        String
+  textEn        String
+  order         Int
+  question      CompassQuestion      @relation(fields: [questionId], references: [id])
+  followUpRules CompassFollowUpRule[]
+  @@map("compass_options")
+}
+
+model CompassFollowUpRule {
+  id                 String           @id @default(cuid())
+  triggerQuestionId  String
+  triggerOptionId    String?
+  triggerCondition   String?
+  followUpQuestionId String
+  dimension          CompassDimension
+  reasonAr           String
+  reasonEn           String
+  priority           Int              @default(0)
+  triggerQuestion    CompassQuestion  @relation("TriggerQuestion", fields: [triggerQuestionId], references: [id])
+  triggerOption      CompassOption?   @relation(fields: [triggerOptionId], references: [id])
+  followUpQuestion   CompassQuestion  @relation("FollowUpQuestion", fields: [followUpQuestionId], references: [id])
+  @@map("compass_follow_up_rules")
+}
+
+model CompassSession {
+  id              String               @id @default(cuid())
+  userId          String
+  versionId       String
+  status          CompassSessionStatus @default(IN_PROGRESS)
+  currentStage    Int                  @default(1)
+  startedAt       DateTime             @default(now())
+  completedAt     DateTime?
+  expiresAt       DateTime             @default(dbgenerated("(now() + interval '30 days')"))
+  user            User                 @relation(fields: [userId], references: [id])
+  version         CompassVersion       @relation(fields: [versionId], references: [id])
+  answers         CompassAnswer[]
+  sessionQuestions CompassSessionQuestion[]
+  dimensionEvidence CompassDimensionEvidence?
+  report          CompassReport?
+  @@index([userId, status])
+  @@index([userId, completedAt])
+  @@map("compass_sessions")
+}
+
+// Tracks every question presented per session: baseline + follow-ups.
+// Required for reliable resume, auditability, and answer-change recalculation.
+model CompassSessionQuestion {
+  id              String                @id @default(cuid())
+  sessionId       String
+  questionId      String
+  presentedOrder  Int
+  status          CompassQuestionStatus @default(PENDING)
+  branchingReason String?
+  followUpDepth   Int                   @default(0)
+  session         CompassSession  @relation(fields: [sessionId], references: [id])
+  question        CompassQuestion @relation(fields: [questionId], references: [id])
+  @@unique([sessionId, questionId])
+  @@index([sessionId, presentedOrder])
+  @@map("compass_session_questions")
+}
+
+model CompassAnswer {
+  id                String   @id @default(cuid())
+  sessionId         String
+  questionId        String
+  selectedOptionIds String[] @default([])
+  rankingOrder      Json?
+  textValue         String?
+  ratingValue       Int?
+  isFollowUp        Boolean  @default(false)
+  followUpDepth     Int      @default(0)
+  answeredAt        DateTime @default(now())
+  session           CompassSession  @relation(fields: [sessionId], references: [id])
+  question          CompassQuestion @relation(fields: [questionId], references: [id])
+  @@unique([sessionId, questionId])
+  @@index([sessionId])
+  @@map("compass_answers")
+}
+
+// Evidence-based findings. Numerical scores are null until CTO approves weights.
+model CompassDimensionEvidence {
+  id                   String  @id @default(cuid())
+  sessionId            String  @unique
+  // All scores nullable — null means "not yet computed with approved weights"
+  interests            Int?
+  skills               Int?
+  behavioralIndicators Int?
+  motivation           Int?
+  workPreferences      Int?
+  marketReadiness      Int?
+  careerFitScore       Int?    // always null — composite requires CTO-approved weights
+  confidence           Int?
+  scoringVersion       String?
+  // Structured evidence observations per dimension (no fabricated numbers)
+  evidenceFindings     Json    @default("{}")
+  // Self-reported vs practical discrepancies stored separately
+  skillDiscrepancies   Json    @default("[]")
+  session              CompassSession @relation(fields: [sessionId], references: [id])
+  @@map("compass_dimension_evidence")
+}
+
+// Provisional, unranked candidate paths. Ranking disabled until weights approved.
+model CompassReport {
+  id               String   @id @default(cuid())
+  sessionId        String   @unique
+  profileSummaryAr String?
+  profileSummaryEn String?
+  // Unranked provisional candidates — not a Top 3 ranking
+  candidatePaths   Json     @default("[]")
+  strengthsAr      Json     @default("[]")
+  strengthsEn      Json     @default("[]")
+  skillGapsAr      Json     @default("[]")
+  skillGapsEn      Json     @default("[]")
+  experienceGapsAr Json     @default("[]")
+  experienceGapsEn Json     @default("[]")
+  learningRoadmapAr Json    @default("{}")
+  learningRoadmapEn Json    @default("{}")
+  limitations      String?
+  aiNarrativeAr    String?
+  aiNarrativeEn    String?
+  generatedAt      DateTime @default(now())
+  session          CompassSession @relation(fields: [sessionId], references: [id])
+  @@map("compass_reports")
 }
 
 

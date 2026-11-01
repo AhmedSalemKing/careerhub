@@ -36,6 +36,7 @@ import { AuditModule } from './common/services/audit.module';
 import { CsrfModule } from './modules/csrf/csrf.module';
 import { QuizzesModule } from './modules/quizzes/quizzes.module';
 import { InstructorReportsModule } from './modules/instructor-reports/instructor-reports.module';
+import { CompassModule } from './modules/compass/compass.module';
 import { CurrencyInterceptor } from './common/interceptors/currency.interceptor';
 
 @Module({
@@ -115,6 +116,7 @@ import { CurrencyInterceptor } from './common/interceptors/currency.interceptor'
     CsrfModule,
     QuizzesModule,
     InstructorReportsModule,
+    CompassModule,
   ],
   controllers: [],
   providers: [

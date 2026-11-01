@@ -4,11 +4,16 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
 const AIInterviewPage = dynamic(() => import('./AIInterviewPage'), { ssr: false })
+const CompassFlow = dynamic(() => import('./compass/CompassFlow').then(m => ({ default: m.CompassFlow })), { ssr: false })
 
 function AssessmentContent() {
   const params = useSearchParams()
   const mode   = params.get('mode') ?? undefined
   const router = useRouter()
+
+  if (mode === 'compass') {
+    return <CompassFlow />
+  }
 
   if (mode === 'interview' || mode === 'quiz') {
     return <AIInterviewPage mode={mode} />
