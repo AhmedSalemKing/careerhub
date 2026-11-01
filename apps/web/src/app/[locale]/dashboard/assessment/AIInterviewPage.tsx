@@ -8,6 +8,7 @@ import type { CareerResult } from '@/components/ai/useAIChat'
 import { computeDiscoveryStage, type ChatMessage } from './career-signals'
 import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
+import { getToken } from '@/lib/auth'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -35,6 +36,53 @@ const QUIZ_START = `ابدأ الاختبار التفاعلي الآن. أنش�
 استخدم هذا الفورمات بالضبط:
 [QUIZ_Q]{"question":"...","choices":["أ) ...","ب) ...","ج) ...","د) ..."],"correct":0,"explanation":"..."}[/QUIZ_Q]
 ثم أضف جملة تشجيعية قصيرة قبل السؤال.`
+
+/* ── Quiz Assessment Types & Data ────────────────────────── */
+interface QuizResult {
+  summary: string
+  topCareers: {
+    name: string
+    nameEn: string
+    match: number
+    reason: string
+    strengths: string[]
+    skillsToLearn: string[]
+    nextStep: string
+  }[]
+  overallStrengths: string[]
+  mainBarrier: string
+  personalNote: string
+}
+
+const PHASES = [
+  { id: 'profiling',   label: 'فهم المستخدم' },
+  { id: 'interests',   label: 'الاهتمامات المهنية' },
+  { id: 'skills',      label: 'المهارات والقدرات' },
+  { id: 'behavioral',  label: 'السلوك المهني' },
+  { id: 'motivation',  label: 'الدوافع وبيئة العمل' },
+  { id: 'readiness',   label: 'الجاهزية المهنية' },
+]
+
+const ALL_QUESTIONS = [
+  { id: 'p1q1', phase: 'profiling', phaseLabel: 'فهم المستخدم', question: 'إيه أقرب وصف لمرحلتك المهنية حالياً؟', options: ['طالب', 'خريج جديد', 'موظف حالياً', 'بفكر أغير مجالي', 'صاحب مشروع'] },
+  { id: 'p1q2', phase: 'profiling', phaseLabel: 'فهم المستخدم', question: 'إيه هدفك الأساسي خلال الـ 12 شهر الجايين؟', options: ['أحصل على أول وظيفة', 'أغير مجالي المهني', 'أترقى في وظيفتي', 'أزيد دخلي', 'أكتسب مهارات جديدة'] },
+  { id: 'p1q3', phase: 'profiling', phaseLabel: 'فهم المستخدم', question: 'إيه نوع الخبرة اللي اكتسبتها لحد دلوقتي؟', options: ['دراسة أكاديمية فقط', 'تدريب أو internship', 'مشروعات شخصية', 'عمل فعلي بخبرة', 'لا توجد خبرة بعد'] },
+  { id: 'p2q1', phase: 'interests', phaseLabel: 'الاهتمامات المهنية', question: 'لو قدامك مشروع جديد، أنهي مهمة هتختار تبدأ بيها؟', options: ['تحليل البيانات واستخراج insights', 'ابتكار فكرة وتصميم الحل', 'تنظيم التنفيذ والخطة', 'التواصل مع العملاء وفهم احتياجاتهم', 'بناء المنتج تقنياً من الصفر'] },
+  { id: 'p2q2', phase: 'interests', phaseLabel: 'الاهتمامات المهنية', question: 'إيه أكتر نشاط بيخليك مندمج ومش حاسس بالوقت؟', options: ['البحث والتحليل العميق', 'التصميم والإبداع البصري', 'مساعدة الناس وحل مشاكلهم', 'حل المشكلات التقنية البرمجية', 'التخطيط وإدارة المشروعات'] },
+  { id: 'p2q3', phase: 'interests', phaseLabel: 'الاهتمامات المهنية', question: 'لو اتيحت لك فرصة تتعلم مهارة جديدة مجاناً، هتختار إيه؟', options: ['البرمجة وتطوير البرمجيات', 'تحليل البيانات والذكاء الاصطناعي', 'التصميم وتجربة المستخدم', 'التسويق الرقمي والمبيعات', 'إدارة المشروعات والمنتجات'] },
+  { id: 'p3q1', phase: 'skills', phaseLabel: 'المهارات والقدرات', question: 'لما تواجه مشكلة جديدة، غالباً بتبدأ إزاي؟', options: ['أجمع المعلومات وأحللها أولاً', 'أجرب حلول مختلفة بشكل عملي', 'أستشير أشخاص عندهم خبرة', 'أقسم المشكلة لخطوات صغيرة', 'أبحث عن حلول مشابهة على الإنترنت'] },
+  { id: 'p3q2', phase: 'skills', phaseLabel: 'المهارات والقدرات', question: 'إيه مدى راحتك مع الأرقام والبيانات والتحليل؟', options: ['بحب الأرقام وبتعامل معها بسهولة', 'مش بكره بس مش الأقوى عندي', 'بفضل الأعمال الإبداعية أو التواصلية', 'بعتمد على أدوات جاهزة', 'صعب عليا أوي'] },
+  { id: 'p3q3', phase: 'skills', phaseLabel: 'المهارات والقدرات', question: 'لما تحتاج تتعلم حاجة جديدة، إيه أسلوبك؟', options: ['أجرب وأتعلم من الأخطاء بنفسي', 'أشوف شرح على يوتيوب أو دورة', 'أتبع منهجاً منظماً خطوة بخطوة', 'أتعلم مع مدرب أو mentor', 'أقرأ وثائق وdocumentation'] },
+  { id: 'p4q1', phase: 'behavioral', phaseLabel: 'السلوك المهني', question: 'أنت مسؤول عن تسليم مشروع خلال يومين واكتشفت مشكلة ممكن تؤخر التسليم. أول إجراء تتخذه؟', options: ['أحلل سبب المشكلة وأحدد البدائل والوقت المطلوب', 'أبلغ الفريق وأقترح إعادة توزيع المهام', 'أبحث عن حل سريع وأختبره قبل ما أتصعيد', 'أتواصل فوراً مع المسؤول وأعرض عليه الخيارات'] },
+  { id: 'p4q2', phase: 'behavioral', phaseLabel: 'السلوك المهني', question: 'أثناء العمل الجماعي، اختلف زميلان على طريقة تنفيذ مهمة. كيف تتصرف؟', options: ['أساعدهما في مقارنة الحلول بناءً على النتائج المتوقعة', 'أستمع لكل طرف وأحاول الوصول لاتفاق', 'أقترح تجربة الحلين عملياً ونشوف النتيجة', 'أطلب تحديد معايير واضحة نبني عليها القرار'] },
+  { id: 'p4q3', phase: 'behavioral', phaseLabel: 'السلوك المهني', question: 'تم تكليفك بمهمة خارج نطاق خبرتك تماماً. كيف تتعامل معها؟', options: ['أبحث بنفسي عن كل المعلومات اللازمة', 'أطلب توجيهاً من شخص أكثر خبرة', 'أقسم المهمة لخطوات وأتعلم خلال التنفيذ', 'أوضح المهارات اللي محتاجها وأقترح خطة تنفيذ'] },
+  { id: 'p5q1', phase: 'motivation', phaseLabel: 'الدوافع وبيئة العمل', question: 'إيه أهم عامل بالنسبة لك في اختيار الوظيفة؟', options: ['الدخل والاستقرار المادي', 'الإبداع والابتكار', 'التعلم والنمو المستمر', 'التأثير الإيجابي وخدمة الآخرين', 'الاستقلالية والمرونة'] },
+  { id: 'p5q2', phase: 'motivation', phaseLabel: 'الدوافع وبيئة العمل', question: 'أي بيئة عمل بتساعدك تقدم أفضل أداء؟', options: ['فريق متعاون ومنظم', 'عمل مستقل بحرية كاملة', 'نظام وإجراءات واضحة', 'بيئة متغيرة بتحديات جديدة كل يوم'] },
+  { id: 'p5q3', phase: 'motivation', phaseLabel: 'الدوافع وبيئة العمل', question: 'لما تفكر في نجاحك المهني، إيه أول حاجة بتيجي في بالك؟', options: ['أصبح خبيراً معروفاً في مجالي', 'أقود فريقاً ناجحاً', 'أبني مشروعي الخاص', 'أحقق دخلاً ممتازاً ومستقراً', 'أُحدث تأثيراً إيجابياً في المجتمع'] },
+  { id: 'p6q1', phase: 'readiness', phaseLabel: 'الجاهزية المهنية', question: 'كم ساعة تقدر تخصص أسبوعياً لتطوير مهاراتك؟', options: ['أقل من 3 ساعات', 'من 3 إلى 5 ساعات', 'من 6 إلى 10 ساعات', 'أكثر من 10 ساعات'] },
+  { id: 'p6q2', phase: 'readiness', phaseLabel: 'الجاهزية المهنية', question: 'إيه مستوى لغتك الإنجليزية في التعامل مع مواد العمل؟', options: ['مبتدئ — بالكاد أفهم', 'متوسط — أفهم لكن صعب أكتب', 'جيد — أقرأ وأكتب بشكل مقبول', 'متقدم — مريح تماماً'] },
+  { id: 'p6q3', phase: 'readiness', phaseLabel: 'الجاهزية المهنية', question: 'ما أكبر عائق يواجهك حالياً في تطوير مسارك؟', options: ['ضيق الوقت', 'التكلفة المادية', 'مش عارف أبدأ منين', 'نقص المهارات الأساسية', 'قلة الفرص في محيطي'] },
+]
 
 /* ── Career Result Card ───────────────────────────────────── */
 function CareerResultCard({ result, onRestart }: { result: CareerResult; onRestart: () => void }) {
@@ -590,122 +638,255 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   )
 }
 
+/* ── Quiz Result Card ─────────────────────────────────────── */
+function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: () => void }) {
+  const router = useRouter()
+  const locale = useLocale()
+  return (
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', overflowY: 'auto', padding: '24px 16px 60px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontFamily: 'PingAR', fontWeight: 900, fontSize: 24, color: 'var(--foreground)' }}>تقرير مسارك المهني</div>
+          <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>من رشيد — مساعد DeveWay للتوجيه المهني</div>
+        </div>
+
+        <div style={{ padding: '16px 18px', borderRadius: 14, marginBottom: 20, background: 'color-mix(in srgb, var(--primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)' }}>
+          <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 13, color: 'var(--primary)', marginBottom: 6 }}>تحليل رشيد</div>
+          <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, color: 'var(--foreground)', lineHeight: 1.7 }}>{result.summary}</div>
+        </div>
+
+        {result.topCareers.map((career, i) => (
+          <div key={i} style={{ padding: '18px 20px', borderRadius: 14, marginBottom: 12, background: 'var(--card)', border: i === 0 ? '1.5px solid color-mix(in srgb, var(--primary) 40%, transparent)' : '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>{career.name}</div>
+                <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>{career.nameEn}</div>
+              </div>
+              <div style={{ fontFamily: 'PingAR', fontWeight: 900, fontSize: 22, color: i === 0 ? 'var(--primary)' : 'var(--foreground)' }}>{career.match}%</div>
+            </div>
+            <div style={{ height: 4, borderRadius: 2, background: 'color-mix(in srgb, var(--foreground) 10%, transparent)', marginBottom: 12 }}>
+              <div style={{ height: '100%', borderRadius: 2, background: 'var(--primary)', width: `${career.match}%`, transition: 'width 1s ease' }} />
+            </div>
+            <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)', marginBottom: 10, lineHeight: 1.6 }}>{career.reason}</div>
+            {career.nextStep && (
+              <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 10 }}>
+                خطوتك القادمة: <span style={{ fontWeight: 300, color: 'var(--foreground)' }}>{career.nextStep}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {career.skillsToLearn.map(s => (
+                <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'color-mix(in srgb, var(--foreground) 6%, transparent)', border: '1px solid var(--border)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>{s}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {result.personalNote && (
+          <div style={{ padding: '14px 18px', borderRadius: 12, marginBottom: 20, background: 'color-mix(in srgb, var(--foreground) 4%, transparent)', border: '1px solid var(--border)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)', lineHeight: 1.7 }}>
+            💬 {result.personalNote}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => router.push(`/${locale}/dashboard/career-path`)}
+            style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+          >
+            ابدأ مسارك مع DeveWay ←
+          </button>
+          <button
+            onClick={onRestart}
+            style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
+          >
+            إعادة
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Quiz Mode ────────────────────────────────────────────── */
 function QuizMode({ onEnd }: { onEnd: () => void }) {
-  const { messages, isLoading, careerResult, sendMessage, clearChat } = useAIChat()
-  const [currentQ, setCurrentQ] = useState<QuizQuestion | null>(null)
-  const [qIndex,   setQIndex]   = useState(0)
-  const [selected, setSelected] = useState<number | null>(null)
-  const [showExp,  setShowExp]  = useState(false)
-  const [started,  setStarted]  = useState(false)
-  const [score,    setScore]    = useState(0)
-  const TOTAL = 8
+  const [currentIndex,    setCurrentIndex]    = useState(0)
+  const [answers,         setAnswers]         = useState<Record<string, string>>({})
+  const [selectedOption,  setSelectedOption]  = useState<string | null>(null)
+  const [insight,         setInsight]         = useState('')
+  const [isLoadingInsight,setIsLoadingInsight]= useState(false)
+  const [isAnalyzing,     setIsAnalyzing]     = useState(false)
+  const [result,          setResult]          = useState<QuizResult | null>(null)
 
-  const parseQuiz = (text: string): QuizQuestion | null => {
-    const m = text.match(/\[QUIZ_Q\]([\s\S]*?)\[\/QUIZ_Q\]/)
-    if (!m) return null
-    try { return JSON.parse(m[1].trim()) } catch { return null }
+  const currentQuestion  = ALL_QUESTIONS[currentIndex]
+  const currentPhaseIdx  = PHASES.findIndex(p => p.id === currentQuestion.phase)
+
+  const callChat = async (prompt: string): Promise<string> => {
+    const token = getToken()
+    const res = await fetch('/api/ai/chat', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+    })
+    const data = await res.json() as { content?: string }
+    return data.content ?? ''
   }
 
-  useEffect(() => {
-    if (!started) { setStarted(true); sendMessage(QUIZ_START, false) }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const handleSelect = async (opt: string) => {
+    if (selectedOption) return
+    setSelectedOption(opt)
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: opt }))
 
-  useEffect(() => {
-    const last = [...messages].reverse().find(m => m.role === 'assistant')
-    if (!last) return
-    const q = parseQuiz(last.content)
-    if (q) { setCurrentQ(q); setSelected(null); setShowExp(false) }
-  }, [messages])
-
-  const handleSelect = (i: number) => {
-    if (selected !== null || !currentQ) return
-    setSelected(i)
-    setShowExp(true)
-    if (i === currentQ.correct) setScore(s => s + 1)
+    setIsLoadingInsight(true)
+    setInsight('')
+    try {
+      const text = await callChat(
+        `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.`
+      )
+      setInsight(text.trim())
+    } catch { /* insight failure is non-critical */ }
+    finally { setIsLoadingInsight(false) }
   }
 
-  const handleNext = () => {
-    const next = qIndex + 1
-    setQIndex(next)
-    setSelected(null)
-    setShowExp(false)
-    setCurrentQ(null)
-    if (next >= TOTAL) {
-      sendMessage(`لقد أجبت على ${TOTAL} أسئلة بنتيجة ${score}/${TOTAL}. الآن قدم توصية المسار المهني المخصصة باستخدام فورمات [CAREER_RESULT].`, false)
-    } else {
-      sendMessage(`أجبت. السؤال التالي رقم ${next + 1} من ${TOTAL}. استخدم فورمات [QUIZ_Q] بالضبط.`, false)
+  const handleNext = async () => {
+    const nextIndex = currentIndex + 1
+    if (nextIndex >= ALL_QUESTIONS.length) {
+      setIsAnalyzing(true)
+      const finalAnswers = { ...answers, [currentQuestion.id]: selectedOption ?? '' }
+      const answersText  = ALL_QUESTIONS.map(q =>
+        `[${q.phaseLabel}] ${q.question}\nإجابته: ${finalAnswers[q.id] || 'لم يجب'}`
+      ).join('\n\n')
+
+      try {
+        const text = await callChat(
+`أنت رشيد، خبير توجيه مهني متخصص في DeveWay.
+المستخدم أكمل تقييم مهني شامل من 18 سؤال في 6 محاور.
+
+إجاباته الكاملة:
+${answersText}
+
+بناءً على التحليل الشامل لكل إجاباته مع بعض (مش كل سؤال على حدة):
+- لاحظ أي تناقضات أو أنماط مثيرة للاهتمام
+- حلل شخصيته المهنية بشكل حقيقي
+- حدد أقوى 3 مسارات مهنية مناسبة له من المسارات التالية:
+  Data Analyst, Frontend Developer, Backend Developer, Full Stack Developer,
+  UI/UX Designer, Product Manager, Data Scientist, Business Analyst,
+  DevOps Engineer, Digital Marketing, Cybersecurity, Mobile Developer
+
+أجب بهذا الفورمات بالضبط (JSON):
+[QUIZ_RESULT]
+{
+  "summary": "تحليل شخصي مخصص له في 2-3 جمل بالعربية يعكس إجاباته فعلاً",
+  "topCareers": [
+    {
+      "name": "اسم المسار بالعربي",
+      "nameEn": "Career Name in English",
+      "match": 87,
+      "reason": "ليه هو المناسب بالتحديد بناءً على إجاباته — جملة أو اثنتين",
+      "strengths": ["نقطة قوة 1", "نقطة قوة 2"],
+      "skillsToLearn": ["مهارة 1", "مهارة 2", "مهارة 3"],
+      "nextStep": "خطوة عملية محددة يبدأ بيها خلال 90 يوم"
     }
+  ],
+  "overallStrengths": ["قوة عامة 1", "قوة عامة 2"],
+  "mainBarrier": "العائق الرئيسي اللي لاحظته من إجاباته وكيف يتغلب عليه",
+  "personalNote": "ملاحظة شخصية من رشيد تشجيعية ومحددة ليه"
+}
+[/QUIZ_RESULT]`
+        )
+        const m = text.match(/\[QUIZ_RESULT\]([\s\S]*?)\[\/QUIZ_RESULT\]/)
+        if (m) setResult(JSON.parse(m[1].trim()) as QuizResult)
+      } catch { /* show error state handled below */ }
+      finally { setIsAnalyzing(false) }
+      return
+    }
+
+    setCurrentIndex(nextIndex)
+    setSelectedOption(null)
+    setInsight('')
   }
 
-  if (careerResult) {
-    return <CareerResultCard result={careerResult} onRestart={() => { clearChat(); setStarted(false); setQIndex(0); setScore(0) }} />
+  if (result) {
+    return (
+      <QuizResultCard
+        result={result}
+        onRestart={() => { setCurrentIndex(0); setAnswers({}); setSelectedOption(null); setInsight(''); setResult(null) }}
+      />
+    )
   }
 
-  const pct = Math.round((qIndex / TOTAL) * 100)
+  if (isAnalyzing) {
+    return (
+      <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes _pulse{0%,100%{transform:scale(1);opacity:0.85}50%{transform:scale(1.12);opacity:1}}`}</style>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--primary)', margin: '0 auto 20px', animation: '_pulse 1.5s ease infinite', opacity: 0.85 }} />
+        <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)', marginBottom: 8 }}>رشيد بيحلل إجاباتك...</div>
+        <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--muted-foreground)' }}>بيدرس الأنماط ويجهز تقريرك المخصص</div>
+      </div>
+    )
+  }
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px' }}>
-      <div style={{ width: '100%', maxWidth: 640, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)' }}>
+      <div style={{ padding: '16px 20px' }}>
         <button onClick={onEnd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'PingAR', fontWeight: 300 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
           خروج
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)' }}>السؤال {Math.min(qIndex + 1, TOTAL)} من {TOTAL}</span>
-          <span style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 900, color: 'var(--primary)' }}>{score} صح</span>
+      </div>
+
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '0 16px 60px' }}>
+        {/* Phase progress */}
+        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+          {PHASES.map((ph, i) => (
+            <div key={ph.id} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= currentPhaseIdx ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)', transition: 'background 0.3s' }} />
+          ))}
         </div>
-      </div>
 
-      <div style={{ width: '100%', maxWidth: 640, height: 6, background: 'var(--border)', borderRadius: 3, marginBottom: 32, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: 3, transition: 'width .4s ease' }} />
-      </div>
+        <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 8 }}>
+          {currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3
+        </div>
 
-      <div style={{ width: '100%', maxWidth: 640 }}>
-        {isLoading && !currentQ ? (
-          <div style={{ textAlign: 'center', padding: 60, fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>
-            يتم توليد السؤال...
+        <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 18, color: 'var(--foreground)', lineHeight: 1.6, marginBottom: 24 }}>
+          {currentQuestion.question}
+        </div>
+
+        {currentQuestion.options.map((opt, i) => (
+          <div
+            key={i}
+            onClick={() => !selectedOption && handleSelect(opt)}
+            style={{
+              padding: '14px 18px', borderRadius: 12, marginBottom: 10,
+              border:      selectedOption === opt ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+              background:  selectedOption === opt ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'var(--card)',
+              cursor:      selectedOption ? 'default' : 'pointer',
+              fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, color: 'var(--foreground)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {opt}
           </div>
-        ) : currentQ ? (
-          <>
-            <div style={{ textAlign: 'center', marginBottom: 32 }}>
-              <div style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--primary)', marginBottom: 10, letterSpacing: '.08em' }}>سؤال {qIndex + 1}</div>
-              <h2 style={{ fontSize: 20, fontFamily: 'PingAR', fontWeight: 900, lineHeight: 1.5, margin: 0, color: 'var(--foreground)' }}>{currentQ.question}</h2>
-            </div>
+        ))}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-              {currentQ.choices.map((c, i) => {
-                const isCorrect  = i === currentQ.correct
-                const isSelected = i === selected
-                let bg = 'var(--card)', border = 'var(--border)', color = 'var(--foreground)'
-                if (selected !== null) {
-                  if (isCorrect)       { bg = 'color-mix(in srgb, var(--success, #22c55e) 12%, transparent)'; border = 'var(--success, #22c55e)'; color = 'var(--success, #22c55e)' }
-                  else if (isSelected) { bg = 'color-mix(in srgb, var(--error, #ef4444) 12%, transparent)'; border = 'var(--error, #ef4444)'; color = 'var(--error, #ef4444)' }
-                }
-                return (
-                  <button key={i} onClick={() => handleSelect(i)} disabled={selected !== null}
-                    style={{ padding: '14px 18px', borderRadius: 12, border: `1.5px solid ${border}`, background: bg, color, textAlign: 'right', cursor: selected !== null ? 'default' : 'pointer', fontSize: 14, fontFamily: 'PingAR', fontWeight: isSelected || (selected !== null && isCorrect) ? 500 : 300, transition: 'all .2s', direction: 'rtl' }}>
-                    {c}
-                  </button>
-                )
-              })}
-            </div>
+        {isLoadingInsight && (
+          <div style={{ marginTop: 16, display: 'flex', gap: 6, alignItems: 'center', padding: '10px 14px', borderRadius: 12, background: 'color-mix(in srgb, var(--foreground) 4%, transparent)', border: '1px solid var(--border)' }}>
+            <style>{`@keyframes _dot{from{transform:translateY(0)}to{transform:translateY(-5px)}}`}</style>
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block', animation: `_dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
+          </div>
+        )}
 
-            {showExp && (
-              <div style={{ background: 'color-mix(in srgb, var(--primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', borderRadius: 12, padding: '14px 18px', marginBottom: 20, fontSize: 13, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--foreground)', lineHeight: 1.6 }}>
-                <span style={{ fontWeight: 500, color: 'var(--primary)' }}>التفسير: </span>
-                {currentQ.explanation}
-              </div>
-            )}
+        {insight && !isLoadingInsight && (
+          <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'color-mix(in srgb, var(--primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 12, color: 'var(--primary)', flexShrink: 0 }}>رشيد</div>
+            <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)' }}>{insight}</div>
+          </div>
+        )}
 
-            {selected !== null && (
-              <button onClick={handleNext} style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>
-                {qIndex + 1 >= TOTAL ? 'عرض النتيجة' : 'السؤال التالي'}
-              </button>
-            )}
-          </>
-        ) : (
-          <div style={{ textAlign: 'center', padding: 60, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>جاري التحليل...</div>
+        {selectedOption && !isLoadingInsight && (
+          <button
+            onClick={handleNext}
+            style={{ width: '100%', marginTop: 16, padding: '13px 0', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
+          >
+            {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
+          </button>
         )}
       </div>
     </div>
