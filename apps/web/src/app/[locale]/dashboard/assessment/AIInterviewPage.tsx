@@ -285,7 +285,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
             setMicError('not-allowed')
             setHandsFreePaused(true)   // stop auto-restart after permission denial or start failure
           }
-        }
+        },
+        { autoSubmit: true },        // hands-free: silence ends the answer
       )
     }, 400)
 
@@ -314,7 +315,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     stopSpeaking()
     startListening(
       text => sendMessage(text, true, memoryContextRef.current),
-      err  => { if (err === 'not-allowed') setMicError('not-allowed') }
+      err  => { if (err === 'not-allowed') setMicError('not-allowed') },
+      { autoSubmit: false },       // push-to-talk: only stop submits, no mid-thought send
     )
   }, [handsFreeEnabled, handleHandsFreeToggle, isListening, stopListening, micState, isLoading, stopSpeaking, startListening, sendMessage, unlockAutoplay])
 

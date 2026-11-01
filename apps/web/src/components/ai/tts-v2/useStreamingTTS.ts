@@ -15,15 +15,16 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { classifyTtsHttpFailure, classifyTtsFetchFailure } from './tts-error-policy'
+import type { TtsFailureKind } from './tts-error-policy'
+import { createRequestGuard, evaluateWatchdog, hasBrowserSynthesis } from './tts-playback'
 
-export type StreamingTTSError =
-  | 'quota_exceeded'   // 429 — caller should inform user
-  | 'no_key'           // 503 — server misconfiguration
-  | 'timeout'          // server timeout
-  | 'network_error'    // client-side fetch failure
-  | 'audio_context'    // AudioContext unavailable (e.g., before user gesture)
-  | 'bad_audio'        // stream returned no PCM data
-  | null
+/**
+ * Failure surface of this hook. Recoverable provider problems may be spoken by
+ * browser speechSynthesis; session/request problems are surfaced instead
+ * (see tts-error-policy.ts).
+ */
+export type StreamingTTSError = TtsFailureKind | null
 
 export interface UseStreamingTTSReturn {
   isSpeaking:    boolean
@@ -58,8 +59,10 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
   const [totalMs,       setTotalMs]       = useState<number | null>(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
 
-  // Monotonic request ID — every async continuation checks isActive()
-  const reqIdRef = useRef(0)
+  // Monotonic request guard — every async continuation checks isActive(id).
+  // Cancelling or starting a newer request invalidates older continuations, so
+  // a late response can never start audio after the user cancelled it.
+  const reqGuardRef = useRef(createRequestGuard())
 
   // AudioContext — created lazily on user interaction
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -75,16 +78,74 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
 
   // Browser speechSynthesis fallback — active utterance for cancellation
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
+  // When the fallback utterance was started (watchdog grace period)
+  const synthStartedAtRef = useRef(0)
   // Pending text for the fallback — set before the async fetch so fallback can use it
   const pendingTextRef = useRef<string>('')
 
+  // Speaking-state watchdog: guarantees `isSpeaking` cannot stay stuck when the
+  // browser never fires `onended` / `onend` (suspended AudioContext, background
+  // tab, muted synthesis). It never cuts audio that is actually playing.
+  const watchdogRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const streamSettledRef = useRef(true)
+  const requestStartedAtRef = useRef(0)
+
+  const disarmWatchdog = useCallback(() => {
+    if (watchdogRef.current !== null) {
+      clearInterval(watchdogRef.current)
+      watchdogRef.current = null
+    }
+  }, [])
+
+  const armWatchdog = useCallback(() => {
+    if (watchdogRef.current !== null) return
+    watchdogRef.current = setInterval(() => {
+      const synth = synthRef.current
+      const s = typeof window !== 'undefined' && hasBrowserSynthesis(window)
+        ? window.speechSynthesis
+        : null
+
+      // Pure decision (unit-tested in tts-playback.ts). It only returns
+      // 'finish' when no source is alive, so playing audio is never cut.
+      const action = evaluateWatchdog({
+        synthesisActive: synth !== null,
+        synthSpeaking:  s ? s.speaking : false,
+        synthPending:   s ? s.pending  : false,
+        synthElapsedMs: Date.now() - synthStartedAtRef.current,
+        streamSettled:  streamSettledRef.current,
+        requestElapsedMs: Date.now() - requestStartedAtRef.current,
+        liveSources: sourcesRef.current.length,
+        contextState: audioCtxRef.current ? audioCtxRef.current.state : null,
+      })
+
+      if (action === 'keep') return
+      if (action === 'resume-and-keep') {
+        // A suspended context is the classic "scheduled but silent" state.
+        audioCtxRef.current?.resume().catch(() => { /* ignore */ })
+        return
+      }
+      if (action === 'abort-stalled') {
+        try { abortRef.current?.abort() } catch { /* ignore */ }
+        streamSettledRef.current = true
+      }
+      // 'finish' or 'abort-stalled': the speaking flag is stale.
+      synthRef.current = null
+      setIsSpeaking(false)
+      disarmWatchdog()
+    }, 1_000)
+  }, [disarmWatchdog])
+
   /* ── Browser speechSynthesis fallback ───────────────────── */
-  // Activated only when primary TTS fails (non-abort errors or no audio produced).
-  // Handles unavailable synthesis gracefully — wrapped in try/catch throughout.
-  const trySynthesisFallback = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+  // Activated only for recoverable failures (quota / timeout / 5xx / network).
+  // `guard` makes sure a cancelled or superseded request never starts talking.
+  const trySynthesisFallback = useCallback((text: string, guard?: () => boolean) => {
+    if (guard && !guard()) return
+    // From here on the HTTP stream is not the active audio source.
+    streamSettledRef.current = true
+    if (typeof window === 'undefined' || !hasBrowserSynthesis(window)) {
       // Can't fall back — clear the speaking state so the interview doesn't stall.
       setIsSpeaking(false)
+      disarmWatchdog()
       return
     }
     try {
@@ -93,6 +154,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
       utter.lang = 'ar-EG'
       utter.rate = 0.9
       synthRef.current = utter
+      synthStartedAtRef.current = Date.now()
       utter.onend = () => {
         if (synthRef.current === utter) {
           synthRef.current = null
@@ -106,35 +168,38 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
         }
       }
       setIsSpeaking(true)
+      armWatchdog()
       window.speechSynthesis.speak(utter)
     } catch {
       // speechSynthesis broken in this browser — stay silent
+      synthRef.current = null
       setIsSpeaking(false)
     }
-  }, [])
+  }, [armWatchdog, disarmWatchdog])
 
   const cancelSynthesis = useCallback(() => {
     synthRef.current = null
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    if (typeof window !== 'undefined' && hasBrowserSynthesis(window)) {
       try { window.speechSynthesis.cancel() } catch { /* ignore */ }
     }
   }, [])
 
   /* ── Unmount cleanup ──────────────────────────────────────── */
   useEffect(() => {
-    const reqRef     = reqIdRef
+    const guardRef   = reqGuardRef
     const srcRef     = sourcesRef
     const abortCtRef = abortRef
     const audioRef   = audioCtxRef
     const synRef     = synthRef
     return () => {
-      ++reqRef.current
+      guardRef.current.cancel()
       srcRef.current.forEach(s => { try { s.stop() } catch { /* ignore */ } })
       srcRef.current = []
       if (abortCtRef.current) { try { abortCtRef.current.abort() } catch { /* ignore */ } }
       if (audioRef.current) { try { audioRef.current.close() } catch { /* ignore */ } }
       synRef.current = null
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (watchdogRef.current !== null) { clearInterval(watchdogRef.current); watchdogRef.current = null }
+      if (typeof window !== 'undefined' && hasBrowserSynthesis(window)) {
         try { window.speechSynthesis.cancel() } catch { /* ignore */ }
       }
     }
@@ -191,22 +256,25 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
 
   /* ── Stop speaking ───────────────────────────────────────── */
   const stopSpeaking = useCallback(() => {
-    ++reqIdRef.current
+    // Invalidate every in-flight continuation first: a response that arrives
+    // after this point must not start audio.
+    reqGuardRef.current.cancel()
     cancelAll()
     cancelSynthesis()
+    disarmWatchdog()
     setIsSpeaking(false)
-  }, [cancelAll, cancelSynthesis])
+  }, [cancelAll, cancelSynthesis, disarmWatchdog])
 
   /* ── Speak ───────────────────────────────────────────────── */
   const speak = useCallback((text: string, gender: 'female' | 'male' = 'female') => {
     if (typeof window === 'undefined') return
 
     // Cancel prior request (primary + fallback synthesis)
+    disarmWatchdog()
     cancelAll()
     cancelSynthesis()
-    ++reqIdRef.current
-    const reqId    = reqIdRef.current
-    const isActive = () => reqIdRef.current === reqId
+    const reqId    = reqGuardRef.current.begin()
+    const isActive = () => reqGuardRef.current.isActive(reqId)
 
     // Store text so the fallback can access it from async continuations
     pendingTextRef.current = text
@@ -214,7 +282,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
     const ctx = getAudioContext()
     if (!ctx) {
       setLastError('audio_context')
-      trySynthesisFallback(text)
+      trySynthesisFallback(text, isActive)
       return
     }
 
@@ -222,6 +290,9 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
     setLastError(null)
     setFirstChunkMs(null)
     setTotalMs(null)
+    streamSettledRef.current = false
+    requestStartedAtRef.current = Date.now()
+    armWatchdog()
 
     const abortCtrl = new AbortController()
     abortRef.current = abortCtrl
@@ -250,6 +321,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
         // If no more sources and stream is done → clear speaking state
         if (sourcesRef.current.length === 0 && isActive()) {
           setIsSpeaking(false)
+          disarmWatchdog()
         }
       }
     }
@@ -320,18 +392,33 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
         if (!isActive()) return
 
         if (!res.ok) {
-          // Parse error JSON
-          let errLabel: StreamingTTSError = 'network_error'
+          // Classify before deciding: session/request errors must not be hidden
+          // behind a browser voice (see tts-error-policy.ts).
+          let bodyError: string | null = null
+          let bodyWasJson = true
           try {
-            const errBody = await res.json() as { error?: string }
-            if (errBody.error === 'quota_exceeded') errLabel = 'quota_exceeded'
-            else if (errBody.error === 'no_key')    errLabel = 'no_key'
-            else if (errBody.error === 'timeout')   errLabel = 'timeout'
-          } catch { /* ignore */ }
-          if (isActive()) {
-            setLastError(errLabel)
-            // Activate synthesis fallback — TTS failure must not silence the response
-            trySynthesisFallback(pendingTextRef.current)
+            const errBody = await res.json() as { error?: unknown }
+            bodyError = typeof errBody?.error === 'string' ? errBody.error : null
+          } catch {
+            bodyWasJson = false
+          }
+          const failure = classifyTtsHttpFailure(
+            res.status,
+            bodyWasJson ? bodyError : 'invalid_json',
+          )
+          console.error(
+            `[useStreamingTTS] tts_failed http=${res.status} kind=${failure.kind} fallback=${failure.allowBrowserFallback}${bodyError ? ` body=${bodyError}` : ''}`,
+          )
+          if (!isActive()) return
+          setLastError(failure.kind)
+          if (failure.allowBrowserFallback) {
+            // Recoverable: let the browser read the answer instead.
+            trySynthesisFallback(pendingTextRef.current, isActive)
+          } else {
+            // Not recoverable: keep the text on screen, stop the speaking state.
+            setIsSpeaking(false)
+            streamSettledRef.current = true
+            disarmWatchdog()
           }
           return
         }
@@ -344,7 +431,7 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
         if (!ct.startsWith('audio/l16') && !ct.startsWith('audio/L16')) {
           if (isActive()) {
             setLastError('bad_audio')
-            trySynthesisFallback(pendingTextRef.current)
+            trySynthesisFallback(pendingTextRef.current, isActive)
           }
           return
         }
@@ -373,29 +460,31 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
           // If nothing was scheduled at all, activate fallback
           if (!firstChunkArrived) {
             setLastError('bad_audio')
-            trySynthesisFallback(pendingTextRef.current)
+            trySynthesisFallback(pendingTextRef.current, isActive)
           }
           // isSpeaking will be cleared by the last source's onended
         }
       } catch (err: unknown) {
         const e = err as { name?: string; message?: string }
         if (isActive()) {
-          if (e?.name !== 'AbortError') {
-            console.error('[useStreamingTTS] fetch error:', e?.message)
-            setLastError('network_error')
-            // Non-abort failure: activate synthesis fallback
-            trySynthesisFallback(pendingTextRef.current)
+          const failure = classifyTtsFetchFailure(e?.name)
+          if (failure.allowBrowserFallback) {
+            console.error(`[useStreamingTTS] fetch error: ${e?.message} (kind=${failure.kind})`)
+            setLastError(failure.kind)
+            // Transient failure: activate synthesis fallback
+            trySynthesisFallback(pendingTextRef.current, isActive)
           } else {
             // User-initiated abort: no fallback, just stop
             setIsSpeaking(false)
           }
         }
       } finally {
+        streamSettledRef.current = true
         if (abortRef.current === abortCtrl) abortRef.current = null
         void streamDone  // suppress unused warning
       }
     })()
-  }, [getAudioContext, cancelAll, cancelSynthesis, trySynthesisFallback])
+  }, [disarmWatchdog, armWatchdog, getAudioContext, cancelAll, cancelSynthesis, trySynthesisFallback])
 
   return {
     isSpeaking, lastError, firstChunkMs, totalMs,

@@ -1,341 +1,424 @@
 /**
- * Focused regression tests for voice-input continuity (STT) and TTS resilience.
+ * Voice regression tests.
  *
- * STT tests:  replicate the startListening closure logic in a pure, React-free
- *             simulation so the timer and restart behaviour can be verified
- *             deterministically with jest.useFakeTimers().
+ * STT half: imports the REAL controller (`components/ai/stt-controller`) — the
+ * exact module `useAIChat` delegates to. No logic is copied into this file, so
+ * these tests fail if the production lifecycle regresses. Time is driven by
+ * jest fake timers and the recognizer by a fake SpeechRecognition object.
  *
- * TTS tests:  test the /api/ai/tts-v2 route with mocked fetch responses.
+ * TTS half: drives the real /api/ai/tts-v2 route with mocked fetch.
+ *
+ * Scope: these prove lifecycle/decision logic. Real Chrome behaviour (the real
+ * `ar-EG` session length, a real microphone, real speechSynthesis voices) can
+ * only be verified manually — restarting Web Speech API never guarantees
+ * gap-free capture, and this suite does not claim otherwise.
  *
  * Run: cd apps/web && npx jest src/app/api/ai/__tests__/voice.test.ts
  */
+import {
+  createSttController,
+  mergeSttSegment,
+  normalizeSttText,
+  DEFAULT_SILENCE_MS,
+} from '../../../../components/ai/stt-controller'
+import type {
+  SttRecognizer,
+  SttResultEvent,
+  SttCommitReason,
+} from '../../../../components/ai/stt-controller'
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STT simulation helpers
-// ─────────────────────────────────────────────────────────────────────────────
+//  ─────────────────────────────────────────────────────────────
+//  Fake SpeechRecognition (mirrors the browser surface we use)
+//  ─────────────────────────────────────────────────────────────
 
-const SILENCE_MS = 2500
-
-/** Minimal mock of the browser SpeechRecognition object. */
-class MockSR {
+class MockSR implements SttRecognizer {
+  lang           = ''
   continuous     = false
   interimResults = false
-  lang           = ''
 
-  onstart:  (() => void) | null  = null
-  onresult: ((e: unknown) => void) | null = null
-  onend:    (() => void) | null  = null
+  onstart:  (() => void) | null = null
+  onresult: ((e: SttResultEvent) => void) | null = null
+  onend:    (() => void) | null = null
   onerror:  ((e: { error?: string }) => void) | null = null
 
   startCalls = 0
   stopCalls  = 0
 
-  start() { this.startCalls++; this.onstart?.() }
-  stop()  { this.stopCalls++;  this.onend?.() }
+  constructor(private readonly failFirstStart: () => boolean = () => false) {}
 
-  /** Fire an onresult event with one final result. */
-  emitFinal(transcript: string, resultIndex = 0) {
-    this.onresult?.({
-      resultIndex,
-      results: {
-        length: resultIndex + 1,
-        [resultIndex]: { isFinal: true,  0: { transcript } },
-      },
-    })
+  start(): void {
+    this.startCalls += 1
+    if (this.startCalls === 1 && this.failFirstStart()) {
+      throw new Error('InvalidStateError: already started')
+    }
+    this.onstart?.()
   }
 
-  /** Fire an onresult event with one interim result. */
-  emitInterim(transcript: string, resultIndex = 0) {
-    this.onresult?.({
-      resultIndex,
-      results: {
-        length: resultIndex + 1,
-        [resultIndex]: { isFinal: false, 0: { transcript } },
-      },
-    })
+  stop(): void {
+    this.stopCalls += 1
+    this.onend?.()
   }
 
-  /** Simulate the browser ending the session unexpectedly (no stop() call). */
-  emitEndUnexpectedly() { this.onend?.() }
+  /** Emit a result event shaped like Chrome's SpeechRecognitionEvent. */
+  emit(items: Array<{ transcript: string; isFinal: boolean }>, resultIndex = 0): void {
+    const results = items.map(item =>
+      Object.assign([{ transcript: item.transcript }], { isFinal: item.isFinal }),
+    )
+    this.onresult?.({ resultIndex, results } as unknown as SttResultEvent)
+  }
 
-  emitError(code: string) { this.onerror?.({ error: code }); this.onend?.() }
+  emitEnd(): void { this.onend?.() }
+  emitError(error: string): void { this.onerror?.({ error }) }
 }
 
-/**
- * Replicates the startListening closure from useAIChat.ts without React.
- * Matches the production implementation exactly (same variable names, same logic).
- */
-function createSttSession(
-  onResult: (text: string) => void,
-  onError?: (code: string) => void,
-): { rec: MockSR; stop: () => void; getRestartCount: () => number } {
-  const rec = new MockSR()
-  rec.continuous = true
-  rec.interimResults = true
-
-  let accText        = ''
-  let restartCount   = 0
-  const MAX_RESTARTS = 20
-  let stopRequested  = false
-  let silenceTimer: ReturnType<typeof setTimeout> | null = null
-
-  const submit = () => {
-    const text = accText.trim()
-    if (!text) return
-    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
-    accText = ''
-    stopRequested = true
-    onResult(text)
-    try { rec.stop() } catch { /* ignore */ }
-  }
-
-  rec.onresult = (e: unknown) => {
-    const ev = e as {
-      resultIndex: number
-      results: { length: number; [i: number]: { isFinal: boolean; 0: { transcript: string } } }
-    }
-    let newFinal    = ''
-    let hasActivity = false
-    for (let i = ev.resultIndex; i < ev.results.length; i++) {
-      hasActivity = true
-      if (ev.results[i].isFinal) newFinal += (ev.results[i][0]?.transcript ?? '') + ' '
-    }
-    if (hasActivity) {
-      if (silenceTimer) clearTimeout(silenceTimer)
-      silenceTimer = setTimeout(submit, SILENCE_MS)
-    }
-    if (!newFinal.trim()) return
-    accText = (accText + ' ' + newFinal).trim()
-  }
-
-  rec.onend = () => {
-    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
-    if (!stopRequested && restartCount < MAX_RESTARTS) {
-      restartCount++
-      try { rec.start(); return } catch { /* fall through */ }
-    }
-    if (accText.trim()) {
-      const text = accText.trim()
-      accText = ''
-      onResult(text)
-    }
-  }
-
-  rec.onerror = (e: { error?: string }) => {
-    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null }
-    const isPermanent = ['not-allowed', 'audio-capture', 'service-not-allowed'].includes(e.error ?? '')
-    if (isPermanent) stopRequested = true
-    if (onError) onError(e.error ?? 'unknown')
-  }
-
-  rec.start()
-
-  return {
-    rec,
-    stop: () => { stopRequested = true; try { rec.stop() } catch { /* ignore */ } },
-    getRestartCount: () => restartCount,
-  }
+interface HarnessOptions {
+  autoSubmit?: boolean
+  maxRestarts?: number
+  silenceMs?: number
+  maxUtteranceMs?: number
+  /** 1-based recognizer instance numbers whose first start() throws. */
+  failStartOn?: number[]
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STT — timer + accumulation
-// ─────────────────────────────────────────────────────────────────────────────
+function harness(opts: HarnessOptions = {}) {
+  const instances: MockSR[] = []
+  const commits: Array<{ text: string; reason: SttCommitReason }> = []
+  const errors: string[] = []
+  const states: string[] = []
+  const partials: string[] = []
+  const exhausted: string[] = []
+  let created = 0
 
-describe('STT — transcript accumulation across multiple recognition events', () => {
+  const controller = createSttController({
+    recognizer: () => {
+      created += 1
+      const shouldFail = (opts.failStartOn ?? []).includes(created)
+      const instance = new MockSR(() => shouldFail)
+      instances.push(instance)
+      return instance
+    },
+    lang: 'ar-EG',
+    autoSubmit: opts.autoSubmit ?? true,
+    silenceMs: opts.silenceMs ?? DEFAULT_SILENCE_MS,
+    maxRestarts: opts.maxRestarts ?? 20,
+    maxUtteranceMs: opts.maxUtteranceMs ?? 180_000,
+    restartDelayMs: 300,
+    onCommit: (text, reason) => commits.push({ text, reason }),
+    onError: code => errors.push(code),
+    onStateChange: state => states.push(state),
+    onPartial: text => partials.push(text),
+    onRestartExhausted: text => exhausted.push(text),
+  })
+
+  const latest = () => instances[instances.length - 1]
+  return { controller, instances, latest, commits, errors, states, partials, exhausted }
+}
+
+describe('STT - unexpected onend', () => {
   beforeEach(() => jest.useFakeTimers())
-  afterEach(() => jest.useRealTimers())
+  afterEach(() => { jest.clearAllTimers(); jest.useRealTimers() })
 
-  test('1 — final results from multiple events accumulate into one submission', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
+  test('does not submit when recognition ends by itself, and restarts instead', () => {
+    const h = harness()
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أنا أبحث عن وظيفة في مجال البرمجة', isFinal: true }])
 
-    rec.emitFinal('أنا')
-    rec.emitFinal('بحب')
-    rec.emitFinal('البرمجة')
+    h.instances[0].emitEnd()                 // Chrome session limit, not the user
 
-    jest.advanceTimersByTime(SILENCE_MS)
-
-    expect(onResult).toHaveBeenCalledTimes(1)
-    expect(onResult).toHaveBeenCalledWith('أنا بحب البرمجة')
-  })
-
-  test('2 — submission only happens after SILENCE_MS of inactivity', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
-
-    rec.emitFinal('كلمة')
-    jest.advanceTimersByTime(SILENCE_MS - 100)
-    expect(onResult).not.toHaveBeenCalled()
-
-    jest.advanceTimersByTime(200)
-    expect(onResult).toHaveBeenCalledTimes(1)
-  })
-
-  test('3 — interim results reset the silence timer (no premature cut-off)', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
-
-    // First final result → timer starts
-    rec.emitFinal('مرحبا')
-
-    // 2 s later: interim result arrives — timer should reset
-    jest.advanceTimersByTime(2000)
-    rec.emitInterim('ازيك')    // no final yet
-
-    // 1.5 s later (only 1.5 s since last activity): should NOT have submitted yet
-    jest.advanceTimersByTime(1500)
-    expect(onResult).not.toHaveBeenCalled()
-
-    // Another 1.1 s → 2.6 s since last activity → silence fires
-    jest.advanceTimersByTime(1100)
-    expect(onResult).toHaveBeenCalledWith('مرحبا')  // interim text is not added (no final)
-  })
-
-  test('4 — 30-second speech split across many events submits complete text', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
-
-    // Simulate a sentence spoken over ~15 s, one word every 1.5 s (< SILENCE_MS=2500)
-    // Each word resets the silence timer before it can fire.
-    const words = ['أنا', 'مهتم', 'بتطوير', 'البرمجيات', 'وعندي', 'خبرة', 'سنتين', 'في', 'React', 'وNode']
-    words.forEach((word, i) => {
-      jest.advanceTimersByTime(1500)
-      rec.emitFinal(word, i)
-    })
-
-    // User finishes — silence timer fires
-    jest.advanceTimersByTime(SILENCE_MS)
-
-    expect(onResult).toHaveBeenCalledTimes(1)
-    const submitted = onResult.mock.calls[0][0] as string
-    expect(submitted).toContain('React')
-    expect(submitted).toContain('أنا')
-  })
-
-  test('5 — no stale timer fires after explicit stop', () => {
-    const onResult = jest.fn()
-    const { rec, stop } = createSttSession(onResult)
-
-    rec.emitFinal('نص')   // timer starts
-    stop()                // explicit stop: flushes 'نص' immediately via onend
-
-    jest.advanceTimersByTime(SILENCE_MS * 2)
-    // onResult called once (via onend flush), not twice
-    expect(onResult).toHaveBeenCalledTimes(1)
-    expect(onResult).toHaveBeenCalledWith('نص')
-  })
-
-  test('6 — no duplicate submission when both silence timer and onend would fire', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
-
-    rec.emitFinal('الموضوع')
-
-    // Timer fires: submits text, calls rec.stop() which fires onend again
-    jest.advanceTimersByTime(SILENCE_MS)
-
-    // onResult must be called exactly once (accText cleared by submit before stop())
-    expect(onResult).toHaveBeenCalledTimes(1)
+    expect(h.commits).toHaveLength(0)        // onend is NOT "answer finished"
+    jest.advanceTimersByTime(299)
+    expect(h.instances).toHaveLength(1)      // restart is not synchronous
+    jest.advanceTimersByTime(1)
+    expect(h.instances).toHaveLength(2)      // recovered on a fresh session
+    expect(h.commits).toHaveLength(0)
   })
 })
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  STT — restart behaviour
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('STT — restart on unexpected onend', () => {
+describe('STT - multiple recognizer sessions', () => {
   beforeEach(() => jest.useFakeTimers())
-  afterEach(() => jest.useRealTimers())
+  afterEach(() => { jest.clearAllTimers(); jest.useRealTimers() })
 
-  test('7 — recognition restarts when browser fires onend unexpectedly', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
+  test('keeps every final result across sessions and submits once on stop', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أنا حاصل على بكالوريوس هندسة', isFinal: true }])
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(300)
 
-    const initialStarts = rec.startCalls  // 1 from createSttSession
+    h.latest().emit([{ transcript: 'وأعمل منذ ثلاث سنوات', isFinal: true }])
+    h.controller.stop()
 
-    // Browser kills the session after ~5 s (Chrome behaviour on Arabic)
-    rec.emitEndUnexpectedly()
-
-    // startListening should have called rec.start() again
-    expect(rec.startCalls).toBe(initialStarts + 1)
-    expect(onResult).not.toHaveBeenCalled()   // no text accumulated yet
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0]).toEqual({
+      text: 'أنا حاصل على بكالوريوس هندسة وأعمل منذ ثلاث سنوات',
+      reason: 'manual',
+    })
   })
 
-  test('8 — transcript is preserved across a restart', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
+  test('keeps interim text when a session dies before the phrase is final', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أبحث عن فرصة عمل', isFinal: false }])
+    expect(h.controller.text).toBe('أبحث عن فرصة عمل')
 
-    // User speaks the first part of their answer
-    rec.emitFinal('أنا عندي خبرة')
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(300)
+    expect(h.controller.text).toBe('أبحث عن فرصة عمل')   // not dropped
 
-    // Browser kills session mid-speech (before silence timer fires)
-    rec.emitEndUnexpectedly()
+    h.latest().emit([{ transcript: 'أبحث عن فرصة عمل في القاهرة', isFinal: true }])
+    h.controller.stop()
 
-    // User continues after restart
-    rec.emitFinal('في البرمجة')
-
-    // Silence fires → complete text submitted
-    jest.advanceTimersByTime(SILENCE_MS)
-
-    expect(onResult).toHaveBeenCalledTimes(1)
-    expect(onResult.mock.calls[0][0]).toContain('أنا عندي خبرة')
-    expect(onResult.mock.calls[0][0]).toContain('في البرمجة')
-  })
-
-  test('9 — restart counter increments and stops at MAX_RESTARTS', () => {
-    const onResult = jest.fn()
-    const { rec, getRestartCount } = createSttSession(onResult)
-
-    // Simulate 20 unexpected browser ends in a row
-    for (let i = 0; i < 20; i++) {
-      rec.emitEndUnexpectedly()
-    }
-    expect(getRestartCount()).toBe(20)
-
-    // 21st unexpected end — restart limit reached; session finalizes
-    const startsBefore = rec.startCalls
-    rec.emitEndUnexpectedly()
-    expect(rec.startCalls).toBe(startsBefore)  // no more starts
-  })
-
-  test('10 — explicit stop does not trigger restart', () => {
-    const onResult = jest.fn()
-    const { rec, stop } = createSttSession(onResult)
-
-    const startsBefore = rec.startCalls
-
-    stop()   // explicit stop
-
-    // rec.stop() was called which fires onend, but stopRequested=true prevents restart
-    expect(rec.startCalls).toBe(startsBefore)  // no new start
-  })
-
-  test('11 — permanent onerror (not-allowed) prevents restart', () => {
-    const onError = jest.fn()
-    const { rec } = createSttSession(jest.fn(), onError)
-
-    const startsBefore = rec.startCalls
-
-    rec.emitError('not-allowed')   // emits onerror then onend
-
-    expect(onError).toHaveBeenCalledWith('not-allowed')
-    expect(rec.startCalls).toBe(startsBefore)   // stopRequested=true → no restart
-  })
-
-  test('12 — transient onerror (no-speech) allows future restart', () => {
-    const onResult = jest.fn()
-    const { rec } = createSttSession(onResult)
-
-    const startsBefore = rec.startCalls
-
-    // 'no-speech' is NOT a permanent error → restart allowed
-    rec.emitError('no-speech')
-
-    expect(rec.startCalls).toBe(startsBefore + 1)
+    expect(h.commits[0].text).toBe('أبحث عن فرصة عمل في القاهرة')
   })
 })
 
-// ─────────────────────────────────────────────────────────────────────────────
+describe('STT - interim/final merge and de-duplication', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => { jest.clearAllTimers(); jest.useRealTimers() })
+
+  test('shows interim text inside the final transcript without duplication', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أعمل في مجال', isFinal: true }])
+    h.instances[0].emit([{ transcript: 'تطوير البرمجيات', isFinal: false }])
+
+    expect(h.controller.text).toBe('أعمل في مجال تطوير البرمجيات')
+
+    h.instances[0].emit([{ transcript: 'تطوير البرمجيات', isFinal: true }])
+    expect(h.controller.text).toBe('أعمل في مجال تطوير البرمجيات')
+  })
+
+  test('does not repeat a phrase re-emitted after a restart', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'خبرة في تطوير الويب', isFinal: true }])
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(300)
+
+    // Chrome often re-delivers the tail of the previous phrase.
+    h.latest().emit([{ transcript: 'تطوير الويب منذ خمس سنوات', isFinal: true }])
+
+    expect(h.controller.text).toBe('خبرة في تطوير الويب منذ خمس سنوات')
+    expect(h.controller.text.match(/تطوير الويب/g)).toHaveLength(1)
+  })
+
+  test('handles a result event that repeats previous finals (resultIndex 0)', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أعمل في مجال تطوير', isFinal: true }])
+    h.instances[0].emit([
+      { transcript: 'أعمل في مجال تطوير', isFinal: true },
+      { transcript: 'البرمجيات منذ خمس سنوات', isFinal: true },
+    ])
+
+    expect(h.controller.text).toBe('أعمل في مجال تطوير البرمجيات منذ خمس سنوات')
+    expect(h.controller.text.match(/تطوير/g)).toHaveLength(1)
+  })
+
+  test('normalize/merge helpers collapse whitespace and overlaps', () => {
+    expect(normalizeSttText('  أهلاً   بك  ')).toBe('أهلاً بك')
+    expect(mergeSttSegment('', 'نص')).toBe('نص')
+    expect(mergeSttSegment('نفس النص', 'نفس النص')).toBe('نفس النص')
+    expect(mergeSttSegment('أعمل في', 'في القاهرة')).toBe('أعمل في القاهرة')
+    expect(mergeSttSegment('خبرة في تطوير الويب', 'تطوير الويب منذ 2020'))
+      .toBe('خبرة في تطوير الويب منذ 2020')
+  })
+})
+
+describe('STT - end-of-utterance policy', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => { jest.clearAllTimers(); jest.useRealTimers() })
+
+  test('a 4-second thinking pause does not submit (hands-free)', () => {
+    const h = harness({ autoSubmit: true })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أريد أن أعمل في مجال', isFinal: true }])
+    h.instances[0].emit([{ transcript: 'تطوير البرمجيات', isFinal: true }])
+
+    jest.advanceTimersByTime(4_000)
+    expect(h.commits).toHaveLength(0)        // user is thinking, not finished
+
+    // The user resumes; the countdown restarts.
+    h.instances[0].emit([{ transcript: 'ولدى خبرة في قيادة الفرق', isFinal: true }])
+    jest.advanceTimersByTime(DEFAULT_SILENCE_MS - 1)
+    expect(h.commits).toHaveLength(0)
+    jest.advanceTimersByTime(1)
+
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].reason).toBe('silence')
+    expect(h.commits[0].text).toBe(
+      'أريد أن أعمل في مجال تطوير البرمجيات ولدى خبرة في قيادة الفرق',
+    )
+  })
+
+  test('silence alone cannot commit while a phrase is still interim', () => {
+    const h = harness({ autoSubmit: true })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'خبرة طويلة في إدارة المشاريع', isFinal: true }])
+    h.instances[0].emit([{ transcript: 'والتسويق الرقمي', isFinal: false }])
+
+    jest.advanceTimersByTime(DEFAULT_SILENCE_MS * 3)
+    expect(h.commits).toHaveLength(0)
+  })
+
+  test('manual push-to-talk never submits on silence, only on stop', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'أعمل في مجال التسويق الرقمي', isFinal: true }])
+
+    jest.advanceTimersByTime(60_000)
+    expect(h.commits).toHaveLength(0)
+
+    h.controller.stop()
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].reason).toBe('manual')
+  })
+
+  test('an explicit stop submits immediately and blocks restart/duplicate sends', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'هذا جوابي الكامل', isFinal: true }])
+
+    h.controller.stop()
+    expect(h.commits).toHaveLength(1)
+
+    // A late browser event from the retired session must be ignored.
+    h.instances[0].emit([{ transcript: 'نص متأخر', isFinal: true }])
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(10_000)
+
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].text).toBe('هذا جوابي الكامل')
+    expect(h.instances).toHaveLength(1)
+  })
+
+  test('stop twice never produces two submissions', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'جواب واحد فقط', isFinal: true }])
+    h.controller.stop()
+    h.controller.stop()
+
+    expect(h.commits).toHaveLength(1)
+  })
+
+  test('stop before any speech sends nothing', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.controller.stop()
+    expect(h.commits).toHaveLength(0)
+  })
+
+  test('after a restart, a finished phrase can still end by silence', () => {
+    const h = harness({ autoSubmit: true })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'لدي خبرة في إدارة المشاريع', isFinal: true }])
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(300)
+
+    jest.advanceTimersByTime(DEFAULT_SILENCE_MS)
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].reason).toBe('silence')
+  })
+
+  test('max-duration ceiling releases the mic', () => {
+    const h = harness({ autoSubmit: false, maxUtteranceMs: 10_000 })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'جواب طويل جداً', isFinal: true }])
+    jest.advanceTimersByTime(10_000)
+
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].reason).toBe('max-duration')
+  })
+})
+
+describe('STT - failures and restart budget', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => { jest.clearAllTimers(); jest.useRealTimers() })
+
+  test('microphone denial stops for good and keeps the text', () => {
+    const h = harness({ autoSubmit: true })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'نص قبل رفض الإذن', isFinal: true }])
+    h.instances[0].emitError('not-allowed')
+
+    expect(h.errors).toEqual(['not-allowed'])
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(60_000)
+
+    expect(h.instances).toHaveLength(1)
+    expect(h.commits).toHaveLength(0)
+    expect(h.controller.listening).toBe(false)
+    expect(h.controller.text).toBe('نص قبل رفض الإذن')
+  })
+
+  test('stops restarting once the budget is exhausted and keeps the text', () => {
+    const h = harness({ maxRestarts: 3 })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'خبرة طويلة في إدارة المشاريع', isFinal: true }])
+
+    for (let i = 0; i < 3; i++) {
+      h.latest().emitEnd()
+      jest.advanceTimersByTime(300)
+    }
+    expect(h.instances).toHaveLength(4)
+
+    h.latest().emitEnd()                     // 4th unexpected end > budget
+    expect(h.exhausted).toEqual(['خبرة طويلة في إدارة المشاريع'])
+    expect(h.commits).toHaveLength(0)        // never sends an unfinished answer
+
+    jest.advanceTimersByTime(60_000)
+    expect(h.instances).toHaveLength(4)      // no unlimited restart storm
+  })
+
+  test('InvalidStateError on restart retries without dropping accumulated text', () => {
+    const h = harness({ failStartOn: [2] })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'خبرة في التسويق الرقمي', isFinal: true }])
+
+    h.instances[0].emitEnd()
+    jest.advanceTimersByTime(300)            // instance 2 throws on start()
+    expect(h.instances).toHaveLength(2)
+    expect(h.controller.text).toBe('خبرة في التسويق الرقمي')
+
+    jest.advanceTimersByTime(300)            // retried on instance 3
+    expect(h.instances).toHaveLength(3)
+
+    h.controller.stop()
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].text).toBe('خبرة في التسويق الرقمي')
+  })
+
+  test('cancel() tears down silently (clearChat / unmount)', () => {
+    const h = harness()
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'نص يجب ألا يُرسل', isFinal: true }])
+    h.controller.cancel()
+
+    expect(h.controller.disposed).toBe(true)
+    jest.advanceTimersByTime(60_000)
+    expect(h.commits).toHaveLength(0)
+    expect(h.instances).toHaveLength(1)
+  })
+
+  test('a stale session cannot affect a newer one', () => {
+    const h = harness({ autoSubmit: false })
+    h.controller.begin()
+    h.instances[0].emit([{ transcript: 'الجلسة الأولى', isFinal: true }])
+    h.controller.cancel()
+
+    h.controller.begin()
+    h.instances[1].emit([{ transcript: 'الجلسة الثانية', isFinal: true }])
+    h.instances[0].emit([{ transcript: 'متأخر من الجلسة الأولى', isFinal: true }])
+    h.instances[0].emitEnd()
+    h.controller.stop()
+
+    expect(h.commits).toHaveLength(1)
+    expect(h.commits[0].text).toBe('الجلسة الثانية')
+  })
+})
+
+//  ─────────────────────────────────────────────────────────────
 //  TTS — route with mocked fetch
 // ─────────────────────────────────────────────────────────────────────────────
 
