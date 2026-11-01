@@ -19,9 +19,6 @@ export interface ConversationMessage {
   content: string
 }
 
-// Backward-compatible alias used by local callers (route.test.ts, AIInterviewPage.tsx)
-export type ChatMessage = ConversationMessage
-
 /**
  * One regex per discovery dimension (0-4). Dimension 5 is reserved for the
  * final results payload and intentionally has no automatic signal.

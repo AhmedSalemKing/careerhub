@@ -1,8 +1,7 @@
 'use client'
 /**
- * PROTOTYPE hook — isolated from useAIChat.ts.
- * Uses /api/ai/tts-v2 (streaming PCM) instead of /api/ai/tts (unary WAV).
- * Web Audio API only — no browser SpeechSynthesis fallback by design.
+ * Streaming TTS hook.
+ * Uses /api/ai/tts-v2 (streaming PCM) with browser speechSynthesis as fallback.
  *
  * Playback model:
  *   AudioContext (sampleRate: 24000) → per-chunk AudioBufferSourceNode
@@ -12,6 +11,10 @@
  *   reqId (monotonic counter) — every async continuation checks isActive()
  *   Abort controller cancels the server-side stream
  *   stopSpeaking() stops all queued AudioBufferSourceNodes immediately
+ *
+ * Fallback model:
+ *   When Gemini TTS fails (quota, network) → browser speechSynthesis
+ *   When speechSynthesis unavailable → isSpeaking cleared, interview continues
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -75,15 +78,15 @@ export function useStreamingTTS(): UseStreamingTTSReturn {
 
   // Browser speechSynthesis fallback — active utterance for cancellation
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null)
-  // Pending text for the fallback — set before the async fetch so fallback can use it
+  // Pending text for the fallback — set before the async fetch so async continuations can use it
   const pendingTextRef = useRef<string>('')
 
   /* ── Browser speechSynthesis fallback ───────────────────── */
-  // Activated only when primary TTS fails (non-abort errors or no audio produced).
-  // Handles unavailable synthesis gracefully — wrapped in try/catch throughout.
+  // Activated when Gemini TTS fails with quota/network errors.
+  // When speechSynthesis is unavailable, clears isSpeaking so the interview continues.
   const trySynthesisFallback = useCallback((text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      // Can't fall back — clear the speaking state so the interview doesn't stall.
+      // No fallback available — clear speaking state so the interview doesn't stall.
       setIsSpeaking(false)
       return
     }
