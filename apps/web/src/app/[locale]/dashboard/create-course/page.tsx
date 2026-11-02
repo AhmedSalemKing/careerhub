@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
 import { formatMoney, getCountryClient } from '../../../../lib/market'
+import { getPathsForCategory } from '../../../../lib/career-path-mapping'
 
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
@@ -360,6 +361,7 @@ export default function CreateCoursePage() {
 
   async function handleSubmit() {
     if (!form.title.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
+    if (!form.categoryId) { setError(isAr ? 'يجب اختيار فئة الكورس' : 'Course category is required'); return }
     setSaving(true)
     setError('')
     try {
@@ -370,8 +372,7 @@ export default function CreateCoursePage() {
         price: parseFloat(form.price) || 0,
         level: form.level,
         status: form.status,
-        categoryId: form.categoryId || undefined,
-        careerPathId: form.careerPathId || undefined,
+        categoryId: form.categoryId,
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         type: form.type,
@@ -585,9 +586,12 @@ export default function CreateCoursePage() {
                 </div>
               </div>
 
-              {(categories as any[]).length > 0 && (
-                <div>
-                  <label className={labelCls}>{isAr ? 'الفئة' : 'Category'}</label>
+              <div>
+                <label className={labelCls}>
+                  {isAr ? 'الفئة' : 'Category'}
+                  <span style={{ color: 'var(--error, #ef4444)', marginInlineStart: 4 }}>*</span>
+                </label>
+                {(categories as any[]).length > 0 ? (
                   <SearchableSelect
                     options={(categories as any[]).filter((c: any) => !c.parentId).flatMap((mainCat: any) =>
                       (mainCat.children || []).map((sub: any) => ({
@@ -601,26 +605,23 @@ export default function CreateCoursePage() {
                     searchPlaceholder={isAr ? 'ابحث عن فئة...' : 'Search category...'}
                     isRtl={isAr}
                   />
-                </div>
-              )}
-
-              {(careerPaths as any[]).length > 0 && (
-                <div>
-                  <label className={labelCls}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
-                  <SearchableSelect
-                    options={(careerPaths as any[]).map((p: any) => ({
-                      value: p.id,
-                      label: isAr ? (p.titleAr || p.descriptionAr?.split('.')[0] || p.slug)
-                                   : (p.titleEn || p.descriptionEn?.split('.')[0] || p.slug),
-                    }))}
-                    value={form.careerPathId}
-                    onChange={val => set('careerPathId', val)}
-                    placeholder={isAr ? 'اختر مساراً مهنياً (اختياري)' : 'Select career path (optional)'}
-                    searchPlaceholder={isAr ? 'ابحث عن مسار...' : 'Search path...'}
-                    isRtl={isAr}
-                  />
-                </div>
-              )}
+                ) : (
+                  <div className="h-10 animate-pulse rounded-xl bg-[color:var(--surface-2)]" />
+                )}
+                {(() => {
+                  if (!form.categoryId) return null
+                  const allCats = (categories as any[]).flatMap((c: any) => [c, ...(c.children || [])])
+                  const selected = allCats.find((c: any) => c.id === form.categoryId)
+                  if (!selected) return null
+                  const detected = getPathsForCategory(selected.name || '')
+                  if (detected.length === 0) return null
+                  return (
+                    <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>
+                      {isAr ? `سيظهر في مسارات: ${detected.slice(0, 4).join('، ')}` : `Will appear in paths: ${detected.slice(0, 4).join(', ')}`}
+                    </p>
+                  )
+                })()}
+              </div>
 
               {/* Thumbnail */}
               <div>

@@ -1124,12 +1124,54 @@ export class AdminController {
   async runMigrations() {
     try {
       await this.prisma.$executeRaw`
-        ALTER TABLE consulting_sessions 
+        ALTER TABLE consulting_sessions
         ADD COLUMN IF NOT EXISTS price DOUBLE PRECISION NOT NULL DEFAULT 0
       `
       return { success: true, message: 'Migration applied' }
     } catch (e: any) {
       return { success: false, error: e.message }
     }
+  }
+
+  @Post('backfill-course-career-paths')
+  @ApiOperation({ summary: 'Backfill careerPaths[] on all courses from their category (one-time)' })
+  async backfillCourseCareerPaths() {
+    const { getPathsForCategory } = await import('../../common/career-path-mapping');
+    const courses = await this.prisma.course.findMany({
+      select: {
+        id: true,
+        titleAr: true,
+        titleEn: true,
+        careerPaths: true,
+        category: { select: { nameEn: true, nameAr: true } },
+      },
+    });
+
+    let updated = 0;
+    let skipped = 0;
+
+    for (const course of courses) {
+      const catText = [
+        course.category?.nameEn ?? '',
+        course.category?.nameAr ?? '',
+      ].filter(Boolean).join(' ').trim();
+
+      const slugs = getPathsForCategory(catText);
+      if (slugs.length > 0) {
+        await this.prisma.course.update({
+          where: { id: course.id },
+          data: { careerPaths: slugs },
+        });
+        updated++;
+      } else {
+        skipped++;
+      }
+    }
+
+    return {
+      success: true,
+      message: `Backfill complete`,
+      data: { total: courses.length, updated, skipped },
+    };
   }
 }

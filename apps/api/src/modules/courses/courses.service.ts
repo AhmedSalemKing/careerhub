@@ -12,6 +12,7 @@ import { ActivityService } from '../../common/services/activity.service';
 import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service';
 import { Course, CourseStatus, User } from '@prisma/client';
 import { parseClientDateTime } from '../../common/utils/client-datetime.util';
+import { getPathsForCategory } from '../../common/career-path-mapping';
 
 @Injectable()
 export class CoursesService {
@@ -70,7 +71,12 @@ export class CoursesService {
     }
 
     if (careerPath) {
-      andConditions.push({ careerPath: { slug: careerPath } });
+      andConditions.push({
+        OR: [
+          { careerPath: { slug: careerPath } },
+          { careerPaths: { has: careerPath } },
+        ],
+      });
     }
 
     if (level) {
@@ -1544,8 +1550,14 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
       if (dto.categoryId && dto.categoryId !== '') {
         const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
-        if (cat) courseData.categoryId = dto.categoryId;
-        else this.logger.warn(`[Courses] Category not found: ${dto.categoryId}, skipping`);
+        if (cat) {
+          courseData.categoryId = dto.categoryId;
+          const categoryText = `${cat.nameEn || ''} ${cat.nameAr || ''}`.trim();
+          const pathSlugs = getPathsForCategory(categoryText);
+          if (pathSlugs.length > 0) courseData.careerPaths = pathSlugs;
+        } else {
+          this.logger.warn(`[Courses] Category not found: ${dto.categoryId}, skipping`);
+        }
       }
 
       if (dto.sections?.length) {
@@ -1611,6 +1623,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       };
     }
 
+    let categoryUpdate: { categoryId?: string; careerPaths?: string[] } = {};
+    if (dto.categoryId && dto.categoryId !== '') {
+      const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
+      if (cat) {
+        categoryUpdate.categoryId = dto.categoryId;
+        const categoryText = `${cat.nameEn || ''} ${cat.nameAr || ''}`.trim();
+        const pathSlugs = getPathsForCategory(categoryText);
+        if (pathSlugs.length > 0) categoryUpdate.careerPaths = pathSlugs;
+      }
+    }
+
     const updated = await this.prisma.course.update({
       where: { id },
       data: {
@@ -1639,6 +1662,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         ...(dto.offlinePaymentType !== undefined && { offlinePaymentType: dto.offlinePaymentType }),
         ...(dto.maxAttendees !== undefined && { maxAttendees: dto.maxAttendees }),
         ...(dto.recordingUrl !== undefined && { recordingUrl: dto.recordingUrl }),
+        ...categoryUpdate,
       },
     });
     return { success: true, data: updated };
