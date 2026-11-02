@@ -166,6 +166,22 @@ export class InstructorReportsService {
     };
   }
 
+  /**
+   * Date filter for lessons. A live lesson belongs to the day it was streamed
+   * (liveStartTime, falling back to creation when it never got one); every other
+   * lesson belongs to the day it was created. Matching on either date would let
+   * a lesson created inside the range but streamed outside it slip in.
+   */
+  private lessonDateFilter(range: { gte?: Date; lte?: Date }) {
+    return {
+      OR: [
+        { type: { in: ['LIVE', 'live'] }, liveStartTime: range },
+        { type: { in: ['LIVE', 'live'] }, liveStartTime: null, createdAt: range },
+        { type: { notIn: ['LIVE', 'live'] }, createdAt: range },
+      ],
+    };
+  }
+
   private dateRange(from?: string, to?: string): { gte?: Date; lte?: Date } {
     const range: { gte?: Date; lte?: Date } = {};
     if (from) range.gte = new Date(from);
@@ -570,9 +586,7 @@ export class InstructorReportsService {
         };
         if (from || to) {
           const lessonRange = this.dateRange(from, to);
-          lessonWhere.AND.push({
-            OR: [{ createdAt: lessonRange }, { liveStartTime: lessonRange }],
-          });
+          lessonWhere.AND.push(this.lessonDateFilter(lessonRange));
         }
         console.log('[REPORT] fetching lessons for courses:', pubCourseIds);
 
@@ -583,6 +597,7 @@ export class InstructorReportsService {
             title: true,
             videoDuration: true,
             createdAt: true,
+            liveStartTime: true,
             isPublished: true,
             type: true,
             module: { select: { courseId: true } },
@@ -613,18 +628,19 @@ export class InstructorReportsService {
           });
           if (!(courseEntry as any).lessons) (courseEntry as any).lessons = [];
           const mins = this.resolveLessonDuration(lesson.videoDuration ?? lesson.videoContent?.duration);
+          const isLive = lesson.type === 'LIVE' || lesson.type === 'live';
+          const lessonDate = isLive ? (lesson.liveStartTime ?? lesson.createdAt) : lesson.createdAt;
           (courseEntry as any).lessons.push({
             lessonId: lesson.id,
             lessonTitle: lesson.title,
             durationMinutes: mins,
-            lessonDate: lesson.createdAt,
+            lessonDate,
             lessonStatus: lesson.isPublished ? 'published' : 'draft',
             typeBadge: lesson.type === 'LIVE' || lesson.type === 'live' ? 'بث مباشر' : 'مسجل',
           });
           // A live lesson's minutes are already counted through its LiveSession
           // (Step 4); show them on the lesson row without adding them twice.
-          const isLive = lesson.type === 'LIVE' || lesson.type === 'live';
-          this.addEntry(inst, courseEntry, isLive ? 0 : mins, lesson.createdAt);
+          this.addEntry(inst, courseEntry, isLive ? 0 : mins, lessonDate);
         }
       }
 
@@ -977,9 +993,7 @@ export class InstructorReportsService {
       };
       if (from || to) {
         const lessonRange = this.dateRange(from, to);
-        lessonDetailWhere.AND.push({
-          OR: [{ createdAt: lessonRange }, { liveStartTime: lessonRange }],
-        });
+        lessonDetailWhere.AND.push(this.lessonDateFilter(lessonRange));
       }
 
       const rawLessons = await this.prisma.lesson.findMany({
@@ -989,6 +1003,8 @@ export class InstructorReportsService {
           title: true,
           videoDuration: true,
           createdAt: true,
+          liveStartTime: true,
+          type: true,
           module: { select: { courseId: true } },
           section: { select: { courseId: true } },
           videoContent: { select: { duration: true } },
@@ -1006,7 +1022,9 @@ export class InstructorReportsService {
           title: lesson.title,
           videoDuration: lesson.videoDuration,
           videoContentDuration: lesson.videoContent?.duration ?? null,
-          createdAt: lesson.createdAt,
+          createdAt: lesson.type === 'LIVE' || lesson.type === 'live'
+            ? (lesson.liveStartTime ?? lesson.createdAt)
+            : lesson.createdAt,
           courseId,
           courseName: course.titleAr || course.titleEn || courseId,
         }];
