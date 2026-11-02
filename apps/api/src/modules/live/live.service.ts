@@ -88,7 +88,10 @@ export class LiveService {
       include: { section: { select: { courseId: true } } },
     })
     if (!lesson) throw new NotFoundException('Lesson not found')
-    return this.startLive(lesson.section.courseId, instructorId)
+    const result = await this.startLive(lesson.section.courseId, instructorId)
+    // Learners read the per-lesson status, so keep it in step with the stream
+    await this.prisma.lesson.update({ where: { id: lessonId }, data: { liveStatus: 'live' } })
+    return result
   }
 
   async joinLive(courseId: string, userId: string): Promise<{ roomUrl: string; token: string; isLive: boolean }> {
@@ -143,6 +146,16 @@ export class LiveService {
         )
       }
     }
+
+    // Mark the live lessons of this course that were streaming as ended
+    await this.prisma.lesson.updateMany({
+      where: {
+        type: 'LIVE',
+        liveStatus: 'live',
+        OR: [{ section: { courseId } }, { module: { courseId } }],
+      },
+      data: { liveStatus: 'ended' },
+    })
 
     const updateData: any = { liveStatus: 'ended', liveViewerCount: 0 }
     if (course.autoDeleteAfterLive) updateData.status = 'archived'

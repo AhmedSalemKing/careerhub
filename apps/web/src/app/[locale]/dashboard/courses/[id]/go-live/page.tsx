@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useLocale } from 'next-intl'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { get, post } from '../../../../../../lib/api'
 import { AuthGate } from '@/app/components/AuthGate'
@@ -22,6 +22,7 @@ export default function GoLivePage() {
   const router = useRouter()
   const params = useParams()
   const courseId = params.id as string
+  const lessonId = useSearchParams()?.get('lessonId') ?? null
 
   const border = 'rgba(255,255,255,0.08)'
   const cardBg = '#111111'
@@ -107,7 +108,8 @@ export default function GoLivePage() {
   const handleStartLive = async () => {
     setStarting(true)
     try {
-      const res = await post(`/live/start/${courseId}`, {})
+      // With a lessonId the lesson is flagged live too (also covers restarting an ended lesson)
+      const res = await post(lessonId ? `/live/lesson-start/${lessonId}` : `/live/start/${courseId}`, {})
       const data = res.data?.data ?? res.data
       if (!data?.roomUrl || !data?.token) throw new Error('Missing roomUrl or token')
       setRoomUrl(data.roomUrl)
