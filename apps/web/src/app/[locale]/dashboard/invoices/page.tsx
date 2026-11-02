@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react'
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
 import {
-  Receipt, GraduationCap, Video, Wallet, Loader2,
+  Receipt, GraduationCap, Video, Loader2,
   ChevronLeft, ChevronRight, Filter
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
 
-type InvoiceType = 'COURSE' | 'SESSION' | 'WALLET_TOPUP'
+type InvoiceType = 'COURSE' | 'SESSION'
 
 type Invoice = {
   id: string
@@ -30,13 +30,11 @@ type Summary = {
   totalSpent: number
   courseCount: number
   sessionCount: number
-  walletCount: number
 }
 
 const TYPE_CONFIG: Record<InvoiceType, { label: string; labelEn: string; icon: any; color: string; bg: string }> = {
   COURSE:        { label: 'كورس',         labelEn: 'Course',         icon: GraduationCap, color: '#5120C8', bg: 'rgba(81,32,200,0.1)' },
   SESSION:       { label: 'جلسة',          labelEn: 'Session',        icon: Video,         color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)' },
-  WALLET_TOPUP:  { label: 'شحن محفظة',     labelEn: 'Wallet Top-up',  icon: Wallet,        color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
 }
 
 export default function InvoicesPage() {
@@ -118,7 +116,7 @@ export default function InvoicesPage() {
 
       {/* Summary cards */}
       {summary && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <SummaryCard
             label={isAr ? 'إجمالي المدفوعات' : 'Total Spent'}
             value={formatMoney(summary.totalSpent, (summary as any).totalSpentDisplay)}
@@ -137,12 +135,6 @@ export default function InvoicesPage() {
             color="#0EA5E9"
             bg="rgba(14,165,233,0.08)"
           />
-          <SummaryCard
-            label={isAr ? 'شحن المحفظة' : 'Wallet Top-ups'}
-            value={String(summary.walletCount)}
-            color="#10B981"
-            bg="rgba(16,185,129,0.08)"
-          />
         </div>
       )}
 
@@ -153,7 +145,6 @@ export default function InvoicesPage() {
           { id: 'ALL' as const,         label: isAr ? 'الكل' : 'All' },
           { id: 'COURSE' as const,      label: isAr ? 'كورسات' : 'Courses' },
           { id: 'SESSION' as const,     label: isAr ? 'جلسات' : 'Sessions' },
-          { id: 'WALLET_TOPUP' as const, label: isAr ? 'شحن محفظة' : 'Top-ups' },
         ]).map(tab => {
           const active = filter === tab.id
           return (
@@ -241,7 +232,7 @@ export default function InvoicesPage() {
         ) : (
           <div>
             {filtered.map((inv, idx) => {
-              const cfg = TYPE_CONFIG[inv.type]
+              const cfg = TYPE_CONFIG[inv.type] ?? TYPE_CONFIG.COURSE
               const Icon = cfg.icon
               return (
                 <div

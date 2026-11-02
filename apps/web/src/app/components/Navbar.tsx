@@ -10,7 +10,7 @@ import { SearchBar } from './SearchBar'
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
 import Image from 'next/image'
-import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Wallet } from 'lucide-react'
+import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
@@ -313,7 +313,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [walletData, setWalletData] = useState<{ balance: number; balanceDisplay?: string | null } | null>(null)
   const { user, token, hydrate } = useAuthStore()
 
   useEffect(() => {
@@ -340,14 +339,6 @@ export function Navbar() {
       timers.forEach(clearTimeout)
     }
   }, [])
-
-  useEffect(() => {
-    if (!token) return
-    get('/wallet').then((res) => {
-      const data = (res?.data as any)?.data
-      if (data) setWalletData({ balance: data.balance || 0, balanceDisplay: data.balanceDisplay ?? null })
-    }).catch(() => setWalletData(null))
-  }, [token])
 
   const isLoggedIn = mounted && !!token
   const isAr = locale === 'ar'
@@ -513,34 +504,6 @@ export function Navbar() {
               </div>
 
               <NotificationBell />
-              {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/wallet`}
-                  style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    justifyContent: 'center', gap: 2,
-                    padding: '6px 10px', borderRadius: 12,
-                    background: 'rgba(81,32,200,0.08)',
-                    border: '1px solid rgba(81,32,200,0.15)',
-                    textDecoration: 'none', cursor: 'pointer',
-                    minWidth: 52,
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.15)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.08)' }}
-                >
-                  <Wallet size={16} color="#5120c8" />
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: '#5120c8',
-                    lineHeight: 1, whiteSpace: 'nowrap',
-                  }}>
-                    {token && walletData !== null
-                      ? (walletData.balanceDisplay ?? `${Number(walletData.balance ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`)
-                      : `${Number(0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
-                    }
-                  </span>
-                </Link>
-              )}
             </div>
 
             {/* Separator */}
@@ -721,16 +684,6 @@ export function Navbar() {
                 </Link>
               )}
               <NotificationBell />
-              {mounted && isLoggedIn && (
-                <Link
-                  href={`/${locale}/dashboard/wallet`}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
-                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
-                >
-                  <Wallet className="h-3.5 w-3.5" />
-                  {isAr ? 'رصيدي' : 'Wallet'}
-                </Link>
-              )}
             </div>
 
             {/* Auth section */}

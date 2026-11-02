@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
-import { get, post } from '@/lib/api'
+import { get } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
 import { browserTimeZone } from '@/lib/time'
 import { safeDate } from '@/lib/formatDate'
@@ -24,11 +24,6 @@ const Ic = {
       <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
     </svg>
   ),
-  wallet: (p: { size?: number; color?: string }) => (
-    <svg width={p.size ?? 15} height={p.size ?? 15} viewBox="0 0 24 24" fill="none" stroke={p.color ?? 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <path d="M20 12V22H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h16v4"/><path d="M20 12a2 2 0 0 0-2 2 2 2 0 0 0 2 2h2v-4z"/><line x1="8" y1="6" x2="8" y2="2"/>
-    </svg>
-  ),
   clock: (p: { size?: number; color?: string }) => (
     <svg width={p.size ?? 15} height={p.size ?? 15} viewBox="0 0 24 24" fill="none" stroke={p.color ?? 'currentColor'} strokeWidth="2" strokeLinecap="round">
       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -47,11 +42,6 @@ const Ic = {
   check: (p: { size?: number; color?: string }) => (
     <svg width={p.size ?? 15} height={p.size ?? 15} viewBox="0 0 24 24" fill="none" stroke={p.color ?? 'currentColor'} strokeWidth="2" strokeLinecap="round">
       <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
-    </svg>
-  ),
-  arrowDownLeft: (p: { size?: number; color?: string }) => (
-    <svg width={p.size ?? 15} height={p.size ?? 15} viewBox="0 0 24 24" fill="none" stroke={p.color ?? 'currentColor'} strokeWidth="2" strokeLinecap="round">
-      <line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/>
     </svg>
   ),
   spinner: (p: { size?: number }) => (
@@ -133,9 +123,6 @@ export default function EarningsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [transferAmount, setTransferAmount] = useState('')
-  const [transferring, setTransferring] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const money = useCallback((amount: number, display?: string | null) => formatMoney(amount, display ?? undefined), [])
 
@@ -160,40 +147,6 @@ export default function EarningsPage() {
     void fetchEarnings()
   }, [fetchEarnings])
 
-  const handleTransfer = async () => {
-    const amount = Number(transferAmount)
-    if (!amount || amount <= 0) return
-
-    if (amount > (data?.available || 0)) {
-      setMessage({
-        type: 'error',
-        text: isAr ? 'المبلغ أكبر من أرباحك المتاحة' : 'Amount exceeds your available earnings',
-      })
-      return
-    }
-
-    setTransferring(true)
-    try {
-      await post('/wallet/transfer-from-earnings', { amount })
-      setMessage({
-        type: 'success',
-        text: `${isAr ? 'تم تحويل' : 'Transferred'} ${money(amount)} ${isAr ? 'إلى محفظتك بنجاح' : 'to your wallet'}`,
-      })
-      setTransferAmount('')
-      await fetchEarnings()
-    } catch (transferError: any) {
-      setMessage({
-        type: 'error',
-        text:
-          transferError?.response?.data?.message ||
-          (isAr ? 'فشل تحويل المبلغ' : 'Transfer failed'),
-      })
-    } finally {
-      setTransferring(false)
-      window.setTimeout(() => setMessage(null), 4000)
-    }
-  }
-
   const stats = useMemo(
     () => [
       {
@@ -204,11 +157,11 @@ export default function EarningsPage() {
         icon: <Ic.dollar size={15} />,
       },
       {
-        label: isAr ? 'الرصيد المتاح' : 'Available to transfer',
+        label: isAr ? 'الرصيد المتاح' : 'Available',
         value: money(data?.available || 0, data?.availableDisplay),
         color: 'var(--accent)',
         background: 'var(--accent-light)',
-        icon: <Ic.wallet size={15} />,
+        icon: <Ic.check size={15} />,
       },
       {
         label: isAr ? 'قيد الانتظار' : 'Pending',
@@ -271,21 +224,6 @@ export default function EarningsPage() {
         </div>
       )}
 
-      {message && (
-        <div
-          className="mb-5 flex items-center gap-2 rounded-xl border p-3 text-sm"
-          style={{
-            background: message.type === 'success' ? 'var(--accent-light)' : 'var(--error-subtle)',
-            borderColor: message.type === 'success' ? 'var(--accent)' : 'var(--error)',
-            color: message.type === 'success' ? 'var(--accent)' : 'var(--error)',
-            fontWeight: 500,
-          }}
-        >
-          {message.type === 'success' ? <Ic.check size={16} /> : <Ic.alertCircle size={16} />}
-          {message.text}
-        </div>
-      )}
-
       <section className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((stat) => (
           <div
@@ -309,56 +247,6 @@ export default function EarningsPage() {
             </p>
           </div>
         ))}
-      </section>
-
-      <section
-        className="mb-5 rounded-2xl border p-4 sm:p-5"
-        style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
-      >
-        <h2 className="mb-4 flex items-center gap-2 text-sm" style={{ fontWeight: 500 }}>
-          <span style={{ color: 'var(--primary)' }}><Ic.arrowDownLeft size={17} /></span>
-          {isAr ? 'تحويل إلى المحفظة' : 'Transfer to wallet'}
-        </h2>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={transferAmount}
-            onChange={(event) => setTransferAmount(event.target.value)}
-            placeholder={
-              isAr
-                ? `الحد الأقصى: ${money(data?.available || 0, data?.availableDisplay)}`
-                : `Max: ${money(data?.available || 0, data?.availableDisplay)}`
-            }
-            className="min-w-0 flex-1 rounded-xl border px-4 py-3 text-sm outline-none"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
-          />
-          <button
-            type="button"
-            onClick={handleTransfer}
-            disabled={transferring || !transferAmount}
-            className="flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm"
-            style={{
-              background: 'var(--primary)',
-              color: 'var(--primary-foreground)',
-              border: 'none',
-              cursor: transferring || !transferAmount ? 'not-allowed' : 'pointer',
-              opacity: transferring || !transferAmount ? 0.5 : 1,
-              fontWeight: 500,
-            }}
-          >
-            {transferring ? <Ic.spinner size={16} /> : <Ic.wallet size={16} />}
-            {transferring ? (isAr ? 'جاري التحويل...' : 'Transferring...') : isAr ? 'تحويل' : 'Transfer'}
-          </button>
-        </div>
-
-        <p className="mt-3 text-[11px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
-          {isAr
-            ? 'يتم تحويل المبلغ من الأرباح المتاحة إلى محفظتك فوراً'
-            : 'The amount moves from available earnings into your wallet immediately'}
-        </p>
       </section>
 
       <section

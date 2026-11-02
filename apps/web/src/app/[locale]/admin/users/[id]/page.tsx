@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { get } from '../../../../../lib/api'
 import { safeDate } from '../../../../../lib/formatDate'
 import {
-  ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Wallet, Briefcase,
+  ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Briefcase,
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
   Key, LogOut, UserPlus, Search, PlusCircle,
 } from 'lucide-react'
@@ -73,7 +73,7 @@ function statusLabel(status: string | undefined, isAr: boolean) {
 }
 
 function paymentType(item: any) {
-  return item?.itemType === 'SESSION' ? 'SESSION' : item?.itemType === 'WALLET' ? 'WALLET' : 'COURSE'
+  return item?.itemType === 'SESSION' ? 'SESSION' : 'COURSE'
 }
 
 function paymentTitle(item: any, isAr: boolean) {
@@ -207,16 +207,14 @@ export default function UserDetailPage() {
 
   const totalPaid = payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED').reduce((s: number, p: any) => s + Number(p.amount || 0), 0)
   const totalEarnings = financials?.totalEarnings || 0
-  const walletBalance = financials?.walletBalance || 0
   const enrolledCount = enrollments.length
   const createdCount = createdCourses.length
   const paymentCount = payments.length
 
   const STATS: { label: string; value: string | number; subValue?: string; icon: any; color: string; bg: string }[] = [
-    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: Wallet, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
+    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: CreditCard, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
     { label: isAr ? 'الكورسات' : 'Courses', value: enrolledCount + createdCount, subValue: `${enrolledCount} ${isAr ? 'مشترك' : 'enrolled'} / ${createdCount} ${isAr ? 'منشأ' : 'created'}`, icon: BookOpen, color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
     { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings, financials?.totalEarningsDisplay), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
-    { label: isAr ? 'المحفظة' : 'Wallet Balance', value: formatCurrency(walletBalance, financials?.walletBalanceDisplay), icon: Briefcase, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)' },
   ]
 
   const activityGroups = groupActivities(activities, isAr)
@@ -595,14 +593,14 @@ export default function UserDetailPage() {
 
           {payments.length === 0 ? (
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: 40, textAlign: 'center' }}>
-              <Wallet size={36} color="var(--muted)" style={{ marginBottom: 12 }} />
+              <CreditCard size={36} color="var(--muted)" style={{ marginBottom: 12 }} />
               <p style={{ color: 'var(--muted)', fontSize: 14, margin: 0 }}>
                 {isAr ? 'لا توجد مدفوعات' : 'No payments'}
               </p>
             </div>
           ) : payments.map((p: any, i: number) => {
             const type = paymentType(p)
-            const Icon = type === 'COURSE' ? BookOpen : type === 'SESSION' ? Briefcase : Wallet
+            const Icon = type === 'COURSE' ? BookOpen : type === 'SESSION' ? Briefcase : CreditCard
             const color = type === 'COURSE' ? '#007AFF' : type === 'SESSION' ? '#5120C8' : '#34C759'
             const bg = type === 'COURSE' ? 'rgba(0, 122, 255, 0.1)' : type === 'SESSION' ? 'rgba(81, 32, 200, 0.1)' : 'rgba(52, 199, 89, 0.1)'
             const success = p?.status === 'SUCCESS' || p?.status === 'COMPLETED'

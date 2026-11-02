@@ -13,7 +13,7 @@ import { FloatingAIButton } from '../../../components/ai/FloatingAIButton'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
-  Calendar, CalendarDays, DollarSign, Wallet,
+  Calendar, CalendarDays, DollarSign,
   Brain, MessageSquare, Award, Settings,
   Shield, Users, Bell, ClipboardList, CalendarCheck,
   X, Menu, LogOut, Receipt
@@ -63,7 +63,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       { icon: Calendar, labelAr: 'جلساتي', labelEn: 'Sessions', href: `/${locale}/dashboard/my-sessions` },
       { icon: Users, labelAr: 'جلسات عملائي', labelEn: 'Client Sessions', href: `/${locale}/dashboard/client-sessions` },
       { icon: DollarSign, labelAr: 'أرباحي', labelEn: 'Earnings', href: `/${locale}/dashboard/earnings` },
-      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
     
@@ -75,7 +74,6 @@ return [
       { icon: Brain, labelAr: 'المسار المهني', labelEn: 'Career', href: `/${locale}/dashboard/career-path` },
       { icon: MessageSquare, labelAr: 'المساعد الذكي', labelEn: 'AI', href: `/${locale}/dashboard/ai-chat` },
       { icon: Award, labelAr: 'الشهادات', labelEn: 'Certs', href: `/${locale}/dashboard/certificates` },
-      { icon: Wallet, labelAr: 'محفظتي', labelEn: 'Wallet', href: `/${locale}/dashboard/wallet` },
       { icon: Settings, labelAr: 'الإعدادات', labelEn: 'Settings', href: `/${locale}/dashboard/settings` },
     ]
   }, [accountType, locale])

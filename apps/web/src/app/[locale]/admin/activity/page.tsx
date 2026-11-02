@@ -49,7 +49,6 @@ const ACTION_I18N: Record<string, { ar: string; en: string }> = {
   BOOK_SESSION: { ar: 'حجز جلسة', en: 'Book Session' },
   COMPLETE_LESSON: { ar: 'إكمال درس', en: 'Complete Lesson' },
   WATCH_LESSON: { ar: 'مشاهدة درس', en: 'Watch Lesson' },
-  WALLET_TOPUP: { ar: 'شحن محفظة', en: 'Wallet Top-up' },
   AI_CHAT:      { ar: 'محادثة ذكية', en: 'AI Chat' },
   ASSESSMENT:   { ar: 'اختبار تقييم', en: 'Assessment' },
   CREATE_COURSE:{ ar: 'إنشاء كورس', en: 'Create Course' },
@@ -85,7 +84,6 @@ function getDetails(act: any, isAr: boolean): string {
     }
     case 'VIEW_COURSE': return meta.courseTitle || act.entityId || '—'
     case 'SEARCH_COURSES': return meta.query || '—'
-    case 'WALLET_TOPUP': return meta.amount ? formatMoney(meta.amount, meta.amountDisplay) : '—'
     case 'COMPLETE_LESSON':
     case 'WATCH_LESSON': return meta.lessonTitle || act.entityId || '—'
     case 'CERTIFICATE_ISSUED': return meta.courseTitle || '—'

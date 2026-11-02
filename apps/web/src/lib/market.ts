@@ -4,7 +4,7 @@
  * Business rules:
  * - Egypt (EG): show prices in EGP using *Display fields from API
  * - All others: show prices in SAR using raw values as fallback
- * - Earnings/wallet/revenue/course prices: all use API Display fields when available
+ * - Earnings/revenue/course prices: all use API Display fields when available
  *
  * Single source of truth: x-vercel-ip-country (server) / market cookie (client)
  */
