@@ -71,12 +71,9 @@ export class CoursesService {
     }
 
     if (careerPath) {
-      andConditions.push({
-        OR: [
-          { careerPath: { slug: careerPath } },
-          { careerPaths: { has: careerPath } },
-        ],
-      });
+      // Strict: a course belongs to a path only when it is explicitly tagged
+      // with that slug in `careerPaths`. No FK fallback, no fuzzy matching.
+      andConditions.push({ careerPaths: { has: careerPath } });
     }
 
     if (level) {
@@ -269,32 +266,42 @@ export class CoursesService {
     const { paths, fields, limit = 12, language = 'en', userId } = options;
     const effectiveLimit = limit || 12;
 
-    const pathIds = paths
-      ? paths.split(',').map(p => p.trim()).filter(Boolean)
+    const pathTokens = [
+      ...(paths ? paths.split(',').map(p => p.trim()).filter(Boolean) : []),
+      ...(fields ? fields.split(',').map(s => s.trim()).filter(Boolean) : []),
+    ];
+
+    // `paths` may contain career-path IDs or slugs; `fields` contains slugs.
+    // Resolve everything to real path slugs, then match ONLY explicit tags.
+    const resolvedPaths = pathTokens.length > 0
+      ? await this.prisma.careerPath.findMany({
+          where: {
+            OR: [
+              { id: { in: pathTokens } },
+              { slug: { in: pathTokens } },
+            ],
+          },
+          select: { slug: true },
+        })
       : [];
 
-    const fieldSlugs = fields
-      ? fields.split(',').map(s => s.trim()).filter(Boolean)
-      : [];
+    const targetSlugs = new Set<string>(resolvedPaths.map(p => p.slug));
 
-    const allPaths = await this.prisma.careerPath.findMany({
-      where: { id: { in: pathIds } },
-      select: { id: true, slug: true, titleEn: true, titleAr: true },
-    });
-
-    const resolvedKeywords: string[] = [];
-    for (const p of allPaths) {
-      resolvedKeywords.push(p.slug.toLowerCase());
-      resolvedKeywords.push(p.titleEn.toLowerCase());
-      resolvedKeywords.push(p.titleAr.toLowerCase());
+    // Auth user: recommendations come from the paths saved/assessed for them.
+    if (userId) {
+      const userSlugs = await this.getUserCareerPathSlugs(userId);
+      for (const slug of userSlugs) targetSlugs.add(slug);
     }
-    const uniqueKeywords = [...new Set(resolvedKeywords)];
 
-    console.log('[Recommended] pathIds:', pathIds, '| fieldSlugs:', fieldSlugs, '| resolvedKeywords:', uniqueKeywords);
+    if (targetSlugs.size === 0) {
+      return this.emptyRecommendations(effectiveLimit);
+    }
 
-    // Fetch all published courses with tags and careerPathId for scoring
-    const allPublished = await this.prisma.course.findMany({
-      where: { status: 'PUBLISHED' },
+    const courses = await this.prisma.course.findMany({
+      where: {
+        status: 'PUBLISHED',
+        careerPaths: { hasSome: Array.from(targetSlugs) },
+      },
       select: {
         id: true,
         titleEn: true,
@@ -315,9 +322,6 @@ export class CoursesService {
         locationLng: true,
         offlinePaymentType: true,
         maxAttendees: true,
-        tags: true,
-        careerPathId: true,
-        careerPaths: true,
         instructor: {
           select: {
             id: true,
@@ -336,63 +340,10 @@ export class CoursesService {
         { isFeatured: 'desc' },
         { createdAt: 'desc' },
       ],
+      take: effectiveLimit,
     });
 
-    const scoredCourses = allPublished.map(course => {
-      let score = 0;
-      const courseTags = (course.tags || []).map(t => t.toLowerCase());
-      const courseCareerPaths = (course.careerPaths || []).map(cp => cp.toLowerCase());
-      const courseText = [
-        (course.titleEn || '').toLowerCase(),
-        (course.titleAr || '').toLowerCase(),
-        (course.descriptionEn || '').toLowerCase(),
-        (course.descriptionAr || '').toLowerCase(),
-        ...courseTags,
-        ...courseCareerPaths,
-      ].join(' ');
-
-      // Score from resolved path keywords (slugs + titles)
-      for (const kw of uniqueKeywords) {
-        if (courseText.includes(kw)) score += 3;
-      }
-
-      // Direct careerPathId match (highest)
-      for (const pid of pathIds) {
-        if (course.careerPathId === pid) score += 10;
-      }
-
-      // careerPaths array slug match
-      for (const slug of [...fieldSlugs, ...allPaths.map(p => p.slug)]) {
-        const slugLower = slug.toLowerCase();
-        if (courseCareerPaths.some(cp => cp === slugLower || cp.includes(slugLower) || slugLower.includes(cp))) {
-          score += 8;
-        }
-      }
-
-      // Tag match against path slugs/titles directly
-      for (const tag of courseTags) {
-        for (const kw of uniqueKeywords) {
-          if (kw.includes(tag) || tag.includes(kw)) {
-            score += 5;
-            break;
-          }
-        }
-      }
-
-      return { ...course, _score: score };
-    });
-
-    // Sort by score descending
-    scoredCourses.sort((a, b) => b._score - a._score);
-
-    // Only return courses with score > 0; if none at all, return top 6 anyway
-    const relevant = scoredCourses.filter(c => c._score > 0);
-    const topCourses = relevant.length > 0
-      ? relevant.slice(0, effectiveLimit)
-      : allPublished.length > 0 ? scoredCourses.slice(0, Math.min(6, effectiveLimit)) : [];
-
-    // Transform to match expected output format
-    const transformedCourses = topCourses.map(course => ({
+    const transformedCourses = courses.map(course => ({
       id: course.id,
       title: language === 'ar' ? course.titleAr : course.titleEn,
       description: language === 'ar' ? course.descriptionAr : course.descriptionEn,
@@ -418,15 +369,18 @@ export class CoursesService {
           }
         : undefined,
       _count: course._count,
-      _score: course._score,
     }));
 
-    let coursesWithEnrollment = transformedCourses;
+    let coursesWithEnrollment = transformedCourses.map(c => ({
+      ...c,
+      isEnrolled: false,
+    }));
+
     if (userId) {
       const enrollments = await this.prisma.enrollment.findMany({
         where: {
           userId,
-          courseId: { in: topCourses.map(c => c.id) },
+          courseId: { in: courses.map(c => c.id) },
           status: 'ACTIVE',
         },
         select: { courseId: true },
@@ -436,17 +390,12 @@ export class CoursesService {
         ...c,
         isEnrolled: enrolledIds.has(c.id),
       }));
-    } else {
-      coursesWithEnrollment = transformedCourses.map(c => ({
-        ...c,
-        isEnrolled: false,
-      }));
     }
 
     return {
       courses: coursesWithEnrollment,
       meta: {
-        total: topCourses.length,
+        total: coursesWithEnrollment.length,
         page: 1,
         limit: effectiveLimit,
         totalPages: 1,
@@ -454,6 +403,53 @@ export class CoursesService {
         hasPrev: false,
       },
     };
+  }
+
+  private emptyRecommendations(limit: number) {
+    return {
+      courses: [] as any[],
+      meta: {
+        total: 0,
+        page: 1,
+        limit,
+        totalPages: 1,
+        hasNext: false,
+        hasPrev: false,
+      },
+    };
+  }
+
+  /**
+   * Resolve the career-path slugs the user has chosen through the career
+   * assessment and/or the "my paths" list. Returns [] when the user has none.
+   */
+  private async getUserCareerPathSlugs(userId: string): Promise<string[]> {
+    const [assessments, savedPaths] = await Promise.all([
+      this.prisma.careerAssessment.findMany({
+        where: { userId, status: 'COMPLETED' },
+        select: { careerPath: { select: { slug: true } } },
+      }).catch(() => [] as any[]),
+      this.prisma.userCareerPath.findMany({
+        where: { userId },
+        select: { pathId: true },
+      }).catch(() => [] as any[]),
+    ]);
+
+    const slugs = new Set<string>();
+    for (const assessment of assessments) {
+      if (assessment?.careerPath?.slug) slugs.add(assessment.careerPath.slug);
+    }
+
+    const savedIds = savedPaths.map((p: any) => p.pathId).filter(Boolean);
+    if (savedIds.length > 0) {
+      const saved = await this.prisma.careerPath.findMany({
+        where: { id: { in: savedIds } },
+        select: { slug: true },
+      }).catch(() => []);
+      for (const path of saved) slugs.add(path.slug);
+    }
+
+    return Array.from(slugs);
   }
 
   async getFeaturedCourses(limit: number, language: string = 'en') {
@@ -1115,34 +1111,36 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
   }
 
   async getRecommendations(userId: string) {
-    // Get user's enrollments and assessment results
-    const [enrollments, assessments] = await Promise.all([
-      this.prisma.enrollment.findMany({
-        where: { userId },
-        include: {
-          course: {
-            include: { careerPath: true },
-          },
-        },
-      }),
-      this.prisma.careerAssessment.findMany({
-        where: { userId, status: 'COMPLETED' },
-        include: { careerPath: true },
-      }),
-    ]);
+    // Strict: use only the career paths explicitly saved/assessed for the user.
+    const userSlugs = await this.getUserCareerPathSlugs(userId);
+    if (userSlugs.length === 0) return [];
 
-    // Get user's career path interests from assessments
-    const interestedPaths = assessments.map(assessment => assessment.careerPathId);
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { userId },
+      select: { courseId: true },
+    });
 
-    // Get recommended courses
     const recommendedCourses = await this.prisma.course.findMany({
       where: {
         status: 'PUBLISHED',
-        careerPathId: { in: interestedPaths },
+        careerPaths: { hasSome: userSlugs },
         id: { notIn: enrollments.map(e => e.courseId) },
       },
-      include: {
-        careerPath: true,
+      select: {
+        id: true,
+        slug: true,
+        titleEn: true,
+        titleAr: true,
+        descriptionEn: true,
+        descriptionAr: true,
+        thumbnail: true,
+        price: true,
+        currency: true,
+        duration: true,
+        level: true,
+        careerPath: {
+          select: { id: true, slug: true, titleEn: true, titleAr: true, color: true },
+        },
         _count: {
           select: {
             enrollments: true,
@@ -1156,6 +1154,11 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       take: 6,
     });
 
+    const assessments = await this.prisma.careerAssessment.findMany({
+      where: { userId, status: 'COMPLETED' },
+      select: { careerPathId: true },
+    });
+
     return recommendedCourses.map(course => ({
       id: course.id,
       slug: course.slug,
@@ -1164,15 +1167,17 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       thumbnail: course.thumbnail,
       price: course.price,
       currency: course.currency,
-      duration: (course as any).duration,
+      duration: course.duration,
       level: course.level,
-      careerPath: {
-        id: (course as any).careerPath.id,
-        slug: (course as any).careerPath.slug,
-        title: (course as any).careerPath.titleEn,
-        color: (course as any).careerPath.color,
-      },
-      enrollments: (course as any)._count.enrollments,
+      careerPath: course.careerPath
+        ? {
+            id: course.careerPath.id,
+            slug: course.careerPath.slug,
+            title: course.careerPath.titleEn,
+            color: course.careerPath.color,
+          }
+        : null,
+      enrollments: course._count.enrollments,
       reason: this.getRecommendationReason(course, enrollments, assessments),
     }));
   }
@@ -1234,7 +1239,24 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
 
     if (createCourseDto.instructorId) courseData.instructorId = createCourseDto.instructorId;
     if (createCourseDto.careerPathId) courseData.careerPathId = createCourseDto.careerPathId;
-    if (createCourseDto.categoryId && createCourseDto.categoryId !== '') courseData.categoryId = createCourseDto.categoryId;
+
+    if (createCourseDto.categoryId && createCourseDto.categoryId !== '') {
+      courseData.categoryId = createCourseDto.categoryId;
+
+      // Admin may tag career paths explicitly. Otherwise derive them strictly
+      // from the category slug (exact lookup, empty result is meaningful).
+      if (Array.isArray(createCourseDto.careerPaths)) {
+        courseData.careerPaths = createCourseDto.careerPaths;
+      } else {
+        const cat = await this.prisma.category.findUnique({
+          where: { id: createCourseDto.categoryId },
+          select: { slug: true },
+        });
+        courseData.careerPaths = cat ? getPathsForCategory(cat.slug) : [];
+      }
+    } else if (Array.isArray(createCourseDto.careerPaths)) {
+      courseData.careerPaths = createCourseDto.careerPaths;
+    }
 
     if (Array.isArray(createCourseDto.sections) && createCourseDto.sections.length > 0) {
       courseData.sections = {
@@ -1256,14 +1278,42 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
   }
 
   async updateCourse(id: string, updateCourseDto: any) {
+    const existing = await this.prisma.course.findUnique({
+      where: { id },
+      select: { titleEn: true },
+    });
+    const titleChanged =
+      !!updateCourseDto.titleEn && updateCourseDto.titleEn !== existing?.titleEn;
+
+    const data: any = {
+      ...updateCourseDto,
+      // Only re-slug when the English title actually changed, so saving the
+      // settings form does not churn the public course URL.
+      ...(titleChanged && {
+        slug: this.generateSlug(updateCourseDto.titleEn),
+      }),
+    };
+
+    // Admin edits may include the category. When they do, re-derive the
+    // career paths from the category slug unless the admin tagged them
+    // explicitly. An empty mapping clears the tags on purpose.
+    if (updateCourseDto.categoryId !== undefined) {
+      if (Array.isArray(updateCourseDto.careerPaths)) {
+        data.careerPaths = updateCourseDto.careerPaths;
+      } else {
+        const cat = updateCourseDto.categoryId
+          ? await this.prisma.category.findUnique({
+              where: { id: updateCourseDto.categoryId },
+              select: { slug: true },
+            })
+          : null;
+        data.careerPaths = cat ? getPathsForCategory(cat.slug) : [];
+      }
+    }
+
     const course = await this.prisma.course.update({
       where: { id },
-      data: {
-        ...updateCourseDto,
-        ...(updateCourseDto.titleEn && {
-          slug: this.generateSlug(updateCourseDto.titleEn),
-        }),
-      },
+      data,
     });
 
     this.logger.log(`Course updated: ${course.titleEn}`);
@@ -1552,9 +1602,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
         if (cat) {
           courseData.categoryId = dto.categoryId;
-          const categoryText = `${cat.nameEn || ''} ${cat.nameAr || ''}`.trim();
-          const pathSlugs = getPathsForCategory(categoryText);
-          if (pathSlugs.length > 0) courseData.careerPaths = pathSlugs;
+          // Strict, exact category-slug lookup. No keyword matching.
+          courseData.careerPaths = getPathsForCategory(cat.slug);
         } else {
           this.logger.warn(`[Courses] Category not found: ${dto.categoryId}, skipping`);
         }
@@ -1628,9 +1677,8 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       const cat = await this.prisma.category.findUnique({ where: { id: dto.categoryId } });
       if (cat) {
         categoryUpdate.categoryId = dto.categoryId;
-        const categoryText = `${cat.nameEn || ''} ${cat.nameAr || ''}`.trim();
-        const pathSlugs = getPathsForCategory(categoryText);
-        if (pathSlugs.length > 0) categoryUpdate.careerPaths = pathSlugs;
+        // Strict, exact category-slug lookup. No keyword matching.
+        categoryUpdate.careerPaths = getPathsForCategory(cat.slug);
       }
     }
 
@@ -2262,8 +2310,9 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
     assessments: any[]
   ): string {
     const userCareerPaths = assessments.map(a => a.careerPathId);
+    const coursePathId = course.careerPathId ?? course.careerPath?.id;
 
-    if (userCareerPaths.includes(course.careerPathId)) {
+    if (coursePathId && userCareerPaths.includes(coursePathId)) {
       return 'Based on your career assessment results';
     }
 

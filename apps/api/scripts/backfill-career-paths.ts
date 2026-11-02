@@ -9,38 +9,47 @@ async function main() {
       id: true,
       titleAr: true,
       titleEn: true,
-      careerPaths: true,
-      category: { select: { nameEn: true, nameAr: true } },
+      category: { select: { slug: true } },
     },
+    orderBy: { createdAt: 'asc' },
   })
 
-  console.log(`Backfilling ${courses.length} courses...`)
+  console.log(`Rebuilding career paths for ${courses.length} courses...`)
 
-  let updated = 0
-  let skipped = 0
+  // Step 1 — clear every tag first so no stale/fuzzy value survives.
+  await prisma.course.updateMany({ data: { careerPaths: [] } })
+
+  // Step 2 — fill strictly from the stored category slug (never the title).
+  const unmatched: Array<{ title: string; category: string | null }> = []
+  let tagged = 0
 
   for (const course of courses) {
-    const catText = [
-      course.category?.nameEn || '',
-      course.category?.nameAr || '',
-    ].filter(Boolean).join(' ').trim()
+    const category = course.category?.slug ?? null
+    const slugs = category ? getPathsForCategory(category) : []
 
-    const slugs = getPathsForCategory(catText)
+    await prisma.course.update({
+      where: { id: course.id },
+      data: { careerPaths: slugs },
+    })
 
-    if (slugs.length > 0) {
-      await prisma.course.update({
-        where: { id: course.id },
-        data: { careerPaths: slugs },
-      })
-      console.log(`  [OK] ${course.titleAr || course.titleEn}: [${slugs.join(', ')}]`)
-      updated++
-    } else {
-      console.log(`  [--] ${course.titleAr || course.titleEn}: no match (category="${catText}")`)
-      skipped++
+    const title = course.titleAr || course.titleEn || course.id
+    console.log(
+      `  ${slugs.length > 0 ? '[OK]' : '[--]'} ${title} | category=${category ?? '(none)'} | paths=[${slugs.join(', ')}]`,
+    )
+
+    if (slugs.length > 0) tagged++
+    else unmatched.push({ title, category })
+  }
+
+  console.log(`\nDone. Total: ${courses.length}, tagged: ${tagged}, unmatched: ${unmatched.length}`)
+
+  if (unmatched.length > 0) {
+    console.log('\nUnmatched courses (need manual career-path tagging):')
+    for (const course of unmatched) {
+      console.log(`  - ${course.title} | category=${course.category ?? '(none)'}`)
     }
   }
 
-  console.log(`\nDone. Updated: ${updated}, Skipped: ${skipped}`)
   await prisma.$disconnect()
 }
 

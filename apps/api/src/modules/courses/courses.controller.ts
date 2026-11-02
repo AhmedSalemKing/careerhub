@@ -584,7 +584,7 @@ export class CoursesController {
   @ApiOperation({ summary: 'Update course (Admin: any / Instructor: own)' })
   @ApiResponse({ status: 200, description: 'Course updated successfully' })
   async updateCourse(@Param('id') id: string, @Request() req: any, @Body() body: any) {
-    if (req.user.role === 'ADMIN') {
+    if (isAdminUser(req.user)) {
       const course = await this.coursesService.updateCourse(id, body);
       return { success: true, message: 'Course updated successfully', data: { course } };
     }

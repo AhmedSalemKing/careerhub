@@ -613,7 +613,7 @@ export default function CreateCoursePage() {
                   const allCats = (categories as any[]).flatMap((c: any) => [c, ...(c.children || [])])
                   const selected = allCats.find((c: any) => c.id === form.categoryId)
                   if (!selected) return null
-                  const detected = getPathsForCategory(selected.name || '')
+                  const detected = getPathsForCategory(selected.slug || selected.name || '')
                   if (detected.length === 0) return null
                   return (
                     <p className="mt-1.5 text-xs" style={{ color: 'var(--muted)' }}>

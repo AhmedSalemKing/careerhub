@@ -1134,44 +1134,70 @@ export class AdminController {
   }
 
   @Post('backfill-course-career-paths')
-  @ApiOperation({ summary: 'Backfill careerPaths[] on all courses from their category (one-time)' })
+  @ApiOperation({ summary: 'Rebuild careerPaths[] on all courses from their category slug (one-time)' })
   async backfillCourseCareerPaths() {
     const { getPathsForCategory } = await import('../../common/career-path-mapping');
+
     const courses = await this.prisma.course.findMany({
       select: {
         id: true,
         titleAr: true,
         titleEn: true,
-        careerPaths: true,
-        category: { select: { nameEn: true, nameAr: true } },
+        category: { select: { slug: true } },
       },
+      orderBy: { createdAt: 'asc' },
     });
 
-    let updated = 0;
-    let skipped = 0;
+    // Step 1 — clear every tag first so no stale/fuzzy value survives.
+    await this.prisma.course.updateMany({ data: { careerPaths: [] } });
+
+    // Step 2 — fill strictly from the stored category slug (never the title).
+    const rows: Array<{
+      id: string;
+      title: string;
+      category: string | null;
+      careerPaths: string[];
+    }> = [];
+    const unmatched: Array<{
+      id: string;
+      title: string;
+      category: string | null;
+    }> = [];
 
     for (const course of courses) {
-      const catText = [
-        course.category?.nameEn ?? '',
-        course.category?.nameAr ?? '',
-      ].filter(Boolean).join(' ').trim();
+      const category = course.category?.slug ?? null;
+      const careerPaths = category ? getPathsForCategory(category) : [];
 
-      const slugs = getPathsForCategory(catText);
-      if (slugs.length > 0) {
-        await this.prisma.course.update({
-          where: { id: course.id },
-          data: { careerPaths: slugs },
-        });
-        updated++;
-      } else {
-        skipped++;
+      await this.prisma.course.update({
+        where: { id: course.id },
+        data: { careerPaths },
+      });
+
+      const title = course.titleAr || course.titleEn || course.id;
+      rows.push({ id: course.id, title, category, careerPaths });
+      if (careerPaths.length === 0) {
+        unmatched.push({ id: course.id, title, category });
       }
+
+      console.log(
+        `[backfill] ${title} | category=${category ?? '(none)'} | paths=[${careerPaths.join(', ')}]`,
+      );
     }
+
+    console.log(
+      `[backfill] done: ${rows.length} courses, ${rows.length - unmatched.length} tagged, ${unmatched.length} unmatched`,
+    );
 
     return {
       success: true,
-      message: `Backfill complete`,
-      data: { total: courses.length, updated, skipped },
+      message: 'Career-path backfill complete',
+      data: {
+        total: rows.length,
+        tagged: rows.length - unmatched.length,
+        unmatchedCount: unmatched.length,
+        courses: rows,
+        unmatched,
+      },
     };
   }
 }

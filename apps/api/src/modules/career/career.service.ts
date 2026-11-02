@@ -176,30 +176,8 @@ export class CareerService {
     const careerPath = await this.prisma.careerPath.findUnique({
       where: { slug, isActive: true },
       include: {
-        courses: {
-          where: { status: 'PUBLISHED' },
-          include: {
-            modules: {
-              include: {
-                _count: {
-                  select: {
-                    lessons: true,
-                  },
-                },
-              },
-            },
-            _count: {
-              select: {
-                enrollments: true,
-                certificates: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
-        },
         _count: {
           select: {
-            courses: true,
             careerAssessments: true,
           },
         },
@@ -209,6 +187,29 @@ export class CareerService {
     if (!careerPath) {
       throw new NotFoundException('Career path not found');
     }
+
+    // Strict: only courses explicitly tagged with this path slug.
+    const courses = await this.prisma.course.findMany({
+      where: { status: 'PUBLISHED', careerPaths: { has: careerPath.slug } },
+      include: {
+        modules: {
+          include: {
+            _count: {
+              select: {
+                lessons: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            certificates: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
 
     // Get market data
     const marketData = await this.getMarketDataForCareerPath(careerPath.id);
@@ -224,7 +225,7 @@ export class CareerService {
       demandLevel: careerPath.demandLevel,
       icon: careerPath.icon,
       color: careerPath.color,
-      courses: (careerPath as any).courses.map(course => ({
+      courses: courses.map(course => ({
         id: course.id,
         slug: course.slug,
         title: language === 'ar' ? course.titleAr : course.titleEn,
@@ -240,10 +241,10 @@ export class CareerService {
         certificates: (course as any)._count?.certificates,
       })),
       stats: {
-        totalCourses: 0,
+        totalCourses: courses.length,
         totalAssessments: 0,
-        averageDuration: this.calculateAverageDuration((careerPath as any).courses),
-        averagePrice: this.calculateAveragePrice((careerPath as any).courses),
+        averageDuration: this.calculateAverageDuration(courses),
+        averagePrice: this.calculateAveragePrice(courses),
       },
       marketData,
     };
@@ -259,7 +260,8 @@ export class CareerService {
     }
 
     const where = {
-      careerPathId: careerPath.id,
+      // Strict: only courses explicitly tagged with this career-path slug.
+      careerPaths: { has: careerPath.slug },
       status: 'PUBLISHED' as const,
       ...(level && { level }),
     };
@@ -307,12 +309,6 @@ export class CareerService {
     const careerPath = await this.prisma.careerPath.findUnique({
       where: { slug, isActive: true },
       include: {
-        courses: {
-          include: {
-            enrollments: true,
-            certificates: true,
-          },
-        },
         careerAssessments: {
           include: {
             user: true,
@@ -325,13 +321,21 @@ export class CareerService {
       throw new NotFoundException('Career path not found');
     }
 
-    const totalEnrollments = (careerPath as any).courses.reduce(
-      (sum, course) => sum + (course as any)._count?.enrollments,
+    // Strict: stats are computed from courses explicitly tagged with this slug.
+    const courses = await this.prisma.course.findMany({
+      where: { status: 'PUBLISHED', careerPaths: { has: careerPath.slug } },
+      select: {
+        _count: { select: { enrollments: true, certificates: true } },
+      },
+    });
+
+    const totalEnrollments = courses.reduce(
+      (sum, course) => sum + (course._count?.enrollments ?? 0),
       0
     );
 
-    const totalCertificates = (careerPath as any).courses.reduce(
-      (sum, course) => sum + (course as any)._count?.certificates,
+    const totalCertificates = courses.reduce(
+      (sum, course) => sum + (course._count?.certificates ?? 0),
       0
     );
 
@@ -482,19 +486,8 @@ export class CareerService {
         isActive: true,
       },
       include: {
-        courses: {
-          include: {
-            _count: {
-              select: {
-                enrollments: true,
-                certificates: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
-            courses: true,
             careerAssessments: true,
           },
         },
@@ -505,22 +498,40 @@ export class CareerService {
       throw new NotFoundException('One or more career paths not found');
     }
 
-    const comparison = careerPaths.map(path => ({
-      id: path.id,
-      slug: path.slug,
-      title: language === 'ar' ? path.titleAr : path.titleEn,
-      skills: (path.skills as any),
-      salaryRange: JSON.parse(language === 'ar' ? path.salaryRangeAr : path.salaryRangeEn),
-      jobTitles: (path.jobTitlesEn as any),
-      demandLevel: path.demandLevel,
-      stats: {
-        totalCourses: (path as any)._count.courses,
-        totalEnrollments: (path as any).courses.reduce((sum, course) => sum + (course as any)._count?.enrollments, 0),
-        totalCertificates: (path as any).courses.reduce((sum, course) => sum + (course as any)._count?.certificates, 0),
-        averagePrice: this.calculateAveragePrice((path as any).courses),
-        averageDuration: this.calculateAverageDuration((path as any).courses),
-      },
-    }));
+    // Strict: per-path stats come from courses explicitly tagged with the
+    // path slug, not from the legacy `careerPathId` relation.
+    const coursesByPath = await Promise.all(
+      careerPaths.map(path =>
+        this.prisma.course.findMany({
+          where: { status: 'PUBLISHED', careerPaths: { has: path.slug } },
+          select: {
+            price: true,
+            duration: true,
+            _count: { select: { enrollments: true, certificates: true } },
+          },
+        }),
+      ),
+    );
+
+    const comparison = careerPaths.map((path, index) => {
+      const courses = coursesByPath[index];
+      return {
+        id: path.id,
+        slug: path.slug,
+        title: language === 'ar' ? path.titleAr : path.titleEn,
+        skills: (path.skills as any),
+        salaryRange: JSON.parse(language === 'ar' ? path.salaryRangeAr : path.salaryRangeEn),
+        jobTitles: (path.jobTitlesEn as any),
+        demandLevel: path.demandLevel,
+        stats: {
+          totalCourses: courses.length,
+          totalEnrollments: courses.reduce((sum, course) => sum + (course._count?.enrollments ?? 0), 0),
+          totalCertificates: courses.reduce((sum, course) => sum + (course._count?.certificates ?? 0), 0),
+          averagePrice: this.calculateAveragePrice(courses as any),
+          averageDuration: this.calculateAverageDuration(courses as any),
+        },
+      };
+    });
 
     return {
       paths: comparison,
@@ -531,27 +542,27 @@ export class CareerService {
   async getCareerPathRoadmap(slug: string, language: string = 'en') {
     const careerPath = await this.prisma.careerPath.findUnique({
       where: { slug, isActive: true },
+    });
+
+    if (!careerPath) {
+      throw new NotFoundException('Career path not found');
+    }
+
+    // Strict: roadmap courses are the ones explicitly tagged with this slug.
+    const courses = await this.prisma.course.findMany({
+      where: { status: 'PUBLISHED', careerPaths: { has: careerPath.slug } },
       include: {
-        courses: {
-          where: { status: 'PUBLISHED' },
+        modules: {
           include: {
-            modules: {
-              include: {
-                lessons: {
-                  orderBy: { createdAt: 'asc' },
-                },
-              },
+            lessons: {
               orderBy: { createdAt: 'asc' },
             },
           },
           orderBy: { createdAt: 'asc' },
         },
       },
+      orderBy: { createdAt: 'asc' },
     });
-
-    if (!careerPath) {
-      throw new NotFoundException('Career path not found');
-    }
 
     const roadmap = {
       careerPath: {
@@ -559,9 +570,9 @@ export class CareerService {
         title: language === 'ar' ? careerPath.titleAr : careerPath.titleEn,
         description: language === 'ar' ? careerPath.descriptionAr : careerPath.descriptionEn,
       },
-      phases: this.generateRoadmapPhases((careerPath as any).courses, language),
-      timeline: this.generateTimeline((careerPath as any).courses),
-      milestones: this.generateMilestones((careerPath as any).courses, language),
+      phases: this.generateRoadmapPhases(courses, language),
+      timeline: this.generateTimeline(courses),
+      milestones: this.generateMilestones(courses, language),
     };
 
     return roadmap;

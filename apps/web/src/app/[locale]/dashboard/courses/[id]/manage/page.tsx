@@ -16,6 +16,7 @@ import {
   formatLiveDateTimeShort,
 } from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
+import { useAuthStore } from '../../../../../../stores/authStore'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -1885,6 +1886,37 @@ function CourseSettingsTab({
   const [expectedLessons, setExpectedLessons] = useState(course?.expectedLessons ?? 0)
   const [certificateEnabled, setCertificateEnabled] = useState(course?.certificateEnabled ?? true)
 
+  const user = useAuthStore((s) => s.user)
+  const isAdmin =
+    user?.accountType === 'ADMIN' ||
+    user?.accountType === 'SUPER_ADMIN' ||
+    user?.role === 'ADMIN'
+
+  const [careerPaths, setCareerPaths] = useState<string[]>(
+    Array.isArray(course?.careerPaths) ? course.careerPaths : [],
+  )
+
+  const { data: careerPathOptions = [] } = useQuery({
+    queryKey: ['career-path-options'],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const res = await get('/career/paths')
+      const raw = res?.data as any
+      const arr = raw?.data?.careerPaths ?? raw?.data ?? raw ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+  })
+
+  useEffect(() => {
+    setCareerPaths(Array.isArray(course?.careerPaths) ? course.careerPaths : [])
+  }, [course?.careerPaths])
+
+  const toggleCareerPath = (slug: string) => {
+    setCareerPaths((prev) =>
+      prev.includes(slug) ? prev.filter((p) => p !== slug) : [...prev, slug],
+    )
+  }
+
   useEffect(() => {
     if (course?.expectedLessons !== undefined) {
       setExpectedLessons(course.expectedLessons)
@@ -1899,15 +1931,30 @@ function CourseSettingsTab({
   async function handleSave() {
     setSaving(true)
     try {
+      // Admin edits go through the admin `updateCourse` path, which expects
+      // `titleEn`/`descriptionEn` and accepts explicit `careerPaths` tags.
+      // Instructors keep using the instructor DTO shape.
+      const coursePayload = isAdmin
+        ? {
+            titleEn: form.title,
+            titleAr: form.titleAr,
+            descriptionEn: form.description,
+            price: parseFloat(form.price) || 0,
+            level: form.level,
+            status: form.status,
+            careerPaths,
+          }
+        : {
+            title: form.title,
+            titleAr: form.titleAr,
+            description: form.description,
+            price: parseFloat(form.price) || 0,
+            level: form.level,
+            status: form.status,
+          }
+
       await Promise.all([
-        patch(`/courses/${courseId}`, {
-          title: form.title,
-          titleAr: form.titleAr,
-          description: form.description,
-          price: parseFloat(form.price) || 0,
-          level: form.level,
-          status: form.status,
-        }),
+        patch(`/courses/${courseId}`, coursePayload),
         patch(`/courses/${courseId}/course-settings`, {
           expectedLessons,
           certificateEnabled,
@@ -2002,6 +2049,60 @@ function CourseSettingsTab({
           ))}
         </div>
       </div>
+
+      {/* ── Career Paths (admin only) ─────────────────────── */}
+      {isAdmin && (
+        <div
+          style={{
+            border: '1px solid var(--border)',
+            borderRadius: '14px',
+            padding: '1rem',
+            background: 'var(--surface-2)',
+          }}
+        >
+          <label className="block text-sm font-medium text-foreground mb-1">
+            المسارات المهنية
+          </label>
+          <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--muted)' }}>
+            يظهر الكورس فقط في المسارات المحددة. اترك القائمة فارغة لإزالته من كل المسارات.
+          </p>
+          <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+            {(careerPathOptions as any[]).length === 0 ? (
+              <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+                لا توجد مسارات متاحة
+              </div>
+            ) : (
+              (careerPathOptions as any[]).map((p: any) => {
+                const slug = String(p.slug || '')
+                if (!slug) return null
+                const checked = careerPaths.includes(slug)
+                return (
+                  <label
+                    key={p.id || slug}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-primary/5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleCareerPath(slug)}
+                      className="h-4 w-4 accent-[color:var(--primary)]"
+                    />
+                    <span>{p.titleAr || p.titleEn || p.title || slug}</span>
+                    <span style={{ marginInlineStart: 'auto', fontSize: '0.7rem', color: 'var(--muted)' }}>
+                      {slug}
+                    </span>
+                  </label>
+                )
+              })
+            )}
+          </div>
+          <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--muted)' }}>
+            {careerPaths.length > 0
+              ? `المحدد (${careerPaths.length}): ${careerPaths.join('، ')}`
+              : 'لا مسارات محددة'}
+          </p>
+        </div>
+      )}
 
       <button
         type="button"

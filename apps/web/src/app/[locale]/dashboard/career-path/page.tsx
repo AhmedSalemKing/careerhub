@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -15,37 +15,6 @@ import { learnUrlWithToken } from '../../../../lib/learn-link'
 import ConfirmModal from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import { formatCoursePrice, getCountryClient } from '../../../../lib/market'
-
-const PATH_KEYWORDS: Record<string, string[]> = {
-  'سيبراني': ['سيبر', 'اختراق', 'أمن', 'شبكات', 'حماية', 'cyber', 'security', 'pentest', 'network', 'ethical hacking', 'vulnerability', 'forensics', 'malware', 'SIEM', 'SOC', 'firewall', 'encryption', 'cryptography'],
-  'اختراق': ['اختراق', 'سيبر', 'أمن', 'هاكر', 'pentest', 'security', 'ethical', 'burp', 'metasploit', 'kali', 'nmap', 'OWASP', 'CTF', 'exploit', 'vulnerability'],
-  'محلل أمن': ['SIEM', 'SOC', 'threat', 'incident', 'log analysis', 'security operations', 'تهديدات', 'تحليل أمني', 'استجابة'],
-  'شبكات': ['شبكات', 'network', 'cisco', 'routing', 'switching', 'TCP/IP', 'LAN', 'WAN', 'VPN', 'firewall', 'IDS', 'IPS', 'packet', 'wireshark'],
-  'برمجيات': ['برمجة', 'تطوير', 'javascript', 'python', 'react', 'backend', 'frontend', 'fullstack', 'software', 'coding', 'programming', 'java', 'typescript', 'algorithms', 'data structures'],
-  'واجهات': ['واجهة', 'frontend', 'react', 'html', 'css', 'javascript', 'UI', 'vue', 'angular', 'responsive', 'tailwind', 'bootstrap'],
-  'خلفيات': ['backend', 'node', 'python', 'api', 'database', 'sql', 'REST', 'GraphQL', 'microservices', 'server', 'django', 'fastapi', 'nestjs', 'express'],
-  'متكامل': ['fullstack', 'full stack', 'frontend', 'backend', 'javascript', 'react', 'node', 'database', 'api', 'typescript'],
-  'موبايل': ['mobile', 'flutter', 'react native', 'ios', 'android', 'dart', 'swift', 'kotlin', 'تطبيق', 'موبايل'],
-  'ألعاب': ['game', 'unity', 'unreal', 'C#', 'C++', '3D', 'gaming', 'ألعاب', 'game development'],
-  'بيانات': ['بيانات', 'data', 'python', 'machine learning', 'sql', 'analytics', 'تعلم آلي', 'pandas', 'numpy', 'statistics', 'tableau', 'powerbi', 'excel', 'R'],
-  'عالم بيانات': ['data science', 'machine learning', 'deep learning', 'python', 'tensorflow', 'pytorch', 'neural network', 'NLP', 'computer vision'],
-  'تعلم آلي': ['machine learning', 'deep learning', 'AI', 'python', 'tensorflow', 'pytorch', 'scikit', 'neural', 'NLP', 'computer vision', 'MLOps'],
-  'ذكاء': ['ذكاء', 'ai', 'artificial intelligence', 'machine learning', 'deep learning', 'llm', 'python', 'LLMs', 'prompt engineering', 'vector', 'generative', 'chatbot'],
-  'تصميم': ['تصميم', 'design', 'ui', 'ux', 'figma', 'photoshop', 'illustrator', 'adobe', 'graphic', 'visual', 'prototype', 'wireframe', 'typography', 'color theory'],
-  'تجربة مستخدم': ['UX', 'user experience', 'user research', 'usability', 'wireframe', 'prototype', 'figma', 'accessibility', 'تجربة مستخدم'],
-  'موشن': ['motion', 'animation', 'after effects', 'cinema 4D', 'animate', 'رسوم متحركة', 'موشن جرافيك'],
-  'تسويق': ['تسويق', 'marketing', 'seo', 'sem', 'ads', 'social media', 'google ads', 'meta ads', 'content', 'email marketing', 'analytics', 'conversion'],
-  'محتوى': ['content', 'copywriting', 'SEO', 'blog', 'محتوى', 'كتابة', 'social media', 'content strategy'],
-  'سحابي': ['cloud', 'aws', 'azure', 'gcp', 'terraform', 'kubernetes', 'docker', 'serverless', 'infrastructure'],
-  'devops': ['devops', 'docker', 'kubernetes', 'ci/cd', 'linux', 'cloud', 'ansible', 'jenkins', 'github actions', 'terraform', 'monitoring'],
-  'موثوقية': ['SRE', 'reliability', 'monitoring', 'observability', 'incident', 'automation', 'linux', 'cloud', 'prometheus', 'grafana'],
-  'ذكاء أعمال': ['BI', 'business intelligence', 'tableau', 'powerbi', 'sql', 'data modeling', 'reporting', 'dashboard'],
-  'أعمال': ['business', 'management', 'strategy', 'leadership', 'MBA', 'project management', 'agile', 'scrum', 'إدارة', 'أعمال'],
-  'منتج': ['product', 'product management', 'agile', 'scrum', 'roadmap', 'user stories', 'backlog', 'stakeholder', 'إدارة منتج'],
-  'مشاريع': ['project management', 'PMP', 'agile', 'scrum', 'kanban', 'risk management', 'إدارة مشاريع', 'تخطيط'],
-  'مستشار': ['consulting', 'architecture', 'system design', 'enterprise', 'استشارات', 'هندسة أنظمة'],
-  'تقني': ['technical', 'product', 'engineering', 'system design', 'architecture', 'agile', 'technology'],
-}
 
 type TabKey = 'paths' | 'assessment' | 'courses'
 
@@ -78,8 +47,9 @@ const [myPathIds, setMyPathIds] = useState<Set<string>>(() => {
 const [assessmentResults, setAssessmentResults] = useState<AssessmentResult[]>([])
 const [rasheedResult, setRasheedResult] = useState<{ summary: string; topCareers: { name: string; nameEn: string; match: number }[] } | null>(null)
 const [allPaths, setAllPaths] = useState<any[]>([])
-const [allCourses, setAllCourses] = useState<any[]>([])
+const [courses, setCourses] = useState<any[]>([])
 const [coursesLoading, setCoursesLoading] = useState(false)
+const [coursePathSlug, setCoursePathSlug] = useState<string | null>(null)
 const [bundles, setBundles] = useState<any[]>([])
 const [_bundlesLoading, setBundlesLoading] = useState(false)
 const [busyPaths, setBusyPaths] = useState<Set<string>>(new Set())
@@ -190,29 +160,6 @@ const [confirmModal, setConfirmModal] = useState<{
   }, [allPaths]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    setCoursesLoading(true)
-    const token = getToken()
-
-    const countryParam = getCountryClient() === 'EG' ? '&country=EG' : ''
-    fetch(`${apiUrl}/courses?page=1&limit=100&language=${locale === 'ar' ? 'ar' : 'en'}${countryParam}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    })
-      .then(r => r.json())
-      .then(data => {
-        const arr = data?.data?.courses ?? data?.data ?? data ?? []
-        setAllCourses(Array.isArray(arr) ? arr : [])
-      })
-      .catch(e => {
-        console.error('[Courses error]', e)
-        setAllCourses([])
-      })
-      .finally(() => setCoursesLoading(false))
-  }, [apiUrl, locale])
-
-  useEffect(() => {
     setBundlesLoading(true)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
     const bundleCountryParam = getCountryClient() === 'EG' ? '?country=EG' : ''
@@ -237,61 +184,74 @@ const [confirmModal, setConfirmModal] = useState<{
 
   const isPathSelected = (p: any) => isPathIdSelected(p?.id)
 
-  const collectPathKeywords = (): string[] => {
-    if (myPathIds.size === 0) return []
-    const selected = allPaths.filter(p => isPathIdSelected(p?.id))
-    const keywords = new Set<string>()
+  // Slugs of the paths the user selected — the only thing used to match
+  // courses. No keyword matching and no client-side fuzzy filtering.
+  const selectedPathSlugs = Array.from(new Set(
+    allPaths
+      .filter(p => isPathSelected(p))
+      .map(p => p?.slug)
+      .filter(Boolean)
+  )) as string[]
+  const selectedPathSlugsKey = selectedPathSlugs.join(',')
 
-    const addKeyWords = (kws: string[]) => {
-      kws.forEach(k => keywords.add(String(k).toLowerCase()))
+  useEffect(() => {
+    if (activeTab !== 'courses') return
+
+    const slugs =
+      coursePathSlug && selectedPathSlugs.includes(coursePathSlug)
+        ? [coursePathSlug]
+        : selectedPathSlugs
+
+    if (slugs.length === 0) {
+      setCourses([])
+      setCoursesLoading(false)
+      return
     }
-    const collectForKey = (name: string) => {
-      const lowerName = name.toLowerCase()
-      for (const [key, kws] of Object.entries(PATH_KEYWORDS)) {
-        const lowerKey = key.toLowerCase()
-        if (lowerName.includes(lowerKey) || lowerKey.includes(lowerName)) {
-          addKeyWords(kws)
-        }
-      }
-    }
 
-    for (const path of selected) {
-      const names = [path.titleAr, path.titleEn, path.title, path.slug]
-        .filter(Boolean)
-        .map(n => String(n).toLowerCase())
+    let cancelled = false
+    setCoursesLoading(true)
+    const token = getToken()
+    const countryParam = getCountryClient() === 'EG' ? '&country=EG' : ''
+    const base = `${apiUrl}/courses?page=1&limit=100&language=${locale === 'ar' ? 'ar' : 'en'}${countryParam}`
 
-      // Primary: path name contains a keyword key (or key contains part of the name)
-      names.forEach(name => collectForKey(name))
-
-      // Fallback: token overlap between path name words and keyword values
-      for (const name of names) {
-        const tokens = new Set<string>(
-          name.split(/[^a-zA-Z0-9\u0600-\u06FF]+/).filter(t => t.length >= 2)
-        )
-        for (const kws of Object.values(PATH_KEYWORDS)) {
-          for (const kw of kws) {
-            const kwTokens = String(kw).toLowerCase().split(/[^a-zA-Z0-9\u0600-\u06FF]+/).filter(t => t.length >= 2)
-            if (kwTokens.some(t => tokens.has(t))) addKeyWords(kws)
+    Promise.all(
+      slugs.map(slug =>
+        fetch(`${base}&careerPath=${encodeURIComponent(slug)}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+          .then(r => r.json())
+          .then(data => {
+            const arr = data?.data?.courses ?? data?.data ?? data ?? []
+            return Array.isArray(arr) ? arr : []
+          })
+          .catch(() => [])
+      )
+    )
+      .then(lists => {
+        if (cancelled) return
+        const seen = new Set<string>()
+        const merged: any[] = []
+        for (const list of lists) {
+          for (const course of list) {
+            if (course?.id && !seen.has(course.id)) {
+              seen.add(course.id)
+              merged.push(course)
+            }
           }
         }
-      }
+        setCourses(merged)
+      })
+      .finally(() => {
+        if (!cancelled) setCoursesLoading(false)
+      })
+
+    return () => {
+      cancelled = true
     }
-
-    return Array.from(keywords)
-  }
-
-  const courses = useMemo(() => {
-    const keywords = collectPathKeywords()
-    if (keywords.length === 0 || allCourses.length === 0) return []
-    return allCourses.filter(course => {
-      const haystack = [
-        course.title, course.description,
-        course.category, course.titleEn, course.titleAr,
-        course.descriptionEn, course.descriptionAr,
-      ].filter(Boolean).map(String).join(' ').toLowerCase()
-      return keywords.some(kw => kw.length > 0 && haystack.includes(kw))
-    })
-  }, [myPathIds, allPaths, allCourses])
+  }, [activeTab, coursePathSlug, selectedPathSlugsKey, apiUrl, locale])
 
   const removePath = async (pathId: string) => {
     if (!isPathIdSelected(pathId)) {
@@ -482,7 +442,7 @@ const [confirmModal, setConfirmModal] = useState<{
           
           <div style={{ display: 'flex', gap: 0 }}>
             {TABS.map(tab => (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              <button key={tab.key} onClick={() => { setActiveTab(tab.key); if (tab.key === 'courses') setCoursePathSlug(null) }} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '12px 20px', background: 'none', border: 'none', cursor: 'pointer',
                 fontSize: 13, fontWeight: 500,
@@ -592,7 +552,7 @@ const [confirmModal, setConfirmModal] = useState<{
                           <div style={{ color: text, fontSize: 14, fontWeight: 600 }}>{isAr ? path.titleAr : path.titleEn}</div>
                           <div style={{ color: subtext, fontSize: 12, marginTop: 2 }}>{isAr ? 'مسار مهني' : 'Career path'}</div>
                         </div>
-                        <button onClick={() => setActiveTab('courses')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                        <button onClick={() => { setCoursePathSlug(path.slug || null); setActiveTab('courses') }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderRadius: 8, background: '#5120c8', color: '#ffffff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                           <BookOpen size={12} />
                           {isAr ? 'كورسات' : 'Courses'}
                         </button>
@@ -761,13 +721,20 @@ const [confirmModal, setConfirmModal] = useState<{
               </div>
             ) : (
               <div>
-                <div style={{ marginBottom: 20 }}>
-                  <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
-                  <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
-                    {myPathIds.size > 0
-                      ? (isAr ? `بناء على ${myPathIds.size} مسار مختار` : `Based on ${myPathIds.size} selected path${myPathIds.size > 1 ? 's' : ''}`)
-                      : (isAr ? 'أحدث الكورسات المنشورة' : 'Latest published courses')}
-                  </p>
+                <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <h3 style={{ color: text, fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{isAr ? 'الكورسات المقترحة' : 'Recommended Courses'}</h3>
+                    <p style={{ color: subtext, fontSize: 13, margin: 0 }}>
+                      {coursePathSlug
+                        ? (isAr ? 'كورسات المسار المختار فقط' : 'Courses for the selected path only')
+                        : (isAr ? `بناء على ${myPathIds.size} مسار مختار` : `Based on ${myPathIds.size} selected path${myPathIds.size > 1 ? 's' : ''}`)}
+                    </p>
+                  </div>
+                  {coursePathSlug && (
+                    <button onClick={() => setCoursePathSlug(null)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${border}`, background: 'transparent', color: '#5120c8', fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      {isAr ? 'عرض كل مساراتي' : 'Show all my paths'}
+                    </button>
+                  )}
                 </div>
                 
                 {coursesLoading ? (
@@ -800,7 +767,9 @@ const [confirmModal, setConfirmModal] = useState<{
                   <div style={{ textAlign:'center', padding:'60px 24px' }}>
                     <BookOpen size={36} color={subtext} style={{ marginBottom:12 }} />
                     <p style={{ color:subtext, fontSize:14, marginBottom:16 }}>
-                      {isAr ? 'لا توجد كورسات مطابقة لمساراتك المختارة حالياً' : 'No courses matching your selected paths yet'}
+                      {isAr
+                        ? (coursePathSlug ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'لا توجد كورسات مطابقة لمساراتك المختارة حالياً')
+                        : (coursePathSlug ? 'No courses tagged with this path yet' : 'No courses matching your selected paths yet')}
                     </p>
                     <a
 href={learnUrlWithToken(`/${locale}/courses`)}
