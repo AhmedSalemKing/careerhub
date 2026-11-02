@@ -3,8 +3,9 @@ import { useEffect, useMemo } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import { CheckCircle2, XCircle, FileText, ExternalLink, RotateCcw, Target, BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, Download, RotateCcw, Target, BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
 import { get } from '@/lib/api'
+import { downloadFile, getDownloadFilename, getFilePreviewUrl, isPdfFile } from '@/lib/file-download'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -434,16 +435,30 @@ export default function QuizResultPage() {
                 )}
 
                 {q.type === 'FILE_UPLOAD' && answer?.fileUrl && (
-                  <a
-                    href={answer.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
-                  >
-                    <FileText className="h-4 w-4" />
-                    {answer.fileName || 'الملف المرفق'}
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
+                  <div className="mt-3 space-y-3">
+                    {isPdfFile(answer.fileUrl, answer.fileName) && (
+                      <iframe
+                        src={getFilePreviewUrl(answer.fileUrl) ?? ''}
+                        width="100%"
+                        height="400"
+                        style={{ border: '1px solid var(--border)', borderRadius: 8, background: '#fff' }}
+                        title="معاينة الملف المرفق"
+                      />
+                    )}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => void downloadFile(answer.fileUrl, answer.fileName)}
+                        className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
+                      >
+                        <Download className="h-4 w-4" />
+                        تحميل الملف{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
+                      </button>
+                      <span className="max-w-[260px] truncate text-xs text-[color:var(--muted)]">
+                        {getDownloadFilename(answer.fileUrl, answer.fileName)}
+                      </span>
+                    </div>
+                  </div>
                 )}
 
                 {finished && answer && (

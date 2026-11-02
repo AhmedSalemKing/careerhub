@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { ArrowRight, Save, CheckCircle2, XCircle, FileText, ExternalLink } from 'lucide-react'
+import { ArrowRight, Save, CheckCircle2, XCircle, Download } from 'lucide-react'
 import { get, post } from '@/lib/api'
 import { formatDateTimeAr } from '@/lib/formatDate'
+import { downloadFile, getDownloadFilename, getFilePreviewUrl, isPdfFile } from '@/lib/file-download'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
@@ -219,22 +220,32 @@ export default function ReviewAttemptPage() {
                 )}
 
                 {q.type === 'FILE_UPLOAD' && (
-                  <div className="mt-3">
+                  <div className="mt-3 space-y-3">
                     {answer?.fileUrl ? (
-                      <a
-                        href={
-                          answer.fileUrl.includes('cloudinary.com') && answer.fileUrl.includes('/upload/')
-                            ? answer.fileUrl.replace('/upload/', '/upload/fl_attachment/')
-                            : answer.fileUrl
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
-                      >
-                        <FileText className="h-4 w-4" />
-                        {answer.fileName || 'الملف المرفق'}
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
+                      <>
+                        {isPdfFile(answer.fileUrl, answer.fileName) && (
+                          <iframe
+                            src={getFilePreviewUrl(answer.fileUrl) ?? ''}
+                            width="100%"
+                            height="400"
+                            style={{ border: '1px solid var(--border)', borderRadius: 8, background: '#fff' }}
+                            title="معاينة ملف الطالب"
+                          />
+                        )}
+                        <div className="flex flex-wrap items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => void downloadFile(answer.fileUrl, answer.fileName)}
+                            className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"
+                          >
+                            <Download className="h-4 w-4" />
+                            تحميل الملف{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
+                          </button>
+                          <span className="max-w-[260px] truncate text-xs text-[color:var(--muted)]">
+                            {getDownloadFilename(answer.fileUrl, answer.fileName)}
+                          </span>
+                        </div>
+                      </>
                     ) : (
                       <p className="text-xs text-[#ef4444]">لم يرفع الطالب ملفاً</p>
                     )}
