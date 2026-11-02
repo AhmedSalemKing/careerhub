@@ -814,6 +814,11 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
   const locale = (params?.locale as string) || 'ar'
 
   async function handleStart() {
+    if (isLive) {
+      // Already live: just reopen the studio instead of restarting the session
+      router.push(`/${locale}/dashboard/courses/${courseId}/go-live?lessonId=${lessonId}`)
+      return
+    }
     setLoading(true)
     try {
       await post(`/live/lesson-start/${lessonId}`, {})
@@ -827,7 +832,7 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
   }
 
   async function handleEnd() {
-    if (!window.confirm('إنهاء البث المباشر؟')) return
+    if (!window.confirm('هل تريد إنهاء البث المباشر؟')) return
     setEnding(true)
     try {
       await post(`/live/end/${courseId}`, {})
@@ -839,64 +844,50 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
     }
   }
 
-  if (isLive) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-        <button
-          type="button"
-          onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/go-live?lessonId=${lessonId}`)}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '5px 12px', borderRadius: 20,
-            background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
-            color: '#ef4444', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-            fontFamily: 'inherit', whiteSpace: 'nowrap',
-          }}
-        >
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
-          مباشر الآن
-        </button>
-        <button
-          type="button"
-          onClick={handleEnd}
-          disabled={ending}
-          style={{
-            padding: '5px 14px', borderRadius: 20,
-            border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.10)',
-            color: '#ef4444', fontSize: '0.78rem', fontWeight: 600,
-            cursor: ending ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-            opacity: ending ? 0.6 : 1, whiteSpace: 'nowrap',
-          }}
-        >
-          {ending ? '...' : 'إنهاء البث'}
-        </button>
-      </div>
-    )
-  }
-
   return (
-    <button
-      type="button"
-      onClick={handleStart}
-      disabled={loading}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: '6px',
-        padding: '5px 14px', borderRadius: '20px',
-        border: '1px solid rgba(81,32,200,0.4)',
-        background: 'rgba(81,32,200,0.12)',
-        color: '#a78bfa',
-        fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-        fontFamily: 'inherit', opacity: loading ? 0.6 : 1,
-        whiteSpace: 'nowrap', flexShrink: 0,
-      }}
-    >
-      {loading ? (
-        <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
-      ) : (
-        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
-      )}
-      بدء البث
-    </button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={handleStart}
+        disabled={loading}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '5px 12px', borderRadius: 20,
+          border: '1px solid rgba(81,32,200,0.4)',
+          background: 'rgba(81,32,200,0.12)',
+          color: '#a78bfa',
+          fontSize: '0.78rem', fontWeight: 600,
+          cursor: 'pointer', whiteSpace: 'nowrap',
+          fontFamily: 'inherit', opacity: loading ? 0.6 : 1,
+        }}
+      >
+        {loading ? (
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: '2px solid currentColor', borderTopColor: 'transparent', animation: 'spin 0.6s linear infinite' }} />
+        ) : (
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+        )}
+        بدء البث
+      </button>
+
+      <button
+        type="button"
+        onClick={handleEnd}
+        disabled={ending}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '5px 12px', borderRadius: 20,
+          border: '1px solid rgba(239,68,68,0.4)',
+          background: 'rgba(239,68,68,0.10)',
+          color: '#f87171',
+          fontSize: '0.78rem', fontWeight: 600,
+          cursor: ending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+          fontFamily: 'inherit', opacity: ending ? 0.6 : 1,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+        {ending ? '...' : 'إنهاء البث'}
+      </button>
+    </div>
   )
 }
 
