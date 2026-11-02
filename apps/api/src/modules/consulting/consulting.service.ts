@@ -354,6 +354,23 @@ export class ConsultingService {
       meetingType: 'daily',
     })
 
+    // Bookings go through this module, not the legacy /api/sessions/book route the
+    // tracking middleware watches, so they must be recorded here explicitly.
+    await this.activityService.track({
+      userId,
+      action: 'BOOK_SESSION',
+      entityType: 'Session',
+      entityId: (session as any).id,
+      metadata: {
+        consultantName: formatName(consultant.profile),
+        date: scheduledAt.toLocaleDateString('ar-EG', { timeZone: 'Africa/Cairo' }),
+        sessionDate: scheduledAt.toISOString(),
+        price: sessionPrice,
+        status: ConsultingStatus.PENDING_APPROVAL,
+        topic: data.topic,
+      },
+    })
+
     await this.notify(data.consultantId, {
       titleEn: 'New Session Booking Request',
       titleAr: 'طلب حجز جلسة جديد',
