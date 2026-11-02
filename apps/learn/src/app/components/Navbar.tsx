@@ -8,15 +8,14 @@ import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { CartIcon } from './CartIcon'
 import { SearchBar } from './SearchBar'
-import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen, Bell, Wallet, ArrowUpRight } from 'lucide-react'
+import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
-/* ═══ Cross-domain web app (notifications + wallet live there) ═══ */
+/* ═══ Cross-domain web app (notifications live there) ═══ */
 const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
 
-import { formatMoney } from '../../lib/market'
 
 /* ═══ Shared font for nav + buttons ═══ */
 const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
@@ -311,7 +310,7 @@ export function Navbar() {
 
   const isActive = (href: string) => pathname === href
 
-  /* ═══ Header badges: unread notifications + wallet balance ═══ */
+  /* ═══ Header badges: unread notifications ═══ */
   const { data: unreadCount = 0 } = useQuery<number>({
     queryKey: ['navbar-notifications-unread'],
     enabled: isLoggedIn,
@@ -328,19 +327,6 @@ export function Navbar() {
     refetchInterval: 60000,
   })
 
-  const { data: wallet } = useQuery<any>({
-    queryKey: ['navbar-wallet'],
-    enabled: isLoggedIn,
-    queryFn: async () => {
-      try {
-        const res = await api.get('/wallet')
-        return (res?.data as any)?.data ?? null
-      } catch {
-        return null
-      }
-    },
-    refetchInterval: 60000,
-  })
 
   return (
     <>
@@ -477,24 +463,6 @@ export function Navbar() {
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
-                </a>
-              )}
-
-              {mounted && isLoggedIn && (
-                <a
-                  href={`${WEB_URL}/${locale}/dashboard/wallet`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="المحفظة"
-                  className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-xl transition-colors duration-150"
-                  style={{ background: 'rgba(81,32,200,0.10)', color: '#5120c8' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.18)' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81,32,200,0.10)' }}
-                >
-                  <Wallet className="h-4 w-4" />
-                  <span className="text-xs font-bold">
-                    {formatMoney(wallet?.balance ?? 0, (wallet as any)?.balanceDisplay)}
-                  </span>
                 </a>
               )}
 
@@ -683,20 +651,6 @@ export function Navbar() {
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
-                </a>
-              )}
-              {mounted && isLoggedIn && (
-                <a
-                  href={`${WEB_URL}/${locale}/dashboard/wallet`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="المحفظة"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
-                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
-                >
-                  <Wallet className="h-3.5 w-3.5" />
-                  {formatMoney(wallet?.balance ?? 0, (wallet as any)?.balanceDisplay)}
                 </a>
               )}
               <CartIcon />

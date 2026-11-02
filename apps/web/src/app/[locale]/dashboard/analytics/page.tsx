@@ -2,17 +2,21 @@
 import { useQuery } from '@tanstack/react-query'
 import { get } from '@/lib/api'
 import { useTheme } from 'next-themes'
-import { BarChart2, Users, BookOpen, Star, TrendingUp, Award, Loader2 } from 'lucide-react'
+import { BarChart2, Users, BookOpen, Star, TrendingUp, Award } from 'lucide-react'
 import { formatCoursePrice, formatMoney } from '@/lib/market'
 
 export default function AnalyticsPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, isError, refetch } = useQuery({
     queryKey: ['instructor-stats'],
+    staleTime: 60_000,
+    retry: 1,
     queryFn: async () => {
-      const res = await get('/courses/instructor/stats')
+      // Fail after 8s instead of spinning forever; the retry button below re-runs it
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000))
+      const res = await Promise.race([get('/courses/instructor/stats'), timeout])
       return res.data?.data ?? {}
     }
   })
@@ -37,11 +41,19 @@ export default function AnalyticsPage() {
         </div>
 
         {isLoading ? (
-          <div style={{ textAlign:'center', padding:60 }}>
-            <Loader2 size={40} style={{ animation:'spin 1s linear infinite', color:'#5120c8', margin:'0 auto' }}/>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ height:110, borderRadius:16, background: isDark?'#121212':'#fff', border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}`, opacity:0.6, animation:'pulse 1.5s ease infinite' }} />
+            ))}
           </div>
         ) : (
           <>
+            {isError && (
+              <div style={{ marginBottom:16, padding:'12px 16px', borderRadius:12, background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.3)', color:'#ef4444', fontSize:13, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <span>تعذر تحميل الإحصائيات</span>
+                <button onClick={() => refetch()} style={{ background:'none', border:'1px solid currentColor', color:'inherit', borderRadius:8, padding:'4px 12px', cursor:'pointer', fontSize:12 }}>إعادة المحاولة</button>
+              </div>
+            )}
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:28 }}>
               {statCards.map((s,i) => (
                 <div key={i} style={{ background: isDark?'#121212':'#fff', borderRadius:16, padding:'20px 18px', border:`1px solid ${isDark?'rgba(255,255,255,0.06)':'#e5e7eb'}` }}>
@@ -77,7 +89,7 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes pulse{0%,100%{opacity:.6}50%{opacity:.3}}`}</style>
     </div>
   )
 }

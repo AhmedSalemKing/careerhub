@@ -1897,7 +1897,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
         success: true,
         data: {
           totalStudents,
-          publishedCourses: courses.filter(c => c.status === 'PUBLISHED').length,
+          publishedCourses: courses.filter(c => String(c.status).toUpperCase() === 'PUBLISHED').length,
           totalCourses: courses.length,
           avgRating: 0,
           totalRevenue,

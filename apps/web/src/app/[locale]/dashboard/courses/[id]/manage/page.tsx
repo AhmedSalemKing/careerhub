@@ -808,6 +808,7 @@ function AddLectureModal({
 
 function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: string; courseId: string; isLive: boolean; onStarted: () => void }) {
   const [loading, setLoading] = useState(false)
+  const [ending, setEnding] = useState(false)
   const router = useRouter()
   const params = useParams()
   const locale = (params?.locale as string) || 'ar'
@@ -825,18 +826,66 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
     }
   }
 
+  async function handleEnd() {
+    if (!window.confirm('إنهاء البث المباشر؟')) return
+    setEnding(true)
+    try {
+      await post(`/live/end/${courseId}`, {})
+    } catch (e) {
+      console.error('Failed to end stream:', e)
+    } finally {
+      setEnding(false)
+      onStarted()
+    }
+  }
+
+  if (isLive) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/go-live?lessonId=${lessonId}`)}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '5px 12px', borderRadius: 20,
+            background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)',
+            color: '#ef4444', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+            fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}
+        >
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444' }} />
+          مباشر الآن
+        </button>
+        <button
+          type="button"
+          onClick={handleEnd}
+          disabled={ending}
+          style={{
+            padding: '5px 14px', borderRadius: 20,
+            border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.10)',
+            color: '#ef4444', fontSize: '0.78rem', fontWeight: 600,
+            cursor: ending ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+            opacity: ending ? 0.6 : 1, whiteSpace: 'nowrap',
+          }}
+        >
+          {ending ? '...' : 'إنهاء البث'}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <button
       type="button"
       onClick={handleStart}
-      disabled={loading || isLive}
+      disabled={loading}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: '6px',
         padding: '5px 14px', borderRadius: '20px',
-        border: isLive ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(81,32,200,0.4)',
-        background: isLive ? 'rgba(239,68,68,0.12)' : 'rgba(81,32,200,0.12)',
-        color: isLive ? '#f87171' : '#a78bfa',
-        fontSize: '0.78rem', fontWeight: 600, cursor: isLive ? 'default' : 'pointer',
+        border: '1px solid rgba(81,32,200,0.4)',
+        background: 'rgba(81,32,200,0.12)',
+        color: '#a78bfa',
+        fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
         fontFamily: 'inherit', opacity: loading ? 0.6 : 1,
         whiteSpace: 'nowrap', flexShrink: 0,
       }}
@@ -846,7 +895,7 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
       ) : (
         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
       )}
-      {isLive ? 'جارٍ البث' : 'بدء البث'}
+      بدء البث
     </button>
   )
 }
