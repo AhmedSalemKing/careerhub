@@ -806,9 +806,10 @@ function AddLectureModal({
 
 // ─── Start Live Button ────────────────────────────────────────────────────────
 
-function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: string; courseId: string; isLive: boolean; onStarted: () => void }) {
+function StartLiveButton({ lessonId, courseId, isLive, isEnded = false, onStarted }: { lessonId: string; courseId: string; isLive: boolean; isEnded?: boolean; onStarted: () => void }) {
   const [loading, setLoading] = useState(false)
   const [ending, setEnding] = useState(false)
+  const [endedLocally, setEndedLocally] = useState(false)
   const router = useRouter()
   const params = useParams()
   const locale = (params?.locale as string) || 'ar'
@@ -839,9 +840,51 @@ function StartLiveButton({ lessonId, courseId, isLive, onStarted }: { lessonId: 
     } catch (e) {
       console.error('Failed to end stream:', e)
     } finally {
+      // Mark as ended client-side even if the request failed, so the UI never stays stuck on "live"
+      setEndedLocally(true)
       setEnding(false)
       onStarted()
     }
+  }
+
+  if (isEnded || endedLocally) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '4px 10px', borderRadius: 20,
+          background: 'rgba(100,116,139,0.12)', border: '1px solid rgba(100,116,139,0.25)',
+          color: '#64748b', fontSize: '0.72rem', fontWeight: 500, whiteSpace: 'nowrap',
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          البث منتهي
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEndedLocally(false)
+            router.push(`/${locale}/dashboard/courses/${courseId}/go-live?lessonId=${lessonId}`)
+          }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '4px 10px', borderRadius: 20,
+            border: '1px solid rgba(81,32,200,0.35)', background: 'rgba(81,32,200,0.08)',
+            color: '#a78bfa', fontSize: '0.72rem', fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+          بث جديد
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -1824,8 +1867,8 @@ export default function ManageCoursePage() {
                         {lesson.isFree && (
                           <span className="text-xs rounded-full bg-green-500/15 text-green-400 px-2 py-0.5 shrink-0">مجانية</span>
                         )}
-                        {(lesson.type === 'LIVE') && !isLiveStatus(lesson.liveStatus, 'ended') && (
-                          <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={isLiveStatus(lesson.liveStatus, 'live')} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
+                        {(lesson.type === 'LIVE') && (
+                          <StartLiveButton lessonId={lesson.id} courseId={courseId} isLive={isLiveStatus(lesson.liveStatus, 'live')} isEnded={isLiveStatus(lesson.liveStatus, 'ended')} onStarted={() => queryClient.invalidateQueries({ queryKey: ['instructor-course-details', courseId] })} />
                         )}
                       </div>
                     ))}
