@@ -86,6 +86,7 @@ interface ConsultantSessionDetail {
   actualStartedAt?: string | Date | null
   actualEndedAt?: string | Date | null
   actualDurationMinutes: number
+  bookedDurationMinutes?: number
   sessionStatus: string
   sessionPrice?: number
   currency?: string
@@ -985,7 +986,18 @@ export default function InstructorReportsClient({ country }: { country: string }
                                         <td style={subTdStyle}>{session.sessionTitle}</td>
                                         <td style={subTdStyle}>{session.topic || '—'}</td>
                                         <td style={subTdStyle}>{safeDate(session.scheduledAt as string | null)}</td>
-                                        <td style={subTdStyle}>{session.actualDurationMinutes > 0 ? `${session.actualDurationMinutes} ${isAr ? 'دقيقة' : 'min'}` : '—'}</td>
+                                        <td style={subTdStyle}>
+                                          {session.actualDurationMinutes > 0 ? (
+                                            <>
+                                              {session.actualDurationMinutes} {isAr ? 'دقيقة' : 'min'}
+                                              {session.bookedDurationMinutes && session.bookedDurationMinutes !== session.actualDurationMinutes && (
+                                                <span style={{ color: 'var(--muted)', fontSize: 11, marginInlineStart: 4 }}>
+                                                  ({isAr ? 'محجوز' : 'booked'}: {session.bookedDurationMinutes})
+                                                </span>
+                                              )}
+                                            </>
+                                          ) : '—'}
+                                        </td>
                                         <td style={subTdStyle}>{session.sessionStatus}</td>
                                         <td style={subTdStyle}>{formatMoney(session.paidAmount, session.paidAmountDisplay)}</td>
                                       </tr>

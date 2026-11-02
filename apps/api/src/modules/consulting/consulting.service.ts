@@ -16,6 +16,7 @@ import {
   getConsultingSessionColumns,
   isMissingColumnError,
 } from './consulting-columns'
+import { calculateActualDuration, snapDurationToPackage } from '../../common/utils/duration'
 
 export const SPECIALTY_KEYWORDS: Record<string, string[]> = {
   tech: ['برمجة','تقنية','software','tech','engineering','هندسة','developer','مطور','web','mobile','fullstack','frontend','backend','python','javascript','react','node','java','php','flutter','تطوير','كود','code','programming','ويب','موبايل','api','database','قاعدة بيانات','devops','cloud','سحابة','aws','azure','docker','kubernetes','linux','network','شبكات','typescript','vue','angular','spring','laravel'],
@@ -880,9 +881,20 @@ export class ConsultingService {
     if (!session) throw new NotFoundException('Session not found')
     if (session.studentId !== userId && session.consultantId !== userId) throw new ForbiddenException('Not authorized')
 
+    // Bill what actually happened, snapped to the booked package (only when the
+    // session really started; a manual "mark complete" keeps the booked length)
+    const endedAt = new Date()
+    const rawMinutes = calculateActualDuration(session.startedAt, endedAt)
+    const actualDuration = rawMinutes !== null ? snapDurationToPackage(rawMinutes, session.duration) : undefined
+
     const updated = await this.prisma.consultingSession.update({
       where: { id: sessionId },
-      data: { status: ConsultingStatus.COMPLETED, completedBy: userId, completedAt: new Date() },
+      data: {
+        status: ConsultingStatus.COMPLETED,
+        completedBy: userId,
+        completedAt: endedAt,
+        ...(actualDuration !== undefined && { actualDuration }),
+      },
     })
 
     const notifyId = session.studentId === userId ? session.consultantId : session.studentId
@@ -934,7 +946,10 @@ export class ConsultingService {
     })
     if (!session) return null
 
-    const actualDuration = durationSeconds > 0 ? Math.round(durationSeconds / 60) : session.duration
+    const actualDuration =
+      durationSeconds > 0
+        ? snapDurationToPackage(Math.round(durationSeconds / 60), session.duration)
+        : session.duration
 
     const updated = await this.prisma.consultingSession.update({
       where: { id: session.id },

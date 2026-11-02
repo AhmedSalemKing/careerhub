@@ -76,6 +76,8 @@ export interface ConsultantSessionDetail {
   actualStartedAt?: string | Date | null;
   actualEndedAt?: string | Date | null;
   actualDurationMinutes: number;
+  /** Length the client booked, shown next to the billed length when they differ */
+  bookedDurationMinutes?: number;
   sessionStatus: string;
   sessionPrice?: number;
   currency?: string;
@@ -794,6 +796,7 @@ export class InstructorReportsService {
           actualStartedAt: null,
           actualEndedAt: null,
           actualDurationMinutes: mins,
+          bookedDurationMinutes: session.duration || undefined,
           sessionStatus: st === 'COMPLETED' ? 'مكتملة' : st === 'CANCELLED' || st === 'NO_SHOW' ? 'ملغاة' : st === 'PENDING' ? 'معلقة' : st === 'SCHEDULED' ? 'مجدولة' : st === 'IN_PROGRESS' ? 'جارية' : st || 'غير محدد',
           sessionPrice: session.price || 0,
           currency: 'SAR',
@@ -826,7 +829,7 @@ export class InstructorReportsService {
           const inst = instructorMap.get((session as any).consultantId)!;
           const course = this.ensureCourse(inst, CONSULTING_COURSE_ID, CONSULTING_COURSE_NAME);
           const deliveredAt = this.resolveDate((session as any).completedAt, (session as any).scheduledAt);
-          const mins = (session as any).duration ?? 60;
+          const mins = (session as any).actualDuration ?? (session as any).duration ?? 60;
           this.addEntry(inst, course, mins, deliveredAt);
         }
       }
