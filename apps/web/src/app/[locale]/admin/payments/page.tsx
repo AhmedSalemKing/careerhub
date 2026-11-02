@@ -64,7 +64,7 @@ export default function AdminPaymentsPage() {
             <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
             <button
               type="button"
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
               onClick={() => {
                 toast({ title: c('loading'), description: c('loading') })
                 q.refetch().catch(() => {})
@@ -86,17 +86,17 @@ export default function AdminPaymentsPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
                       <tr>
-                        <th className="px-4 py-3 text-right font-semibold">{t('th_id')}</th>
-                        <th className="px-4 py-3 text-right font-semibold">{t('th_amount')}</th>
-                        <th className="px-4 py-3 text-right font-semibold">{t('th_status')}</th>
-                        <th className="px-4 py-3 text-right font-semibold">{t('th_user')}</th>
-                        <th className="px-4 py-3 text-right font-semibold">{t('th_time')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('th_id')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('th_amount')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('th_status')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('th_user')}</th>
+                        <th className="px-4 py-3 text-right font-medium">{t('th_time')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {items.map((p) => (
                         <tr key={p.id} className="border-t border-[color:var(--border)]">
-                          <td className="px-4 py-3 font-semibold text-foreground">{p.id}</td>
+                          <td className="px-4 py-3 font-medium text-foreground">{p.id}</td>
                           <td className="px-4 py-3 text-[color:var(--muted)]">
                             {p.amount ?? '-'} {p.currency ?? ''}
                           </td>
@@ -132,8 +132,8 @@ export default function AdminPaymentsPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 shadow-sm">
-      <div className="text-xs font-semibold text-[color:var(--muted)]">{label}</div>
-      <div className="mt-2 text-2xl font-extrabold text-foreground">{Math.round(value)}</div>
+      <div className="text-xs font-medium text-[color:var(--muted)]">{label}</div>
+      <div className="mt-2 text-2xl font-medium text-foreground">{Math.round(value)}</div>
     </div>
   )
 }

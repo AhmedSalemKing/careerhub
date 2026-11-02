@@ -113,7 +113,7 @@ export default function AdminOverviewPage() {
 	const accountTypeColor = (t: string) => {
 		const map: Record<string, { bg: string; text: string }> = {
 			STUDENT: {
-				bg: isDark ? "rgba(81,32,200,0.15)" : "rgba(81,32,200,0.08)",
+				bg: isDark ? "var(--primary-muted)" : "var(--primary-subtle)",
 				text: "#5120c8",
 			},
 			INSTRUCTOR: {
@@ -140,7 +140,7 @@ export default function AdminOverviewPage() {
 		<ErrorBoundary>
 		<div dir={isAr ? "rtl" : "ltr"} className="space-y-6" style={{ width:'100%', maxWidth:'100%', overflowX:'hidden', boxSizing:'border-box', padding:16 }}>
 			{/* ─── Header ─── */}
-			<h1 className="text-xl font-bold" style={{ color: "var(--foreground)" }}>
+			<h1 className="text-xl font-black" style={{ color: "var(--foreground)" }}>
 				{isAr ? "نظرة عامة على المنصة" : "Platform Overview"}
 			</h1>
 
@@ -239,7 +239,7 @@ export default function AdminOverviewPage() {
 								</div>
 							</div>
 							<p
-								className="font-bold mb-1"
+								className="font-medium mb-1"
 								style={{ color: "var(--foreground)", fontSize: 'clamp(20px, 5vw, 32px)' }}>
 								{s.value}
 							</p>
@@ -315,7 +315,7 @@ export default function AdminOverviewPage() {
 				<div className="flex items-center gap-2 mb-6">
 					<BarChart2 size={18} style={{ color: "#5120c8" }} />
 					<h2
-						className="text-sm font-bold"
+						className="text-sm font-medium"
 						style={{ color: "var(--foreground)" }}>
 						{isAr ? "الإيرادات — آخر ١٢ شهر" : "Revenue — Last 12 Months"}
 					</h2>
@@ -376,7 +376,7 @@ export default function AdminOverviewPage() {
 					className="flex items-center justify-between p-5"
 					style={{ borderBottom: "1px solid var(--border)" }}>
 					<h2
-						className="text-sm font-bold flex items-center gap-2"
+						className="text-sm font-medium flex items-center gap-2"
 						style={{ color: "var(--foreground)" }}>
 						<Users size={16} style={{ color: "#5120c8" }} />
 						{isAr ? "أحدث المستخدمين" : "Recent Users"}
@@ -415,18 +415,18 @@ export default function AdminOverviewPage() {
 									style={{ borderBottom: "1px solid var(--border)" }}
 									onMouseEnter={(e) => {
 										e.currentTarget.style.background = isDark
-											? "rgba(255,255,255,0.03)"
+											? "color-mix(in srgb, var(--foreground) 4%, transparent)"
 											: "rgba(0,0,0,0.02)";
 									}}
 									onMouseLeave={(e) => {
 										e.currentTarget.style.background = "transparent";
 									}}>
 									<div
-										className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+										className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium shrink-0"
 										style={{
 											background: isDark
-												? "rgba(81,32,200,0.15)"
-												: "rgba(81,32,200,0.08)",
+												? "var(--primary-muted)"
+												: "var(--primary-subtle)",
 											color: "#5120c8",
 										}}>
 										{u.profile?.firstName?.[0] ?? u.email[0].toUpperCase()}
@@ -447,7 +447,7 @@ export default function AdminOverviewPage() {
 									</div>
 									<div className="flex flex-col items-end gap-1 shrink-0">
 										<span
-											className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+											className="text-[11px] font-medium px-2.5 py-0.5 rounded-full"
 											style={{ background: colors.bg, color: colors.text }}>
 											{accountTypeLabel(u.accountType)}
 										</span>

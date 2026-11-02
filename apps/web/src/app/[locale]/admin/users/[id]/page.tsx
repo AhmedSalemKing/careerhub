@@ -33,11 +33,11 @@ const ACTION_META: Record<string, { icon: any; color: string; bg: string; labelA
   ENROLLMENT: { icon: CheckCircle, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)', labelAr: 'تسجيل في كورس', labelEn: 'Enroll course' },
   COMPLETE_COURSE: { icon: GraduationCap, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)', labelAr: 'إكمال كورس', labelEn: 'Complete course' },
   COURSE_COMPLETE: { icon: GraduationCap, color: '#F5A623', bg: 'rgba(245, 166, 35, 0.1)', labelAr: 'إكمال كورس', labelEn: 'Complete course' },
-  LOGIN: { icon: Key, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)', labelAr: 'تسجيل دخول', labelEn: 'Login' },
+  LOGIN: { icon: Key, color: '#5120C8', bg: 'var(--primary-muted)', labelAr: 'تسجيل دخول', labelEn: 'Login' },
   LOGOUT: { icon: LogOut, color: '#8E8E93', bg: 'rgba(142, 142, 147, 0.1)', labelAr: 'تسجيل خروج', labelEn: 'Logout' },
   PAYMENT_SUCCESS: { icon: DollarSign, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)', labelAr: 'دفع ناجح', labelEn: 'Payment success' },
   PAYMENT: { icon: DollarSign, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)', labelAr: 'دفع ناجح', labelEn: 'Payment success' },
-  BOOK_SESSION: { icon: Calendar, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)', labelAr: 'حجز جلسة', labelEn: 'Book session' },
+  BOOK_SESSION: { icon: Calendar, color: '#5120C8', bg: 'var(--primary-muted)', labelAr: 'حجز جلسة', labelEn: 'Book session' },
   SEARCH_COURSES: { icon: Search, color: '#6E6E73', bg: 'rgba(110, 110, 115, 0.1)', labelAr: 'بحث في الكورسات', labelEn: 'Search courses' },
   REGISTER: { icon: UserPlus, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)', labelAr: 'إنشاء حساب', labelEn: 'Register' },
 }
@@ -207,7 +207,7 @@ export default function UserDetailPage() {
   const paymentCount = payments.length
 
   const STATS: { label: string; value: string | number; subValue?: string; icon: any; color: string; bg: string }[] = [
-    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: CreditCard, color: '#5120C8', bg: 'rgba(81, 32, 200, 0.1)' },
+    { label: isAr ? 'إجمالي الدفع' : 'Total Payments', value: displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay), subValue: paymentCount > 0 ? `${paymentCount} ${isAr ? 'عملية' : 'transactions'}` : undefined, icon: CreditCard, color: '#5120C8', bg: 'var(--primary-muted)' },
     { label: isAr ? 'الكورسات' : 'Courses', value: enrolledCount + createdCount, subValue: `${enrolledCount} ${isAr ? 'مشترك' : 'enrolled'} / ${createdCount} ${isAr ? 'منشأ' : 'created'}`, icon: BookOpen, color: '#007AFF', bg: 'rgba(0, 122, 255, 0.1)' },
     { label: isAr ? 'الأرباح' : 'Earnings', value: formatCurrency(totalEarnings, financials?.totalEarningsDisplay), icon: TrendingUp, color: '#34C759', bg: 'rgba(52, 199, 89, 0.1)' },
   ]
@@ -238,16 +238,16 @@ export default function UserDetailPage() {
           <div
             style={{
               width: 56, height: 56, borderRadius: 16,
-              background: 'rgba(81, 32, 200, 0.1)', color: '#5120C8',
+              background: 'var(--primary-muted)', color: '#5120C8',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 22, fontWeight: 800, flexShrink: 0,
+              fontSize: 22, fontWeight: 500, flexShrink: 0,
             }}
           >
             {user?.profile?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', margin: 0, lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--foreground)', margin: 0, lineHeight: 1.2 }}>
               {user?.profile?.firstName} {user?.profile?.lastName}
             </h1>
             <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0', direction: 'ltr', textAlign: isAr ? 'right' : 'left' }}>
@@ -256,7 +256,7 @@ export default function UserDetailPage() {
           </div>
 
           <div style={{ flexShrink: 0 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, padding: '6px 14px', borderRadius: 20, background: 'rgba(81, 32, 200, 0.1)', color: '#5120C8' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 500, padding: '6px 14px', borderRadius: 20, background: 'var(--primary-muted)', color: '#5120C8' }}>
               <User size={13} />
               {roleLabel(user?.accountType || user?.role, isAr)}
             </span>
@@ -274,9 +274,9 @@ export default function UserDetailPage() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '10px 18px', borderRadius: 12,
-                  fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
+                  fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
                   border: active ? '1px solid rgba(81, 32, 200, 0.3)' : '1px solid transparent',
-                  background: active ? 'rgba(81, 32, 200, 0.1)' : 'transparent',
+                  background: active ? 'var(--primary-muted)' : 'transparent',
                   color: active ? '#5120C8' : 'var(--muted)',
                   cursor: 'pointer', transition: 'all 0.15s ease',
                 }}
@@ -299,12 +299,12 @@ export default function UserDetailPage() {
               return (
                 <div key={i} style={{ padding: 20, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>{stat.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>{stat.label}</span>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: stat.bg, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <Icon size={18} />
                     </div>
                   </div>
-                  <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.1 }}>{stat.value}</div>
+                  <div style={{ fontSize: 26, fontWeight: 500, color: 'var(--foreground)', lineHeight: 1.1 }}>{stat.value}</div>
                   {stat.subValue && (
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>{stat.subValue}</div>
                   )}
@@ -315,7 +315,7 @@ export default function UserDetailPage() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 20 }}>
             <div style={{ padding: 24, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)' }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 20px' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 20px' }}>
                 {isAr ? 'معلومات الحساب' : 'Account Info'}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -331,7 +331,7 @@ export default function UserDetailPage() {
                         <Icon size={14} />
                       </div>
                       <span style={{ flex: 1, fontSize: 13, color: 'var(--muted)' }}>{row.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{row.value}</span>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--foreground)' }}>{row.value}</span>
                     </div>
                   )
                 })}
@@ -339,7 +339,7 @@ export default function UserDetailPage() {
             </div>
 
             <div style={{ padding: 24, borderRadius: 16, background: 'var(--card)', border: '1px solid var(--border)' }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 20px' }}>
+              <h2 style={{ fontSize: 15, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 20px' }}>
                 {isAr ? 'النشاط الأخير' : 'Recent Activity'}
               </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
@@ -356,7 +356,7 @@ export default function UserDetailPage() {
                         <Icon size={16} />
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>
+                        <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--foreground)' }}>
                           {isAr ? meta.labelAr : meta.labelEn}
                         </p>
                         {act?.metadata?.courseTitle && (
@@ -386,7 +386,7 @@ export default function UserDetailPage() {
                   borderRadius: 10,
                   padding: '8px 16px',
                   fontSize: 12,
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: activityFilter === filter.key ? '#fff' : 'var(--muted)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
@@ -406,7 +406,7 @@ export default function UserDetailPage() {
             </div>
           ) : activityGroups.map((group) => (
             <div key={group.key}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '24px 0 12px' }}>
+              <h3 style={{ fontSize: 13, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '24px 0 12px' }}>
                 {group.label}
               </h3>
               {group.items.map((act: any, i: number) => {
@@ -423,7 +423,7 @@ export default function UserDetailPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: meta.bg, color: meta.color }}>
+                        <span style={{ fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: meta.bg, color: meta.color }}>
                           {isAr ? meta.labelAr : meta.labelEn}
                         </span>
                         {entityName && (
@@ -475,7 +475,7 @@ export default function UserDetailPage() {
                     <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(0, 122, 255, 0.1)', color: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <BookOpen size={16} />
                     </div>
-                    <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 500, color: 'var(--foreground)', margin: 0 }}>
                       {isAr ? `الكورسات المسجلة (${enrolledCount})` : `Enrolled Courses (${enrolledCount})`}
                     </h2>
                   </div>
@@ -485,7 +485,7 @@ export default function UserDetailPage() {
                       const isCompleted = Boolean(enroll?.completedAt) || progress >= 100
                       return (
                         <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', transition: 'box-shadow 0.15s ease' }}>
-                          <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), var(--primary-muted))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {enroll.course?.thumbnail ? (
                               <img src={enroll.course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
@@ -494,11 +494,11 @@ export default function UserDetailPage() {
                           </div>
                           <div style={{ padding: 16 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-                              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--foreground)', flex: 1 }}>
+                              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--foreground)', flex: 1 }}>
                                 {isAr ? enroll.course?.titleAr : enroll.course?.titleEn}
                               </h4>
                               {isCompleted && (
-                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: '#34C759', background: 'rgba(52, 199, 89, 0.1)', padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 500, color: '#34C759', background: 'rgba(52, 199, 89, 0.1)', padding: '3px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
                                   <CheckCircle size={12} />
                                   {isAr ? 'مكتمل' : 'Completed'}
                                 </span>
@@ -506,13 +506,13 @@ export default function UserDetailPage() {
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                               <span style={{ fontSize: 12, color: 'var(--muted)' }}>{formatDate(enroll.enrolledAt, isAr)}</span>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3' }}>{formatCurrency(enroll.course?.price || 0, enroll.course?.priceDisplay)}</span>
+                              <span style={{ fontSize: 13, fontWeight: 500, color: '#2BBFA3' }}>{formatCurrency(enroll.course?.price || 0, enroll.course?.priceDisplay)}</span>
                             </div>
                             {progress > 0 && (
                               <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                                   <span style={{ fontSize: 11, color: 'var(--muted)' }}>{isAr ? 'التقدم' : 'Progress'}</span>
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: '#007AFF' }}>{progress}%</span>
+                                  <span style={{ fontSize: 11, fontWeight: 500, color: '#007AFF' }}>{progress}%</span>
                                 </div>
                                 <div style={{ height: 6, borderRadius: 6, background: 'var(--surface-2)', overflow: 'hidden' }}>
                                   <div style={{ width: `${progress}%`, height: '100%', borderRadius: 6, background: '#007AFF' }} />
@@ -530,17 +530,17 @@ export default function UserDetailPage() {
               {createdCount > 0 && (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(81, 32, 200, 0.1)', color: '#5120C8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--primary-muted)', color: '#5120C8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <PlusCircle size={16} />
                     </div>
-                    <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 500, color: 'var(--foreground)', margin: 0 }}>
                       {isAr ? `الكورسات المنشأة (${createdCount})` : `Created Courses (${createdCount})`}
                     </h2>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                     {createdCourses.map((course: any, i: number) => (
                       <div key={i} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-                        <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), rgba(81,32,200,0.1))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ height: 120, background: 'linear-gradient(135deg, rgba(81,32,200,0.3), var(--primary-muted))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {course.thumbnail ? (
                             <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
@@ -548,14 +548,14 @@ export default function UserDetailPage() {
                           )}
                         </div>
                         <div style={{ padding: 16 }}>
-                          <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>
+                          <h4 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 500, color: 'var(--foreground)' }}>
                             {isAr ? course.titleAr : course.titleEn}
                           </h4>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <span style={{ fontSize: 12, color: 'var(--muted)' }}>
                               {course.status}
                             </span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#2BBFA3' }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: '#2BBFA3' }}>
                               {formatCurrency(course.price || 0, course.priceDisplay)}
                             </span>
                           </div>
@@ -578,11 +578,11 @@ export default function UserDetailPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderRadius: 16, background: 'rgba(52, 199, 89, 0.08)', border: '1px solid rgba(52, 199, 89, 0.2)', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'إجمالي المدفوعات' : 'Total Payments'}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#34C759' }}>{displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay)}</div>
+              <div style={{ fontSize: 28, fontWeight: 500, color: '#34C759' }}>{displayTotal(payments.filter((p: any) => p.status === 'SUCCESS' || p.status === 'COMPLETED'), 'amountDisplay', totalPaid, financials?.totalEarningsDisplay)}</div>
             </div>
             <div style={{ textAlign: isAr ? 'right' : 'left' }}>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{isAr ? 'عدد العمليات' : 'Transactions'}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--foreground)' }}>{paymentCount}</div>
+              <div style={{ fontSize: 28, fontWeight: 500, color: 'var(--foreground)' }}>{paymentCount}</div>
             </div>
           </div>
 
@@ -597,7 +597,7 @@ export default function UserDetailPage() {
             const type = paymentType(p)
             const Icon = type === 'COURSE' ? BookOpen : type === 'SESSION' ? Briefcase : CreditCard
             const color = type === 'COURSE' ? '#007AFF' : type === 'SESSION' ? '#5120C8' : '#34C759'
-            const bg = type === 'COURSE' ? 'rgba(0, 122, 255, 0.1)' : type === 'SESSION' ? 'rgba(81, 32, 200, 0.1)' : 'rgba(52, 199, 89, 0.1)'
+            const bg = type === 'COURSE' ? 'rgba(0, 122, 255, 0.1)' : type === 'SESSION' ? 'var(--primary-muted)' : 'rgba(52, 199, 89, 0.1)'
             const success = p?.status === 'SUCCESS' || p?.status === 'COMPLETED'
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: 16, borderRadius: 14, background: 'var(--card)', border: '1px solid var(--border)', marginBottom: 10, flexWrap: 'wrap' }}>
@@ -605,7 +605,7 @@ export default function UserDetailPage() {
                   <Icon size={20} />
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>{paymentTitle(p, isAr)}</div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--foreground)' }}>{paymentTitle(p, isAr)}</div>
                   {(Boolean(p?.method) || Boolean(p?.description)) && (
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
                       {p?.method || ''}{p?.method && p?.description ? ' · ' : ''}{p?.description || ''}
@@ -614,7 +614,7 @@ export default function UserDetailPage() {
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{formatDate(p.createdAt, isAr)}</div>
                 </div>
                 <div style={{ textAlign: isAr ? 'right' : 'left' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: success ? '#34C759' : 'var(--muted)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 500, color: success ? '#34C759' : 'var(--muted)' }}>
                     {formatCurrency(p.amount, p.amountDisplay)}
                   </div>
                   <div style={{ fontSize: 11, color: success ? '#34C759' : '#EF4444', marginTop: 2 }}>{p.status}</div>

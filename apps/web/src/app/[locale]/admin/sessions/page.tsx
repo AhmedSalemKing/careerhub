@@ -89,8 +89,8 @@ export default function AdminSessionsPage() {
   const statusBadge = (status: string) => {
     const map: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
       PENDING:     { label: isAr ? 'معلقة' : 'Pending',      dot: 'bg-amber-500',   bg: isDark ? 'rgba(245,158,11,0.12)' : 'rgba(245,158,11,0.08)', text: isDark ? '#fbbf24' : '#b45309', border: isDark ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.2)' },
-      CONFIRMED:   { label: isAr ? 'مؤكدة' : 'Confirmed',    dot: 'bg-[#5120c8]',    bg: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)', text: 'var(--foreground)', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
-      SCHEDULED:   { label: isAr ? 'مجدولة' : 'Scheduled',    dot: 'bg-[#5120c8]',    bg: isDark ? 'rgba(81,32,200,0.12)' : 'rgba(81,32,200,0.08)', text: 'var(--foreground)', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
+      CONFIRMED:   { label: isAr ? 'مؤكدة' : 'Confirmed',    dot: 'bg-[#5120c8]',    bg: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)', text: 'var(--foreground)', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
+      SCHEDULED:   { label: isAr ? 'مجدولة' : 'Scheduled',    dot: 'bg-[#5120c8]',    bg: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)', text: 'var(--foreground)', border: isDark ? 'rgba(81,32,200,0.3)' : 'rgba(81,32,200,0.2)' },
       COMPLETED:   { label: isAr ? 'مكتملة' : 'Completed',    dot: 'bg-emerald-500', bg: isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)', text: isDark ? '#34d399' : '#059669', border: isDark ? 'rgba(16,185,129,0.3)' : 'rgba(16,185,129,0.2)' },
       CANCELLED:   { label: isAr ? 'ملغية' : 'Cancelled',     dot: 'bg-red-500',     bg: isDark ? 'rgba(239,68,68,0.12)' : 'rgba(239,68,68,0.08)',   text: isDark ? '#f87171' : '#dc2626', border: isDark ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.2)' },
       REJECTED:    { label: isAr ? 'مرفوضة' : 'Rejected',     dot: 'bg-gray-500',    bg: isDark ? 'rgba(107,114,128,0.12)' : 'rgba(107,114,128,0.08)', text: isDark ? '#9ca3af' : '#6b7280', border: isDark ? 'rgba(107,114,128,0.3)' : 'rgba(107,114,128,0.2)' },
@@ -122,7 +122,7 @@ export default function AdminSessionsPage() {
       {/* ─── Header ─── */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
+          <h1 className="text-xl font-black flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
             <Calendar style={{ color: '#5120c8' }} />
             {isAr ? 'إدارة الجلسات الاستشارية' : 'Consulting Sessions'}
           </h1>
@@ -132,7 +132,7 @@ export default function AdminSessionsPage() {
         </div>
         <button
           onClick={goToCreateSession}
-          className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-xl transition-all group"
+          className="flex items-center gap-2 font-medium px-5 py-2.5 rounded-xl transition-all group"
           style={{ background: '#5120c8', color: '#fff', boxShadow: '0 4px 12px rgba(81,32,200,0.25)' }}
         >
           <PlusCircle size={18} className="group-hover:rotate-90 transition-transform duration-300" />
@@ -159,7 +159,7 @@ export default function AdminSessionsPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <Icon size={18} style={{ color: stat.color }} />
-                <span className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</span>
+                <span className="text-2xl font-medium" style={{ color: stat.color }}>{stat.value}</span>
               </div>
               <p className="text-xs" style={{ color: 'var(--muted)' }}>{stat.label}</p>
             </div>
@@ -236,7 +236,7 @@ export default function AdminSessionsPage() {
                     isAr ? 'الدفع' : 'Payment',
                     isAr ? 'الحالة' : 'Status',
                   ].map((h) => (
-                    <th key={h} className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                    <th key={h} className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                       {h}
                     </th>
                   ))}
@@ -257,15 +257,15 @@ export default function AdminSessionsPage() {
                       key={s.id}
                       className="group transition-colors"
                       style={{ borderBottom: '1px solid var(--border)' }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.02)' }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                     >
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
                             style={{
-                              background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
+                              background: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)',
                             color: 'var(--foreground)',
                             }}
                           >
@@ -277,7 +277,7 @@ export default function AdminSessionsPage() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium"
                             style={{
                               background: isDark ? 'rgba(139,92,246,0.15)' : 'rgba(139,92,246,0.08)',
                               color: '#8b5cf6',
@@ -301,7 +301,7 @@ export default function AdminSessionsPage() {
                         <span
                           className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium"
                           style={{
-                            background: isDark ? 'rgba(81,32,200,0.1)' : 'rgba(81,32,200,0.06)',
+                            background: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)',
                             color: 'var(--foreground)',
                           }}
                         >
@@ -310,13 +310,13 @@ export default function AdminSessionsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span className="font-bold text-sm" style={{ color: '#10b981' }}>
+                        <span className="font-medium text-sm" style={{ color: '#10b981' }}>
                           {s.priceDisplay ?? `${Number(s.price ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`}
                         </span>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
                           style={{ background: pay.bg, color: pay.text, border: `1px solid ${pay.border}` }}
                         >
                           {pay.label}
@@ -324,7 +324,7 @@ export default function AdminSessionsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
                           style={{ background: st.bg, color: st.text, border: `1px solid ${st.border}` }}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />

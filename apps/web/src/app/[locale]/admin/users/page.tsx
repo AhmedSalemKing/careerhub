@@ -188,12 +188,12 @@ export default function AdminUsersPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">{isAr ? 'المستخدمون' : 'Users'}</h1>
+          <h1 className="text-xl font-black text-foreground">{isAr ? 'المستخدمون' : 'Users'}</h1>
           <span className="text-sm text-gray-400">{total} {isAr ? 'مستخدم' : 'total'}</span>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 18px', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 14 }}
         >
           <UserPlus size={16} />
           {isAr ? 'إضافة مستخدم' : 'Add User'}
@@ -217,7 +217,7 @@ export default function AdminUsersPage() {
                 flexShrink: 0, whiteSpace: 'nowrap',
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px',
-                background: isActive ? 'rgba(81,32,200,0.15)' : 'var(--surface)',
+                background: isActive ? 'var(--primary-muted)' : 'var(--surface)',
                 color: isActive ? '#5120C8' : 'var(--muted)',
                 border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid var(--border)',
                 borderRadius: 10,
@@ -254,7 +254,7 @@ export default function AdminUsersPage() {
         </div>
         <button
           onClick={() => { setPage(1); setSearch(searchInput) }}
-          className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold rounded-lg transition-colors"
+          className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-sm font-medium rounded-lg transition-colors"
         >
           {isAr ? 'بحث' : 'Search'}
         </button>
@@ -300,7 +300,7 @@ export default function AdminUsersPage() {
                           {u.profile?.avatar ? (
                             <img src={getMediaUrl(u.profile.avatar) ?? ''} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(81,32,200,0.3)' }} />
                           ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-bold text-white" style={{ background: '#5120c8' }}>
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 text-[11px] font-medium text-white" style={{ background: '#5120c8' }}>
                               {(u.profile?.firstName?.[0] || u.email[0] || '?').toUpperCase()}
                             </div>
                           )}
@@ -333,7 +333,7 @@ export default function AdminUsersPage() {
                       </select>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 text-[11px] font-semibold rounded border ${statusBadge(u)}`}>
+                      <span className={`inline-block px-2 py-0.5 text-[11px] font-medium rounded border ${statusBadge(u)}`}>
                         {u.status}
                       </span>
                     </td>
@@ -342,7 +342,7 @@ export default function AdminUsersPage() {
                       <div className="flex items-center justify-end gap-1 flex-wrap">
                         <a
                           href={`/${locale}/admin/users/${u.id}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: 'rgba(81,32,200,0.15)', color: '#A78BFA', fontSize: 11, textDecoration: 'none', fontWeight: 600 }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, background: 'var(--primary-muted)', color: '#A78BFA', fontSize: 11, textDecoration: 'none', fontWeight: 500 }}
                         >
                           <Eye size={11} />
                           {isAr ? 'عرض' : 'View'}
@@ -351,7 +351,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => unban(u.id)}
                             disabled={processing === u.id}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-[11px] font-medium rounded-lg transition-colors"
                           >
                             <CheckCircle size={12} /> {isAr ? 'رفع الحظر' : 'Unban'}
                           </button>
@@ -359,7 +359,7 @@ export default function AdminUsersPage() {
                           <button
                             onClick={() => ban(u.id)}
                             disabled={processing === u.id || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.accountType === 'SUPER_ADMIN'}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-700 hover:bg-orange-800 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-700 hover:bg-orange-800 disabled:opacity-50 text-white text-[11px] font-medium rounded-lg transition-colors"
                           >
                             <Ban size={12} /> {isAr ? 'حظر' : 'Ban'}
                           </button>
@@ -367,7 +367,7 @@ export default function AdminUsersPage() {
                         <button
                           onClick={() => remove(u.id)}
                           disabled={processing === u.id || u.role === 'ADMIN' || u.role === 'SUPER_ADMIN' || u.accountType === 'SUPER_ADMIN'}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-red-800 hover:bg-red-900 disabled:opacity-50 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-2.5 py-1.5 bg-red-800 hover:bg-red-900 disabled:opacity-50 text-white text-[11px] font-medium rounded-lg transition-colors"
                         >
                           <Trash2 size={12} /> {isAr ? 'حذف' : 'Delete'}
                         </button>
@@ -413,7 +413,7 @@ export default function AdminUsersPage() {
             <button onClick={() => setShowCreate(false)} style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
               <X size={18} />
             </button>
-            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 18, color: 'var(--foreground)', margin: '0 0 20px' }}>
+            <h2 style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 18, color: 'var(--foreground)', margin: '0 0 20px' }}>
               {isAr ? 'إضافة مستخدم جديد' : 'Add New User'}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -461,7 +461,7 @@ export default function AdminUsersPage() {
               <button
                 onClick={handleCreateUser}
                 disabled={creating || !createForm.email || !createForm.password || !createForm.firstName}
-                style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontFamily: 'DM Sans, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
+                style={{ background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px', fontFamily: 'DM Sans, sans-serif', fontWeight: 500, fontSize: 14, cursor: 'pointer', opacity: creating ? 0.7 : 1 }}
               >
                 {creating ? '...' : (isAr ? 'إنشاء المستخدم' : 'Create User')}
               </button>
@@ -499,15 +499,15 @@ export default function AdminUsersPage() {
               <Shield size={24} color="#f59e0b" />
             </div>
             
-            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 600, textAlign: 'center', marginBottom: 12 }}>
+            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, textAlign: 'center', marginBottom: 12 }}>
               تأكيد تغيير الدور
             </h3>
             
             <p style={{ color: 'var(--muted)', fontSize: 14, textAlign: 'center', lineHeight: 1.7, marginBottom: 20 }}>
               هل تريد تغيير دور <strong style={{ color: 'var(--foreground)' }}>{confirmDialog.userName}</strong> من{' '}
-              <span style={{ color: '#5120c8', fontWeight: 600 }}>{roleLabels[confirmDialog.currentRole]}</span>{' '}
+              <span style={{ color: '#5120c8', fontWeight: 500 }}>{roleLabels[confirmDialog.currentRole]}</span>{' '}
               إلى{' '}
-              <span style={{ color: '#16a34a', fontWeight: 600 }}>{roleLabels[confirmDialog.newRole]}</span>
+              <span style={{ color: '#16a34a', fontWeight: 500 }}>{roleLabels[confirmDialog.newRole]}</span>
             </p>
             
             {confirmDialog.newRole === 'ADMIN' && (
@@ -528,7 +528,7 @@ export default function AdminUsersPage() {
                   flex: 1, padding: '12px', borderRadius: 12,
                   background: confirmDialog.newRole === 'ADMIN' ? '#ef4444' : '#5120c8',
                   color: '#fff', border: 'none', cursor: 'pointer',
-                  fontSize: 15, fontWeight: 600,
+                  fontSize: 15, fontWeight: 500,
                 }}
               >
                 تأكيد التغيير
@@ -539,7 +539,7 @@ export default function AdminUsersPage() {
                   flex: 1, padding: '12px', borderRadius: 12,
                   background: 'transparent', color: 'var(--foreground)',
                   border: '1px solid var(--border)',
-                  cursor: 'pointer', fontSize: 15, fontWeight: 600,
+                  cursor: 'pointer', fontSize: 15, fontWeight: 500,
                 }}
               >
                 إلغاء

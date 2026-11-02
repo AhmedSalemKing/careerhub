@@ -158,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
-                    fontWeight: 800,
+                    fontWeight: 500,
                     fontSize: 14,
                     fontFamily: 'var(--font-brand)',
                     flexShrink: 0,
@@ -169,7 +169,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span
                   style={{
                     fontFamily: 'var(--font-brand)',
-                    fontWeight: 800,
+                    fontWeight: 500,
                     fontSize: 18,
                     color: 'var(--foreground)',
                   }}
@@ -214,7 +214,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       borderRadius: 12,
                       marginBottom: '2px',
                       color: active ? '#5120C8' : 'var(--foreground)',
-                      background: active ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      background: active ? 'var(--primary-muted)' : 'transparent',
                       fontWeight: active ? 700 : 500,
                       fontSize: '14px',
                       textDecoration: 'none',
@@ -260,7 +260,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   opacity: 0.8,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(81,32,200,0.06)'
+                  e.currentTarget.style.background = 'var(--primary-subtle)'
                   e.currentTarget.style.opacity = '1'
                 }}
                 onMouseLeave={(e) => {
@@ -308,7 +308,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <button onClick={() => setDrawerOpen(true)} className="flex items-center justify-center p-1 -mr-1">
             <Menu className="h-6 w-6 text-foreground" />
           </button>
-          <span className="font-bold text-foreground">{isAr ? 'لوحة الإدارة' : 'Admin Panel'}</span>
+          <span className="font-medium text-foreground">{isAr ? 'لوحة الإدارة' : 'Admin Panel'}</span>
           <div style={{ marginInlineStart: 'auto' }}>
             <AdminCurrencyToggle />
           </div>

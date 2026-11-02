@@ -136,7 +136,7 @@ export default function CMSSettingsPage() {
     }}>
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: '700', color: 'var(--foreground)' }}>
+        <h1 style={{ fontSize: 'clamp(20px, 5vw, 24px)', fontWeight: 900, color: 'var(--foreground)' }}>
           إعدادات المنصة
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 'clamp(12px, 2.5vw, 14px)', marginTop: '4px' }}>
@@ -159,7 +159,7 @@ export default function CMSSettingsPage() {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 flexShrink: 0, whiteSpace: 'nowrap',
-                fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: '600',
+                fontSize: 'clamp(12px, 3vw, 14px)', fontWeight: 500,
                 padding: '10px 20px', borderRadius: '12px',
                 border: 'none', cursor: 'pointer',
                 background: isActive ? 'rgba(81,32,200,0.2)' : 'transparent',
@@ -360,7 +360,7 @@ export default function CMSSettingsPage() {
                   background: ratesSaved ? '#10b981' : ratesSaving ? 'rgba(81,32,200,0.5)' : '#5120C8',
                   color: '#fff', border: 'none',
                   cursor: ratesSaving ? 'wait' : 'pointer',
-                  fontWeight: 700, fontSize: '14px',
+                  fontWeight: 500, fontSize: '14px',
                   display: 'flex', alignItems: 'center', gap: '8px',
                 }}
               >
@@ -411,7 +411,7 @@ export default function CMSSettingsPage() {
           disabled={saving}
           style={{
             width: '100%', padding: '14px',
-            fontSize: 'clamp(13px, 3vw, 16px)', fontWeight: '700',
+            fontSize: 'clamp(13px, 3vw, 16px)', fontWeight: 500,
             borderRadius: '12px', marginTop: '16px',
             background: saving ? 'rgba(81,32,200,0.5)' : '#5120C8',
             color: '#fff', border: 'none',
@@ -429,7 +429,7 @@ export default function CMSSettingsPage() {
 
 function SectionTitle({ label }: { label: string }) {
   return (
-    <p style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: '700', color: 'var(--muted)', letterSpacing: '0.5px', marginBottom: '16px' }}>
+    <p style={{ fontSize: 'clamp(14px, 3.5vw, 18px)', fontWeight: 500, color: 'var(--muted)', letterSpacing: '0.5px', marginBottom: '16px' }}>
       {label}
     </p>
   )
@@ -437,7 +437,7 @@ function SectionTitle({ label }: { label: string }) {
 
 function Label({ text }: { text: string }) {
   return (
-    <p style={{ display: 'block', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: '600', marginBottom: '6px', color: 'var(--muted)' }}>
+    <p style={{ display: 'block', fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 500, marginBottom: '6px', color: 'var(--muted)' }}>
       {text}
     </p>
   )

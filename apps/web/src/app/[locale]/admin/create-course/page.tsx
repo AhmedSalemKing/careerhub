@@ -271,20 +271,20 @@ export default function AdminCreateCoursePage() {
     width: '100%', maxWidth: '100%', boxSizing: 'border-box',
     padding: '12px 16px', borderRadius: 10,
     background: isDark ? '#1a1a1a' : '#f8fafc',
-    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+    border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
     color: isDark ? '#f1f5f9' : '#0d0d0d',
     fontSize: 14, outline: 'none', transition: 'border-color 0.2s',
   }
 
   const labelStyle: React.CSSProperties = {
     display: 'block', color: 'var(--muted)',
-    fontSize: 13, fontWeight: 600, marginBottom: 8,
+    fontSize: 13, fontWeight: 500, marginBottom: 8,
   }
 
   const cardStyle: React.CSSProperties = {
     background: isDark ? '#111111' : '#fff',
     borderRadius: 20, padding: 32,
-    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
+    border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#e5e7eb'}`,
     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
   }
 
@@ -302,12 +302,12 @@ export default function AdminCreateCoursePage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
-              background: 'rgba(81,32,200,0.1)',
+              background: 'var(--primary-muted)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <BookOpen size={24} color="#5120c8" />
             </div>
-            <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
+            <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 900, margin: 0 }}>
               {isAr ? 'إضافة كورس جديد' : 'Add New Course'}
             </h1>
           </div>
@@ -322,7 +322,7 @@ export default function AdminCreateCoursePage() {
             position: 'fixed', top: 20, right: isAr ? 'auto' : 20, left: isAr ? 20 : 'auto',
             padding: '12px 20px', borderRadius: 12, zIndex: 50,
             background: toast.type === 'success' ? '#22c55e' : '#ef4444',
-            color: '#fff', fontWeight: 600, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+            color: '#fff', fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           }}>
             {toast.message}
           </div>
@@ -335,7 +335,7 @@ export default function AdminCreateCoursePage() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <BookOpen size={18} color="#5120c8" />
-              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
                 {isAr ? 'المعلومات الأساسية' : 'Basic Information'}
               </h3>
             </div>
@@ -385,7 +385,7 @@ export default function AdminCreateCoursePage() {
                   placeholder="e.g. Introduction to Programming"
                   style={inputStyle}
                   onFocus={(e: any) => e.target.style.borderColor = '#5120c8'}
-                  onBlur={(e: any) => e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}
+                  onBlur={(e: any) => e.target.style.borderColor = isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}
                 />
               </div>
               <div>
@@ -506,13 +506,13 @@ export default function AdminCreateCoursePage() {
           </div>
 
           {/* Divider */}
-          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+          <div style={{ borderTop: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#f1f5f9'}`, margin: '24px 0' }} />
 
           {/* Media Section */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <ImageIcon size={18} color="#5120c8" />
-              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
                 {isAr ? 'الوسائط' : 'Media'}
               </h3>
             </div>
@@ -525,7 +525,7 @@ export default function AdminCreateCoursePage() {
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
                   borderRadius: 12, padding: 20,
-                  border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                  border: `2px dashed ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
                   background: isDark ? '#1a1a1a' : '#f8fafc',
                   cursor: 'pointer',
                 }}
@@ -563,7 +563,7 @@ export default function AdminCreateCoursePage() {
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
                   borderRadius: 12, padding: 20,
-                  border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                  border: `2px dashed ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
                   background: isDark ? '#1a1a1a' : '#f8fafc',
                   cursor: 'pointer',
                 }}
@@ -589,7 +589,7 @@ export default function AdminCreateCoursePage() {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <CheckCircle size={14} color="#22c55e" />
-                        <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 600 }}>
+                        <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 500 }}>
                           {isAr ? 'تم الرفع' : 'Uploaded'}
                         </span>
                       </div>
@@ -626,14 +626,14 @@ export default function AdminCreateCoursePage() {
           </div>
 
           {/* Divider */}
-          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+          <div style={{ borderTop: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#f1f5f9'}`, margin: '24px 0' }} />
 
           {/* Sections */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <Plus size={18} color="#5120c8" />
-                <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
+                <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
                   {isAr ? 'المحتوى' : 'Content'}
                 </h3>
               </div>
@@ -642,8 +642,8 @@ export default function AdminCreateCoursePage() {
                 onClick={addSection}
                 style={{
                   padding: '8px 16px', borderRadius: 8, border: 'none',
-                  background: 'rgba(81,32,200,0.1)', color: '#5120c8',
-                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  background: 'var(--primary-muted)', color: '#5120c8',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 6,
                 }}
               >
@@ -696,7 +696,7 @@ export default function AdminCreateCoursePage() {
               onClick={() => router.back()}
               style={{
                 padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
-                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 500,
                 borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
                 border: '1px solid var(--border)',
                 background: 'transparent', color: 'var(--foreground)',
@@ -712,7 +712,7 @@ export default function AdminCreateCoursePage() {
               disabled={saving}
               style={{
                 padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
-                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 500,
                 borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
                 background: 'transparent',
                 border: '2px solid var(--border)',
@@ -731,7 +731,7 @@ export default function AdminCreateCoursePage() {
               disabled={saving}
               style={{
                 padding: 'clamp(8px, 2vw, 12px) clamp(8px, 2vw, 16px)',
-                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 600,
+                fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: 500,
                 borderRadius: '10px', width: '100%', whiteSpace: 'nowrap',
                 border: 'none', cursor: 'pointer', textAlign: 'center',
                 background: saving ? '#4b5563' : '#5120c8',

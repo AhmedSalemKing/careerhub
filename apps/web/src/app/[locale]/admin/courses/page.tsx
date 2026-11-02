@@ -145,7 +145,7 @@ export default function AdminCoursesPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1
-            className="text-xl font-bold"
+            className="text-xl font-black"
             style={{ color: 'var(--foreground)' }}
           >
             {isAr ? 'إدارة الكورسات' : 'Course Management'}
@@ -159,7 +159,7 @@ export default function AdminCoursesPage() {
         </div>
         <button
           onClick={goToCreateCourse}
-          className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-xl transition-all group"
+          className="flex items-center gap-2 font-medium px-5 py-2.5 rounded-xl transition-all group"
           style={{
             background: '#5120c8',
             color: '#fff',
@@ -188,7 +188,7 @@ export default function AdminCoursesPage() {
               borderColor: 'var(--border)',
             }}
           >
-            <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
+            <p className="text-2xl font-medium" style={{ color: stat.color }}>{stat.value}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{stat.label}</p>
           </div>
         ))}
@@ -214,7 +214,7 @@ export default function AdminCoursesPage() {
         </div>
         <button
           onClick={() => { setPage(1); setSearch(searchInput) }}
-          className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-colors"
+          className="px-5 py-2.5 text-sm font-medium rounded-xl transition-colors"
           style={{ background: '#5120c8', color: '#fff' }}
         >
           {isAr ? 'بحث' : 'Search'}
@@ -239,7 +239,7 @@ export default function AdminCoursesPage() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px',
-                background: isActive ? 'rgba(81,32,200,0.15)' : 'var(--surface)',
+                background: isActive ? 'var(--primary-muted)' : 'var(--surface)',
                 color: isActive ? '#5120C8' : 'var(--muted)',
                 border: isActive ? '1px solid rgba(81,32,200,0.3)' : '1px solid var(--border)',
                 borderRadius: 10,
@@ -301,22 +301,22 @@ export default function AdminCoursesPage() {
                   background: 'var(--surface-2)',
                 }}
               >
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'الكورس' : 'Course'}
                 </th>
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'التصنيف' : 'Category'}
                 </th>
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'الحالة' : 'Status'}
                 </th>
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'السعر' : 'Price'}
                 </th>
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'المشتركون' : 'Students'}
                 </th>
-                <th className="px-4 py-3.5 font-semibold text-xs uppercase tracking-wider text-right" style={{ color: 'var(--muted)' }}>
+                <th className="px-4 py-3.5 font-medium text-xs uppercase tracking-wider text-right" style={{ color: 'var(--muted)' }}>
                   {isAr ? 'إجراءات' : 'Actions'}
                 </th>
               </tr>
@@ -353,7 +353,7 @@ export default function AdminCoursesPage() {
                     className="group transition-colors cursor-pointer"
                     style={{ borderBottom: '1px solid var(--border)' }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                      e.currentTarget.style.background = isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.02)'
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = 'transparent'
@@ -362,9 +362,9 @@ export default function AdminCoursesPage() {
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
+                          className="w-10 h-10 rounded-lg flex items-center justify-center font-medium text-sm shrink-0"
                           style={{
-                            background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
+                            background: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)',
                             color: '#5120c8',
                           }}
                         >
@@ -387,7 +387,7 @@ export default function AdminCoursesPage() {
                       {c.careerPath?.titleEn ?? '—'}
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-semibold rounded-full border ${statusBadgeClass(c.status)}`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 text-[11px] font-medium rounded-full border ${statusBadgeClass(c.status)}`}>
                         <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${statusDotClass(c.status)}`} />
                         {statusLabel(c.status)}
                       </span>
@@ -424,9 +424,9 @@ export default function AdminCoursesPage() {
 
                         <button
                           onClick={() => router.push(`/${locale}/admin/courses/${c.id}/manage`)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-colors"
                           style={{
-                            background: isDark ? 'rgba(81,32,200,0.15)' : 'rgba(81,32,200,0.08)',
+                            background: isDark ? 'var(--primary-muted)' : 'var(--primary-subtle)',
                             color: isDark ? '#a78bfa' : '#5120c8',
                             border: isDark ? '1px solid rgba(81,32,200,0.3)' : '1px solid rgba(81,32,200,0.2)',
                           }}
@@ -439,7 +439,7 @@ export default function AdminCoursesPage() {
                           <button
                             onClick={() => approve(c.id)}
                             disabled={processing === c.id}
-                            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50"
                             style={{
                               background: isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.08)',
                               color: isDark ? '#34d399' : '#059669',
@@ -453,7 +453,7 @@ export default function AdminCoursesPage() {
                           <button
                             onClick={() => reject(c.id)}
                             disabled={processing === c.id}
-                            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-medium rounded-lg transition-colors disabled:opacity-50"
                             style={{
                               background: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.08)',
                               color: isDark ? '#f87171' : '#dc2626',

@@ -51,7 +51,7 @@ export default function AdminCoachesPage() {
             <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
             <button
               type="button"
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
               onClick={() => {
                 toast({ title: c('loading'), description: c('loading') })
                 q.refetch().catch(() => {})
@@ -66,16 +66,16 @@ export default function AdminCoachesPage() {
               <table className="w-full text-sm">
                 <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
                   <tr>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_name')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_rate')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_rating')}</th>
-                    <th className="px-4 py-3 text-right font-semibold">{t('th_specialties')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('th_name')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('th_rate')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('th_rating')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('th_specialties')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((coach) => (
                     <tr key={coach.id} className="border-t border-[color:var(--border)]">
-                      <td className="px-4 py-3 font-semibold text-foreground">{coach.name || '-'}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">{coach.name || '-'}</td>
                       <td className="px-4 py-3 text-[color:var(--muted)]">{coach.hourlyRate ?? '-'}</td>
                       <td className="px-4 py-3 text-[color:var(--muted)]">{coach.rating ?? '-'}</td>
                       <td className="px-4 py-3 text-[color:var(--muted)]">

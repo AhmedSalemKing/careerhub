@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import * as path from 'path';
@@ -790,6 +791,59 @@ export class AdminService {
       });
       return { success: true, data: [] };
     }
+  }
+
+  async updateConsultantRate(userId: string, hourlyRate: number) {
+    if (!Number.isFinite(hourlyRate) || hourlyRate <= 0) {
+      throw new BadRequestException('hourlyRate must be a positive number');
+    }
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { hourlyRate },
+      select: { id: true, hourlyRate: true },
+    });
+    await this.notificationsService.createNotification({
+      userId,
+      type: 'SYSTEM_ANNOUNCEMENT',
+      titleEn: 'Price Updated',
+      titleAr: 'تم تحديث السعر',
+      contentEn: `The admin updated your hourly rate to ${hourlyRate}.`,
+      contentAr: `تم تحديث سعرك بالساعة من قِبل الإدارة إلى ${hourlyRate}`,
+      data: { type: 'price_update' },
+    }).catch(() => {});
+    await this.log('UPDATE_CONSULTANT_RATE', 'User', userId, undefined, { hourlyRate });
+    return user;
+  }
+
+  async updateCoursePrice(courseId: string, prices: { priceUSD?: number; priceEGP?: number }) {
+    const data: Record<string, number> = {};
+    const usd = Number(prices?.priceUSD);
+    const egp = Number(prices?.priceEGP);
+    if (prices?.priceUSD != null && Number.isFinite(usd) && usd > 0) {
+      data.priceUSD = usd;
+      data.price = usd;
+    }
+    if (prices?.priceEGP != null && Number.isFinite(egp) && egp > 0) data.priceEGP = egp;
+    if (!Object.keys(data).length) throw new BadRequestException('A positive price is required');
+
+    const course = await this.prisma.course.update({ where: { id: courseId }, data });
+    if (course.instructorId) {
+      const shown = [
+        data.priceEGP != null ? `${data.priceEGP} ج.م` : null,
+        data.priceUSD != null ? `${data.priceUSD}$` : null,
+      ].filter(Boolean).join(' / ');
+      await this.notificationsService.createNotification({
+        userId: course.instructorId,
+        type: 'SYSTEM_ANNOUNCEMENT',
+        titleEn: 'Price Updated',
+        titleAr: 'تم تحديث السعر',
+        contentEn: `The admin updated the price of "${course.titleEn}".`,
+        contentAr: `تم تحديث سعر كورس "${course.titleAr || course.titleEn}" من قِبل الإدارة إلى ${shown}`,
+        data: { type: 'price_update', courseId },
+      }).catch(() => {});
+    }
+    await this.log('UPDATE_COURSE_PRICE', 'Course', courseId, undefined, data);
+    return course;
   }
 
   async approveCourse(id: string, prices?: { priceUSD?: number; priceEGP?: number }) {

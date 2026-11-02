@@ -170,14 +170,14 @@ export default function AdminCreateSessionPage() {
     width: '100%', maxWidth: '100%', boxSizing: 'border-box',
     padding: '12px 16px', borderRadius: 10,
     background: isDark ? '#1a1a1a' : '#f8fafc',
-    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+    border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
     color: isDark ? '#f1f5f9' : '#0d0d0d',
     fontSize: 14, outline: 'none', transition: 'border-color 0.2s',
   }
 
   const labelStyle: React.CSSProperties = {
     display: 'block', color: 'var(--muted)',
-    fontSize: 13, fontWeight: 600, marginBottom: 8,
+    fontSize: 13, fontWeight: 500, marginBottom: 8,
   }
 
   const cardStyle: React.CSSProperties = {
@@ -189,7 +189,7 @@ export default function AdminCreateSessionPage() {
     overflowX: 'hidden',
     background: isDark ? '#111111' : '#fff',
     borderRadius: 20,
-    border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e5e7eb'}`,
+    border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#e5e7eb'}`,
     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
   }
 
@@ -211,12 +211,12 @@ export default function AdminCreateSessionPage() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
-              background: 'rgba(81,32,200,0.1)',
+              background: 'var(--primary-muted)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Calendar size={24} color="#5120c8" />
             </div>
-            <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 800, margin: 0 }}>
+            <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(22px, 5vw, 28px)', fontWeight: 900, margin: 0 }}>
               {isAr ? 'إضافة جلسة جديدة' : 'Add New Session'}
             </h1>
           </div>
@@ -234,7 +234,7 @@ export default function AdminCreateSessionPage() {
           }}>
             <CheckCircle size={24} color="#22c55e" />
             <div>
-              <p style={{ color: '#22c55e', fontWeight: 700, margin: 0 }}>
+              <p style={{ color: '#22c55e', fontWeight: 500, margin: 0 }}>
                 {isAr ? 'تم إنشاء الجلسة بنجاح!' : 'Session created successfully!'}
               </p>
               <p style={{ color: 'rgba(34,197,94,0.7)', fontSize: 13, margin: 0 }}>
@@ -251,7 +251,7 @@ export default function AdminCreateSessionPage() {
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
               <User size={18} color="#5120c8" />
-              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
                 {isAr ? 'معلومات الجلسة' : 'Session Information'}
               </h3>
             </div>
@@ -268,7 +268,7 @@ export default function AdminCreateSessionPage() {
                 placeholder={isAr ? 'مثال: استشارة في التسويق الرقمي' : 'e.g. Digital Marketing Consultation'}
                 style={inputStyle}
                 onFocus={(e: any) => e.target.style.borderColor = '#5120c8'}
-                onBlur={(e: any) => e.target.style.borderColor = isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}
+                onBlur={(e: any) => e.target.style.borderColor = isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}
               />
             </div>
 
@@ -342,9 +342,9 @@ export default function AdminCreateSessionPage() {
                     style={{
                       padding: '10px 4px', borderRadius: 10,
                       border: `2px solid ${form.duration === d ? '#5120c8' : 'var(--border)'}`,
-                      background: form.duration === d ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      background: form.duration === d ? 'var(--primary-muted)' : 'transparent',
                       color: form.duration === d ? '#5120c8' : 'var(--muted)',
-                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
+                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 500,
                       width: '100%', textAlign: 'center',
                       transition: 'all 0.2s',
                     }}
@@ -365,10 +365,10 @@ export default function AdminCreateSessionPage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 flexWrap: 'wrap', gap: '8px', width: '100%',
                 padding: '12px 16px', borderRadius: '10px',
-                background: isDark ? 'rgba(255,255,255,0.04)' : '#f1f5f9',
-                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                background: isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : '#f1f5f9',
+                border: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
                 color: 'var(--foreground)',
-                fontSize: '14px', fontWeight: '600',
+                fontSize: '14px', fontWeight: 500,
                 opacity: 0.8, boxSizing: 'border-box',
               }}>
                 <span style={{ color: 'var(--muted)', fontSize: '13px' }}>
@@ -395,9 +395,9 @@ export default function AdminCreateSessionPage() {
                     style={{
                       padding: '8px 4px', borderRadius: 12,
                       border: `2px solid ${form.meetingMethod === method.value ? '#5120c8' : 'var(--border)'}`,
-                      background: form.meetingMethod === method.value ? 'rgba(81,32,200,0.1)' : 'transparent',
+                      background: form.meetingMethod === method.value ? 'var(--primary-muted)' : 'transparent',
                       color: form.meetingMethod === method.value ? '#5120c8' : 'var(--muted)',
-                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 600,
+                      cursor: 'pointer', fontSize: 'clamp(11px, 2.5vw, 13px)', fontWeight: 500,
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                       width: '100%', textAlign: 'center',
                       transition: 'all 0.2s',
@@ -427,13 +427,13 @@ export default function AdminCreateSessionPage() {
           </div>
 
           {/* Divider */}
-          <div style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9'}`, margin: '24px 0' }} />
+          <div style={{ borderTop: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#f1f5f9'}`, margin: '24px 0' }} />
 
           {/* Image Upload */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <ImageIcon size={18} color="#5120c8" />
-              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
                 {isAr ? 'صورة الجلسة (اختياري)' : 'Session Image (optional)'}
               </h3>
             </div>
@@ -445,7 +445,7 @@ export default function AdminCreateSessionPage() {
                 padding: '24px 16px', textAlign: 'center',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
                 borderRadius: 16,
-                border: `2px dashed ${isDark ? 'rgba(255,255,255,0.08)' : '#e5e7eb'}`,
+                border: `2px dashed ${isDark ? 'color-mix(in srgb, var(--foreground) 6%, transparent)' : '#e5e7eb'}`,
                 background: isDark ? '#1a1a1a' : '#f8fafc',
                 cursor: 'pointer', transition: 'border-color 0.2s',
               }}
@@ -516,7 +516,7 @@ export default function AdminCreateSessionPage() {
                 width: '100%', padding: '12px 4px', borderRadius: 12,
                 border: '1px solid var(--border)',
                 background: 'transparent', color: 'var(--foreground)',
-                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 600, cursor: 'pointer',
+                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 500, cursor: 'pointer',
                 textAlign: 'center',
               }}
             >
@@ -530,7 +530,7 @@ export default function AdminCreateSessionPage() {
                 width: '100%', padding: '12px 4px', borderRadius: 12,
                 border: 'none', cursor: 'pointer',
                 background: '#5120c8', color: '#fff',
-                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 700,
+                fontSize: 'clamp(12px, 2.5vw, 14px)', fontWeight: 500,
                 boxShadow: '0 4px 16px rgba(81,32,200,0.3)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 transition: 'all 0.2s ease', opacity: saving || success ? 0.7 : 1,

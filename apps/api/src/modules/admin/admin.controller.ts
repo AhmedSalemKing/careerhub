@@ -1002,6 +1002,27 @@ export class AdminController {
     return { success: true, data: result };
   }
 
+  @Patch('users/:id/hourly-rate')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a consultant hourly rate and notify them' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  async updateHourlyRate(@Param('id') id: string, @Body() body: { hourlyRate: number }) {
+    const user = await this.adminService.updateConsultantRate(id, Number(body?.hourlyRate));
+    return { success: true, data: { user } };
+  }
+
+  @Patch('courses/:id/price')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update a course price and notify the instructor' })
+  @ApiParam({ name: 'id', description: 'Course ID' })
+  async updateCoursePrice(
+    @Param('id') id: string,
+    @Body() body: { priceUSD?: number; priceEGP?: number },
+  ) {
+    const course = await this.adminService.updateCoursePrice(id, body);
+    return { success: true, data: { course } };
+  }
+
   @Patch('users/:userId/role')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change user role' })

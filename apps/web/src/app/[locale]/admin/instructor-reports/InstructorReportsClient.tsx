@@ -448,7 +448,7 @@ export default function InstructorReportsClient({ country }: { country: string }
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <BarChart3 size={22} color="#5120C8" />
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>
               {isAr ? 'تقارير المحاضرين' : 'Instructor Reports'}
             </h1>
             <p style={{ color: 'var(--muted)', fontSize: 13, margin: '4px 0 0' }}>
@@ -472,7 +472,7 @@ export default function InstructorReportsClient({ country }: { country: string }
             border: 'none',
             cursor: 'pointer',
             fontSize: 13,
-            fontWeight: 700,
+            fontWeight: 500,
           }}
         >
           <Plus size={16} />
@@ -527,7 +527,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: 500,
               opacity: loading ? 0.7 : 1,
             }}
           >
@@ -547,7 +547,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               border: '1px solid var(--border)',
               cursor: exporting || !report ? 'not-allowed' : 'pointer',
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: 500,
               opacity: exporting || !report ? 0.65 : 1,
             }}
           >
@@ -568,7 +568,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               border: 'none',
               cursor: exportingPdf || !report ? 'not-allowed' : 'pointer',
               fontSize: 13,
-              fontWeight: 700,
+              fontWeight: 500,
               opacity: exportingPdf || !report ? 0.65 : 1,
             }}
           >
@@ -612,7 +612,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               marginBottom: 24,
             }}
           >
-            <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
+            <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
               {isAr ? 'قسم المحاضرين' : 'Instructors'}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -648,12 +648,12 @@ export default function InstructorReportsClient({ country }: { country: string }
                     <>
                       <tr key={instructor.instructorId} style={{ borderBottom: '1px solid var(--border)' }}>
                         <td style={tdStyle}>
-                          <div style={{ fontWeight: 700 }}>{instructor.nameAr}</div>
+                          <div style={{ fontWeight: 500 }}>{instructor.nameAr}</div>
                           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{instructor.email}</div>
                         </td>
                         <td style={tdStyle}>{courseCount}</td>
                         <td style={tdStyle}>{totalLessons}</td>
-                        <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
+                        <td style={{ ...tdStyle, fontWeight: 500, color: '#5120C8' }}>{instructor.hoursDisplay}</td>
                         <td style={tdStyle}>{totalStudents}</td>
                         <td style={tdStyle}>{formatMoney(totalRevenue, (instructor as any).totalRevenueDisplay)}</td>
                         <td style={tdStyle}>
@@ -671,7 +671,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                 color: 'var(--foreground)',
                                 cursor: 'pointer',
                                 fontSize: 12,
-                                fontWeight: 700,
+                                fontWeight: 500,
                               }}
                             >
                               {isOpen ? (isAr ? 'إخفاء' : 'Hide') : isAr ? 'عرض' : 'Show'}
@@ -734,9 +734,9 @@ export default function InstructorReportsClient({ country }: { country: string }
 
                       {isOpen && (
                         <tr>
-                          <td colSpan={7} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
+                          <td colSpan={7} style={{ padding: 0, background: 'var(--primary-subtle)' }}>
                             <div style={{ padding: '14px 18px' }}>
-                              <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 10 }}>
+                              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>
                                 {isAr ? 'تفصيل الكورسات' : 'Course breakdown'}
                               </div>
                               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
@@ -764,14 +764,14 @@ export default function InstructorReportsClient({ country }: { country: string }
                                 </tbody>
                               </table>
 
-                              <div style={{ fontSize: 13, fontWeight: 800, margin: '16px 0 10px' }}>
+                              <div style={{ fontSize: 13, fontWeight: 500, margin: '16px 0 10px' }}>
                                 {isAr ? 'تفصيل الدروس' : 'Lessons'}
                               </div>
                               {(instructor.courses.filter((c:any)=>c.courseId !== '__consulting__').some((c:any)=>(c.lessons && c.lessons.length>0))) ? (
                                 instructor.courses.filter((c:any)=>c.courseId !== '__consulting__').map((course:any)=>(
                                   course.lessons && course.lessons.length>0 && (
                                     <div key={course.courseId} style={{ marginBottom: 16 }}>
-                                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{course.courseName || course.courseTitle}</div>
+                                      <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 6 }}>{course.courseName || course.courseTitle}</div>
                                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                                         <thead>
                                           <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -801,7 +801,7 @@ export default function InstructorReportsClient({ country }: { country: string }
 
                               {lectures && lectures.length > 0 && (
                                 <>
-                                  <div style={{ fontSize: 13, fontWeight: 800, margin: '16px 0 10px' }}>
+                                  <div style={{ fontSize: 13, fontWeight: 500, margin: '16px 0 10px' }}>
                                     {isAr ? 'سجل المحاضرات' : 'Lecture Log'}
                                   </div>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -854,7 +854,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                 marginBottom: 24,
               }}
             >
-              <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 800 }}>
+              <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
                 {isAr ? 'قسم الاستشاريين' : 'Consultants'}
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
@@ -882,13 +882,13 @@ export default function InstructorReportsClient({ country }: { country: string }
                       <>
                         <tr key={consultant.consultantId} style={{ borderBottom: '1px solid var(--border)' }}>
                           <td style={tdStyle}>
-                            <div style={{ fontWeight: 700 }}>{consultant.nameAr || consultant.nameEn}</div>
+                            <div style={{ fontWeight: 500 }}>{consultant.nameAr || consultant.nameEn}</div>
                             <div style={{ fontSize: 12, color: 'var(--muted)' }}>{consultant.email}</div>
                           </td>
                           <td style={tdStyle}>{consultant.sessionCount}</td>
                           <td style={tdStyle}>{consultant.completedCount}</td>
                           <td style={tdStyle}>{consultant.cancelledCount}</td>
-                          <td style={{ ...tdStyle, fontWeight: 800, color: '#5120C8' }}>{consultant.hoursDisplay}</td>
+                          <td style={{ ...tdStyle, fontWeight: 500, color: '#5120C8' }}>{consultant.hoursDisplay}</td>
                           <td style={tdStyle}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <button
@@ -904,7 +904,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                   color: 'var(--foreground)',
                                   cursor: 'pointer',
                                   fontSize: 12,
-                                  fontWeight: 700,
+                                  fontWeight: 500,
                                 }}
                               >
                                 {isOpen ? (isAr ? 'إخفاء' : 'Hide') : isAr ? 'عرض' : 'Show'}
@@ -966,7 +966,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                         </tr>
                         {isOpen && consultant.sessions && consultant.sessions.length > 0 && (
                           <tr>
-                            <td colSpan={6} style={{ padding: 0, background: 'rgba(81,32,200,0.03)' }}>
+                            <td colSpan={6} style={{ padding: 0, background: 'var(--primary-subtle)' }}>
                               <div style={{ padding: '14px 18px' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                   <thead>
@@ -1078,7 +1078,7 @@ export default function InstructorReportsClient({ country }: { country: string }
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 500, margin: 0 }}>
                 {isAr ? 'تسجيل محاضرة جديدة' : 'Log New Lecture'}
               </h2>
               <button
@@ -1199,7 +1199,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                   color: '#fff',
                   border: 'none',
                   cursor: saving ? 'not-allowed' : 'pointer',
-                  fontWeight: 700,
+                  fontWeight: 500,
                   opacity: saving ? 0.7 : 1,
                 }}
               >
@@ -1251,7 +1251,7 @@ function StatCard({
           width: 42,
           height: 42,
           borderRadius: 10,
-          background: 'rgba(81,32,200,0.1)',
+          background: 'var(--primary-muted)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -1262,7 +1262,7 @@ function StatCard({
       </div>
       <div>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 20, fontWeight: 800 }}>{value}</div>
+        <div style={{ fontSize: 20, fontWeight: 500 }}>{value}</div>
       </div>
     </div>
   )
@@ -1271,7 +1271,7 @@ function StatCard({
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 500,
   color: 'var(--muted)',
   marginBottom: 5,
 }
@@ -1291,7 +1291,7 @@ const thStyle: React.CSSProperties = {
   padding: '12px 16px',
   textAlign: 'right',
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 500,
   color: 'var(--muted)',
 }
 
@@ -1304,7 +1304,7 @@ const subThStyle: React.CSSProperties = {
   padding: '8px 10px',
   textAlign: 'right',
   fontSize: 12,
-  fontWeight: 700,
+  fontWeight: 500,
   color: 'var(--muted)',
 }
 

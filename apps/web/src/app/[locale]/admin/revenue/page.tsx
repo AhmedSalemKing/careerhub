@@ -111,7 +111,7 @@ export default function AdminRevenuePage() {
 
       {/* ─── Header ─── */}
       <div>
-        <h1 className="text-xl font-bold flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
+        <h1 className="text-xl font-black flex items-center gap-3" style={{ color: 'var(--foreground)' }}>
           <DollarSign style={{ color: '#5120c8' }} />
           {isAr ? 'الإيرادات المؤكدة' : 'Confirmed Revenue'}
         </h1>
@@ -143,7 +143,7 @@ export default function AdminRevenuePage() {
               >
                 <Icon size={20} style={{ color: s.color }} />
               </div>
-              <p className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>{s.value}</p>
+              <p className="text-2xl font-medium" style={{ color: 'var(--foreground)' }}>{s.value}</p>
               <p className="text-sm mt-1" style={{ color: 'var(--muted)' }}>{s.label}</p>
             </div>
           )
@@ -155,7 +155,7 @@ export default function AdminRevenuePage() {
         className="rounded-xl border p-5"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
-        <h2 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
+        <h2 className="font-medium mb-4 flex items-center gap-2" style={{ color: 'var(--foreground)' }}>
           <BarChart2 size={18} style={{ color: '#5120c8' }} />
           {isAr ? 'توزيع الإيرادات' : 'Revenue Breakdown'}
         </h2>
@@ -166,9 +166,9 @@ export default function AdminRevenuePage() {
               { currency: 'EGP', amount: egpTotal, label: isAr ? 'جنيه مصري' : 'Egyptian Pound', color: '#f59e0b' },
               { currency: 'USD', amount: usdTotal, label: isAr ? 'دولار أمريكي' : 'US Dollar', color: '#3b82f6' },
             ].map((c) => (
-              <div key={c.currency} className="rounded-lg p-3" style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
-                <p className="text-xs font-semibold mb-1" style={{ color: 'var(--muted)' }}>{c.label}</p>
-                <p className="text-lg font-bold" style={{ color: c.color }}>{c.amount.toLocaleString(isAr ? 'ar-SA' : 'en-US')} {c.currency}</p>
+              <div key={c.currency} className="rounded-lg p-3" style={{ background: isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.03)', border: '1px solid var(--border)' }}>
+                <p className="text-xs font-medium mb-1" style={{ color: 'var(--muted)' }}>{c.label}</p>
+                <p className="text-lg font-medium" style={{ color: c.color }}>{c.amount.toLocaleString(isAr ? 'ar-SA' : 'en-US')} {c.currency}</p>
               </div>
             ))}
           </div>
@@ -176,13 +176,13 @@ export default function AdminRevenuePage() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div
             className="rounded-lg p-4 border"
-            style={{ borderColor: 'var(--border)', background: isDark ? 'rgba(81,32,200,0.06)' : 'rgba(81,32,200,0.03)' }}
+            style={{ borderColor: 'var(--border)', background: isDark ? 'var(--primary-subtle)' : 'var(--primary-subtle)' }}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الكورسات' : 'Course Revenue'}</span>
               <CreditCard size={16} style={{ color: '#5120c8' }} />
             </div>
-            <p className="text-xl font-bold" style={{ color: '#5120c8' }}>{displayTotal(payments, 'amountDisplay', paymentTotal)}</p>
+            <p className="text-xl font-medium" style={{ color: '#5120c8' }}>{displayTotal(payments, 'amountDisplay', paymentTotal)}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{payments.length} {isAr ? 'عملية دفع' : 'payments'}</p>
           </div>
           <div
@@ -193,7 +193,7 @@ export default function AdminRevenuePage() {
               <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'إيرادات الجلسات' : 'Session Revenue'}</span>
               <Calendar size={16} style={{ color: '#8b5cf6' }} />
             </div>
-            <p className="text-xl font-bold" style={{ color: '#8b5cf6' }}>{displayTotal(paidSessions, 'priceDisplay', sessionTotal)}</p>
+            <p className="text-xl font-medium" style={{ color: '#8b5cf6' }}>{displayTotal(paidSessions, 'priceDisplay', sessionTotal)}</p>
             <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>{paidSessions.length} {isAr ? 'جلسة مدفوعة' : 'paid sessions'}</p>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function AdminRevenuePage() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <CheckCircle2 size={18} style={{ color: '#10b981' }} />
-            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? 'مدفوعات الكورسات المؤكدة' : 'Confirmed Course Payments'}</h2>
+            <h2 className="font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'مدفوعات الكورسات المؤكدة' : 'Confirmed Course Payments'}</h2>
             <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{payments.length} {isAr ? 'عملية' : 'transactions'}</span>
           </div>
           {loadingP ? (
@@ -252,12 +252,12 @@ export default function AdminRevenuePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الكورس' : 'Course'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الحالة' : 'Status'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الكورس' : 'Course'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الحالة' : 'Status'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -269,16 +269,16 @@ export default function AdminRevenuePage() {
                         key={p.id}
                         className="transition-colors"
                         style={{ borderBottom: '1px solid var(--border)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.02)' }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                       >
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{idx + 1}</td>
                         <td className="p-3 font-medium" style={{ color: 'var(--foreground)' }}>{name}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{courseTitle}</td>
-                        <td className="p-3 font-bold" style={{ color: '#10b981' }}>{formatPrice(Number(p.amount), p.amountDisplay)}</td>
+                        <td className="p-3 font-medium" style={{ color: '#10b981' }}>{formatPrice(Number(p.amount), p.amountDisplay)}</td>
                         <td className="p-3">
                           <span
-                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
                             style={{
                               background: isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)',
                               color: isDark ? '#34d399' : '#059669',
@@ -313,7 +313,7 @@ export default function AdminRevenuePage() {
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <Calendar size={18} style={{ color: '#8b5cf6' }} />
-            <h2 className="font-bold" style={{ color: 'var(--foreground)' }}>{isAr ? 'الجلسات المدفوعة' : 'Paid Sessions'}</h2>
+            <h2 className="font-medium" style={{ color: 'var(--foreground)' }}>{isAr ? 'الجلسات المدفوعة' : 'Paid Sessions'}</h2>
             <span className="mr-auto text-sm" style={{ color: 'var(--muted)' }}>{paidSessions.length} {isAr ? 'جلسة' : 'sessions'}</span>
           </div>
           {loadingS ? (
@@ -334,12 +334,12 @@ export default function AdminRevenuePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: 'var(--surface-2)' }}>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستشار' : 'Consultant'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الموضوع' : 'Topic'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
-                    <th className="p-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>#</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستخدم' : 'User'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المستشار' : 'Consultant'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'الموضوع' : 'Topic'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'المبلغ' : 'Amount'}</th>
+                    <th className="p-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--muted)' }}>{isAr ? 'التاريخ' : 'Date'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -351,14 +351,14 @@ export default function AdminRevenuePage() {
                         key={s.id}
                         className="transition-colors"
                         style={{ borderBottom: '1px solid var(--border)' }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.02)' }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                       >
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{idx + 1}</td>
                         <td className="p-3 font-medium" style={{ color: 'var(--foreground)' }}>{student}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{consultant}</td>
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{s.topic || '—'}</td>
-                        <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price), s.priceDisplay)}</td>
+                        <td className="p-3 font-medium" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price), s.priceDisplay)}</td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
                           {formatDate(s.scheduledAt || s.createdAt)}
                         </td>
@@ -383,7 +383,7 @@ export default function AdminRevenuePage() {
         <div className="flex items-center gap-3">
           <CheckCircle2 size={22} style={{ color: '#10b981' }} />
           <div>
-            <p className="font-bold" style={{ color: isDark ? '#34d399' : '#059669' }}>{isAr ? 'ملخص الإيرادات' : 'Revenue Summary'}</p>
+            <p className="font-medium" style={{ color: isDark ? '#34d399' : '#059669' }}>{isAr ? 'ملخص الإيرادات' : 'Revenue Summary'}</p>
             <p className="text-sm mt-1" style={{ color: isDark ? 'rgba(52,211,153,0.7)' : 'rgba(5,150,105,0.7)' }}>
               {isAr ? 'كورسات' : 'Courses'}: {displayTotal(payments, 'amountDisplay', paymentTotal)} | {isAr ? 'جلسات' : 'Sessions'}: {displayTotal(paidSessions, 'priceDisplay', sessionTotal)} | {isAr ? 'الإجمالي' : 'Total'}: {displayTotal(allRevItems, '_d', total)}
             </p>

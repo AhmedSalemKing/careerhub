@@ -165,8 +165,8 @@ export default function ActivityPage() {
   const total = (activityData as any)?.total ?? 0
   const totalPages = (activityData as any)?.totalPages ?? 0
 
-  const tableBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
-  const tableHover = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+  const tableBg = isDark ? 'color-mix(in srgb, var(--foreground) 4%, transparent)' : 'rgba(0,0,0,0.02)'
+  const tableHover = isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : 'rgba(0,0,0,0.04)'
   const borderColor = 'var(--border)'
   const surface = 'var(--surface)'
   const fg = 'var(--foreground)'
@@ -180,7 +180,7 @@ export default function ActivityPage() {
       {/* ─── Header ─── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 900, margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Activity size={22} color="#5120c8" />
             {isAr ? 'نشاط المنصة' : 'Platform Activity'}
           </h1>
@@ -190,8 +190,8 @@ export default function ActivityPage() {
         </div>
         <button onClick={() => refetch().catch(() => {})} style={{
           display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px',
-          background: 'rgba(81,32,200,0.1)', color: '#5120c8', border: '1px solid rgba(81,32,200,0.2)',
-          fontSize: '13px', fontWeight: 600, cursor: 'pointer',
+          background: 'var(--primary-muted)', color: '#5120c8', border: '1px solid rgba(81,32,200,0.2)',
+          fontSize: '13px', fontWeight: 500, cursor: 'pointer',
         }}>
           <RefreshCw size={14} />
           {isAr ? 'تحديث' : 'Refresh'}
@@ -213,7 +213,7 @@ export default function ActivityPage() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <Icon size={20} color={s.color} />
-                <span style={{ fontSize: '24px', fontWeight: 700, color: s.color }}>{s.value}</span>
+                <span style={{ fontSize: '24px', fontWeight: 500, color: s.color }}>{s.value}</span>
               </div>
               <p style={{ fontSize: '12px', color: muted, margin: 0 }}>{s.label}</p>
             </div>
@@ -272,7 +272,7 @@ export default function ActivityPage() {
             <button key={tab.key} onClick={() => { setActiveTab(tab.key); setPage(1) }} style={{
               display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '10px',
               border: isActive ? '1px solid #5120c8' : `1px solid transparent`,
-              background: isActive ? 'rgba(81,32,200,0.1)' : 'transparent',
+              background: isActive ? 'var(--primary-muted)' : 'transparent',
               color: isActive ? '#5120c8' : muted, fontSize: '13px', fontWeight: isActive ? 600 : 400,
               cursor: 'pointer', transition: 'all 0.15s',
             }}>
@@ -398,7 +398,7 @@ export default function ActivityPage() {
 
       {/* ─── Live Tracking Placeholder (Phase 2) ─── */}
       <div style={{
-        background: 'rgba(81,32,200,0.05)', border: '1px solid rgba(81,32,200,0.15)',
+        background: 'var(--primary-subtle)', border: '1px solid var(--primary-muted)',
         borderRadius: '16px', padding: '32px', textAlign: 'center', marginTop: '24px',
       }}>
         <Monitor size={28} style={{ color: 'rgba(81,32,200,0.3)', margin: '0 auto 8px', display: 'block' }} />

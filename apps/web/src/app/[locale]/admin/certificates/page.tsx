@@ -63,7 +63,7 @@ export default function AdminCertificatesPage() {
             <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
             <button
               type="button"
-              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
+              className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90"
               onClick={() => {
                 toast({ title: c('loading'), description: c('loading') })
                 q.refetch().catch(() => {})
@@ -77,11 +77,11 @@ export default function AdminCertificatesPage() {
             <table className="w-full text-sm">
               <thead className="bg-[color:var(--surface-2)] text-[color:var(--muted)]">
                 <tr>
-                  <th className="px-4 py-3 text-right font-semibold">{t('th_serial')}</th>
-                  <th className="px-4 py-3 text-right font-semibold">المستخدم</th>
-                  <th className="px-4 py-3 text-right font-semibold">الكورس</th>
-                  <th className="px-4 py-3 text-right font-semibold">{t('th_issued')}</th>
-                  <th className="px-4 py-3 text-right font-semibold">عرض</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('th_serial')}</th>
+                  <th className="px-4 py-3 text-right font-medium">المستخدم</th>
+                  <th className="px-4 py-3 text-right font-medium">الكورس</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('th_issued')}</th>
+                  <th className="px-4 py-3 text-right font-medium">عرض</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,7 +99,7 @@ export default function AdminCertificatesPage() {
                           href={cert.certificateUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+                          className="inline-flex items-center gap-1 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
                         >
                           <Award size={12} />
                           عرض
