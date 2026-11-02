@@ -107,26 +107,32 @@ export class CertificatesService {
       throw new ForbiddenException('Certificates are not enabled for this course')
     }
 
-    const totalLessons = await this.prisma.lesson.count({
-      where: {
-        isPublished: true,
-        OR: [
-          { section: { courseId } },
-          { module: { courseId } },
-        ],
-      },
-    })
+    if (!course.isCompleted) {
+      throw new ForbiddenException('The instructor has not marked this course as complete yet')
+    }
+
+    // Count real published lessons (not expectedLessons) and only the student's
+    // completed progress on those same lessons, so the two numbers always match.
+    const publishedLessonWhere = {
+      isPublished: true,
+      OR: [
+        { section: { courseId } },
+        { module: { courseId } },
+      ],
+    }
+    const totalLessons = await this.prisma.lesson.count({ where: publishedLessonWhere })
     const completedLessons = await this.prisma.lessonProgress.count({
       where: {
         userId,
         status: 'COMPLETED',
-        lesson: {
-          OR: [
-            { section: { courseId } },
-            { module: { courseId } },
-          ],
-        },
+        lesson: publishedLessonWhere,
       },
+    })
+    console.log('[Certificate] completion check:', {
+      completedLessons,
+      totalLessons,
+      isCompleted: course.isCompleted,
+      certificateEnabled: course.certificateEnabled,
     })
 
     if (totalLessons === 0 || completedLessons < totalLessons) {
