@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { post } from '@/lib/api'
+import { useAuthStore } from '@/stores/authStore'
 
 interface RoomData {
   roomUrl: string
@@ -24,6 +25,7 @@ export default function ConsultingGoLivePage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const sessionId = params.sessionId as string
+  const accountType = useAuthStore((s) => s.user?.accountType)
 
   const [roomData, setRoomData] = useState<RoomData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -94,7 +96,12 @@ export default function ConsultingGoLivePage() {
       await post(`/consulting/sessions/${sessionId}/end`, { durationSeconds: elapsed })
     } catch { }
     setEnded(true)
-    router.push(`/${locale}/dashboard/client-sessions`)
+    // Consultants review their clients' sessions; students go back to their own list
+    router.push(
+      accountType === 'CONSULTANT'
+        ? `/${locale}/dashboard/client-sessions`
+        : `/${locale}/dashboard/my-sessions`,
+    )
   }
 
   return (

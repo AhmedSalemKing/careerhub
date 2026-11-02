@@ -1,6 +1,9 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { useAuthStore } from '../../../../stores/authStore'
+import { getNotificationUrl } from '../../../../lib/notification-url'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { get, patch } from '../../../../lib/api'
 import { unwrapData, type ApiEnvelope } from '../../../../lib/unwrap'
@@ -26,6 +29,9 @@ export default function DashboardNotificationsPage() {
   const c = useTranslations('common')
   const e = useTranslations('errors')
   const { toast } = useToast()
+  const router = useRouter()
+  const locale = useLocale()
+  const accountType = useAuthStore((st) => st.user?.accountType)
 
   const q = useQuery({
     queryKey: ['notifications'],
@@ -90,7 +96,16 @@ export default function DashboardNotificationsPage() {
             {items.map((n) => (
               <div
                 key={n.id}
-                className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (!n.isRead) markRead.mutate(n.id)
+                  router.push(getNotificationUrl(n as { type?: string; data?: unknown }, locale, accountType))
+                }}
+                onKeyDown={(ev) => {
+                  if (ev.key === 'Enter') router.push(getNotificationUrl(n as { type?: string; data?: unknown }, locale, accountType))
+                }}
+                className="cursor-pointer rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -102,7 +117,7 @@ export default function DashboardNotificationsPage() {
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => markRead.mutate(n.id)}
+                      onClick={(ev) => { ev.stopPropagation(); markRead.mutate(n.id) }}
                       disabled={markRead.isPending}
                     >
                       {t('mark_read')}

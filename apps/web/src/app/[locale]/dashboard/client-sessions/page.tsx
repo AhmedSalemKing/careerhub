@@ -186,6 +186,12 @@ export default function ClientSessionsPage() {
   const isAr = locale === 'ar'
   const router = useRouter()
   const queryClient = useQueryClient()
+  const accountType = useAuthStore((st) => st.user?.accountType)
+
+  // This page is the consultant's view; students have their own sessions list
+  useEffect(() => {
+    if (accountType === 'STUDENT') router.replace(`/${locale}/dashboard/my-sessions`)
+  }, [accountType, locale, router])
 
   const [activeTab, setActiveTab] = useState<TabKey>('pending_approval')
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -843,10 +849,10 @@ function RescheduleModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
-          width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto',
+          width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontFamily: font, fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>
               {tr('إعادة جدولة الجلسة', 'Reschedule session')}
@@ -867,7 +873,7 @@ function RescheduleModal({
           </button>
         </div>
 
-        <div style={{ padding: '16px 24px 0', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ padding: '16px 24px 0', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'center' }}>
           {([1, 2, 3] as const).map((s) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
@@ -885,7 +891,7 @@ function RescheduleModal({
           ))}
         </div>
 
-        <div style={{ padding: '16px 24px 24px' }}>
+        <div style={{ padding: '16px 24px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {step === 1 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -944,12 +950,6 @@ function RescheduleModal({
                   )
                 })}
               </div>
-
-              {selectedDate && (
-                <button type="button" onClick={() => setStep(2)} style={{ ...primaryBtn(true), width: '100%', marginTop: 16 }}>
-                  {tr('التالي — اختر الوقت', 'Next — choose a time')}
-                </button>
-              )}
             </div>
           )}
 
@@ -1042,13 +1042,6 @@ function RescheduleModal({
                   </div>
                 </>
               )}
-
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button type="button" onClick={() => setStep(1)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
-                <button type="button" disabled={!selectedSlot} onClick={() => selectedSlot && setStep(3)} style={{ ...primaryBtn(!!selectedSlot), flex: 2 }}>
-                  {tr('التالي — تأكيد', 'Next — confirm')}
-                </button>
-              </div>
             </div>
           )}
 
@@ -1093,18 +1086,41 @@ function RescheduleModal({
                   style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', resize: 'none', fontFamily: font, fontWeight: 300, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
+            </div>
+          )}
+        </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={() => setStep(2)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
-                <button
-                  type="button"
-                  disabled={submitting || !selectedSlot}
-                  onClick={() => selectedSlot && onSubmit(selectedSlot, reason.trim() || undefined)}
-                  style={{ ...primaryBtn(!submitting), flex: 2, opacity: submitting ? 0.7 : 1 }}
-                >
-                  {submitting ? tr('جاري الإرسال...', 'Sending...') : tr('تأكيد إعادة الجدولة', 'Confirm reschedule')}
-                </button>
-              </div>
+        {/* Action buttons: always visible below the scrolling content */}
+        <div style={{ padding: '12px 24px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--card)' }}>
+          {step === 1 && selectedDate && (
+            <button type="button" onClick={() => setStep(2)} style={{ ...primaryBtn(true), width: '100%', padding: '12px 0' }}>
+              {tr('التالي — اختر الوقت', 'Next — choose a time')}
+            </button>
+          )}
+          {step === 1 && !selectedDate && (
+            <div style={{ textAlign: 'center', fontFamily: font, fontWeight: 300, fontSize: 12, color: muted, padding: '8px 0' }}>
+              {tr('اختر تاريخاً للمتابعة', 'Pick a date to continue')}
+            </div>
+          )}
+          {step === 2 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={() => setStep(1)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
+              <button type="button" disabled={!selectedSlot} onClick={() => selectedSlot && setStep(3)} style={{ ...primaryBtn(!!selectedSlot), flex: 2 }}>
+                {tr('التالي — تأكيد', 'Next — confirm')}
+              </button>
+            </div>
+          )}
+          {step === 3 && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={() => setStep(2)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
+              <button
+                type="button"
+                disabled={submitting || !selectedSlot}
+                onClick={() => selectedSlot && onSubmit(selectedSlot, reason.trim() || undefined)}
+                style={{ ...primaryBtn(!submitting), flex: 2, opacity: submitting ? 0.7 : 1 }}
+              >
+                {submitting ? tr('جاري الإرسال...', 'Sending...') : tr('تأكيد إعادة الجدولة', 'Confirm reschedule')}
+              </button>
             </div>
           )}
         </div>

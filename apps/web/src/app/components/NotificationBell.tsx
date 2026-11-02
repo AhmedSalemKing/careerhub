@@ -1,10 +1,13 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, CheckCircle, XCircle, AlertTriangle, Info, Award, CreditCard, User, Clock } from 'lucide-react'
 import { get, patch } from '../../lib/api'
 import { useAuthStore } from '../../stores/authStore'
 import { timeAgoAr } from '../../lib/formatDate'
+import { getNotificationUrl } from '../../lib/notification-url'
 
 type Notification = {
   id: string
@@ -13,6 +16,7 @@ type Notification = {
   titleAr: string
   contentEn: string
   contentAr: string
+  data?: Record<string, unknown> | null
   isRead: boolean
   createdAt: string
 }
@@ -70,6 +74,9 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null)
   const qc = useQueryClient()
   const token = useAuthStore((s) => s.token)
+  const accountType = useAuthStore((s) => s.user?.accountType)
+  const router = useRouter()
+  const locale = useLocale()
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -103,6 +110,17 @@ export function NotificationBell() {
     mutationFn: () => patch('/notifications/mark-all-read', {}),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
   })
+
+  const markRead = useMutation({
+    mutationFn: (id: string) => patch(`/notifications/${encodeURIComponent(id)}/read`, {}),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  const openNotification = (n: Notification) => {
+    if (!n.isRead) markRead.mutate(n.id)
+    setOpen(false)
+    router.push(getNotificationUrl(n, locale, accountType))
+  }
 
   if (!token) return null
 
@@ -152,7 +170,11 @@ export function NotificationBell() {
                 notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`p-4 border-b border-[color:var(--border)] last:border-0 transition cursor-pointer ${
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openNotification(n)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') openNotification(n) }}
+                    className={`p-4 hover:bg-[color:var(--surface-2)] border-b border-[color:var(--border)] last:border-0 transition cursor-pointer ${
                       !n.isRead ? getBgColor(n.type) : 'opacity-60'
                     }`}
                   >

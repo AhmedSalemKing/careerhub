@@ -511,12 +511,21 @@ export class ConsultingService {
       },
     })
 
+    // Servers run in UTC; always render the proposed time in Cairo time for users
+    const fmtCairo = (locale: string) =>
+      proposedAt.toLocaleString(locale, {
+        timeZone: 'Africa/Cairo',
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', hour12: true,
+      })
+
     await this.notify(session.studentId, {
       titleEn: 'Reschedule Requested',
       titleAr: 'طلب تغيير موعد',
-      contentEn: `The consultant proposes a new time: ${proposedAt.toLocaleDateString('en')} ${proposedAt.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
-      contentAr: `المستشار يقترح موعداً جديداً: ${proposedAt.toLocaleDateString('ar')} ${proposedAt.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}${data.reason ? ' - ' + data.reason : ''}`,
+      contentEn: `The consultant proposes a new time: ${fmtCairo('en-US')}${data.reason ? ' - ' + data.reason : ''}`,
+      contentAr: `المستشار يقترح موعداً جديداً: ${fmtCairo('ar-EG')}${data.reason ? ' - ' + data.reason : ''}`,
       type: 'SYSTEM_ANNOUNCEMENT',
+      data: { sessionId, kind: 'SESSION_RESCHEDULE' },
     })
 
     return { success: true, data: updated }
