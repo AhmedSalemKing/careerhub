@@ -838,10 +838,10 @@ function RescheduleModal({
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        position: 'fixed', inset: 0, zIndex: 10000,
         background: 'color-mix(in srgb, var(--foreground) 60%, transparent)',
         backdropFilter: 'blur(6px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 16px 90px 16px',
       }}
     >
       <div
@@ -849,7 +849,7 @@ function RescheduleModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
-          width: '100%', maxWidth: 520, height: 'min(88dvh, 640px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          width: '100%', maxWidth: 520, height: 'min(calc(88dvh - 80px), 600px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
