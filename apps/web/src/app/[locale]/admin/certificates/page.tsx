@@ -8,6 +8,7 @@ import { AuthGate } from '../../../components/AuthGate'
 import { AdminShell } from '../../../components/AdminShell'
 import { Skeleton } from '../../../components/ui/Skeleton'
 import { useToast } from '../../../../lib/toast'
+import { formatDate as formatSafeDate } from '@/lib/format-date'
 import { Award, ExternalLink } from 'lucide-react'
 
 type AdminCert = {
@@ -46,8 +47,7 @@ export default function AdminCertificatesPage() {
   const courseTitle = (cert: AdminCert) =>
     cert.course?.titleAr ?? cert.course?.titleEn ?? '-'
 
-  const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString('ar-EG-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' })
+  const formatDate = (d: string) => formatSafeDate(d)
 
   return (
     <AuthGate>

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { get } from '../../../../lib/api'
+import { formatDate } from '@/lib/format-date'
 import {
   DollarSign, TrendingUp, CreditCard, Calendar,
   CheckCircle2, XCircle, Clock, BarChart2,
@@ -289,7 +290,7 @@ export default function AdminRevenuePage() {
                           </span>
                         </td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
+                          {formatDate(p.createdAt)}
                         </td>
                       </tr>
                     )
@@ -359,7 +360,7 @@ export default function AdminRevenuePage() {
                         <td className="p-3" style={{ color: 'var(--muted)' }}>{s.topic || '—'}</td>
                         <td className="p-3 font-bold" style={{ color: '#8b5cf6' }}>{formatPrice(Number(s.price), s.priceDisplay)}</td>
                         <td className="p-3 text-xs" style={{ color: 'var(--muted)' }}>
-                          {new Date(s.scheduledAt || s.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
+                          {formatDate(s.scheduledAt || s.createdAt)}
                         </td>
                       </tr>
                     )

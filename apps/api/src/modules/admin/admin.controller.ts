@@ -314,8 +314,11 @@ export class AdminController {
   @ApiOperation({ summary: 'Approve course (Admin only)' })
   @ApiResponse({ status: 200, description: 'Course approved successfully' })
   @ApiParam({ name: 'id', description: 'Course ID' })
-  async approveCourse(@Param('id') id: string) {
-    const course = await this.adminService.approveCourse(id);
+  async approveCourse(
+    @Param('id') id: string,
+    @Body() body?: { priceUSD?: number; priceEGP?: number },
+  ) {
+    const course = await this.adminService.approveCourse(id, body);
     return {
       success: true,
       message: 'Course approved successfully',
@@ -770,8 +773,11 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Approve and publish a course' })
   @ApiParam({ name: 'id', description: 'Course ID' })
-  async postApproveCourse(@Param('id') id: string) {
-    const course = await this.adminService.approveCourse(id);
+  async postApproveCourse(
+    @Param('id') id: string,
+    @Body() body?: { priceUSD?: number; priceEGP?: number },
+  ) {
+    const course = await this.adminService.approveCourse(id, body);
     return { success: true, message: 'Course approved and published', data: { course } };
   }
 
@@ -828,8 +834,9 @@ export class AdminController {
   async approveUser(
     @Param('userId') userId: string,
     @CurrentUser() admin: User,
+    @Body() body?: { hourlyRate?: number },
   ) {
-    const user = await this.adminService.approveUser(userId, admin.id);
+    const user = await this.adminService.approveUser(userId, admin.id, body?.hourlyRate);
     return { success: true, message: 'User approved', data: { user } };
   }
 

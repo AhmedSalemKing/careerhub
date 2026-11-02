@@ -17,6 +17,7 @@ import {
   Download,
 } from 'lucide-react'
 import VerifiedBadge from '../../../../components/VerifiedBadge'
+import { formatDate } from '@/lib/format-date'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -27,6 +28,8 @@ export default function ApprovalsPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'verification'>('users')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
+  const [editingPrices, setEditingPrices] = useState<Record<string, string>>({})
+  const [editingCoursePrices, setEditingCoursePrices] = useState<Record<string, { usd?: string; egp?: string }>>({})
 
   // ── Pending users ──────────────────────────────────────────────
   const { data: users = [], isLoading: usersLoading } = useQuery({
@@ -39,8 +42,9 @@ export default function ApprovalsPage() {
   })
 
   const approveUser = useMutation({
-    mutationFn: (userId: string) => post(`/admin/approve/${userId}`),
-    onSuccess: (_, userId) => {
+    mutationFn: ({ userId, hourlyRate }: { userId: string; hourlyRate?: number }) =>
+      post(`/admin/approve/${userId}`, { hourlyRate }),
+    onSuccess: (_, { userId }) => {
       qc.invalidateQueries({ queryKey: ['pending-approvals'] })
       const user = users.find((u: any) => u.id === userId)
       notify.success(isAr ? `تم قبول ${user?.profile?.firstName || user?.email || 'المستخدم'}` : `Approved ${user?.profile?.firstName || user?.email || 'user'}`)
@@ -101,7 +105,8 @@ export default function ApprovalsPage() {
   })
 
   const approveCourse = useMutation({
-    mutationFn: (courseId: string) => post(`/admin/courses/${courseId}/approve`, {}),
+    mutationFn: ({ courseId, priceUSD, priceEGP }: { courseId: string; priceUSD?: number; priceEGP?: number }) =>
+      post(`/admin/courses/${courseId}/approve`, { priceUSD, priceEGP }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['pending-courses'] })
       notify.success(isAr ? 'تم الموافقة على الكورس ونشره' : 'Course approved and published')
@@ -224,7 +229,7 @@ export default function ApprovalsPage() {
                         </span>
                         <span className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
                           <Clock className="h-3 w-3" />
-                          {new Date(u.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
+                          {formatDate(u.createdAt)}
                         </span>
                       </div>
                     </div>
@@ -247,7 +252,16 @@ export default function ApprovalsPage() {
                       {u.hourlyRate && (
                         <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
                           <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'السعر بالساعة' : 'Hourly Rate'}</p>
-                          <p className="text-sm font-medium text-foreground">{formatMoney(u.hourlyRate, u.hourlyRateDisplay)}</p>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min={0}
+                              value={editingPrices[u.id] ?? u.hourlyRate ?? ''}
+                              onChange={(e) => setEditingPrices((prev) => ({ ...prev, [u.id]: e.target.value }))}
+                              className="w-24 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-1 text-center text-sm text-foreground"
+                            />
+                            <span className="text-xs text-[color:var(--muted)]">{isAr ? '/ ساعة' : '/ hour'}</span>
+                          </div>
                         </div>
                       )}
                       {u.meetingMethod && (
@@ -353,7 +367,14 @@ export default function ApprovalsPage() {
                     ) : (
                       <>
                         <button
-                          onClick={() => approveUser.mutate(u.id)}
+                          onClick={() => {
+                            const raw = editingPrices[u.id]
+                            const next = raw !== undefined && raw !== '' ? Number(raw) : undefined
+                            approveUser.mutate({
+                              userId: u.id,
+                              hourlyRate: next !== undefined && Number.isFinite(next) && next !== u.hourlyRate ? next : undefined,
+                            })
+                          }}
                           disabled={approveUser.isPending}
                           className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 transition"
                         >
@@ -409,11 +430,28 @@ export default function ApprovalsPage() {
                           {course.instructor?.profile?.lastName}
                           {course.instructor?.isVerified && <VerifiedBadge size="xs" showTooltip={false} />}
                         </span>
-                        <span>
-                          {isAr ? 'السعر:' : 'Price:'}{' '}
-                          {formatCoursePrice(course)}
-                          {(course as any).priceUSD != null && <> &larr; {Number((course as any).priceUSD).toFixed(2)}$</>}
-                          {(course as any).priceEGP != null && <> / {Number((course as any).priceEGP).toFixed(0)} {isAr ? 'ج.م' : 'EGP'}</>}
+                        <span className="flex flex-wrap items-center gap-2">
+                          {isAr ? 'السعر:' : 'Price:'}
+                          <input
+                            type="number"
+                            min={0}
+                            value={editingCoursePrices[course.id]?.usd ?? (course.priceUSD != null ? Number(course.priceUSD) : '')}
+                            onChange={(e) =>
+                              setEditingCoursePrices((prev) => ({ ...prev, [course.id]: { ...prev[course.id], usd: e.target.value } }))
+                            }
+                            className="w-20 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-1 text-center text-sm text-foreground"
+                          />
+                          <span>$</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={editingCoursePrices[course.id]?.egp ?? (course.priceEGP != null ? Number(course.priceEGP) : '')}
+                            onChange={(e) =>
+                              setEditingCoursePrices((prev) => ({ ...prev, [course.id]: { ...prev[course.id], egp: e.target.value } }))
+                            }
+                            className="w-24 rounded-md border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-1 text-center text-sm text-foreground"
+                          />
+                          <span>{isAr ? 'ج.م' : 'EGP'}</span>
                         </span>
                         <span>{isAr ? 'المستوى:' : 'Level:'} {course.level}</span>
                         <span>{isAr ? 'الأقسام:' : 'Sections:'} {course._count?.sections || 0}</span>
@@ -445,12 +483,24 @@ export default function ApprovalsPage() {
                   )}
 
                   <p className="text-xs text-[color:var(--muted)] mb-4">
-                    {isAr ? 'تاريخ الطلب:' : 'Request date:'} {new Date(course.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US')}
+                    {isAr ? 'تاريخ الطلب:' : 'Request date:'} {formatDate(course.createdAt)}
                   </p>
 
                   <div className="flex gap-3">
                     <button
-                      onClick={() => approveCourse.mutate(course.id)}
+                      onClick={() => {
+                        const edit = editingCoursePrices[course.id]
+                        const changed = (raw: string | undefined, orig: unknown) => {
+                          if (raw === undefined || raw === '') return undefined
+                          const n = Number(raw)
+                          return Number.isFinite(n) && n !== Number(orig) ? n : undefined
+                        }
+                        approveCourse.mutate({
+                          courseId: course.id,
+                          priceUSD: changed(edit?.usd, course.priceUSD),
+                          priceEGP: changed(edit?.egp, course.priceEGP),
+                        })
+                      }}
                       disabled={approveCourse.isPending}
                       className="flex items-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-60 transition"
                     >

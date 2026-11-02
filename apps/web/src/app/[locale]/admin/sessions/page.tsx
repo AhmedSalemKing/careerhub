@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { useQuery } from '@tanstack/react-query'
 import { get } from '../../../../lib/api'
+import { formatDate, formatTime } from '@/lib/format-date'
 import {
   Calendar, Video, Globe, Phone, PlusCircle, ExternalLink,
   CheckCircle, XCircle, Clock, Users, Eye,
@@ -249,7 +250,6 @@ export default function AdminSessionsPage() {
                   const method = mc[s.meetingMethod] || mc.ONLINE
                   const studentName = userName(s.student)
                   const consultantName = userName(s.consultant)
-                  const date = new Date(s.scheduledAt)
                   const MethodIcon = method.icon
 
                   return (
@@ -293,8 +293,8 @@ export default function AdminSessionsPage() {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="text-xs" style={{ color: 'var(--foreground)' }}>
-                          <div>{date.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { day: 'numeric', month: 'short' })}</div>
-                          <div style={{ color: 'var(--muted)' }}>{date.toLocaleTimeString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { hour: '2-digit', minute: '2-digit' })}</div>
+                          <div>{formatDate(s.scheduledAt, { year: undefined })}</div>
+                          <div style={{ color: 'var(--muted)' }}>{formatTime(s.scheduledAt)}</div>
                         </div>
                       </td>
                       <td className="px-4 py-3.5">

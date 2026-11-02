@@ -792,11 +792,37 @@ export class AdminService {
     }
   }
 
-  async approveCourse(id: string) {
+  async approveCourse(id: string, prices?: { priceUSD?: number; priceEGP?: number }) {
+    const priceData: Record<string, number> = {};
+    const usd = Number(prices?.priceUSD);
+    const egp = Number(prices?.priceEGP);
+    if (prices?.priceUSD != null && Number.isFinite(usd) && usd >= 0) {
+      priceData.priceUSD = usd;
+      priceData.price = usd;
+    }
+    if (prices?.priceEGP != null && Number.isFinite(egp) && egp >= 0) priceData.priceEGP = egp;
+    const priceChanged = Object.keys(priceData).length > 0;
+
     const course = await this.prisma.course.update({
       where: { id },
-      data: { status: 'PUBLISHED', publishedAt: new Date(), updatedAt: new Date() },
+      data: { status: 'PUBLISHED', publishedAt: new Date(), updatedAt: new Date(), ...priceData },
     });
+
+    if (priceChanged && course.instructorId) {
+      const shown = [
+        priceData.priceEGP != null ? `${priceData.priceEGP} ج.م` : null,
+        priceData.priceUSD != null ? `${priceData.priceUSD}$` : null,
+      ].filter(Boolean).join(' / ');
+      await this.notificationsService.createNotification({
+        userId: course.instructorId,
+        type: 'SYSTEM_ANNOUNCEMENT',
+        titleEn: 'Price Updated',
+        titleAr: 'تحديث السعر',
+        contentEn: `The admin updated the price of "${course.titleEn}".`,
+        contentAr: `تم تحديث سعر كورس "${course.titleAr || course.titleEn}" من قِبل الإدارة إلى ${shown}`,
+        data: { type: 'price_update', courseId: id },
+      }).catch(() => {});
+    }
 
     if (course.instructorId) {
       await this.notificationsService.createNotification({
@@ -1265,12 +1291,28 @@ export class AdminService {
   // 👤 USER APPROVAL & MANAGEMENT
   // ─────────────────────────────────────────────────────────────────────
 
-  async approveUser(userId: string, adminId?: string) {
+  async approveUser(userId: string, adminId?: string, hourlyRate?: number) {
+    const rate = Number(hourlyRate);
+    const rateData = hourlyRate != null && Number.isFinite(rate) && rate >= 0 ? { hourlyRate: rate } : {};
+    const before = rateData.hourlyRate != null
+      ? await this.prisma.user.findUnique({ where: { id: userId }, select: { hourlyRate: true } })
+      : null;
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: { status: 'ACTIVE', approvedAt: new Date() },
+      data: { status: 'ACTIVE', approvedAt: new Date(), ...rateData },
       include: { profile: true },
     });
+    if (rateData.hourlyRate != null && before?.hourlyRate !== rateData.hourlyRate) {
+      await this.notificationsService.createNotification({
+        userId,
+        type: 'SYSTEM_ANNOUNCEMENT',
+        titleEn: 'Price Updated',
+        titleAr: 'تحديث السعر',
+        contentEn: `The admin updated your hourly rate to ${rateData.hourlyRate}.`,
+        contentAr: `تم تحديث سعرك بالساعة من قِبل الإدارة إلى ${rateData.hourlyRate}`,
+        data: { type: 'price_update' },
+      }).catch(() => {});
+    }
     await this.notificationsService.createNotification({
       userId,
       type: 'SYSTEM_ANNOUNCEMENT',

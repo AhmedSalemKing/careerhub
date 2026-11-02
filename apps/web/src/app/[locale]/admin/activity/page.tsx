@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { get } from '../../../../lib/api'
 import { formatMoney } from '../../../../lib/market'
+import { formatDate, formatDateTime } from '@/lib/format-date'
 import {
   Activity, Users, LogIn, BookOpen, Calendar, DollarSign,
   Search, RefreshCw, Monitor, TrendingUp, Clock, MapPin,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 
 function timeAgo(dateStr: string, isAr: boolean): string {
+  if (isNaN(new Date(dateStr).getTime())) return '—'
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return isAr ? 'الآن' : 'now'
@@ -22,12 +24,8 @@ function timeAgo(dateStr: string, isAr: boolean): string {
   return isAr ? `منذ ${days} ي` : `${days}d ago`
 }
 
-function fmtDateTime(dateStr: string, isAr: boolean): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  })
+function fmtDateTime(dateStr: string, _isAr?: boolean): string {
+  return formatDateTime(dateStr)
 }
 
 const TABS = [
@@ -72,7 +70,7 @@ function getDetails(act: any, isAr: boolean): string {
           paymentParts.push(`${prefix} ${meta.consultantName}`)
         }
         if (meta.sessionDate) {
-          paymentParts.push(new Date(meta.sessionDate).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US'))
+          paymentParts.push(formatDate(meta.sessionDate))
         }
       } else if (meta.type === 'course' && meta.courseTitle) {
         const prefix = isAr ? 'كورس' : 'Course'
@@ -362,9 +360,7 @@ export default function ActivityPage() {
                         {timeAgo(act.createdAt, isAr)}
                       </div>
                       <div style={{ fontSize: '10px', color: muted, opacity: 0.6, marginTop: '2px' }}>
-                        {new Date(act.createdAt).toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
-                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatDateTime(act.createdAt)}
                       </div>
                     </td>
                   </tr>

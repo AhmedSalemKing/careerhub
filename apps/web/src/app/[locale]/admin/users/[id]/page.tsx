@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl'
 import { useParams, useRouter } from 'next/navigation'
 import { get } from '../../../../../lib/api'
 import { safeDate } from '../../../../../lib/formatDate'
+import { formatDateTime } from '@/lib/format-date'
 import {
   ArrowRight, LayoutDashboard, Activity, BookOpen, CreditCard, Briefcase,
   TrendingUp, User, Shield, Calendar, GraduationCap, CheckCircle, DollarSign,
@@ -101,13 +102,7 @@ function formatDate(date: string | Date | null | undefined, isAr: boolean) {
   if (!date) return '-'
   const d = safeDate(date)
   if (!d) return '-'
-  return d.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatDateTime(d)
 }
 
 function formatTimeAgo(date: string | Date | null | undefined, isAr: boolean) {

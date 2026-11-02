@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "../../../lib/api";
 import { ErrorBoundary } from "../../../components/ErrorBoundary";
 import { formatMoney } from "../../../lib/market";
+import { formatDate } from "@/lib/format-date";
 import {
 	Users,
 	BookOpen,
@@ -453,9 +454,7 @@ export default function AdminOverviewPage() {
 										<span
 											className="hidden sm:block text-[10px]"
 											style={{ color: "var(--muted)" }}>
-											{new Date(u.createdAt).toLocaleDateString(
-												isAr ? "ar-EG-u-ca-gregory" : "en-US",
-											)}
+											{formatDate(u.createdAt)}
 										</span>
 									</div>
 								</div>

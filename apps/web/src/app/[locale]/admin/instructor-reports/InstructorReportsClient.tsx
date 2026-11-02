@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { api } from '../../../../lib/api'
 import { formatMoney } from '../../../../lib/market'
+import { formatDate } from '@/lib/format-date'
 import {
   BarChart3,
   Users,
@@ -175,11 +176,9 @@ function formatHours(totalMinutes: number) {
 }
 
 function safeDate(value: Date | string | null | undefined): string {
-  if (!value) return '—'
-  const d = value instanceof Date ? value : new Date(value)
-  if (isNaN(d.getTime())) return '—'
-  if (d.getFullYear() === 1970) return '—'
-  return d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric' })
+  const d = value instanceof Date ? value : value ? new Date(value) : null
+  if (!d || d.getFullYear() === 1970) return '—'
+  return formatDate(d)
 }
 
 export default function InstructorReportsClient({ country }: { country: string }) {
