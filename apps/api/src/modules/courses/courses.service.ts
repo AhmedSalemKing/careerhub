@@ -1840,6 +1840,7 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
           orderBy: { order: 'asc' },
         },
         enrollments: {
+          orderBy: { enrolledAt: 'desc' },
           include: {
             user: {
               select: {
@@ -1854,7 +1855,18 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
     });
     if (!course) throw new NotFoundException('Course not found');
-    return { success: true, data: course };
+
+    // One row per student: keep the most recent enrollment for each user
+    const seen = new Set<string>();
+    const enrollments = course.enrollments.filter((e) => {
+      if (seen.has(e.userId)) return false;
+      seen.add(e.userId);
+      return true;
+    });
+    return {
+      success: true,
+      data: { ...course, enrollments, _count: { ...course._count, enrollments: enrollments.length } },
+    };
   }
 
   async getInstructorStats(userId: string) {
