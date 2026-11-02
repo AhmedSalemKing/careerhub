@@ -5,14 +5,9 @@ import { useLocale } from 'next-intl'
 import { get, post } from '@/lib/api'
 import { formatMoney } from '@/lib/market'
 import { browserTimeZone } from '@/lib/time'
+import { safeDate } from '@/lib/formatDate'
 
-function parseSessionDate(raw: unknown): Date | null {
-  if (!raw) return null
-  if (raw instanceof Date) return isNaN(raw.getTime()) ? null : raw
-  if (typeof raw === 'string') { const d = new Date(raw); return isNaN(d.getTime()) ? null : d }
-  if (typeof raw === 'object' && (raw as any).$date) { const d = new Date((raw as any).$date); return isNaN(d.getTime()) ? null : d }
-  return null
-}
+const parseSessionDate = (raw: unknown): Date | null => safeDate(raw)
 
 function parseAnyDate(s: any): Date | null {
   const candidates = [s.scheduledAt, s.date, s.startAt, s.sessionDate, s.createdAt]

@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Eye } from 'lucide-react'
 import { get } from '@/lib/api'
+import { formatDateTimeAr } from '@/lib/formatDate'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import SegmentedControl from '@/components/quizzes/SegmentedControl'
 
@@ -103,7 +104,7 @@ export default function QuizAttemptsPage() {
               <tbody>
                 {attempts.map((a: any) => {
                   const name = `${a.user?.profile?.firstName ?? ''} ${a.user?.profile?.lastName ?? ''}`.trim() || a.user?.email || '—'
-                  const date = a.startedAt ? new Date(a.startedAt).toLocaleString('ar-EG-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+                  const date = formatDateTimeAr(a.startedAt) || '—'
                   return (
                     <tr key={a.id} className="border-b border-[color:var(--border)] last:border-0">
                       <td className="px-4 py-3">

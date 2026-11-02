@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { ArrowRight, Save, CheckCircle2, XCircle, FileText, ExternalLink } from 'lucide-react'
 import { get, post } from '@/lib/api'
+import { formatDateTimeAr } from '@/lib/formatDate'
 import StatusBadge from '@/components/quizzes/StatusBadge'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
@@ -109,7 +110,7 @@ export default function ReviewAttemptPage() {
   }
 
   const name = `${attempt.student?.profile?.firstName ?? ''} ${attempt.student?.profile?.lastName ?? ''}`.trim() || attempt.student?.email || '—'
-  const startDate = attempt.startedAt ? new Date(attempt.startedAt).toLocaleString('ar-EG-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : '—'
+  const startDate = formatDateTimeAr(attempt.startedAt) || '—'
 
   const setGrade = (answerId: string, key: keyof GradeDraft, value: string) =>
     setGrades((g) => ({ ...g, [answerId]: { ...(g[answerId] ?? { manualGrade: '0', feedback: '' }), [key]: value } }))
@@ -221,7 +222,11 @@ export default function ReviewAttemptPage() {
                   <div className="mt-3">
                     {answer?.fileUrl ? (
                       <a
-                        href={answer.fileUrl}
+                        href={
+                          answer.fileUrl.includes('cloudinary.com') && answer.fileUrl.includes('/upload/')
+                            ? answer.fileUrl.replace('/upload/', '/upload/fl_attachment/')
+                            : answer.fileUrl
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-[10px] bg-[#5120c8]/10 px-4 py-2 text-sm font-semibold text-[#5120c8] hover:bg-[#5120c8]/20 transition-colors duration-150"

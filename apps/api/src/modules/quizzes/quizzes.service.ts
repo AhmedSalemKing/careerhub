@@ -580,7 +580,11 @@ export class QuizzesService implements OnModuleInit {
     ]);
 
     return {
-      items,
+      items: items.map(a => ({
+        ...a,
+        startedAt: a.startedAt instanceof Date ? a.startedAt.toISOString() : a.startedAt,
+        submittedAt: (a as any).submittedAt instanceof Date ? (a as any).submittedAt.toISOString() : (a as any).submittedAt,
+      })),
       total,
       page: safePage,
       limit: safeLimit,
@@ -636,7 +640,7 @@ export class QuizzesService implements OnModuleInit {
               autoGrade: answer.autoGrade,
               manualGrade: answer.manualGrade,
               feedback: answer.feedback,
-              gradedAt: answer.gradedAt,
+              gradedAt: answer.gradedAt instanceof Date ? answer.gradedAt.toISOString() : answer.gradedAt,
             }
           : null,
       };
@@ -645,9 +649,9 @@ export class QuizzesService implements OnModuleInit {
     return {
       id: attempt.id,
       status: attempt.status,
-      startedAt: attempt.startedAt,
-      submittedAt: attempt.submittedAt,
-      endsAt: attempt.endsAt,
+      startedAt: attempt.startedAt instanceof Date ? attempt.startedAt.toISOString() : attempt.startedAt,
+      submittedAt: attempt.submittedAt instanceof Date ? attempt.submittedAt.toISOString() : attempt.submittedAt,
+      endsAt: attempt.endsAt instanceof Date ? attempt.endsAt.toISOString() : attempt.endsAt,
       timeSpentSeconds: attempt.timeSpentSeconds,
       autoScore: attempt.autoScore,
       manualScore: attempt.manualScore,

@@ -82,6 +82,15 @@ export class LiveService {
     return { roomUrl, token }
   }
 
+  async startLessonLive(lessonId: string, instructorId: string): Promise<{ roomUrl: string; token: string }> {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      include: { section: { select: { courseId: true } } },
+    })
+    if (!lesson) throw new NotFoundException('Lesson not found')
+    return this.startLive(lesson.section.courseId, instructorId)
+  }
+
   async joinLive(courseId: string, userId: string): Promise<{ roomUrl: string; token: string; isLive: boolean }> {
     const enrollment = await this.prisma.enrollment.findFirst({ where: { courseId, userId } })
     const course = await this.prisma.course.findUnique({ where: { id: courseId } })

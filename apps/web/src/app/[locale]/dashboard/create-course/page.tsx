@@ -6,7 +6,7 @@ import { useLocale } from 'next-intl'
 import { useQuery } from '@tanstack/react-query'
 import { post, get } from '../../../../lib/api'
 import { getUploadErrorMessage } from '../../../../lib/upload-error'
-import { formatMoney } from '../../../../lib/market'
+import { formatMoney, getCountryClient } from '../../../../lib/market'
 
 import { AuthGate } from '../../../components/AuthGate'
 import { useAuthStore } from '../../../../stores/authStore'
@@ -556,13 +556,15 @@ export default function CreateCoursePage() {
                     <input type="number" min="0" step="0.01" value={form.price} onChange={e => set('price', e.target.value)}
                       className={`${inputCls} ${isAr ? 'pl-12' : 'pr-12'}`} />
                     <span className={`absolute top-1/2 -translate-y-1/2 text-xs font-semibold text-[color:var(--muted)] ${isAr ? 'left-3' : 'right-3'}`}>
-                      SAR
+                      {getCountryClient() === 'EG' ? 'ج.م' : 'ر.س'}
                     </span>
                   </div>
                   <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>
                     {isAr
-                      ? 'سيتم تحويل السعر تلقائيا للجنيه المصري والدولار عند الحفظ.'
-                      : 'EGP and USD equivalents are filled automatically on save.'}
+                      ? (getCountryClient() === 'EG'
+                          ? 'السعر بالجنيه المصري. سيتم احتساب المكافئ بالدولار عند الحفظ.'
+                          : 'السعر بالريال السعودي. سيتم تحويله للجنيه المصري والدولار عند الحفظ.')
+                      : 'Price will be converted to all currencies automatically on save.'}
                   </p>
                 </div>
                 <div>

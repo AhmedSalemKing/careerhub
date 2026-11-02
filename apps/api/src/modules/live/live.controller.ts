@@ -21,6 +21,13 @@ export class LiveController {
     return { success: true, data: { roomUrl, token } }
   }
 
+  @Post('lesson-start/:lessonId')
+  @UseGuards(JwtAuthGuard)
+  async startLessonLive(@Param('lessonId') lessonId: string, @Request() req: any) {
+    const { roomUrl, token } = await this.liveService.startLessonLive(lessonId, req.user.id)
+    return { success: true, data: { roomUrl, token } }
+  }
+
   @Post('end/:courseId')
   @UseGuards(JwtAuthGuard)
   async endLive(@Param('courseId') courseId: string, @Request() req: any) {

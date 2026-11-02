@@ -1471,7 +1471,12 @@ const enrollments: any[] = await this.prisma.enrollment.findMany({
       },
       orderBy: { createdAt: 'desc' },
     });
-    return { success: true, data: courses };
+    const data = courses.map(c => ({
+      ...c,
+      earnings: c.price * (c._count?.enrollments ?? 0),
+      revenue: c.price * (c._count?.enrollments ?? 0),
+    }));
+    return { success: true, data };
   }
 
   async createInstructorCourse(instructorId: string, dto: any) {

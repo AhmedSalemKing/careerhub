@@ -126,6 +126,7 @@ export default function CourseDetailPage({
 	const {
 		data: enrollmentData,
 		isLoading: enrollmentLoading,
+		isFetching: enrollmentFetching,
 		refetch: refetchEnrollment,
 	} = useQuery({
 		queryKey: ["enrollment", courseId],
@@ -141,7 +142,7 @@ export default function CourseDetailPage({
 		enabled: !!hasUser && !!courseId,
 		retry: 1,
 		retryDelay: 2000,
-		staleTime: 5 * 60 * 1000,
+		staleTime: 0,
 	});
 
 	// Course quiz grades — used to explain why a certificate is (not) available.
@@ -160,6 +161,10 @@ export default function CourseDetailPage({
 	});
 
 		useEffect(() => {
+		if (enrollmentLoading || enrollmentFetching) {
+			setEnrollmentStatus("loading");
+			return;
+		}
 		if (enrollmentData === undefined) return;
 		const enrolled = !!(
 			enrollmentData?.enrolled === true ||
@@ -171,7 +176,7 @@ export default function CourseDetailPage({
 			enrollmentData?.status === "active"
 		);
 		setEnrollmentStatus(enrolled ? "enrolled" : "not-enrolled");
-	}, [enrollmentData]);
+	}, [enrollmentData, enrollmentLoading, enrollmentFetching]);
 
 	// Sync completed lesson IDs from enrollment data into local state
 	useEffect(() => {

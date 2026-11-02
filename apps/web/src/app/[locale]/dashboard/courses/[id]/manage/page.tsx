@@ -1977,28 +1977,7 @@ function CourseSettingsTab({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">السعر</label>
-          <input
-            type="number"
-            min="0"
-            value={form.price}
-            onChange={(e) => setF('price', e.target.value)}
-            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">المستوى</label>
-          <select
-            value={form.level}
-            onChange={(e) => setF('level', e.target.value)}
-            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
-          >
-            {LEVELS.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-          </select>
-        </div>
-      </div>
+      {/* Price and level are managed by admin only — hidden from instructor */}
 
       <div>
         <label className="block text-sm font-medium text-foreground mb-1.5">الحالة</label>
