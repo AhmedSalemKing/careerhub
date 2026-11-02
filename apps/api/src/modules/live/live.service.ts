@@ -127,6 +127,7 @@ export class LiveService {
       orderBy: { createdAt: 'desc' },
     })
 
+    let streamSeconds: number | null = null
     if (session) {
       const now = new Date()
       const started = session.startedAt ?? course.liveStartTime ?? now
@@ -138,6 +139,7 @@ export class LiveService {
         where: { id: session.id },
         data: { isLive: false, status: 'ENDED', endedAt: now, durationMinutes },
       })
+      streamSeconds = durationMinutes * 60
 
       if (session.dailyRoomName) {
         await this.daily.deleteRoom(session.dailyRoomName)
@@ -154,7 +156,10 @@ export class LiveService {
         liveStatus: 'live',
         OR: [{ section: { courseId } }, { module: { courseId } }],
       },
-      data: { liveStatus: 'ended' },
+      // videoDuration is in seconds; instructor reports read it per lesson
+      data: streamSeconds != null
+        ? { liveStatus: 'ended', videoDuration: streamSeconds }
+        : { liveStatus: 'ended' },
     })
 
     const updateData: any = { liveStatus: 'ended', liveViewerCount: 0 }

@@ -621,7 +621,10 @@ export class InstructorReportsService {
             lessonStatus: lesson.isPublished ? 'published' : 'draft',
             typeBadge: lesson.type === 'LIVE' || lesson.type === 'live' ? 'بث مباشر' : 'مسجل',
           });
-          this.addEntry(inst, courseEntry, mins, lesson.createdAt);
+          // A live lesson's minutes are already counted through its LiveSession
+          // (Step 4); show them on the lesson row without adding them twice.
+          const isLive = lesson.type === 'LIVE' || lesson.type === 'live';
+          this.addEntry(inst, courseEntry, isLive ? 0 : mins, lesson.createdAt);
         }
       }
 
