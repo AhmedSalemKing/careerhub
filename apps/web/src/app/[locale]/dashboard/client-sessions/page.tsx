@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -12,7 +12,6 @@ import {
   formatTimeOnly,
   formatTimeRange,
   formatTimeSafe,
-  localDateTimeToISO,
   type DateLike,
 } from '@/lib/time'
 import Link from 'next/link'
@@ -191,9 +190,6 @@ export default function ClientSessionsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('pending_approval')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [rescheduleSession, setRescheduleSession] = useState<any | null>(null)
-  const [newDate, setNewDate] = useState('')
-  const [newTime, setNewTime] = useState('')
-  const [rescheduleReason, setRescheduleReason] = useState('')
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     title: string
@@ -285,9 +281,6 @@ export default function ClientSessionsPage() {
     onSuccess: () => {
       toast.success(isAr ? 'تم إرسال طلب تغيير الموعد' : 'Reschedule request sent')
       setRescheduleSession(null)
-      setNewDate('')
-      setNewTime('')
-      setRescheduleReason('')
       invalidate()
     },
     onError: (error: any) =>
@@ -601,9 +594,6 @@ export default function ClientSessionsPage() {
                             type="button"
                             onClick={() => {
                               setRescheduleSession(session)
-                              setNewDate('')
-                              setNewTime('')
-                              setRescheduleReason('')
                             }}
                             className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)', cursor: 'pointer' }}
@@ -666,9 +656,6 @@ export default function ClientSessionsPage() {
                           type="button"
                           onClick={() => {
                             setRescheduleSession(session)
-                            setNewDate('')
-                            setNewTime('')
-                            setRescheduleReason('')
                           }}
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
                           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
@@ -712,139 +699,15 @@ export default function ClientSessionsPage() {
       </main>
 
       {rescheduleSession && (
-        <>
-          <div
-            onClick={() => setRescheduleSession(null)}
-            className="fixed inset-0 z-[200]"
-            style={{ background: 'color-mix(in srgb, var(--foreground) 45%, transparent)' }}
-          />
-          <div
-            dir="rtl"
-            className="fixed left-1/2 top-1/2 z-[201] w-[min(420px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-5"
-            style={{ background: 'var(--card)', borderColor: 'var(--border)', boxShadow: '0 24px 64px color-mix(in srgb, var(--foreground) 25%, transparent)' }}
-          >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-black">{isAr ? 'طلب تغيير الموعد' : 'Request reschedule'}</h3>
-              <button
-                type="button"
-                onClick={() => setRescheduleSession(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border"
-                style={{ borderColor: 'var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }}
-              >
-                <Ic.x size={14} />
-              </button>
-            </div>
-
-            <p
-              className="mb-4 rounded-lg border px-3 py-2 text-[11px] font-semibold"
-              style={{ background: 'var(--warning-subtle)', borderColor: 'var(--warning)', color: 'var(--warning)' }}
-            >
-              {isAr ? 'سيتم إرسال إشعار للعميل للموافقة على الموعد الجديد' : 'The client will be notified to approve the new time'}
-            </p>
-
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1.5 block text-[11px] font-bold" htmlFor="reschedule-date">
-                  {isAr ? 'التاريخ الجديد' : 'New date'} *
-                </label>
-                <input
-                  id="reschedule-date"
-                  type="date"
-                  min={new Date().toISOString().split('T')[0]}
-                  value={newDate}
-                  onChange={(event) => setNewDate(event.target.value)}
-                  className="w-full rounded-lg border px-3 py-2.5 text-xs outline-none"
-                  style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--foreground)' }}
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[11px] font-bold">{isAr ? 'الوقت الجديد' : 'New time'} *</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00']
-                    .filter(
-                      (time) =>
-                        !newDate ||
-                        newDate !== new Date().toISOString().split('T')[0] ||
-                        parseInt(time, 10) > new Date().getHours() + 1,
-                    )
-                    .map((time) => {
-                      const active = newTime === time
-                      return (
-                        <button
-                          key={time}
-                          type="button"
-                          onClick={() => setNewTime(time)}
-                          className="rounded-lg border py-2 text-[11px] font-bold"
-                          style={{
-                            borderColor: active ? 'var(--primary)' : 'var(--border)',
-                            background: active ? 'var(--primary-subtle)' : 'var(--surface)',
-                            color: active ? 'var(--primary)' : 'var(--muted)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {time}
-                        </button>
-                      )
-                    })}
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-[11px] font-bold" htmlFor="reschedule-reason">
-                  {isAr ? 'السبب (اختياري)' : 'Reason (optional)'}
-                </label>
-                <input
-                  id="reschedule-reason"
-                  type="text"
-                  value={rescheduleReason}
-                  onChange={(event) => setRescheduleReason(event.target.value)}
-                  placeholder={isAr ? 'مثال: ارتباط طارئ' : 'e.g. Emergency'}
-                  className="w-full rounded-lg border px-3 py-2.5 text-xs outline-none"
-                  style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--foreground)' }}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setRescheduleSession(null)}
-                  className="flex-1 rounded-lg border py-2.5 text-xs font-bold"
-                  style={{ borderColor: 'var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer' }}
-                >
-                  {isAr ? 'إلغاء' : 'Cancel'}
-                </button>
-                <button
-                  type="button"
-                  disabled={!newDate || !newTime || requestRescheduleMutation.isPending}
-                  onClick={() =>
-                    requestRescheduleMutation.mutate({
-                      id: rescheduleSession.id,
-                      proposedAt: localDateTimeToISO(newDate, newTime),
-                      reason: rescheduleReason || undefined,
-                    })
-                  }
-                  className="flex-[2] rounded-lg py-2.5 text-xs font-black"
-                  style={{
-                    background: 'var(--primary)',
-                    color: 'var(--primary-foreground)',
-                    border: 'none',
-                    cursor: !newDate || !newTime ? 'not-allowed' : 'pointer',
-                    opacity: !newDate || !newTime || requestRescheduleMutation.isPending ? 0.5 : 1,
-                  }}
-                >
-                  {requestRescheduleMutation.isPending
-                    ? isAr
-                      ? 'جاري الإرسال...'
-                      : 'Sending...'
-                    : isAr
-                      ? 'إرسال الطلب'
-                      : 'Send request'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+        <RescheduleModal
+          session={rescheduleSession}
+          isAr={isAr}
+          submitting={requestRescheduleMutation.isPending}
+          onClose={() => setRescheduleSession(null)}
+          onSubmit={(proposedAt, reason) =>
+            requestRescheduleMutation.mutate({ id: rescheduleSession.id, proposedAt, reason })
+          }
+        />
       )}
 
       <ConfirmModal
@@ -857,6 +720,395 @@ export default function ClientSessionsPage() {
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal((previous) => ({ ...previous, isOpen: false }))}
       />
+    </div>
+  )
+}
+
+// ─── Reschedule modal: calendar → time slots → confirm ──────────────────────
+
+interface RescheduleSlot {
+  time: string
+  status: 'available' | 'booked'
+  isCurrentSession?: boolean
+  clientName?: string
+  sessionTopic?: string
+}
+
+function RescheduleModal({
+  session,
+  isAr,
+  submitting,
+  onClose,
+  onSubmit,
+}: {
+  session: any
+  isAr: boolean
+  submitting: boolean
+  onClose: () => void
+  onSubmit: (proposedAt: string, reason?: string) => void
+}) {
+  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+  const [slots, setSlots] = useState<RescheduleSlot[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [slotsError, setSlotsError] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(() => new Date())
+
+  const tr = (ar: string, en: string) => (isAr ? ar : en)
+  const dateLocale = isAr ? 'ar-EG-u-ca-gregory' : 'en-US'
+  const dayNames = isAr
+    ? ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const duration = session.duration || 60
+
+  useEffect(() => {
+    if (!selectedDate) return
+    let cancelled = false
+    const from = new Date(selectedDate)
+    from.setHours(0, 0, 0, 0)
+    const to = new Date(from)
+    to.setDate(to.getDate() + 1)
+    setLoadingSlots(true)
+    setSlotsError(false)
+    setSlots([])
+    setSelectedSlot(null)
+    get(`/consulting/sessions/${session.id}/reschedule-slots`, {
+      params: { from: from.toISOString(), to: to.toISOString() },
+    })
+      .then((res: any) => {
+        if (cancelled) return
+        setSlots(res?.data?.data?.slots ?? [])
+      })
+      .catch(() => {
+        if (cancelled) return
+        setSlotsError(true)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingSlots(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedDate, session.id])
+
+  const formatSlot = (iso: string) =>
+    new Date(iso).toLocaleTimeString(dateLocale, { hour: 'numeric', minute: '2-digit' })
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay()
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
+
+  const font = 'PingAR'
+  const muted = 'var(--muted)'
+  const faint = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
+
+  const primaryBtn = (enabled: boolean): React.CSSProperties => ({
+    background: enabled ? 'var(--primary)' : faint,
+    color: enabled ? 'var(--primary-foreground)' : muted,
+    border: 'none',
+    borderRadius: 10,
+    padding: '10px 0',
+    fontFamily: font,
+    fontWeight: 500,
+    fontSize: 14,
+    cursor: enabled ? 'pointer' : 'not-allowed',
+  })
+  const ghostBtn: React.CSSProperties = {
+    border: '1px solid var(--border)',
+    background: 'transparent',
+    color: 'var(--foreground)',
+    borderRadius: 10,
+    padding: '10px 0',
+    fontFamily: font,
+    fontWeight: 300,
+    fontSize: 13,
+    cursor: 'pointer',
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'color-mix(in srgb, var(--foreground) 60%, transparent)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+      }}
+    >
+      <div
+        dir={isAr ? 'rtl' : 'ltr'}
+        onClick={(event) => event.stopPropagation()}
+        style={{
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
+          width: '100%', maxWidth: 520, maxHeight: '90vh', overflowY: 'auto',
+        }}
+      >
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: font, fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>
+              {tr('إعادة جدولة الجلسة', 'Reschedule session')}
+            </div>
+            <div style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: muted, marginTop: 3 }}>
+              {session.topic || session.sessionName || ''} — {duration} {tr('دقيقة', 'min')}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={tr('إغلاق', 'Close')}
+            style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: faint, color: muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+
+        <div style={{ padding: '16px 24px 0', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {([1, 2, 3] as const).map((s) => (
+            <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: step >= s ? 'var(--primary)' : faint,
+                color: step >= s ? 'var(--primary-foreground)' : muted,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: font, fontWeight: 500, fontSize: 12,
+              }}>{s}</div>
+              <span style={{ fontFamily: font, fontWeight: 300, fontSize: 11, color: step >= s ? 'var(--foreground)' : muted }}>
+                {s === 1 ? tr('التاريخ', 'Date') : s === 2 ? tr('الوقت', 'Time') : tr('تأكيد', 'Confirm')}
+              </span>
+              {s < 3 && <div style={{ width: 24, height: 1, background: 'var(--border)' }} />}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ padding: '16px 24px 24px' }}>
+          {step === 1 && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', padding: '4px 8px' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : undefined }}>
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                </button>
+                <span style={{ fontFamily: font, fontWeight: 500, fontSize: 14, color: 'var(--foreground)' }}>
+                  {currentMonth.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', padding: '4px 8px' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : undefined }}>
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
+                {dayNames.map((d) => (
+                  <div key={d} style={{ textAlign: 'center', fontFamily: font, fontWeight: 300, fontSize: 11, color: muted, padding: '4px 0' }}>{d}</div>
+                ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+                {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1
+                  const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+                  const available = date >= today
+                  const isSelected = selectedDate?.toDateString() === date.toDateString()
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => available && setSelectedDate(date)}
+                      disabled={!available}
+                      style={{
+                        aspectRatio: '1', borderRadius: 8, border: 'none',
+                        background: isSelected ? 'var(--primary)' : available ? faint : 'transparent',
+                        color: isSelected ? 'var(--primary-foreground)' : available ? 'var(--foreground)' : 'color-mix(in srgb, var(--foreground) 20%, transparent)',
+                        cursor: available ? 'pointer' : 'not-allowed',
+                        fontFamily: font, fontWeight: 300, fontSize: 13,
+                      }}
+                    >
+                      {day}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {selectedDate && (
+                <button type="button" onClick={() => setStep(2)} style={{ ...primaryBtn(true), width: '100%', marginTop: 16 }}>
+                  {tr('التالي — اختر الوقت', 'Next — choose a time')}
+                </button>
+              )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              <div style={{ fontFamily: font, fontWeight: 300, fontSize: 13, color: muted, marginBottom: 16 }}>
+                {selectedDate?.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+
+              {loadingSlots ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: muted, fontFamily: font, fontWeight: 300, fontSize: 13 }}>
+                  {tr('جاري تحميل الأوقات المتاحة...', 'Loading available times...')}
+                </div>
+              ) : slotsError ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--error)', fontFamily: font, fontWeight: 300, fontSize: 13 }}>
+                  {tr('تعذر تحميل الأوقات', 'Could not load times')}
+                </div>
+              ) : slots.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: muted, fontFamily: font, fontWeight: 300, fontSize: 13 }}>
+                  {tr('لا توجد أوقات في هذا اليوم', 'No times on this day')}
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+                    {slots.map((slot) => {
+                      const isAvailable = slot.status === 'available'
+                      const isCurrent = !!slot.isCurrentSession
+                      const isBooked = slot.status === 'booked' && !isCurrent
+                      const isSelected = selectedSlot === slot.time
+                      return (
+                        <button
+                          key={slot.time}
+                          type="button"
+                          onClick={() => isAvailable && setSelectedSlot(slot.time)}
+                          disabled={!isAvailable}
+                          title={
+                            isCurrent
+                              ? tr('الموعد الحالي لهذا العميل', 'Current time of this client')
+                              : isBooked
+                                ? `${slot.clientName ?? tr('عميل', 'Client')}${slot.sessionTopic ? ' — ' + slot.sessionTopic : ''}`
+                                : ''
+                          }
+                          style={{
+                            padding: '8px 4px', borderRadius: 8,
+                            border: isSelected
+                              ? '1.5px solid var(--primary)'
+                              : isCurrent
+                                ? '1.5px solid var(--accent)'
+                                : isBooked
+                                  ? '1px solid color-mix(in srgb, var(--foreground) 10%, transparent)'
+                                  : '1px solid var(--border)',
+                            background: isSelected
+                              ? 'var(--primary-subtle)'
+                              : isCurrent
+                                ? 'var(--accent-light)'
+                                : isBooked
+                                  ? 'color-mix(in srgb, var(--foreground) 4%, transparent)'
+                                  : 'var(--card)',
+                            color: isSelected
+                              ? 'var(--primary)'
+                              : isCurrent
+                                ? 'var(--accent)'
+                                : isBooked
+                                  ? 'color-mix(in srgb, var(--foreground) 35%, transparent)'
+                                  : 'var(--foreground)',
+                            cursor: isAvailable ? 'pointer' : 'not-allowed',
+                            fontFamily: font, fontWeight: isCurrent ? 500 : 300, fontSize: 12,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                          }}
+                        >
+                          <span>{formatSlot(slot.time)}</span>
+                          {isCurrent && <span style={{ fontSize: 9, opacity: 0.8 }}>{tr('موعده الحالي', 'Current time')}</span>}
+                          {isBooked && <span style={{ fontSize: 9, opacity: 0.8, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.clientName ?? tr('محجوز', 'Booked')}</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+                    {[
+                      { color: 'var(--border)', label: tr('متاح', 'Available') },
+                      { color: 'var(--accent)', label: tr('الموعد الحالي', 'Current time') },
+                      { color: 'color-mix(in srgb, var(--foreground) 20%, transparent)', label: tr('محجوز', 'Booked') },
+                    ].map((item) => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: 3, border: `1.5px solid ${item.color}`, background: 'transparent' }} />
+                        <span style={{ fontFamily: font, fontWeight: 300, fontSize: 11, color: muted }}>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button type="button" onClick={() => setStep(1)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
+                <button type="button" disabled={!selectedSlot} onClick={() => selectedSlot && setStep(3)} style={{ ...primaryBtn(!!selectedSlot), flex: 2 }}>
+                  {tr('التالي — تأكيد', 'Next — confirm')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div style={{ padding: '14px 16px', borderRadius: 12, marginBottom: 16, background: faint, border: '1px solid var(--border)' }}>
+                <div style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--foreground)', marginBottom: 10 }}>
+                  {tr('ملخص الموعد الجديد', 'New time summary')}
+                </div>
+                {[
+                  { label: tr('التاريخ', 'Date'), value: selectedDate?.toLocaleDateString(dateLocale, { weekday: 'long', month: 'long', day: 'numeric' }) ?? '' },
+                  { label: tr('الوقت', 'Time'), value: selectedSlot ? formatSlot(selectedSlot) : '' },
+                  { label: tr('المدة', 'Duration'), value: `${duration} ${tr('دقيقة', 'min')}` },
+                ].map((row) => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                    <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: muted }}>{row.label}</span>
+                    <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--foreground)' }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ padding: '10px 14px', borderRadius: 10, marginBottom: 16, background: 'var(--primary-subtle)', border: '1px solid var(--primary-border)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--foreground)' }}>
+                  {tr('سيتم إرسال إشعار للعميل بالموعد الجديد ويطلب موافقته', 'The client will be notified of the new time and asked to approve it')}
+                </span>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label htmlFor="reschedule-reason" style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: muted, display: 'block', marginBottom: 6 }}>
+                  {tr('سبب إعادة الجدولة (اختياري)', 'Reason (optional)')}
+                </label>
+                <textarea
+                  id="reschedule-reason"
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder={tr('مثال: ارتباط طارئ', 'e.g. Emergency')}
+                  rows={2}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', resize: 'none', fontFamily: font, fontWeight: 300, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={() => setStep(2)} style={{ ...ghostBtn, flex: 1 }}>{tr('رجوع', 'Back')}</button>
+                <button
+                  type="button"
+                  disabled={submitting || !selectedSlot}
+                  onClick={() => selectedSlot && onSubmit(selectedSlot, reason.trim() || undefined)}
+                  style={{ ...primaryBtn(!submitting), flex: 2, opacity: submitting ? 0.7 : 1 }}
+                >
+                  {submitting ? tr('جاري الإرسال...', 'Sending...') : tr('تأكيد إعادة الجدولة', 'Confirm reschedule')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

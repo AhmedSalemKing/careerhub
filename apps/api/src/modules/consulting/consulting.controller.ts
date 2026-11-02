@@ -66,6 +66,18 @@ export class ConsultingController {
     return this.consultingService.approveSession(id, req.user.id || req.user.sub)
   }
 
+  @Get('sessions/:id/reschedule-slots')
+  @UseGuards(JwtAuthGuard)
+  async getRescheduleSlots(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    if (!from || !to) throw new BadRequestException('from and to are required')
+    return this.consultingService.getRescheduleSlots(id, req.user.id || req.user.sub, from, to)
+  }
+
   @Patch('sessions/:id/request-reschedule')
   @UseGuards(JwtAuthGuard)
   async requestReschedule(@Param('id') id: string, @Request() req: any, @Body() body: any) {

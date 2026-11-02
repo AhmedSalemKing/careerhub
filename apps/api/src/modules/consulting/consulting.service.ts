@@ -438,6 +438,61 @@ export class ConsultingService {
     return { success: true, data: updated }
   }
 
+  /**
+   * Slot grid for the consultant's reschedule picker. Same grid as the public
+   * booking page, but each taken slot also says whether it is this session and,
+   * for the consultant only, which client holds it.
+   */
+  async getRescheduleSlots(sessionId: string, consultantId: string, fromStr: string, toStr: string) {
+    const session = await this.prisma.consultingSession.findUnique({
+      where: { id: sessionId },
+      select: { id: true, consultantId: true, duration: true },
+    })
+    if (!session) throw new NotFoundException('Session not found')
+    if (session.consultantId !== consultantId) throw new ForbiddenException('Not authorized')
+
+    const base = await this.getAvailableSlots(consultantId, fromStr, toStr, session.duration || DEFAULT_DURATION)
+    const baseSlots = base.data.slots
+
+    const conflictIds = Array.from(new Set(baseSlots.map((s) => s.sessionId).filter((v): v is string => !!v)))
+    const conflicts = conflictIds.length
+      ? await this.prisma.consultingSession.findMany({
+          where: { id: { in: conflictIds } },
+          select: {
+            id: true,
+            topic: true,
+            sessionName: true,
+            studentId: true,
+          },
+        })
+      : []
+    const studentIds = Array.from(new Set(conflicts.map((c) => c.studentId)))
+    const students = studentIds.length
+      ? await this.prisma.user.findMany({
+          where: { id: { in: studentIds } },
+          select: { id: true, profile: { select: { firstName: true, lastName: true } } },
+        })
+      : []
+    const studentById = new Map(students.map((u) => [u.id, u]))
+    const byId = new Map(conflicts.map((c) => [c.id, c]))
+
+    const slots = baseSlots.map((slot) => {
+      if (slot.available) return { time: slot.time, status: 'available' as const }
+      const conflict = slot.sessionId ? byId.get(slot.sessionId) : undefined
+      const profile = conflict ? studentById.get(conflict.studentId)?.profile : undefined
+      const clientName = [profile?.firstName, profile?.lastName].filter(Boolean).join(' ')
+      return {
+        time: slot.time,
+        status: 'booked' as const,
+        isCurrentSession: slot.sessionId === sessionId,
+        clientName: clientName || undefined,
+        sessionTopic: conflict?.topic || conflict?.sessionName || undefined,
+      }
+    })
+
+    return { success: true, data: { slots, duration: base.data.duration } }
+  }
+
   async requestReschedule(sessionId: string, consultantId: string, data: { proposedAt: string; reason?: string }) {
     const session = await this.prisma.consultingSession.findUnique({ where: { id: sessionId } })
     if (!session) throw new NotFoundException('Session not found')
