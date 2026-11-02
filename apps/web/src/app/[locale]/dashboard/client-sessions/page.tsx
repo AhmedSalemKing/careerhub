@@ -849,10 +849,10 @@ function RescheduleModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
-          width: '100%', maxWidth: 520, height: 'min(90vh, 700px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          width: '100%', maxWidth: 520, height: 'min(88dvh, 640px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontFamily: font, fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>
               {tr('إعادة جدولة الجلسة', 'Reschedule session')}
@@ -873,7 +873,7 @@ function RescheduleModal({
           </button>
         </div>
 
-        <div style={{ padding: '16px 24px 0', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ padding: '10px 20px 0', flexShrink: 0, display: 'flex', gap: 8, alignItems: 'center' }}>
           {([1, 2, 3] as const).map((s) => (
             <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{
@@ -891,10 +891,10 @@ function RescheduleModal({
           ))}
         </div>
 
-        <div style={{ padding: '16px 24px', overflowY: 'auto', overflowX: 'hidden', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: '12px 20px', overflowY: 'auto', overflowX: 'hidden', flex: 1, minHeight: 0 }}>
           {step === 1 && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <button
                   type="button"
                   onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
@@ -904,7 +904,7 @@ function RescheduleModal({
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                 </button>
-                <span style={{ fontFamily: font, fontWeight: 500, fontSize: 14, color: 'var(--foreground)' }}>
+                <span style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--foreground)' }}>
                   {currentMonth.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' })}
                 </span>
                 <button
@@ -918,13 +918,13 @@ function RescheduleModal({
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 6 }}>
                 {dayNames.map((d) => (
-                  <div key={d} style={{ textAlign: 'center', fontFamily: font, fontWeight: 300, fontSize: 11, color: muted, padding: '4px 0' }}>{d}</div>
+                  <div key={d} style={{ textAlign: 'center', fontFamily: font, fontWeight: 300, fontSize: 10, color: muted, padding: '2px 0' }}>{d}</div>
                 ))}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
                 {Array.from({ length: firstDay }).map((_, i) => <div key={`e-${i}`} />)}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1
@@ -938,11 +938,11 @@ function RescheduleModal({
                       onClick={() => available && setSelectedDate(date)}
                       disabled={!available}
                       style={{
-                        aspectRatio: '1', borderRadius: 8, border: 'none',
+                        width: '100%', aspectRatio: '1', borderRadius: 6, border: 'none',
                         background: isSelected ? 'var(--primary)' : available ? faint : 'transparent',
                         color: isSelected ? 'var(--primary-foreground)' : available ? 'var(--foreground)' : 'color-mix(in srgb, var(--foreground) 20%, transparent)',
                         cursor: available ? 'pointer' : 'not-allowed',
-                        fontFamily: font, fontWeight: 300, fontSize: 13,
+                        fontFamily: font, fontWeight: 300, fontSize: 12,
                       }}
                     >
                       {day}
@@ -1091,7 +1091,7 @@ function RescheduleModal({
         </div>
 
         {/* Action buttons: always visible below the scrolling content */}
-        <div style={{ padding: '12px 24px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--card)' }}>
+        <div style={{ padding: '10px 20px 14px', borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--card)' }}>
           {step === 1 && (
             <button
               type="button"
