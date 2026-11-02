@@ -849,7 +849,7 @@ function RescheduleModal({
         onClick={(event) => event.stopPropagation()}
         style={{
           background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
-          width: '100%', maxWidth: 520, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+          width: '100%', maxWidth: 520, height: 'min(90vh, 700px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -891,7 +891,7 @@ function RescheduleModal({
           ))}
         </div>
 
-        <div style={{ padding: '16px 24px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
+        <div style={{ padding: '16px 24px', overflowY: 'auto', overflowX: 'hidden', flex: 1, minHeight: 0 }}>
           {step === 1 && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -1092,15 +1092,15 @@ function RescheduleModal({
 
         {/* Action buttons: always visible below the scrolling content */}
         <div style={{ padding: '12px 24px 20px', borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--card)' }}>
-          {step === 1 && selectedDate && (
-            <button type="button" onClick={() => setStep(2)} style={{ ...primaryBtn(true), width: '100%', padding: '12px 0' }}>
-              {tr('التالي — اختر الوقت', 'Next — choose a time')}
+          {step === 1 && (
+            <button
+              type="button"
+              onClick={() => selectedDate && setStep(2)}
+              disabled={!selectedDate}
+              style={{ ...primaryBtn(!!selectedDate), width: '100%', padding: '13px 0' }}
+            >
+              {selectedDate ? tr('التالي — اختر الوقت', 'Next — choose a time') : tr('اختر تاريخاً للمتابعة', 'Pick a date to continue')}
             </button>
-          )}
-          {step === 1 && !selectedDate && (
-            <div style={{ textAlign: 'center', fontFamily: font, fontWeight: 300, fontSize: 12, color: muted, padding: '8px 0' }}>
-              {tr('اختر تاريخاً للمتابعة', 'Pick a date to continue')}
-            </div>
           )}
           {step === 2 && (
             <div style={{ display: 'flex', gap: 8 }}>
