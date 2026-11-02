@@ -37,6 +37,8 @@ function formatSAR(sarAmount: number): string {
 function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0): unknown {
   if (depth > 15 || obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
+  // Dates have no own enumerable keys; rebuilding them as plain objects yields {}
+  if (obj instanceof Date) return obj.toISOString()
 
   if (Array.isArray(obj)) {
     return obj.map((item) => transformValue(item, rate, isEgypt, depth + 1))
