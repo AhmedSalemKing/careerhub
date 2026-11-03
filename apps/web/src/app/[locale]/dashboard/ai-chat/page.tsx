@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
+import { getToken } from '@/lib/auth'
 
 // Plain React + fetch only. The conversation lives in component state and every
 // reply comes from the Gemini-backed /api/ai/chat route (Rasheed persona).
@@ -174,9 +175,12 @@ export default function AiChatPage() {
 
       let reply = ''
       try {
+        // Same pattern as AIInterviewPage: the route accepts the cookie or a Bearer token
+        const token = getToken()
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             mode: 'rasheed',
             messages: history.map((m) => ({ role: m.role, content: m.content })),
