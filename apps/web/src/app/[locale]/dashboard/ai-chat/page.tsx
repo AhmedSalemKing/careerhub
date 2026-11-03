@@ -103,8 +103,23 @@ function MessageContent({ content }: { content: string }) {
 /** The model sometimes writes the old catalogue host; the live site is devewayhub. */
 const fixContent = (text: string): string =>
   text
+    // the model sometimes closes the tag with ">" instead of "]"
+    .replace(/\[\/COURSE_SUGGESTION>/gi, '[/COURSE_SUGGESTION]')
     .replace(/https?:\/\/deveway-teal\.vercel\.app\/(ar|en)\/courses/g, 'https://devewayhub.vercel.app/$1/courses')
     .replace(/https?:\/\/deveway-teal\.vercel\.app\/courses/g, 'https://devewayhub.vercel.app/ar/courses')
+
+const COURSES_SITE = 'https://devewayhub.vercel.app'
+const MAIN_SITE = 'https://deveway-teal.vercel.app'
+
+/** Where a suggestion chip goes: course pages live on devewayhub, everything else on the main site. */
+function suggestionHref(path: string | undefined): string {
+  const fallback = `${COURSES_SITE}/ar/courses`
+  if (!path) return fallback
+  if (/^https?:\/\//i.test(path)) return fixContent(path)
+  const rel = path.startsWith('/') ? path : `/${path}`
+  if (rel.startsWith('//')) return fallback
+  return rel.includes('courses') ? `${COURSES_SITE}${rel}` : `${MAIN_SITE}${rel}`
+}
 
 /** Applied to every href before it is rendered. */
 const fixLink = (url: string): string => fixContent(url)
@@ -112,7 +127,10 @@ const fixLink = (url: string): string => fixContent(url)
 /** Sent with the first message so the model always uses the right catalogue URL. */
 const COURSE_LINK_INSTRUCTION =
   'عند اقتراح أي كورس أو رابط للكورسات، استخدم دائماً هذا الرابط فقط: https://devewayhub.vercel.app/ar/courses\n' +
-  'لا تستخدم أبداً: https://deveway-teal.vercel.app/ar/courses'
+  'لا تستخدم أبداً: https://deveway-teal.vercel.app/ar/courses\n' +
+  'عند اقتراح كورس، استخدم هذا الفورمات الدقيق فقط:\n' +
+  '[COURSE_SUGGESTION]\nاسم الكورس | https://devewayhub.vercel.app/ar/courses\n[/COURSE_SUGGESTION]\n' +
+  'الرابط يجب أن يكون دائماً https://devewayhub.vercel.app/ar/courses'
 
 /** Assistant text plus [COURSE_SUGGESTION]title | path[/COURSE_SUGGESTION] link chips. */
 function MessageBody({ content, locale }: { content: string; locale: string }) {
@@ -120,15 +138,21 @@ function MessageBody({ content, locale }: { content: string; locale: string }) {
   return (
     <>
       {parts.map((part, i) => {
-        if (i % 2 === 0) return part.trim() ? <MessageContent key={i} content={part} /> : null
+        if (i % 2 === 0) {
+          // drop any half-written tag the model left behind
+          const text = part.replace(/\[\/?COURSE_SUGGESTION[\]>]?/gi, '')
+          return text.trim() ? <MessageContent key={i} content={text} /> : null
+        }
         const [title, rawPath] = part.split('|').map((x) => x.trim())
-        const href = rawPath && rawPath.startsWith('/') && !rawPath.startsWith('//') ? rawPath : `/${locale}/courses`
+        const href = suggestionHref(rawPath)
         return (
           <a
             key={i}
             href={fixLink(href)}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, margin: '4px 0',
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 20, margin: '4px 2px',
               background: 'var(--primary-muted)', border: '1px solid var(--primary-border)', color: 'var(--primary)',
               textDecoration: 'none', fontFamily: F, fontWeight: 300, fontSize: 13,
             }}
