@@ -6,7 +6,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
-import { CartIcon } from './CartIcon'
 import { SearchBar } from './SearchBar'
 import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
@@ -170,7 +169,9 @@ function UserDropdown({ locale }: { locale: string }) {
 
           {/* My Courses link */}
           <Link
-            href={`/${locale}/my-courses`}
+            href={`${WEB_URL}/${locale}/dashboard/my-courses`}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setOpen(false)}
             style={{
               display: 'flex', alignItems: 'center', gap: '10px',
@@ -297,9 +298,10 @@ export function Navbar() {
       label: t('courses')
     },
     {
-      href: isLoggedIn ? `/${locale}/my-courses` : `/${locale}/login`,
+      href: isLoggedIn ? `${WEB_URL}/${locale}/dashboard/my-courses` : `/${locale}/login`,
       label: t('my_courses'),
-      requiresAuth: true
+      requiresAuth: true,
+      external: isLoggedIn
     },
     {
       href: `${MAIN_URL}/${locale}/coaching`,
@@ -466,7 +468,6 @@ export function Navbar() {
                 </a>
               )}
 
-              <CartIcon />
             </div>
 
             {/* Separator */}
@@ -653,7 +654,6 @@ export function Navbar() {
                   )}
                 </a>
               )}
-              <CartIcon />
             </div>
 
             {/* Auth section */}
@@ -688,7 +688,9 @@ export function Navbar() {
                 </div>
                 <div className="flex gap-2.5">
                   <Link
-                    href={`/${locale}/my-courses`}
+                    href={`${WEB_URL}/${locale}/dashboard/my-courses`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
                     className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-black transition-colors duration-150"
                     style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}

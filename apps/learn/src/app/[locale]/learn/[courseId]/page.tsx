@@ -62,6 +62,7 @@ import VideoProtection from "../../../../components/VideoProtection";
 import LiveSessionReplay from "../../../../components/live/LiveSessionReplay";
 import QuizEntryCard from "../../../../components/quizzes/QuizEntryCard";
 import NotEnrolledPage from "../../../../components/course/NotEnrolledPage";
+import AiComingSoonButton from "../../../../components/course/AiComingSoon";
 import { useAuthStore } from "../../../../stores/authStore";
 import {
 	normalizeLiveStatus,
@@ -3013,32 +3014,8 @@ function MetaItem({
 				/>
 			</div>
 
-			{/* Floating AI Assistant Button */}
-			<a
-				href={`/${locale}/learn/${courseId}/ai`}
-				style={{
-					position: "fixed",
-					bottom: 24,
-					left: 24,
-					width: 48,
-					height: 48,
-					borderRadius: 14,
-					background: "#5120c8",
-					border: "none",
-					cursor: "pointer",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					boxShadow: "0 4px 16px rgba(81,32,200,0.3)",
-					transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
-					zIndex: 50,
-					textDecoration: "none",
-				}}
-				onMouseEnter={(e) => (e.currentTarget.style.background = "#6d35e0")}
-				onMouseLeave={(e) => (e.currentTarget.style.background = "#5120c8")}
-				title="المساعد الذكي">
-				<Sparkles size={20} color="#fff" />
-			</a>
+			{/* Floating AI Assistant Button: the assistant is not available here yet */}
+			<AiComingSoonButton />
 
 
 			{/* Mobile Bottom Navigation Bar - Hidden (using inline controls instead) */}
