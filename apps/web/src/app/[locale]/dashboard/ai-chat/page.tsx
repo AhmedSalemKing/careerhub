@@ -52,7 +52,7 @@ function renderInline(text: string, keyBase: string): React.ReactNode[] {
       )
     } else if (match[4] !== undefined) {
       out.push(
-        <a key={key} href={match[4]} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+        <a key={key} href={fixLink(match[4])} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
           {match[4]}
         </a>,
       )
@@ -100,13 +100,23 @@ function MessageContent({ content }: { content: string }) {
   return <div>{rows}</div>
 }
 
-/** Old catalogue host the model sometimes writes; the live site is devewayhub. */
-const fixCourseLinks = (text: string) =>
-  text.replace(/https?:\/\/deveway-teal\.vercel\.app\/([a-z]+)\/courses/g, 'https://devewayhub.vercel.app/$1/courses')
+/** The model sometimes writes the old catalogue host; the live site is devewayhub. */
+const fixContent = (text: string): string =>
+  text
+    .replace(/https?:\/\/deveway-teal\.vercel\.app\/(ar|en)\/courses/g, 'https://devewayhub.vercel.app/$1/courses')
+    .replace(/https?:\/\/deveway-teal\.vercel\.app\/courses/g, 'https://devewayhub.vercel.app/ar/courses')
+
+/** Applied to every href before it is rendered. */
+const fixLink = (url: string): string => fixContent(url)
+
+/** Sent with the first message so the model always uses the right catalogue URL. */
+const COURSE_LINK_INSTRUCTION =
+  'عند اقتراح أي كورس أو رابط للكورسات، استخدم دائماً هذا الرابط فقط: https://devewayhub.vercel.app/ar/courses\n' +
+  'لا تستخدم أبداً: https://deveway-teal.vercel.app/ar/courses'
 
 /** Assistant text plus [COURSE_SUGGESTION]title | path[/COURSE_SUGGESTION] link chips. */
 function MessageBody({ content, locale }: { content: string; locale: string }) {
-  const parts = fixCourseLinks(content).split(/\[COURSE_SUGGESTION\]([\s\S]*?)\[\/COURSE_SUGGESTION\]/g)
+  const parts = fixContent(content).split(/\[COURSE_SUGGESTION\]([\s\S]*?)\[\/COURSE_SUGGESTION\]/g)
   return (
     <>
       {parts.map((part, i) => {
@@ -116,7 +126,7 @@ function MessageBody({ content, locale }: { content: string; locale: string }) {
         return (
           <a
             key={i}
-            href={href}
+            href={fixLink(href)}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, margin: '4px 0',
               background: 'var(--primary-muted)', border: '1px solid var(--primary-border)', color: 'var(--primary)',
@@ -298,7 +308,10 @@ export default function AiChatPage() {
           headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
           body: JSON.stringify({
             mode: 'rasheed',
-            messages: history.map((m) => ({ role: m.role, content: m.content })),
+            messages: history.map((m, i) => ({
+              role: m.role,
+              content: i === 0 ? `${m.content}\n\n[${COURSE_LINK_INSTRUCTION}]` : m.content,
+            })),
           }),
         })
         const data = (await res.json().catch(() => ({}))) as { content?: string; message?: string; text?: string }
@@ -312,7 +325,7 @@ export default function AiChatPage() {
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          content: reply || (isAr ? 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مجدداً.' : 'Sorry, something went wrong. Please try again.'),
+          content: fixContent(reply) || (isAr ? 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مجدداً.' : 'Sorry, something went wrong. Please try again.'),
         },
       ])
       setLoading(false)
