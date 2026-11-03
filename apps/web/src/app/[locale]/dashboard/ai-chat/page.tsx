@@ -548,12 +548,11 @@ export default function AiChatPage() {
             <div
               style={{
                 display: 'flex', alignItems: 'flex-end', background: 'var(--card)', border: '1px solid var(--border)',
-                borderRadius: 24, padding: '12px 16px 12px 12px', gap: 8,
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--foreground) 8%, transparent)',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
+                borderRadius: 24, paddingBlock: 10, paddingInlineStart: 16, paddingInlineEnd: 10, gap: 8,
               }}
             >
               <textarea
+                className="rasheed-input"
                 ref={textareaRef}
                 value={input}
                 onChange={(e) => {
@@ -568,9 +567,10 @@ export default function AiChatPage() {
                 rows={1}
                 disabled={loading}
                 style={{
-                  flex: 1, border: 'none', background: 'transparent', resize: 'none', outline: 'none', overflow: 'hidden',
+                  flex: 1, width: '100%', display: 'block', border: 'none', outline: 'none', background: 'none', boxShadow: 'none',
+                  WebkitAppearance: 'none', resize: 'none', overflow: 'hidden',
                   fontFamily: F, fontWeight: 300, fontSize: 15, color: 'var(--foreground)', lineHeight: 1.6,
-                  minHeight: 24, maxHeight: 200, padding: 0, margin: 0,
+                  minHeight: 26, maxHeight: 200, padding: 0, margin: 0,
                 }}
               />
               <button
@@ -601,6 +601,18 @@ export default function AiChatPage() {
         @keyframes rasheedBounce {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-6px); opacity: 1; }
+        }
+        /* globals.css gives every textarea a filled background and a focus ring with !important;
+           the chat input must stay bare inside its single container. */
+        textarea.rasheed-input,
+        textarea.rasheed-input:focus,
+        textarea.rasheed-input:focus-visible {
+          background: none !important;
+          background-color: transparent !important;
+          border: none !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          outline: none !important;
         }
         @media (max-width: 767px) {
           .rasheed-sidebar { position: absolute; inset-block: 0; inset-inline-start: 0; z-index: 20; }
