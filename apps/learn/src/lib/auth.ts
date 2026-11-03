@@ -92,10 +92,55 @@ export function isAuthenticated() {
   return !!getToken()
 }
 
+const AUTH_COOKIE_NAMES = [
+  'deveway_token', 'deveway_refresh', 'deveway_user',
+  'careerhub_token', 'careerhub_refresh', 'careerhub_user',
+  'token', 'auth', 'session', 'user',
+]
+
+const AUTH_STORAGE_KEYS = [
+  'deveway_token', 'deveway_refresh', 'deveway_user',
+  'careerhub_token', 'careerhub_refresh', 'careerhub_user',
+  'token', 'access_token', 'refresh_token', 'user',
+]
+
+/**
+ * Remove every auth cookie regardless of how it was set: host-only, on the
+ * current hostname, and on the parent domain (e.g. .deveways.com). A cookie
+ * written with a Domain attribute is only removed by a delete that uses the
+ * same Domain, so each name is cleared with and without it.
+ */
+export function clearAuthCookies() {
+  if (typeof window === 'undefined') return
+  const expired = 'expires=Thu, 01 Jan 1970 00:00:00 GMT'
+  const host = window.location.hostname
+  const parent = host.split('.').slice(-2).join('.')
+  const cookieDomain = host.includes('.') ? `.${parent}` : host
+  AUTH_COOKIE_NAMES.forEach((name) => {
+    try {
+      document.cookie = `${name}=; ${expired}; path=/`
+      document.cookie = `${name}=; ${expired}; path=/; domain=${cookieDomain}`
+      document.cookie = `${name}=; ${expired}; path=/; domain=.${parent}`
+      document.cookie = `${name}=; ${expired}; path=/; domain=${host}`
+    } catch {}
+  })
+}
+
+/** Remove every known auth key from localStorage and sessionStorage. */
+export function clearAuthStorage() {
+  if (typeof window === 'undefined') return
+  AUTH_STORAGE_KEYS.forEach((k) => {
+    try { localStorage.removeItem(k) } catch {}
+    try { sessionStorage.removeItem(k) } catch {}
+  })
+}
+
 export function logout() {
   removeToken()
   removeRefreshToken()
   removeUser()
+  clearAuthStorage()
+  clearAuthCookies()
   if (typeof window !== 'undefined') {
     const seg = window.location.pathname.split('/')[1]
     const locale = seg === 'en' ? 'en' : 'ar'

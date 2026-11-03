@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { webLoginUrl } from '../../../lib/constants'
+import { clearAuthCookies } from '../../../lib/auth'
 
 const AUTH_KEYS = [
   'deveway_token', 'deveway_refresh', 'deveway_user',
@@ -15,6 +16,10 @@ const ALLOWED_RETURN_HOSTS = [
   'devewayhub.vercel.app',
   'deveway.com',
   'www.deveway.com',
+  'deveways.com',
+  'www.deveways.com',
+  'localhost',
+  '127.0.0.1',
 ]
 
 function isAllowedReturn(url: string): boolean {
@@ -34,7 +39,9 @@ export default function LogoutPage() {
       try { sessionStorage.removeItem(k) } catch {}
     })
 
-    // 2) Clear any auth-looking non-httpOnly cookies
+    // 2) Clear auth cookies, including ones set with a Domain attribute
+    clearAuthCookies()
+    // ...and any other auth-looking non-httpOnly host cookies
     try {
       document.cookie.split(';').forEach((c) => {
         const name = c.split('=')[0].trim()

@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react'
 import { api } from '../../../lib/api'
+import { useAuthStore } from '../../../stores/authStore'
 import BottomDock from '../../../components/BottomDock'
 import AdminCurrencyToggle from '../../../components/AdminCurrencyToggle'
 
@@ -25,6 +26,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const locale = useLocale()
   const pathname = usePathname()
   const router = useRouter()
+  const logout = useAuthStore((s) => s.logout)
   const [authorized, setAuthorized] = useState<boolean | null>(null)
   const [ready, setReady] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -90,11 +92,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ]
 
   function handleLogout() {
-    localStorage.removeItem('deveway_token')
-    localStorage.removeItem('deveway_refresh')
-    localStorage.removeItem('deveway_user')
+    // authStore.logout() clears web storage and cookies, then redirects through
+    // learn's /logout so both apps are signed out.
+    logout()
     window.dispatchEvent(new Event('auth:updated'))
-    router.replace(`/${locale}/login`)
   }
 
   return (

@@ -23,6 +23,16 @@ export function TokenSync() {
     const urlToken = searchParams?.get('token')
     if (urlToken && urlToken !== 'null' && urlToken !== 'undefined') {
       try {
+        // Account switch: a different token means a different session, so drop
+        // the previous user record (and the store copy) before adopting it.
+        // It is refetched from /auth/me for the new token.
+        const previous =
+          localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token')
+        if (previous && previous !== urlToken) {
+          localStorage.removeItem('deveway_user')
+          localStorage.removeItem('careerhub_user')
+          useAuthStore.setState({ user: null })
+        }
         localStorage.setItem('deveway_token', urlToken)
         localStorage.setItem('careerhub_token', urlToken)
         setToken(urlToken)

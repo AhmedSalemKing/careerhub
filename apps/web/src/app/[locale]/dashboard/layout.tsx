@@ -165,11 +165,10 @@ return [
   }
 
   function handleLogout() {
-    localStorage.removeItem('deveway_token')
-    localStorage.removeItem('deveway_refresh')
-    localStorage.removeItem('deveway_user')
+    // authStore.logout() clears web storage and cookies, then redirects through
+    // learn's /logout so both apps are signed out.
+    logout()
     window.dispatchEvent(new Event('auth:updated'))
-    router.replace(`/${locale}/login`)
   }
 
   return (
