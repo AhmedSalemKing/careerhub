@@ -52,6 +52,176 @@ const cbIsOpen         = (m: string)                    => cb.isOpen(m)
 const cbRecordSuccess  = (m: string)                    => cb.recordSuccess(m)
 const cbRecordFailure  = (m: string, q: boolean)        => cb.recordFailure(m, q)
 
+// ── Streaming (SSE) ─────────────────────────────────────────────────────────
+// Opt-in: only used when the request sends `Accept: text/event-stream` or
+// `stream: true`. Other callers (assessment, interview) keep the JSON response.
+//
+// Wire format, one event per Gemini chunk:  data: {"text":"..."}\n\n
+// Terminated by `data: [DONE]` on success or `data: [ERROR]` on failure.
+//
+// Fallback to the next model only happens before the first byte arrives: once
+// text has been sent to the client it cannot be taken back.
+const STREAM_TOTAL_MS = 26_000  // whole stream incl. body; maxDuration = 30s
+
+type GeminiContent = { role: string; parts: { text: string }[] }
+
+function streamChat(opts: {
+  apiKey: string
+  models: string[]
+  contents: GeminiContent[]
+  systemPrompt: string
+  reqId: string
+  tStart: number
+}): Response {
+  const { apiKey, models, contents, systemPrompt, reqId, tStart } = opts
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+  const ctrl    = new AbortController()   // client cancel or overall deadline
+  let closed    = false
+
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (payload: string) => {
+        if (closed) return
+        try { controller.enqueue(encoder.encode(`data: ${payload}\n\n`)) } catch { closed = true }
+      }
+      const close = () => {
+        if (closed) return
+        closed = true
+        try { controller.close() } catch { /* already closed */ }
+      }
+      const overall = setTimeout(() => ctrl.abort(), STREAM_TOTAL_MS)
+      let activeModel = ''
+      let sent = 0
+
+      try {
+        let upstream: Response | null = null
+        let lastError = ''
+
+        for (let mi = 0; mi < models.length; mi++) {
+          const model = models[mi]
+          if (cbIsOpen(model)) { lastError = `${model} skipped (circuit open)`; continue }
+
+          // Deadline for response HEADERS only; cleared once the stream starts.
+          const attempt  = new AbortController()
+          const onAbort  = () => attempt.abort()
+          ctrl.signal.addEventListener('abort', onAbort, { once: true })
+          const hdrTimer = setTimeout(() => attempt.abort(), mi === 0 ? PRIMARY_TIMEOUT_MS : FALLBACK_TIMEOUT_MS)
+
+          try {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${apiKey}`,
+              {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal:  attempt.signal,
+                body:    JSON.stringify({
+                  contents,
+                  system_instruction: { parts: [{ text: systemPrompt }] },
+                  generationConfig: {
+                    temperature: 0.8,
+                    maxOutputTokens: 800,
+                    ...(model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-lite' ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
+                  },
+                }),
+              },
+            )
+            clearTimeout(hdrTimer)
+
+            if (!res.ok) {
+              const errText = await res.text()
+              lastError = `${model} http=${res.status}`
+              console.error(`[AI Chat] req=${reqId} stream ${lastError} body=${errText.slice(0, 120)}`)
+              // Quota / auth errors affect the shared key — the fallback model would fail too.
+              if ((res.status === 429 && classify429Body(errText) === 'account_quota') || res.status === 401 || res.status === 403) {
+                cbRecordFailure(model, false)
+                break
+              }
+              cbRecordFailure(model, true)
+              continue
+            }
+            if (!res.body) { lastError = `${model} no body`; cbRecordFailure(model, true); continue }
+            upstream    = res
+            activeModel = model
+            break
+          } catch (err: unknown) {
+            clearTimeout(hdrTimer)
+            const e = err as { name?: string; message?: string }
+            lastError = e?.name === 'AbortError' ? `${model} header timeout` : `${model} exception: ${e?.message}`
+            console.error(`[AI Chat] req=${reqId} stream ${lastError}`)
+            cbRecordFailure(model, e?.name === 'AbortError')
+          }
+        }
+
+        if (!upstream || !upstream.body) {
+          console.error(`[AI Chat] req=${reqId} STREAM_ALL_MODELS_FAILED last=${lastError} totalMs=${Date.now() - tStart}`)
+          send('[ERROR]')
+          return
+        }
+
+        const handleLine = (line: string) => {
+          if (!line.startsWith('data:')) return
+          const json = line.slice(5).trim()
+          if (!json) return
+          try {
+            const data  = JSON.parse(json) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] }
+            const parts = data?.candidates?.[0]?.content?.parts
+            const text  = Array.isArray(parts) ? parts.filter(p => !p.thought).map(p => p.text ?? '').join('') : ''
+            if (text) { sent += text.length; send(JSON.stringify({ text })) }
+          } catch { /* partial or non-JSON line — ignore */ }
+        }
+
+        // Network chunks can split an SSE line in half, so buffer until a newline.
+        const reader = upstream.body.getReader()
+        let buf = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          let nl: number
+          while ((nl = buf.indexOf('\n')) >= 0) {
+            handleLine(buf.slice(0, nl).replace(/\r$/, ''))
+            buf = buf.slice(nl + 1)
+          }
+        }
+        if (buf) handleLine(buf.replace(/\r$/, ''))
+
+        if (sent === 0) {
+          console.error(`[AI Chat] req=${reqId} stream ${activeModel} empty response`)
+          cbRecordFailure(activeModel, true)
+          send('[ERROR]')
+        } else {
+          cbRecordSuccess(activeModel)
+          console.log(`[AI Chat] req=${reqId} STREAM_SUCCESS model=${activeModel} len=${sent} totalMs=${Date.now() - tStart}`)
+          send('[DONE]')
+        }
+      } catch (err: unknown) {
+        const e = err as { name?: string; message?: string }
+        console.error(`[AI Chat] req=${reqId} stream error model=${activeModel} ${e?.name === 'AbortError' ? 'aborted' : e?.message}`)
+        if (activeModel && !closed) cbRecordFailure(activeModel, e?.name === 'AbortError')
+        send('[ERROR]')
+      } finally {
+        clearTimeout(overall)
+        close()
+      }
+    },
+    cancel() {
+      // Client navigated away / aborted: stop the upstream request too.
+      closed = true
+      ctrl.abort()
+    },
+  })
+
+  return new Response(body, {
+    headers: {
+      'Content-Type':      'text/event-stream; charset=utf-8',
+      'Cache-Control':     'no-cache, no-transform',
+      'Connection':        'keep-alive',
+      'X-Accel-Buffering': 'no',
+    },
+  })
+}
+
 export async function POST(req: NextRequest) {
   // ── Authentication ────────────────────────────────────────────────────────────
   const authUser = await verifyRequest(req)
@@ -78,7 +248,7 @@ export async function POST(req: NextRequest) {
     // userName is derived server-side from the verified JWT — never trusted from client body.
     // memoryContext may still come from the client: an authenticated user passing their own
     // memory context only affects their own session; prompt injection risk is low and bounded.
-    const { messages, memoryContext, mode } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string }
+    const { messages, memoryContext, mode, stream } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -134,6 +304,13 @@ export async function POST(req: NextRequest) {
     console.log(`[AI Chat] req=${reqId} uid=${authUser.id} msgs=${validMessages.length} turns=${contents.length}${safeUserName ? ` user=${safeUserName}` : ''}`)
 
     const models      = ['gemini-2.5-flash', 'gemini-2.5-flash-lite']
+
+    // Streaming is opt-in; every other caller keeps the JSON response below.
+    const wantsStream = (req.headers.get('accept') ?? '').includes('text/event-stream') || stream === true
+    if (wantsStream) {
+      return streamChat({ apiKey, models, contents, systemPrompt, reqId, tStart })
+    }
+
     const budgetStart = Date.now()
     let lastError     = ''
 

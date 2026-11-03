@@ -322,36 +322,98 @@ export default function AiChatPage() {
       setLoading(true)
       if (textareaRef.current) textareaRef.current.style.height = 'auto'
 
-      let reply = ''
+      const errorText = isAr ? 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مجدداً.' : 'Sorry, something went wrong. Please try again.'
+      const streamingId = `a-${Date.now()}`
+      let fullContent = ''
+      let bubbleAdded = false
+      let lastFlush = 0
+
+      // The bubble is created on the first token (the typing dots show until then).
+      // Updates are throttled: every setMessages also rewrites localStorage.
+      const flush = (force: boolean) => {
+        const now = Date.now()
+        if (!force && bubbleAdded && now - lastFlush < 60) return
+        lastFlush = now
+        const snapshot = fullContent
+        if (!bubbleAdded) {
+          bubbleAdded = true
+          setMessages((prev) => [...prev, { id: streamingId, role: 'assistant', content: snapshot }])
+        } else {
+          setMessages((prev) => prev.map((m) => (m.id === streamingId ? { ...m, content: snapshot } : m)))
+        }
+      }
+
       try {
         // Same pattern as AIInterviewPage: the route accepts the cookie or a Bearer token
         const token = getToken()
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({
             mode: 'rasheed',
+            stream: true,
             messages: history.map((m, i) => ({
               role: m.role,
               content: i === 0 ? `${m.content}\n\n[${COURSE_LINK_INSTRUCTION}]` : m.content,
             })),
           }),
         })
-        const data = (await res.json().catch(() => ({}))) as { content?: string; message?: string; text?: string }
-        reply = data.content || data.message || data.text || ''
+        if (!res.ok || !res.body) throw new Error('stream request failed')
+
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+        let finished = false
+        let failed = false
+
+        // A network chunk can end mid-line, so keep the tail until its newline arrives.
+        const handleLine = (line: string) => {
+          if (!line.startsWith('data:')) return
+          const data = line.slice(5).trim()
+          if (data === '[DONE]') { finished = true; return }
+          if (data === '[ERROR]') { failed = true; finished = true; return }
+          try {
+            const parsed = JSON.parse(data) as { text?: string }
+            if (parsed.text) {
+              fullContent += parsed.text
+              flush(false)
+            }
+          } catch {
+            /* ignore malformed event */
+          }
+        }
+
+        while (!finished) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          let nl: number
+          while (!finished && (nl = buf.indexOf('\n')) >= 0) {
+            handleLine(buf.slice(0, nl).replace(/\r$/, ''))
+            buf = buf.slice(nl + 1)
+          }
+        }
+        if (!finished && buf) handleLine(buf.replace(/\r$/, ''))
+        if (finished) reader.cancel().catch(() => {})
+
+        // Server-reported error with nothing received -> show the error message.
+        // With partial text, keep what arrived.
+        if (failed && !fullContent) throw new Error('stream error')
       } catch {
-        reply = ''
+        /* handled below: partial text is kept, an empty reply becomes the error message */
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          content: fixContent(reply) || (isAr ? 'عذراً، حدث خطأ في الاتصال. يرجى المحاولة مجدداً.' : 'Sorry, something went wrong. Please try again.'),
-        },
-      ])
+      const finalText = fixContent(fullContent)
+      if (bubbleAdded) {
+        setMessages((prev) => prev.map((m) => (m.id === streamingId ? { ...m, content: finalText || errorText } : m)))
+      } else {
+        setMessages((prev) => [...prev, { id: streamingId, role: 'assistant', content: finalText || errorText }])
+      }
       setLoading(false)
     },
     [messages, loading, isAr],
@@ -560,7 +622,7 @@ export default function AiChatPage() {
                   )
                 })}
 
-                {loading && (
+                {loading && messages[messages.length - 1]?.role !== 'assistant' && (
                   <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <Avatar size={32} icon={14} />
                     <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--border)', display: 'flex', gap: 4, alignItems: 'center' }}>
