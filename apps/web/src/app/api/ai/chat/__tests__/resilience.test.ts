@@ -254,7 +254,7 @@ function response(status: number, payload: unknown, ok = status >= 200 && status
 
 const baseArgs = {
   apiKey: 'test-key',
-  model: 'gemini-3.8-flash',
+  model: 'gemini-2.5-flash',
   contents: [{ role: 'user' as const, parts: [{ text: 'مرحبا' }] }],
   timeoutMs: 1_000,
   includeSystemInstruction: false,
@@ -350,7 +350,7 @@ describe('Gemini provider attempts', () => {
 
     await callGeminiModel(baseArgs)
 
-    expect(seenUrl).toContain('models/gemini-3.8-flash:generateContent')
+    expect(seenUrl).toContain('models/gemini-2.5-flash:generateContent')
     expect(spy).toHaveBeenCalledTimes(1)
   })
 

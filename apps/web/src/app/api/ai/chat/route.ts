@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
       const generationConfig = {
         temperature: 0.8,
         maxOutputTokens: 800,
-        ...(model === 'gemini-3.8-flash' ? { thinkingConfig: { thinkingLevel: 'LOW' } } : {}),
+        ...(model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-lite' ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
       }
       const baseBody = {
         contents,
