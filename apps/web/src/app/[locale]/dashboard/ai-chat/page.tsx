@@ -5,10 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import DOMPurify from 'isomorphic-dompurify'
 import { get, post, del } from '../../../../lib/api'
-import {
-  Plus,
-  MessageSquare,
-} from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { notify } from '../../../../lib/notify'
 
 // ════════════════════════════════════
@@ -40,13 +37,13 @@ function MessageContent({ content }: { content: string }) {
   lines.forEach((line, i) => {
     if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={i} className="font-semibold text-base mt-3 mb-1" style={{ color: 'var(--primary)' }}>
+        <h3 key={i} className="font-medium text-base mt-3 mb-1" style={{ color: 'var(--primary)' }}>
           {line.slice(4)}
         </h3>
       )
     } else if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={i} className="font-semibold text-lg mt-4 mb-2" style={{ color: 'var(--foreground)' }}>
+        <h2 key={i} className="font-medium text-lg mt-4 mb-2" style={{ color: 'var(--foreground)' }}>
           {line.slice(3)}
         </h2>
       )
@@ -61,7 +58,7 @@ function MessageContent({ content }: { content: string }) {
       const num = line.match(/^(\d+)\./)?.[1]
       elements.push(
         <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
-          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold" style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}>{num}</span>
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium" style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}>{num}</span>
           <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }} />
         </li>
       )
@@ -69,7 +66,7 @@ function MessageContent({ content }: { content: string }) {
       elements.push(
         <p key={i} className="text-sm leading-relaxed mb-1" dangerouslySetInnerHTML={{
           __html: DOMPurify.sanitize(line
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--foreground);font-weight:600">$1</strong>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--foreground);font-weight:500">$1</strong>')
             .replace(/`(.*?)`/g, '<code style="background:var(--code-bg);color:var(--primary);padding:2px 6px;border-radius:6px;font-size:13px;font-family:monospace">$1</code>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>'))
         }} />
@@ -83,6 +80,59 @@ function MessageContent({ content }: { content: string }) {
 }
 
 
+
+const SUGGESTED_PROMPTS_AR = [
+  'ما هي الكورسات المتاحة في تطوير الويب؟',
+  'كيف أبدأ تعلم البرمجة من الصفر؟',
+  'ما الفرق بين Frontend و Backend؟',
+  'اقترح لي مسار مهني في أمن المعلومات',
+]
+const SUGGESTED_PROMPTS_EN = [
+  'Which web development courses are available?',
+  'How do I start learning to code from scratch?',
+  "What's the difference between Frontend and Backend?",
+  'Suggest a career path in cybersecurity',
+]
+
+/**
+ * Renders an assistant reply. Course suggestions the model writes as
+ * [COURSE_SUGGESTION]title | path[/COURSE_SUGGESTION] become link chips; a
+ * suggestion still being streamed (no closing tag yet) is held back so the raw
+ * marker never flashes on screen.
+ */
+function MessageBody({ content, locale }: { content: string; locale: string }) {
+  const visible = content.replace(/\[COURSE_SUGGESTION\](?:(?!\[\/COURSE_SUGGESTION\])[\s\S])*$/, '')
+  const parts = visible.split(/\[COURSE_SUGGESTION\]([\s\S]*?)\[\/COURSE_SUGGESTION\]/g)
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (i % 2 === 0) return part.trim() ? <MessageContent key={i} content={part} /> : null
+        const [title, rawPath] = part.split('|').map((x) => x.trim())
+        // Only same-site paths are linked; anything else falls back to the catalogue.
+        const href = rawPath && rawPath.startsWith('/') && !rawPath.startsWith('//') ? rawPath : `/${locale}/courses`
+        return (
+          <a
+            key={i}
+            href={href}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 8, margin: '4px 0',
+              background: 'var(--primary-muted)', border: '1px solid var(--primary-border)',
+              color: 'var(--primary)', textDecoration: 'none',
+              fontFamily: 'PingAR, sans-serif', fontWeight: 300, fontSize: 13,
+            }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 7v14" />
+              <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+            </svg>
+            {title}
+          </a>
+        )
+      })}
+    </>
+  )
+}
 
 // ════════════════════════════════════
 // MAIN COMPONENT
@@ -354,10 +404,6 @@ export default function AiChatPage() {
     e.target.style.height = `${newHeight}px`
   }
 
-  const handleSuggestion = (text: string) => {
-    setInput(text)
-  }
-
   const clearChat = () => {
     setActiveConvId(null)
     setMessages([])
@@ -368,540 +414,335 @@ export default function AiChatPage() {
   const hasInput = input.trim().length > 0
 
   // ── RENDER ──────────────────────
+  const SUGGESTED_PROMPTS = isAr ? SUGGESTED_PROMPTS_AR : SUGGESTED_PROMPTS_EN
+  const F = 'PingAR, sans-serif'
+  const avatar = (size: number, icon: number) => (
+    <div
+      style={{
+        width: size, height: size, borderRadius: '50%', flexShrink: 0,
+        background: 'var(--primary)', color: 'var(--primary-foreground)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <svg width={icon} height={icon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z" />
+        <circle cx="12" cy="9" r="2.5" fill="currentColor" stroke="none" />
+      </svg>
+    </div>
+  )
+
   return (
-    <div 
-      className="flex h-screen overflow-hidden"
-      dir="rtl"
-      style={{ 
-        backgroundColor: 'var(--background)',
-        color: 'var(--foreground)',
-        fontFamily: "'DM Sans', sans-serif",
+    <div
+      dir={isAr ? 'rtl' : 'ltr'}
+      style={{
+        display: 'flex', height: 'calc(100dvh - 80px)', overflow: 'hidden',
+        background: 'var(--background)', color: 'var(--foreground)', fontFamily: F,
       }}
     >
       {/* ═══ SIDEBAR ═══ */}
-      {/* ✅ FIX #1: Changed 'flex col' to 'flex flex-col' */}
-      <aside 
-        className={`
-          fixed 
-          inset-y-0 
-          right-0 
-          z-30 
-          w-[288px]
-          md:w-[256px]
-          lg:w-[288px]
-          flex 
-          flex-col 
-          border-l 
-          transition-transform 
-          duration-300 
-          ease-out 
-          md:relative 
-          md:right-auto 
-          md:left-0 
-          md:w-64 
-          lg:w-72 
-          ${sidebarOpen ? 'translate-x-0' : 'translate-x-full'}
-          md:translate-x-0
-        `}
-        style={{ 
-          backgroundColor: 'var(--surface)',
-          borderLeft: '1px solid var(--border)',
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden"
+          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'color-mix(in srgb, var(--background) 60%, transparent)' }}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 z-50 flex w-[272px] flex-col transition-transform duration-300 md:static md:z-auto md:translate-x-0 ${
+          isAr ? 'right-0' : 'left-0'
+        } ${sidebarOpen ? 'translate-x-0' : isAr ? 'translate-x-full' : '-translate-x-full'}`}
+        style={{
+          background: 'var(--card)',
+          [isAr ? 'borderLeft' : 'borderRight']: '1px solid var(--border)',
         }}
+        aria-label={isAr ? 'قائمة المحادثات' : 'Conversations'}
       >
-        {/* New Chat Button */}
-        <div 
-          className="p-3"
-          style={{ borderBottom: '1px solid var(--border)' }}
-        >
+        <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
           <button
             onClick={() => createConv.mutate()}
             disabled={createConv.isPending}
-            className="
-              w-full 
-              flex 
-              items-center 
-              justify-center 
-              gap-2 
-              rounded-xl 
-              px-4 
-              py-2.5 
-              text-sm 
-              font-bold 
-              transition-all 
-              duration-200 
-              hover:scale-[1.02] 
-              active:scale-[0.98]
-            "
             style={{
-              backgroundColor: 'var(--primary)',
-              color: '#ffffff',
-              fontFamily: "'PingARLT', sans-serif",
-              boxShadow: '0 2px 8px rgba(81, 32, 200, 0.25)',
+              width: '100%', padding: '10px 14px', borderRadius: 10,
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--foreground)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              fontFamily: F, fontWeight: 300, fontSize: 13,
             }}
           >
-            <Plus className="h-4 w-4" strokeWidth={2.5} />
-            <span>محادثة جديدة</span>
+            <Plus size={14} strokeWidth={2} />
+            {isAr ? 'محادثة جديدة' : 'New conversation'}
           </button>
         </div>
 
-        {/* Conversations List */}
-        <nav 
-          className="flex-1 overflow-y-auto p-2"
-          aria-label="قائمة المحادثات"
-        >
+        <nav style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
           {conversations.length === 0 ? (
-            <div 
-              className="
-                flex 
-                flex-col 
-                items-center 
-                justify-center 
-                py-16 
-                px-4 
-                text-center 
-              "
-            >
-              <MessageSquare 
-                className="
-                  h-12 
-                  w-12 
-                  mb-4 
-                  opacity-20 
-                " 
-                style={{ color: 'var(--muted)' }} 
-              />
-              <p 
-                className="text-sm font-medium mt-2"
-                style={{ color: 'var(--muted)' }} 
-              >
-                لا توجد محادثات بعد
-              </p>
-              <p 
-                className="text-xs mt-1"
-                style={{ color: 'var(--muted-foreground)' }} 
-              >
-                ابدأ محادثة جديدة!
-              </p>
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>
+              {isAr ? 'لا توجد محادثات سابقة' : 'No previous conversations'}
             </div>
           ) : (
-            <ul className="space-y-1">
-              {conversations.map((conv) => (
-                <li key={conv.id}>
+            conversations.map((conv) => {
+              const active = activeConvId === conv.id
+              return (
+                <div
+                  key={conv.id}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2,
+                    borderRadius: 8, background: active ? 'var(--primary-subtle)' : 'transparent',
+                  }}
+                >
                   <button
                     onClick={() => loadConversation(conv.id)}
-                    className="
-                      w-full 
-                      text-right 
-                      flex 
-                      items-center 
-                      gap-3 
-                      rounded-xl 
-                      px-3 
-                      py-2.5 
-                      text-sm 
-                      transition-all 
-                      duration-150 
-                      hover:bg-[color:var(--surface-2)]
-                      active:bg-[color:var(--primary-subtle)]
-                    "
                     style={{
-                      backgroundColor: activeConvId === conv.id ? 'var(--primary-subtle)' : 'transparent',
-                      color: activeConvId === conv.id ? 'var(--primary)' : 'var(--foreground)',
+                      flex: 1, minWidth: 0, padding: '10px 12px', border: 'none',
+                      background: 'transparent', cursor: 'pointer', textAlign: isAr ? 'right' : 'left',
+                      color: active ? 'var(--primary)' : 'var(--foreground)',
+                      fontFamily: F, fontWeight: 300, fontSize: 12,
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}
                   >
-                    <MessageSquare 
-                      className="h-4 w-4 shrink-0 opacity-60"
-                      style={{ 
-                        color: activeConvId === conv.id ? 'var(--primary)' : 'var(--muted)' 
-                      }} 
-                    />
-                    
-                    <span 
-                      className="
-                        truncate 
-                        flex-1 
-                        text-right 
-                        font-medium 
-                      " 
-                      style={{ 
-                        color: activeConvId === conv.id ? 'var(--primary)' : 'var(--foreground)' 
-                      }} 
-                    >
-                      {conv.title}
-                    </span>
+                    {conv.title}
                   </button>
-                </li>
-              ))}
-            </ul>
+                  <button
+                    onClick={() => deleteConv.mutate(conv.id)}
+                    aria-label={isAr ? 'حذف المحادثة' : 'Delete conversation'}
+                    style={{
+                      width: 28, height: 28, border: 'none', background: 'transparent',
+                      color: 'var(--muted-foreground)', cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                    </svg>
+                  </button>
+                </div>
+              )
+            })
           )}
         </nav>
-
-        {/* Mobile Close Button */}
-        <div 
-          className="
-            md:hidden 
-            p-3 
-            border-t 
-            mt-auto 
-          " 
-          style={{ borderTop: '1px solid var(--border)' }}
-        >
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="
-              w-full 
-              py-2.5 
-              rounded-xl 
-              text-sm 
-              font-medium 
-              transition-colors 
-              duration-150 
-              hover:opacity-80 
-            "
-            style={{
-              backgroundColor: 'var(--surface-2)',
-              color: 'var(--foreground)',
-            }}
-          >
-            إغلاق القائمة
-          </button>
-        </div>
       </aside>
 
-      {/* Sidebar Overlay for Mobile */}
-      {sidebarOpen && (
+      {/* ═══ MAIN ═══ */}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Header */}
         <div
-          className="
-            fixed 
-            inset-0 
-            z-40 
-            bg-black/50 
-            backdrop-blur-sm 
-            md:hidden 
-          "
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* ═══ MAIN CHAT AREA (REDESIGNED) ═══ */}
-      <main className="flex-1 flex flex-col min-w-0" style={{ height: '100vh', maxHeight: '100vh', overflow: 'hidden' }}>
-        <div style={{
-          display: 'flex', flexDirection: 'column',
-          height: '100%', maxHeight: '100%',
-          overflow: 'hidden',
-          maxWidth: '900px', margin: '0 auto',
-          padding: '0 1rem',
-        }}>
-          {/* ── HEADER ── */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '12px',
-            padding: '1.25rem 0',
-            borderBottom: '1px solid var(--border)',
-          }}>
-            {/* Mobile menu toggle */}
+          style={{
+            padding: '14px 20px', borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexShrink: 0, background: 'var(--card)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={() => setSidebarOpen(true)}
+              onClick={() => setSidebarOpen((v) => !v)}
               className="md:hidden"
+              aria-label={isAr ? 'القائمة' : 'Menu'}
               style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                color: 'var(--muted-foreground)', padding: '4px',
-                display: 'flex', alignItems: 'center',
+                width: 32, height: 32, borderRadius: 8, border: 'none',
+                background: 'color-mix(in srgb, var(--foreground) 6%, transparent)',
+                color: 'var(--foreground)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
-              aria-label={isAr ? 'فتح القائمة' : 'Open menu'}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="3" y1="6" x2="21" y2="6"/>
-                <line x1="3" y1="12" x2="21" y2="12"/>
-                <line x1="3" y1="18" x2="21" y2="18"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            {/* AI Avatar */}
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '12px',
-              background: 'linear-gradient(135deg, #5120c8, #7c3aed)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(81,32,200,0.4)',
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                stroke="#fff" strokeWidth="2" strokeLinecap="round">
-                <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
-              </svg>
-            </div>
+            {avatar(36, 18)}
             <div>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: '0 0 2px' }}>
-                {isAr ? 'المساعد الذكي' : 'AI Assistant'}
+              <h1 style={{ margin: 0, fontFamily: F, fontWeight: 900, fontSize: 15, color: 'var(--foreground)' }}>
+                {isAr ? 'رشيد — مساعد DeveWay' : 'Rasheed — DeveWay assistant'}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <div style={{
-                  width: '7px', height: '7px', borderRadius: '50%',
-                  background: '#4ade80',
-                  boxShadow: '0 0 6px rgba(74,222,128,0.6)',
-                }}/>
-                <span style={{ fontSize: '0.75rem', color: '#4ade80', fontWeight: 500 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success, currentColor)', color: 'var(--success, var(--primary))' }} />
+                <span style={{ fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>
                   {isAr ? 'متاح الآن' : 'Online'}
                 </span>
               </div>
             </div>
-            {/* New Chat button */}
-            <button onClick={clearChat}
-              style={{
-                marginRight: 'auto', marginLeft: isAr ? '0' : 'auto',
-                padding: '6px 14px', borderRadius: '8px',
-                background: 'var(--card-bg)',
-                border: '1px solid var(--border)',
-                color: 'var(--muted-foreground)', fontSize: '0.78rem',
-                cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: '5px',
-              }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
-              </svg>
-              {isAr ? 'محادثة جديدة' : 'New Chat'}
-            </button>
           </div>
-
-          {/* ── MESSAGES AREA ── */}
-          <div ref={messagesContainerRef} style={{
-            flex: 1, overflowY: 'auto', overflowX: 'hidden',
-            height: '0', minHeight: '300px', scrollBehavior: 'smooth',
-            padding: '1.5rem 0',
-            display: 'flex', flexDirection: 'column', gap: '1.25rem',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(81,32,200,0.3) transparent',
-          }}>
-            {isEmpty ? (
-              /* ── WELCOME STATE ── */
-              <div style={{
-                flex: 1, display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                padding: '3rem 1rem', textAlign: 'center',
-              }}>
-                <div style={{
-                  width: '72px', height: '72px', borderRadius: '20px',
-                  background: 'linear-gradient(135deg, rgba(81,32,200,0.2), rgba(124,58,237,0.15))',
-                  border: '1px solid rgba(81,32,200,0.3)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '1.25rem',
-                  boxShadow: '0 8px 24px rgba(81,32,200,0.2)',
-                }}>
-                  <svg width="34" height="34" viewBox="0 0 24 24" fill="none"
-                    stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round">
-                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/>
-                  </svg>
-                </div>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 8px' }}>
-                  {isAr ? 'مرحبا! كيف يمكنني مساعدتك' : 'Hello! How can I help you?'}
-                </h2>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
-                  maxWidth: '400px', lineHeight: 1.7, margin: '0 0 2rem' }}>
-                  {isAr
-                    ? 'اسألني عن أي موضوع تعليمي، مفهوم برمجي، أو احصل على مساعدة في دراستك'
-                    : 'Ask me about any educational topic, programming concept, or get help with your studies'}
-                </p>
-                <div style={{
-                  display: 'flex', flexWrap: 'wrap', gap: '8px',
-                  justifyContent: 'center', maxWidth: '500px',
-                }}>
-                  {[
-                    isAr ? 'اشرح لي مفهوم OOP' : 'Explain OOP concepts',
-                    isAr ? 'ما الفرق بين REST و GraphQL' : 'REST vs GraphQL?',
-                    isAr ? 'كيف أبدأ تعلم البرمجة' : 'How to start coding?',
-                    isAr ? 'اقترح لي مسار تعلم Web Dev' : 'Web Dev learning path',
-                  ].map((suggestion, i) => (
-                    <button key={i}
-                      onClick={() => handleSuggestion(suggestion)}
-                      style={{
-                        padding: '8px 16px', borderRadius: '20px',
-                        background: 'rgba(81,32,200,0.1)',
-                        border: '1px solid rgba(81,32,200,0.25)',
-                        color: '#a78bfa', fontSize: '0.8rem',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.background = 'rgba(81,32,200,0.2)'
-                        e.currentTarget.style.borderColor = 'rgba(81,32,200,0.5)'
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.background = 'rgba(81,32,200,0.1)'
-                        e.currentTarget.style.borderColor = 'rgba(81,32,200,0.25)'
-                      }}
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              /* ── MESSAGES LIST ── */
-              <>
-                {messages.map((msg: any) => (
-                  <div key={msg.id} style={{
-                    display: 'flex',
-                    flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
-                    gap: '10px', alignItems: 'flex-start',
-                  }}>
-                    {msg.role === 'assistant' && (
-                      <div style={{
-                        width: '32px', height: '32px', borderRadius: '9px',
-                        background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                          stroke="#fff" strokeWidth="2" strokeLinecap="round">
-                          <circle cx="12" cy="12" r="10"/>
-                          <circle cx="9" cy="12" r="1" fill="#fff"/>
-                          <circle cx="15" cy="12" r="1" fill="#fff"/>
-                        </svg>
-                      </div>
-                    )}
-                    <div style={{
-                      maxWidth: '75%',
-                      padding: '12px 16px',
-                      borderRadius: msg.role === 'user'
-                        ? '16px 4px 16px 16px'
-                        : '4px 16px 16px 16px',
-                      background: msg.role === 'user'
-                        ? '#5120c8'
-                        : 'var(--card-bg)',
-                      border: msg.role === 'user'
-                        ? 'none'
-                        : '1px solid var(--border)',
-                      color: msg.role === 'user' ? '#fff' : 'var(--foreground)',
-                      fontSize: '0.9rem', lineHeight: 1.7,
-                      boxShadow: msg.role === 'user'
-                        ? '0 4px 12px rgba(81,32,200,0.3)' : 'none',
-                    }}>
-                      {msg.role === 'user' ? (
-                        msg.content
-                      ) : (
-                        <MessageContent content={msg.content} />
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {isStreaming && (
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: '9px',
-                      background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="#fff" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                      </svg>
-                    </div>
-                    <div style={{
-                      padding: '14px 18px', borderRadius: '4px 16px 16px 16px',
-                      background: 'var(--card-bg)',
-                      border: '1px solid var(--border)',
-                    }}>
-                      {streamingContent ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <MessageContent content={streamingContent} />
-                          <span style={{
-                            display: 'inline-block', width: '4px', height: '16px',
-                            background: '#5120c8', borderRadius: '2px',
-                            animation: 'cursorBlink 800ms infinite',
-                          }}/>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                          {[0,1,2].map(j => (
-                            <div key={j} style={{
-                              width: '7px', height: '7px', borderRadius: '50%',
-                              background: '#a78bfa',
-                              animation: 'bounce 1.2s infinite',
-                              animationDelay: `${j * 0.2}s`,
-                            }}/>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-
-          {/* ── INPUT AREA ── */}
-          <div style={{
-            padding: '1rem 0 1.5rem',
-            borderTop: '1px solid var(--border)',
-          }}>
-            <div style={{
-              display: 'flex', gap: '10px', alignItems: 'flex-end',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border)',
-              borderRadius: '14px', padding: '10px 14px',
-              transition: 'border-color 0.2s',
-            }}>
-              <textarea
-                value={input}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onCompositionStart={handleCompositionStart}
-                onCompositionEnd={handleCompositionEnd}
-                placeholder={isAr ? 'اكتب رسالتك هنا... (Enter للإرسال)' : 'Type your message... (Enter to send)'}
-                disabled={isStreaming}
-                rows={1}
-                style={{
-                  flex: 1, background: 'transparent', border: 'none',
-                  color: 'var(--foreground)', fontSize: '0.9rem',
-                  resize: 'none', outline: 'none', fontFamily: 'inherit',
-                  lineHeight: 1.6, maxHeight: '120px', overflowY: 'auto',
-                }}
-              />
-              <button
-                onClick={() => sendMessage(input)}
-                disabled={!hasInput || isStreaming}
-                style={{
-                  width: '38px', height: '38px', borderRadius: '10px',
-                  background: hasInput && !isStreaming ? '#5120c8' : 'var(--card-bg)',
-                  border: `1px solid ${hasInput && !isStreaming ? '#5120c8' : 'var(--border)'}`,
-                  color: hasInput && !isStreaming ? '#fff' : 'var(--muted-foreground)',
-                  cursor: hasInput && !isStreaming ? 'pointer' : 'default',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0, transition: 'all 0.15s',
-                }}
-              >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
-                  style={{ transform: isAr ? 'rotate(180deg)' : 'none' }}>
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-              </button>
-            </div>
-            <p style={{ textAlign:'center', fontSize:'0.72rem',
-              color:'var(--muted-foreground)', margin:'8px 0 0' }}>
-              {isAr
-                ? 'المساعد الذكي يعمل بتقنية Claude AI - قد تكون الإجابات غير دقيقة أحيانا'
-                : 'Powered by Claude AI - responses may occasionally be inaccurate'}
-            </p>
-          </div>
+          <button
+            onClick={clearChat}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--muted-foreground)', cursor: 'pointer',
+              fontFamily: F, fontWeight: 300, fontSize: 12,
+            }}
+          >
+            <Plus size={12} strokeWidth={2} />
+            {isAr ? 'جديد' : 'New'}
+          </button>
         </div>
 
-        <style>{`
-          @keyframes bounce {
-            0%, 60%, 100% { transform: translateY(0) }
-            30% { transform: translateY(-6px) }
-          }
-          @keyframes cursorBlink {
-            0%, 100% { opacity: 1 }
-            50% { opacity: 0 }
-          }
-        `}</style>
+        {/* Messages */}
+        <div
+          ref={messagesContainerRef}
+          style={{
+            flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 20px 8px',
+            display: 'flex', flexDirection: 'column', gap: 16,
+          }}
+        >
+          {isEmpty ? (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 8px' }}>
+              {avatar(64, 30)}
+              <h2 style={{ margin: '16px 0 6px', fontFamily: F, fontWeight: 500, fontSize: 18, color: 'var(--foreground)' }}>
+                {isAr ? 'مرحباً، أنا رشيد' : "Hi, I'm Rasheed"}
+              </h2>
+              <p style={{ margin: '0 0 24px', maxWidth: 420, fontFamily: F, fontWeight: 300, fontSize: 13, lineHeight: 1.8, color: 'var(--muted-foreground)' }}>
+                {isAr
+                  ? 'مساعدك الذكي في DeveWay. أساعدك في اختيار الكورس المناسب، ومسارك المهني، وشرح المفاهيم التقنية.'
+                  : 'Your DeveWay assistant. I help you pick courses, plan your career path and explain technical concepts.'}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 560 }}>
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => sendMessage(prompt)}
+                    style={{
+                      padding: '8px 14px', borderRadius: 20, border: '1px solid var(--border)',
+                      background: 'var(--card)', color: 'var(--foreground)', cursor: 'pointer',
+                      fontFamily: F, fontWeight: 300, fontSize: 12,
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg: any) => {
+                const isUser = msg.role === 'user'
+                return (
+                  <div
+                    key={msg.id}
+                    style={{ display: 'flex', flexDirection: isUser ? 'row-reverse' : 'row', gap: 10, alignItems: 'flex-start' }}
+                  >
+                    {isUser ? (
+                      <div
+                        style={{
+                          width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                          background: 'color-mix(in srgb, var(--foreground) 10%, transparent)',
+                          color: 'var(--foreground)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                    ) : (
+                      avatar(32, 14)
+                    )}
+                    <div
+                      style={{
+                        maxWidth: '78%', padding: '12px 16px', borderRadius: 14,
+                        background: isUser ? 'var(--primary-muted)' : 'var(--card)',
+                        border: isUser ? '1px solid var(--primary-border)' : '1px solid var(--border)',
+                        fontFamily: F, fontWeight: 300, fontSize: 14, lineHeight: 1.7,
+                        color: 'var(--foreground)',
+                      }}
+                    >
+                      {isUser ? (
+                        <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span>
+                      ) : (
+                        <MessageBody content={msg.content} locale={locale} />
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {isStreaming && (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  {avatar(32, 14)}
+                  <div
+                    style={{
+                      maxWidth: '78%', padding: '12px 16px', borderRadius: 14,
+                      background: 'var(--card)', border: '1px solid var(--border)',
+                      fontFamily: F, fontWeight: 300, fontSize: 14, color: 'var(--foreground)',
+                    }}
+                  >
+                    {streamingContent ? (
+                      <MessageBody content={streamingContent} locale={locale} />
+                    ) : (
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', padding: '4px 0' }}>
+                        {[0, 1, 2].map((j) => (
+                          <span
+                            key={j}
+                            style={{
+                              width: 6, height: 6, borderRadius: '50%',
+                              background: 'var(--muted-foreground)',
+                              animation: `bounce 1.2s ease ${j * 0.2}s infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Input */}
+        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--border)', background: 'var(--card)', flexShrink: 0 }}>
+          <div
+            style={{
+              display: 'flex', gap: 10, alignItems: 'flex-end', background: 'var(--background)',
+              border: '1px solid var(--border)', borderRadius: 14, padding: '8px 12px',
+            }}
+          >
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
+              placeholder={isAr ? 'اسأل رشيد...' : 'Ask Rasheed...'}
+              disabled={isStreaming}
+              rows={1}
+              style={{
+                flex: 1, border: 'none', background: 'transparent', resize: 'none', outline: 'none',
+                fontFamily: F, fontWeight: 300, fontSize: 14, color: 'var(--foreground)',
+                lineHeight: 1.6, minHeight: 24, maxHeight: 120, overflowY: 'auto',
+              }}
+            />
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={!hasInput || isStreaming}
+              aria-label={isAr ? 'إرسال' : 'Send'}
+              style={{
+                width: 36, height: 36, borderRadius: 10, border: 'none', flexShrink: 0,
+                background: hasInput && !isStreaming ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)',
+                color: hasInput && !isStreaming ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                cursor: hasInput && !isStreaming ? 'pointer' : 'not-allowed',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : 'none' }}>
+                <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </div>
+          <div style={{ marginTop: 8, textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>
+            {isAr ? 'رشيد مخصص لمساعدتك في رحلتك التعليمية على DeveWay' : 'Rasheed is here to support your learning journey on DeveWay'}
+          </div>
+        </div>
       </main>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-6px); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }

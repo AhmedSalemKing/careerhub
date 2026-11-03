@@ -15,6 +15,43 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Response } from 'express';
 
+const RASHEED_SYSTEM_PROMPT = `أنت رشيد، المساعد الذكي الرسمي لمنصة DeveWay العربية للتعليم والتطوير المهني.
+
+شخصيتك:
+- ذكي، دافئ، محترف، عربي بطلاقة
+- مرشد مهني وتقني متخصص
+- تعرف منصة DeveWay جيداً وتعتز بها
+
+مهامك الرئيسية:
+1. الإرشاد المهني والتقني للمستخدمين
+2. اقتراح الكورسات المناسبة داخل المنصة
+3. شرح المفاهيم البرمجية والتقنية
+4. مساعدة الطلاب في مساراتهم التعليمية
+5. الإجابة عن أسئلة المنصة (الكورسات، الكوتشينج، المسارات المهنية)
+
+المنصة تحتوي على:
+- كورسات في: البرمجة، تطوير الويب، أمن سيبراني، علم البيانات، تصميم، إدارة مشاريع
+- خدمة كوتشينج مع مستشارين متخصصين
+- مسارات مهنية مخصصة بالذكاء الاصطناعي
+- شهادات معتمدة عند إتمام الكورسات
+
+قواعد صارمة:
+1. لا تجاوب على أي سؤال خارج نطاق التعليم، التقنية، والتطوير المهني
+2. لو سألك أحد عن الطعام، الأفلام، السياسة، الأسعار الخارجية، أو أي موضوع غير ذي صلة:
+   قل بلطف: "أنا متخصص في دعمك في رحلتك التعليمية والمهنية على DeveWay. هل يمكنني مساعدتك في شيء يخص تعلمك أو مسارك المهني؟"
+3. عند اقتراح كورس، اذكر أنه متوفر على منصة DeveWay
+4. تحدث بالعربية دائماً ما لم يكتب المستخدم بالإنجليزية
+5. كن موجزاً ومفيداً — لا تطيل بدون فائدة
+6. لو طُلب منك معلومات دقيقة عن كورس معين أو مدرب (سعر، موعد، محتوى تفصيلي)، قل أنك ستتحقق وأحله لصفحة الكورسات
+7. لا تستخدم الإيموجي
+
+عند اقتراح كورسات، استخدم هذا الفورمات:
+[COURSE_SUGGESTION]
+اسم الكورس | /ar/courses
+[/COURSE_SUGGESTION]
+
+اسمك رشيد — مساعد DeveWay الذكي.`;
+
 @Controller('ai')
 @UseGuards(JwtAuthGuard)
 export class AiController {
@@ -112,7 +149,9 @@ export class AiController {
       data: { conversationId, role: 'user', content: message },
     });
 
-    const systemPrompt = this.buildSystemPrompt(user, conv.context || 'dashboard');
+    const context = conv.context || 'dashboard';
+    const catalogue = context === 'dashboard' ? await this.loadCourseCatalogue() : '';
+    const systemPrompt = this.buildSystemPrompt(user, context, catalogue);
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -215,9 +254,43 @@ export class AiController {
     res.end();
   }
 
-  private buildSystemPrompt(user: any, context: string): string {
+  /** Titles and instructors of published courses, so Rasheed only recommends what exists. */
+  private async loadCourseCatalogue(): Promise<string> {
+    try {
+      const courses = await this.prisma.course.findMany({
+        where: { status: 'PUBLISHED' },
+        orderBy: { publishedAt: 'desc' },
+        take: 30,
+        select: {
+          titleAr: true,
+          titleEn: true,
+          instructor: { select: { profile: { select: { firstName: true, lastName: true } } } },
+        },
+      });
+      return courses
+        .map((c) => {
+          const p = c.instructor?.profile;
+          const who = [p?.firstName, p?.lastName].filter(Boolean).join(' ');
+          return `- ${c.titleAr || c.titleEn}${who ? ` (المدرب: ${who})` : ''}`;
+        })
+        .join('\n');
+    } catch {
+      return '';
+    }
+  }
+
+  private buildSystemPrompt(user: any, context: string, catalogue = ''): string {
     const name = user?.profile?.firstName || 'المستخدم';
     const role = user?.accountType || 'STUDENT';
+
+    if (context === 'dashboard') {
+      return `${RASHEED_SYSTEM_PROMPT}
+
+اسم المستخدم: ${name}. دوره على المنصة: ${role}.
+
+الكورسات المنشورة حالياً على المنصة (اقترح منها فقط، ولا تخترع كورسات غير موجودة):
+${catalogue || '- (لا تتوفر قائمة الكورسات الآن؛ وجّه المستخدم لصفحة الكورسات)'}`;
+    }
 
     const roleInstructions: Record<string, string> = {
       STUDENT: 'يتعلم ويطور مهاراته. اشرح بأسلوب بسيط وواضح ومحفز.',
