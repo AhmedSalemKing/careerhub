@@ -904,7 +904,7 @@ export default function CreateCoursePage() {
                   </div>
 
                   {/* 3. Info grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
 
                     {/* الوصف */}
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1062,7 +1062,7 @@ export default function CreateCoursePage() {
                   <div style={{ fontWeight: 500, fontSize: '0.85rem', color: 'var(--muted)', margin: '20px 0 10px' }}>
                     {isAr ? 'حالة النشر' : 'Publish Status'}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
                     {([
                       { val: 'DRAFT', ar: 'حفظ كمسودة', en: 'Save as Draft', subAr: 'لن يُعرض للطلاب', subEn: "Won't be visible to students" },
                       { val: 'PENDING_REVIEW', ar: 'إرسال للمراجعة', en: 'Submit for Review', subAr: 'سيراجعه فريق DeveWay', subEn: 'DeveWay team will review' },
@@ -1099,52 +1099,6 @@ export default function CreateCoursePage() {
                     })}
                   </div>
 
-                  {/* Error */}
-                  {error && (
-                    <div style={{ marginTop: 16, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '12px 16px', fontSize: '0.88rem', color: '#f87171', fontWeight: 300 }}>
-                      {error}
-                    </div>
-                  )}
-
-                  {/* 5. Action buttons */}
-                  <div style={{ display: 'flex', gap: 12, marginTop: 24, flexDirection: 'row-reverse' }}>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={saving}
-                      style={{
-                        flex: 1, background: 'var(--primary)', color: '#fff',
-                        borderRadius: 12, padding: 13, fontWeight: 500, fontSize: '0.95rem',
-                        border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        opacity: saving ? 0.7 : 1,
-                        fontFamily: "'PingAR', sans-serif",
-                      }}
-                    >
-                      {saving ? (
-                        <span style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', display: 'inline-block', animation: '_rev_spin 0.8s linear infinite' }} />
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                      )}
-                      {saving ? (isAr ? 'جاري الإنشاء...' : 'Creating...') : (isAr ? 'إنشاء الكورس' : 'Create Course')}
-                    </button>
-                    <button
-                      onClick={() => setStep(s => Math.max(1, s - 1) as any)}
-                      style={{
-                        background: 'var(--card)', border: '1px solid var(--border)',
-                        color: 'var(--muted)', borderRadius: 12, padding: '13px 20px',
-                        fontWeight: 300, fontSize: '0.88rem', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        fontFamily: "'PingAR', sans-serif",
-                      }}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 19 19 12 12 5"/>
-                      </svg>
-                      {isAr ? 'السابق' : 'Back'}
-                    </button>
-                  </div>
 
                 </div>
               </div>
@@ -1160,20 +1114,20 @@ export default function CreateCoursePage() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-6">
           <button onClick={() => setStep(s => Math.max(1, s - 1) as 1 | 2 | 3 | 4)} disabled={step === 1}
-            className="rounded-xl border border-[color:var(--border)] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] disabled:opacity-30 transition-all flex items-center gap-2">
+            className="rounded-xl border border-[color:var(--border)] px-5 py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] disabled:opacity-30 transition-all flex flex-1 min-w-[130px] items-center justify-center gap-2">
             <ChevronRight className="h-4 w-4" /> {isAr ? 'السابق' : 'Back'}
           </button>
 
           {step < 4 ? (
             <button onClick={() => { setError(''); setStep(s => Math.min(4, s + 1) as 1 | 2 | 3 | 4) }} disabled={!canProceed()}
-              className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center gap-2">
+              className="rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all flex flex-1 min-w-[130px] items-center justify-center gap-2">
               {isAr ? 'التالي' : 'Next'} <ChevronLeft className="h-4 w-4" />
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={saving}
-              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all">
+              className="flex flex-1 min-w-[130px] items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-50 transition-all">
               {saving && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
               {saving ? (isAr ? 'جاري الإنشاء...' : 'Creating...') : (isAr ? 'إنشاء الكورس' : 'Create Course')}
             </button>

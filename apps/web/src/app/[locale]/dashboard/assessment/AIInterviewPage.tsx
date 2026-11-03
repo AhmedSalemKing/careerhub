@@ -84,6 +84,26 @@ const ALL_QUESTIONS = [
   { id: 'p6q3', phase: 'readiness', phaseLabel: 'الجاهزية المهنية', question: 'ما أكبر عائق يواجهك حالياً في تطوير مسارك؟', options: ['ضيق الوقت', 'التكلفة المادية', 'مش عارف أبدأ منين', 'نقص المهارات الأساسية', 'قلة الفرص في محيطي'] },
 ]
 
+/* ── Responsive overrides (inline styles cannot use media queries) ── */
+const INTERVIEW_CSS = `
+  @media (max-width: 768px) {
+    .interview-stages { left: 12px !important; }
+    .interview-stages > div { min-width: 150px !important; padding: 12px 14px !important; }
+  }
+  @media (max-width: 640px) {
+    .interview-root { height: 100dvh !important; }
+    .interview-stages { display: none !important; }
+    .interview-header { flex-wrap: wrap !important; gap: 8px !important; padding: 12px !important; justify-content: center !important; }
+    .interview-timer-wrap { right: 12px !important; bottom: 88px !important; }
+    .interview-timer { padding: 6px 10px !important; gap: 6px !important; }
+    .interview-timer span { font-size: 13px !important; }
+    .interview-input { padding: 12px !important; }
+    .interview-grid2 { grid-template-columns: 1fr !important; }
+    .interview-actions { flex-direction: column !important; }
+    .interview-actions button { width: 100% !important; }
+  }
+`
+
 /* ── Career Result Card ───────────────────────────────────── */
 function CareerResultCard({ result, onRestart }: { result: CareerResult; onRestart: () => void }) {
   const router = useRouter()
@@ -96,6 +116,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'var(--background)' }}>
+      <style>{INTERVIEW_CSS}</style>
       <div style={{ width: '100%', maxWidth: 680, direction: 'rtl' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -108,7 +129,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         </div>
 
         {/* Score + primary path */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 24 }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20, padding: 28, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
           <div style={{ flexShrink: 0, position: 'relative', width: 110, height: 110 }}>
             <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
               <circle cx="55" cy="55" r={radius} fill="none" stroke="var(--border)" strokeWidth="10" />
@@ -129,7 +150,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         </div>
 
         {/* Grid: strengths + next steps */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="interview-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
             <div style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 12 }}>نقاط قوتك</div>
             {(result.strengths ?? []).map((s, i) => (
@@ -173,7 +194,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="interview-actions" style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => router.push(`/${locale}/dashboard/career-path`)}
             style={{ flex: 1, padding: '13px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}
@@ -212,7 +233,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   const [handsFreeEnabled, setHandsFreeEnabled] = useState(false)
   const [handsFreePaused,  setHandsFreePaused]  = useState(false)
   const [micError,         setMicError]         = useState<string | null>(null)
-  const messagesEndRef    = useRef<HTMLDivElement>(null)
+  const [orbSize,          setOrbSize]          = useState(230)
+  const messagesEndRef   = useRef<HTMLDivElement>(null)
   const spokenInitialRef  = useRef(false)
   const hasSpokeRef        = useRef(false)
   const autoListenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -221,6 +243,13 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
   useEffect(() => {
     const id = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const update = () => setOrbSize(window.innerWidth < 640 ? 170 : 230)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
   }, [])
 
   useEffect(() => {
@@ -386,11 +415,12 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
     : 'جاهز'
 
   return (
-    <div dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
+    <div className="interview-root" dir="rtl" style={{ display: 'flex', height: '100vh', background: 'var(--background)', color: 'var(--foreground)', overflow: 'hidden' }}>
+      <style>{INTERVIEW_CSS}</style>
 
       {/* Timer */}
-      <div style={{ position: 'absolute', bottom: 100, right: 24, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)' }}>
+      <div className="interview-timer-wrap" style={{ position: 'absolute', bottom: 100, right: 24, zIndex: 10 }}>
+        <div className="interview-timer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>الوقت المتبقي</span>
           <span style={{ fontSize: 16, fontFamily: 'PingAR', fontWeight: 900, color: timeLeft < 300 ? 'var(--error, #ef4444)' : 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
@@ -400,7 +430,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       </div>
 
       {/* Stages sidebar */}
-      <div style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
+      <div className="interview-stages" style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 18px', minWidth: 190 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)' }}>مراحل المقابلة</span>
@@ -428,10 +458,10 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       </div>
 
       {/* Main center */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="interview-main" style={{ flex: 1, minHeight: 0, minWidth: 0, overflowY: 'auto', paddingBottom: 96, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
         {/* Top bar */}
-        <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', zIndex: 10 }}>
+        <div className="interview-header" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', zIndex: 10 }}>
           <button
             onClick={() => { stopSpeaking(); onEnd() }}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'PingAR', fontWeight: 300 }}
@@ -516,7 +546,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
             isSpeaking={isSpeaking}
             isThinking={isLoading}
             onClick={handleMic}
-            size={230}
+            size={orbSize}
           />
         </div>
 
@@ -590,7 +620,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         )}
 
         {/* Input bar */}
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px', background: 'var(--card)', borderTop: '1px solid var(--border)', zIndex: 20 }}>
+        <div className="interview-input" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px', background: 'var(--card)', borderTop: '1px solid var(--border)', zIndex: 20 }}>
           <div style={{ maxWidth: 680, margin: '0 auto', display: 'flex', gap: 10 }}>
             <input
               value={input}
@@ -645,6 +675,7 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
   const [selectedCareerIdx, setSelectedCareerIdx] = useState(0)
   return (
     <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', overflowY: 'auto', padding: '24px 16px 60px' }}>
+      <style>{INTERVIEW_CSS}</style>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontFamily: 'PingAR', fontWeight: 900, fontSize: 24, color: 'var(--foreground)' }}>تقرير مسارك المهني</div>
@@ -688,7 +719,7 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="interview-actions" style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => {
               try {

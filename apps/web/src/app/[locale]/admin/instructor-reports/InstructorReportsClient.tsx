@@ -435,6 +435,12 @@ export default function InstructorReportsClient({ country }: { country: string }
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', direction: isAr ? 'rtl' : 'ltr' }}>
+      <style>{`
+        @media (max-width: 640px) {
+          .reports-table-wrap table { min-width: 500px !important; font-size: 12px !important; }
+          .reports-filter > div { min-width: 140px; }
+        }
+      `}</style>
       <div
         style={{
           display: 'flex',
@@ -481,6 +487,7 @@ export default function InstructorReportsClient({ country }: { country: string }
       </div>
 
       <div
+        className="reports-filter"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -514,7 +521,7 @@ export default function InstructorReportsClient({ country }: { country: string }
           <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} style={inputStyle} />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
           <button
             onClick={loadReport}
             disabled={loading}
@@ -586,6 +593,7 @@ export default function InstructorReportsClient({ country }: { country: string }
       {loaded && report && (
         <>
           <div
+            className="reports-stats"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -615,7 +623,7 @@ export default function InstructorReportsClient({ country }: { country: string }
             <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
               {isAr ? 'قسم المحاضرين' : 'Instructors'}
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
               <thead>
                 <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
                   <th style={thStyle}>{isAr ? 'اسم المحاضر' : 'Instructor'}</th>
@@ -739,7 +747,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                               <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>
                                 {isAr ? 'تفصيل الكورسات' : 'Course breakdown'}
                               </div>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                              <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                 <thead>
                                   <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                     <th style={subThStyle}>{isAr ? 'اسم الكورس' : 'Course'}</th>
@@ -762,7 +770,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                     </tr>
                                   ))}
                                 </tbody>
-                              </table>
+                              </table></div>
 
                               <div style={{ fontSize: 13, fontWeight: 500, margin: '16px 0 10px' }}>
                                 {isAr ? 'تفصيل الدروس' : 'Lessons'}
@@ -772,7 +780,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                   course.lessons && course.lessons.length>0 && (
                                     <div key={course.courseId} style={{ marginBottom: 16 }}>
                                       <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 6 }}>{course.courseName || course.courseTitle}</div>
-                                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                      <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                                         <thead>
                                           <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                             <th style={subThStyle}>{isAr ? 'عنوان الدرس' : 'Lesson'}</th>
@@ -791,7 +799,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                             </tr>
                                           ))}
                                         </tbody>
-                                      </table>
+                                      </table></div>
                                     </div>
                                   )
                                 ))
@@ -804,7 +812,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                   <div style={{ fontSize: 13, fontWeight: 500, margin: '16px 0 10px' }}>
                                     {isAr ? 'سجل المحاضرات' : 'Lecture Log'}
                                   </div>
-                                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                                  <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                                     <thead>
                                       <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                         <th style={subThStyle}>{isAr ? 'العنوان' : 'Title'}</th>
@@ -825,7 +833,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                         </tr>
                                       ))}
                                     </tbody>
-                                  </table>
+                                  </table></div>
                                 </>
                               )}
                               {loadingLectures === instructor.instructorId && (
@@ -841,7 +849,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                   )
                 })}
               </tbody>
-            </table>
+            </table></div>
           </div>
 
           {report.consultants && report.consultants.length > 0 && (
@@ -857,7 +865,7 @@ export default function InstructorReportsClient({ country }: { country: string }
               <div style={{ padding: '12px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', fontWeight: 500 }}>
                 {isAr ? 'قسم الاستشاريين' : 'Consultants'}
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+              <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
                   <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
                     <th style={thStyle}>{isAr ? 'اسم الاستشاري' : 'Consultant'}</th>
@@ -968,7 +976,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                           <tr>
                             <td colSpan={6} style={{ padding: 0, background: 'var(--primary-subtle)' }}>
                               <div style={{ padding: '14px 18px' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                                <div className="reports-table-wrap" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}><table style={{ minWidth: 600, width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                                   <thead>
                                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
                                       <th style={subThStyle}>{isAr ? 'عنوان الجلسة' : 'Session'}</th>
@@ -1002,7 +1010,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                                       </tr>
                                     ))}
                                   </tbody>
-                                </table>
+                                </table></div>
                               </div>
                             </td>
                           </tr>
@@ -1011,7 +1019,7 @@ export default function InstructorReportsClient({ country }: { country: string }
                     )
                   })}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           )}
         </>
