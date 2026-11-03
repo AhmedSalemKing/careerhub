@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { productionCb } from './circuit-breaker'
 import { classify429Body } from './gemini-utils'
 import { verifyRequest } from '../_auth'
+import { RASHEED_SYSTEM_PROMPT } from './rasheed-prompt'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
     // userName is derived server-side from the verified JWT — never trusted from client body.
     // memoryContext may still come from the client: an authenticated user passing their own
     // memory context only affects their own session; prompt injection risk is low and bounded.
-    const { messages, memoryContext } = await req.json() as { messages: unknown; memoryContext?: string }
+    const { messages, memoryContext, mode } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
     const safeMemory = typeof memoryContext === 'string' && memoryContext.trim().length > 0
       ? memoryContext.trim().slice(0, 500)
       : null
-    let systemPrompt = DEVEWAY_SYSTEM_PROMPT
+    let systemPrompt = mode === 'rasheed' ? RASHEED_SYSTEM_PROMPT : DEVEWAY_SYSTEM_PROMPT
     if (safeUserName) systemPrompt += `\n\nاسم المستخدم: ${safeUserName}. خاطبه باسمه بشكل طبيعي في المحادثة.`
     // Memory is sandboxed in a labeled data block — the block markers prevent client-
     // supplied text from being mistaken for system instructions by the model.

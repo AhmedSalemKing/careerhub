@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
-import DOMPurify from 'isomorphic-dompurify'
 import { get, post, del } from '../../../../lib/api'
 import { Plus } from 'lucide-react'
 import { notify } from '../../../../lib/notify'
@@ -30,6 +29,33 @@ interface Conversation {
 // MARKDOWN RENDERER
 // ════════════════════════════════════
 
+/** **bold**, `code` and *italic* as React nodes; no HTML string is ever injected. */
+function renderInline(text: string, keyBase: string): React.ReactNode[] {
+  const out: React.ReactNode[] = []
+  const re = /\*\*(.+?)\*\*|`([^`]+)`|\*(.+?)\*/g
+  let last = 0
+  let n = 0
+  let match: RegExpExecArray | null
+  while ((match = re.exec(text))) {
+    if (match.index > last) out.push(text.slice(last, match.index))
+    const key = `${keyBase}-${n++}`
+    if (match[1] !== undefined) {
+      out.push(<strong key={key} style={{ color: 'var(--foreground)', fontWeight: 500 }}>{match[1]}</strong>)
+    } else if (match[2] !== undefined) {
+      out.push(
+        <code key={key} style={{ background: 'var(--code-bg)', color: 'var(--primary)', padding: '2px 6px', borderRadius: 6, fontSize: 13, fontFamily: 'monospace' }}>
+          {match[2]}
+        </code>,
+      )
+    } else {
+      out.push(<em key={key}>{match[3]}</em>)
+    }
+    last = match.index + match[0].length
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return out
+}
+
 function MessageContent({ content }: { content: string }) {
   const lines = content.split('\n')
   const elements: JSX.Element[] = []
@@ -38,38 +64,33 @@ function MessageContent({ content }: { content: string }) {
     if (line.startsWith('### ')) {
       elements.push(
         <h3 key={i} className="font-medium text-base mt-3 mb-1" style={{ color: 'var(--primary)' }}>
-          {line.slice(4)}
-        </h3>
+          {renderInline(line.slice(4), `h3-${i}`)}
+        </h3>,
       )
     } else if (line.startsWith('## ')) {
       elements.push(
         <h2 key={i} className="font-medium text-lg mt-4 mb-2" style={{ color: 'var(--foreground)' }}>
-          {line.slice(3)}
-        </h2>
+          {renderInline(line.slice(3), `h2-${i}`)}
+        </h2>,
       )
     } else if (line.startsWith('- ') || line.startsWith('* ')) {
       elements.push(
-        <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
+        <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1" style={{ listStyle: 'none' }}>
           <span className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--primary)' }} />
-          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(line.slice(2).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }} />
-        </li>
+          <span>{renderInline(line.slice(2), `li-${i}`)}</span>
+        </li>,
       )
     } else if (/^\d+\. /.test(line)) {
       const num = line.match(/^(\d+)\./)?.[1]
       elements.push(
-        <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1">
+        <li key={i} className="flex items-start gap-2 text-sm leading-relaxed mr-2 mb-1" style={{ listStyle: 'none' }}>
           <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-medium" style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}>{num}</span>
-          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')) }} />
-        </li>
+          <span>{renderInline(line.replace(/^\d+\. /, ''), `ol-${i}`)}</span>
+        </li>,
       )
     } else if (line.trim()) {
       elements.push(
-        <p key={i} className="text-sm leading-relaxed mb-1" dangerouslySetInnerHTML={{
-          __html: DOMPurify.sanitize(line
-            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--foreground);font-weight:500">$1</strong>')
-            .replace(/`(.*?)`/g, '<code style="background:var(--code-bg);color:var(--primary);padding:2px 6px;border-radius:6px;font-size:13px;font-family:monospace">$1</code>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>'))
-        }} />
+        <p key={i} className="text-sm leading-relaxed mb-1">{renderInline(line, `p-${i}`)}</p>,
       )
     } else if (i > 0) {
       elements.push(<div key={i} className="h-2" />)
@@ -78,8 +99,6 @@ function MessageContent({ content }: { content: string }) {
 
   return <div className="space-y-0.5">{elements}</div>
 }
-
-
 
 const SUGGESTED_PROMPTS_AR = [
   'ما هي الكورسات المتاحة في تطوير الويب؟',
@@ -186,18 +205,35 @@ export default function AiChatPage() {
     }
   }, [])
 
+  // The saved-conversation backend can be unavailable; chat then continues in a
+  // local (unsaved) conversation instead of failing outright.
+  const startConversation = useCallback(async (): Promise<{ id: string }> => {
+    try {
+      const res = await post('/ai/conversations', { context: 'dashboard' })
+      const created = (res?.data as any)?.data
+      if (created?.id) return created
+      throw new Error('No conversation id returned')
+    } catch (error) {
+      console.warn('[AI Chat] Backend conversation unavailable, using local mode', error)
+      return { id: `local-${Date.now()}` }
+    }
+  }, [])
+
+  const generateLocally = useCallback(async (history: { role: string; content: string }[]): Promise<string> => {
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode: 'rasheed', messages: history.map((m) => ({ role: m.role, content: m.content })) }),
+    })
+    const data = (await res.json().catch(() => ({}))) as { content?: string }
+    if (!data.content) throw new Error(`HTTP ${res.status}`)
+    return data.content
+  }, [])
+
   const createConv = useMutation({
-    mutationFn: async () => {
-      try {
-        const res = await post('/ai/conversations', { context: 'dashboard' })
-        return (res?.data as any)?.data
-      } catch (error) {
-        console.error('Error creating conversation:', error)
-        throw error
-      }
-    },
+    mutationFn: startConversation,
     onSuccess: (conv) => {
-      qc.invalidateQueries({ queryKey: ['ai-conversations'] })
+      if (!String(conv.id).startsWith('local-')) qc.invalidateQueries({ queryKey: ['ai-conversations'] })
       setActiveConvId(conv.id)
       setMessages([])
       setSidebarOpen(false)
@@ -239,22 +275,9 @@ export default function AiChatPage() {
       
       // Create conversation if none exists
       if (!convId) {
-        try {
-          const res = await post('/ai/conversations', { context: 'dashboard' })
-          convId = (res?.data as any)?.data?.id
-          
-          if (!convId) {
-            console.error('Failed to create conversation: No ID returned')
-            return
-          }
-          
-          setActiveConvId(convId)
-          qc.invalidateQueries({ queryKey: ['ai-conversations'] })
-        } catch (error) {
-          console.error('Error creating conversation:', error)
-          notify.error('فشل بدء المحادثة')
-          return
-        }
+        convId = (await startConversation()).id
+        setActiveConvId(convId)
+        if (!convId.startsWith('local-')) qc.invalidateQueries({ queryKey: ['ai-conversations'] })
       }
 
       // Add user message immediately
@@ -275,7 +298,22 @@ export default function AiChatPage() {
         textareaRef.current.style.height = 'auto'
       }
 
+      const history = [...messages, userMsg]
+      const finishWithLocalReply = async () => {
+        const reply = await generateLocally(history)
+        setMessages(prev => [...prev, {
+          id: `ai-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          role: 'assistant' as const,
+          content: reply,
+          createdAt: new Date().toISOString(),
+        }])
+      }
+
       try {
+        if (convId.startsWith('local-')) {
+          await finishWithLocalReply()
+          return
+        }
         const token = localStorage.getItem('deveway_token') || 
                      document.cookie.match(/deveway_token=([^;]+)/)?.[1] || ''
 
@@ -339,6 +377,7 @@ export default function AiChatPage() {
           }
         }
 
+        if (!fullContent) throw new Error('Empty AI response')
         // Add final AI message
         if (fullContent) {
           const aiMsg: Message = {
@@ -352,14 +391,18 @@ export default function AiChatPage() {
         }
       } catch (error) {
         console.error('Send message error:', error)
-        notify.error('حدث خطأ في إرسال رسالتك')
+        try {
+          await finishWithLocalReply()
+        } catch {
+          notify.error('حدث خطأ في إرسال رسالتك')
+        }
       } finally {
         setIsStreaming(false)
         setStreamingContent('')
         qc.invalidateQueries({ queryKey: ['ai-conversations'] })
       }
     },
-    [activeConvId, isStreaming, qc]
+    [activeConvId, isStreaming, qc, messages, startConversation, generateLocally]
   )
 
   // ── Auto-scroll inside messages container only ──
@@ -691,11 +734,11 @@ export default function AiChatPage() {
         </div>
 
         {/* Input */}
-        <div style={{ padding: '12px 20px 16px', borderTop: '1px solid var(--border)', background: 'var(--card)', flexShrink: 0 }}>
+        <div style={{ padding: '12px 20px 16px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
           <div
             style={{
-              display: 'flex', gap: 10, alignItems: 'flex-end', background: 'var(--background)',
-              border: '1px solid var(--border)', borderRadius: 14, padding: '8px 12px',
+              display: 'flex', alignItems: 'flex-end', gap: 8, padding: '10px 14px',
+              borderRadius: 16, border: '1.5px solid var(--border)', background: 'var(--card)',
             }}
           >
             <textarea
@@ -710,8 +753,8 @@ export default function AiChatPage() {
               rows={1}
               style={{
                 flex: 1, border: 'none', background: 'transparent', resize: 'none', outline: 'none',
-                fontFamily: F, fontWeight: 300, fontSize: 14, color: 'var(--foreground)',
-                lineHeight: 1.6, minHeight: 24, maxHeight: 120, overflowY: 'auto',
+                overflow: 'hidden', fontFamily: F, fontWeight: 300, fontSize: 14,
+                color: 'var(--foreground)', lineHeight: 1.65, minHeight: 22, maxHeight: 120, paddingTop: 1,
               }}
             />
             <button
@@ -720,10 +763,10 @@ export default function AiChatPage() {
               aria-label={isAr ? 'إرسال' : 'Send'}
               style={{
                 width: 36, height: 36, borderRadius: 10, border: 'none', flexShrink: 0,
-                background: hasInput && !isStreaming ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)',
+                background: hasInput && !isStreaming ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 8%, transparent)',
                 color: hasInput && !isStreaming ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
                 cursor: hasInput && !isStreaming ? 'pointer' : 'not-allowed',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : 'none' }}>
@@ -731,9 +774,9 @@ export default function AiChatPage() {
               </svg>
             </button>
           </div>
-          <div style={{ marginTop: 8, textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>
-            {isAr ? 'رشيد مخصص لمساعدتك في رحلتك التعليمية على DeveWay' : 'Rasheed is here to support your learning journey on DeveWay'}
-          </div>
+          <p style={{ margin: '6px 0 0', textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>
+            {isAr ? 'Enter للإرسال · Shift+Enter لسطر جديد' : 'Enter to send · Shift+Enter for a new line'}
+          </p>
         </div>
       </main>
 
