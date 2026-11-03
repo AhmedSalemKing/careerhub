@@ -1,4 +1,4 @@
-import { webLoginUrl } from './constants'
+import { MAIN_URL } from './constants'
 
 export const TOKEN_KEY = 'deveway_token'
 export const REFRESH_KEY = 'deveway_refresh'
@@ -144,6 +144,8 @@ export function logout() {
   if (typeof window !== 'undefined') {
     const seg = window.location.pathname.split('/')[1]
     const locale = seg === 'en' ? 'en' : 'ar'
-    window.location.href = webLoginUrl(locale)
+    // Go through web's /logout so web's own copy of the session is cleared too;
+    // it then lands on the web login page.
+    window.location.href = `${MAIN_URL}/${locale}/logout`
   }
 }

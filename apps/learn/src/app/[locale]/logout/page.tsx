@@ -1,14 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
-import { webLoginUrl } from '../../../lib/constants'
+import { MAIN_URL } from '../../../lib/constants'
 import { clearAuthCookies } from '../../../lib/auth'
 
 const AUTH_KEYS = [
   'deveway_token', 'deveway_refresh', 'deveway_user',
   'careerhub_token', 'careerhub_refresh', 'careerhub_user',
   'token', 'accessToken', 'access_token', 'auth_token',
-  'refreshToken', 'userName', 'user_name', 'user_avatar',
+  'refreshToken', 'refresh_token', 'user', 'userName', 'user_name', 'user_avatar',
+  'auth-storage', 'deveway-auth',
 ]
 
 const ALLOWED_RETURN_HOSTS = [
@@ -25,7 +26,8 @@ const ALLOWED_RETURN_HOSTS = [
 function isAllowedReturn(url: string): boolean {
   try {
     const u = new URL(url)
-    return ALLOWED_RETURN_HOSTS.includes(u.hostname)
+    // Exact host or a subdomain of an allowed host (e.g. learn.deveways.com)
+    return ALLOWED_RETURN_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith(`.${h}`))
   } catch {
     return false
   }
@@ -56,14 +58,18 @@ export default function LogoutPage() {
       caches.keys().then(keys => keys.forEach(k => caches.delete(k)))
     } } catch {}
 
-    // 4) Determine destination — from ?return= if whitelisted, else web login
+    // 4) Determine destination.
+    //  - ?return= (whitelisted): the logout started on web, which has already
+    //    cleared itself, so go straight back to where it asked.
+    //  - otherwise: the logout started on learn, so go through web's /logout to
+    //    clear web's copy of the session too (web then lands on its login page).
     const params = new URLSearchParams(window.location.search)
     const returnUrl = params.get('return')
-    const locale = window.location.pathname.split('/')[1] || 'ar'
+    const locale = window.location.pathname.split('/')[1] === 'en' ? 'en' : 'ar'
 
     const dest = returnUrl && isAllowedReturn(returnUrl)
       ? returnUrl
-      : webLoginUrl(locale)
+      : `${MAIN_URL}/${locale}/logout`
 
     // 5) Navigate away immediately. Every clear above is synchronous, so there is
     // nothing to wait for. Doing this synchronously (instead of a 250ms timer

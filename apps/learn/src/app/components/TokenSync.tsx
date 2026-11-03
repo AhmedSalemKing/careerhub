@@ -62,5 +62,31 @@ export function TokenSync() {
     }
   }, [searchParams, pathname, setToken, hydrate])
 
+  // Keep this tab in step with logouts that happen elsewhere.
+  // Note: web and learn are different origins, so the `storage` event only fires
+  // for other learn tabs; web is signed out through the /logout redirect chain.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'deveway_token' || e.newValue || !e.oldValue) return
+      // Token was cleared in another learn tab: sign this tab out too.
+      if (window.location.pathname.includes('/logout')) return
+      const locale = window.location.pathname.split('/')[1] === 'en' ? 'en' : 'ar'
+      window.location.href = `/${locale}/logout`
+    }
+
+    // Returning to the tab: re-read storage so a logout in the meantime shows
+    // as logged out (hydrate() is a no-op when nothing changed).
+    const onFocus = () => hydrate()
+
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [hydrate])
+
   return null
 }
