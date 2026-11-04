@@ -34,6 +34,21 @@ function formatSAR(sarAmount: number): string {
   return `${sarAmount.toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`
 }
 
+// Display string for an amount stored in `stored` currency, shown to the viewer's market.
+//   EGP + Egypt -> as is | EGP + other -> SAR | SAR + Egypt -> EGP | SAR + other -> as is
+//   any other currency (USD, ...) -> unchanged, labelled with its own code
+function formatForMarket(amount: number, stored: string, rate: number, isEgypt: boolean): string {
+  if (stored === 'EGP') {
+    return isEgypt
+      ? `${Math.round(amount).toLocaleString('ar-EG')} ج.م`
+      : formatSAR(Math.round(amount / rate))
+  }
+  if (stored === 'SAR') {
+    return isEgypt ? formatEGP(amount, rate) : formatSAR(amount)
+  }
+  return `${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${stored}`
+}
+
 function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0): unknown {
   if (depth > 15 || obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
@@ -46,6 +61,10 @@ function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0)
 
   const record = obj as Record<string, unknown>
   const result: Record<string, unknown> = {}
+  // A record carrying its own currency (course, payment, ...) describes its amounts in it;
+  // records without one keep the historical assumption that amounts are SAR.
+  const storedCurrency =
+    typeof record.currency === 'string' && record.currency ? record.currency.toUpperCase() : 'SAR'
 
   for (const key of Object.keys(record)) {
     const val = record[key]
@@ -58,7 +77,7 @@ function transformValue(obj: unknown, rate: number, isEgypt: boolean, depth = 0)
     result[key] = val
 
     if (typeof val === 'number' && val >= 0 && isMonetaryField(key) && !result[`${key}Display`]) {
-      result[`${key}Display`] = isEgypt ? formatEGP(val, rate) : formatSAR(val)
+      result[`${key}Display`] = formatForMarket(val, storedCurrency, rate, isEgypt)
     }
   }
 
