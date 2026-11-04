@@ -507,6 +507,16 @@ function StudentOverview() {
     (isAr ? (c?.titleAr || c?.title) : (c?.titleEn || c?.title)) || (isAr ? 'كورس' : 'Course')
   const categoryOf = (c: any): string =>
     c?.careerPath?.title || c?.category || (isAr ? 'كورس' : 'Course')
+  const levelLabel = (lvl?: string | null): string => {
+    if (!lvl) return ''
+    const map: Record<string, [string, string]> = {
+      BEGINNER: ['مبتدئ', 'Beginner'],
+      INTERMEDIATE: ['متوسط', 'Intermediate'],
+      ADVANCED: ['متقدم', 'Advanced'],
+    }
+    const hit = map[String(lvl).toUpperCase()]
+    return hit ? (isAr ? hit[0] : hit[1]) : String(lvl)
+  }
   const lessonsLabel = (e: any): string =>
     `${e.completedLessons ?? 0}/${e.totalLessons ?? 0} ${isAr ? 'درس' : 'lessons'}`
 
@@ -525,15 +535,8 @@ function StudentOverview() {
   const nextEnrollment: any = upNext[0]
   const sideCourse: any = recommended || (nextEnrollment ? courseOf(nextEnrollment) : null)
   const sideHref = sideCourse?.id ? learnCourseLink(sideCourse.id, locale) : learnCoursesLink(locale)
-  const sideMeta = sideCourse?.duration
-    ? `${sideCourse.duration}${isAr ? ' ساعة' : 'h'}`
-    : (sideCourse?.level || '')
-
-  const tones = [
-    { bg: 'var(--primary)', fg: 'var(--primary-foreground)', border: 'none', soft: mix('var(--primary-foreground)', 20), track: mix('var(--primary-foreground)', 30), fill: 'var(--primary-foreground)' },
-    { bg: 'var(--primary-hover)', fg: 'var(--primary-foreground)', border: 'none', soft: mix('var(--primary-foreground)', 20), track: mix('var(--primary-foreground)', 30), fill: 'var(--primary-foreground)' },
-    { bg: 'var(--card)', fg: 'var(--foreground)', border: '1px solid var(--border)', soft: mix('var(--foreground)', 8), track: mix('var(--foreground)', 10), fill: 'var(--primary)' },
-  ]
+  const sideThumb = getMediaUrl(sideCourse?.thumbnail ?? sideCourse?.thumbnailUrl)
+  const sideLevel = levelLabel(sideCourse?.level)
 
   const tabs: { key: 'all' | 'active' | 'done'; label: string }[] = [
     { key: 'all', label: isAr ? 'الكل' : 'All' },
@@ -551,7 +554,7 @@ function StudentOverview() {
   }
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px', width: '100%' }}>
       <style>{`
         .sd-layout { display: flex; gap: 24px; align-items: flex-start; }
         .sd-side { width: 280px; flex-shrink: 0; }
@@ -622,14 +625,12 @@ function StudentOverview() {
 
             {visible.length > 0 ? (
               <div className="sd-cards">
-                {visible.slice(0, 8).map((enrollment: any, index: number) => {
+                {visible.slice(0, 8).map((enrollment: any) => {
                   const course = courseOf(enrollment)
                   const progress = Math.min(100, Math.round(progressOf(enrollment)))
-                  const tone = tones[index % 3]
                   const courseId = course?.id || enrollment.courseId
-                  const meta = course?.duration
-                    ? `${course.duration}${isAr ? ' ساعة' : 'h'}`
-                    : (course?.level || '')
+                  const thumb = getMediaUrl(course?.thumbnail)
+                  const level = levelLabel(course?.level)
                   return (
                     <a
                       key={enrollment.id || courseId}
@@ -637,48 +638,61 @@ function StudentOverview() {
                       target="_blank" rel="noopener noreferrer"
                       className="sd-card"
                       style={{
-                        borderRadius: 16, padding: 20, background: tone.bg, color: tone.fg, border: tone.border,
-                        display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', minHeight: 200,
+                        minWidth: 220, maxWidth: 240, borderRadius: 14, overflow: 'hidden',
+                        border: '1px solid var(--border)', background: 'var(--card)',
+                        textDecoration: 'none', display: 'flex', flexDirection: 'column',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                        <span style={{
-                          background: tone.soft, borderRadius: 6, padding: '3px 8px',
-                          fontSize: 11, fontWeight: 500, maxWidth: '80%',
-                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }}>
-                          {categoryOf(course)}
-                        </span>
-                        <Bookmark size={16} style={{ opacity: 0.7, flexShrink: 0 }} />
-                      </div>
-
                       <div style={{
-                        fontWeight: 900, fontSize: 16, lineHeight: 1.3, flex: 1,
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        width: '100%', height: 130, position: 'relative', flexShrink: 0, overflow: 'hidden',
+                        background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
-                        {titleOf(course)}
+                        {thumb
+                          ? <img src={thumb} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <BookOpen size={28} color="var(--muted-foreground)" />}
+                        {level && (
+                          <span style={{
+                            position: 'absolute', top: 10, insetInlineEnd: 10,
+                            background: 'var(--overlay-strong)', color: 'var(--primary-foreground)',
+                            borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 500,
+                            backdropFilter: 'blur(4px)',
+                          }}>
+                            {level}
+                          </span>
+                        )}
                       </div>
 
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 300, marginBottom: 6, opacity: 0.8 }}>
-                          <span>{isAr ? 'تقدمك' : 'Progress'}</span>
-                          <span>{lessonsLabel(enrollment)}</span>
+                      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                        <div style={{
+                          fontWeight: 500, fontSize: 13, color: 'var(--foreground)', lineHeight: 1.4,
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        }}>
+                          {titleOf(course)}
                         </div>
-                        <div style={{ height: 4, background: tone.track, borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: tone.fill, borderRadius: 2, width: `${progress}%` }} />
-                        </div>
-                      </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                        <div style={{ fontSize: 11, fontWeight: 300, opacity: 0.7 }}>{meta}</div>
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4,
-                          background: 'var(--success)', color: 'var(--primary-foreground)',
-                          borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 500,
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 300, color: 'var(--muted)', marginBottom: 5 }}>
+                            <span>{isAr ? 'تقدمك' : 'Progress'}</span>
+                            <span>{lessonsLabel(enrollment)}</span>
+                          </div>
+                          <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%', borderRadius: 2, width: `${progress}%`,
+                              background: progress >= 100 ? 'var(--success)' : 'var(--primary)',
+                              transition: 'width 0.3s ease',
+                            }} />
+                          </div>
+                        </div>
+
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+                          padding: '5px 10px', borderRadius: 7, marginTop: 'auto',
+                          background: 'var(--primary)', color: 'var(--primary-foreground)',
+                          fontSize: 12, fontWeight: 500,
                         }}>
                           {progress >= 100 ? (isAr ? 'مراجعة' : 'Review') : (isAr ? 'متابعة' : 'Continue')}
                           <ChevronLeft size={12} style={arrow} />
-                        </span>
+                        </div>
                       </div>
                     </a>
                   )
@@ -785,23 +799,26 @@ function StudentOverview() {
             {recommended ? (isAr ? 'مقترح لك' : 'Recommended for you') : (isAr ? 'تابع من حيث توقفت' : 'Pick up where you left off')}
           </div>
 
-          <a href={sideHref} target="_blank" rel="noopener noreferrer" style={{
-            display: 'block', textDecoration: 'none',
-            background: 'var(--primary)', color: 'var(--primary-foreground)',
-            borderRadius: 12, padding: 16,
-          }}>
-            <span style={{
-              display: 'inline-block', background: mix('var(--primary-foreground)', 20),
-              borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500,
+          <a href={sideHref} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', borderRadius: 12, overflow: 'hidden' }}>
+            <div style={{
+              height: 120, position: 'relative', overflow: 'hidden', background: 'var(--primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {categoryOf(sideCourse)}
-            </span>
-            <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10, lineHeight: 1.3 }}>
-              {sideCourse ? titleOf(sideCourse) : (isAr ? 'ابدأ كورسك القادم' : 'Start your next course')}
+              {sideThumb
+                ? <img src={sideThumb} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <BookOpen size={32} color="var(--primary-foreground)" />}
             </div>
-            {sideMeta && (
-              <div style={{ fontWeight: 300, fontSize: 12, opacity: 0.8, marginTop: 6 }}>{sideMeta}</div>
-            )}
+            <div style={{
+              padding: '10px 14px 14px', background: 'var(--card)',
+              border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px',
+            }}>
+              <div style={{ fontWeight: 900, fontSize: 14, color: 'var(--foreground)', lineHeight: 1.3 }}>
+                {sideCourse ? titleOf(sideCourse) : (isAr ? 'ابدأ كورسك القادم' : 'Start your next course')}
+              </div>
+              {sideLevel && (
+                <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{sideLevel}</div>
+              )}
+            </div>
           </a>
 
           {[
