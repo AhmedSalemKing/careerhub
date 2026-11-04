@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
 import {
-  Play, Users, BookOpen, Star, Clock, ArrowRight,
+  Play, Users, BookOpen, Clock, ArrowRight,
   Award, Globe, Code, Palette,
   BarChart3, Briefcase, Sparkles
 } from 'lucide-react'
@@ -62,7 +62,6 @@ export default function HomePage() {
     title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
     duration: c.duration || 0,
     students: c._count?.enrollments || 0,
-    rating: 4.7 + i * 0.1,
     price: c.price ?? 0,
     priceDisplay: (c.priceDisplay ?? null) as string | null,
     badge: c.isMostPopular ? (locale === 'ar' ? 'الأكثر طلباً' : 'Popular') : i === 1 ? (locale === 'ar' ? 'جديد' : 'New') : null,
@@ -276,10 +275,6 @@ export default function HomePage() {
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       <span>{course.students.toLocaleString()}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4" style={{ color: '#F5A623', fill: '#F5A623' }} />
-                      <span className="font-medium">{course.rating}</span>
                     </div>
                   </div>
 

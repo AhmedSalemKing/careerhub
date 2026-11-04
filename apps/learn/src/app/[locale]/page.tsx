@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import {
-  Play, Users, BookOpen, Star, Clock, ArrowRight,
+  Play, Users, BookOpen, Clock, ArrowRight,
   Award, Globe, Code, Palette,
   BarChart3, Briefcase, Sparkles, Laptop, CheckCircle2
 } from 'lucide-react'
@@ -196,7 +196,6 @@ export default function HomePage() {
     title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
     duration: c.duration || 0,
     students: c._count?.enrollments || 0,
-    rating: c.rating || 4.5,
     price: c.price ?? 0,
     priceDisplay: c.priceDisplay ?? null,
     isMostPopular: c.isMostPopular === true,
@@ -532,7 +531,6 @@ export default function HomePage() {
                   <h3 className="text-lg font-semibold mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
                   <div className="flex items-center gap-4 text-sm mb-4" style={{ color: 'var(--muted)' }}>
                     <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{course.students.toLocaleString()}</span></div>
-                    <div className="flex items-center gap-1"><Star className="h-4 w-4" style={{ color: '#F5A623', fill: '#F5A623' }} /><span className="font-medium">{course.rating}</span></div>
                   </div>
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course)}</div>
