@@ -72,6 +72,14 @@ export class CreateCourseAdminDto {
   instructorId?: string;
 
   @IsOptional()
+  @IsString()
+  providerName?: string;
+
+  @IsOptional()
+  @IsString()
+  providerLogo?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CourseSectionDto)
