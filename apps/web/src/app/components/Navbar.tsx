@@ -14,7 +14,7 @@ import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shi
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
-import { learnUrlWithToken } from '../../lib/learn-link'
+import { learnUrlWithToken, installLearnLinkTokenizer } from '../../lib/learn-link'
 
 
 /* ════════════════════════════════════════
@@ -314,6 +314,10 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { user, token, hydrate } = useAuthStore()
+
+  // Every link to the learn app carries the current token, even ones rendered
+  // before auth state was available (SSR / module-level hrefs).
+  useEffect(() => installLearnLinkTokenizer(), [])
 
   useEffect(() => {
     setMounted(true)

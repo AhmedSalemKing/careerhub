@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useLocale } from 'next-intl'
 import { getToken } from '@/lib/auth'
+import { withLearnToken } from '@/lib/learn-link'
 
 // Plain React + fetch only. The conversation lives in component state and every
 // reply comes from the Gemini-backed /api/ai/chat route (Rasheed persona).
@@ -122,7 +123,7 @@ function suggestionHref(path: string | undefined): string {
 }
 
 /** Applied to every href before it is rendered. */
-const fixLink = (url: string): string => fixContent(url)
+const fixLink = (url: string): string => withLearnToken(fixContent(url))
 
 /** Sent with the first message so the model always uses the right catalogue URL. */
 const COURSE_LINK_INSTRUCTION =

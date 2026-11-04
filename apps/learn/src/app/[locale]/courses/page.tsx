@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
+import { useAuthStore } from '../../../stores/authStore'
 import { formatCoursePrice } from '../../../lib/market'
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
@@ -129,11 +130,15 @@ export default function CoursesPage() {
   const [error, setError] = useState<string | null>(null)
   const [fetchKey, setFetchKey] = useState(0)
 
+  // TokenSync (root layout, inside Suspense) may store a ?token= from the web app
+  // after this page has mounted, so follow the auth store instead of reading
+  // storage once.
+  const storeToken = useAuthStore((st) => st.token)
   useEffect(() => {
-    const t = localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token') ||
+    const t = storeToken || localStorage.getItem('deveway_token') || localStorage.getItem('careerhub_token') ||
       localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     setToken(t)
-  }, [])
+  }, [storeToken])
   const [selectedMainCat, setSelectedMainCat] = useState<string | null>(null)
 
   // Main fetch — re-runs when category or tab changes, with race-condition guard

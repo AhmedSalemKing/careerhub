@@ -16,6 +16,7 @@ import {
   formatLiveDateTimeShort,
 } from '../../../../../../lib/live'
 import { AuthGate } from '../../../../../components/AuthGate'
+import { learnUrlWithToken } from '../../../../../../lib/learn-link'
 import { useAuthStore } from '../../../../../../stores/authStore'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
@@ -1478,7 +1479,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               </div>
               <button
                 onClick={() => window.open(
-                  `https://devewayhub.vercel.app/ar/learn/${courseId}`, '_blank'
+                  learnUrlWithToken(`/ar/learn/${courseId}`), '_blank'
                 )}
                 style={{
                   background: '#1e1b4b', border: '1px solid #2d2060',
