@@ -4,11 +4,14 @@ import { useEffect, useState, useMemo } from 'react'
 import { useLocale } from 'next-intl'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
-import { BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand } from 'lucide-react'
+import {
+  BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
+  CheckCircle, Award, BookMarked, Zap, Play, Map as MapIcon, Bot, CreditCard, GraduationCap, MessageSquare,
+} from 'lucide-react'
 import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
-import { learnUrlWithToken } from '../../../lib/learn-link'
+import { learnUrlWithToken, learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -454,8 +457,8 @@ function StudentOverview() {
   if (isLoading) {
     return (
       <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'البيانات قيد التحميل...' : 'Loading your data...'}>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-32 rounded-2xl" />
           ))}
         </div>
@@ -470,7 +473,7 @@ function StudentOverview() {
           border:'1px solid var(--border)', borderRadius:'16px',
           background:'var(--surface)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
-            stroke="#ef4444" strokeWidth="2" strokeLinecap="round"
+            stroke="var(--error)" strokeWidth="2" strokeLinecap="round"
             style={{ margin:'0 auto 1rem', display:'block', opacity:0.5 }}>
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
@@ -481,7 +484,7 @@ function StudentOverview() {
           </p>
           <button onClick={() => refetch()} style={{
             padding:'10px 22px', borderRadius:'10px',
-            background:'#5120c8', color:'var(--primary-foreground)',
+            background:'var(--primary)', color:'var(--primary-foreground)',
             border:'none', fontSize:'0.875rem', fontWeight:500, cursor:'pointer',
           }}>
             {isAr ? 'إعادة المحاولة' : 'Retry'}
@@ -491,381 +494,257 @@ function StudentOverview() {
     )
   }
 
+  const firstName = isAr
+    ? (user?.profile?.firstName || 'الطالب')
+    : (user?.profile?.firstName || 'Student')
+  const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
+  const tile = (tone: string, pct = 10) => `color-mix(in srgb, ${tone} ${pct}%, transparent)`
+
+  const stats = [
+    {
+      Icon: BookOpen, tone: 'var(--primary)',
+      label: isAr ? 'كورسات مسجلة' : 'Enrolled Courses',
+      value: enrollments.length || studentStats?.enrolledCourses || 0,
+      href: `/${locale}/dashboard/my-courses`,
+    },
+    {
+      Icon: CheckCircle, tone: 'var(--success)',
+      label: isAr ? 'كورسات مكتملة' : 'Completed',
+      value: enrollments.filter((e: any) => {
+        const p = e.progress ?? e.enrollment?.progress ?? 0
+        return p >= 100
+      }).length || studentStats?.completedCourses || 0,
+      href: `/${locale}/dashboard/my-courses`,
+    },
+    {
+      Icon: Award, tone: 'var(--warning)',
+      label: isAr ? 'شهادات محققة' : 'Certificates',
+      value: certificates.length || studentStats?.certificatesEarned || 0,
+      href: `/${locale}/dashboard/certificates`,
+    },
+  ]
+
+  const quickLinks = [
+    { Icon: BookOpen, label: isAr ? 'كورساتي' : 'My Courses', href: `/${locale}/dashboard/my-courses` },
+    { Icon: Award, label: isAr ? 'شهاداتي' : 'Certificates', href: `/${locale}/dashboard/certificates` },
+    { Icon: MapIcon, label: isAr ? 'المسار المهني' : 'Career Path', href: `/${locale}/dashboard/career-path` },
+    { Icon: Bot, label: isAr ? 'المساعد الذكي' : 'AI Assistant', href: `/${locale}/dashboard/ai-chat` },
+    { Icon: Calendar, label: isAr ? 'جلساتي' : 'My Sessions', href: `/${locale}/dashboard/my-sessions` },
+    { Icon: CreditCard, label: isAr ? 'المدفوعات' : 'Payments', href: `/${locale}/dashboard/invoices` },
+    { Icon: GraduationCap, label: isAr ? 'استعرض الكورسات' : 'Browse Courses', href: learnCoursesLink(locale), external: true },
+    { Icon: MessageSquare, label: isAr ? 'احجز استشارة' : 'Book Consultation', href: `/${locale}/coaching` },
+  ]
+
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
       <style>{`
-        .student-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-        .student-two-col { display: grid; grid-template-columns: 1fr 300px; gap: 1.25rem; }
-        @media (max-width: 768px) { .student-two-col { grid-template-columns: 1fr; } .student-stats { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .student-stats { grid-template-columns: 1fr; } }
+        .sd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .sd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+        .sd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
+        .sd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .sd-course { transition: background 0.15s ease, border-color 0.15s ease; }
+        .sd-course:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+        .sd-link { transition: background 0.15s ease; }
+        .sd-link:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
+        .sd-cta { transition: background 0.15s ease; }
+        .sd-cta:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
+        @media (max-width: 900px) { .sd-main { grid-template-columns: 1fr; } }
+        @media (max-width: 560px) { .sd-stats { grid-template-columns: 1fr; } }
       `}</style>
 
-      {/* Welcome Banner */}
+      {/* Header */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(81,32,200,0.15) 0%, rgba(81,32,200,0.05) 100%)',
-        border: '1px solid rgba(81,32,200,0.2)',
-        borderRadius: '16px',
-        padding: '1.75rem 2rem',
-        marginBottom: '1.5rem',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '1rem',
-        maxWidth: '100%', minWidth: 0,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'1rem', minWidth: 0, maxWidth: '100%' }}>
-          <div style={{
-            width:'56px', height:'56px', borderRadius:'50%',
-            border:'2px solid rgba(81,32,200,0.5)',
-            overflow:'hidden', flexShrink:0,
-            background:'linear-gradient(135deg,#5120c8,#7c3aed)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-            fontSize:'1.4rem', fontWeight:500, color:'var(--primary-foreground)',
-          }}>
-            {user?.profile?.avatar
-              ? <img src={user.profile.avatar} alt=""
-                  style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-              : (user?.profile?.firstName?.[0] || 'ط')
-            }
-          </div>
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
-              {isAr ? 'مرحبا بك' : 'Welcome back,'}
-            </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:900, margin:'0 0 3px' }}>
-              {isAr
-                ? (user?.profile?.firstName || 'الطالب')
-                : (user?.profile?.firstName || 'Student')}
-            </h1>
-            <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
-              {isAr ? 'واصل رحلتك التعليمية' : 'Continue your learning journey'}
-            </p>
-          </div>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontWeight: 900, fontSize: 28, lineHeight: 1.2, color: 'var(--foreground)', margin: '0 0 6px' }}>
+            <span style={{ fontWeight: 300, fontSize: 16, color: 'var(--muted)', marginInlineEnd: 10 }}>
+              {isAr ? 'مرحباً بك' : 'Welcome back,'}
+            </span>
+            {firstName}
+          </h1>
+          <p style={{ fontWeight: 300, fontSize: 14, color: 'var(--muted)', margin: 0 }}>
+            {isAr ? 'واصل رحلتك التعليمية' : 'Continue your learning journey'}
+          </p>
         </div>
-        <a href={learnUrlWithToken(`/${locale}/courses`)} target="_blank" rel="noopener noreferrer" style={{
-          display:'inline-flex', alignItems:'center', gap:'8px',
-          padding:'11px 22px', borderRadius:'10px',
-          background:'#5120c8', color:'var(--primary-foreground)',
-          fontWeight:500, fontSize:'0.9rem', textDecoration:'none',
-          boxShadow:'0 4px 15px rgba(81,32,200,0.3)',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
+        <a
+          href={learnCoursesLink(locale)}
+          target="_blank" rel="noopener noreferrer"
+          className="sd-cta"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 10,
+            border: '1.5px solid var(--primary)', color: 'var(--primary)',
+            fontWeight: 500, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap',
+          }}
+        >
           {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
+          <ChevronLeft size={16} style={arrow} />
         </a>
       </div>
 
-      {/* Stats Grid */}
-      <div className="student-stats">
-        {[
-          {
-            labelAr:'كورسات مسجلة', labelEn:'Enrolled Courses',
-            value: enrollments.length || studentStats?.enrolledCourses || 0,
-            color:'#a78bfa', bg:'rgba(81,32,200,0.12)',
-            href: `/${locale}/dashboard/my-courses`,
-            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-            </svg>,
-          },
-          {
-            labelAr:'كورسات مكتملة', labelEn:'Completed',
-            value: enrollments.filter((e: any) => {
-              const p = e.progress ?? e.enrollment?.progress ?? 0
-              return p >= 100
-            }).length || studentStats?.completedCourses || 0,
-            color:'#34d399', bg:'rgba(52,211,153,0.12)',
-            href: `/${locale}/dashboard/my-courses`,
-            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>,
-          },
-          {
-            labelAr:'شهادات محققة', labelEn:'Certificates',
-            value: certificates.length || studentStats?.certificatesEarned || 0,
-            color:'#fbbf24', bg:'rgba(251,191,36,0.12)',
-            href: `/${locale}/dashboard/certificates`,
-            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="8" r="6"/>
-              <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
-            </svg>,
-          },
-          {
-            labelAr:'ساعات التعلم', labelEn:'Hours Learned',
-            value: studentStats?.hoursLearned || 0,
-            color:'#f87171', bg:'rgba(248,113,113,0.12)',
-            href: `/${locale}/dashboard/my-courses`,
-            icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>,
-          },
-        ].map((stat: any, i: number) => (
-          <a key={i} href={stat.href} style={{ textDecoration:'none' }}>
-            <div style={{
-              padding:'1.25rem',
-              background:'var(--card)',
-              border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-              borderRadius:'14px',
-              display:'flex', alignItems:'flex-start', gap:'1rem',
-              transition:'border-color 0.2s',
-              cursor:'pointer',
-              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
-            }}
-            onMouseEnter={(e: any) => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
-            onMouseLeave={(e: any) => e.currentTarget.style.borderColor='color-mix(in srgb, var(--foreground) 7%, transparent)'}
-            >
+      {/* Stats */}
+      <div className="sd-stats">
+        {stats.map(({ Icon, tone, label, value, href }) => (
+          <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
+            <div className="sd-stat" style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 14, padding: '20px 20px 18px',
+              display: 'flex', flexDirection: 'column', gap: 12,
+            }}>
               <div style={{
-                width:'44px', height:'44px', borderRadius:'12px',
-                background:stat.bg, color:stat.color, flexShrink:0,
-                display:'flex', alignItems:'center', justifyContent:'center',
+                width: 40, height: 40, borderRadius: 10,
+                background: tile(tone), display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {stat.icon}
+                <Icon size={18} color={tone} />
               </div>
-              <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize:'1.6rem', fontWeight:300, margin:'0 0 2px',
-                  color:'var(--foreground)' }}>
-                  {stat.value}
-                </p>
-                <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
-                  {isAr ? stat.labelAr : stat.labelEn}
-                </p>
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 30, color: 'var(--foreground)', lineHeight: 1 }}>
+                  {value}
+                </div>
+                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                  {label}
+                </div>
               </div>
             </div>
           </a>
         ))}
       </div>
 
-      {/* Two column layout */}
-      <div className="student-two-col" style={{ maxWidth: '100%', minWidth: 0 }}>
-        {/* My Courses - recent enrollments */}
+      {/* Two columns */}
+      <div className="sd-main">
+        {/* My courses */}
         <div style={{
-          background:'var(--card)',
-          border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-          borderRadius:'14px', padding:'1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 24, minWidth: 0,
         }}>
-          <div style={{ display:'flex', alignItems:'center',
-            justifyContent:'space-between', marginBottom:'1rem' }}>
-            <h2 style={{ fontSize:'1rem', fontWeight:500, margin:0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
+              <BookMarked size={18} color="var(--primary)" />
               {isAr ? 'كورساتي' : 'My Courses'}
             </h2>
-            <a href={`/${locale}/dashboard/my-courses`}
-              style={{ fontSize:'0.8rem', color:'#a78bfa', textDecoration:'none' }}>
+            <a href={`/${locale}/dashboard/my-courses`} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontWeight: 300, fontSize: 13, color: 'var(--primary)', textDecoration: 'none',
+            }}>
               {isAr ? 'عرض الكل' : 'View all'}
+              <ChevronLeft size={14} style={arrow} />
             </a>
           </div>
 
-          {enrollments.length > 0 ? (
-            enrollments.slice(0, 4).map((enrollment: any) => {
-              const course = enrollment.course || enrollment
-              const progress = enrollment.progress ?? enrollment.enrollment?.progress ?? 0
-              const courseId = course?.id || enrollment.courseId
-              const title = isAr
-                ? (course?.titleAr || course?.title)
-                : (course?.titleEn || course?.title)
-              return (
-                <a key={enrollment.id || courseId}
-                  href={learnUrlWithToken(`/${locale}/courses/${courseId}`)}
-                  target="_blank" rel="noopener noreferrer"
-                  style={{ textDecoration:'none', display:'block' }}>
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:'12px',
-                    padding:'10px 0',
-                    borderBottom:'1px solid color-mix(in srgb, var(--foreground) 5%, transparent)',
-                    transition:'opacity 0.15s',
-                    minWidth: 0, maxWidth: '100%', overflow: 'hidden',
-                  }}
-                  onMouseEnter={(e: any) => e.currentTarget.style.opacity='0.8'}
-                  onMouseLeave={(e: any) => e.currentTarget.style.opacity='1'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {enrollments.length > 0 ? (
+              enrollments.slice(0, 4).map((enrollment: any) => {
+                const course = enrollment.course || enrollment
+                const progress = enrollment.progress ?? enrollment.enrollment?.progress ?? 0
+                const courseId = course?.id || enrollment.courseId
+                const title = isAr
+                  ? (course?.titleAr || course?.title)
+                  : (course?.titleEn || course?.title)
+                const done = progress >= 100
+                return (
+                  <a
+                    key={enrollment.id || courseId}
+                    href={learnCourseLink(courseId, locale)}
+                    target="_blank" rel="noopener noreferrer"
+                    className="sd-course"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      padding: 12, borderRadius: 10, border: '1px solid var(--border)',
+                      textDecoration: 'none', minWidth: 0,
+                    }}
                   >
-                    {/* Thumbnail */}
                     <div style={{
-                      width:'44px', height:'44px', borderRadius:'8px',
-                      background:'#1a1a2e', flexShrink:0, overflow:'hidden',
+                      width: 56, height: 42, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+                      background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {course?.thumbnail
-                        ? <img src={course.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                        : <div style={{ width:'100%', height:'100%',
-                            background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
-                            display:'flex', alignItems:'center', justifyContent:'center' }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                              stroke="color-mix(in srgb, var(--foreground) 20%, transparent)" strokeWidth="1.5">
-                              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                            </svg>
-                          </div>
-                      }
+                        ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <BookOpen size={18} color="var(--muted-foreground)" />}
                     </div>
 
-                    {/* Info */}
-                    <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
-                      <p style={{
-                        fontWeight:500, fontSize:'0.875rem', margin:'0 0 4px',
-                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                        color:'var(--foreground)',
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}>
                         {title}
-                      </p>
-                      {/* Progress bar */}
-                      <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+                      </div>
+                      <div style={{ marginTop: 8, height: 3, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
                         <div style={{
-                          flex:1, height:'4px', background:'color-mix(in srgb, var(--foreground) 6%, transparent)',
-                          borderRadius:'99px', overflow:'hidden',
-                        }}>
-                          <div style={{
-                            height:'100%', borderRadius:'99px',
-                            width:`${Math.round(progress)}%`,
-                            background: progress >= 100
-                              ? 'linear-gradient(90deg,#4ade80,#22c55e)'
-                              : '#5120c8',
-                          }}/>
-                        </div>
-                        <span style={{ fontSize:'0.7rem', color:'var(--muted-foreground)',
-                          flexShrink:0 }}>
-                          {Math.round(progress)}%
-                        </span>
+                          height: '100%', borderRadius: 2,
+                          width: `${Math.min(100, Math.round(progress))}%`,
+                          background: done ? 'var(--success)' : 'var(--primary)',
+                        }} />
                       </div>
                     </div>
 
-                    {/* Status badge */}
-                    <div style={{
-                      padding:'3px 8px', borderRadius:'20px', fontSize:'0.68rem',
-                      fontWeight:300, flexShrink:0,
-                      background: progress >= 100
-                        ? 'rgba(34,197,94,0.1)' : 'rgba(81,32,200,0.12)',
-                      border: progress >= 100
-                        ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(81,32,200,0.25)',
-                      color: progress >= 100 ? '#4ade80' : '#a78bfa',
-                    }}>
-                      {progress >= 100
-                        ? (isAr ? 'مكتمل' : 'Done')
-                        : (isAr ? 'جار' : 'Active')}
+                    <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>
+                      {Math.round(progress)}%
                     </div>
-                  </div>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: tile('var(--primary)', 12),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Play size={12} color="var(--primary)" />
+                    </div>
+                  </a>
+                )
+              })
+            ) : (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
+                <BookOpen size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
+                <p style={{ margin: '0 0 16px', fontWeight: 300, fontSize: 13 }}>
+                  {isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet'}
+                </p>
+                <a href={`/${locale}/courses`} style={{
+                  display: 'inline-block', padding: '8px 20px', borderRadius: 8,
+                  background: 'var(--primary)', color: 'var(--primary-foreground)',
+                  textDecoration: 'none', fontSize: 13, fontWeight: 500,
+                }}>
+                  {isAr ? 'ابدأ التعلم' : 'Start Learning'}
                 </a>
-              )
-            })
-          ) : (
-            <div style={{ textAlign:'center', padding:'2rem',
-              color:'var(--muted-foreground)' }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.5"
-                style={{ margin:'0 auto 8px', display:'block', opacity:0.3 }}>
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>
-              <p style={{ margin:'0 0 1rem', fontSize:'0.875rem' }}>
-                {isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet'}
-              </p>
-              <a href={`/${locale}/courses`} style={{
-                padding:'8px 20px', borderRadius:'8px',
-                background:'#5120c8', color:'var(--primary-foreground)',
-                textDecoration:'none', fontSize:'0.82rem', fontWeight:500,
-              }}>
-                {isAr ? 'ابدأ التعلم' : 'Start Learning'}
-              </a>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick links */}
         <div style={{
-          background:'var(--card)',
-          border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-          borderRadius:'14px', padding:'1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 24, minWidth: 0,
         }}>
-          <h2 style={{ fontSize:'1rem', fontWeight:500, margin:'0 0 1rem' }}>
+          <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
+            <Zap size={18} color="var(--primary)" />
             {isAr ? 'روابط سريعة' : 'Quick Links'}
           </h2>
-          {[
-            {
-              labelAr:'كورساتي', labelEn:'My Courses',
-              href:`/${locale}/dashboard/my-courses`,
-              color:'#a78bfa', bg:'rgba(167,139,250,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>,
-            },
-            {
-              labelAr:'شهاداتي', labelEn:'Certificates',
-              href:`/${locale}/dashboard/certificates`,
-              color:'#fbbf24', bg:'rgba(251,191,36,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="8" r="6"/>
-                <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
-              </svg>,
-            },
-            {
-              labelAr:'المسار المهني', labelEn:'Career Path',
-              href:`/${locale}/dashboard/career-path`,
-              color:'#34d399', bg:'rgba(52,211,153,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-              </svg>,
-            },
-            {
-              labelAr:'استعرض الكورسات', labelEn:'Browse Courses',
-              href: learnUrlWithToken(`/${locale}/courses`),
-              external: true,
-              color:'#5120c8', bg:'rgba(81,32,200,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>,
-            },
-            {
-              labelAr:'احجز استشارة', labelEn:'Book Consultation',
-              href:`/${locale}/coaching`,
-              color:'#f87171', bg:'rgba(248,113,113,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>,
-            },
-          ].map((action: any, i: number) => (
-            <a key={i} href={action.href} target={action.external ? '_blank' : undefined} rel={action.external ? 'noopener noreferrer' : undefined} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
-              <div style={{
-                display:'flex', alignItems:'center', gap:'12px',
-                padding:'9px 10px', borderRadius:'10px', marginBottom:'4px',
-                background:'transparent', cursor:'pointer',
-                transition:'background 0.15s',
-                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
-              }}
-              onMouseEnter={(e: any) => e.currentTarget.style.background=action.bg}
-              onMouseLeave={(e: any) => e.currentTarget.style.background='transparent'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {quickLinks.map(({ Icon, label, href, external }) => (
+              <a
+                key={label}
+                href={href}
+                target={external ? '_blank' : undefined}
+                rel={external ? 'noopener noreferrer' : undefined}
+                className="sd-link"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '8px', borderRadius: 8, textDecoration: 'none', color: 'var(--foreground)',
+                }}
               >
                 <div style={{
-                  width:'34px', height:'34px', borderRadius:'9px',
-                  background:action.bg, color:action.color, flexShrink:0,
-                  display:'flex', alignItems:'center', justifyContent:'center',
+                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                  background: tile('var(--foreground)', 5),
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {action.icon}
+                  <Icon size={15} color="var(--muted-foreground)" />
                 </div>
-                <span style={{ fontSize:'0.875rem', fontWeight:500,
-                  color:'var(--foreground)', flex:1 }}>
-                  {isAr ? action.labelAr : action.labelEn}
-                </span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2"
-                  style={{ opacity:0.3, transform: isAr ? 'rotate(180deg)' : 'none' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
-            </a>
-          ))}
+                <span style={{ flex: 1, fontWeight: 300, fontSize: 13, minWidth: 0 }}>{label}</span>
+                <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />
+              </a>
+            ))}
+          </div>
         </div>
       </div>
     </div>
