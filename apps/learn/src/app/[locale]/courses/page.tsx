@@ -15,6 +15,7 @@ import { formatLiveDateTime } from '../../../lib/live'
 import { webLoginUrl } from '../../../lib/constants'
 import { useAuthStore } from '../../../stores/authStore'
 import { formatCoursePrice } from '../../../lib/market'
+import { instructorDisplayName } from '../../../lib/instructor'
 
 const PRODUCTION_API_URL = 'https://api.deveways.com/api'
 
@@ -507,8 +508,8 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           >
             {course.instructor.profile.avatar
               ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{course.instructor.profile.firstName?.[0]}</div>}
-            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
+              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
+            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
           </a>
         )}
 
@@ -697,8 +698,8 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             >
               {course.instructor.profile.avatar
                 ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
-                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{course.instructor.profile.firstName?.[0]}</div>}
-              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
+                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
+              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
             </a>
           )}
           {liveDate && (

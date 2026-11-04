@@ -32,6 +32,7 @@ import {
 	Video,
 } from "lucide-react";
 import { getCourseTitle, getMediaUrl } from "../../lib/media";
+import { instructorDisplayName } from "../../lib/instructor";
 import {
 	formatLiveDateLong,
 	formatLiveTimeShort,
@@ -73,12 +74,10 @@ export default function LiveCourseDetail({
 	const thumb = getMediaUrl(course?.thumbnail);
 
 	const instructorProfile = course?.instructor?.profile;
-	const instructorName = instructorProfile
-		? `${instructorProfile.firstName ?? ""} ${instructorProfile.lastName ?? ""}`.trim() ||
-		  (isAr ? "المدرب" : "Instructor")
-		: isAr
-			? "المدرب"
-			: "Instructor";
+	const instructorName = instructorDisplayName(
+		course?.instructor,
+		isAr ? "المدرب" : "Instructor",
+	);
 	const instructorAvatar = getMediaUrl(instructorProfile?.avatar);
 
 	const sections: any[] = Array.isArray(course?.sections)

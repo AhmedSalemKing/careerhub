@@ -54,6 +54,7 @@ import {
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast, Toaster } from "react-hot-toast";
+import { instructorDisplayName } from "../../../../lib/instructor";
 import LiveCourseDetail from "../../../../components/live/LiveCourseDetail";
 import LiveRecordingPlayer from "../../../../components/live/LiveRecordingPlayer";
 
@@ -418,9 +419,7 @@ export default function CourseDetailPage({
 
 	const thumb = getMediaUrl(course.thumbnail);
 	const previewVideo = getMediaUrl(course.previewVideo);
-	const instructorName = course.instructor?.profile
-		? `${course.instructor.profile.firstName} ${course.instructor.profile.lastName}`
-		: t("instructor");
+	const instructorName = instructorDisplayName(course.instructor, t("instructor"));
 	const sections = course.sections ?? course.modules ?? [];
 	const allLessonsFlat = sections.flatMap((section: any) => section.lessons || []);
 	// A recorded lesson of this live session — the recording pipeline creates
