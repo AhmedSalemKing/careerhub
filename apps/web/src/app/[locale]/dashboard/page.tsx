@@ -7,6 +7,7 @@ import Link from 'next/link'
 import {
   BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
   CheckCircle, Award, Bookmark, CreditCard, Settings,
+  TrendingUp, DollarSign, BarChart2, Plus, Bell,
 } from 'lucide-react'
 import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
@@ -57,7 +58,7 @@ function InstructorOverview() {
     queryFn: async () => {
       const res = await get('/courses/instructor/stats')
       const d = (res?.data as any)?.data ?? {}
-      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.totalRevenue ?? 0, revenueDisplay: d.totalRevenueDisplay ?? null }
+      return { totalCourses: d.totalCourses ?? 0, totalStudents: d.totalStudents ?? 0, revenue: d.totalRevenue ?? 0, revenueDisplay: d.totalRevenueDisplay ?? null, completionRate: d.completionRate ?? 0 }
     },
   })
 
@@ -70,333 +71,214 @@ function InstructorOverview() {
     },
   })
 
+  const firstName = user?.profile?.firstName || (isAr ? 'المحاضر' : 'Instructor')
+  const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
+  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
+
+  const statCards = [
+    {
+      Icon: TrendingUp, color: 'var(--primary)',
+      label: isAr ? 'الكورسات' : 'Courses',
+      value: stats?.totalCourses ?? courses?.length ?? 0,
+      href: `/${locale}/dashboard/my-courses`,
+    },
+    {
+      Icon: Users, color: 'var(--success)',
+      label: isAr ? 'الطلاب' : 'Students',
+      value: stats?.totalStudents ?? 0,
+      href: `/${locale}/dashboard/my-courses`,
+    },
+    {
+      Icon: DollarSign, color: 'var(--warning)',
+      label: isAr ? 'الإيرادات' : 'Revenue',
+      value: stats?.revenueDisplay ?? `${Number(stats?.revenue ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`,
+      href: `/${locale}/dashboard/revenue`,
+    },
+    {
+      Icon: BarChart2, color: 'var(--info)',
+      label: isAr ? 'معدل الإتمام' : 'Completion Rate',
+      value: `${stats?.completionRate ?? 0}%`,
+      href: `/${locale}/dashboard/analytics`,
+    },
+  ]
+
+  const actions = [
+    { Icon: Plus, label: isAr ? 'إنشاء كورس جديد' : 'Create New Course', href: `/${locale}/dashboard/create-course`, primary: true },
+    { Icon: BookOpen, label: isAr ? 'كورساتي' : 'My Courses', href: `/${locale}/dashboard/my-courses`, primary: false },
+    { Icon: DollarSign, label: isAr ? 'الإيرادات' : 'Revenue', href: `/${locale}/dashboard/revenue`, primary: false },
+    { Icon: BarChart2, label: isAr ? 'الإحصائيات' : 'Analytics', href: `/${locale}/dashboard/analytics`, primary: false },
+    { Icon: Settings, label: isAr ? 'الإعدادات' : 'Settings', href: `/${locale}/dashboard/settings`, primary: false },
+  ]
+
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px', width: '100%' }}>
       <style>{`
-        .dashboard-two-col { display: grid; grid-template-columns: 1fr 320px; gap: 1.25rem; }
-        @media (max-width: 768px) { .dashboard-two-col { grid-template-columns: 1fr; } }
+        .rd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .rd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+        .rd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
+        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-row { transition: background 0.15s ease, border-color 0.15s ease; }
+        a.rd-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+        .rd-action { transition: border-color 0.15s ease, opacity 0.15s ease; }
+        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-action.rd-primary:hover { opacity: 0.9; }
+        @media (max-width: 900px) { .rd-stats { grid-template-columns: repeat(2, 1fr); } .rd-main { grid-template-columns: 1fr; } }
+        @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
       `}</style>
 
       <div style={{
-        background: 'linear-gradient(135deg, rgba(81,32,200,0.18) 0%, rgba(81,32,200,0.05) 100%)',
-        border: '1px solid rgba(81,32,200,0.25)',
-        borderRadius: '16px',
-        padding: '1.75rem 2rem',
-        marginBottom: '1.5rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        maxWidth: '100%', minWidth: 0,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, maxWidth: '100%' }}>
-          <div style={{
-            width: '56px', height: '56px', borderRadius: '50%',
-            border: '2px solid rgba(81,32,200,0.5)',
-            overflow: 'hidden', flexShrink: 0,
-            background: 'linear-gradient(135deg,#5120c8,#7c3aed)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 500, color: 'var(--primary-foreground)',
-          }}>
-            {user?.profile?.avatar
-              ? <img src={user.profile.avatar} alt=""
-                  style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-              : (user?.profile?.firstName?.[0] || 'م')
-            }
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 6 }}>
+            {isAr ? 'لوحة تحكم المحاضر' : 'Instructor Dashboard'}
           </div>
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <p style={{ color:'#a78bfa', fontSize:'0.8rem', fontWeight:500, margin:'0 0 3px' }}>
-              {isAr ? 'لوحة التحكم' : 'Dashboard'}
-            </p>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:900, margin:'0 0 3px' }}>
-              {isAr ? `مرحباً، ${user?.profile?.firstName || 'المحاضر'}` : `Welcome, ${user?.profile?.firstName || 'Instructor'}`}
-            </h1>
-            <p style={{ color:'var(--muted-foreground)', fontSize:'0.82rem', margin:0 }}>
-              {isAr ? 'إليك ملخص نشاطك' : "Here's your activity overview"}
-            </p>
-          </div>
+          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
+            {isAr ? `مرحباً، ${firstName}` : `Welcome, ${firstName}`}
+          </h1>
+          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+            {isAr ? 'إليك ملخص نشاطك اليوم' : "Here's your activity overview"}
+          </p>
         </div>
-        <a href={`/${locale}/dashboard/create-course`} style={{
-          display: 'inline-flex', alignItems: 'center', gap: '8px',
-          padding: '11px 22px', borderRadius: '10px',
-          background: '#5120c8', color: 'var(--primary-foreground)',
-          fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none',
-          boxShadow: '0 4px 15px rgba(81,32,200,0.3)',
+        <a href={`/${locale}/dashboard/create-course`} className="rd-action rd-primary" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px', borderRadius: 10,
+          background: 'var(--primary)', color: 'var(--primary-foreground)',
+          fontWeight: 500, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          {isAr ? 'إنشاء كورس جديد' : 'New Course'}
+          <Plus size={16} />
+          {isAr ? 'إنشاء كورس' : 'New Course'}
         </a>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1.5rem',
-        maxWidth: '100%', minWidth: 0,
-      }}>
-        {[
-          {
-            labelAr: 'الكورسات', labelEn: 'Courses',
-            value: stats?.totalCourses ?? courses?.length ?? 0,
-            color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
-            href: `/${locale}/dashboard/my-courses`,
-            icon: (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>
-            ),
-          },
-          {
-            labelAr: 'الطلاب', labelEn: 'Students',
-            value: stats?.totalStudents ?? 0,
-            color: '#34d399', bg: 'rgba(52,211,153,0.12)',
-            href: `/${locale}/dashboard/my-courses`,
-            icon: (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            ),
-          },
-          {
-            labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: stats?.revenueDisplay ?? `${Number(stats?.revenue ?? 0).toLocaleString('ar-SA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ر.س`,
-            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
-            href: `/${locale}/dashboard/revenue`,
-            icon: (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            ),
-          },
-        ].map((stat, i) => (
-          <a key={i} href={stat.href} style={{ textDecoration: 'none' }}>
-            <div style={{
-              padding: '1.25rem',
-              background: 'var(--card)',
-              border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-              borderRadius: '14px',
-              display: 'flex', alignItems: 'flex-start', gap: '1rem',
-              cursor: 'pointer', transition: 'border-color 0.2s',
-              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor='rgba(81,32,200,0.3)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor='color-mix(in srgb, var(--foreground) 7%, transparent)'}
-            >
+      <div className="rd-stats">
+        {statCards.map(({ Icon, color, label, value, href }) => (
+          <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
+            <div className="rd-stat" style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 14, padding: '20px 20px 18px',
+              display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0,
+            }}>
               <div style={{
-                width: '44px', height: '44px', borderRadius: '12px',
-                background: stat.bg, flexShrink: 0, color: stat.color,
+                width: 40, height: 40, borderRadius: 10, background: mix(color, 10),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {stat.icon}
+                <Icon size={18} color={color} />
               </div>
-              <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize: '1.6rem', fontWeight: 300, margin: '0 0 2px',
-                  color: 'var(--foreground)' }}>
-                  {stat.value}
-                </p>
-                <p style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)', margin: 0 }}>
-                  {isAr ? stat.labelAr : stat.labelEn}
-                </p>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--foreground)', lineHeight: 1.1, wordBreak: 'break-word' }}>
+                  {value}
+                </div>
+                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                  {label}
+                </div>
               </div>
             </div>
           </a>
         ))}
       </div>
 
-      <div className="dashboard-two-col" style={{ marginBottom: '1.5rem', maxWidth: '100%', minWidth: 0 }}>
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-          borderRadius: '14px',
-          padding: '1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+      <div className="rd-main">
+        {/* Recent courses */}
+        <section style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 24, minWidth: 0,
         }}>
-          <div style={{ display:'flex', alignItems:'center',
-            justifyContent:'space-between', marginBottom:'1rem' }}>
-            <h2 style={{ fontSize:'1rem', fontWeight:500, margin:0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
               {isAr ? 'آخر الكورسات' : 'Recent Courses'}
             </h2>
-            <a href={`/${locale}/dashboard/my-courses`}
-              style={{ fontSize:'0.8rem', color:'#a78bfa', textDecoration:'none' }}>
+            <a href={`/${locale}/dashboard/my-courses`} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontWeight: 300, fontSize: 13, color: 'var(--primary)', textDecoration: 'none',
+            }}>
               {isAr ? 'عرض الكل' : 'View all'}
+              <ChevronLeft size={14} style={arrow} />
             </a>
           </div>
-          {courses.slice(0,4).map((course: any) => (
-            <a key={course.id}
-              href={`/${locale}/dashboard/courses/${course.id}/manage`}
-              style={{ textDecoration:'none' }}>
-              <div style={{
-                display:'flex', alignItems:'center', gap:'12px',
-                padding:'10px 0',
-                borderBottom:'1px solid color-mix(in srgb, var(--foreground) 5%, transparent)',
-                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
-              }}
-              onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
-              onMouseLeave={e => e.currentTarget.style.opacity='1'}
+
+          {courses.slice(0, 4).map((course: any) => {
+            const thumb = getMediaUrl(course.thumbnail)
+            const published = course.status === 'PUBLISHED'
+            return (
+              <a
+                key={course.id}
+                href={`/${locale}/dashboard/courses/${course.id}/manage`}
+                className="rd-row"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14, minWidth: 0,
+                  padding: 12, borderRadius: 10, marginBottom: 10,
+                  border: '1px solid var(--border)', textDecoration: 'none',
+                }}
               >
                 <div style={{
-                  width:'44px', height:'44px', borderRadius:'8px',
-                  background:'#1a1a2e', flexShrink:0, overflow:'hidden',
+                  width: 56, height: 42, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
+                  background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {course.thumbnail
-                    ? <img src={course.thumbnail} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                    : <div style={{ width:'100%', height:'100%',
-                        background:'linear-gradient(135deg,#1a0a2e,#2d1054)',
-                        display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                          stroke="color-mix(in srgb, var(--foreground) 20%, transparent)" strokeWidth="1.5">
-                          <rect x="2" y="3" width="20" height="14" rx="2"/>
-                          <path d="M8 21h8M12 17v4"/>
-                        </svg>
-                      </div>
-                  }
+                  {thumb
+                    ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : <BookOpen size={18} color="var(--muted-foreground)" />}
                 </div>
-                <div style={{ flex:1, minWidth:0, overflow: 'hidden' }}>
-                  <p style={{ fontWeight:500, fontSize:'0.875rem', margin:'0 0 3px',
-                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap',
-                    color:'var(--foreground)' }}>
-                    {isAr ? course.titleAr : course.titleEn}
-                  </p>
-                  <p style={{ fontSize:'0.75rem', color:'var(--muted-foreground)', margin:0 }}>
-                    {course._count?.enrollments ?? 0}
-                    {isAr ? ' طالب' : ' students'}
-                    {formatCoursePrice(course)}
-                  </p>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
+                    {(isAr ? course.titleAr : course.titleEn) || course.titleAr || course.titleEn}
+                  </div>
+                  <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    {course._count?.enrollments ?? 0}{isAr ? ' طالب' : ' students'} · {formatCoursePrice(course)}
+                  </div>
                 </div>
-                <div style={{
-                  padding:'3px 10px', borderRadius:'20px', fontSize:'0.7rem',
-                  fontWeight:300, flexShrink:0,
-                  background: course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.1)' : 'rgba(234,179,8,0.1)',
-                  border: `1px solid ${course.status === 'PUBLISHED' ? 'rgba(34,197,94,0.3)' : 'rgba(234,179,8,0.3)'}`,
-                  color: course.status === 'PUBLISHED' ? '#4ade80' : '#fbbf24',
+                <span style={{
+                  padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, flexShrink: 0,
+                  background: mix(published ? 'var(--success)' : 'var(--muted-foreground)', 12),
+                  color: published ? 'var(--success)' : 'var(--muted)',
                 }}>
-                  {course.status === 'PUBLISHED' ? (isAr ? 'منشور' : 'Live') : (isAr ? 'مسودة' : 'Draft')}
-                </div>
-              </div>
-            </a>
-          ))}
+                  {published ? (isAr ? 'منشور' : 'Live') : (isAr ? 'مسودة' : 'Draft')}
+                </span>
+              </a>
+            )
+          })}
+
           {courses.length === 0 && (
-            <div style={{ textAlign:'center', padding:'2rem', color:'var(--muted-foreground)' }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 8px', display:'block', opacity:0.3 }}>
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>
-              <p style={{ margin:0, fontSize:'0.85rem' }}>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
+              <BookOpen size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
+              <p style={{ margin: 0, fontWeight: 300, fontSize: 13 }}>
                 {isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}
               </p>
             </div>
           )}
-        </div>
+        </section>
 
-        <div style={{
-          background: 'var(--card)',
-          border: '1px solid color-mix(in srgb, var(--foreground) 7%, transparent)',
-          borderRadius: '14px',
-          padding: '1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+        <aside style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 20, minWidth: 0,
         }}>
-          <h2 style={{ fontSize:'1rem', fontWeight:500, margin:'0 0 1rem' }}>
+          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
             {isAr ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
-          {[
-            {
-              labelAr: 'إنشاء كورس جديد', labelEn: 'Create New Course',
-              href: `/${locale}/dashboard/create-course`,
-              color: '#5120c8', bg: 'rgba(81,32,200,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>,
-            },
-            {
-              labelAr: 'كورساتي', labelEn: 'My Courses',
-              href: `/${locale}/dashboard/my-courses`,
-              color: '#a78bfa', bg: 'rgba(167,139,250,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>,
-            },
-            {
-              labelAr: 'الإيرادات', labelEn: 'Revenue',
-              href: `/${locale}/dashboard/revenue`,
-              color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>,
-            },
-            {
-              labelAr: 'الإحصائيات', labelEn: 'Analytics',
-              href: `/${locale}/dashboard/analytics`,
-              color: '#34d399', bg: 'rgba(52,211,153,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <line x1="18" y1="20" x2="18" y2="10"/>
-                <line x1="12" y1="20" x2="12" y2="4"/>
-                <line x1="6" y1="20" x2="6" y2="14"/>
-              </svg>,
-            },
-            {
-              labelAr: 'الإعدادات', labelEn: 'Settings',
-              href: `/${locale}/dashboard/settings`,
-              color: '#9999aa', bg: 'rgba(153,153,170,0.1)',
-              icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>,
-            },
-          ].map((action, i) => (
-            <a key={i} href={action.href} style={{ textDecoration:'none', display:'block', maxWidth:'100%' }}>
-              <div style={{
-                display:'flex', alignItems:'center', gap:'12px',
-                padding:'10px 12px', borderRadius:'10px', marginBottom:'6px',
-                background: 'transparent', cursor:'pointer',
-                transition:'background 0.15s',
-                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
+          {actions.map(({ Icon, label, href, primary }) => (
+            <a
+              key={label}
+              href={href}
+              className={primary ? 'rd-action rd-primary' : 'rd-action'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '11px 12px', borderRadius: 10, marginBottom: 8,
+                border: primary ? 'none' : '1px solid var(--border)',
+                background: primary ? 'var(--primary)' : 'var(--card)',
+                color: primary ? 'var(--primary-foreground)' : 'var(--foreground)',
+                textDecoration: 'none', fontWeight: primary ? 500 : 300, fontSize: 13,
               }}
-              onMouseEnter={e => e.currentTarget.style.background=action.bg}
-              onMouseLeave={e => e.currentTarget.style.background='transparent'}
-              >
-                <div style={{
-                  width:'36px', height:'36px', borderRadius:'9px',
-                  background: action.bg, flexShrink:0, color: action.color,
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                }}>
-                  {action.icon}
-                </div>
-                <span style={{ fontSize:'0.875rem', fontWeight:500, color:'var(--foreground)' }}>
-                  {isAr ? action.labelAr : action.labelEn}
-                </span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2"
-                  style={{ marginRight:'auto', opacity:0.3,
-                    transform: isAr ? 'rotate(180deg)' : 'none' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
+            >
+              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--muted-foreground)'} />
+              <span style={{ flex: 1, minWidth: 0 }}>{label}</span>
+              {!primary && <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />}
             </a>
           ))}
-        </div>
+        </aside>
       </div>
     </div>
   )
@@ -929,355 +811,220 @@ function ConsultantOverview() {
     s.status !== 'COMPLETED'
   )
 
+  const firstName = user?.profile?.firstName || (isAr ? 'المستشار' : 'Coach')
+  const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
+  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
+
+  const statCards = [
+    {
+      Icon: Bell, color: 'var(--primary)',
+      label: isAr ? 'طلبات جديدة' : 'New Requests',
+      value: pending.length,
+      href: `/${locale}/dashboard/client-sessions`,
+    },
+    {
+      Icon: Calendar, color: 'var(--info)',
+      label: isAr ? 'جلسات مؤكدة' : 'Confirmed',
+      value: confirmed.length,
+      href: `/${locale}/dashboard/my-sessions`,
+    },
+    {
+      Icon: CheckCircle, color: 'var(--success)',
+      label: isAr ? 'جلسات مكتملة' : 'Completed',
+      value: completed.length,
+      href: `/${locale}/dashboard/my-sessions`,
+    },
+    {
+      Icon: DollarSign, color: 'var(--warning)',
+      label: isAr ? 'الإيرادات' : 'Revenue',
+      value: displayTotal(completed, 'priceDisplay', totalRevenue),
+      href: `/${locale}/dashboard/revenue`,
+    },
+  ]
+
+  const actions = [
+    { Icon: Calendar, label: isAr ? 'إدارة الجلسات' : 'Manage Sessions', href: `/${locale}/dashboard/my-sessions`, primary: true },
+    { Icon: Users, label: isAr ? 'طلبات العملاء' : 'Client Requests', href: `/${locale}/dashboard/client-sessions`, primary: false },
+    { Icon: DollarSign, label: isAr ? 'الإيرادات' : 'Revenue', href: `/${locale}/dashboard/revenue`, primary: false },
+    { Icon: Settings, label: isAr ? 'الإعدادات' : 'Settings', href: `/${locale}/dashboard/settings`, primary: false },
+  ]
+
   return (
-    <div style={{ padding: '1.5rem 2rem 2.5rem', width: '100%', maxWidth: '100vw', minWidth: 0 }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px', width: '100%' }}>
       <style>{`
-        .consultant-two-col { display: grid; grid-template-columns: 1fr 280px; gap: 1.25rem; }
-        @media (max-width: 768px) { .consultant-two-col { grid-template-columns: 1fr; } }
+        .rd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .rd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+        .rd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
+        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-row { transition: background 0.15s ease, border-color 0.15s ease; }
+        a.rd-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+        .rd-action { transition: border-color 0.15s ease, opacity 0.15s ease; }
+        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-action.rd-primary:hover { opacity: 0.9; }
+        @media (max-width: 900px) { .rd-stats { grid-template-columns: repeat(2, 1fr); } .rd-main { grid-template-columns: 1fr; } }
+        @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
       `}</style>
 
-      {/* Welcome Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(52,211,153,0.15) 0%, rgba(52,211,153,0.04) 100%)',
-        border: '1px solid rgba(52,211,153,0.2)',
-        borderRadius: '16px',
-        padding: '1.75rem 2rem',
-        marginBottom: '1.5rem',
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '1rem',
-        maxWidth: '100%', minWidth: 0,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+        marginBottom: 32, flexWrap: 'wrap', gap: 16,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, maxWidth: '100%' }}>
-          <div style={{
-            width: '56px', height: '56px', borderRadius: '50%',
-            border: '2px solid rgba(52,211,153,0.5)',
-            overflow: 'hidden', flexShrink: 0,
-            background: 'linear-gradient(135deg,#059669,#34d399)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.4rem', fontWeight: 500, color: 'var(--primary-foreground)',
-          }}>
-            {user?.profile?.avatar
-              ? <img src={user.profile.avatar} alt=""
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
-              : (user?.profile?.firstName?.[0] || 'م')
-            }
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 6 }}>
+            {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
           </div>
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <p style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 500, margin: '0 0 3px' }}>
-              {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
-            </p>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 3px' }}>
-              {isAr
-                ? `مرحبا ${user?.profile?.firstName || 'المستشار'}`
-                : `Welcome, ${user?.profile?.firstName || 'Coach'}`}
-            </h1>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: '0.82rem', margin: 0 }}>
-              {isAr ? 'تابع جلساتك واستشاراتك اليوم' : 'Track your sessions and consultations'}
-            </p>
-          </div>
+          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
+            {isAr ? `مرحباً، ${firstName}` : `Welcome, ${firstName}`}
+          </h1>
+          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+            {isAr ? 'تابع جلساتك واستشاراتك' : 'Track your sessions and consultations'}
+          </p>
         </div>
-        <a href={`/${locale}/dashboard/my-sessions`} style={{
-          display: 'inline-flex', alignItems: 'center', gap: '8px',
-          padding: '11px 22px', borderRadius: '10px',
-          background: '#059669', color: 'var(--primary-foreground)',
-          fontWeight: 500, fontSize: '0.9rem', textDecoration: 'none',
-          boxShadow: '0 4px 15px rgba(5,150,105,0.3)',
+        <a href={`/${locale}/dashboard/my-sessions`} className="rd-action" style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px', borderRadius: 10,
+          border: '1.5px solid var(--primary)', color: 'var(--primary)',
+          fontWeight: 500, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap',
         }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
           {isAr ? 'إدارة الجلسات' : 'Manage Sessions'}
+          <ChevronLeft size={16} style={arrow} />
         </a>
       </div>
 
-      {/* Stats Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '1rem', marginBottom: '1.5rem',
-        maxWidth: '100%', minWidth: 0,
-      }}>
-        {[
-          {
-            labelAr: 'طلبات جديدة', labelEn: 'New Requests',
-            value: pending.length,
-            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
-            href: `/${locale}/dashboard/client-sessions`,
-          },
-          {
-            labelAr: 'جلسات مؤكدة', labelEn: 'Confirmed',
-            value: confirmed.length,
-            color: '#34d399', bg: 'rgba(52,211,153,0.12)',
-            href: `/${locale}/dashboard/my-sessions`,
-          },
-          {
-            labelAr: 'جلسات مكتملة', labelEn: 'Completed',
-            value: completed.length,
-            color: '#a78bfa', bg: 'rgba(81,32,200,0.12)',
-            href: `/${locale}/dashboard/my-sessions`,
-          },
-          {
-            labelAr: 'الإيرادات', labelEn: 'Revenue',
-            value: displayTotal(completed, 'priceDisplay', totalRevenue),
-            color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',
-            href: `/${locale}/dashboard/revenue`,
-          },
-        ].map((stat, i) => (
-          <a key={i} href={stat.href} style={{ textDecoration: 'none' }}>
-            <div style={{
-              padding: '1.25rem',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border)',
-              borderRadius: '14px',
-              display: 'flex', alignItems: 'flex-start', gap: '1rem',
-              transition: 'border-color 0.2s', cursor: 'pointer',
-              maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
-            }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(52,211,153,0.3)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
+      <div className="rd-stats">
+        {statCards.map(({ Icon, color, label, value, href }) => (
+          <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
+            <div className="rd-stat" style={{
+              background: 'var(--card)', border: '1px solid var(--border)',
+              borderRadius: 14, padding: '20px 20px 18px',
+              display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0,
+            }}>
               <div style={{
-                width: '44px', height: '44px', borderRadius: '12px',
-                background: stat.bg, color: stat.color, flexShrink: 0,
+                width: 40, height: 40, borderRadius: 10, background: mix(color, 10),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {stat.labelAr === 'طلبات جديدة' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                    <line x1="6" y1="1" x2="6" y2="4"/>
-                    <line x1="10" y1="1" x2="10" y2="4"/>
-                    <line x1="14" y1="1" x2="14" y2="4"/>
-                  </svg>
-                ) : stat.labelAr === 'جلسات مؤكدة' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                    <polyline points="9 16 11 18 15 14"/>
-                  </svg>
-                ) : stat.labelAr === 'جلسات مكتملة' ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <line x1="12" y1="1" x2="12" y2="23"/>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                  </svg>
-                )}
+                <Icon size={18} color={color} />
               </div>
-              <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <p style={{ fontSize: '1.6rem', fontWeight: 300, margin: '0 0 2px',
-                  color: 'var(--foreground)' }}>
-                  {stat.value}
-                </p>
-                <p style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)', margin: 0 }}>
-                  {isAr ? stat.labelAr : stat.labelEn}
-                </p>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--foreground)', lineHeight: 1.1, wordBreak: 'break-word' }}>
+                  {value}
+                </div>
+                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                  {label}
+                </div>
               </div>
             </div>
           </a>
         ))}
       </div>
 
-      {/* Two column: upcoming sessions + quick actions */}
-      <div className="consultant-two-col" style={{ maxWidth: '100%', minWidth: 0 }}>
-        {/* Upcoming Sessions */}
-        <div style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
-          borderRadius: '14px', padding: '1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+      <div className="rd-main">
+        {/* Upcoming sessions */}
+        <section style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 24, minWidth: 0,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center',
-            justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 500, margin: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
               {isAr ? 'الجلسات القادمة' : 'Upcoming Sessions'}
             </h2>
-            <a href={`/${locale}/dashboard/my-sessions`}
-              style={{ fontSize: '0.8rem', color: '#34d399', textDecoration: 'none' }}>
+            <a href={`/${locale}/dashboard/my-sessions`} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontWeight: 300, fontSize: 13, color: 'var(--primary)', textDecoration: 'none',
+            }}>
               {isAr ? 'عرض الكل' : 'View all'}
+              <ChevronLeft size={14} style={arrow} />
             </a>
           </div>
 
           {upcomingSessions.length > 0 ? (
-            upcomingSessions.slice(0, 4).map((session: any, i: number) => (
-              <div key={session.id || i} style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '10px 12px', marginBottom: '6px',
-                background: 'var(--card)',
-                borderRadius: '12px',
-                border: '1px solid var(--border)',
-                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
-              }}>
-                <div style={{
-                  width: '38px', height: '38px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg,#059669,#34d399)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--primary-foreground)', fontSize: '0.85rem', fontWeight: 500, flexShrink: 0,
+            upcomingSessions.slice(0, 4).map((session: any, i: number) => {
+              const d = parseSessionDate(session.scheduledAt)
+              const clientName = session.sessionName || session.user?.profile?.firstName || (isAr ? 'جلسة' : 'Session')
+              return (
+                <div key={session.id || i} className="rd-row" style={{
+                  display: 'flex', alignItems: 'center', gap: 14, minWidth: 0,
+                  padding: '14px 16px', borderRadius: 12, marginBottom: 10,
+                  border: '1px solid var(--border)', background: 'var(--card)',
                 }}>
-                  {session.user?.profile?.firstName?.[0] || '?'}
-                </div>
-                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                  <p style={{ fontWeight: 500, fontSize: '0.82rem', margin: '0 0 2px',
-                    color: 'var(--foreground)', overflow: 'hidden',
-                    textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {session.sessionName || session.user?.profile?.firstName || (isAr ? 'جلسة' : 'Session')}
-                  </p>
-                  <p style={{ fontSize: '0.7rem', color: 'var(--muted-foreground)', margin: 0 }}>
-                    {(() => {
-                      const d = parseSessionDate(session.scheduledAt)
-                      return d ? d.toLocaleDateString(
-                          isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
-                          { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-                        ) : (isAr ? 'تاريخ غير محدد' : 'Date TBD')
-                    })()}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <div style={{
-                    padding: '3px 8px', borderRadius: '20px', fontSize: '0.65rem',
-                    fontWeight: 300,
-                    background: 'rgba(52,211,153,0.1)',
-                    border: '1px solid rgba(52,211,153,0.3)',
-                    color: '#34d399',
+                    width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
+                    background: mix('var(--primary)', 15),
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 500, fontSize: 14, color: 'var(--primary)',
                   }}>
-                    {isAr ? 'مؤكد' : 'Confirmed'}
+                    {session.user?.profile?.firstName?.[0] || (isAr ? 'ع' : 'C')}
                   </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {clientName}
+                    </div>
+                    <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                      {d
+                        ? d.toLocaleDateString(
+                            isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
+                            { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' },
+                          )
+                        : (isAr ? 'تاريخ غير محدد' : 'Date TBD')}
+                    </div>
+                  </div>
+                  <span style={{
+                    padding: '4px 12px', borderRadius: 20, fontSize: 11, fontWeight: 500, flexShrink: 0,
+                    background: mix('var(--info)', 12), color: 'var(--info)',
+                  }}>
+                    {isAr ? 'مؤكدة' : 'Confirmed'}
+                  </span>
                   {session.meetingLink && (
-                    <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
-                      style={{
-                        padding: '4px 10px', borderRadius: '8px', fontSize: '0.68rem',
-                        fontWeight: 500, textDecoration: 'none',
-                        background: '#5120c8', color: 'var(--primary-foreground)',
-                      }}>
+                    <a href={session.meetingLink} target="_blank" rel="noopener noreferrer" style={{
+                      padding: '5px 12px', borderRadius: 8, fontSize: 12, fontWeight: 500, flexShrink: 0,
+                      textDecoration: 'none', background: 'var(--primary)', color: 'var(--primary-foreground)',
+                    }}>
                       {isAr ? 'انضم' : 'Join'}
                     </a>
                   )}
                 </div>
-              </div>
-            ))
+              )
+            })
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem',
-              color: 'var(--muted-foreground)' }}>
-              <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="1.5"
-                style={{ margin: '0 auto 8px', display: 'block', opacity: 0.3 }}>
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              <p style={{ margin: '0', fontSize: '0.875rem' }}>
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
+              <Calendar size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
+              <p style={{ margin: 0, fontWeight: 300, fontSize: 13 }}>
                 {isAr ? 'لا توجد جلسات قادمة' : 'No upcoming sessions'}
               </p>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Quick Actions */}
-        <div style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--border)',
-          borderRadius: '14px', padding: '1.25rem',
-          maxWidth: '100%', minWidth: 0, overflow: 'hidden', boxSizing: 'border-box',
+        <aside style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, padding: 20, minWidth: 0,
         }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 500, margin: '0 0 1rem' }}>
+          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
           </h2>
-          {[
-            {
-              labelAr: 'جلساتي', labelEn: 'My Sessions',
-              href: `/${locale}/dashboard/my-sessions`,
-              color: '#34d399', bg: 'rgba(52,211,153,0.1)',
-            },
-            {
-              labelAr: 'طلبات العملاء', labelEn: 'Client Requests',
-              href: `/${locale}/dashboard/client-sessions`,
-              color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',
-            },
-            {
-              labelAr: 'الإيرادات', labelEn: 'Revenue',
-              href: `/${locale}/dashboard/revenue`,
-              color: '#a78bfa', bg: 'rgba(81,32,200,0.1)',
-            },
-            {
-              labelAr: 'الإعدادات', labelEn: 'Settings',
-              href: `/${locale}/dashboard/settings`,
-              color: '#9999aa', bg: 'rgba(153,153,170,0.1)',
-            },
-          ].map((action, i) => (
-            <a key={i} href={action.href} style={{ textDecoration: 'none', display: 'block', maxWidth:'100%' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '9px 10px', borderRadius: '10px', marginBottom: '4px',
-                background: 'transparent', cursor: 'pointer',
-                transition: 'background 0.15s',
-                minWidth: 0, maxWidth: '100%', overflow: 'hidden',
+          {actions.map(({ Icon, label, href, primary }) => (
+            <a
+              key={label}
+              href={href}
+              className={primary ? 'rd-action rd-primary' : 'rd-action'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '11px 12px', borderRadius: 10, marginBottom: 8,
+                border: primary ? 'none' : '1px solid var(--border)',
+                background: primary ? 'var(--primary)' : 'var(--card)',
+                color: primary ? 'var(--primary-foreground)' : 'var(--foreground)',
+                textDecoration: 'none', fontWeight: primary ? 500 : 300, fontSize: 13,
               }}
-              onMouseEnter={e => e.currentTarget.style.background = action.bg}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{
-                  width: '34px', height: '34px', borderRadius: '9px',
-                  background: action.bg, color: action.color, flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {action.labelAr === 'جلساتي' ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2"/>
-                      <line x1="16" y1="2" x2="16" y2="6"/>
-                      <line x1="8" y1="2" x2="8" y2="6"/>
-                      <line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                  ) : action.labelAr === 'طلبات العملاء' ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  ) : action.labelAr === 'الإيرادات' ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                  )}
-                </div>
-                <span style={{ fontSize: '0.875rem', fontWeight: 500,
-                  color: 'var(--foreground)', flex: 1 }}>
-                  {isAr ? action.labelAr : action.labelEn}
-                </span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2"
-                  style={{ opacity: 0.3, transform: isAr ? 'rotate(180deg)' : 'none' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
+            >
+              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--muted-foreground)'} />
+              <span style={{ flex: 1, minWidth: 0 }}>{label}</span>
+              {!primary && <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />}
             </a>
           ))}
-        </div>
+        </aside>
       </div>
     </div>
   )
