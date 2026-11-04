@@ -261,7 +261,7 @@ export default function HomePage() {
                 </div>
 
                 <h1 
-                  className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-madinet leading-tight break-words"
+                  className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black font-madinet leading-tight break-words"
                   style={{ color: 'var(--foreground)' }}
                 >
                   {locale === 'ar' ? 'تعلم مهارة' : 'Learn a Skill'}
@@ -306,7 +306,7 @@ export default function HomePage() {
                   <a
                     href="#"
                     onClick={handleBrowseCoursesClick}
-                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
+                    className="inline-flex items-center justify-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
                     style={{
                       background: 'transparent',
                       border: '1.5px solid color-mix(in srgb, var(--foreground) 45%, transparent)',
@@ -351,7 +351,7 @@ export default function HomePage() {
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gold) 0%, color-mix(in srgb, var(--gold) 55%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--gold) 40%, transparent)' }}>
                         <Sparkles className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
                       </div>
-                      <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Interactive</span>
+                      <span className="text-sm font-medium whitespace-nowrap tracking-wide">Interactive</span>
                     </div>
                   </div>
                   
@@ -360,7 +360,7 @@ export default function HomePage() {
                       <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 60%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--primary) 40%, transparent)' }}>
                         <Award className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
                       </div>
-                      <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Certified</span>
+                      <span className="text-sm font-medium whitespace-nowrap tracking-wide">Certified</span>
                     </div>
                   </div>
                 </div>
@@ -394,7 +394,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold font-madinet" style={{ color: 'var(--foreground)' }}>
+              <h2 className="text-3xl sm:text-4xl font-medium font-madinet" style={{ color: 'var(--foreground)' }}>
                 {locale === 'ar' ? 'الكورسات المميزة' : 'Featured Courses'}
               </h2>
             </div>
@@ -455,14 +455,14 @@ export default function HomePage() {
                     </div>
                   </div>
                   {courseSort === 'popular' && course.enrollmentCount === maxEnrollment && maxEnrollment > 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--gold)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--gold)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
                   )}
                   {courseSort === 'newest' && index === 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
                   )}
                   {isLiveNow(course) && (
                     <div
-                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"
+                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"
                       style={{ background: 'var(--error)', color: 'var(--primary-fg)', animation: 'livePulse 1.5s infinite', zIndex: 2 }}
                     >
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary-fg)', display: 'inline-block' }} />
@@ -472,12 +472,12 @@ export default function HomePage() {
                   <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs flex items-center gap-1" style={{ background: 'var(--overlay-strong)', color: 'var(--primary-fg)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
                 </div>
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
+                  <h3 className="text-lg font-medium mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
                   <div className="flex items-center gap-4 text-sm mb-4" style={{ color: 'var(--muted)' }}>
                     <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{course.students.toLocaleString()}</span></div>
                   </div>
                   <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                    <div className="text-xl font-bold" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course)}</div>
+                    <div className="text-xl font-medium" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course)}</div>
                     {enrolledIds.has(course.id) ? (
                       <Link
                         href={
@@ -497,7 +497,7 @@ export default function HomePage() {
                           border: '1px solid color-mix(in srgb, var(--success) 40%, transparent)',
                           color: 'var(--success)',
                           fontSize: 13,
-                          fontWeight: 600,
+                          fontWeight: 500,
                           textDecoration: 'none',
                         }}>
                         <CheckCircle2 size={14} />
@@ -513,12 +513,12 @@ export default function HomePage() {
           </div>
 
           <div className="mt-16">
-            <h3 className="text-xl font-semibold text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
+            <h3 className="text-xl font-medium text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {categories.map((category, index) => (
                 <Link key={category.slug || index} href={`/${locale}/courses?categoryId=${category.id}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                   <div className="shrink-0 h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: category.bg }}><category.icon className="h-6 w-6" style={{ color: category.color }} /></div>
-                  <div><h4 className="font-semibold" style={{ color: 'var(--foreground)' }}>{category.name[locale]}</h4><p className="text-sm" style={{ color: 'var(--muted)' }}>{category.count} {locale === 'ar' ? 'كورس' : 'Courses'}</p></div>
+                  <div><h4 className="font-medium" style={{ color: 'var(--foreground)' }}>{category.name[locale]}</h4><p className="text-sm" style={{ color: 'var(--muted)' }}>{category.count} {locale === 'ar' ? 'كورس' : 'Courses'}</p></div>
                 </Link>
               ))}
             </div>
@@ -530,7 +530,7 @@ export default function HomePage() {
       <section className="relative py-16 sm:py-24 overflow-hidden" style={{ background: 'var(--surface-2)', color: 'var(--foreground)' }}>
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'color-mix(in srgb, var(--foreground) 7%, transparent)', border: '1px solid var(--border)', color: 'var(--muted)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
-          <h2 className="text-3xl sm:text-4xl font-bold font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
+          <h2 className="text-3xl sm:text-4xl font-medium font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
           <p className="mt-4 text-lg" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? tl('joinLearners') : 'Join thousands of learners and start today'}</p>
           <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center [&>a]:w-full sm:[&>a]:w-auto">
             {/* ===== CTA START FREE BUTTON ===== */}
@@ -562,7 +562,7 @@ export default function HomePage() {
             <a
               href="#"
               onClick={handleBrowseCoursesClick}
-              className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
+              className="inline-flex items-center justify-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
               style={{
                 background: 'transparent',
                 border: '1.5px solid var(--border-strong)',

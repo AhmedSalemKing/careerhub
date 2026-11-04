@@ -104,7 +104,7 @@ export default function InvoicesPage() {
             <Receipt size={22} style={{ color: '#5120C8' }} />
           </div>
           <div>
-            <h1 className="font-bold text-xl text-foreground">
+            <h1 className="font-black text-xl text-foreground">
               {isAr ? 'تاريخ المدفوعات' : 'Payment History'}
             </h1>
             <p className="text-sm text-[color:var(--muted)]">
@@ -155,7 +155,7 @@ export default function InvoicesPage() {
                 padding: '7px 16px',
                 borderRadius: '20px',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 500,
                 cursor: 'pointer',
                 border: active ? '1px solid rgba(81,32,200,0.4)' : '1px solid var(--border)',
                 background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface)',
@@ -194,7 +194,7 @@ export default function InvoicesPage() {
                 padding: '8px 20px', borderRadius: '10px',
                 background: 'rgba(81,32,200,0.1)',
                 color: '#5120C8', border: '1px solid rgba(81,32,200,0.3)',
-                fontWeight: 600, fontSize: '13px', cursor: 'pointer',
+                fontWeight: 500, fontSize: '13px', cursor: 'pointer',
               }}
             >
               {isAr ? 'إعادة المحاولة' : 'Retry'}
@@ -209,7 +209,7 @@ export default function InvoicesPage() {
             }}>
               <Receipt size={24} style={{ color: '#5120C8' }} />
             </div>
-            <p className="font-semibold text-foreground">
+            <p className="font-medium text-foreground">
               {isAr ? 'لا توجد مدفوعات بعد' : 'No payments yet'}
             </p>
             <p className="text-sm text-[color:var(--muted)]">
@@ -222,7 +222,7 @@ export default function InvoicesPage() {
               style={{
                 padding: '9px 22px', borderRadius: '10px',
                 background: '#5120C8', color: '#fff',
-                fontSize: '13px', fontWeight: 700,
+                fontSize: '13px', fontWeight: 500,
                 textDecoration: 'none', marginTop: '6px',
               }}
             >
@@ -260,11 +260,11 @@ export default function InvoicesPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm text-foreground truncate">
+                      <p className="font-medium text-sm text-foreground truncate">
                         {inv.itemName}
                       </p>
                       <span style={{
-                        fontSize: '11px', fontWeight: 600,
+                        fontSize: '11px', fontWeight: 500,
                         padding: '2px 8px', borderRadius: '20px',
                         background: cfg.bg, color: cfg.color,
                       }}>
@@ -283,7 +283,7 @@ export default function InvoicesPage() {
 
                   {/* Amount */}
                   <div className="text-right shrink-0">
-                    <p className="font-bold text-base" style={{ color: cfg.color }}>
+                    <p className="font-medium text-base" style={{ color: cfg.color }}>
                       {formatMoney(inv.amount, (inv as any).amountDisplay)}
                     </p>
                     <p className="text-[10px] font-mono text-[color:var(--muted)] mt-0.5">
@@ -307,7 +307,7 @@ export default function InvoicesPage() {
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
                     color: 'var(--foreground)',
-                    fontSize: '13px', fontWeight: 600,
+                    fontSize: '13px', fontWeight: 500,
                     cursor: page <= 1 ? 'not-allowed' : 'pointer',
                     opacity: page <= 1 ? 0.4 : 1,
                   }}
@@ -329,7 +329,7 @@ export default function InvoicesPage() {
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
                     color: 'var(--foreground)',
-                    fontSize: '13px', fontWeight: 600,
+                    fontSize: '13px', fontWeight: 500,
                     cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                     opacity: page >= totalPages ? 0.4 : 1,
                   }}
@@ -358,7 +358,7 @@ function SummaryCard({
       padding: '16px',
     }}>
       <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{label}</p>
-      <p className="font-bold text-lg" style={{ color }}>{value}</p>
+      <p className="font-medium text-lg" style={{ color }}>{value}</p>
     </div>
   )
 }

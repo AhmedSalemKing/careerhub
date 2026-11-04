@@ -67,7 +67,7 @@ export default function CertificatesPage() {
         marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem',
       }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--foreground)' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, margin: '0 0 4px', color: 'var(--foreground)' }}>
             {isAr ? 'شهاداتي' : 'My Certificates'}
           </h1>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.88rem', margin: 0 }}>
@@ -83,7 +83,7 @@ export default function CertificatesPage() {
             background: 'rgba(81,32,200,0.12)',
             border: '1px solid rgba(81,32,200,0.25)',
             color: '#a78bfa', textDecoration: 'none',
-            fontSize: '0.875rem', fontWeight: 600,
+            fontSize: '0.875rem', fontWeight: 500,
           }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -146,7 +146,7 @@ export default function CertificatesPage() {
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 500, margin: '0 0 8px', color: 'var(--foreground)' }}>
             {isAr ? 'حدث خطأ في تحميل الشهادات' : 'Error loading certificates'}
           </h3>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', margin: 0 }}>
@@ -175,7 +175,7 @@ export default function CertificatesPage() {
               <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
             </svg>
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 500, margin: '0 0 8px', color: 'var(--foreground)' }}>
             {isAr ? 'لا توجد شهادات بعد' : 'No certificates yet'}
           </h3>
           <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem',
@@ -188,7 +188,7 @@ export default function CertificatesPage() {
             style={{
               padding: '10px 24px', borderRadius: '10px',
               background: '#5120c8', color: '#fff',
-              textDecoration: 'none', fontWeight: 600, fontSize: '0.875rem',
+              textDecoration: 'none', fontWeight: 500, fontSize: '0.875rem',
             }}>
             {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
           </a>
@@ -246,7 +246,7 @@ export default function CertificatesPage() {
                       <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
                     </svg>
                   </div>
-                  <p style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700,
+                  <p style={{ color: '#fbbf24', fontSize: '0.72rem', fontWeight: 500,
                     letterSpacing: '0.1em', margin: 0 }}>
                     {isAr ? 'شهادة إتمام' : 'CERTIFICATE OF COMPLETION'}
                   </p>
@@ -256,7 +256,7 @@ export default function CertificatesPage() {
               {/* Card content */}
               <div style={{ padding: '1.25rem' }}>
                 <h3 style={{
-                  fontSize: '0.95rem', fontWeight: 700, margin: '0 0 6px',
+                  fontSize: '0.95rem', fontWeight: 500, margin: '0 0 6px',
                   overflow: 'hidden', textOverflow: 'ellipsis',
                   display: '-webkit-box', WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
@@ -314,7 +314,7 @@ export default function CertificatesPage() {
                         flex: 1, padding: '9px', borderRadius: '9px',
                         background: '#5120c8', color: '#fff',
                         textDecoration: 'none', textAlign: 'center',
-                        fontSize: '0.82rem', fontWeight: 600,
+                        fontSize: '0.82rem', fontWeight: 500,
                         display: 'flex', alignItems: 'center',
                         justifyContent: 'center', gap: '6px',
                       }}>

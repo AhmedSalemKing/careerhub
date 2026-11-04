@@ -77,7 +77,7 @@ function VerificationSection({ user }: { user: any }) {
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, background: 'rgba(22,163,74,0.1)', border: '2px solid rgba(22,163,74,0.3)', borderRadius: 16, padding: '16px 28px', marginBottom: 16 }}>
           <CheckCircle size={28} color="#16a34a" />
-          <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }}>هويتك موثقة بنجاح</span>
+          <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>هويتك موثقة بنجاح</span>
         </div>
         <p style={{ color: 'var(--muted)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك</p>
       </div>
@@ -88,7 +88,7 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <Loader2 size={48} color="#f59e0b" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
         <p style={{ color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.</p>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
@@ -99,10 +99,10 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <XCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
         {verificationStatus?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {verificationStatus.idRejectedReason}</p>}
         <p style={{ color: 'var(--muted)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
-        <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 600, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
+        <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
       </div>
     )
   }
@@ -111,7 +111,7 @@ function VerificationSection({ user }: { user: any }) {
   return (
     <div style={{ padding: '24px 0', direction: 'rtl' }}>
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 700, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
         <div style={{ background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', borderRadius: 12, padding: '14px 18px' }}>
           <p style={{ color: '#A78BFA', fontSize: 14, margin: 0, lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
             متطلبات التوثيق:
@@ -137,7 +137,7 @@ function VerificationSection({ user }: { user: any }) {
         </label>
       </div>
 
-      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--border)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
+      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--border)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
         {submitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
         {submitting ? 'جاري الإرسال...' : 'تقديم طلب التوثيق'}
       </button>
@@ -322,7 +322,7 @@ export default function SettingsPage() {
           const Icon = tab.icon
           const active = activeTab === tab.key
           return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--muted)', cursor: 'pointer', fontSize: 13, fontWeight: active ? 700 : 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--muted)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
               <Icon size={14} />
               {tab.label}
             </button>
@@ -354,7 +354,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <p style={{ fontWeight: 700, color: 'var(--foreground)', fontSize: 15, margin: '0 0 4px', fontFamily: 'DM Sans, sans-serif' }}>{profileForm.firstName} {profileForm.lastName}</p>
+              <p style={{ fontWeight: 500, color: 'var(--foreground)', fontSize: 15, margin: '0 0 4px', fontFamily: 'DM Sans, sans-serif' }}>{profileForm.firstName} {profileForm.lastName}</p>
               <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'اضغط لتغيير الصورة' : 'Click to change photo'}</p>
             </div>
             <input type="file" accept="image/*" id="settings-avatar" style={{ display: 'none' }}
@@ -399,7 +399,7 @@ export default function SettingsPage() {
           {/* Instructor/Consultant fields */}
           {(me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT') && (
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 8 }}>
-              <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
+              <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
                 {isAr ? 'معلومات المحاضر/المستشار' : 'Instructor/Consultant Info'}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -428,7 +428,7 @@ export default function SettingsPage() {
             </div>
           )}
           
-          <button onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: profileMutation.isPending ? 0.7 : 1 }}>
+          <button onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: profileMutation.isPending ? 0.7 : 1 }}>
             <Save size={16} />
             {profileMutation.isPending ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ التغييرات' : 'Save Changes')}
           </button>
@@ -438,7 +438,7 @@ export default function SettingsPage() {
       {/* SECURITY TAB */}
       {activeTab === 'security' && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تغيير كلمة المرور' : 'Change Password'}</h3>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تغيير كلمة المرور' : 'Change Password'}</h3>
           {[
             { key: 'oldPassword', label: isAr ? 'كلمة المرور الحالية' : 'Current Password', show: showOldPass, toggle: () => setShowOldPass(p => !p) },
             { key: 'newPassword', label: isAr ? 'كلمة المرور الجديدة' : 'New Password', show: showNewPass, toggle: () => setShowNewPass(p => !p) },
@@ -460,7 +460,7 @@ export default function SettingsPage() {
               <span style={{ fontSize: 12, color: '#EF4444', fontFamily: 'DM Sans, sans-serif' }}>{(passwordMutation.error as any)?.message || (isAr ? 'حدث خطأ' : 'An error occurred')}</span>
             </div>
           )}
-          <button onClick={() => passwordMutation.mutate()} disabled={passwordMutation.isPending || !passwordForm.oldPassword || !passwordForm.newPassword} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 700, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: (passwordMutation.isPending || !passwordForm.oldPassword) ? 0.5 : 1 }}>
+          <button onClick={() => passwordMutation.mutate()} disabled={passwordMutation.isPending || !passwordForm.oldPassword || !passwordForm.newPassword} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#5120c8', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 24px', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif', fontSize: 14, opacity: (passwordMutation.isPending || !passwordForm.oldPassword) ? 0.5 : 1 }}>
             <Lock size={16} />
             {passwordMutation.isPending ? (isAr ? 'جاري التحديث...' : 'Updating...') : (isAr ? 'تحديث كلمة المرور' : 'Update Password')}
           </button>
@@ -470,7 +470,7 @@ export default function SettingsPage() {
       {/* PREFERENCES TAB */}
       {activeTab === 'preferences' && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'التفضيلات' : 'Preferences'}</h3>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'التفضيلات' : 'Preferences'}</h3>
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{isAr ? 'المظهر' : 'Theme'}</label>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -478,7 +478,7 @@ export default function SettingsPage() {
                 const Icon = opt.icon
                 const active = prefForm.theme === opt.value
                 return (
-                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); setTheme(opt.value) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: active ? 700 : 500 }}>
+                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); setTheme(opt.value) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
                     <Icon size={16} />{opt.label}
                   </button>
                 )
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                 const currentLang = typeof window !== 'undefined' ? (window.location.pathname.startsWith('/ar') ? 'ar' : 'en') : locale
                 const active = currentLang === opt.value
                 return (
-                  <button key={opt.value} onClick={() => { const path = window.location.pathname; window.location.href = opt.value === 'ar' ? path.replace('/en/', '/ar/') : path.replace('/ar/', '/en/') }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: active ? 700 : 500 }}>
+                  <button key={opt.value} onClick={() => { const path = window.location.pathname; window.location.href = opt.value === 'ar' ? path.replace('/en/', '/ar/') : path.replace('/ar/', '/en/') }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
                     {opt.label}
                   </button>
                 )
@@ -505,11 +505,11 @@ export default function SettingsPage() {
       {/* NOTIFICATIONS TAB */}
       {activeTab === 'notifications' && (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'إعدادات الإشعارات' : 'Notification Settings'}</h3>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'إعدادات الإشعارات' : 'Notification Settings'}</h3>
           {[{ key: 'emailNotifications', label: isAr ? 'إشعارات البريد الإلكتروني' : 'Email Notifications', desc: isAr ? 'استقبل تحديثات عبر البريد' : 'Receive updates via email' }].map(item => (
             <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
               <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{item.label}</p>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{item.label}</p>
                 <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>{item.desc}</p>
               </div>
               <button onClick={() => setPrefForm(f => ({ ...f, [item.key]: !(f as any)[item.key] }))} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: (prefForm as any)[item.key] ? '#5120c8' : 'var(--border)', position: 'relative', transition: 'background 0.2s ease' }}>

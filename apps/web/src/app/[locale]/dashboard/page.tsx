@@ -894,7 +894,7 @@ function Stat({
         {icon || <BookOpen className="h-5 w-5 text-white" />}
       </div>
       <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">{label}</p>
-      <p className="text-2xl md:text-3xl font-extrabold text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
+      <p className="text-2xl md:text-3xl font-medium text-foreground" style={{ fontFamily: 'PingARLT, sans-serif' }}>
         {value}
       </p>
     </div>

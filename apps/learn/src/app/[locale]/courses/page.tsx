@@ -395,7 +395,7 @@ export default function CoursesPage() {
             <p style={{ color: '#dc2626', fontSize: 14, marginBottom: 16 }}>
               {tl('failedLoadCourses')}
             </p>
-            <button onClick={() => setFetchKey(k => k + 1)} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+            <button onClick={() => setFetchKey(k => k + 1)} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
               {tl('tryAgain')}
             </button>
           </div>
@@ -405,7 +405,7 @@ export default function CoursesPage() {
         {!isLoading && filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
             <activeTabConfig.icon size={48} color='var(--muted-foreground)' style={{ marginBottom: 16, opacity: 0.4 }} />
-            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 600, margin: '0 0 8px' }}>
+            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>
               {tl('noCoursesFound')}
             </h3>
             <p style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>
@@ -450,7 +450,7 @@ export default function CoursesPage() {
                 padding: '12px 32px', borderRadius: 12,
                 background: 'rgba(81,32,200,0.1)',
                 border: '1px solid rgba(81,32,200,0.3)',
-                color: '#5120C8', fontWeight: 600, fontSize: 14,
+                color: '#5120C8', fontWeight: 500, fontSize: 14,
                 cursor: 'pointer', transition: 'all 0.2s ease',
               }}
               onMouseEnter={e => { e.currentTarget.style.background = '#5120C8'; e.currentTarget.style.color = '#fff' }}
@@ -495,7 +495,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
       </div>
 
       <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 'clamp(12px, 3.5vw, 15px)', fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 'clamp(12px, 3.5vw, 15px)', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {getTitle(course, locale)}
         </h3>
 
@@ -507,7 +507,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           >
             {course.instructor.profile.avatar
               ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 600 }}>{course.instructor.profile.firstName?.[0]}</div>}
+              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{course.instructor.profile.firstName?.[0]}</div>}
             <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
           </a>
         )}
@@ -526,10 +526,10 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
         </div>
 
         <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 700 }}>
+          <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 500 }}>
             {formatCoursePrice(course)}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
             {isEnrolled ? tl('continueBtn') : tl('viewBtn')}
             <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
           </div>
@@ -622,7 +622,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
       {isLive && (
         <div style={{ padding: '10px 20px', background: 'rgba(220,38,38,0.1)', borderBottom: '1px solid rgba(220,38,38,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626', display: 'block' }} className="live-dot" />
-          <span style={{ color: '#dc2626', fontSize: 12, fontWeight: 600 }}>
+          <span style={{ color: '#dc2626', fontSize: 12, fontWeight: 500 }}>
             {tl('liveNowBadge')}
           </span>
           {course.liveViewerCount > 0 && (
@@ -661,7 +661,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
       {isEnded && (
         <div style={{ padding: '10px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Square size={13} color='var(--muted-foreground)' />
-          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 600 }}>
+          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 500 }}>
             {isAr ? 'انتهى البث' : 'Stream ended'}
           </span>
         </div>
@@ -676,7 +676,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
               <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(220,38,38,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Radio size={18} color="#fff" />
               </div>
-              <div style={{ position: 'absolute', top: 6, [isAr ? 'right' : 'left']: 6, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 20, background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 700 }} className="live-dot">
+              <div style={{ position: 'absolute', top: 6, [isAr ? 'right' : 'left']: 6, display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 20, background: '#dc2626', color: '#fff', fontSize: 9, fontWeight: 500 }} className="live-dot">
                 <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff' }} />
                 {isAr ? 'مباشر الآن' : 'LIVE NOW'}
               </div>
@@ -686,7 +686,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 200 }}>
-          <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 600, margin: '0 0 4px' }}>
+          <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: '0 0 4px' }}>
             {getTitle(course, locale)}
           </h3>
           {course.instructor?.profile && (
@@ -697,7 +697,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             >
               {course.instructor.profile.avatar
                 ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
-                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 600 }}>{course.instructor.profile.firstName?.[0]}</div>}
+                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{course.instructor.profile.firstName?.[0]}</div>}
               <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{course.instructor.profile.firstName} {course.instructor.profile.lastName}</span>
             </a>
           )}
@@ -717,7 +717,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
           {/* Price + CTA */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ color: isLive ? '#dc2626' : '#5120c8', fontSize: 18, fontWeight: 700 }}>
+            <div style={{ color: isLive ? '#dc2626' : '#5120c8', fontSize: 18, fontWeight: 500 }}>
             {formatCoursePrice(course)}
             </div>
 
@@ -727,7 +727,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
                 padding: '10px 20px', borderRadius: 11,
                 background: isPaid || price === 0 ? '#dc2626' : '#5120c8',
                 color: '#ffffff', border: 'none', cursor: joining ? 'wait' : 'pointer',
-                fontSize: 13, fontWeight: 600, opacity: joining ? 0.7 : 1,
+                fontSize: 13, fontWeight: 500, opacity: joining ? 0.7 : 1,
               }}>
           {joining ? tl('joining') :
           isPaid || price === 0
@@ -744,7 +744,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
                 } else {
                   router.push(`/${locale}/courses/${course.id}`)
                 }
-              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 11, background: price > 0 && !isPaid ? '#5120c8' : 'rgba(220,38,38,0.1)', color: price > 0 && !isPaid ? '#ffffff' : '#dc2626', border: price > 0 && !isPaid ? 'none' : '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 11, background: price > 0 && !isPaid ? '#5120c8' : 'rgba(220,38,38,0.1)', color: price > 0 && !isPaid ? '#ffffff' : '#dc2626', border: price > 0 && !isPaid ? 'none' : '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 {price > 0 && !isPaid
                   ? <><Lock size={12} />{tl('enrollAndWait')}</>
                   : <><Calendar size={12} />{tl('addToCalendar')}</>}
@@ -758,7 +758,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
                 padding: '10px 18px', borderRadius: 11,
                 background: 'rgba(81,32,200,0.1)', color: '#5120c8',
                 border: '1px solid rgba(81,32,200,0.3)', cursor: 'pointer',
-                fontSize: 12, fontWeight: 600,
+                fontSize: 12, fontWeight: 500,
               }}>
                 <PlayCircle size={14} />
                 {isAr ? 'شاهد التسجيل' : 'Watch recording'}
@@ -829,7 +829,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
       </div>
 
       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 600, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 500, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {getTitle(course, locale)}
         </h3>
 
@@ -879,7 +879,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
 
         {/* Price + CTA */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          <div style={{ color: '#16a34a', fontSize: 16, fontWeight: 700 }}>
+          <div style={{ color: '#16a34a', fontSize: 16, fontWeight: 500 }}>
             {course.priceDisplay ?? (price > 0
               ? `${price} ${tl('sar')}`
               : course.offlinePaymentType === 'on_site'
@@ -888,7 +888,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); handleBookSeat(); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 9, background: isEnrolled ? 'rgba(22,163,74,0.1)' : '#16a34a', color: isEnrolled ? '#16a34a' : '#fff', border: isEnrolled ? '1px solid rgba(22,163,74,0.3)' : 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '8px 14px', borderRadius: 9, background: isEnrolled ? 'rgba(22,163,74,0.1)' : '#16a34a', color: isEnrolled ? '#16a34a' : '#fff', border: isEnrolled ? '1px solid rgba(22,163,74,0.3)' : 'none', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
             {isEnrolled
               ? <><CheckCircle2 size={12} />{tl('booked')}</>
               : <><MapPin size={12} />{tl('bookSeat')}</>}

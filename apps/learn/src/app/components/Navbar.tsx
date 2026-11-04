@@ -121,7 +121,7 @@ function Avatar({
 
   return (
     <span
-      className={`flex ${dim} items-center justify-center rounded-full ${size === 'sm' ? 'text-xs' : 'text-sm'} font-black select-none`}
+      className={`flex ${dim} items-center justify-center rounded-full ${size === 'sm' ? 'text-xs' : 'text-sm'} font-medium select-none`}
       style={{ background: 'var(--primary)', fontFamily: NAV_FONT, color: 'var(--primary-fg)' }}
     >
       {initial}
@@ -192,7 +192,7 @@ function UserDropdown({ locale }: { locale: string }) {
             borderBottom: '1px solid var(--border)',
             marginBottom: '6px',
           }}>
-            <p style={{ fontWeight: '700', fontSize: '14px', color: 'var(--foreground)', margin: 0 }}>
+            <p style={{ fontWeight: 500, fontSize: '14px', color: 'var(--foreground)', margin: 0 }}>
               {user?.profile?.firstName ?? ''} {user?.profile?.lastName ?? ''}
             </p>
             <p style={{ fontSize: '12px', color: 'var(--muted)', margin: '2px 0 0' }}>
@@ -210,7 +210,7 @@ function UserDropdown({ locale }: { locale: string }) {
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '10px 14px', borderRadius: '10px',
               color: 'var(--foreground)', textDecoration: 'none',
-              fontSize: '14px', fontWeight: '600',
+              fontSize: '14px', fontWeight: 500,
               transition: 'background 0.15s ease',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
@@ -228,7 +228,7 @@ function UserDropdown({ locale }: { locale: string }) {
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '10px 14px', borderRadius: '10px',
               color: 'var(--foreground)', textDecoration: 'none',
-              fontSize: '14px', fontWeight: '600',
+              fontSize: '14px', fontWeight: 500,
               transition: 'background 0.15s ease',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
@@ -249,7 +249,7 @@ function UserDropdown({ locale }: { locale: string }) {
               padding: '10px 14px', borderRadius: '10px',
               color: '#ef4444', background: 'transparent',
               border: 'none', width: '100%', cursor: 'pointer',
-              fontSize: '14px', fontWeight: '600',
+              fontSize: '14px', fontWeight: 500,
               fontFamily: 'inherit',
               transition: 'background 0.15s ease',
             }}
@@ -494,7 +494,7 @@ export function Navbar() {
                 >
                   <Bell className="h-5 w-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -521,13 +521,13 @@ export function Navbar() {
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                   >
                     <div
-                      className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-black"
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium"
                       style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
                     >
                       {initials || 'A'}
                     </div>
                     <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-black"
+                      className="rounded-full px-2 py-0.5 text-[10px] font-medium"
                       style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
                     >
                       Admin
@@ -542,7 +542,7 @@ export function Navbar() {
                 {/* تسجيل الدخول */}
                 <Link
                   href={`/${locale}/login`}
-                  className="px-4 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"
+                  className="px-4 py-[10px] text-[12px] font-medium rounded-xl transition-all duration-150"
                   style={{
                     color: 'var(--muted)',
                     border: '1px solid var(--border)',
@@ -569,7 +569,7 @@ export function Navbar() {
                 {/* إنشاء حساب */}
                 <Link
                   href={`/${locale}/register`}
-                  className="px-5 py-[10px] text-[12px] font-black rounded-xl transition-all duration-150"
+                  className="px-5 py-[10px] text-[12px] font-medium rounded-xl transition-all duration-150"
                   style={{
                     background: '#5120c8',
                     color: '#ffffff',
@@ -661,7 +661,7 @@ export function Navbar() {
                   href={`https://deveway-teal.vercel.app/${locale}/dashboard/ai-chat`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
                   style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
@@ -681,7 +681,7 @@ export function Navbar() {
                 >
                   <Bell className="h-[18px] w-[18px]" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                    <span className="absolute top-1.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -695,7 +695,7 @@ export function Navbar() {
                 <div className="flex items-center gap-3 px-2">
                   <Avatar user={user} size="md" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--foreground)' }}>
                       {user?.profile?.firstName
                         ? `${user.profile.firstName} ${user.profile.lastName ?? ''}`.trim()
                         : user?.email}
@@ -711,7 +711,7 @@ export function Navbar() {
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => setMobileOpen(false)}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium transition-colors duration-150"
                     style={{ background: 'var(--surface-2)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                   >
                     <BookOpen className="h-4 w-4" />
@@ -722,7 +722,7 @@ export function Navbar() {
                       const currentLocale = locale ?? 'ar'
                       window.location.href = `/${currentLocale}/logout`
                     }}
-                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black transition-colors duration-150"
+                    className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--error)', border: '1px solid rgba(239,68,68,0.12)', fontFamily: NAV_FONT }}
                   >
                     <LogOut className="h-4 w-4" />
@@ -734,7 +734,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/login`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
                   style={{ border: '1px solid var(--border)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
                 >
                   {t('login')}
@@ -742,7 +742,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/register`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-black transition-colors duration-150"
+                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
                   style={{
                     background: '#5120c8',
                     color: '#ffffff',

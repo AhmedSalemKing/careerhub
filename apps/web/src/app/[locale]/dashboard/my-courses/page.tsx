@@ -180,7 +180,7 @@ export default function MyCoursesPage() {
 					}}>
 						<div>
 							<h1 style={{
-								fontWeight: 700,
+								fontWeight: 900,
 								fontSize: 'clamp(1.8rem,4vw,2.4rem)',
 								color: 'var(--foreground)',
 								margin: 0,
@@ -421,7 +421,7 @@ export default function MyCoursesPage() {
 							border: '1px dashed var(--border)',
 							borderRadius: 16,
 						}}>
-							<h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 8px', color: 'var(--foreground)' }}>
+							<h3 style={{ fontSize: '1.1rem', fontWeight: 500, margin: '0 0 8px', color: 'var(--foreground)' }}>
 								{isInstructor
 									? (isAr ? 'لا توجد كورسات بعد' : 'No courses yet')
 									: (isAr ? 'لم تشترك في أي كورس بعد' : 'Not enrolled in any course')}
