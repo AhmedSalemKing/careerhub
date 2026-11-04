@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useSearchParams, usePathname } from 'next/navigation'
 import { useAuthStore } from '../../stores/authStore'
+import { syncAuthUser } from '../../lib/auth-sync'
 
 /**
  * Cross-origin token bridge.
@@ -37,6 +38,10 @@ export function TokenSync() {
         localStorage.setItem('careerhub_token', urlToken)
         setToken(urlToken)
         hydrate()
+        // Providers' one-shot syncAuthUser() can run before this effect stores the
+        // token (TokenSync hydrates later, inside Suspense) and then never retries,
+        // leaving the user null. Fetch the user for the new token now.
+        syncAuthUser(true)
       } catch (e) {
         console.error('[TokenSync] failed to store token:', e)
       }
@@ -57,6 +62,9 @@ export function TokenSync() {
     if (token) {
       setToken(token)
       hydrate()
+      // Token without a user yet (e.g. arrived via /auth/sync): load it. No-op
+      // once resolved for this token (single-flight, memoized).
+      if (!useAuthStore.getState().user) syncAuthUser()
     } else {
       hydrate()
     }

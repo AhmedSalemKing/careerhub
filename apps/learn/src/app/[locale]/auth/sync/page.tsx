@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
+import { api } from '../../../../lib/api'
 
 const ALLOWED_RETURN_HOSTS = [
   'deveway-teal.vercel.app',
@@ -34,6 +35,7 @@ export default function AuthSyncPage() {
   const locale = (params?.locale as string) || 'ar'
 
   useEffect(() => {
+    const run = async () => {
     const qs = new URLSearchParams(window.location.search)
     const token = qs.get('token')
     const returnUrl = qs.get('return')
@@ -50,12 +52,31 @@ export default function AuthSyncPage() {
         localStorage.setItem('deveway_token', token)
         localStorage.setItem('careerhub_token', token)
       } catch {}
+
+      // Fetch the user NOW so the page we land on already has it in storage
+      // (the auth store hydrates from it) instead of rendering signed-in but
+      // user-less. Bounded so a slow API cannot stall the login.
+      try {
+        const res = await api.get('/auth/me', {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 4000,
+        })
+        const body = (res.data as any)?.data ?? res.data
+        const user = body?.user ?? body
+        if (user?.id) {
+          const json = JSON.stringify(user)
+          localStorage.setItem('deveway_user', json)
+          localStorage.setItem('careerhub_user', json)
+        }
+      } catch {}
     }
 
     const dest = returnUrl && isAllowedReturn(returnUrl) ? returnUrl : `/${locale}/courses`
     // Drop the token from the URL/history before leaving
     window.history.replaceState({}, '', window.location.pathname)
     window.location.replace(dest)
+    }
+    run()
   }, [locale])
 
   return (
