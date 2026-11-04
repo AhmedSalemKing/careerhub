@@ -69,14 +69,15 @@ export default async function RootLayout({
             __html: `
               (function() {
                 try {
+                  // Mirror next-themes (key 'theme': light | dark | system, default system)
+                  // so the class is right before first paint and never flips afterwards.
                   var theme = localStorage.getItem('theme');
-                  if (theme === 'light') {
-                    document.documentElement.classList.add('light');
-                    document.documentElement.classList.remove('dark');
-                  } else {
-                    document.documentElement.classList.remove('light');
-                    document.documentElement.classList.add('dark');
-                  }
+                  var dark = theme === 'dark' ||
+                    ((!theme || theme === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var root = document.documentElement;
+                  root.classList.toggle('dark', dark);
+                  root.classList.toggle('light', !dark);
+                  root.style.colorScheme = dark ? 'dark' : 'light';
                 } catch(e) {}
                 window.addEventListener('load', function() {
                   requestAnimationFrame(function() {
@@ -89,14 +90,6 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            try {
-              var t = document.documentElement.classList.contains('dark') ? '#0d0d0d' : '#ffffff';
-              document.body.style.backgroundColor = t;
-            } catch(e){}
-          `,
-        }} />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <NumberInputGuard />
           <NextIntlClientProvider messages={messages}>
