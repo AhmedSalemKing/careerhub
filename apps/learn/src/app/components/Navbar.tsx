@@ -81,6 +81,55 @@ function ThemeToggle() {
 }
 
 /* ════════════════════════════════════════
+   Avatar: image -> initial -> loading skeleton (never "?")
+   The token is available before /auth/me resolves, so for a moment the user is
+   signed in but has no name/email yet. Show a pulsing placeholder then.
+   ════════════════════════════════════════ */
+function Avatar({
+  user,
+  size,
+}: {
+  user: { email?: string; profile?: { firstName?: string; avatar?: string } } | null
+  size: 'sm' | 'md'
+}) {
+  const src = user?.profile?.avatar
+  const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  const initial = (user?.profile?.firstName?.trim()?.[0] || user?.email?.trim()?.[0] || '').toUpperCase()
+  const dim = size === 'sm' ? 'h-8 w-8' : 'h-10 w-10'
+
+  if (src && failedSrc !== src) {
+    return (
+      <img
+        src={src}
+        alt={initial || 'avatar'}
+        className={`${dim} rounded-full object-cover`}
+        style={{ boxShadow: '0 0 0 2px var(--border)' }}
+        onError={() => setFailedSrc(src)}
+      />
+    )
+  }
+
+  if (!initial) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`${dim} block rounded-full animate-pulse`}
+        style={{ background: 'var(--surface-3)' }}
+      />
+    )
+  }
+
+  return (
+    <span
+      className={`flex ${dim} items-center justify-center rounded-full ${size === 'sm' ? 'text-xs' : 'text-sm'} font-black select-none`}
+      style={{ background: 'var(--primary)', fontFamily: NAV_FONT, color: 'var(--primary-fg)' }}
+    >
+      {initial}
+    </span>
+  )
+}
+
+/* ════════════════════════════════════════
    User Dropdown (Professional Style)
    ════════════════════════════════════════ */
 function UserDropdown({ locale }: { locale: string }) {
@@ -89,8 +138,6 @@ function UserDropdown({ locale }: { locale: string }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const firstName = user?.profile?.firstName || user?.email?.split('@')[0] || ''
-  const initials = firstName[0]?.toUpperCase() || '?'
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -114,21 +161,7 @@ function UserDropdown({ locale }: { locale: string }) {
         className="flex items-center gap-1.5 rounded-full focus:outline-none transition-opacity duration-200 hover:opacity-80"
         aria-label="User menu"
       >
-        {user?.profile?.avatar ? (
-          <img
-            src={user.profile.avatar}
-            alt="avatar"
-            className="h-8 w-8 rounded-full object-cover"
-            style={{ boxShadow: '0 0 0 2px var(--border)' }}
-          />
-        ) : (
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-black select-none"
-            style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
-          >
-            {initials}
-          </span>
-        )}
+        <Avatar user={user} size="sm" />
         <ChevronDown
           className="h-3 w-3 transition-transform duration-200"
           style={{ color: 'var(--muted)', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -660,21 +693,7 @@ export function Navbar() {
             {isLoggedIn ? (
               <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
                 <div className="flex items-center gap-3 px-2">
-                  {user?.profile?.avatar ? (
-                    <img
-                      src={user.profile.avatar}
-                      alt="avatar"
-                      className="h-10 w-10 rounded-full object-cover"
-                      style={{ boxShadow: '0 0 0 2px var(--border)' }}
-                    />
-                  ) : (
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-black"
-                      style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
-                    >
-                      {initials || '?'}
-                    </div>
-                  )}
+                  <Avatar user={user} size="md" />
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: 'var(--foreground)' }}>
                       {user?.profile?.firstName
