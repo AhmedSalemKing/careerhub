@@ -271,7 +271,9 @@ export function CoursesShowcase() {
             href={learnUrlWithToken(`/${locale}/courses`)}
             target="_blank"
             rel="noopener noreferrer"
-            className="cs-header-btn"
+            // "btn-" in the class name opts out of the global a:hover { color: var(--primary) }
+            // rule, which otherwise paints the label the same purple as the button.
+            className="cs-header-btn btn-cs-header"
           >
             {t('all_courses')}
             <ArrowLeft size={16} />

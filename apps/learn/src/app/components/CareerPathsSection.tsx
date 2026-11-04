@@ -454,10 +454,13 @@ export function CareerPathsSection() {
             href={`/${locale}/register`}
             whileHover={{ scale: 1.03, y: -1 }}
             whileTap={{ scale: 0.97 }}
-            className="inline-flex items-center gap-2.5 rounded-2xl px-10 py-4 text-[15px] font-bold text-white transition-all duration-200"
+            className="inline-flex items-center gap-2.5 rounded-2xl px-10 py-4 text-[15px] font-bold transition-all duration-200"
             style={{
               background: 'var(--primary)',
               boxShadow: 'var(--cta-shadow)',
+              // Not the text-white class: light mode remaps it to --foreground with
+              // !important, which an inline color cannot override.
+              color: 'var(--primary-fg)',
             }}
             onMouseEnter={(e) => {
               const el = e.currentTarget as HTMLAnchorElement
