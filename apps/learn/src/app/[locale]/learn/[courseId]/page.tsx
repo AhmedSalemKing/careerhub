@@ -2087,6 +2087,28 @@ function MetaItem({
 											}} />
 										</div>
 
+										{/* Provider attribution (set by admin on the course) */}
+										{course?.providerName && (
+											<div style={{
+												display: 'inline-flex', alignItems: 'center', gap: '8px',
+												background: 'var(--surface-2)', border: '1px solid var(--border)',
+												borderRadius: '6px', padding: '5px 12px', marginTop: '8px',
+												fontSize: '12px', color: 'var(--muted)',
+											}}>
+												{course.providerLogo && (
+													<img
+														src={course.providerLogo}
+														alt={course.providerName}
+														width={20}
+														height={20}
+														style={{ objectFit: 'contain' }}
+														onError={(e) => { e.currentTarget.style.display = 'none' }}
+													/>
+												)}
+												<span>Powered by {course.providerName}</span>
+											</div>
+										)}
+
 										{/* Speed Controls — Segmented Pills */}
 										<div style={{ marginTop: '12px' }}>
 											<div style={{
