@@ -88,6 +88,52 @@ const KNOWN_PROVIDERS: Record<string, { logo: string; display: string }> = {
   ilearn: { logo: '/logos/ilearn.png', display: 'iLearn' },
 }
 
+// Which categories (by slug) make sense for each career path (by slug).
+// A path that is not listed here shows every category, so new paths keep working.
+const CATEGORY_GROUPS: { paths: string[]; categories: string[] }[] = [
+  {
+    paths: ['software-engineering', 'software-engineer', 'frontend-developer', 'frontend', 'backend-developer', 'fullstack-developer', 'mobile-developer', 'mobile', 'game-developer'],
+    categories: ['frontend-development', 'backend-development', 'mobile-development', 'game-development', 'javascript-programming', 'python-programming', 'java-programming', 'cpp-programming', 'databases', 'البرمجة-والتطوير'],
+  },
+  {
+    paths: ['data-science', 'data-analyst', 'data-scientist', 'ml-engineer', 'bi-analyst'],
+    categories: ['data-analysis', 'data-science', 'machine-learning', 'python-programming', 'databases'],
+  },
+  {
+    paths: ['ai-engineer', 'ai-product-specialist'],
+    categories: ['artificial-intelligence', 'machine-learning', 'python-programming', 'data-science'],
+  },
+  {
+    paths: ['cybersecurity', 'cybersecurity-analyst', 'penetration-tester', 'network-security-engineer', 'soc-analyst', 'network-security'],
+    categories: ['cybersecurity', 'penetration-testing', 'network-security', 'networking'],
+  },
+  {
+    paths: ['cloud-devops', 'devops-engineer', 'cloud-engineer', 'sre-engineer', 'network-engineer'],
+    categories: ['devops-and-cloud', 'networking', 'network-security'],
+  },
+  {
+    paths: ['digital-marketing', 'digital-marketer', 'performance-marketer', 'seo-specialist', 'content-strategist'],
+    categories: ['digital-marketing', 'content-marketing', 'seo', 'paid-advertising', 'التسويق-والأعمال-الرقمية'],
+  },
+  {
+    paths: ['design', 'ui-ux', 'ui-designer', 'ux-designer', 'product-designer', 'motion-designer'],
+    categories: ['graphic-design', 'ui-ux-design', 'product-design', 'motion-graphics', 'التصميم-والإبداع'],
+  },
+  {
+    paths: ['business-analysis', 'business-analyst-role', 'product-management', 'product-manager-role', 'product-owner', 'project-manager', 'technical-product-manager', 'technical-consultant'],
+    categories: ['business-analysis', 'product-management', 'project-management', 'business-administration', 'إدارة-الأعمال-والتطوير-المهني'],
+  },
+  {
+    paths: ['content'],
+    categories: ['content-marketing', 'seo', 'communication-skills', 'english-language'],
+  },
+]
+
+function categorySlugsForPath(pathSlug?: string): string[] | null {
+  if (!pathSlug) return null
+  return CATEGORY_GROUPS.find((g) => g.paths.includes(pathSlug))?.categories ?? null
+}
+
 type Section = { title: string }
 type CourseForm = {
   titleEn: string
@@ -236,6 +282,9 @@ export default function AdminCreateCoursePage() {
   }
 
   const provider = form.hasProvider ? KNOWN_PROVIDERS[form.providerName.trim().toLowerCase()] : undefined
+
+  const selectedPathSlug = (careerPaths as any[]).find((cp) => cp.id === form.careerPathId)?.slug
+  const allowedCategorySlugs = categorySlugsForPath(selectedPathSlug)
 
   async function handleSubmit(status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED') {
     if (!form.titleEn.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
@@ -496,7 +545,7 @@ export default function AdminCreateCoursePage() {
                 <label style={labelStyle}>{isAr ? 'المسار المهني' : 'Career Path'}</label>
                 <select
                   value={form.careerPathId}
-                  onChange={(e) => set('careerPathId', e.target.value)}
+                  onChange={(e) => { set('careerPathId', e.target.value); set('categoryId', '') }}
                   style={inputStyle}
                 >
                   <option value="">{isAr ? 'اختر المسار' : 'Select Career Path'}</option>
@@ -513,7 +562,7 @@ export default function AdminCreateCoursePage() {
                   style={inputStyle}
                 >
                   <option value="">{isAr ? 'اختر التصنيف' : 'Select Category'}</option>
-                  {(categories as any[]).map((cat) => (
+                  {(categories as any[]).filter((cat) => !allowedCategorySlugs || allowedCategorySlugs.includes(cat.slug)).map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
