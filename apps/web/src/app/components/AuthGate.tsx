@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useAuthStore } from '../../stores/authStore'
+import { isLoggingOut } from '../../lib/auth'
 import { Skeleton } from './ui/Skeleton'
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   }, [hydrate])
 
   useEffect(() => {
-    if (!isLoading && !token) {
+    // A logout in progress is already navigating through learn's /logout
+    if (!isLoading && !token && !isLoggingOut()) {
       window.location.href = `/${locale}/login`
     }
   }, [isLoading, token, locale])

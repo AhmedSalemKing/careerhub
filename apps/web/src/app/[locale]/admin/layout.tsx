@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { api } from '../../../lib/api'
 import { useAuthStore } from '../../../stores/authStore'
+import { isLoggingOut } from '../../../lib/auth'
 import BottomDock from '../../../components/BottomDock'
 import AdminCurrencyToggle from '../../../components/AdminCurrencyToggle'
 
@@ -58,7 +59,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname])
 
   useEffect(() => {
-    if (authorized === false) {
+    if (authorized === false && !isLoggingOut()) {
       router.replace(`/${locale}/login`)
     }
   }, [authorized, locale, router])

@@ -90,7 +90,24 @@ export function isAuthenticated() {
   return !!getToken()
 }
 
-export function logout() {
+/**
+ * True once logout() has started its navigation through learn's /logout.
+ * Auth guards and the API 401 handler must not start their own redirect while
+ * this is set: a second navigation cancels the pending one, so learn would
+ * never see the logout page and its session would survive.
+ */
+export function isLoggingOut(): boolean {
+  return typeof window !== 'undefined' && (window as unknown as { __dvLoggingOut?: boolean }).__dvLoggingOut === true
+}
+
+/**
+ * @param returnPath where to land on web after learn has cleared its session
+ *   (defaults to the locale's login page). Must be a same-origin path.
+ */
+export function logout(returnPath?: string) {
+  if (typeof window !== 'undefined') {
+    ;(window as unknown as { __dvLoggingOut?: boolean }).__dvLoggingOut = true
+  }
   removeToken()
   removeRefreshToken()
   removeUser()
@@ -122,8 +139,12 @@ export function logout() {
     // loads), and browsers partition third-party iframe storage anyway.
     // Learn clears its storage, then redirects back to `return` (web login).
     const learnUrl = (process.env.NEXT_PUBLIC_LEARN_URL || 'https://devewayhub.vercel.app').replace(/\/+$/, '')
-    const back = `${window.location.origin}/${locale}/login`
+    const path = returnPath && returnPath.startsWith('/') && !returnPath.startsWith('//')
+      ? returnPath
+      : `/${locale}/login`
+    const back = `${window.location.origin}${path}`
     const logoutUrl = `${learnUrl}/${locale}/logout?return=${encodeURIComponent(back)}`
+    console.log('[Logout] Starting logout, redirecting to:', logoutUrl)
     // replace() so the still-authenticated page isn't kept in session history.
     try {
       window.location.replace(logoutUrl)

@@ -1,3 +1,4 @@
+import { isLoggingOut } from './auth'
 import axios from 'axios'
 
 // Resolve the API base URL once, preferring the environment variable.
@@ -84,7 +85,8 @@ api.interceptors.response.use(
     // Handle auth errors - force logout and redirect. Callers that must not be
     // interrupted (for example the non-fatal cloud-recording call during a
     // live stream) can opt out with skipAuthRedirect.
-    if (status === 401 && !(error.config as any)?.skipAuthRedirect) {
+    // Skip while a user-initiated logout is already navigating through learn
+    if (status === 401 && !(error.config as any)?.skipAuthRedirect && !isLoggingOut()) {
       const isAuthPath = window.location.pathname.includes('/login')
       const isRegisterPath = window.location.pathname.includes('/register')
       

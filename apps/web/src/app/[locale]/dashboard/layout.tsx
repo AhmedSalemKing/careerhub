@@ -129,8 +129,8 @@ return [
 
     if (user.status === 'PENDING' || user.status === 'BANNED' || user.status === 'REJECTED') {
       const error = user.status === 'PENDING' ? 'pending_approval' : 'account_rejected'
-      logout()
-      router.replace(`/${locale}/login?error=${error}`)
+      // Through learn's /logout so its session is cleared too, then land on login with the error
+      logout(`/${locale}/login?error=${error}`)
     }
   }, [mounted, user, locale, logout, router])
 
