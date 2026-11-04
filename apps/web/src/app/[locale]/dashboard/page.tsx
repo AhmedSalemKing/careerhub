@@ -6,12 +6,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
-  CheckCircle, Award, BookMarked, Zap, Play, Map as MapIcon, Bot, CreditCard, GraduationCap, MessageSquare,
+  CheckCircle, Award, Bookmark,
 } from 'lucide-react'
 import { get } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
-import { learnUrlWithToken, learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
+import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
@@ -453,6 +453,7 @@ function StudentOverview() {
   const enrollments = enrollmentData ?? []
   const certificates = certData ?? []
   const studentStats = statsData?.stats
+  const [tab, setTab] = useState<'all' | 'active' | 'done'>('all')
 
   if (isLoading) {
     return (
@@ -498,254 +499,333 @@ function StudentOverview() {
     ? (user?.profile?.firstName || 'الطالب')
     : (user?.profile?.firstName || 'Student')
   const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
-  const tile = (tone: string, pct = 10) => `color-mix(in srgb, ${tone} ${pct}%, transparent)`
+  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
 
-  const stats = [
-    {
-      Icon: BookOpen, tone: 'var(--primary)',
-      label: isAr ? 'كورسات مسجلة' : 'Enrolled Courses',
-      value: enrollments.length || studentStats?.enrolledCourses || 0,
-      href: `/${locale}/dashboard/my-courses`,
-    },
-    {
-      Icon: CheckCircle, tone: 'var(--success)',
-      label: isAr ? 'كورسات مكتملة' : 'Completed',
-      value: enrollments.filter((e: any) => {
-        const p = e.progress ?? e.enrollment?.progress ?? 0
-        return p >= 100
-      }).length || studentStats?.completedCourses || 0,
-      href: `/${locale}/dashboard/my-courses`,
-    },
-    {
-      Icon: Award, tone: 'var(--warning)',
-      label: isAr ? 'شهادات محققة' : 'Certificates',
-      value: certificates.length || studentStats?.certificatesEarned || 0,
-      href: `/${locale}/dashboard/certificates`,
-    },
+  const progressOf = (e: any): number => Number(e.progress ?? e.enrollment?.progress ?? 0) || 0
+  const courseOf = (e: any) => e.course || e
+  const titleOf = (c: any): string =>
+    (isAr ? (c?.titleAr || c?.title) : (c?.titleEn || c?.title)) || (isAr ? 'كورس' : 'Course')
+  const categoryOf = (c: any): string =>
+    c?.careerPath?.title || c?.category || (isAr ? 'كورس' : 'Course')
+  const lessonsLabel = (e: any): string =>
+    `${e.completedLessons ?? 0}/${e.totalLessons ?? 0} ${isAr ? 'درس' : 'lessons'}`
+
+  const enrolledCount = enrollments.length || studentStats?.enrolledCourses || 0
+  const completedCount = enrollments.filter((e: any) => progressOf(e) >= 100).length || studentStats?.completedCourses || 0
+  const certificatesCount = certificates.length || studentStats?.certificatesEarned || 0
+
+  const visible = enrollments.filter((e: any) =>
+    tab === 'all' ? true : tab === 'done' ? progressOf(e) >= 100 : progressOf(e) < 100,
+  )
+  // unfinished courses first, so the table reads as "what to do next"
+  const upNext = [...enrollments].sort((x: any, y: any) => Number(progressOf(x) >= 100) - Number(progressOf(y) >= 100))
+
+  // Side card: a recommended course if the API sends one, else the next unfinished enrollment
+  const recommended: any = (statsData as any)?.recommendedCourses?.[0]
+  const nextEnrollment: any = upNext[0]
+  const sideCourse: any = recommended || (nextEnrollment ? courseOf(nextEnrollment) : null)
+  const sideHref = sideCourse?.id ? learnCourseLink(sideCourse.id, locale) : learnCoursesLink(locale)
+  const sideMeta = sideCourse?.duration
+    ? `${sideCourse.duration}${isAr ? ' ساعة' : 'h'}`
+    : (sideCourse?.level || '')
+
+  const tones = [
+    { bg: 'var(--primary)', fg: 'var(--primary-foreground)', border: 'none', soft: mix('var(--primary-foreground)', 20), track: mix('var(--primary-foreground)', 30), fill: 'var(--primary-foreground)' },
+    { bg: 'var(--primary-hover)', fg: 'var(--primary-foreground)', border: 'none', soft: mix('var(--primary-foreground)', 20), track: mix('var(--primary-foreground)', 30), fill: 'var(--primary-foreground)' },
+    { bg: 'var(--card)', fg: 'var(--foreground)', border: '1px solid var(--border)', soft: mix('var(--foreground)', 8), track: mix('var(--foreground)', 10), fill: 'var(--primary)' },
   ]
 
-  const quickLinks = [
-    { Icon: BookOpen, label: isAr ? 'كورساتي' : 'My Courses', href: `/${locale}/dashboard/my-courses` },
-    { Icon: Award, label: isAr ? 'شهاداتي' : 'Certificates', href: `/${locale}/dashboard/certificates` },
-    { Icon: MapIcon, label: isAr ? 'المسار المهني' : 'Career Path', href: `/${locale}/dashboard/career-path` },
-    { Icon: Bot, label: isAr ? 'المساعد الذكي' : 'AI Assistant', href: `/${locale}/dashboard/ai-chat` },
-    { Icon: Calendar, label: isAr ? 'جلساتي' : 'My Sessions', href: `/${locale}/dashboard/my-sessions` },
-    { Icon: CreditCard, label: isAr ? 'المدفوعات' : 'Payments', href: `/${locale}/dashboard/invoices` },
-    { Icon: GraduationCap, label: isAr ? 'استعرض الكورسات' : 'Browse Courses', href: learnCoursesLink(locale), external: true },
-    { Icon: MessageSquare, label: isAr ? 'احجز استشارة' : 'Book Consultation', href: `/${locale}/coaching` },
+  const tabs: { key: 'all' | 'active' | 'done'; label: string }[] = [
+    { key: 'all', label: isAr ? 'الكل' : 'All' },
+    { key: 'active', label: isAr ? 'مسجل' : 'Active' },
+    { key: 'done', label: isAr ? 'مكتمل' : 'Completed' },
   ]
+
+  const sectionTitle: React.CSSProperties = { fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }
+  const viewAll: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 4,
+    fontWeight: 300, fontSize: 12, color: 'var(--primary)', textDecoration: 'none',
+  }
+  const th: React.CSSProperties = {
+    fontWeight: 500, fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em',
+  }
 
   return (
     <div style={{ padding: '1.5rem', maxWidth: '1200px', width: '100%' }}>
       <style>{`
-        .sd-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-        .sd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
-        .sd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
-        .sd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
-        .sd-course { transition: background 0.15s ease, border-color 0.15s ease; }
-        .sd-course:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
-        .sd-link { transition: background 0.15s ease; }
-        .sd-link:hover { background: color-mix(in srgb, var(--foreground) 5%, transparent); }
-        .sd-cta { transition: background 0.15s ease; }
-        .sd-cta:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
-        @media (max-width: 900px) { .sd-main { grid-template-columns: 1fr; } }
-        @media (max-width: 560px) { .sd-stats { grid-template-columns: 1fr; } }
+        .sd-layout { display: flex; gap: 24px; align-items: flex-start; }
+        .sd-side { width: 280px; flex-shrink: 0; }
+        .sd-cards { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity; }
+        .sd-card { flex: 0 0 230px; scroll-snap-align: start; transition: transform 0.15s ease; }
+        .sd-card:hover { transform: translateY(-2px); }
+        .sd-row { display: grid; grid-template-columns: 1fr 160px 90px; align-items: center; gap: 12px; }
+        .sd-row-link { transition: background 0.15s ease; }
+        .sd-row-link:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
+        .sd-tab { transition: background 0.15s ease, color 0.15s ease; }
+        @media (max-width: 1000px) {
+          .sd-layout { flex-direction: column; }
+          .sd-side { width: 100%; }
+        }
+        @media (max-width: 640px) {
+          .sd-row { grid-template-columns: 1fr 70px; }
+          .sd-mid { display: none !important; }
+        }
       `}</style>
 
       {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        marginBottom: 32, flexWrap: 'wrap', gap: 16,
-      }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontWeight: 900, fontSize: 28, lineHeight: 1.2, color: 'var(--foreground)', margin: '0 0 6px' }}>
-            <span style={{ fontWeight: 300, fontSize: 16, color: 'var(--muted)', marginInlineEnd: 10 }}>
-              {isAr ? 'مرحباً بك' : 'Welcome back,'}
-            </span>
-            {firstName}
+          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
+            {isAr ? `مرحباً بك، ${firstName}` : `Welcome back, ${firstName}`}
           </h1>
-          <p style={{ fontWeight: 300, fontSize: 14, color: 'var(--muted)', margin: 0 }}>
+          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
             {isAr ? 'واصل رحلتك التعليمية' : 'Continue your learning journey'}
           </p>
         </div>
-        <a
-          href={learnCoursesLink(locale)}
-          target="_blank" rel="noopener noreferrer"
-          className="sd-cta"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '10px 20px', borderRadius: 10,
-            border: '1.5px solid var(--primary)', color: 'var(--primary)',
-            fontWeight: 500, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap',
-          }}
-        >
-          {isAr ? 'استعرض الكورسات' : 'Browse Courses'}
-          <ChevronLeft size={16} style={arrow} />
-        </a>
+        <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)' }}>
+          {new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="sd-stats">
-        {stats.map(({ Icon, tone, label, value, href }) => (
-          <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
-            <div className="sd-stat" style={{
-              background: 'var(--card)', border: '1px solid var(--border)',
-              borderRadius: 14, padding: '20px 20px 18px',
-              display: 'flex', flexDirection: 'column', gap: 12,
-            }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: tile(tone), display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Icon size={18} color={tone} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 900, fontSize: 30, color: 'var(--foreground)', lineHeight: 1 }}>
-                  {value}
+      <div className="sd-layout">
+        {/* Main */}
+        <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
+          {/* Course cards */}
+          <section style={{ marginBottom: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <h2 style={sectionTitle}>{isAr ? 'كورساتي' : 'My Courses'}</h2>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {tabs.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      className="sd-tab"
+                      onClick={() => setTab(t.key)}
+                      style={{
+                        padding: '4px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                        fontWeight: 500, fontSize: 12,
+                        background: tab === t.key ? mix('var(--primary)', 12) : 'transparent',
+                        color: tab === t.key ? 'var(--primary)' : 'var(--muted)',
+                      }}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
                 </div>
-                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
-                  {label}
-                </div>
               </div>
+              <a href={`/${locale}/dashboard/my-courses`} style={viewAll}>
+                {isAr ? 'عرض الكل' : 'View all'}
+                <ChevronLeft size={14} style={arrow} />
+              </a>
             </div>
-          </a>
-        ))}
-      </div>
 
-      {/* Two columns */}
-      <div className="sd-main">
-        {/* My courses */}
-        <div style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: 24, minWidth: 0,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
-              <BookMarked size={18} color="var(--primary)" />
-              {isAr ? 'كورساتي' : 'My Courses'}
-            </h2>
-            <a href={`/${locale}/dashboard/my-courses`} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              fontWeight: 300, fontSize: 13, color: 'var(--primary)', textDecoration: 'none',
-            }}>
-              {isAr ? 'عرض الكل' : 'View all'}
-              <ChevronLeft size={14} style={arrow} />
-            </a>
-          </div>
+            {visible.length > 0 ? (
+              <div className="sd-cards">
+                {visible.slice(0, 8).map((enrollment: any, index: number) => {
+                  const course = courseOf(enrollment)
+                  const progress = Math.min(100, Math.round(progressOf(enrollment)))
+                  const tone = tones[index % 3]
+                  const courseId = course?.id || enrollment.courseId
+                  const meta = course?.duration
+                    ? `${course.duration}${isAr ? ' ساعة' : 'h'}`
+                    : (course?.level || '')
+                  return (
+                    <a
+                      key={enrollment.id || courseId}
+                      href={learnCourseLink(courseId, locale)}
+                      target="_blank" rel="noopener noreferrer"
+                      className="sd-card"
+                      style={{
+                        borderRadius: 16, padding: 20, background: tone.bg, color: tone.fg, border: tone.border,
+                        display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', minHeight: 200,
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <span style={{
+                          background: tone.soft, borderRadius: 6, padding: '3px 8px',
+                          fontSize: 11, fontWeight: 500, maxWidth: '80%',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }}>
+                          {categoryOf(course)}
+                        </span>
+                        <Bookmark size={16} style={{ opacity: 0.7, flexShrink: 0 }} />
+                      </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {enrollments.length > 0 ? (
-              enrollments.slice(0, 4).map((enrollment: any) => {
-                const course = enrollment.course || enrollment
-                const progress = enrollment.progress ?? enrollment.enrollment?.progress ?? 0
-                const courseId = course?.id || enrollment.courseId
-                const title = isAr
-                  ? (course?.titleAr || course?.title)
-                  : (course?.titleEn || course?.title)
-                const done = progress >= 100
-                return (
-                  <a
-                    key={enrollment.id || courseId}
-                    href={learnCourseLink(courseId, locale)}
-                    target="_blank" rel="noopener noreferrer"
-                    className="sd-course"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      padding: 12, borderRadius: 10, border: '1px solid var(--border)',
-                      textDecoration: 'none', minWidth: 0,
-                    }}
-                  >
-                    <div style={{
-                      width: 56, height: 42, borderRadius: 8, flexShrink: 0, overflow: 'hidden',
-                      background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {course?.thumbnail
-                        ? <img src={course.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <BookOpen size={18} color="var(--muted-foreground)" />}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        fontWeight: 900, fontSize: 16, lineHeight: 1.3, flex: 1,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                       }}>
-                        {title}
+                        {titleOf(course)}
                       </div>
-                      <div style={{ marginTop: 8, height: 3, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', borderRadius: 2,
-                          width: `${Math.min(100, Math.round(progress))}%`,
-                          background: done ? 'var(--success)' : 'var(--primary)',
-                        }} />
-                      </div>
-                    </div>
 
-                    <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', flexShrink: 0 }}>
-                      {Math.round(progress)}%
-                    </div>
-                    <div style={{
-                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                      background: tile('var(--primary)', 12),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Play size={12} color="var(--primary)" />
-                    </div>
-                  </a>
-                )
-              })
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 300, marginBottom: 6, opacity: 0.8 }}>
+                          <span>{isAr ? 'تقدمك' : 'Progress'}</span>
+                          <span>{lessonsLabel(enrollment)}</span>
+                        </div>
+                        <div style={{ height: 4, background: tone.track, borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', background: tone.fill, borderRadius: 2, width: `${progress}%` }} />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 300, opacity: 0.7 }}>{meta}</div>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 4,
+                          background: 'var(--success)', color: 'var(--primary-foreground)',
+                          borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 500,
+                        }}>
+                          {progress >= 100 ? (isAr ? 'مراجعة' : 'Review') : (isAr ? 'متابعة' : 'Continue')}
+                          <ChevronLeft size={12} style={arrow} />
+                        </span>
+                      </div>
+                    </a>
+                  )
+                })}
+              </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
+              <div style={{
+                textAlign: 'center', padding: '32px 0', color: 'var(--muted)',
+                border: '1px dashed var(--border)', borderRadius: 16,
+              }}>
                 <BookOpen size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
                 <p style={{ margin: '0 0 16px', fontWeight: 300, fontSize: 13 }}>
-                  {isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet'}
+                  {enrollments.length === 0
+                    ? (isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet')
+                    : (isAr ? 'لا توجد كورسات في هذا التصنيف' : 'No courses in this view')}
                 </p>
-                <a href={`/${locale}/courses`} style={{
-                  display: 'inline-block', padding: '8px 20px', borderRadius: 8,
-                  background: 'var(--primary)', color: 'var(--primary-foreground)',
-                  textDecoration: 'none', fontSize: 13, fontWeight: 500,
-                }}>
-                  {isAr ? 'ابدأ التعلم' : 'Start Learning'}
-                </a>
+                {enrollments.length === 0 && (
+                  <a href={learnCoursesLink(locale)} target="_blank" rel="noopener noreferrer" style={{
+                    display: 'inline-block', padding: '8px 20px', borderRadius: 8,
+                    background: 'var(--primary)', color: 'var(--primary-foreground)',
+                    textDecoration: 'none', fontSize: 13, fontWeight: 500,
+                  }}>
+                    {isAr ? 'ابدأ التعلم' : 'Start Learning'}
+                  </a>
+                )}
               </div>
             )}
-          </div>
+          </section>
+
+          {/* Up-next table */}
+          <section>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h2 style={sectionTitle}>{isAr ? 'كورساتي التالية' : 'Up Next'}</h2>
+              <a href={`/${locale}/dashboard/my-courses`} style={viewAll}>
+                {isAr ? 'عرض الكل' : 'View all'}
+                <ChevronLeft size={14} style={arrow} />
+              </a>
+            </div>
+
+            <div className="sd-row" style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+              <span style={th}>{isAr ? 'الكورس' : 'Course'}</span>
+              <span className="sd-mid" style={th}>{isAr ? 'المسار' : 'Path'}</span>
+              <span style={th}>{isAr ? 'التقدم' : 'Progress'}</span>
+            </div>
+
+            {upNext.slice(0, 6).map((enrollment: any) => {
+              const course = courseOf(enrollment)
+              const progress = Math.min(100, Math.round(progressOf(enrollment)))
+              const courseId = course?.id || enrollment.courseId
+              return (
+                <a
+                  key={enrollment.id || courseId}
+                  href={learnCourseLink(courseId, locale)}
+                  target="_blank" rel="noopener noreferrer"
+                  className="sd-row sd-row-link"
+                  style={{ padding: '12px 0', borderBottom: '1px solid var(--border)', textDecoration: 'none' }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {titleOf(course)}
+                    </div>
+                    <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                      {lessonsLabel(enrollment)}
+                    </div>
+                  </div>
+                  <div className="sd-mid" style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: mix('var(--primary)', 12),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <BookOpen size={13} color="var(--primary)" />
+                    </div>
+                    <span style={{
+                      fontWeight: 300, fontSize: 12, color: 'var(--foreground)',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>
+                      {categoryOf(course)}
+                    </span>
+                  </div>
+                  <div style={{
+                    fontWeight: progress >= 100 ? 500 : 300, fontSize: 12,
+                    color: progress >= 100 ? 'var(--success)' : 'var(--muted)',
+                  }}>
+                    {progress >= 100 ? (isAr ? 'مكتمل' : 'Done') : `${progress}%`}
+                  </div>
+                </a>
+              )
+            })}
+          </section>
         </div>
 
-        {/* Quick links */}
-        <div style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: 24, minWidth: 0,
+        {/* Side card */}
+        <aside className="sd-side" style={{
+          background: 'color-mix(in srgb, var(--primary) 8%, var(--background))',
+          border: '1px solid ' + mix('var(--primary)', 20),
+          borderRadius: 16, padding: 20,
+          display: 'flex', flexDirection: 'column', gap: 16,
         }}>
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
-            <Zap size={18} color="var(--primary)" />
-            {isAr ? 'روابط سريعة' : 'Quick Links'}
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {quickLinks.map(({ Icon, label, href, external }) => (
-              <a
-                key={label}
-                href={href}
-                target={external ? '_blank' : undefined}
-                rel={external ? 'noopener noreferrer' : undefined}
-                className="sd-link"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px', borderRadius: 8, textDecoration: 'none', color: 'var(--foreground)',
-                }}
-              >
-                <div style={{
-                  width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                  background: tile('var(--foreground)', 5),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Icon size={15} color="var(--muted-foreground)" />
-                </div>
-                <span style={{ flex: 1, fontWeight: 300, fontSize: 13, minWidth: 0 }}>{label}</span>
-                <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />
-              </a>
-            ))}
+          <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)' }}>
+            {recommended ? (isAr ? 'مقترح لك' : 'Recommended for you') : (isAr ? 'تابع من حيث توقفت' : 'Pick up where you left off')}
           </div>
-        </div>
+
+          <a href={sideHref} target="_blank" rel="noopener noreferrer" style={{
+            display: 'block', textDecoration: 'none',
+            background: 'var(--primary)', color: 'var(--primary-foreground)',
+            borderRadius: 12, padding: 16,
+          }}>
+            <span style={{
+              display: 'inline-block', background: mix('var(--primary-foreground)', 20),
+              borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 500,
+            }}>
+              {categoryOf(sideCourse)}
+            </span>
+            <div style={{ fontWeight: 900, fontSize: 18, marginTop: 10, lineHeight: 1.3 }}>
+              {sideCourse ? titleOf(sideCourse) : (isAr ? 'ابدأ كورسك القادم' : 'Start your next course')}
+            </div>
+            {sideMeta && (
+              <div style={{ fontWeight: 300, fontSize: 12, opacity: 0.8, marginTop: 6 }}>{sideMeta}</div>
+            )}
+          </a>
+
+          {[
+            { label: isAr ? 'كورسات مسجلة' : 'Enrolled', value: enrolledCount, Icon: BookOpen, href: `/${locale}/dashboard/my-courses` },
+            { label: isAr ? 'كورسات مكتملة' : 'Completed', value: completedCount, Icon: CheckCircle, href: `/${locale}/dashboard/my-courses` },
+            { label: isAr ? 'شهادات' : 'Certificates', value: certificatesCount, Icon: Award, href: `/${locale}/dashboard/certificates` },
+          ].map(({ label, value, Icon, href }) => (
+            <a key={label} href={href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--foreground)' }}>
+              <Icon size={15} color="var(--primary)" />
+              <span style={{ flex: 1, fontWeight: 300, fontSize: 13 }}>{label}</span>
+              <span style={{ fontWeight: 500, fontSize: 14 }}>{value}</span>
+            </a>
+          ))}
+
+          <a href={learnCoursesLink(locale)} target="_blank" rel="noopener noreferrer" style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: 10, borderRadius: 10,
+            background: 'var(--primary)', color: 'var(--primary-foreground)',
+            fontWeight: 500, fontSize: 13, textDecoration: 'none', marginTop: 'auto',
+          }}>
+            {isAr ? 'استعرض الكل' : 'Browse all'}
+            <ChevronLeft size={14} style={arrow} />
+          </a>
+        </aside>
       </div>
     </div>
   )
