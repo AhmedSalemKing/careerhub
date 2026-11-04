@@ -20,7 +20,9 @@ import {
   User,
   FileText,
   Globe,
+  Award,
 } from 'lucide-react'
+import { useAuthStore } from '../../../../stores/authStore'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
@@ -81,6 +83,11 @@ async function uploadVideoFile(
   })
 }
 
+// Providers whose logo we ship; typing the name auto-fills it.
+const KNOWN_PROVIDERS: Record<string, { logo: string; display: string }> = {
+  ilearn: { logo: '/logos/ilearn.png', display: 'iLearn' },
+}
+
 type Section = { title: string }
 type CourseForm = {
   titleEn: string
@@ -95,6 +102,8 @@ type CourseForm = {
   categoryId: string
   thumbnail: string
   previewVideo: string
+  hasProvider: boolean
+  providerName: string
   sections: Section[]
   isInstructor: boolean
   instructorId: string
@@ -118,6 +127,8 @@ export default function AdminCreateCoursePage() {
   const router = useRouter()
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const authUser = useAuthStore((st) => st.user)
+  const isAdmin = ['ADMIN', 'SUPER_ADMIN'].includes(String(authUser?.accountType ?? authUser?.role ?? '').toUpperCase())
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -136,6 +147,8 @@ export default function AdminCreateCoursePage() {
     categoryId: '',
     thumbnail: '',
     previewVideo: '',
+    hasProvider: false,
+    providerName: '',
     sections: [{ title: '' }],
     isInstructor: true,
     instructorId: '',
@@ -222,6 +235,8 @@ export default function AdminCreateCoursePage() {
     })
   }
 
+  const provider = form.hasProvider ? KNOWN_PROVIDERS[form.providerName.trim().toLowerCase()] : undefined
+
   async function handleSubmit(status: 'DRAFT' | 'PUBLISHED' = 'PUBLISHED') {
     if (!form.titleEn.trim()) { setError(isAr ? 'عنوان الكورس مطلوب' : 'Course title is required'); return }
     setSaving(true)
@@ -240,6 +255,8 @@ export default function AdminCreateCoursePage() {
         status,
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
+        providerName: isAdmin && form.hasProvider ? (provider?.display ?? form.providerName.trim()) || undefined : undefined,
+        providerLogo: isAdmin && form.hasProvider ? provider?.logo : undefined,
         duration: parseInt(form.duration) || 0,
         isInstructor: form.isInstructor,
         instructorId: !form.isInstructor ? form.instructorId : undefined,
@@ -626,6 +643,67 @@ export default function AdminCreateCoursePage() {
 
           {/* Divider */}
           <div style={{ borderTop: `1px solid ${isDark ? 'color-mix(in srgb, var(--foreground) 5%, transparent)' : '#f1f5f9'}`, margin: '24px 0' }} />
+
+          {/* Provider Attribution (admin only) */}
+          {isAdmin && (
+            <>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+                  <Award size={18} color="var(--primary)" />
+                  <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: 0 }}>
+                    {isAr ? 'نسب الكورس لبروفايدر' : 'Provider Attribution'}
+                  </h3>
+                </div>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: form.hasProvider ? 16 : 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.hasProvider}
+                    onChange={(e) => set('hasProvider', e.target.checked)}
+                    style={{ width: 18, height: 18, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  />
+                  <span style={{ color: 'var(--foreground)', fontSize: 14, fontWeight: 500 }}>
+                    {isAr ? 'هل الكورس تابع لبروفايدر؟' : 'Is this course from a provider?'}
+                  </span>
+                </label>
+
+                {form.hasProvider && (
+                  <div>
+                    <label style={labelStyle}>{isAr ? 'اسم البروفايدر' : 'Provider name'}</label>
+                    <input
+                      type="text"
+                      value={form.providerName}
+                      onChange={(e) => set('providerName', e.target.value)}
+                      placeholder={isAr ? 'مثال: iLearn' : 'e.g. iLearn'}
+                      style={inputStyle}
+                    />
+
+                    {form.providerName.trim() && (
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
+                        padding: '8px 14px', borderRadius: 999,
+                        background: 'var(--primary-muted)', border: '1px solid var(--border)',
+                        color: 'var(--foreground)', fontSize: 13, fontWeight: 500,
+                      }}>
+                        {provider && (
+                          <img
+                            src={provider.logo}
+                            alt=""
+                            style={{ height: 18, width: 'auto', objectFit: 'contain' }}
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+                          />
+                        )}
+                        <span>Powered by {provider?.display ?? form.providerName.trim()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div style={{ borderTop: '1px solid var(--border)', margin: '24px 0' }} />
+            </>
+          )}
 
           {/* Sections */}
           <div style={{ marginBottom: 24 }}>

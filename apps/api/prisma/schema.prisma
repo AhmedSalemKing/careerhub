@@ -356,6 +356,8 @@ model Course {
   sortOrder           Int          @default(0)
   expectedLessons     Int          @default(0)
   certificateEnabled  Boolean      @default(true)
+  providerName        String?
+  providerLogo        String?
   isCompleted         Boolean      @default(false)
   completedAt         DateTime?
   publishedAt         DateTime?

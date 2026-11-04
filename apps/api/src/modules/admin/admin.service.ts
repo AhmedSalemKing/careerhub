@@ -90,6 +90,8 @@ export class AdminService {
           status: status as any,
           thumbnail: courseData.thumbnail || null,
           previewVideo: courseData.previewVideo || null,
+          providerName: courseData.providerName?.toString().trim() || null,
+          providerLogo: courseData.providerLogo?.toString().trim() || null,
           instructorId: sanitizeId(instructorId),
           careerPathId: sanitizeId(courseData.careerPathId),
           categoryId: sanitizeId(courseData.categoryId),

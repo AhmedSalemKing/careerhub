@@ -1,0 +1,2 @@
+ALTER TABLE "Course" ADD COLUMN IF NOT EXISTS "providerName" TEXT;
+ALTER TABLE "Course" ADD COLUMN IF NOT EXISTS "providerLogo" TEXT;
