@@ -1,8 +1,8 @@
 ﻿'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { BookOpen, Users, ArrowLeft, Play, ChevronLeft, ChevronRight } from 'lucide-react'
+import { BookOpen, Users, ArrowLeft, Play } from 'lucide-react'
 import api from '../../lib/api'
 import { learnUrlWithToken } from '../../lib/learn-link'
 import { formatCoursePrice } from '../../lib/market'
@@ -64,19 +64,6 @@ export function CoursesShowcase() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  
-  // ✅ متغيرات محسنة للسكرول التلقائي
-  const animRef = useRef<number>(0)
-  const pausedRef = useRef(false)
-  const positionRef = useRef(0)
-  const lastTimeRef = useRef<number>(0)
-  const velocityRef = useRef(0)
-  const targetVelocityRef = useRef(0.5)
-  
-  // حالة للأزرار
-  const [showNavButtons, setShowNavButtons] = useState(false)
-
   // learnUrl() from constants appends the auth token for cross-domain nav
 
   // ── Fetch real courses ──
@@ -121,83 +108,15 @@ export function CoursesShowcase() {
     return () => { mounted = false }
   }, [])
 
-  // ── Auto-scroll animation ──
-  useEffect(() => {
-    if (courses.length === 0) return
-    const el = scrollRef.current
-    if (!el) return
-
-    positionRef.current = 0
-    velocityRef.current = 0
-    lastTimeRef.current = performance.now()
-
-    const tick = (currentTime: number) => {
-      const deltaTime = currentTime - lastTimeRef.current
-      lastTimeRef.current = currentTime
-      
-      const clampedDelta = Math.min(deltaTime, 100)
-      
-      if (el && el.scrollWidth > 0) {
-        const halfWidth = el.scrollWidth / 2
-        
-        if (!pausedRef.current) {
-          const acceleration = 0.02
-          targetVelocityRef.current = 0.5
-          
-          if (velocityRef.current < targetVelocityRef.current) {
-            velocityRef.current += acceleration * clampedDelta
-            velocityRef.current = Math.min(velocityRef.current, targetVelocityRef.current)
-          }
-          
-          positionRef.current += velocityRef.current * clampedDelta * 0.06
-          
-          if (positionRef.current >= halfWidth) {
-            positionRef.current = positionRef.current % halfWidth
-          }
-          
-          el.scrollLeft = positionRef.current
-        } else {
-          const deceleration = 0.08
-          velocityRef.current *= (1 - deceleration * clampedDelta * 0.1)
-          if (velocityRef.current < 0.01) velocityRef.current = 0
-        }
-      }
-      
-      animRef.current = requestAnimationFrame(tick)
-    }
-
-    animRef.current = requestAnimationFrame(tick)
-    
-    return () => cancelAnimationFrame(animRef.current)
-  }, [courses])
-
-  // دالة للسكرول اليدوي بالأزرار
-  const scrollToDirection = (direction: 'left' | 'right') => {
-    const el = scrollRef.current
-    if (!el) return
-    
-    const cardWidth = 298
-    const scrollAmount = direction === 'right' ? cardWidth : -cardWidth
-    
-    velocityRef.current = direction === 'right' ? 8 : -8
-    positionRef.current = Math.max(0, el.scrollLeft + scrollAmount)
-    el.scrollTo({
-      left: positionRef.current,
-      behavior: 'smooth'
-    })
-    
-    setTimeout(() => setShowNavButtons(false), 3000)
-  }
-
   // Duplicate for infinite loop
   const displayCourses = courses.length > 0 ? [...courses, ...courses] : []
+  // Scale the loop time with the number of cards so the speed stays constant
+  const loopSeconds = Math.max(20, courses.length * 4)
 
   return (
     <section 
       className="courses-showcase-section" 
       dir={isAr ? 'rtl' : 'ltr'}
-      onMouseEnter={() => setShowNavButtons(true)}
-      onMouseLeave={() => setShowNavButtons(false)}
     >
       
       {/* ═══ Theme Variables + Font Import ═══ */}
@@ -327,48 +246,7 @@ export function CoursesShowcase() {
           background: linear-gradient(to left, var(--cs-bg), transparent);
         }
 
-        /* Navigation buttons styling */
-        .cs-nav-btn {
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: var(--cs-card-bg);
-          border: 1.5px solid var(--cs-card-border);
-          color: var(--cs-fg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          z-index: 20;
-          opacity: 0;
-          visibility: hidden;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-        }
 
-        .cs-nav-btn:hover {
-          background: var(--cs-primary);
-          border-color: var(--cs-primary);
-          color: white;
-          transform: translateY(-50%) scale(1.05);
-          box-shadow: 0 6px 24px var(--cs-primary-shadow);
-        }
-
-        .cs-nav-btn.cs-visible {
-          opacity: 1;
-          visibility: visible;
-        }
-
-        .cs-nav-left {
-          left: 16px;
-        }
-
-        .cs-nav-right {
-          right: 16px;
-        }
       `}</style>
 
       {/* ═══ Container ═══ */}
@@ -404,26 +282,6 @@ export function CoursesShowcase() {
       {/* ═══ Scrolling Rail ═══ */}
       <div className="cs-scroll-wrapper">
         
-        {/* Navigation Buttons */}
-        {!loading && courses.length > 0 && (
-          <>
-            <button
-              className={`cs-nav-btn cs-nav-left ${showNavButtons ? 'cs-visible' : ''}`}
-              onClick={() => scrollToDirection('left')}
-              aria-label={t('previous')}
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              className={`cs-nav-btn cs-nav-right ${showNavButtons ? 'cs-visible' : ''}`}
-              onClick={() => scrollToDirection('right')}
-              aria-label={t('next')}
-            >
-              <ChevronRight size={20} />
-            </button>
-          </>
-        )}
-
         {loading ? (
           <div className="cs-rail cs-rail-loading">
             {[...Array(5)].map((_, i) => (
@@ -443,19 +301,11 @@ export function CoursesShowcase() {
             )}
           </div>
         ) : (
-          <div
-            ref={scrollRef}
-            className="cs-rail"
-            onMouseEnter={() => { 
-              pausedRef.current = true
-            }}
-            onMouseLeave={() => { 
-              pausedRef.current = false
-              setTimeout(() => {
-                pausedRef.current = false
-              }, 300)
-            }}
-          >
+          <div className="cs-rail">
+            <div
+              className={`cs-track ${isAr ? 'cs-track-rtl' : 'cs-track-ltr'}`}
+              style={{ animationDuration: `${loopSeconds}s` }}
+            >
             {displayCourses.map((course, idx) => {
               const thumb = getThumb(course.thumbnail)
               const name = isAr ? (course.titleAr || course.title) : course.title
@@ -479,7 +329,6 @@ export function CoursesShowcase() {
                       '0 20px 50px var(--cs-primary-shadow), ' +
                       '0 0 0 1px var(--cs-border-hover), ' +
                       'inset 0 1px 0 rgba(255,255,255,0.1)'
-                    pausedRef.current = true
                   }}
                   onMouseLeave={(e) => {
                     const el = e.currentTarget
@@ -488,7 +337,6 @@ export function CoursesShowcase() {
                     el.style.boxShadow = 
                       '0 2px 8px rgba(0,0,0,0.12), ' +
                       'inset 0 1px 0 rgba(255,255,255,0.04)'
-                    pausedRef.current = false
                   }}
                 >
                   {/* Thumbnail Area */}
@@ -560,6 +408,7 @@ export function CoursesShowcase() {
                 </a>
               )
             })}
+            </div>
           </div>
         )}
       </div>
@@ -662,16 +511,31 @@ export function CoursesShowcase() {
 
         /* ─── Rail / Scroll Container ─── */
         .cs-rail {
-          display: flex;
-          gap: 18px;
           overflow-x: hidden;
           padding: 8px 60px 28px;
-          cursor: grab;
-          userSelect: none;
-          will-change: scroll-position;
-          -webkit-overflow-scrolling: touch;
+        }
+        /* Infinite marquee: the card list is rendered twice, so moving the track
+           by exactly half its width loops seamlessly. The trailing padding equals
+           the gap so both halves are the same width. */
+        .cs-track {
+          display: flex;
+          gap: 18px;
+          width: max-content;
+          padding-inline-end: 18px;
+          animation-timing-function: linear;
+          animation-iteration-count: infinite;
+          will-change: transform;
+        }
+        .cs-track-ltr { animation-name: cs-scroll-left; }
+        .cs-track-rtl { animation-name: cs-scroll-right; }
+        .cs-track:hover { animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) {
+          .cs-track { animation: none; }
+          .cs-rail { overflow-x: auto; }
         }
         .cs-rail-loading {
+          display: flex;
+          gap: 18px;
           padding: 0 60px;
         }
 
@@ -906,6 +770,15 @@ export function CoursesShowcase() {
         @keyframes cs-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
+        }
+
+        @keyframes cs-scroll-left {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        @keyframes cs-scroll-right {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(50%); }
         }
 
         @keyframes cs-shimmer {
