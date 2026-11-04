@@ -51,7 +51,6 @@ export default function HomePage() {
   const [showStickyCta, setShowStickyCta] = useState(false)
   const heroRef = useRef<HTMLDivElement>(null)
   const [apiCourses, setApiCourses] = useState<any[]>([])
-  const [isDarkMode, setIsDarkMode] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
@@ -118,38 +117,6 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Detect Dark/Light Mode for Wave Divider
-  useEffect(() => {
-    const checkTheme = () => {
-      const isDark = 
-        document.documentElement.classList.contains('dark') ||
-        document.documentElement.getAttribute('data-theme') === 'dark' ||
-        window.matchMedia('(prefers-color-scheme: dark)').matches
-      
-      setIsDarkMode(isDark)
-    }
-    
-    checkTheme()
-    
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class' || mutation.attributeName === 'data-theme') {
-          checkTheme()
-        }
-      })
-    })
-    
-    observer.observe(document.documentElement, { attributes: true })
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    mediaQuery.addEventListener('change', checkTheme)
-    
-    return () => {
-      observer.disconnect()
-      mediaQuery.removeEventListener('change', checkTheme)
-    }
-  }, [])
-
   const [apiCategories, setApiCategories] = useState<any[]>([])
   const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
 
@@ -186,8 +153,8 @@ export default function HomePage() {
         icon: iconMap[cat.icon as string] || Code,
         name: { ar: cat.nameAr || cat.name, en: cat.nameEn || cat.name },
         count: cat.courseCount || 0,
-        bg: 'rgba(81,32,200,0.10)',
-        color: '#5120c8',
+        bg: 'color-mix(in srgb, var(--primary) 10%, transparent)',
+        color: 'var(--primary)',
       }))
     : []
 
@@ -247,8 +214,8 @@ export default function HomePage() {
       {/* ========== HERO - REVERSED LAYOUT ========== */}
       <section
         ref={heroRef}
-        className="relative min-h-[92vh] text-white overflow-hidden"
-        style={{ background: '#0D0D0D' }}
+        className="relative min-h-[92vh] overflow-hidden"
+        style={{ background: 'var(--background)', color: 'var(--foreground)', isolation: 'isolate', zIndex: 0 }}
       >
         {/* Background ambient lights */}
         <div style={{
@@ -258,7 +225,7 @@ export default function HomePage() {
           width: 600,
           height: 600,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(81,32,200,0.18) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 70%)',
           pointerEvents: 'none',
           zIndex: 1,
         }} />
@@ -269,13 +236,13 @@ export default function HomePage() {
           width: 500,
           height: 500,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(43,191,163,0.10) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, color-mix(in srgb, var(--teal) 10%, transparent) 0%, transparent 70%)',
           pointerEvents: 'none',
           zIndex: 1,
         }} />
 
         {/* Main Content Grid */}
-        <div className="relative z-10 min-h-[92vh] flex items-center">
+        <div className="relative z-10 min-h-[92vh] flex items-center pt-10 pb-28 sm:pb-32 lg:pb-40">
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               
@@ -284,35 +251,32 @@ export default function HomePage() {
                 <div
                   className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium"
                   style={{
-                    background: 'rgba(81,32,200,0.15)',
-                    border: '1px solid rgba(81,32,200,0.3)',
-                    color: '#A78BFA',
+                    background: 'color-mix(in srgb, var(--primary) 12%, transparent)',
+                    border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',
+                    color: 'var(--primary)',
                   }}
                 >
-                  <Sparkles className="h-4 w-4" style={{ color: '#F5A623' }} />
+                  <Sparkles className="h-4 w-4" style={{ color: 'var(--gold)' }} />
                   <span>{locale === 'ar' ? 'أكثر من 10,000 متعلم حققوا أهدافهم' : 'Over 10,000 learners achieved their goals'}</span>
                 </div>
 
                 <h1 
-                  className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-madinet leading-tight"
-                  style={{ 
-                    color: '#ffffff !important',
-                    textShadow: '0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(255,255,255,0.1)'
-                  }}
+                  className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold font-madinet leading-tight break-words"
+                  style={{ color: 'var(--foreground)' }}
                 >
                   {locale === 'ar' ? 'تعلم مهارة' : 'Learn a Skill'}
-                  <span className="block mt-3" style={{ color: '#A78BFA' }}>
+                  <span className="block mt-3" style={{ color: 'var(--primary)' }}>
                     {locale === 'ar' ? tl('changeFuture') : 'Change Your Future'}
                   </span>
                 </h1>
 
-                <p className="text-lg sm:text-xl leading-relaxed max-w-xl" style={{ color: 'rgba(248,248,250,0.65)' }}>
+                <p className="text-lg sm:text-xl leading-relaxed max-w-xl" style={{ color: 'var(--muted)' }}>
                   {locale === 'ar'
                     ? 'منصة تعليمية متكاملة مع كورسات احترافية وكوتشينج شخصي لمساعدتك على تحقيق أهدافك المهنية'
                     : 'A comprehensive learning platform with professional courses and personal coaching to help you achieve your career goals'}
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 [&>a]:w-full sm:[&>a]:w-auto">
                   {/* ===== START FREE NOW BUTTON ===== */}
                   <a
                     href="#"
@@ -342,14 +306,13 @@ export default function HomePage() {
                   <a
                     href="#"
                     onClick={handleBrowseCoursesClick}
-                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10"
+                    className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
                     style={{
                       background: 'transparent',
-                      border: '1.5px solid rgba(255,255,255,0.6)',
-                      color: '#ffffff !important',
+                      border: '1.5px solid color-mix(in srgb, var(--foreground) 45%, transparent)',
+                      color: 'var(--foreground)',
                       fontFamily: "'Plus Jakarta Sans', sans-serif",
                       textDecoration: 'none',
-                      textShadow: '0 2px 15px rgba(0,0,0,0.4)',
                       cursor: 'pointer',
                     }}
                   >
@@ -359,13 +322,13 @@ export default function HomePage() {
               </div>
 
               {/* ========== RIGHT SIDE - IMAGE ========== */}
-              <div className="flex justify-center lg:justify-end order-2">
+              <div className="flex justify-center lg:justify-end order-2 px-6 sm:px-0">
                 <div 
                   className="absolute rounded-3xl blur-3xl opacity-30"
                   style={{
-                    width: '450px',
-                    height: '450px',
-                    background: 'linear-gradient(135deg, rgba(81,32,200,0.4) 0%, rgba(43,191,163,0.3) 100%)',
+                    width: 'min(450px, 80vw)',
+                    height: 'min(450px, 80vw)',
+                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent) 0%, color-mix(in srgb, var(--teal) 30%, transparent) 100%)',
                     top: '50%',
                     right: '8%',
                     transform: 'translateY(-50%)',
@@ -376,26 +339,26 @@ export default function HomePage() {
                   <img
                     src="/Remove_the_background_from_this_laptop_image_showi-1776361981480.png"
                     alt="Learning Platform"
-                    className="relative w-full max-w-lg lg:max-w-xl object-contain drop-shadow-2xl"
-                    style={{ filter: 'drop-shadow(0 25px 50px rgba(81,32,200,0.25))' }}
+                    className="relative w-full max-w-[260px] sm:max-w-lg lg:max-w-xl object-contain drop-shadow-2xl"
+                    style={{ filter: 'drop-shadow(0 25px 50px color-mix(in srgb, var(--primary) 25%, transparent))' }}
                   />
                   
-                  <div className="absolute -top-4 -left-4 w-20 h-20 rounded-full opacity-60" style={{ background: 'linear-gradient(135deg, #5120C8 0%, #A78BFA 100%)', filter: 'blur(1px)' }} />
-                  <div className="absolute -bottom-6 -right-6 w-16 h-16 rounded-lg opacity-40 rotate-12" style={{ background: 'linear-gradient(135deg, #2BBFA3 0%, #5EEAD4 100%)', filter: 'blur(1px)' }} />
+                  <div className="absolute -top-4 -left-4 w-20 h-20 rounded-full opacity-60" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 55%, var(--background)) 100%)', filter: 'blur(1px)' }} />
+                  <div className="absolute -bottom-6 -right-6 w-16 h-16 rounded-lg opacity-40 rotate-12" style={{ background: 'linear-gradient(135deg, var(--teal) 0%, color-mix(in srgb, var(--teal) 55%, var(--background)) 100%)', filter: 'blur(1px)' }} />
                   
-                  <div className="absolute top-1/4 -left-10 sm:-left-14 px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-float-badge-reverse" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)', borderColor: 'rgba(255,255,255,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+                  <div className="absolute top-1/4 -left-3 sm:-left-14 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl backdrop-blur-md border animate-float-badge-reverse" style={{ background: 'color-mix(in srgb, var(--surface) 75%, transparent)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', color: 'var(--foreground)' }}>
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F5A623 0%, #FCD34D 100%)', boxShadow: '0 4px 12px rgba(245,166,35,0.4)' }}>
-                        <Sparkles className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gold) 0%, color-mix(in srgb, var(--gold) 55%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--gold) 40%, transparent)' }}>
+                        <Sparkles className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
                       </div>
                       <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Interactive</span>
                     </div>
                   </div>
                   
-                  <div className="absolute bottom-1/3 -right-8 sm:-right-12 px-4 py-2.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-float-badge" style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.2) 0%, rgba(81,32,200,0.1) 100%)', borderColor: 'rgba(167,139,250,0.3)', boxShadow: '0 8px 32px rgba(81,32,200,0.25), inset 0 1px 0 rgba(255,255,255,0.1)' }}>
+                  <div className="absolute bottom-1/3 -right-3 sm:-right-12 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl backdrop-blur-md border animate-float-badge" style={{ background: 'color-mix(in srgb, var(--primary) 14%, transparent)', borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)', boxShadow: 'var(--shadow-lg)', color: 'var(--foreground)' }}>
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #A78BFA 0%, #818CF8 100%)', boxShadow: '0 4px 12px rgba(167,139,250,0.4)' }}>
-                        <Award className="h-4 w-4 text-white" />
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 60%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--primary) 40%, transparent)' }}>
+                        <Award className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
                       </div>
                       <span className="text-sm font-semibold whitespace-nowrap tracking-wide">Certified</span>
                     </div>
@@ -415,29 +378,10 @@ export default function HomePage() {
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <defs>
-              <linearGradient id="waveGradientDark" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#0D0D0D" />
-                <stop offset="50%" stopColor="#1a1a2e" />
-                <stop offset="100%" stopColor="#0a0a0a" />
-              </linearGradient>
-              <linearGradient id="waveGradientLight" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="50%" stopColor="#f8f9fa" />
-                <stop offset="100%" stopColor="#ffffff" />
-              </linearGradient>
-              <filter id="glowDark">
-                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                <feMerge>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-              </filter>
-            </defs>
             
-            <path d="M0,90 C240,140 480,40 720,80 C960,120 1200,60 1440,100 L1440,180 L0,180 Z" className="wave-main-path" filter="url(#glowDark)" opacity="0.98" />
-            <path d="M0,110 C180,150 360,70 540,100 C720,130 900,80 1080,110 C1260,140 1380,100 1440,120 L1440,180 L0,180 Z" className="wave-secondary-path" opacity="0.5" />
-            <path d="M0,130 C200,160 400,120 600,145 C800,170 1000,130 1200,155 C1350,170 1420,150 1440,160 L1440,180 L0,180 Z" className="wave-accent-path" opacity="0.12" />
+            <path d="M0,90 C240,140 480,40 720,80 C960,120 1200,60 1440,100 L1440,180 L0,180 Z" style={{ fill: 'var(--background)' }} opacity="0.98" />
+            <path d="M0,110 C180,150 360,70 540,100 C720,130 900,80 1080,110 C1260,140 1380,100 1440,120 L1440,180 L0,180 Z" style={{ fill: 'color-mix(in srgb, var(--foreground) 6%, var(--background))' }} opacity="0.5" />
+            <path d="M0,130 C200,160 400,120 600,145 C800,170 1000,130 1200,155 C1350,170 1420,150 1440,160 L1440,180 L0,180 Z" style={{ fill: 'color-mix(in srgb, var(--primary) 50%, var(--background))' }} opacity="0.12" />
           </svg>
         </div>
       </section>
@@ -464,7 +408,7 @@ export default function HomePage() {
                     padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
                     cursor: 'pointer', border: courseSort === tab.key ? 'none' : '1px solid var(--border)',
                     background: courseSort === tab.key ? 'var(--primary)' : 'transparent',
-                    color: courseSort === tab.key ? '#fff' : 'var(--muted)',
+                    color: courseSort === tab.key ? 'var(--primary-fg)' : 'var(--muted)',
                     transition: 'all 0.15s',
                   }}>
                   {locale === 'ar' ? tab.ar : tab.en}
@@ -497,7 +441,7 @@ export default function HomePage() {
           }}>
             {sortedCourses.map((course, index) => (
               <div key={course.id} className="group relative rounded-xl overflow-hidden card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--navy)' }}>
+                <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--surface-2)' }}>
                   {thumbUrl(course.thumbnail) ? (
                     <img src={thumbUrl(course.thumbnail)!} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
                   ) : (
@@ -505,27 +449,27 @@ export default function HomePage() {
                       <Laptop className="h-10 w-10 text-primary" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <div className="h-14 w-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.9)' }}>
-                      <Play className="h-6 w-6" style={{ color: 'var(--navy)', transform: 'translateX(2px)' }} />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" style={{ background: 'var(--overlay)' }}>
+                    <div className="h-14 w-14 rounded-full flex items-center justify-center" style={{ background: 'var(--surface)' }}>
+                      <Play className="h-6 w-6" style={{ color: 'var(--primary)', transform: 'translateX(2px)' }} />
                     </div>
                   </div>
                   {courseSort === 'popular' && course.enrollmentCount === maxEnrollment && maxEnrollment > 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: '#F5A623' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--gold)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
                   )}
                   {courseSort === 'newest' && index === 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: 'var(--primary)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
+                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-semibold" style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
                   )}
                   {isLiveNow(course) && (
                     <div
-                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-semibold text-white flex items-center gap-1.5"
-                      style={{ background: '#dc2626', animation: 'livePulse 1.5s infinite', zIndex: 2 }}
+                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5"
+                      style={{ background: 'var(--error)', color: 'var(--primary-fg)', animation: 'livePulse 1.5s infinite', zIndex: 2 }}
                     >
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary-fg)', display: 'inline-block' }} />
                       {locale === 'ar' ? 'مباشر الآن' : 'LIVE NOW'}
                     </div>
                   )}
-                  <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs text-white flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
+                  <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs flex items-center gap-1" style={{ background: 'var(--overlay-strong)', color: 'var(--primary-fg)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
                 </div>
                 <div className="p-5">
                   <h3 className="text-lg font-semibold mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
@@ -549,9 +493,9 @@ export default function HomePage() {
                           gap: '6px',
                           padding: '8px 16px',
                           borderRadius: '10px',
-                          background: 'rgba(16,185,129,0.12)',
-                          border: '1px solid rgba(16,185,129,0.4)',
-                          color: '#10B981',
+                          background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+                          border: '1px solid color-mix(in srgb, var(--success) 40%, transparent)',
+                          color: 'var(--success)',
                           fontSize: 13,
                           fontWeight: 600,
                           textDecoration: 'none',
@@ -583,12 +527,12 @@ export default function HomePage() {
       </section>
 
       {/* ========== CTA ========== */}
-      <section className="relative py-24 text-white overflow-hidden" style={{ background: 'var(--navy)' }}>
+      <section className="relative py-16 sm:py-24 overflow-hidden" style={{ background: 'var(--surface-2)', color: 'var(--foreground)' }}>
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'rgba(248,248,250,0.07)', border: '1px solid rgba(248,248,250,0.12)', color: 'rgba(248,248,250,0.8)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
-          <h2 className="text-3xl sm:text-4xl font-bold font-madinet">{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
-          <p className="mt-4 text-lg" style={{ color: 'rgba(248,248,250,0.65)' }}>{locale === 'ar' ? tl('joinLearners') : 'Join thousands of learners and start today'}</p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'color-mix(in srgb, var(--foreground) 7%, transparent)', border: '1px solid var(--border)', color: 'var(--muted)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
+          <h2 className="text-3xl sm:text-4xl font-bold font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
+          <p className="mt-4 text-lg" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? tl('joinLearners') : 'Join thousands of learners and start today'}</p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center [&>a]:w-full sm:[&>a]:w-auto">
             {/* ===== CTA START FREE BUTTON ===== */}
             <a
               href="#"
@@ -618,11 +562,11 @@ export default function HomePage() {
             <a
               href="#"
               onClick={handleBrowseCoursesClick}
-              className="inline-flex items-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-white/10"
+              className="inline-flex items-center justify-center gap-2 text-base font-semibold rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
               style={{
                 background: 'transparent',
-                border: '1.5px solid rgba(248,248,250,0.25)',
-                color: '#F8F8FA',
+                border: '1.5px solid var(--border-strong)',
+                color: 'var(--foreground)',
                 textDecoration: 'none',
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 cursor: 'pointer',

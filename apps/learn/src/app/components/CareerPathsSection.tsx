@@ -100,7 +100,7 @@ export function CareerPathsSection() {
                 <span
                   style={{
                     fontFamily: "'PingARLT', sans-serif",
-                    color: '#5B21B6',
+                    color: 'var(--primary)',
                   }}
                 >
                   {' '}للاحتراف
@@ -112,7 +112,7 @@ export function CareerPathsSection() {
                 <span
                   style={{
                     fontFamily: "'28DaysLater', sans-serif",
-                    color: '#5B21B6',
+                    color: 'var(--primary)',
                   }}
                 >
                   {' '}Master Tech
