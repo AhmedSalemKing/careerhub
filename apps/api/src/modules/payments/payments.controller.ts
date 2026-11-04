@@ -13,12 +13,20 @@ export class PaymentsController {
   async courseCheckout(
     @Param('courseId') courseId: string,
     @Request() req: any,
-    @Body() body: { locale?: string }
+    @Body() body: { locale?: string; currency?: string }
   ) {
+    // Prefer explicit currency from the client (its `market` cookie), then the
+    // market cookie on the request, then IP country headers.
+    const country = String(req.headers?.['x-vercel-ip-country'] || req.headers?.['cf-ipcountry'] || '').toUpperCase()
+    const market =
+      body.currency ||
+      req.cookies?.market ||
+      (country ? (country === 'EG' ? 'EGP' : 'SAR') : 'SAR')
     return this.paymentsService.createCourseCheckoutSession(
       courseId,
       req.user.id,
-      body.locale || 'ar'
+      body.locale || 'ar',
+      market
     )
   }
 

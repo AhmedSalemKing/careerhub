@@ -1,7 +1,14 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { ActivityService } from '../../common/services/activity.service'
+import { ExchangeRateService } from '../../exchange-rate/exchange-rate.service'
 import Stripe from 'stripe'
+
+const STRIPE_CURRENCY_MAP: Record<string, string> = {
+  SAR: 'sar',
+  EGP: 'egp',
+  USD: 'usd',
+}
 
 @Injectable()
 export class PaymentsService {
@@ -10,6 +17,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private readonly activityService: ActivityService,
+    private readonly exchangeRateService: ExchangeRateService,
   ) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
       apiVersion: '2024-06-20' as any,
@@ -17,7 +25,7 @@ export class PaymentsService {
   }
 
   // Create checkout session for COURSE enrollment
-  async createCourseCheckoutSession(courseId: string, userId: string, locale: string) {
+  async createCourseCheckoutSession(courseId: string, userId: string, locale: string, market?: string) {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: {
@@ -36,6 +44,16 @@ export class PaymentsService {
     const price = parseFloat(course.price?.toString() || '0')
     if (price <= 0) throw new BadRequestException('Course is free, no payment needed')
 
+    // Course prices are stored in SAR; charge in the buyer's market currency
+    // using the same exchange rates as the displayed prices.
+    const requested = String(market || 'SAR').toUpperCase()
+    const stripeCurrency = (STRIPE_CURRENCY_MAP[requested] || 'sar') as 'sar' | 'egp' | 'usd'
+    let chargeAmount = price
+    if (stripeCurrency !== 'sar') {
+      const rates = await this.exchangeRateService.getRates()
+      chargeAmount = price * (stripeCurrency === 'egp' ? rates.EGP : rates.USD)
+    }
+
     const courseTitle = (course as any).titleAr || (course as any).titleEn || 'Course'
     const courseType = (course as any).type || 'recorded'
     
@@ -51,14 +69,14 @@ export class PaymentsService {
       customer_email: user?.email,
       line_items: [{
         price_data: {
-          currency: 'sar',
+          currency: stripeCurrency,
           product_data: {
             name: courseTitle,
             description: `${courseType === 'live' ? 'بث مباشر' : courseType === 'offline' ? 'مقر فعلي' : 'كورس مسجل'} - ${(course as any).instructor?.profile?.firstName || ''}`,
             images: (course as any).thumbnail ? [(course as any).thumbnail] : [],
             metadata: { courseId, courseType },
           },
-          unit_amount: Math.round(price * 100),
+          unit_amount: Math.round(chargeAmount * 100),
         },
         quantity: 1,
       }],
