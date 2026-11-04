@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { api } from '@/lib/api'
+import { learnSyncUrl } from '@/lib/learn-link'
 
 export default function GoogleAuthSuccess() {
   const searchParams = useSearchParams()
@@ -58,11 +59,9 @@ export default function GoogleAuthSuccess() {
         window.dispatchEvent(new Event('auth:updated'))
 
         const locale = 'ar'
-        if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
-          router.push(`/${locale}/admin`)
-        } else {
-          router.push(`/${locale}/dashboard`)
-        }
+        // Sync the token to the learn app on the way in
+        const dest = user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN' ? 'admin' : 'dashboard'
+        window.location.href = learnSyncUrl(`${window.location.origin}/${locale}/${dest}`, locale, accessToken)
       } catch (e) {
         router.push('/ar/login?error=parse_failed')
       }

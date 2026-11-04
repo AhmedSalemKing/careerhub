@@ -11,6 +11,7 @@ import { Clock } from 'lucide-react'
 import { useAuthStore } from '../../../stores/authStore'
 import { api } from '../../../lib/api'
 import { setToken, setRefreshToken, setUser } from '../../../lib/auth'
+import { learnSyncUrl } from '../../../lib/learn-link'
 
 export default function LoginPage() {
   const locale = useLocale() as 'ar' | 'en'
@@ -99,11 +100,9 @@ export default function LoginPage() {
         }
         return
       }
-      if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
-        window.location.href = `/${locale}/admin`
-      } else {
-        window.location.href = `/${locale}/dashboard`
-      }
+      // Go via learn's /auth/sync so the learn app is signed in too
+      const dest = user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN' ? 'admin' : 'dashboard'
+      window.location.href = learnSyncUrl(`${window.location.origin}/${locale}/${dest}`, locale)
     }
   }, [token, user, locale])
 
@@ -168,11 +167,14 @@ export default function LoginPage() {
       window.dispatchEvent(new Event('auth:updated'))
 
       if (user.accountType === 'ADMIN' || user.accountType === 'SUPER_ADMIN') {
-        window.location.href = `/${locale}/admin`
+        window.location.href = learnSyncUrl(`${window.location.origin}/${locale}/admin`, locale, token)
       } else {
         const params = new URLSearchParams(window.location.search)
-        const returnTo = params.get('redirect') || `/${locale}/dashboard`
-        if (returnTo.startsWith('http')) {
+        const returnTo = params.get('redirect') || ''
+        if (!returnTo) {
+          // No explicit destination: sync the token to learn, then land on the dashboard
+          window.location.href = learnSyncUrl(`${window.location.origin}/${locale}/dashboard`, locale, token)
+        } else if (returnTo.startsWith('http')) {
           try {
             const url = new URL(returnTo)
             url.searchParams.set('token', token)
