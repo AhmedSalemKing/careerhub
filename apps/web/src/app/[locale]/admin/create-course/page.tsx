@@ -109,7 +109,6 @@ const LEVELS = [
 
 const CURRENCIES = [
   { value: 'SAR', labelAr: 'ريال سعودي', labelEn: 'SAR' },
-  { value: 'USD', labelAr: 'دولار أمريكي', labelEn: 'USD' },
   { value: 'EGP', labelAr: 'جنيه مصري', labelEn: 'EGP' },
 ]
 
