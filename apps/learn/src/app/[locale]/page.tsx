@@ -378,10 +378,7 @@ export default function HomePage() {
             preserveAspectRatio="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            
-            <path d="M0,90 C240,140 480,40 720,80 C960,120 1200,60 1440,100 L1440,180 L0,180 Z" style={{ fill: 'var(--background)' }} opacity="0.98" />
-            <path d="M0,110 C180,150 360,70 540,100 C720,130 900,80 1080,110 C1260,140 1380,100 1440,120 L1440,180 L0,180 Z" style={{ fill: 'color-mix(in srgb, var(--foreground) 6%, var(--background))' }} opacity="0.5" />
-            <path d="M0,130 C200,160 400,120 600,145 C800,170 1000,130 1200,155 C1350,170 1420,150 1440,160 L1440,180 L0,180 Z" style={{ fill: 'color-mix(in srgb, var(--primary) 50%, var(--background))' }} opacity="0.12" />
+            <path d="M0,90 C240,140 480,40 720,80 C960,120 1200,60 1440,100 L1440,180 L0,180 Z" style={{ fill: 'var(--background)' }} />
           </svg>
         </div>
       </section>
@@ -527,7 +524,7 @@ export default function HomePage() {
       </section>
 
       {/* ========== CTA ========== */}
-      <section className="relative py-16 sm:py-24 overflow-hidden" style={{ background: 'var(--surface-2)', color: 'var(--foreground)' }}>
+      <section className="relative py-16 sm:py-24 overflow-hidden" style={{ background: 'color-mix(in srgb, var(--primary) 8%, var(--background))', color: 'var(--foreground)' }}>
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'color-mix(in srgb, var(--foreground) 7%, transparent)', border: '1px solid var(--border)', color: 'var(--muted)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
           <h2 className="text-3xl sm:text-4xl font-medium font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>

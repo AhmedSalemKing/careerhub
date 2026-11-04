@@ -297,7 +297,7 @@
 html {
     font-family: var(--font-body);
     color: var(--foreground);
-    background-color: #0d0d0d;
+    background-color: var(--background);
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -305,12 +305,12 @@ html {
 }
 
 html.light {
-    background-color: #ffffff !important;
+    background-color: var(--background) !important;
     color-scheme: light !important;
 }
 
 html.light, html.light body {
-    background-color: #ffffff !important;
+    background-color: var(--background) !important;
 }
 
 html, body {
@@ -1346,17 +1346,9 @@ html.no-transition *::after {
 .dark html,
 html.dark body,
 html.dark {
-    background-color: #0D0D0D;
+    background-color: var(--background);
     background-image: none;
 }
-
-/* Wave path colors — CSS-driven instead of JS class toggling */
-html.dark .wave-main-path { fill: #0D0D0D; }
-html:not(.dark) .wave-main-path { fill: #ffffff; }
-html.dark .wave-secondary-path { fill: #1a1a2e; }
-html:not(.dark) .wave-secondary-path { fill: #f8f9fa; }
-html.dark .wave-accent-path { fill: url(#waveGradientDark); }
-html:not(.dark) .wave-accent-path { fill: url(#waveGradientLight); }
 
 /* Dark mode cards use surface (lighter than bg) */
 .dark .card,
