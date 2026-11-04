@@ -66,9 +66,25 @@ input:-webkit-autofill:active {
 }
 
 @font-face {
+    font-family: "PingARLT";
+    src: url("/fonts/alfont_com_PingARLT-Medium.otf") format("opentype");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "PingARLT";
+    src: url("/fonts/alfont_com_PingARLT-Light.otf") format("opentype");
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
 	font-family: "PingAR";
 	src: url("/fonts/alfont_com_PingARLT-Black.otf") format("opentype");
-	font-weight: 700;
+	font-weight: 900;
 	font-style: normal;
 	font-display: swap;
 }
@@ -180,9 +196,9 @@ input:-webkit-autofill:active {
 
 	/* ── Typography ── */
 	--font-display: "Plus Jakarta Sans", sans-serif;
-	--font-body: "PingARLT", "Arial Black", "sans-serif";
-	--font-madinet: "PingARLT", "Cairo", sans-serif;
-	--font-brand: "PingARLT", "Arial Black", sans-serif;
+	--font-body: "PingAR", "Arial Black", "sans-serif";
+	--font-madinet: "PingAR", "Cairo", sans-serif;
+	--font-brand: "PingAR", "Arial Black", sans-serif;
 
 	/* ── Radius ── */
 	--radius-sm: 8px;
@@ -341,8 +357,7 @@ h4:lang(ar),
 [dir="rtl"] h3,
 [dir="rtl"] h4,
 .font-madinet {
-	font-family: "PingARLT", "Cairo", sans-serif !important;
-	font-weight: 700 !important;
+	font-family: "PingAR", "Cairo", sans-serif !important;
 }
 
 /* ── English Headings → Plus Jakarta Sans ── */
@@ -379,7 +394,7 @@ li,
 td,
 th,
 label {
-	font-family: "", sans-serif;
+	font-family: inherit;
 }
 
 a,
@@ -592,7 +607,7 @@ img {
 	gap: 8px;
 	background-color: #5120c8;
 	color: #ffffff;
-	font-family: "PingARLT", "Arial Black", sans-serif;
+	font-family: "PingAR", "Arial Black", sans-serif;
 	font-weight: 900;
 	font-size: 14px;
 	padding: 10px 20px;
@@ -623,7 +638,7 @@ img {
 	gap: 8px;
 	background-color: transparent;
 	color: #5120c8;
-	font-family: "PingARLT", "Arial Black", sans-serif;
+	font-family: "PingAR", "Arial Black", sans-serif;
 	font-weight: 900;
 	font-size: 14px;
 	padding: 10px 20px;
@@ -646,7 +661,7 @@ img {
 	padding: 14px 36px;
 	border-radius: var(--radius-lg);
 	font-weight: 900;
-	font-family: "PingARLT", "Arial Black", sans-serif;
+	font-family: "PingAR", "Arial Black", sans-serif;
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
@@ -786,7 +801,7 @@ h3 {
 
 .section-title {
 	font-size: clamp(22px, 3.5vw, 40px);
-	font-family: "PingARLT", "Cairo", sans-serif;
+	font-family: "PingAR", "Cairo", sans-serif;
 }
 
 /* ══════════════════════════════════════
@@ -1495,8 +1510,7 @@ button.btn-primary {
 	background-color: #5120c8 !important;
 	color: #ffffff !important;
 	border: none !important;
-	font-family: "PingARLT", "Arial Black", sans-serif !important;
-	font-weight: 900 !important;
+	font-family: "PingAR", "Arial Black", sans-serif !important;
 	letter-spacing: -0.01em !important;
 	box-shadow: none !important;
 }
@@ -1515,8 +1529,7 @@ button.btn-cta-primary:hover {
 button,
 a[role="button"],
 [class*="btn"] {
-	font-family: "PingARLT", "Arial Black", sans-serif !important;
-	font-weight: 900 !important;
+	font-family: "PingAR", "Arial Black", sans-serif !important;
 	box-shadow: none !important;
 }
 
@@ -1524,7 +1537,7 @@ a[role="button"],
 button[class*="bg-primary"],
 a[class*="bg-primary"] {
 	background-color: #5120c8 !important;
-	font-family: "PingARLT", "Cairo", sans-serif !important;
+	font-family: "PingAR", "Cairo", sans-serif !important;
 	box-shadow: none !important;
 }
 
@@ -1534,8 +1547,7 @@ a[class*="bg-primary"] {
 .fx-title,
 .feature-title,
 .feature-cta {
-	font-family: "PingARLT", "Arial Black", sans-serif !important;
-	font-weight: 900 !important;
+	font-family: "PingAR", "Arial Black", sans-serif !important;
 }
 
 h1:not(:lang(ar)):not([dir="rtl"]),
@@ -1550,7 +1562,7 @@ h3:lang(ar),
 [dir="rtl"] h1,
 [dir="rtl"] h2,
 [dir="rtl"] h3 {
-	font-family: "PingARLT", "Cairo", sans-serif !important;
+	font-family: "PingAR", "Cairo", sans-serif !important;
 }
 
 /* ══════════════════════════════════════
@@ -1725,176 +1737,84 @@ button:is([style*="5120c8"]) {
    ══════════════════════════════════════ */
 
 /* ═══════════════════════════════════════════════════════════════
-   FONT WEIGHT REFINEMENT — lighter scale, cleaner hierarchy
-   Do not edit component files. All rules below use CSS cascade.
+   FONT WEIGHT SYSTEM
+   PingAR has three faces: 300 Light, 500 Medium, 900 Black.
+     900  page title (h1) only
+     500  headings h2-h6, buttons, nav, tabs, labels, badges, table headers
+     300  body text, inputs, table cells, muted text
+   Element-level defaults use :where() (zero specificity) and no !important, so
+   Tailwind classes (font-medium, font-black, ...) and inline styles in
+   components always win.
    ═══════════════════════════════════════════════════════════════ */
 
-/* Body stays 400 */
 body {
-  font-weight: 400;
+  font-weight: 300;
 }
 
-/* Hero H1 — the ONLY 900 */
-h1, .h1 {
+h1,
+.h1 {
   font-weight: 900;
 }
 
-/* Section H2 — lighter now */
-h2, .h2 {
-  font-weight: 700;
+h2,
+h3,
+h4,
+h5,
+h6,
+.h2,
+.h3,
+.h4 {
+  font-weight: 500;
 }
 
-/* Card / sub titles — lighter now */
-h3, .h3, h4, .h4 {
-  font-weight: 600;
+:where([data-section-title], [data-card-title]) {
+  font-weight: 500;
 }
 
-/* Section-level label chips */
-[data-section-title] {
-  font-weight: 700 !important;
-}
-[data-card-title] {
-  font-weight: 600 !important;
+:where(button, a[role="button"], [class*="btn"]) {
+  font-weight: 500;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Buttons — out-rank the existing `button, [class*="btn"] {900 !important}`
-   ───────────────────────────────────────────────────────────── */
-
-/* Primary CTA — 600 */
-button[data-variant="primary"],
-button.bg-primary,
-a.bg-primary,
-button.primary,
-.btn-primary,
-button.btn-primary,
-a.btn-primary,
-.btn-cta-primary,
-button.btn-cta-primary,
-a.btn-cta-primary,
-button.hero-cta-primary,
-a.hero-cta-primary {
-  font-weight: 600 !important;
+:where(nav a, .navbar a, .nav-link) {
+  font-weight: 500;
 }
 
-/* Secondary buttons + everything else → 500 */
-button:not([data-variant="primary"]):not(.bg-primary):not(.primary):not(.btn-primary):not(.btn-cta-primary):not(.hero-cta-primary):not(.font-extrabold) {
-  font-weight: 500 !important;
+:where([role="tab"], .tab, .pill) {
+  font-weight: 500;
 }
 
-/* Nav links — 500 */
-nav a,
-.navbar a,
-.nav-link {
-  font-weight: 500 !important;
+:where(label) {
+  font-weight: 500;
 }
 
-/* Tabs / Pills — 500 */
-[role="tab"],
-.tab,
-.pill {
-  font-weight: 500 !important;
+:where(.badge, .tag, [data-badge]) {
+  font-weight: 500;
 }
 
-/* Form labels — 500 */
-label {
-  font-weight: 500 !important;
+:where(thead th, table th) {
+  font-weight: 500;
 }
 
-/* Badges / Tags — 500 */
-.badge,
-.tag,
-[data-badge] {
-  font-weight: 500 !important;
+:where(tbody td, table td) {
+  font-weight: 300;
 }
 
-/* Table headers — 500 */
-thead th,
-table th {
-  font-weight: 500 !important;
+:where(input, textarea, select) {
+  font-weight: 300;
 }
 
-/* Table cells — 400 */
-tbody td,
-table td {
-  font-weight: 400 !important;
+:where(.text-muted, [data-muted]) {
+  font-weight: 300;
 }
 
-/* Muted text — 400 */
-.text-muted,
-[data-muted] {
-  font-weight: 400;
+:where(.fx-title, .feature-title, .feature-cta) {
+  font-weight: 500;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Utility class overrides for classes used in JSX
-   (!important required to beat existing 900/700 !important rules)
-   ───────────────────────────────────────────────────────────── */
-
-/* font-black on things that are NOT the hero H1 */
-.font-black:not(h1):not(.h1) {
-  font-weight: 700 !important;
-}
-
-/* font-extrabold on buttons → 600 */
-button.font-extrabold {
-  font-weight: 600 !important;
-}
-
-/* font-extrabold on nav / tabs / labels / badges → 500 */
-nav .font-extrabold,
-[role="tab"].font-extrabold,
-label.font-extrabold,
-.badge.font-extrabold {
-  font-weight: 500 !important;
-}
-
-/* .font-bold sweep — non-titles → 500 (keeps 600 on primary CTAs) */
-.font-bold:not(h1):not(h2):not(h3):not(h4):not(.h1):not(.h2):not(.h3):not(.h4):not(.btn-primary):not(.btn-cta-primary):not(.hero-cta-primary):not(.bg-primary) {
-  font-weight: 500 !important;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Leftover 900 !important rules surfaced in the audit (Phase 1.3)
-   ───────────────────────────────────────────────────────────── */
-
-/* .fx-title / .feature-title / .feature-cta → 700 instead of 900 */
-.fx-title,
-.feature-title,
-.feature-cta,
-.features-section .fx-title,
-.features-section .feature-title,
-.features-section .feature-cta {
-  font-weight: 700 !important;
-}
-
-/* Any leftover hero-cta-primary variant */
-button.hero-cta-primary,
-a.hero-cta-primary {
-  font-weight: 600 !important;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Arabic / RTL headings — out-rank the `[dir="rtl"] h1..h4 {700 !important}` cap
-   ───────────────────────────────────────────────────────────── */
-
-/* Arabic hero H1 → 900 */
-html[dir="rtl"] h1:first-of-type,
-[dir="rtl"] h1:first-of-type,
-html[lang^="ar"] h1:first-of-type {
-  font-weight: 900 !important;
-}
-
-/* Other Arabic headings → hierarchy */
-html[dir="rtl"] h2,
-[dir="rtl"] h2,
-html[lang^="ar"] h2 {
-  font-weight: 700 !important;
-}
-
-html[dir="rtl"] h3,
-[dir="rtl"] h3,
-html[dir="rtl"] h4,
-[dir="rtl"] h4 {
-  font-weight: 600 !important;
+/* Legacy utility sweep: font-bold / font-semibold on non-headings render as
+   Medium (there is no face between 500 and 900). Components that need Black
+   use font-black. No !important. */
+.font-bold:not(h1):not(h2):not(h3):not(h4):not(.h1):not(.h2):not(.h3):not(.h4),
+.font-semibold:not(h1):not(h2):not(h3):not(h4):not(.h1):not(.h2):not(.h3):not(.h4) {
+  font-weight: 500;
 }
