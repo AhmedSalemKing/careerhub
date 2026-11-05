@@ -2470,3 +2470,125 @@ a.dw-instructor:hover { color: var(--accent); }
 	border-top: 1px solid var(--line);
 }
 .dw-footer .footer-link:hover { color: var(--brand); }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ILLUSTRATED SCENES — character duos, persona cards, coaching split
+   (ported from the DeveWay design file; tokens only)
+   ═══════════════════════════════════════════════════════════════════ */
+.dw-scene {
+	position: relative;
+	overflow: hidden;
+	isolation: isolate;
+	background: radial-gradient(120% 90% at 20% 10%, var(--wash) 0%, var(--wash-2) 55%, color-mix(in srgb, var(--lavender) 60%, var(--wash-2)) 100%);
+}
+.dark .dw-scene {
+	background: radial-gradient(120% 90% at 20% 10%, var(--wash-2) 0%, var(--wash) 55%, var(--night-2) 100%);
+}
+.sc-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.sc-orb.o1 { width: 46%; aspect-ratio: 1; top: 8%; inset-inline-end: 8%; background: color-mix(in srgb, var(--on-brand) 35%, transparent); }
+.sc-orb.o2 { width: 22%; aspect-ratio: 1; bottom: 12%; inset-inline-start: 6%; border: 2px dashed color-mix(in srgb, var(--brand) 25%, transparent); animation: dw-float 7s ease-in-out infinite; }
+.dw-duo { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; z-index: 1; }
+.dw-duo-p { position: relative; height: 88%; aspect-ratio: 1; max-width: 62%; transition: transform 0.6s var(--ease); }
+.dw-duo.n2 .dw-duo-p + .dw-duo-p { margin-inline-start: -14%; }
+.dw-duo.n2 .dw-duo-p:first-child { z-index: 2; }
+.dw-char { display: block; width: 100%; height: 100%; }
+.dw-char .char { width: 100%; height: 100%; display: block; }
+/* the SVGs carry their own background tile; hide it so the scene gradient shows through */
+.dw-char .char > g > rect:first-child,
+.dw-char .char > g > circle:nth-of-type(1) { opacity: 0; }
+.dw-duo-flag {
+	position: absolute;
+	top: 4%;
+	inset-inline-start: 50%;
+	transform: translateX(-50%);
+	white-space: nowrap;
+	font-style: normal;
+	font-size: 11px;
+	font-weight: 800;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--surface);
+	border: 1px solid currentColor;
+	box-shadow: var(--shadow-sm);
+	z-index: 3;
+}
+[dir="rtl"] .dw-duo-flag { transform: translateX(50%); }
+.dw-duo-flag.sa { color: color-mix(in srgb, var(--success) 60%, var(--ink)); }
+.dw-duo-flag.eg { color: color-mix(in srgb, var(--error) 70%, var(--ink)); }
+
+.dw-char-av { display: inline-block; border-radius: 50%; overflow: hidden; flex: none; background: var(--wash); }
+.dw-char-av .char { width: 100%; height: 100%; display: block; }
+
+/* Persona cards: characters in the upper area, text over the lower gradient */
+.dw-personas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.dw-pcard {
+	position: relative;
+	display: block;
+	border-radius: var(--r-lg);
+	overflow: hidden;
+	aspect-ratio: 3 / 4;
+	color: var(--on-brand);
+	isolation: isolate;
+	text-decoration: none;
+	box-shadow: var(--shadow-sm);
+}
+.dw-pcard .dw-scene { position: absolute; inset: 0; }
+.dw-pcard .dw-scene.top .dw-duo { bottom: 30%; }
+.dw-pcard .dw-scene.top .dw-duo-p { height: 100%; max-width: 58%; }
+.dw-pcard::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	background: linear-gradient(180deg, transparent 30%, color-mix(in srgb, var(--night) 85%, transparent) 78%);
+	transition: background 0.4s;
+}
+.dw-pcard:hover::after {
+	background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 10%, transparent) 0%, color-mix(in srgb, var(--night-2) 92%, transparent) 70%);
+}
+.dw-pcard:hover .dw-duo-p:first-child { transform: translateY(-8px) rotate(-2deg); }
+.dw-pcard:hover .dw-duo-p + .dw-duo-p { transform: translateY(-4px) rotate(2deg); }
+.dw-p-body {
+	position: absolute;
+	z-index: 3;
+	inset-inline: 0;
+	bottom: 0;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	transform: translateY(32px);
+	transition: transform 0.45s var(--ease);
+}
+.dw-pcard:hover .dw-p-body,
+.dw-pcard:focus-visible .dw-p-body { transform: none; }
+.dw-home.dw-home .dw-p-body h3 { font-size: 24px !important; color: var(--on-brand); }
+.dw-p-body p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--on-brand); opacity: 0.88; }
+.dw-p-cta { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; opacity: 0; transition: opacity 0.4s; }
+.dw-pcard:hover .dw-p-cta,
+.dw-pcard:focus-visible .dw-p-cta { opacity: 1; }
+@media (hover: none) {
+	.dw-p-body { transform: none; }
+	.dw-p-cta { opacity: 1; }
+}
+@media (max-width: 860px) {
+	.dw-personas { grid-template-columns: 1fr; }
+	.dw-pcard { aspect-ratio: 16 / 11; }
+	.dw-pcard .dw-scene.top .dw-duo { bottom: 40%; }
+}
+
+/* Coaching split: illustrated media + feature list */
+.dw-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.dw-split-media { position: relative; }
+.dw-split-media .dw-scene { aspect-ratio: 5 / 4; border-radius: 30px; box-shadow: var(--shadow-lg); }
+.dw-split-media .dw-scene .dw-duo-p { height: 92%; }
+.dw-f-coach { bottom: -18px; inset-inline-start: -18px; display: flex; align-items: center; gap: 10px; animation-delay: -3s; }
+.dw-feat-list { display: flex; flex-direction: column; gap: 14px; margin-block: 8px; }
+.dw-feat { display: flex; gap: 16px; padding: 16px; border-radius: 16px; border: 1px solid transparent; transition: background-color 0.3s, border-color 0.3s, transform 0.3s var(--ease); }
+.dw-feat:hover { background: var(--surface); border-color: var(--line); transform: translateX(6px); }
+[dir="rtl"] .dw-feat:hover { transform: translateX(-6px); }
+.dw-feat-ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--wash); color: var(--accent); flex: none; }
+.dw-feat h4 { margin: 0; font-size: 17px; font-weight: 800; }
+.dw-feat p { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+@media (max-width: 900px) { .dw-split { grid-template-columns: 1fr; } }

@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import { useLocale, useTranslations } from 'next-intl'
-import { ArrowLeft, ArrowRight, Compass, Map, GraduationCap, Rocket, Users, FileText, Target, School, Repeat, TrendingUp } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Compass, Map, GraduationCap, Rocket, Users, FileText, Target } from 'lucide-react'
+import { CharacterScene, CharacterAvatar } from '../../components/CharacterDuo'
+import type { CharacterId } from '../../components/characters'
 
 /* Role names scrolling in the strip (translated) */
 export function MarqueeStrip() {
@@ -60,15 +62,21 @@ export function StepsSection() {
   )
 }
 
-/* Three career moments */
+/* Three career moments: persona cards with an illustrated duo */
+const PERSONA_CAST: readonly (readonly CharacterId[])[] = [
+  ['sa2', 'eg1'], // students and new graduates
+  ['eg2', 'sa3'], // career changers
+  ['sa1', 'eg3'], // professionals
+]
+
 export function MomentsSection() {
   const t = useTranslations('homeV2')
   const locale = useLocale()
   const Arrow = locale === 'ar' ? ArrowLeft : ArrowRight
   const items = [
-    { Icon: School, title: t('m1_title'), desc: t('m1_desc') },
-    { Icon: Repeat, title: t('m2_title'), desc: t('m2_desc') },
-    { Icon: TrendingUp, title: t('m3_title'), desc: t('m3_desc') },
+    { title: t('m1_title'), desc: t('m1_desc') },
+    { title: t('m2_title'), desc: t('m2_desc') },
+    { title: t('m3_title'), desc: t('m3_desc') },
   ]
 
   return (
@@ -78,17 +86,25 @@ export function MomentsSection() {
           <span className="dw-eyebrow">{t('momentsEyebrow')}</span>
           <h2>{t('momentsTitle')}</h2>
         </div>
-        <div className="dw-trio">
-          {items.map(({ Icon, title, desc }) => (
-            <div className="dw-mcard" key={title}>
-              <div className="dw-mcard-ic"><Icon size={26} aria-hidden="true" /></div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
-              <Link href={`/${locale}/register`} className="btn btn-ghost btn-sm">
-                {t('momentsCta')}
-                <Arrow size={16} aria-hidden="true" />
-              </Link>
-            </div>
+        <div className="dw-personas">
+          {items.map(({ title, desc }, i) => (
+            <Link key={title} href={`/${locale}/register`} className="dw-pcard">
+              <CharacterScene
+                ids={PERSONA_CAST[i]}
+                label={title}
+                flagSa={t('flagSa')}
+                flagEg={t('flagEg')}
+                top
+              />
+              <div className="dw-p-body">
+                <h3>{title}</h3>
+                <p>{desc}</p>
+                <span className="dw-p-cta">
+                  {t('momentsCta')}
+                  <Arrow size={16} aria-hidden="true" />
+                </span>
+              </div>
+            </Link>
           ))}
         </div>
       </div>
@@ -96,7 +112,7 @@ export function MomentsSection() {
   )
 }
 
-/* Coaching formats */
+/* Coaching formats: split layout with an illustrated mentor + learner */
 export function CoachingSection() {
   const t = useTranslations('homeV2')
   const locale = useLocale()
@@ -108,25 +124,45 @@ export function CoachingSection() {
 
   return (
     <section className="dw-section">
-      <div className="dw-wrap">
-        <div className="dw-head">
-          <span className="dw-eyebrow">{t('coachEyebrow')}</span>
-          <h2>{t('coachTitle')}</h2>
-          <p>{t('coachLede')}</p>
-        </div>
-        <div className="dw-trio">
-          {items.map(({ Icon, title, desc }) => (
-            <div className="dw-mcard" key={title}>
-              <div className="dw-mcard-ic"><Icon size={26} aria-hidden="true" /></div>
-              <h3>{title}</h3>
-              <p>{desc}</p>
+      <div className="dw-wrap dw-split">
+        <div className="dw-split-media">
+          <CharacterScene
+            ids={['sa5', 'eg7']}
+            label={t('coachIllus')}
+            flagSa={t('flagSa')}
+            flagEg={t('flagEg')}
+          />
+          <div className="dw-float dw-f-coach">
+            <CharacterAvatar id="sa5" size={40} />
+            <div>
+              <div className="dw-f-track-label">{t('liveLabel')}</div>
+              <div className="dw-f-track-title">{t('liveTitle')}</div>
             </div>
-          ))}
+          </div>
         </div>
-        <div style={{ marginTop: 32 }}>
-          <Link href={`/${locale}/coaching`} className="btn btn-primary">
-            {t('coachCta')}
-          </Link>
+
+        <div>
+          <div className="dw-head" style={{ marginBottom: 18 }}>
+            <span className="dw-eyebrow">{t('coachEyebrow')}</span>
+            <h2>{t('coachTitle')}</h2>
+            <p>{t('coachLede')}</p>
+          </div>
+          <div className="dw-feat-list">
+            {items.map(({ Icon, title, desc }) => (
+              <div className="dw-feat" key={title}>
+                <span className="dw-feat-ic"><Icon size={22} aria-hidden="true" /></span>
+                <div>
+                  <h4>{title}</h4>
+                  <p>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 24 }}>
+            <Link href={`/${locale}/coaching`} className="btn btn-primary">
+              {t('coachCta')}
+            </Link>
+          </div>
         </div>
       </div>
     </section>
