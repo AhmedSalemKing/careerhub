@@ -4,6 +4,7 @@ import { FeaturesSection } from './sections/FeaturesSection'
 import { CareerPathsSection } from './sections/CareerPathsSection'
 import { TestimonialsSection } from './sections/TestimonialsSection'
 import { CTASection } from './sections/CTASection'
+import { MarqueeStrip, StepsSection, MomentsSection, CoachingSection } from './sections/HomeSections'
 import { CoursesShowcase } from '../components/CoursesShowcase'
 import { HashScrollHandler } from '../components/HashScrollHandler'
 
@@ -106,9 +107,13 @@ export default async function HomePage() {
       <main id="main-content" aria-label="DeveWay homepage" className="dw-home scroll-smooth">
         <HashScrollHandler />
         <HeroSection siteConfig={config} />
+        <MarqueeStrip />
         {showFeatures && <FeaturesSection />}
+        {showFeatures && <StepsSection />}
         {showCareers && <CareerPathsSection />}
+        {showCareers && <MomentsSection />}
         {showCourses && <CoursesShowcase />}
+        <CoachingSection />
         {showTestimonials && <TestimonialsSection siteConfig={config} />}
         {showPricing && <CTASection />}
         {!showPricing && (

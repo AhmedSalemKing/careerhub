@@ -2231,3 +2231,115 @@ a.dw-instructor:hover { color: var(--accent); }
 	.dw-blob { animation: none; }
 	.dw-home * { transition-duration: 0.01ms !important; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOME v2 ADDITIONS — hero collage, marquee, flow steps, trio cards
+   (tokens only; scoped under .dw-home)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Hero becomes a two-column layout with a product collage */
+.dw-hero { text-align: start; }
+.dw-hero-grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+	gap: clamp(32px, 5vw, 72px);
+	align-items: center;
+}
+.dw-hero-copy { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.dw-hero-copy h1 { margin-top: 24px; max-width: none; }
+.dw-hero-brand { display: block; }
+.dw-hero-sub { margin-inline: 0; }
+.dw-hero-actions { justify-content: flex-start; }
+.dw-hero-note { display: flex; align-items: center; gap: 8px; margin-top: 18px; font-size: 13px; color: var(--ink-3); }
+.dw-hero-copy .dw-stats { justify-content: flex-start; margin-top: 44px; padding-top: 28px; gap: 14px 40px; }
+.dw-hero-copy .dw-stat { align-items: flex-start; }
+@media (max-width: 960px) {
+	.dw-hero-grid { grid-template-columns: 1fr; }
+}
+
+.dw-collage { position: relative; aspect-ratio: 1 / 1.02; max-width: 520px; width: 100%; margin-inline: auto; }
+.dw-collage-visual {
+	position: absolute; inset: 8% 10% 12% 10%;
+	border-radius: 32px;
+	background: linear-gradient(135deg, var(--wash) 0%, var(--bg-2) 50%, var(--wash-2) 100%);
+	box-shadow: var(--shadow-lg);
+	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+	overflow: hidden;
+}
+.dw-collage-visual .cv-logo { font-size: 28px; font-weight: 800; color: var(--brand); }
+.dw-collage-visual .cv-tracks { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 20px; justify-content: center; }
+.dw-collage-visual .cv-tracks span { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.dw-collage-ring { position: absolute; inset: 2% 4% 6% 2%; border: 2px dashed var(--line-2); border-radius: 44px; transform: rotate(-3deg); pointer-events: none; }
+.dw-float {
+	position: absolute; z-index: 3;
+	background: var(--glass);
+	-webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+	box-shadow: var(--shadow);
+	padding: 14px 16px;
+	animation: dw-float 6s ease-in-out infinite;
+}
+.dw-f-ai { inset-inline-start: -4%; top: 14%; width: 260px; display: flex; gap: 12px; align-items: flex-start; }
+.dw-ring-wrap { position: relative; display: grid; place-items: center; flex: none; width: 56px; height: 56px; }
+.dw-ring-wrap b { position: absolute; font-size: 13px; font-weight: 800; color: var(--ink); }
+.dw-ring-svg { width: 56px; height: 56px; transform: rotate(-90deg); }
+.dw-ring-svg .bg { fill: none; stroke: var(--line); stroke-width: 6; }
+.dw-ring-svg .fg { fill: none; stroke: url(#dw-rg); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 138; stroke-dashoffset: 18; animation: dw-ring 1.6s 0.4s var(--ease) both; }
+.dw-f-ai-info { min-width: 0; }
+.dw-f-ai-info p { font-size: 12px; color: var(--ink-3); font-weight: 600; margin: 0; }
+.dw-f-ai-info strong { display: block; font-size: 15px; font-weight: 800; color: var(--ink); }
+.dw-f-ai-info .dw-f-ai-why { font-size: 11px; color: var(--ink-2); font-weight: 500; margin-top: 3px; line-height: 1.4; }
+.dw-f-track { inset-inline-end: -2%; top: 4%; width: 220px; animation-delay: -2s; }
+.dw-f-track-label { font-size: 11px; color: var(--ink-3); font-weight: 600; }
+.dw-f-track-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+.dw-f-track .bar { height: 6px; border-radius: 6px; background: var(--line); margin-top: 10px; overflow: hidden; }
+.dw-f-track .bar span { display: block; height: 100%; width: 35%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), var(--lavender)); transform-origin: left; animation: dw-draw 1.6s 0.6s var(--ease) both; }
+[dir="rtl"] .dw-f-track .bar span { transform-origin: right; }
+.dw-f-live { inset-inline-start: 2%; bottom: 6%; display: flex; align-items: center; gap: 10px; animation-delay: -4s; }
+.dw-live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--error); flex: none; animation: dw-pulse 1.8s infinite; }
+@keyframes dw-float { 50% { transform: translateY(-10px); } }
+@keyframes dw-ring { from { stroke-dashoffset: 138; } }
+@keyframes dw-draw { from { transform: scaleX(0); } }
+@keyframes dw-pulse { 0% { box-shadow: 0 0 0 0 var(--error); } 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (max-width: 520px) {
+	.dw-f-ai { width: 210px; inset-inline-start: 0; }
+	.dw-f-ai .dw-f-ai-why { display: none; }
+	.dw-f-track { width: 170px; }
+}
+
+/* Marquee strip */
+.dw-strip { border-block: 1px solid var(--line); background: var(--surface); overflow: hidden; padding-block: 18px; }
+.dw-marquee { display: flex; width: max-content; animation: dw-marquee 38s linear infinite; }
+[dir="rtl"] .dw-marquee { animation-name: dw-marquee-rtl; }
+.dw-strip:hover .dw-marquee { animation-play-state: paused; }
+.dw-marquee > span { display: inline-flex; align-items: center; gap: 14px; padding-inline: 22px; font-weight: 700; font-size: 16px; color: var(--ink-2); white-space: nowrap; }
+.dw-marquee .dot { width: 6px; height: 6px; padding: 0; border-radius: 50%; background: var(--lavender); flex: none; }
+@keyframes dw-marquee { to { transform: translateX(-50%); } }
+@keyframes dw-marquee-rtl { to { transform: translateX(50%); } }
+
+/* 4-step flow */
+.dw-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; position: relative; }
+.dw-flow::before { content: ''; position: absolute; top: 34px; inset-inline: 12%; height: 2px; background: repeating-linear-gradient(90deg, var(--line-2) 0 8px, transparent 8px 14px); }
+.dw-flow-step { position: relative; display: flex; flex-direction: column; gap: 12px; padding: 0 6px; }
+.dw-flow-ic { position: relative; width: 68px; height: 68px; border-radius: 22px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--accent); box-shadow: var(--shadow); transition: transform 0.35s var(--ease), background-color 0.35s, color 0.35s; }
+.dw-flow-step:hover .dw-flow-ic { transform: translateY(-6px) rotate(-4deg); background: var(--brand); color: var(--on-brand); }
+.dw-flow-n { position: absolute; top: -8px; inset-inline-end: -8px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--lavender); color: var(--on-brand); font-size: 13px; font-weight: 800; }
+.dw-flow-step h3 { margin: 0; }
+.dw-flow-step p { margin: 0; color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+@media (max-width: 860px) { .dw-flow { grid-template-columns: 1fr 1fr; gap: 36px 22px; } .dw-flow::before { display: none; } }
+@media (max-width: 480px) { .dw-flow { grid-template-columns: 1fr; } }
+
+/* Trio cards (moments + coaching) */
+.dw-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+@media (max-width: 768px) { .dw-trio { grid-template-columns: 1fr; } }
+.dw-mcard { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding: 28px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-sm); transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease); }
+.dw-mcard:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+.dw-mcard-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: var(--wash); color: var(--accent); }
+.dw-mcard h3 { margin: 0; }
+.dw-mcard p { margin: 0; flex: 1; color: var(--ink-2); font-size: 15px; line-height: 1.65; }
+
+@media (prefers-reduced-motion: reduce) {
+	.dw-marquee, .dw-float { animation: none; }
+}
