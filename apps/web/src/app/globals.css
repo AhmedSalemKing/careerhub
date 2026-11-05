@@ -2343,3 +2343,130 @@ a.dw-instructor:hover { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
 	.dw-marquee, .dw-float { animation: none; }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOME v3 — alignment with the "DeveWay Final" reference design.
+   Appended last on purpose: same-specificity rules above are overridden
+   by source order. Tokens only; no hardcoded colors.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+	--glass: rgb(255 255 255 / 0.82);
+}
+.dark {
+	--brand-hover: #7341ff;
+	--night-2: #140f38;
+	--night-line: #2a2258;
+	--shadow: 0 2px 4px rgb(0 0 0 / 0.3), 0 14px 34px -14px rgb(0 0 0 / 0.75);
+	--glass: rgb(21 16 54 / 0.85);
+}
+.dark .dw-home {
+	--surface-2: #1b1542;
+	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+	--shadow-lg: 0 30px 60px -24px rgb(0 0 0 / 0.8);
+}
+
+/* Primary button: light sweep on hover */
+:is(.dw-home, .dw-header, .dw-menu, .dw-footer) .btn { position: relative; overflow: hidden; }
+:is(.dw-home, .dw-header, .dw-menu, .dw-footer) .btn-primary::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(110deg, transparent 30%, color-mix(in srgb, var(--on-brand) 30%, transparent) 50%, transparent 70%);
+	transform: translateX(-120%);
+	transition: transform 0.7s var(--ease);
+	pointer-events: none;
+}
+:is(.dw-home, .dw-header, .dw-menu, .dw-footer) .btn-primary:hover::after { transform: translateX(120%); }
+
+/* Hero blobs: soft lavender glow (stronger in light, subtle in dark) */
+.dw-blob { filter: blur(60px); opacity: 0.55; }
+.dw-blob-1 { background: var(--lavender); }
+.dw-blob-2 { background: var(--wash-2); }
+.dark .dw-blob { opacity: 0.22; }
+.dw-dots { opacity: 0.6; }
+
+/* ── Night band: the features section (assessment → training → coaching) ── */
+.dw-home #features { position: relative; overflow: hidden; isolation: isolate; background: var(--night); color: var(--night-ink); }
+.dw-home #features::before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+	width: 700px;
+	height: 700px;
+	max-width: 100%;
+	border-radius: 50%;
+	inset-inline-end: -200px;
+	top: -300px;
+	background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 45%, transparent), transparent);
+	pointer-events: none;
+}
+.dw-home #features .dw-eyebrow { background: transparent; border-color: var(--night-line); color: var(--lavender); }
+.dw-home.dw-home #features h2,
+.dw-home.dw-home #features h3 { color: var(--night-ink); }
+.dw-home #features .dw-steps-intro p { color: var(--night-ink-2); }
+.dw-home #features .dw-step {
+	background: var(--night-2);
+	border-color: var(--night-line);
+	color: var(--night-ink);
+	box-shadow: none;
+}
+.dw-home #features .dw-step p { color: var(--night-ink-2); }
+.dw-home #features .dw-step:hover { border-color: var(--lavender); }
+.dw-home #features .dw-step-num { background: color-mix(in srgb, var(--lavender) 18%, transparent); color: var(--lavender); }
+.dw-home #features .dw-step-go { border-color: var(--night-line); color: var(--night-ink); }
+.dw-home #features .dw-step:hover .dw-step-go { background: var(--lavender); border-color: var(--lavender); color: var(--night); }
+/* middle card (training platform) is the highlighted one */
+.dw-home #features .dw-step:nth-child(3) {
+	background: linear-gradient(160deg, var(--brand), color-mix(in srgb, var(--brand) 70%, var(--night)));
+	border-color: transparent;
+}
+.dw-home #features .dw-step:nth-child(3) p { color: color-mix(in srgb, var(--on-brand) 88%, transparent); }
+.dw-home #features .dw-step:nth-child(3) h3 { color: var(--on-brand); }
+.dw-home #features .dw-step:nth-child(3) .dw-step-num { background: color-mix(in srgb, var(--on-brand) 20%, transparent); color: var(--on-brand); }
+.dw-home #features .dw-step:nth-child(3) .dw-step-go { border-color: color-mix(in srgb, var(--on-brand) 40%, transparent); color: var(--on-brand); }
+.dw-home #features .dw-step:nth-child(3):hover .dw-step-go { background: var(--on-brand); border-color: var(--on-brand); color: var(--brand); }
+
+/* ── Final CTA: brand gradient band with dot texture ── */
+.dw-cta {
+	border-radius: 34px;
+	padding: clamp(36px, 6vw, 72px);
+	background: linear-gradient(130deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 60%, var(--lavender)) 55%, var(--lavender) 100%);
+	color: var(--on-brand);
+}
+.dw-cta::before {
+	inset: 0;
+	width: auto;
+	height: auto;
+	border-radius: 0;
+	filter: none;
+	opacity: 1;
+	background-color: transparent;
+	background-image: radial-gradient(color-mix(in srgb, var(--on-brand) 18%, transparent) 1px, transparent 1px);
+	background-size: 22px 22px;
+	-webkit-mask-image: linear-gradient(90deg, transparent, var(--ink));
+	mask-image: linear-gradient(90deg, transparent, var(--ink));
+}
+.dw-cta .dw-eyebrow {
+	background: color-mix(in srgb, var(--on-brand) 14%, transparent);
+	border-color: color-mix(in srgb, var(--on-brand) 30%, transparent);
+	color: var(--on-brand);
+}
+.dw-home .dw-cta h2 { color: var(--on-brand); }
+.dw-cta p { color: color-mix(in srgb, var(--on-brand) 90%, transparent); font-size: 19px; }
+.dw-cta .btn-primary { background-color: var(--on-brand) !important; color: var(--purple) !important; box-shadow: none !important; }
+.dw-cta .btn-primary:hover { background-color: var(--on-brand) !important; box-shadow: var(--shadow) !important; }
+.dw-cta .btn-primary::after { display: none; }
+.dw-cta .btn-ghost { background: transparent; border-color: color-mix(in srgb, var(--on-brand) 35%, transparent); color: var(--on-brand); }
+.dw-cta .btn-ghost:hover { border-color: var(--on-brand); color: var(--on-brand); }
+
+/* ── Footer: light surface like the reference (reuses the footer's token names) ── */
+.dw-footer {
+	--night-ink: var(--ink);
+	--night-ink-2: var(--ink-2);
+	--night-line: var(--line);
+	background: var(--surface);
+	color: var(--ink-2);
+	border-top: 1px solid var(--line);
+}
+.dw-footer .footer-link:hover { color: var(--brand); }
