@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { CHARACTERS, type CharacterId } from './characters'
+import { CHARACTERS, RASHEED_AVATAR, type CharacterId } from './characters'
 
 /**
  * Illustrated scene with one or two characters (Saudi "sa*" / Egyptian "eg*"),
@@ -49,6 +49,29 @@ export function CharacterAvatar({ id, size = 40 }: { id: CharacterId; size?: num
       style={{ width: size, height: size }}
       aria-hidden="true"
       dangerouslySetInnerHTML={{ __html: CHARACTERS[id] }}
+    />
+  )
+}
+
+/** Overlapping row of round avatars. */
+export function CharacterCast({ ids, size = 34 }: { ids: readonly CharacterId[]; size?: number }) {
+  return (
+    <span className="dw-cast">
+      {ids.map((id) => (
+        <CharacterAvatar key={id} id={id} size={size} />
+      ))}
+    </span>
+  )
+}
+
+/** Rasheed, DeveWay's AI career guide (idle pose). */
+export function RasheedAvatar({ size = 18 }: { size?: number }) {
+  return (
+    <span
+      className="dw-rasheed"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: RASHEED_AVATAR }}
     />
   )
 }

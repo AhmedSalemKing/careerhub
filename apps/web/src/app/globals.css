@@ -2592,3 +2592,62 @@ a.dw-instructor:hover { color: var(--accent); }
 .dw-feat h4 { margin: 0; font-size: 17px; font-weight: 800; }
 .dw-feat p { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.65; }
 @media (max-width: 900px) { .dw-split { grid-template-columns: 1fr; } }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HERO v2 — collage with illustrated scenes, avatar cast, Rasheed card
+   (tokens only)
+   ═══════════════════════════════════════════════════════════════════ */
+.dw-hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.dw-hero-bg .dots {
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(var(--line-2) 1px, transparent 1px);
+	background-size: 26px 26px;
+	-webkit-mask-image: radial-gradient(ellipse at 70% 30%, var(--ink) 10%, transparent 65%);
+	mask-image: radial-gradient(ellipse at 70% 30%, var(--ink) 10%, transparent 65%);
+	opacity: 0.6;
+}
+.dw-hero h1 .grad { display: block; margin-top: 6px; padding-bottom: 0.08em; }
+.dw-hero-actions .go { transition: transform 0.25s var(--ease); }
+.dw-hero-actions .btn:hover .go { transform: translateX(4px); }
+[dir="rtl"] .dw-hero-actions .go.flip { transform: scaleX(-1); }
+[dir="rtl"] .dw-hero-actions .btn:hover .go.flip { transform: scaleX(-1) translateX(4px); }
+
+.dw-hero-note { gap: 12px; }
+.dw-cast { display: inline-flex; }
+.dw-cast .dw-char-av { box-shadow: 0 0 0 3px var(--bg); }
+.dw-cast .dw-char-av + .dw-char-av { margin-inline-start: -12px; }
+
+.dw-collage { max-width: 560px; }
+.dw-collage-main {
+	position: absolute;
+	inset: 4% 8% 10% 10%;
+	border-radius: 36px;
+	box-shadow: var(--shadow-lg);
+	overflow: hidden;
+}
+.dw-collage-main .dw-scene { position: absolute; inset: 0; border-radius: inherit; }
+.dw-collage-main .dw-duo-p { height: 92%; }
+.dw-collage-main:hover .dw-duo-p:first-child { transform: translateY(-6px); }
+.dw-collage-main:hover .dw-duo-p + .dw-duo-p { transform: translateY(-3px); }
+.dw-collage-side {
+	position: absolute;
+	width: 34%;
+	aspect-ratio: 1;
+	inset-inline-end: 0;
+	bottom: 2%;
+	border-radius: 26px;
+	border: 5px solid var(--bg);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+	z-index: 2;
+}
+.dw-collage-side .dw-scene { position: absolute; inset: 0; }
+.dw-collage .dw-duo-flag { display: none; }
+.dw-collage-ring { inset: 0 2% 6% 4%; transform: rotate(-4deg); }
+
+.dw-r-line { display: flex; align-items: center; gap: 6px; }
+.dw-rasheed { display: inline-block; flex: none; border-radius: 30%; }
+.dw-rasheed svg { width: 100%; height: 100%; display: block; }
+.dw-f-live .dw-char-av { margin-inline-start: 4px; }
