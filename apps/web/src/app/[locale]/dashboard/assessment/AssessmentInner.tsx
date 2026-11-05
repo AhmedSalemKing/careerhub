@@ -1,35 +1,23 @@
 'use client'
-import { Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useRef } from 'react'
 import dynamic from 'next/dynamic'
 import { RasheedAvatar } from '../../../components/CharacterDuo'
 
 const AIInterviewPage = dynamic(() => import('./AIInterviewPage'), { ssr: false })
 
-const STEPS = [
-  'فهم المستخدم',
-  'الاهتمامات المهنية',
-  'المهارات والقدرات',
-  'السلوك المهني',
-  'الدوافع وبيئة العمل',
-  'الجاهزية المهنية',
-]
-
 function AssessmentContent() {
-  const params = useSearchParams()
-  const mode   = params.get('mode') ?? undefined
-  const router = useRouter()
+  const quizRef = useRef<HTMLDivElement>(null)
 
-  // Quiz is the default flow. Interview mode is temporarily hidden (its code is preserved
-  // in AIInterviewPage); a stale ?mode=interview link falls back to the intro screen.
-  if (mode === 'quiz') {
-    return <AIInterviewPage mode={mode} />
+  // Single page: the intro hero and the quiz live together at /dashboard/assessment.
+  // The CTA scrolls to the quiz instead of navigating. Interview mode stays hidden
+  // (its code is preserved in AIInterviewPage): <AIInterviewPage mode="interview" />
+  const handleStart = () => {
+    quizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
-  // if (mode === 'interview') return <AIInterviewPage mode={mode} />
 
   return (
     <div dir="rtl" className="dw-assess">
-      <section className="dw-as-hero">
+      <section className="dw-as-hero full">
         <div className="dw-as-blob b1" aria-hidden="true" />
         <div className="dw-as-blob b2" aria-hidden="true" />
 
@@ -46,10 +34,10 @@ function AssessmentContent() {
             أسئلة ذكية تتكيف مع إجاباتك لتحديد أنسب المسارات المهنية لك بدقة عالية، ثم أقترح عليك خطوتك القادمة.
           </p>
 
-          <button type="button" className="dw-as-cta" onClick={() => router.push('?mode=quiz')}>
+          <button type="button" className="dw-as-cta" onClick={handleStart}>
             ابدأ التقييم مع رشيد
-            <svg className="go" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+            <svg className="go down" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" />
             </svg>
           </button>
 
@@ -57,16 +45,13 @@ function AssessmentContent() {
         </div>
       </section>
 
-      <section className="dw-as-steps">
-        <ol>
-          {STEPS.map((step, i) => (
-            <li key={step}>
-              <b>{i + 1}</b>
-              {step}
-            </li>
-          ))}
-        </ol>
-      </section>
+      <div ref={quizRef} className="dw-as-quizsec">
+        <div className="dw-as-title">
+          <span className="dw-as-eyebrow dark">نحو 15-20 دقيقة</span>
+          <h2>التقييم المهني المجاني مع رشيد</h2>
+        </div>
+        <AIInterviewPage mode="quiz" embedded />
+      </div>
 
       <div className="dw-as-note">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -79,9 +64,5 @@ function AssessmentContent() {
 }
 
 export function AssessmentInner() {
-  return (
-    <Suspense fallback={null}>
-      <AssessmentContent />
-    </Suspense>
-  )
+  return <AssessmentContent />
 }

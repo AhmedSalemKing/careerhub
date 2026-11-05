@@ -762,7 +762,21 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
 }
 
 /* ── Quiz Mode ────────────────────────────────────────────── */
-function QuizMode({ onEnd }: { onEnd: () => void }) {
+const PHASE_ICONS = ['👤', '🎯', '🛠️', '🧩', '💡', '🚀']
+const OPT_LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ']
+const RASHEED_REACTIONS: string[][] = [
+  ['ممتاز! كل مرحلة لها قيمتها.', 'رائع، هذا يوضح نقطة انطلاقك.', 'جيد، بدأت الصورة تتضح.'],
+  ['اهتماماتك هي بوصلتك.', 'رائع، الشغف مهم جداً.', 'فهمت ميولك أكثر!'],
+  ['مهاراتك تميزك.', 'أسلوبك في التعلم يفرق كثيراً.', 'ممتاز، هذا يساعدني على التوجيه بدقة.'],
+  ['شخصيتك تؤثر في مسارك المهني.', 'فهمتك أكثر!', 'هذا مهم جداً.'],
+  ['دوافعك تحدد بيئتك المثالية.', 'رائع، هذا يعكس أولوياتك.', 'نحو مسار يناسبك.'],
+  ['أهدافك واضحة، وهذا ممتاز.', 'الوقت المتاح عامل مهم.', 'قريباً من النتيجة!'],
+]
+const RASHEED_IDLE = 'اختر الإجابة الأقرب لك، ولا توجد إجابة خاطئة.'
+
+function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: boolean }) {
+  const [reaction,        setReaction]        = useState('')
+  const [isReacting,      setIsReacting]      = useState(false)
   const [currentIndex,    setCurrentIndex]    = useState(0)
   const [answers,         setAnswers]         = useState<Record<string, string>>({})
   const [selectedOption,  setSelectedOption]  = useState<string | null>(null)
@@ -789,6 +803,11 @@ function QuizMode({ onEnd }: { onEnd: () => void }) {
     if (selectedOption) return
     setSelectedOption(opt)
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: opt }))
+
+    const pool = RASHEED_REACTIONS[currentPhaseIdx] ?? RASHEED_REACTIONS[0]
+    setReaction(pool[Math.floor(Math.random() * pool.length)])
+    setIsReacting(true)
+    setTimeout(() => setIsReacting(false), 1000)
 
     setIsLoadingInsight(true)
     setInsight('')
@@ -857,6 +876,7 @@ ${answersText}
     setCurrentIndex(nextIndex)
     setSelectedOption(null)
     setInsight('')
+    setReaction('')
   }
 
   if (result) {
@@ -881,19 +901,34 @@ ${answersText}
   }
 
   const progressPercent = Math.round(((currentIndex + (selectedOption ? 1 : 0)) / ALL_QUESTIONS.length) * 100)
+  const phaseLabel = PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel
+  const bubbleText = insight && !isLoadingInsight ? insight : (reaction || RASHEED_IDLE)
+  const gridCols = currentQuestion.options.length <= 4 ? ' two' : ''
 
   return (
-    <div dir="rtl" className="dw-assess">
-      <div className="dw-as-main">
-        <button onClick={onEnd} className="dw-as-exit">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-          خروج
-        </button>
+    <div dir="rtl" className={`dw-assess${embedded ? ' embedded' : ''}`}>
+      <div className="dw-as-main wide">
+        {!embedded && (
+          <button onClick={onEnd} className="dw-as-exit">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+            خروج
+          </button>
+        )}
+
+        {/* Section bar */}
+        <ol className="dw-as-secbar">
+          {PHASES.map((ph, i) => (
+            <li key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''}>
+              <span className="ic" aria-hidden="true">{PHASE_ICONS[i]}</span>
+              <span className="sb-l">{ph.label}</span>
+            </li>
+          ))}
+        </ol>
 
         {/* Progress */}
         <div className="dw-as-prog">
           <div className="dw-as-prog-top">
-            <span className="l">{PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel}</span>
+            <span className="l">{phaseLabel}</span>
             <span className="r">سؤال {currentIndex + 1} من {ALL_QUESTIONS.length}</span>
           </div>
           <div className="dw-as-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
@@ -901,57 +936,72 @@ ${answersText}
           </div>
         </div>
 
-        {/* Rasheed question card */}
-        <div className="dw-as-card">
-          <div className="dw-as-card-head">
-            <div className="dw-as-mini"><RasheedAvatar size={40} /></div>
-            <div>
-              <p className="who">رشيد · مرشد DeveWay</p>
-              <p className="sub">{currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3</p>
-            </div>
-          </div>
-
-          <div className="dw-as-card-body">
-            <p className="dw-as-q">{currentQuestion.question}</p>
-
-            <div className="dw-as-opts">
-              {currentQuestion.options.map((opt, i) => {
-                const isSelected = selectedOption === opt
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    disabled={!!selectedOption}
-                    onClick={() => !selectedOption && handleSelect(opt)}
-                    className={`dw-as-opt${isSelected ? ' on' : ''}`}
-                  >
-                    <span className="bub">{isSelected ? '✓' : String.fromCharCode(65 + i)}</span>
-                    {opt}
-                  </button>
-                )
-              })}
-            </div>
-
-            {isLoadingInsight && (
-              <div className="dw-as-typing">
-                {[0, 1, 2].map(i => <i key={i} style={{ animation: `dw-as-dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
+        <div className="dw-as-stage">
+          <div className="dw-as-qcol">
+            {/* Rasheed question card */}
+            <div className="dw-as-card">
+              <div className="dw-as-card-head">
+                <div className="dw-as-mini"><RasheedAvatar size={40} /></div>
+                <div>
+                  <p className="who">يسأل رشيد</p>
+                  <p className="sub">{currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3</p>
+                </div>
               </div>
-            )}
 
-            {insight && !isLoadingInsight && (
-              <div className="dw-as-insight">
-                <div className="n">رشيد</div>
-                <div className="t">{insight}</div>
+              <div className="dw-as-card-body">
+                <p className="dw-as-q">{currentQuestion.question}</p>
+
+                <div className={`dw-as-opts${gridCols}`}>
+                  {currentQuestion.options.map((opt, i) => {
+                    const isSelected = selectedOption === opt
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={!!selectedOption}
+                        onClick={() => !selectedOption && handleSelect(opt)}
+                        className={`dw-as-opt${isSelected ? ' on' : ''}`}
+                      >
+                        <span className="bub">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
+                        <span className="tx">{opt}</span>
+                        {isSelected && <span className="ck" aria-hidden="true">✓</span>}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
+            </div>
+
+            {selectedOption && !isLoadingInsight && (
+              <button onClick={handleNext} className="dw-as-next">
+                {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'} ←
+              </button>
             )}
           </div>
+
+          {/* Rasheed panel */}
+          <aside className="dw-as-rpanel" aria-live="polite">
+            <div className={`dw-as-bubble${selectedOption ? ' on' : ''}`}>
+              <strong>رشيد</strong>
+              {isLoadingInsight ? (
+                <div className="dw-as-typing inline">
+                  {[0, 1, 2].map(i => <i key={i} style={{ animation: `dw-as-dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
+                </div>
+              ) : (
+                <p>{bubbleText}</p>
+              )}
+            </div>
+            <div className="dw-as-figure">
+              <span className="blobbg" aria-hidden="true" />
+              <div className={`fig${isReacting ? ' jump' : ''}`}><RasheedAvatar size={176} /></div>
+            </div>
+            <div className="dw-as-dots" aria-hidden="true">
+              {PHASES.map((ph, i) => (
+                <i key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''} />
+              ))}
+            </div>
+          </aside>
         </div>
-
-        {selectedOption && !isLoadingInsight && (
-          <button onClick={handleNext} className="dw-as-next">
-            {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'} ←
-          </button>
-        )}
       </div>
     </div>
   )
@@ -1017,13 +1067,13 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
 }
 
 /* ── Main export ──────────────────────────────────────────── */
-export default function AIInterviewPage({ mode }: { mode?: string }) {
+export default function AIInterviewPage({ mode, embedded = false }: { mode?: string; embedded?: boolean }) {
   const router = useRouter()
   const locale = useLocale()
 
   const handleEnd = () => router.push(`/${locale}/dashboard/assessment`)
 
   if (mode === 'interview') return <InterviewMode onEnd={handleEnd} />
-  if (mode === 'quiz')      return <QuizMode      onEnd={handleEnd} />
+  if (mode === 'quiz')      return <QuizMode      onEnd={handleEnd} embedded={embedded} />
   return <ModeSelect onSelect={m => router.push(`/${locale}/dashboard/assessment?mode=${m}`)} />
 }
