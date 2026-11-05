@@ -12,7 +12,7 @@ export function Footer() {
   const user = useAuthStore((s) => s.user)
 
   return (
-    <footer className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
+    <footer className="dw-footer">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div>
           <div className="flex items-center gap-2.5">
@@ -25,21 +25,20 @@ export function Footer() {
               style={{ background: 'transparent' }}
             />
             <span style={{
-              fontFamily: 'Plus Jakarta Sans, sans-serif',
+              fontFamily: 'var(--font-ui)',
               fontWeight: 700,
               fontSize: 18,
-              color: 'var(--foreground)',
-              letterSpacing: '-0.02em',
+              color: 'var(--night-ink)',
             }}>
               DeveWay
             </span>
           </div>
-          <p className="mt-3 text-sm text-[color:var(--muted)]">{t('about')}</p>
+          <p className="dw-footer-text mt-3 text-sm">{t('about')}</p>
         </div>
 
         <div>
-          <div className="text-sm font-medium text-foreground">{tNav('careers')}</div>
-          <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
+          <div className="dw-footer-title">{tNav('careers')}</div>
+          <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link className="footer-link" href="/careers">
                 {tNav('careers')}
@@ -49,8 +48,8 @@ export function Footer() {
         </div>
 
         <div>
-          <div className="text-sm font-medium text-foreground">{tNav('training')}</div>
-          <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
+          <div className="dw-footer-title">{tNav('training')}</div>
+          <ul className="mt-3 space-y-2 text-sm">
             <li>
               <a className="footer-link" href={learnUrlWithToken('/')} target="_blank" rel="noopener noreferrer">
                 {t('all_courses')}
@@ -70,8 +69,8 @@ export function Footer() {
         </div>
 
         <div>
-          <div className="text-sm font-medium text-foreground">{tNav('coaches')}</div>
-          <ul className="mt-3 space-y-2 text-sm text-[color:var(--muted)]">
+          <div className="dw-footer-title">{tNav('coaches')}</div>
+          <ul className="mt-3 space-y-2 text-sm">
             <li>
               <Link className="footer-link" href="/coaching">
                 {tNav('coaches')}
@@ -88,8 +87,8 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-[color:var(--border)]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm text-[color:var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <div className="dw-footer-bottom">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm dw-footer-text sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>{t('rights')}</div>
           <div className="flex items-center gap-4">
             <Link className="footer-link" href="/privacy">

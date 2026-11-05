@@ -103,21 +103,13 @@ export default async function HomePage() {
       <style dangerouslySetInnerHTML={{
         __html: `:root{--primary:${primaryColor};}`,
       }} />
-      <main id="main-content" aria-label="DeveWay homepage" className="scroll-smooth">
+      <main id="main-content" aria-label="DeveWay homepage" className="dw-home scroll-smooth">
         <HashScrollHandler />
         <HeroSection siteConfig={config} />
-        {showFeatures && (
-          <div style={{ borderTop: '1px solid var(--border)' }}>
-            <FeaturesSection />
-          </div>
-        )}
+        {showFeatures && <FeaturesSection />}
         {showCareers && <CareerPathsSection />}
         {showCourses && <CoursesShowcase />}
-        {showTestimonials && (
-          <div style={{ borderTop: '1px solid var(--border)' }}>
-            <TestimonialsSection siteConfig={config} />
-          </div>
-        )}
+        {showTestimonials && <TestimonialsSection siteConfig={config} />}
         {showPricing && <CTASection />}
         {!showPricing && (
           <div style={{ height: '80px' }} />

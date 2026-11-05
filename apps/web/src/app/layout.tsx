@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages } from 'next-intl/server'
 import localFont from 'next/font/local'
+import { IBM_Plex_Sans_Arabic, Inter } from 'next/font/google'
 import './globals.css'
 import { Providers } from './components/Providers'
 import { LoadingProvider } from './components/PageLoader'
@@ -17,6 +18,22 @@ const madinetAlBat = localFont({
   variable: '--font-madinet',
   display: 'swap',
   preload: true,
+})
+
+// Home redesign fonts: IBM Plex Sans Arabic for RTL, Inter for LTR.
+// Exposed as --font-plex-ar / --font-inter and combined into --font-ui in globals.css.
+const plexArabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-ar',
+  display: 'swap',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -86,7 +103,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang={locale}
       dir={dir}
-      className={`${madinetAlBat.variable} no-transition`}
+      className={`${madinetAlBat.variable} ${plexArabic.variable} ${inter.variable} no-transition`}
       suppressHydrationWarning
     >
       <head>

@@ -14,7 +14,7 @@ interface TypewriterHeroProps {
 
 export function TypewriterHero({
   text = 'DeveWay',
-  color = '#5120c8',
+  color = 'var(--brand)',
   className = '',
   speed = 120,
   cursorHideDelay = 2200,
@@ -75,7 +75,8 @@ export function TypewriterHero({
   const glowOpacity = glow
     ? Math.min(indexRef.current / text.length, 1) * glowIntensity
     : 0
-  const glowColor = color + Math.round(glowOpacity * 255).toString(16).padStart(2, '0')
+  const mix = (pct: number) => `color-mix(in srgb, ${color} ${Math.round(pct)}%, transparent)`
+  const glowColor = mix(glowOpacity * 100)
 
   return (
     <span className={`inline-flex items-center ${className}`}>
@@ -88,7 +89,7 @@ export function TypewriterHero({
           letterSpacing: '0.02em',
           lineHeight: 1.1,
           textShadow: glow
-            ? `0 0 20px ${glowColor}, 0 0 40px ${color}10`
+            ? `0 0 20px ${glowColor}, 0 0 40px ${mix(6)}`
             : 'none',
           transition: 'text-shadow 0.3s ease',
         }}
@@ -100,12 +101,12 @@ export function TypewriterHero({
               display: 'inline-block',
               width: 3,
               height: '0.85em',
-              background: `linear-gradient(180deg, ${color}, ${color}88)`,
+              background: `linear-gradient(180deg, ${color}, ${mix(53)})`,
               marginLeft: 3,
               verticalAlign: 'middle',
               borderRadius: '2px',
               animation: 'dw-blink 0.7s step-end infinite',
-              boxShadow: `0 0 6px ${color}60`,
+              boxShadow: `0 0 6px ${mix(38)}`,
             }}
           />
         )}

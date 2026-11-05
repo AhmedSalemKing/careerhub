@@ -50,7 +50,7 @@ function scrollToSection(sectionId: string, locale: string) {
 }
 
 /* ═══ Shared font for nav + buttons ═══ */
-const NAV_FONT = "'PingARLT', 'Arial Black', sans-serif"
+const NAV_FONT = 'var(--font-ui)'
 
 /* ════════════════════════════════════════
    Theme Toggle
@@ -90,7 +90,7 @@ function ThemeToggle() {
           transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(90deg) scale(0.5)',
         }}
       >
-        <Moon className="h-[15px] w-[15px]" style={{ color: '#5120c8' }} />
+        <Moon className="h-[15px] w-[15px]" style={{ color: 'var(--brand)' }} />
       </div>
       <div
         className="absolute inset-0 flex items-center justify-center transition-all duration-200"
@@ -152,7 +152,7 @@ function UserDropdown({ locale }: { locale: string }) {
           ) : (
             <span
               className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold select-none"
-              style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+              style={{ background: 'var(--brand)', fontFamily: NAV_FONT, color: '#ffffff' }}
             >
               {initials}
             </span>
@@ -223,7 +223,7 @@ function UserDropdown({ locale }: { locale: string }) {
               style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
                 padding: '10px 14px', borderRadius: '10px',
-                color: '#5120c8', textDecoration: 'none',
+                color: 'var(--brand)', textDecoration: 'none',
                 fontSize: '14px', fontWeight: '500',
                 transition: 'background 0.15s ease',
               }}
@@ -309,7 +309,6 @@ export function Navbar() {
   const t = useTranslations('nav')
   const locale = useLocale()
   const pathname = usePathname()
-  const { resolvedTheme } = useTheme() // ← إضافة useTheme للحصول على الوضع الحالي
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -348,11 +347,6 @@ export function Navbar() {
   const isAr = locale === 'ar'
   const isLearnRelative = LEARN_URL.startsWith('/')
 
-  // ← تحديد لون DeveWay بناءً على الوضع
-  const deveWayColor = mounted 
-    ? (resolvedTheme === 'dark' ? '#ffffff' : '#0d0d0d')
-    : '#ffffff'
-
   const initials = mounted && user?.profile
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
     : ''
@@ -379,15 +373,12 @@ export function Navbar() {
       `}</style>
 
       <header
-        className="sticky top-0 z-40 w-full transition-all duration-200"
+        className="dw-header sticky top-0 z-40 w-full transition-all duration-200"
         style={{
-          background: '#050505',
-          backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(81,32,200,0.08) 0%, transparent 60%)',
-          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid transparent',
-          boxShadow: scrolled ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
+          boxShadow: scrolled ? 'var(--shadow)' : 'none',
         }}
       >
-        <div className="dw-container flex h-[68px] items-center justify-between">
+        <div className="dw-container flex h-[72px] items-center justify-between">
 
           {/* ═══ Branding (Logo + Text) ═══ */}
           <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:me-6 md:me-8" style={{ marginInlineEnd: '12px' }}>
@@ -405,7 +396,7 @@ export function Navbar() {
               className="hidden sm:inline-block text-[22px] font-bold tracking-tight transition-colors duration-200 hover:opacity-80 md:text-[24px]"
               style={{ 
                 fontFamily: NAV_FONT, 
-                color: deveWayColor,  // ← اللون الديناميكي
+                color: 'var(--ink)',
                 lineHeight: 1 
               }}
             >
@@ -434,7 +425,7 @@ export function Navbar() {
                     fontWeight: 500,
                     letterSpacing: '-0.01em',
                     fontFamily: NAV_FONT,
-                    color: active ? '#5120c8' : 'var(--foreground)',
+                    color: active ? 'var(--brand)' : 'var(--foreground)',
                     background: active ? 'var(--surface-2)' : 'transparent',
                     opacity: active ? 1 : 0.75,
                   }}
@@ -490,7 +481,7 @@ export function Navbar() {
               
               <SearchBar />
 
-              <div className="hidden sm:flex items-center gap-1 border-r border-white/10 pr-2 mr-1">
+              <div className="hidden sm:flex items-center gap-1 border-e border-[color:var(--line)] pe-2 me-1">
                 <LanguageSwitcher />
                 <ThemeToggle />
                 {mounted && isLoggedIn && (
@@ -502,7 +493,7 @@ export function Navbar() {
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.18)' }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
                   >
-                    <Sparkles className="h-[14px] w-[14px]" style={{ color: '#5120c8' }} />
+                    <Sparkles className="h-[14px] w-[14px]" style={{ color: 'var(--brand)' }} />
                   </Link>
                 )}
               </div>
@@ -558,44 +549,11 @@ export function Navbar() {
               </div>
             ) : (
               <div className="hidden lg:flex items-center gap-2">
-                <Link
-                  href={`/${locale}/login`}
-                  className="px-4 py-2 text-[13px] font-medium rounded-xl transition-colors duration-150"
-                  style={{
-                    color: 'var(--muted)',
-                    border: '1px solid var(--border)',
-                    fontFamily: NAV_FONT,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--foreground)'
-                    e.currentTarget.style.borderColor = 'var(--border-strong)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--muted)'
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                  }}
-                >
+                <Link href={`/${locale}/login`} className="btn btn-ghost btn-sm">
                   {t('login')}
                 </Link>
-                <Link
-                  href={`/${locale}/register`}
-                  className="px-5 py-2 text-[13px] font-semibold rounded-xl transition-colors duration-150"
-                  style={{
-                    background: '#5120c8',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
-                    fontFamily: NAV_FONT,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#4318a8'
-                    e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(81,32,200,0.30)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#5120c8'
-                    e.currentTarget.style.boxShadow = '0 2px 8px -2px rgba(81,32,200,0.25)'
-                  }}
-                >
-                  {t('register')}
+                <Link href={`/${locale}/register`} className="btn btn-primary btn-sm">
+                  {t('start_assessment')}
                 </Link>
               </div>
             )}
@@ -619,7 +577,7 @@ export function Navbar() {
       {/* ═══ Mobile Menu ═══ */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 top-[68px] z-30 lg:hidden overflow-y-auto"
+          className="dw-menu fixed inset-0 top-[72px] z-30 lg:hidden overflow-y-auto"
           style={{
             background: 'var(--surface)',
             borderTop: '1px solid var(--border)',
@@ -649,7 +607,7 @@ export function Navbar() {
                     style={{
                       fontWeight: 500,
                       fontFamily: NAV_FONT,
-                      color: active ? '#5120c8' : 'var(--foreground)',
+                      color: active ? 'var(--brand)' : 'var(--foreground)',
                       background: active ? 'var(--surface-2)' : 'transparent',
                       letterSpacing: '-0.01em',
                     }}
@@ -681,7 +639,7 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/dashboard/ai-chat`}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium"
-                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: '#5120c8', fontFamily: NAV_FONT }}
+                  style={{ background: 'rgba(81, 32, 200, 0.10)', color: 'var(--brand)', fontFamily: NAV_FONT }}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   AI
@@ -705,7 +663,7 @@ export function Navbar() {
                     ) : (
                       <div
                         className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
-                        style={{ background: '#5120c8', fontFamily: NAV_FONT, color: '#ffffff' }}
+                        style={{ background: 'var(--brand)', fontFamily: NAV_FONT, color: '#ffffff' }}
                       >
                         {initials || '?'}
                       </div>
@@ -753,23 +711,16 @@ export function Navbar() {
                 <Link
                   href={`/${locale}/login`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-medium transition-colors duration-150"
-                  style={{ border: '1px solid var(--border)', color: 'var(--foreground)', fontFamily: NAV_FONT }}
+                  className="btn btn-ghost w-full"
                 >
                   {t('login')}
                 </Link>
                 <Link
                   href={`/${locale}/register`}
                   onClick={() => setMobileOpen(false)}
-                  className="w-full flex items-center justify-center rounded-xl py-3 text-sm font-semibold transition-colors duration-150"
-                  style={{
-                    background: '#5120c8',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 8px -2px rgba(81,32,200,0.25)',
-                    fontFamily: NAV_FONT,
-                  }}
+                  className="btn btn-primary w-full"
                 >
-                  {t('register')}
+                  {t('start_assessment')}
                 </Link>
               </div>
             ) : null}
