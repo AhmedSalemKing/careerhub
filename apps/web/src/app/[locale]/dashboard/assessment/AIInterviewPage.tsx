@@ -9,6 +9,7 @@ import { computeDiscoveryStage, type ChatMessage } from './career-signals'
 import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 import { getToken } from '@/lib/auth'
+import { RasheedAvatar } from '../../../components/CharacterDuo'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -674,85 +675,86 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
   const locale = useLocale()
   const [selectedCareerIdx, setSelectedCareerIdx] = useState(0)
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', overflowY: 'auto', padding: '24px 16px 60px' }}>
+    <div dir="rtl" className="dw-assess" style={{ overflowY: 'auto' }}>
       <style>{INTERVIEW_CSS}</style>
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontFamily: 'PingAR', fontWeight: 900, fontSize: 24, color: 'var(--foreground)' }}>تقرير مسارك المهني</div>
-          <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--muted-foreground)', marginTop: 4 }}>من رشيد — مساعد DeveWay للتوجيه المهني</div>
-        </div>
-
-        <div style={{ padding: '16px 18px', borderRadius: 14, marginBottom: 20, background: 'color-mix(in srgb, var(--primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)' }}>
-          <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 13, color: 'var(--primary)', marginBottom: 6 }}>تحليل رشيد</div>
-          <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, color: 'var(--foreground)', lineHeight: 1.7 }}>{result.summary}</div>
-        </div>
-
-        {result.topCareers.map((career, i) => (
-          <div key={i} onClick={() => setSelectedCareerIdx(i)} style={{ padding: '18px 20px', borderRadius: 14, marginBottom: 12, cursor: 'pointer', background: selectedCareerIdx === i ? 'color-mix(in srgb, var(--primary) 6%, var(--card))' : 'var(--card)', border: selectedCareerIdx === i ? '1.5px solid color-mix(in srgb, var(--primary) 50%, transparent)' : '1px solid var(--border)', transition: 'all 0.15s' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div>
-                <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>{career.name}</div>
-                <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>{career.nameEn}</div>
-              </div>
-              <div style={{ fontFamily: 'PingAR', fontWeight: 900, fontSize: 22, color: i === 0 ? 'var(--primary)' : 'var(--foreground)' }}>{career.match}%</div>
-            </div>
-            <div style={{ height: 4, borderRadius: 2, background: 'color-mix(in srgb, var(--foreground) 10%, transparent)', marginBottom: 12 }}>
-              <div style={{ height: '100%', borderRadius: 2, background: 'var(--primary)', width: `${career.match}%`, transition: 'width 1s ease' }} />
-            </div>
-            <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)', marginBottom: 10, lineHeight: 1.6 }}>{career.reason}</div>
-            {career.nextStep && (
-              <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 10 }}>
-                خطوتك القادمة: <span style={{ fontWeight: 300, color: 'var(--foreground)' }}>{career.nextStep}</span>
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {career.skillsToLearn.map(s => (
-                <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'color-mix(in srgb, var(--foreground) 6%, transparent)', border: '1px solid var(--border)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>{s}</span>
-              ))}
-            </div>
+      <div className="dw-as-result">
+        <div className="dw-as-result-card">
+          <div className="dw-as-result-head">
+            <h1>تقرير مسارك المهني</h1>
+            <p>من رشيد — مساعد DeveWay للتوجيه المهني</p>
           </div>
-        ))}
 
-        {result.personalNote && (
-          <div style={{ padding: '14px 18px', borderRadius: 12, marginBottom: 20, background: 'color-mix(in srgb, var(--foreground) 4%, transparent)', border: '1px solid var(--border)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)', lineHeight: 1.7 }}>
-            💬 {result.personalNote}
+          <div className="dw-as-sum">
+            <div className="k">تحليل رشيد</div>
+            <div className="v">{result.summary}</div>
           </div>
-        )}
 
-        <div className="interview-actions" style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={() => {
-              try {
-                localStorage.setItem('rasheed_quiz_result', JSON.stringify(result))
-                const ar = result.topCareers.map(c => ({
-                  track: c.nameEn.toLowerCase().replace(/\s+/g, '-'),
-                  score: c.match, normalized: c.match, titleAr: c.name, titleEn: c.nameEn,
-                }))
-                localStorage.setItem('assessmentResults', JSON.stringify(ar))
-                const sel = result.topCareers[selectedCareerIdx]
-                if (sel) localStorage.setItem('rasheed_selected_career', JSON.stringify({
-                  track: sel.nameEn.toLowerCase().replace(/\s+/g, '-'),
-                  score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
-                }))
-              } catch {}
-              router.push(`/${locale}/dashboard/career-path`)
-            }}
-            style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
-          >
-            {result.topCareers[selectedCareerIdx] ? `ابدأ مسار ${result.topCareers[selectedCareerIdx].name}` : 'ابدأ مسارك مع DeveWay'} ←
-          </button>
-          <button
-            onClick={() => router.push(`/${locale}/careers`)}
-            style={{ flex: 1, padding: '14px 0', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
-          >
-            اختر مساراً مختلفاً
-          </button>
-          <button
-            onClick={onRestart}
-            style={{ padding: '14px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
-          >
-            إعادة
-          </button>
+          {result.topCareers.map((career, i) => (
+            <div
+              key={i}
+              onClick={() => setSelectedCareerIdx(i)}
+              className={`dw-as-career${selectedCareerIdx === i ? ' on' : ''}${i === 0 ? ' first' : ''}`}
+            >
+              <div className="dw-as-career-top">
+                <div>
+                  <div className="nm">{career.name}</div>
+                  <div className="en">{career.nameEn}</div>
+                </div>
+                <div className="pc">{career.match}%</div>
+              </div>
+              <div className="dw-as-track" style={{ marginBottom: 12 }}>
+                <div className="dw-as-fill" style={{ width: `${career.match}%` }} />
+              </div>
+              <div className="why">{career.reason}</div>
+              {career.nextStep && (
+                <div className="step">
+                  خطوتك القادمة: <span>{career.nextStep}</span>
+                </div>
+              )}
+              <div className="dw-as-chips">
+                {career.skillsToLearn.map(s => (
+                  <span key={s}>{s}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {result.personalNote && (
+            <div className="dw-as-personal">
+              <RasheedAvatar size={24} />
+              <span>{result.personalNote}</span>
+            </div>
+          )}
+
+          <div className="interview-actions dw-as-actions">
+            <button
+              className="dw-as-next"
+              onClick={() => {
+                try {
+                  localStorage.setItem('rasheed_quiz_result', JSON.stringify(result))
+                  const ar = result.topCareers.map(c => ({
+                    track: c.nameEn.toLowerCase().replace(/\s+/g, '-'),
+                    score: c.match, normalized: c.match, titleAr: c.name, titleEn: c.nameEn,
+                  }))
+                  localStorage.setItem('assessmentResults', JSON.stringify(ar))
+                  const sel = result.topCareers[selectedCareerIdx]
+                  if (sel) localStorage.setItem('rasheed_selected_career', JSON.stringify({
+                    track: sel.nameEn.toLowerCase().replace(/\s+/g, '-'),
+                    score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
+                  }))
+                } catch {}
+                router.push(`/${locale}/dashboard/career-path`)
+              }}
+            >
+              {result.topCareers[selectedCareerIdx] ? `ابدأ مسار ${result.topCareers[selectedCareerIdx].name}` : 'ابدأ مسارك مع DeveWay'} ←
+            </button>
+            <button className="dw-as-ghost" onClick={() => router.push(`/${locale}/careers`)}>
+              اختر مساراً مختلفاً
+            </button>
+            <button className="dw-as-ghost" onClick={onRestart}>
+              إعادة
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -868,77 +870,86 @@ ${answersText}
 
   if (isAnalyzing) {
     return (
-      <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <style>{`@keyframes _pulse{0%,100%{transform:scale(1);opacity:0.85}50%{transform:scale(1.12);opacity:1}}`}</style>
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--primary)', margin: '0 auto 20px', animation: '_pulse 1.5s ease infinite', opacity: 0.85 }} />
-        <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)', marginBottom: 8 }}>رشيد بيحلل إجاباتك...</div>
-        <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--muted-foreground)' }}>بيدرس الأنماط ويجهز تقريرك المخصص</div>
+      <div dir="rtl" className="dw-assess">
+        <div className="dw-as-center">
+          <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
+          <h2>رشيد بيحلل إجاباتك...</h2>
+          <p>بيدرس الأنماط ويجهز تقريرك المخصص</p>
+        </div>
       </div>
     )
   }
 
+  const progressPercent = Math.round(((currentIndex + (selectedOption ? 1 : 0)) / ALL_QUESTIONS.length) * 100)
+
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--background)' }}>
-      <div style={{ padding: '16px 20px' }}>
-        <button onClick={onEnd} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'PingAR', fontWeight: 300 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+    <div dir="rtl" className="dw-assess">
+      <div className="dw-as-main">
+        <button onClick={onEnd} className="dw-as-exit">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
           خروج
         </button>
-      </div>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '0 16px 60px' }}>
-        {/* Phase progress */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
-          {PHASES.map((ph, i) => (
-            <div key={ph.id} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= currentPhaseIdx ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)', transition: 'background 0.3s' }} />
-          ))}
+        {/* Progress */}
+        <div className="dw-as-prog">
+          <div className="dw-as-prog-top">
+            <span className="l">{PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel}</span>
+            <span className="r">سؤال {currentIndex + 1} من {ALL_QUESTIONS.length}</span>
+          </div>
+          <div className="dw-as-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+            <div className="dw-as-fill" style={{ width: `${progressPercent}%` }} />
+          </div>
         </div>
 
-        <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 8 }}>
-          {currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3
+        {/* Rasheed question card */}
+        <div className="dw-as-card">
+          <div className="dw-as-card-head">
+            <div className="dw-as-mini"><RasheedAvatar size={40} /></div>
+            <div>
+              <p className="who">رشيد · مرشد DeveWay</p>
+              <p className="sub">{currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3</p>
+            </div>
+          </div>
+
+          <div className="dw-as-card-body">
+            <p className="dw-as-q">{currentQuestion.question}</p>
+
+            <div className="dw-as-opts">
+              {currentQuestion.options.map((opt, i) => {
+                const isSelected = selectedOption === opt
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={!!selectedOption}
+                    onClick={() => !selectedOption && handleSelect(opt)}
+                    className={`dw-as-opt${isSelected ? ' on' : ''}`}
+                  >
+                    <span className="bub">{isSelected ? '✓' : String.fromCharCode(65 + i)}</span>
+                    {opt}
+                  </button>
+                )
+              })}
+            </div>
+
+            {isLoadingInsight && (
+              <div className="dw-as-typing">
+                {[0, 1, 2].map(i => <i key={i} style={{ animation: `dw-as-dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
+              </div>
+            )}
+
+            {insight && !isLoadingInsight && (
+              <div className="dw-as-insight">
+                <div className="n">رشيد</div>
+                <div className="t">{insight}</div>
+              </div>
+            )}
+          </div>
         </div>
-
-        <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 18, color: 'var(--foreground)', lineHeight: 1.6, marginBottom: 24 }}>
-          {currentQuestion.question}
-        </div>
-
-        {currentQuestion.options.map((opt, i) => (
-          <div
-            key={i}
-            onClick={() => !selectedOption && handleSelect(opt)}
-            style={{
-              padding: '14px 18px', borderRadius: 12, marginBottom: 10,
-              border:      selectedOption === opt ? '1.5px solid var(--primary)' : '1px solid var(--border)',
-              background:  selectedOption === opt ? 'color-mix(in srgb, var(--primary) 10%, transparent)' : 'var(--card)',
-              cursor:      selectedOption ? 'default' : 'pointer',
-              fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, color: 'var(--foreground)',
-              transition: 'all 0.15s',
-            }}
-          >
-            {opt}
-          </div>
-        ))}
-
-        {isLoadingInsight && (
-          <div style={{ marginTop: 16, display: 'flex', gap: 6, alignItems: 'center', padding: '10px 14px', borderRadius: 12, background: 'color-mix(in srgb, var(--foreground) 4%, transparent)', border: '1px solid var(--border)' }}>
-            <style>{`@keyframes _dot{from{transform:translateY(0)}to{transform:translateY(-5px)}}`}</style>
-            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--primary)', display: 'inline-block', animation: `_dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
-          </div>
-        )}
-
-        {insight && !isLoadingInsight && (
-          <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'color-mix(in srgb, var(--primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 12, color: 'var(--primary)', flexShrink: 0 }}>رشيد</div>
-            <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, color: 'var(--foreground)' }}>{insight}</div>
-          </div>
-        )}
 
         {selectedOption && !isLoadingInsight && (
-          <button
-            onClick={handleNext}
-            style={{ width: '100%', marginTop: 16, padding: '13px 0', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 15, cursor: 'pointer' }}
-          >
-            {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
+          <button onClick={handleNext} className="dw-as-next">
+            {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'} ←
           </button>
         )}
       </div>
