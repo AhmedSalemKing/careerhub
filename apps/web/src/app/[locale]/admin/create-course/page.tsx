@@ -83,9 +83,9 @@ async function uploadVideoFile(
   })
 }
 
-// Providers whose logo we ship; typing the name auto-fills it.
-const KNOWN_PROVIDERS: Record<string, { logo: string; display: string }> = {
-  ilearn: { logo: '/logos/ilearn.png', display: 'iLearn' },
+// Known providers: typing the name normalises its spelling (name only, no logo).
+const KNOWN_PROVIDERS: Record<string, { display: string }> = {
+  ilearn: { display: 'iLearn' },
 }
 
 // Which categories (by slug) make sense for each career path (by slug).
@@ -305,7 +305,6 @@ export default function AdminCreateCoursePage() {
         thumbnail: form.thumbnail || undefined,
         previewVideo: form.previewVideo || undefined,
         providerName: isAdmin && form.hasProvider ? (provider?.display ?? form.providerName.trim()) || undefined : undefined,
-        providerLogo: isAdmin && form.hasProvider ? provider?.logo : undefined,
         duration: parseInt(form.duration) || 0,
         isInstructor: form.isInstructor,
         instructorId: !form.isInstructor ? form.instructorId : undefined,
@@ -734,14 +733,6 @@ export default function AdminCreateCoursePage() {
                         background: 'var(--primary-muted)', border: '1px solid var(--border)',
                         color: 'var(--foreground)', fontSize: 13, fontWeight: 500,
                       }}>
-                        {provider && (
-                          <img
-                            src={provider.logo}
-                            alt=""
-                            style={{ height: 18, width: 'auto', objectFit: 'contain' }}
-                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
-                          />
-                        )}
                         <span>Powered by {provider?.display ?? form.providerName.trim()}</span>
                       </div>
                     )}

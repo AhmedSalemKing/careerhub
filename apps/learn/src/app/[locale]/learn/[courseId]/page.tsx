@@ -2095,16 +2095,6 @@ function MetaItem({
 												borderRadius: '6px', padding: '5px 12px', marginTop: '8px',
 												fontSize: '12px', color: 'var(--muted)',
 											}}>
-												{course.providerLogo && (
-													<img
-														src={course.providerLogo}
-														alt={course.providerName}
-														width={20}
-														height={20}
-														style={{ objectFit: 'contain' }}
-														onError={(e) => { e.currentTarget.style.display = 'none' }}
-													/>
-												)}
 												<span>Powered by {course.providerName}</span>
 											</div>
 										)}
