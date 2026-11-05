@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { SearchBar } from './SearchBar' 
 import { NotificationBell } from './NotificationBell'
@@ -359,6 +359,49 @@ export function Navbar() {
 
   const isActive = (href: string) => pathname === href
 
+  const learnDesktop = (
+            <a
+              key="learn"
+              href={learnUrlWithToken(`/${locale}`)}
+              target={isLearnRelative ? '_self' : '_blank'}
+              rel="noopener noreferrer"
+              className="px-[18px] py-[9px] rounded-xl transition-colors duration-150"
+              style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                letterSpacing: '-0.01em',
+                fontFamily: NAV_FONT,
+                color: 'var(--foreground)',
+                opacity: 0.85,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--surface-2)'
+                e.currentTarget.style.opacity = '1'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent'
+                e.currentTarget.style.opacity = '0.85'
+              }}
+            >
+              {t('training')}
+              <span className="inline-block ms-1 text-[10px] opacity-35">↗</span>
+            </a>
+  )
+
+  const learnMobile = (
+              <a
+              key="learn"
+                href={learnUrlWithToken(`/${locale}`)}
+                target={isLearnRelative ? '_self' : '_blank'}
+                rel="noopener noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
+                style={{ fontWeight: 500, fontFamily: NAV_FONT, color: 'var(--foreground)', letterSpacing: '-0.01em' }}
+              >
+                {t('training')} <span className="text-xs opacity-30">↗</span>
+              </a>
+  )
+
   return (
     <>
       <style jsx>{`
@@ -406,11 +449,12 @@ export function Navbar() {
 
           {/* ═══ Navigation Links (Desktop) ═══ */}
           <nav className="hidden lg:flex items-center gap-0.5">
-            {links.map((l) => {
+            {links.map((l, i) => {
               const active = isActive(l.href)
               return (
+                <Fragment key={l.href}>
+                {i === 1 && learnDesktop}
                 <Link
-                  key={l.href}
                   href={l.href}
                   onClick={(e) => {
                     if (l.isAnchor) {
@@ -444,33 +488,9 @@ export function Navbar() {
                 >
                   {l.label}
                 </Link>
+              </Fragment>
               )
             })}
-            <a
-              href={learnUrlWithToken(`/${locale}`)}
-              target={isLearnRelative ? '_self' : '_blank'}
-              rel="noopener noreferrer"
-              className="px-[18px] py-[9px] rounded-xl transition-colors duration-150"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                letterSpacing: '-0.01em',
-                fontFamily: NAV_FONT,
-                color: 'var(--foreground)',
-                opacity: 0.85,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--surface-2)'
-                e.currentTarget.style.opacity = '1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.opacity = '0.85'
-              }}
-            >
-              {t('training')}
-              <span className="inline-block ms-1 text-[10px] opacity-35">↗</span>
-            </a>
           </nav>
 
           {/* ═══ Actions ═══ */}
@@ -587,11 +607,12 @@ export function Navbar() {
           <div className="px-4 py-5 space-y-5">
             {/* Nav links */}
             <nav className="flex flex-col gap-0.5">
-              {links.map((l) => {
+              {links.map((l, i) => {
                 const active = isActive(l.href)
                 return (
-                  <Link
-                    key={l.href}
+                  <Fragment key={l.href}>
+                {i === 1 && learnMobile}
+                <Link
                     href={l.href}
                     onClick={(e) => {
                       if (l.isAnchor) {
@@ -614,18 +635,9 @@ export function Navbar() {
                   >
                     {l.label}
                   </Link>
+              </Fragment>
                 )
               })}
-              <a
-                href={learnUrlWithToken(`/${locale}`)}
-                target={isLearnRelative ? '_self' : '_blank'}
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
-                style={{ fontWeight: 500, fontFamily: NAV_FONT, color: 'var(--foreground)', letterSpacing: '-0.01em' }}
-              >
-                {t('training')} <span className="text-xs opacity-30">↗</span>
-              </a>
             </nav>
 
             {/* Mobile actions row */}
