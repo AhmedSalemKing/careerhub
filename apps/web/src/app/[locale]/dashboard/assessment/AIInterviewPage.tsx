@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 import { getToken } from '@/lib/auth'
 import { RasheedAvatar } from '../../../components/CharacterDuo'
+import { SECTION_SVGS, CHECK_SVG } from './sections'
 
 /* ── Types ────────────────────────────────────────────────── */
 interface QuizQuestion {
@@ -762,7 +763,6 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
 }
 
 /* ── Quiz Mode ────────────────────────────────────────────── */
-const PHASE_ICONS = ['👤', '🎯', '🛠️', '🧩', '💡', '🚀']
 const OPT_LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ']
 const RASHEED_REACTIONS: string[][] = [
   ['ممتاز! كل مرحلة لها قيمتها.', 'رائع، هذا يوضح نقطة انطلاقك.', 'جيد، بدأت الصورة تتضح.'],
@@ -916,10 +916,10 @@ ${answersText}
         )}
 
         {/* Section bar */}
-        <ol className="dw-as-secbar">
+        <ol className="secbar">
           {PHASES.map((ph, i) => (
             <li key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''}>
-              <span className="ic" aria-hidden="true">{PHASE_ICONS[i]}</span>
+              <span className="sb-ic">{i < currentPhaseIdx ? CHECK_SVG : SECTION_SVGS[i]}</span>
               <span className="sb-l">{ph.label}</span>
             </li>
           ))}
@@ -964,7 +964,7 @@ ${answersText}
                       >
                         <span className="bub">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
                         <span className="tx">{opt}</span>
-                        {isSelected && <span className="ck" aria-hidden="true">✓</span>}
+                        {isSelected && <span className="ck" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span>}
                       </button>
                     )
                   })}

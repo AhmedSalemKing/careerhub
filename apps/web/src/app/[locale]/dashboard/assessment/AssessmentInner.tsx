@@ -1,51 +1,76 @@
 'use client'
-import { useRef } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import dynamic from 'next/dynamic'
-import { RasheedAvatar } from '../../../components/CharacterDuo'
+import { SECTION_SVGS, SECTION_LABELS, RasheedFigure } from './sections'
 
 const AIInterviewPage = dynamic(() => import('./AIInterviewPage'), { ssr: false })
 
 function AssessmentContent() {
   const quizRef = useRef<HTMLDivElement>(null)
+  const [line0Visible, setLine0Visible] = useState(false)
+  const [line1Visible, setLine1Visible] = useState(false)
+  const [line2Visible, setLine2Visible] = useState(false)
+  const [sectionsVisible, setSectionsVisible] = useState(false)
 
-  // Single page: the intro hero and the quiz live together at /dashboard/assessment.
-  // The CTA scrolls to the quiz instead of navigating. Interview mode stays hidden
-  // (its code is preserved in AIInterviewPage): <AIInterviewPage mode="interview" />
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = []
+    timers.push(setTimeout(() => setLine0Visible(true), 300))
+    timers.push(setTimeout(() => setLine1Visible(true), 700))
+    timers.push(setTimeout(() => setLine2Visible(true), 1100))
+    timers.push(setTimeout(() => setSectionsVisible(true), 1500))
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
+  // Single page: intro and quiz both live at /dashboard/assessment. The CTA only scrolls.
+  // Interview mode stays hidden (code preserved in AIInterviewPage).
   const handleStart = () => {
     quizRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
     <div dir="rtl" className="dw-assess">
-      <section className="dw-as-hero full">
-        <div className="dw-as-blob b1" aria-hidden="true" />
-        <div className="dw-as-blob b2" aria-hidden="true" />
+      <section className="ri-hero">
+        <div className="ri-wrap">
+          <div className="ri-center">
+            <figure className="r-figure ri-figure">
+              <span className="r-blob" aria-hidden="true" />
+              <RasheedFigure />
+            </figure>
 
-        <div className="dw-as-hero-in">
-          <div className="dw-as-avatar">
-            <RasheedAvatar size={96} />
+            <div className="ri-lines">
+              <p className={`ri-line big${line0Visible ? ' on' : ''}`}>اكتشف مسارك المهني مع رشيد</p>
+              <p className={`ri-line${line1Visible ? ' on' : ''}`}>
+                أجب على ١٨ سؤالاً وسيحلل رشيد مهاراتك وشخصيتك وطموحاتك
+              </p>
+              <p className={`ri-line${line2Visible ? ' on' : ''}`}>
+                ثم يقترح عليك أفضل المسارات المهنية المناسبة لك
+              </p>
+            </div>
+
+            <div className="ri-cta">
+              <button type="button" className="dw-as-cta" onClick={handleStart}>
+                ابدأ التقييم مع رشيد
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </div>
+
+            <div className={`ri-secs${sectionsVisible ? ' on' : ''}`}>
+              <ol>
+                {SECTION_LABELS.map((label, i) => (
+                  <li key={label} style={{ '--d': `${i * 70}ms` } as CSSProperties}>
+                    <span className="sb-ic">{SECTION_SVGS[i]}</span>
+                    <span><b>{i + 1}</b> {label}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
-
-          <span className="dw-as-eyebrow">مرشد DeveWay المهني بالذكاء الاصطناعي</span>
-
-          <h1>أهلًا، أنا رشيد</h1>
-
-          <p className="dw-as-lede">
-            أسئلة ذكية تتكيف مع إجاباتك لتحديد أنسب المسارات المهنية لك بدقة عالية، ثم أقترح عليك خطوتك القادمة.
-          </p>
-
-          <button type="button" className="dw-as-cta" onClick={handleStart}>
-            ابدأ التقييم مع رشيد
-            <svg className="go down" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="12" y1="5" x2="12" y2="19" /><polyline points="19 12 12 19 5 12" />
-            </svg>
-          </button>
-
-          <p className="dw-as-meta">المدة التقريبية: 15-20 دقيقة · 18 سؤالاً في 6 محاور</p>
         </div>
       </section>
 
-      <div ref={quizRef} className="dw-as-quizsec">
+      <div ref={quizRef} id="assess-q" className="assess-q">
         <div className="dw-as-title">
           <span className="dw-as-eyebrow dark">نحو 15-20 دقيقة</span>
           <h2>التقييم المهني المجاني مع رشيد</h2>
