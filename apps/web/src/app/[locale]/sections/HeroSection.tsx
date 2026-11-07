@@ -5,7 +5,6 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useAuthStore } from '../../../stores/authStore'
-import { TypewriterHero } from '../../components/TypewriterHero'
 import { CharacterScene, CharacterAvatar, CharacterCast, RasheedAvatar } from '../../components/CharacterDuo'
 
 export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }) {
@@ -40,9 +39,7 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
 
           <h1>
             {heroTitle}
-            <span className="grad">
-              <TypewriterHero />
-            </span>
+            <span className="grad">{t('title2')}</span>
           </h1>
 
           <p className="dw-hero-sub">{heroSubtitle}</p>
@@ -53,9 +50,9 @@ export function HeroSection({ siteConfig }: { siteConfig?: Record<string, any> }
               <ArrowRight className="go flip" size={18} aria-hidden="true" />
             </Link>
 
-            <a href="#features" className="btn btn-ghost">
+            <Link href={`/${locale}/careers`} className="btn btn-ghost">
               {t('cta_secondary')}
-            </a>
+            </Link>
           </div>
 
           <p className="dw-hero-note">

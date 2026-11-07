@@ -67,11 +67,12 @@
     "courses": "Courses"
   },
   "hero": {
-    "badge": "AI-Powered Career Platform",
-    "title": "Discover your career path with DeveWay",
-    "subtitle": "An all-in-one platform combining career guidance, professional training, and 1:1 coaching",
-    "cta_primary": "Start your journey for free",
-    "cta_secondary": "Learn more",
+    "badge": "For learners in Saudi Arabia and Egypt",
+    "title": "From career confusion",
+    "title2": "to job-market readiness",
+    "subtitle": "Discover the career path that fits you, understand why it was recommended, and follow a ready learning path built on what employers ask for.",
+    "cta_primary": "Start the free assessment",
+    "cta_secondary": "Browse career paths",
     "stat_courses": "Courses+",
     "stat_coaches": "Coaches+",
     "stat_students": "Learners+"
