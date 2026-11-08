@@ -2212,14 +2212,185 @@ a.dw-instructor:hover { color: var(--accent); }
 
 :is(.dw-header, .dw-menu, .dw-footer) .btn-ghost:hover { border-color: var(--brand); color: var(--brand); }
 
-/* ── Header (glass) ────────────────────────────────────────────────── */
-.dw-header {
-	background: var(--glass);
-	-webkit-backdrop-filter: blur(16px);
-	backdrop-filter: blur(16px);
-	border-bottom: 1px solid var(--line);
+/* ══════════════════════════════════════════
+   GLOBAL HEADER / NAVBAR
+   ══════════════════════════════════════════ */
+
+/* ── Shell ──
+   sticky (not fixed) keeps the bar in the page flow so no page's content
+   slides underneath it. --bg only exists on some pages, so fall back to
+   the global --background. */
+.header {
+	position: sticky;
+	inset-block-start: 0;
+	inset-inline-start: 0;
+	width: 100%;
+	z-index: 100;
+	background: transparent;
 	font-family: var(--font-ui);
+	transition: background .22s ease, box-shadow .22s ease, backdrop-filter .22s ease;
 }
+.header.scrolled {
+	background: color-mix(in srgb, var(--bg, var(--background)) 88%, transparent);
+	backdrop-filter: blur(18px) saturate(1.5);
+	-webkit-backdrop-filter: blur(18px) saturate(1.5);
+	box-shadow: 0 1px 0 var(--line);
+}
+
+/* ── Inner wrap ── */
+.header .wrap {
+	display: flex;
+	align-items: center;
+	height: 64px;
+	max-width: 1240px;
+	margin-inline: auto;
+	padding-inline: clamp(16px, 4vw, 48px);
+	gap: 0;
+}
+
+/* ── Logo ── */
+.header .logo {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin-inline-end: 36px;
+	text-decoration: none;
+}
+.header .logo img {
+	display: block;
+	height: 30px;
+	width: auto;
+	min-width: 0;
+}
+.header .logo-text {
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	line-height: 1;
+	color: var(--ink);
+}
+/* Light/dark logo swap */
+.header .logo .on-dark { display: none; }
+.dark .header .logo .on-light { display: none; }
+.dark .header .logo .on-dark  { display: block; }
+
+/* ── Main nav ── */
+.header .nav {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+}
+.header .nav a {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 11px;
+	border-radius: 8px;
+	font-size: .875rem;
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--ink-2);
+	text-decoration: none;
+	white-space: nowrap;
+	transition: color .14s ease, background .14s ease;
+}
+.header .nav a:hover,
+.header .nav a:focus-visible {
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 7%, transparent);
+	outline: none;
+}
+.header .nav a.active,
+.header .nav a[aria-current='page'] {
+	color: var(--brand);
+	background: color-mix(in srgb, var(--brand) 9%, transparent);
+}
+/* The mobile menu replaces the inline nav below the desktop breakpoint */
+@media (max-width: 1023px) { .header .nav { display: none; } .header .wrap { justify-content: space-between; } }
+
+/* ── Tools cluster ── */
+.hdr-tools {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-inline-start: 24px;
+	flex-shrink: 0;
+}
+@media (max-width: 1023px) { .hdr-tools { margin-inline-start: 0; } }
+
+/* ── Market switcher (KSA / EG) ── */
+.mkt {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px;
+	gap: 2px;
+	background: var(--surface);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.mkt button {
+	padding: 3px 10px;
+	border-radius: 6px;
+	font-size: .75rem;
+	font-weight: 700;
+	letter-spacing: .03em;
+	color: var(--ink-3);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	transition: color .14s ease, background .14s ease, box-shadow .14s ease;
+	line-height: 1.5;
+}
+.mkt button.on {
+	background: var(--bg, var(--background));
+	color: var(--ink);
+	box-shadow: 0 1px 3px color-mix(in srgb, var(--night) 14%, transparent);
+}
+.mkt button:hover:not(.on) { color: var(--ink-2); }
+
+/* ── Icon buttons (lang, theme, menu) ── */
+.icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 7px 9px;
+	border-radius: 8px;
+	color: var(--ink-2);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	font-size: .8125rem;
+	font-weight: 500;
+	transition: color .14s ease, background .14s ease;
+	line-height: 1;
+	white-space: nowrap;
+}
+.icon-btn:hover,
+.icon-btn:focus-visible {
+	color: var(--ink);
+	background: color-mix(in srgb, var(--ink) 7%, transparent);
+	outline: none;
+}
+.icon-btn .icon {
+	width: 18px;
+	height: 18px;
+	flex-shrink: 0;
+}
+/* Theme toggle keeps its sun/moon crossfade, so it needs a fixed box */
+.icon-btn.theme-btn { position: relative; width: 36px; height: 36px; padding: 0; overflow: hidden; }
+
+/* ── Hamburger ── */
+.menu-btn .icon { width: 20px; height: 20px; }
+
+/* ── Responsive visibility ── */
+@media (max-width: 639px)  { .hide-sm { display: none !important; } }
+@media (min-width: 768px)  { .hide-md { display: none !important; } }
+
+/* ── Large screens: hide hamburger ── */
+@media (min-width: 1024px) { .menu-btn { display: none !important; } }
 
 /* ── Footer ────────────────────────────────────────────────────────── */
 .dw-footer { background: var(--night); color: var(--night-ink); border-top: 1px solid var(--night-line); font-family: var(--font-ui); }

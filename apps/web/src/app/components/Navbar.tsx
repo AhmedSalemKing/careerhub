@@ -77,11 +77,8 @@ function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-200 overflow-hidden"
-      style={{ background: 'var(--surface-2)' }}
+      className="icon-btn theme-btn"
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--surface-2)' }}
     >
       <div
         className="absolute inset-0 flex items-center justify-center transition-all duration-200"
@@ -415,16 +412,11 @@ export function Navbar() {
         }
       `}</style>
 
-      <header
-        className="dw-header sticky top-0 z-40 w-full transition-all duration-200"
-        style={{
-          boxShadow: scrolled ? 'var(--shadow)' : 'none',
-        }}
-      >
-        <div className="dw-container flex h-[72px] items-center justify-between">
+      <header className={`header dw-header${scrolled ? ' scrolled' : ''}`}>
+        <div className="wrap">
 
           {/* ═══ Branding (Logo + Text) ═══ */}
-          <Link href={`/${locale}`} className="shrink-0 flex items-center gap-3 sm:me-6 md:me-8" style={{ marginInlineEnd: '12px' }}>
+          <Link href={`/${locale}`} className="logo">
             <Image
               src="/logo-icon.png"
               alt="DeveWay"
@@ -432,23 +424,15 @@ export function Navbar() {
               height={52}
               priority
               className="object-contain transition-opacity duration-200 hover:opacity-80"
-              style={{ background: 'transparent', width: 'auto', height: '44px', minWidth: '44px' }}
             />
             {/* ✅ تم تعديل اللون هنا ليكون ديناميكياً حسب الوضع */}
-            <span
-              className="hidden sm:inline-block text-[22px] font-bold tracking-tight transition-colors duration-200 hover:opacity-80 md:text-[24px]"
-              style={{ 
-                fontFamily: NAV_FONT, 
-                color: 'var(--ink)',
-                lineHeight: 1 
-              }}
-            >
+            <span className="logo-text hidden sm:inline-block">
               DeveWay
             </span>
           </Link>
 
           {/* ═══ Navigation Links (Desktop) ═══ */}
-          <nav className="hidden lg:flex items-center gap-0.5">
+          <nav className="nav">
             {links.map((l, i) => {
               const active = isActive(l.href)
               return (
@@ -463,28 +447,8 @@ export function Navbar() {
                       scrollToSection(sectionId, locale)
                     }
                   }}
-                  className="relative px-[18px] py-[9px] rounded-xl transition-colors duration-150"
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    letterSpacing: '-0.01em',
-                    fontFamily: NAV_FONT,
-                    color: active ? 'var(--brand)' : 'var(--foreground)',
-                    background: active ? 'var(--surface-2)' : 'transparent',
-                    opacity: active ? 1 : 0.75,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.background = 'var(--surface-2)'
-                      e.currentTarget.style.opacity = '1'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!active) {
-                      e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.opacity = '0.75'
-                    }
-                  }}
+                  className={active ? 'active' : undefined}
+                  aria-current={active ? 'page' : undefined}
                 >
                   {l.label}
                 </Link>
@@ -494,7 +458,7 @@ export function Navbar() {
           </nav>
 
           {/* ═══ Actions ═══ */}
-          <div className="flex items-center gap-1.5">
+          <div className="hdr-tools">
 
             {/* Icon buttons row */}
             <div className="flex items-center gap-1">
@@ -581,14 +545,11 @@ export function Navbar() {
             {/* Mobile toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="flex lg:hidden h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-              style={{
-                color: 'var(--muted)',
-                background: mobileOpen ? 'var(--surface-2)' : 'transparent',
-              }}
+              className="icon-btn menu-btn"
               aria-label="Toggle menu"
+              aria-expanded={mobileOpen}
             >
-              {mobileOpen ? <X className="h-[18px] w-[18px]" /> : <Menu className="h-[18px] w-[18px]" />}
+              {mobileOpen ? <X className="icon" /> : <Menu className="icon" />}
             </button>
           </div>
         </div>
@@ -597,7 +558,7 @@ export function Navbar() {
       {/* ═══ Mobile Menu ═══ */}
       {mobileOpen && (
         <div
-          className="dw-menu fixed inset-0 top-[72px] z-30 lg:hidden overflow-y-auto"
+          className="dw-menu fixed inset-0 top-[64px] z-30 lg:hidden overflow-y-auto"
           style={{
             background: 'var(--surface)',
             borderTop: '1px solid var(--border)',
