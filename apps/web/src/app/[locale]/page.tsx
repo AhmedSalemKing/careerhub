@@ -1,11 +1,17 @@
 import { normalisePrimary } from '../../lib/utils'
 import { HeroSection } from './sections/HeroSection'
-import { FeaturesSection } from './sections/FeaturesSection'
-import { CareerPathsSection } from './sections/CareerPathsSection'
-import { TestimonialsSection } from './sections/TestimonialsSection'
-import { CTASection } from './sections/CTASection'
-import { MarqueeStrip, StepsSection, MomentsSection, CoachingSection } from './sections/HomeSections'
-import { CoursesShowcase } from '../components/CoursesShowcase'
+import { MarqueeStrip } from './sections/HomeSections'
+import {
+  RevealOnScroll,
+  HowSection,
+  TracksSection,
+  MomentsV3Section,
+  WhySection,
+  MentorsSection,
+  ProvidersSection,
+  RegionsSection,
+  CtaBandSection,
+} from './sections/HomeV3Sections'
 import { HashScrollHandler } from '../components/HashScrollHandler'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://api.deveways.com/api'
@@ -89,12 +95,6 @@ async function getSiteConfig() {
 export default async function HomePage() {
   const config = await getSiteConfig()
 
-  const showFeatures = config['sections.features.visible'] !== false
-  const showCourses = config['sections.courses.visible'] !== false
-  const showCareers = config['sections.careers.visible'] !== false
-  const showTestimonials = config['sections.testimonials.visible'] !== false
-  const showPricing = config['sections.pricing.visible'] !== false
-
   const primaryColor = normalisePrimary(config['theme.primaryColor'] || '#5120C8')
 
   return (
@@ -106,19 +106,17 @@ export default async function HomePage() {
       }} />
       <main id="main-content" aria-label="DeveWay homepage" className="dw-home scroll-smooth">
         <HashScrollHandler />
+        <RevealOnScroll />
         <HeroSection siteConfig={config} />
         <MarqueeStrip />
-        {showFeatures && <FeaturesSection />}
-        {showFeatures && <StepsSection />}
-        {showCareers && <CareerPathsSection />}
-        {showCareers && <MomentsSection />}
-        {showCourses && <CoursesShowcase />}
-        <CoachingSection />
-        {showTestimonials && <TestimonialsSection siteConfig={config} />}
-        {showPricing && <CTASection />}
-        {!showPricing && (
-          <div style={{ height: '80px' }} />
-        )}
+        <HowSection />
+        <TracksSection />
+        <MomentsV3Section />
+        <WhySection />
+        <MentorsSection />
+        <ProvidersSection />
+        <RegionsSection />
+        <CtaBandSection />
       </main>
     </>
   )

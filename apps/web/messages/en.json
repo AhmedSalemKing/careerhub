@@ -51,6 +51,121 @@
     "c3_title": "1:1 sessions",
     "c3_desc": "Readiness reviews and mock interviews before you launch."
   },
+  "homeV3": {
+    "how": {
+      "eyebrow": "How it works",
+      "title": "One connected journey, from the first question to the first job",
+      "step1": {
+        "title": "Explore",
+        "body": "Tell us your interests, strengths and goals in a short assessment."
+      },
+      "step2": {
+        "title": "Understand",
+        "body": "See the career paths that fit you, with the reasons behind each."
+      },
+      "step3": {
+        "title": "Follow your path",
+        "body": "Get a step-by-step course path from trusted training providers."
+      },
+      "step4": {
+        "title": "Get ready",
+        "body": "Build your skills, projects and confidence, with mentors at the moments that matter."
+      }
+    },
+    "careers": {
+      "eyebrow": "Career paths",
+      "title": "Six paths built on market needs",
+      "lede": "Each path combines courses from several training providers into one plan, in the right order."
+    },
+    "moments": {
+      "eyebrow": "Wherever you're starting",
+      "title": "Designed for three career moments",
+      "card1": {
+        "title": "Students and new graduates",
+        "body": "Start your career with a clearer direction and a learning path built around your goals.",
+        "cta": "Start here"
+      },
+      "card2": {
+        "title": "Career changers",
+        "body": "Explore your next career path and learn how to prepare for the move.",
+        "cta": "Start here"
+      },
+      "card3": {
+        "title": "Professionals moving up",
+        "body": "Turn your experience into a clearer plan for your next career step.",
+        "cta": "Start here"
+      }
+    },
+    "why": {
+      "eyebrow": "Explained, not guessed",
+      "title": "Every recommendation comes with its reasons",
+      "lede": "Rasheed, our AI career guide, does the matching, and what you see is the explanation: how your interests, skills and market demand lead to a career path. Guidance to help you decide, not a guarantee.",
+      "cta": "Start the free assessment",
+      "sample": "Illustrative example",
+      "bar": {
+        "interests": "Interests",
+        "skills": "Skills",
+        "market": "Market demand"
+      },
+      "reason1": "You enjoy finding patterns in numbers",
+      "reason2": "You're strong with spreadsheets and analysis",
+      "reason3": "Demand for this role is high in the market"
+    },
+    "mentors": {
+      "eyebrow": "Human guidance",
+      "title": "Mentors at the moments that matter",
+      "lede": "Group clinics, expert reviews of your work, and one-to-one sessions at the key milestones of your path.",
+      "type1": {
+        "title": "Group clinics",
+        "body": "Live Q&A sessions with a mentor and learners on your path."
+      },
+      "type2": {
+        "title": "Expert reviews",
+        "body": "Written or recorded feedback on your CV, portfolio or project."
+      },
+      "type3": {
+        "title": "One-to-one sessions",
+        "body": "Readiness reviews and mock interviews before you finish your path."
+      },
+      "joinCta": "Join as a mentor",
+      "comingSoon": "Launching in a later phase"
+    },
+    "providers": {
+      "eyebrow": "For training providers",
+      "title": "Reach learners who arrive with a clear goal",
+      "lede": "List your self-paced and live courses within DeveWay career paths. Hosting and teaching stay with you, and we bring motivated learners in one connected experience.",
+      "cta": "Become a partner",
+      "col1": "Your responsibility",
+      "col2": "DeveWay's responsibility",
+      "col3": "What the learner sees",
+      "yours1": "Course content and hosting",
+      "yours2": "Live teaching and instructors",
+      "yours3": "Exams and certificates",
+      "dw1": "Career assessment and recommendations",
+      "dw2": "Path design and learner progress",
+      "dw3": "Booking, reminders and learner support",
+      "learner1": "One path and one sign-in",
+      "learner2": "One progress record across providers"
+    },
+    "regions": {
+      "eyebrow": "Built for the region",
+      "title": "We start in Saudi Arabia and Egypt",
+      "sa": {
+        "title": "Saudi Arabia",
+        "body": "Career paths and market requirements built on the Saudi job market."
+      },
+      "eg": {
+        "title": "Egypt",
+        "body": "The same promise, adapted for learners and employers in Egypt."
+      }
+    },
+    "cta": {
+      "title": "Ready to find your direction?",
+      "lede": "Five minutes, free, and you leave with a plan.",
+      "primary": "Start the free assessment",
+      "secondary": "Browse career paths"
+    }
+  },
   "nav": {
     "home": "Home",
     "careers": "Career Paths",
