@@ -3096,14 +3096,14 @@ a.dw-instructor:hover { color: var(--accent); }
 }
 
 /* Quiz shell: side panel + main */
-.dw-assess .a-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: clamp(20px, 3vw, 36px); align-items: start; }
-@media (max-width: 860px) { .dw-assess .a-shell { grid-template-columns: 1fr; } .dw-assess .r-panel { display: none; } }
+.dw-assess .a-shell, .dw-assess .a-stage { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: clamp(20px, 3vw, 36px); align-items: start; }
+@media (max-width: 860px) { .dw-assess .a-shell, .dw-assess .a-stage { grid-template-columns: 1fr; } .dw-assess .r-panel { display: none; } }
 
 /* Rasheed side panel */
 .dw-assess .r-panel { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
 .dw-assess .r-panel.reacting .r-figure { animation: rBounce .4s; }
 @keyframes rBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.dw-assess .r-panel .r-figure { align-self: center; }
+.dw-assess .r-panel .r-figure { align-self: center; width: 100%; height: auto; aspect-ratio: 1; max-width: 160px; margin-inline: auto; }
 .dw-assess .r-say { font-size: 14px; color: var(--ink-2); }
 .dw-assess .r-say b { color: var(--ink); margin-bottom: 2px; }
 .dw-assess .r-say p { margin: 8px 0 0; line-height: 1.55; }
