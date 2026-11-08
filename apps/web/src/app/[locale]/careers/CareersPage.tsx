@@ -138,53 +138,19 @@ export default function CareersPage() {
   }, [allPaths, activeCategory, searchQuery])
   
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const styleId = 'careers-animation-styles'
-      if (!document.getElementById(styleId)) {
-        const style = document.createElement('style')
-        style.id = styleId
-        style.textContent = `
-          @keyframes cardReveal {
-            from { opacity: 0; transform: translateY(24px) scale(0.97); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-          }
-          .career-card {
-            opacity: 0;
-            transform: translateY(24px) scale(0.97);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
-          }
-          .career-card-visible {
-            animation: cardReveal 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          .career-card-visible:nth-child(1) { animation-delay: 0s; }
-          .career-card-visible:nth-child(2) { animation-delay: 0.06s; }
-          .career-card-visible:nth-child(3) { animation-delay: 0.12s; }
-          .career-card-visible:nth-child(4) { animation-delay: 0.18s; }
-          .career-card-visible:nth-child(5) { animation-delay: 0.24s; }
-          .career-card-visible:nth-child(6) { animation-delay: 0.30s; }
-          .career-card-visible:nth-child(7) { animation-delay: 0.36s; }
-          .career-card-visible:nth-child(8) { animation-delay: 0.42s; }
-          .career-card-visible:nth-child(9) { animation-delay: 0.48s; }
-          .career-card-visible:nth-child(n+10) { animation-delay: 0.54s; }
-        `
-        document.head.appendChild(style)
-      }
+    const cards = document.querySelectorAll('.careers-page .rv')
+    if (!('IntersectionObserver' in window)) {
+      cards.forEach(el => el.classList.add('in'))
+      return
     }
-    
-    const cards = document.querySelectorAll('.career-card')
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('career-card-visible')
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+    const obs = new IntersectionObserver(
+      entries => entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target) }
+      }),
+      { threshold: 0.08 }
     )
-    cards.forEach(card => observer.observe(card))
-    return () => observer.disconnect()
+    cards.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
   }, [filteredPaths])
   
   const bg = 'var(--background)'
@@ -195,7 +161,7 @@ export default function CareersPage() {
   const textMuted = isDark ? '#64748b' : '#9ca3af'
   
   return (
-    <div style={{ minHeight:'100vh', background:bg, direction:isAr?'rtl':'ltr' }}>
+    <div className="careers-page" style={{ minHeight:'100vh', direction:isAr?'rtl':'ltr' }}>
       
       {/* Hero Section */}
       <div style={{
@@ -243,241 +209,103 @@ export default function CareersPage() {
             ))}
           </div>
           
-          {/* Search bar */}
-          <div style={{ width:'100%', boxSizing:'border-box', position:'relative', maxWidth:480, margin:'0 auto' }}>
-            <Search size={16} color="#6b7280" style={{
-              position:'absolute', top:'50%', transform:'translateY(-50%)',
-              right: isAr ? 16 : 'auto', left: isAr ? 'auto' : 16,
-            }} />
-            <input
-              type="text"
-              placeholder={isAr ? 'ابحث عن مسار أو مهارة...' : 'Search paths or skills...'}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                width:'100%', padding: isAr ? '14px 44px 14px 16px' : '14px 16px 14px 44px',
-                borderRadius:14, border:`1px solid ${border}`,
-                background: cardBg, color:text,
-                fontSize:14, outline:'none',
-                boxSizing:'border-box',
-              }}
-            />
-          </div>
         </div>
       </div>
       
       {/* Main content */}
       <div style={{ width:'100%', boxSizing:'border-box', maxWidth:1200, margin:'0 auto', padding:'32px 24px', overflowX:'hidden' }}>
         
-        {/* Category tabs */}
-        <div style={{ display:'flex', overflowX:'auto', scrollbarWidth:'none', WebkitOverflowScrolling:'touch', gap:'8px', width:'100%', paddingBottom:'4px' }}>
+        {/* Filters: search + category chips */}
+        <div className="filters">
+          <label className="search">
+            <Search size={16} aria-hidden="true" />
+            <input
+              type="text"
+              placeholder={isAr ? 'ابحث عن مسار أو مهارة...' : 'Search paths or skills...'}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              aria-label={isAr ? 'بحث' : 'Search'}
+            />
+          </label>
           {CATEGORIES.map(cat => (
-            <button key={cat.key} onClick={() => setActiveCategory(cat.key)} style={{
-              flexShrink:0, whiteSpace:'nowrap',
-              padding:'10px 22px', borderRadius:12, border:'none', cursor:'pointer',
-              fontSize:13, fontWeight:700,
-              background: activeCategory===cat.key ? '#5120c8' : 'var(--surface)',
-              color: activeCategory===cat.key ? '#fff' : subtext,
-              transition:'all 0.2s',
-            }}>
+            <button
+              key={cat.key}
+              type="button"
+              onClick={() => setActiveCategory(cat.key)}
+              className={`chip${activeCategory === cat.key ? ' on' : ''}`}
+              aria-pressed={activeCategory === cat.key}
+            >
               {isAr ? cat.labelAr : cat.labelEn}
-              {activeCategory===cat.key && (
-                <span style={{ marginRight:isAr?0:6, marginLeft:isAr?6:0, opacity:0.8 }}>
-                  ({filteredPaths.length})
-                </span>
-              )}
+              {activeCategory === cat.key && <span>({filteredPaths.length})</span>}
             </button>
           ))}
         </div>
-        
+
         {/* Results count */}
-        <div style={{ color:subtext, fontSize:14, marginBottom:20 }}>
+        <div className="results-count">
           {isAr ? `${filteredPaths.length} مسار متاح` : `${filteredPaths.length} paths available`}
         </div>
-        
+
         {/* Paths grid */}
-        <div key={`grid-${activeCategory}-${searchQuery}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+        <div key={`grid-${activeCategory}-${searchQuery}`} className="tracks-grid">
           {filteredPaths.map((path, idx) => {
             const IconComp = ICON_MAP[path.icon] || Briefcase
-            
+            const isHigh = (path.demand || '').toLowerCase().includes('very')
+            const roles = (path.progression && path.progression.length > 0 ? path.progression : path.skills ?? []).slice(0, 3)
+
             return (
-              <div key={path.id} className="career-card" style={{
-                display:'flex', flexDirection:'column', width:'100%',
-                height:'auto', minHeight:'280px', overflow:'hidden',
-                borderRadius:'16px', padding:'16px',
-                background: cardBg, border:`1px solid ${border}`,
-                boxSizing:'border-box', cursor:'pointer', position:'relative',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(81,32,200,0.4)'
-                e.currentTarget.style.boxShadow = '0 8px 32px rgba(81,32,200,0.1)'
-                e.currentTarget.style.transform = 'translateY(-2px)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = border
-                e.currentTarget.style.boxShadow = 'none'
-                e.currentTarget.style.transform = 'translateY(0)'
-              }}>
-                
-                {/* Top accent line */}
-                <div style={{
-                  position:'absolute', top:0, right:0, left:0, height:3,
-                  background:'#5120c8',
-                  borderRadius:'16px 16px 0 0',
-                }} />
-                
-                {/* Header */}
-                <div style={{ display:'flex', alignItems:'flex-start', gap:'8px', marginBottom:'8px' }}>
-                  <div style={{
-                    width:36, height:36, borderRadius:10, flexShrink:0,
-                    background:'rgba(81,32,200,0.1)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                  }}>
-                    <IconComp size={18} color="#5120c8" />
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ color:subtext, fontSize:'10px', fontWeight:600, marginBottom:'1px' }}>
-                      {String(idx + 1).padStart(2, '0')}
+              <article
+                key={path.id}
+                className="tcard rv"
+                style={{ ['--d' as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties}
+              >
+                <div className="t-media">
+                  <span className="t-watermark" aria-hidden="true"><IconComp size={72} /></span>
+                  <span className={`t-demand${isHigh ? ' high' : ''}`}>
+                    {isHigh ? <Flame size={12} aria-hidden="true" /> : <Zap size={12} aria-hidden="true" />}
+                    {isHigh ? (isAr ? 'طلب مرتفع' : 'High demand') : (isAr ? 'طلب جيد' : 'Good demand')}
+                  </span>
+                  <span className="t-badge"><IconComp className="icon" size={18} aria-hidden="true" /></span>
+                  <span className="t-count">
+                    <Star className="icon" size={13} aria-hidden="true" />
+                    {path.level || 'All Levels'}
+                  </span>
+                </div>
+
+                <div className="t-body">
+                  <h3>{isAr ? path.titleAr : path.title}</h3>
+                  <p className="t-desc">{isAr ? path.descriptionAr : path.descriptionEn}</p>
+
+                  {roles.length > 0 && (
+                    <div className="roles">
+                      {roles.map((r, i) => <span key={`${r}-${i}`}>{r}</span>)}
                     </div>
-                    <h3 style={{ color:text, fontSize:'clamp(13px, 3vw, 16px)', fontWeight:700, margin:0 }}>
-                      {isAr ? path.titleAr : path.title}
-                    </h3>
-                  </div>
-                  
-                  {/* Demand badge */}
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:'3px', flexShrink:0,
-                    padding:'3px 8px', borderRadius:'20px',
-                    background: (path.demand || '').toLowerCase().includes('very') ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)',
-                    border: `1px solid ${(path.demand || '').toLowerCase().includes('very')?'rgba(22,163,74,0.2)':'rgba(245,158,11,0.2)'}`,
-                    whiteSpace:'nowrap',
-                  }}>
-                    {(path.demand || '').toLowerCase().includes('very')
-                      ? <Flame size={10} color="#16a34a" />
-                      : <Zap size={10} color="#d97706" />}
-                    <span style={{
-                      color: (path.demand || '').toLowerCase().includes('very')?'#16a34a':'#d97706',
-                      fontSize:'10px', fontWeight:700,
-                    }}>
-                      {(path.demand || '').toLowerCase().includes('very')
-                        ? (isAr?'مرتفع':'High')
-                        : (isAr?'جيد':'Good')}
-                    </span>
+                  )}
+
+                  <p className="t-sal">
+                    <TrendingUp className="icon" size={15} aria-hidden="true" />
+                    <span>{isAr ? 'الراتب الشهري المعتاد' : 'Typical monthly salary'}</span>
+                    <b>{path.salary} SAR</b>
+                  </p>
+
+                  <div className="t-foot">
+                    <button
+                      type="button"
+                      className="t-btn"
+                      onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
+                    >
+                      {isAr ? 'تفاصيل' : 'Details'}
+                    </button>
+                    <button type="button" className="t-btn primary" onClick={() => requestStartPath(path)}>
+                      {isAr ? 'ابدأ المسار' : 'Start Path'}
+                    </button>
                   </div>
                 </div>
-                
-                {/* Description */}
-                <p style={{
-                  fontSize:'clamp(11px, 2.5vw, 13px)',
-                  color:subtext,
-                  overflow:'hidden',
-                  display:'-webkit-box',
-                  WebkitLineClamp:2,
-                  WebkitBoxOrient:'vertical',
-                  marginBottom:'8px',
-                }}>
-                  {isAr ? path.descriptionAr : path.descriptionEn}
-                </p>
-                
-                {/* Salary + Level row */}
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'8px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
-                    <DollarSign size={12} color="#5120c8" />
-                    <span style={{ color:'#5120c8', fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:700, whiteSpace:'nowrap', overflow:'hidden' }}>
-                      {path.salary} SAR
-                    </span>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
-                    <Star size={12} color="#6b7280" />
-                    <span style={{ color:subtext, fontSize:'clamp(11px, 2.5vw, 13px)', whiteSpace:'nowrap', overflow:'hidden' }}>
-                      {path.level || 'All Levels'}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Skills tags */}
-                {path.skills && path.skills.length > 0 && (
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', marginBottom:'8px', overflow:'hidden', maxHeight:'52px' }}>
-                    {path.skills.slice(0,4).map((skill, i) => (
-                      <span key={i} style={{
-                        padding:'2px 8px', borderRadius:'20px',
-                        fontSize:'clamp(9px, 2vw, 11px)',
-                        background:'var(--primary-subtle)',
-                        color:'var(--primary)',
-                        whiteSpace:'nowrap',
-                        flexShrink:0,
-                      }}>
-                        {skill}
-                      </span>
-                    ))}
-                    {path.skills.length > 4 && (
-                      <span style={{
-                        padding:'2px 8px', borderRadius:'20px',
-                        fontSize:'clamp(9px, 2vw, 11px)',
-                        background:'var(--primary-subtle)',
-                        color:'var(--primary)',
-                        whiteSpace:'nowrap',
-                        flexShrink:0,
-                      }}>
-                        +{path.skills.length - 4}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Career path steps */}
-                {path.progression && path.progression.length > 0 && (
-                  <div style={{
-                    display:'flex', alignItems:'center', gap:'2px',
-                    overflowX:'auto', scrollbarWidth:'none', marginBottom:'12px', paddingBottom:'2px',
-                  }}>
-                    {path.progression.map((step, i) => (
-                      <span key={i} style={{ display:'flex', alignItems:'center', gap:'2px' }}>
-                        <span style={{
-                          fontSize:'clamp(8px, 1.8vw, 10px)',
-                          whiteSpace:'nowrap', flexShrink:0,
-                          color:subtext,
-                        }}>
-                          {step}
-                        </span>
-                        {i < (path.progression?.length ?? 0) - 1 && (
-                          <span style={{ fontSize:'10px', color:'var(--muted)' }}>›</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                {/* CTA Buttons */}
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'8px', marginTop:'auto' }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
-                    style={{
-                      padding:'8px 4px', borderRadius:'10px',
-                      fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:600,
-                      textAlign:'center', width:'100%', whiteSpace:'nowrap', overflow:'hidden',
-                      background:'transparent', border:`1px solid ${border}`,
-                      color:subtext, cursor:'pointer',
-                    }}>
-                    {isAr ? 'تفاصيل' : 'Details'}
-                  </button>
-                  <button
-                    onClick={() => requestStartPath(path)}
-                    style={{
-                      padding:'8px 4px', borderRadius:'10px',
-                      fontSize:'clamp(11px, 2.5vw, 13px)', fontWeight:600,
-                      textAlign:'center', width:'100%', whiteSpace:'nowrap', overflow:'hidden',
-                      background:'#5120c8', color:'#ffffff',
-                      border:'none', cursor:'pointer',
-                    }}>
-                    {isAr ? 'ابدأ المسار' : 'Start Path'}
-                  </button>
-                </div>
-              </div>
+              </article>
             )
           })}
         </div>
-        
+
         {/* Bottom CTA */}
         <div style={{
           marginTop:60, padding:'48px 32px', borderRadius:24,
