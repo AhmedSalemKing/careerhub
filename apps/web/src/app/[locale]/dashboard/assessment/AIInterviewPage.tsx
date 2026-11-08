@@ -9,7 +9,7 @@ import { computeDiscoveryStage, type ChatMessage } from './career-signals'
 import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 import { getToken } from '@/lib/auth'
-import { RasheedAvatar } from '../../../components/CharacterDuo'
+import { RasheedAvatar, CharacterAvatar } from '../../../components/CharacterDuo'
 import { SECTION_SVGS, CHECK_SVG } from './sections'
 
 /* ── Types ────────────────────────────────────────────────── */
@@ -674,88 +674,132 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
-  const [selectedCareerIdx, setSelectedCareerIdx] = useState(0)
+  const RC_COLORS = ['var(--brand)', 'var(--purple)', 'var(--lavender)']
+
+  const startPath = (idx: number) => {
+    try {
+      localStorage.setItem('rasheed_quiz_result', JSON.stringify(result))
+      const ar = result.topCareers.map(c => ({
+        track: c.nameEn.toLowerCase().replace(/\s+/g, '-'),
+        score: c.match, normalized: c.match, titleAr: c.name, titleEn: c.nameEn,
+      }))
+      localStorage.setItem('assessmentResults', JSON.stringify(ar))
+      const sel = result.topCareers[idx]
+      if (sel) localStorage.setItem('rasheed_selected_career', JSON.stringify({
+        track: sel.nameEn.toLowerCase().replace(/\s+/g, '-'),
+        score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
+      }))
+    } catch {}
+    router.push(`/${locale}/dashboard/career-path`)
+  }
+
   return (
     <div dir="rtl" className="dw-assess" style={{ overflowY: 'auto' }}>
       <style>{INTERVIEW_CSS}</style>
-      <div className="dw-as-result">
-        <div className="dw-as-result-card">
-          <div className="dw-as-result-head">
-            <h1>تقرير مسارك المهني</h1>
-            <p>من رشيد — مساعد DeveWay للتوجيه المهني</p>
-          </div>
+      <div className="wrap assess" style={{ maxWidth: '1240px' }}>
+        <div className="a-top">
+          <span className="eyebrow">{SECTION_SVGS[4]} نتائج تقييمك جاهزة</span>
+          <h1>ترشيحات رشيد لك</h1>
+          <p className="lede">بناءً على إجاباتك. هذه اقتراحات تساعدك على القرار، وليست ضمانًا.</p>
+        </div>
 
-          <div className="dw-as-sum">
-            <div className="k">تحليل رشيد</div>
-            <div className="v">{result.summary}</div>
+        <div className="r-intro r-intro-lg">
+          <span className="r-figure static">
+            <span className="r-blob" aria-hidden="true" />
+            <RasheedAvatar size={52} />
+          </span>
+          <div className="r-bubble">
+            <b>رشيد</b> <span className="muted small">· مرشدك المهني</span>
+            <p>{result.summary}</p>
+            {result.personalNote && <p>{result.personalNote}</p>}
           </div>
+        </div>
 
-          {result.topCareers.map((career, i) => (
-            <div
-              key={i}
-              onClick={() => setSelectedCareerIdx(i)}
-              className={`dw-as-career${selectedCareerIdx === i ? ' on' : ''}${i === 0 ? ' first' : ''}`}
-            >
-              <div className="dw-as-career-top">
-                <div>
-                  <div className="nm">{career.name}</div>
-                  <div className="en">{career.nameEn}</div>
+        <div className="results rc-list">
+          {result.topCareers.map((career, i) => {
+            const len = 2 * Math.PI * 22
+            return (
+              <article
+                key={i}
+                className={`rc${i === 0 ? ' best' : ''}`}
+                style={{ animationDelay: `${i * 140}ms` }}
+              >
+                <header className="rc-head">
+                  <span className="rc-ic" style={{ background: RC_COLORS[i % RC_COLORS.length] }}>{SECTION_SVGS[5]}</span>
+                  <div className="rc-title">
+                    <span className="rc-rank">{i === 0 ? <>{SECTION_SVGS[0]} الأفضل تطابقًا</> : `خيار ${i + 1}`}</span>
+                    <h3>{career.name}</h3>
+                    <p>{career.nameEn}</p>
+                  </div>
+                  <div className="rc-match">
+                    <span className="ring-wrap">
+                      <svg className="ring-svg" width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+                        <defs>
+                          <linearGradient id={`rg-${i}`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="var(--brand)" />
+                            <stop offset="100%" stopColor="var(--lavender)" />
+                          </linearGradient>
+                        </defs>
+                        <circle className="bg" cx="28" cy="28" r="22" strokeWidth="6" />
+                        <circle
+                          className="fg"
+                          cx="28" cy="28" r="22" strokeWidth="6"
+                          stroke={`url(#rg-${i})`}
+                          strokeDasharray={len}
+                          strokeDashoffset={len * (1 - Math.min(100, Math.max(0, career.match)) / 100)}
+                          style={{ ['--len' as string]: len } as React.CSSProperties}
+                        />
+                      </svg>
+                      <b>{career.match}%</b>
+                    </span>
+                    <small>تطابق</small>
+                  </div>
+                </header>
+
+                <div className="rc-grid">
+                  <section className="rc-sec rc-why">
+                    <h4>{SECTION_SVGS[5]} لماذا يناسبك</h4>
+                    <ul className="reasons">
+                      <li>{CHECK_SVG}<span>{career.reason}</span></li>
+                      {career.strengths?.map(s => (
+                        <li key={s}>{CHECK_SVG}<span>{s}</span></li>
+                      ))}
+                    </ul>
+                  </section>
+                  <section className="rc-sec">
+                    <h4>{SECTION_SVGS[2]} خطوتك القادمة</h4>
+                    <p className="rc-step">{career.nextStep}</p>
+                  </section>
+                  <section className="rc-sec" style={{ gridColumn: '1 / -1' }}>
+                    <h4>{SECTION_SVGS[1]} المهارات التي ستتعلمها</h4>
+                    <div className="skills">{career.skillsToLearn.map(s => <span key={s}>{s}</span>)}</div>
+                  </section>
                 </div>
-                <div className="pc">{career.match}%</div>
-              </div>
-              <div className="dw-as-track" style={{ marginBottom: 12 }}>
-                <div className="dw-as-fill" style={{ width: `${career.match}%` }} />
-              </div>
-              <div className="why">{career.reason}</div>
-              {career.nextStep && (
-                <div className="step">
-                  خطوتك القادمة: <span>{career.nextStep}</span>
-                </div>
-              )}
-              <div className="dw-as-chips">
-                {career.skillsToLearn.map(s => (
-                  <span key={s}>{s}</span>
-                ))}
-              </div>
-            </div>
-          ))}
 
-          {result.personalNote && (
-            <div className="dw-as-personal">
-              <RasheedAvatar size={24} />
-              <span>{result.personalNote}</span>
-            </div>
-          )}
+                <footer className="rc-foot">
+                  <span className="rc-actions">
+                    <button
+                      type="button"
+                      className={`btn ${i === 0 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+                      onClick={() => startPath(i)}
+                    >
+                      ابدأ مسار {career.name}
+                      <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                    </button>
+                  </span>
+                </footer>
+              </article>
+            )
+          })}
+        </div>
 
-          <div className="interview-actions dw-as-actions">
-            <button
-              className="dw-as-next"
-              onClick={() => {
-                try {
-                  localStorage.setItem('rasheed_quiz_result', JSON.stringify(result))
-                  const ar = result.topCareers.map(c => ({
-                    track: c.nameEn.toLowerCase().replace(/\s+/g, '-'),
-                    score: c.match, normalized: c.match, titleAr: c.name, titleEn: c.nameEn,
-                  }))
-                  localStorage.setItem('assessmentResults', JSON.stringify(ar))
-                  const sel = result.topCareers[selectedCareerIdx]
-                  if (sel) localStorage.setItem('rasheed_selected_career', JSON.stringify({
-                    track: sel.nameEn.toLowerCase().replace(/\s+/g, '-'),
-                    score: sel.match, normalized: sel.match, titleAr: sel.name, titleEn: sel.nameEn,
-                  }))
-                } catch {}
-                router.push(`/${locale}/dashboard/career-path`)
-              }}
-            >
-              {result.topCareers[selectedCareerIdx] ? `ابدأ مسار ${result.topCareers[selectedCareerIdx].name}` : 'ابدأ مسارك مع DeveWay'} ←
-            </button>
-            <button className="dw-as-ghost" onClick={() => router.push(`/${locale}/careers`)}>
-              اختر مساراً مختلفاً
-            </button>
-            <button className="dw-as-ghost" onClick={onRestart}>
-              إعادة
-            </button>
-          </div>
+        <div className="rc-bottom">
+          <button type="button" className="btn btn-ghost" onClick={() => router.push(`/${locale}/careers`)}>
+            اختر مساراً مختلفاً
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={onRestart}>
+            إعادة التقييم
+          </button>
         </div>
       </div>
     </div>
@@ -903,11 +947,10 @@ ${answersText}
   const progressPercent = Math.round(((currentIndex + (selectedOption ? 1 : 0)) / ALL_QUESTIONS.length) * 100)
   const phaseLabel = PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel
   const bubbleText = insight && !isLoadingInsight ? insight : (reaction || RASHEED_IDLE)
-  const gridCols = currentQuestion.options.length <= 4 ? ' two' : ''
 
   return (
     <div dir="rtl" className={`dw-assess${embedded ? ' embedded' : ''}`}>
-      <div className="dw-as-main wide">
+      <div className="wrap assess" style={{ maxWidth: '1240px' }}>
         {!embedded && (
           <button onClick={onEnd} className="dw-as-exit">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
@@ -915,7 +958,7 @@ ${answersText}
           </button>
         )}
 
-        {/* Section bar */}
+        {/* Section stepper */}
         <ol className="secbar">
           {PHASES.map((ph, i) => (
             <li key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''}>
@@ -925,82 +968,83 @@ ${answersText}
           ))}
         </ol>
 
-        {/* Progress */}
-        <div className="dw-as-prog">
-          <div className="dw-as-prog-top">
-            <span className="l">{phaseLabel}</span>
-            <span className="r">سؤال {currentIndex + 1} من {ALL_QUESTIONS.length}</span>
-          </div>
-          <div className="dw-as-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
-            <div className="dw-as-fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
-
-        <div className="dw-as-stage">
-          <div className="dw-as-qcol">
-            {/* Rasheed question card */}
-            <div className="dw-as-card">
-              <div className="dw-as-card-head">
-                <div className="dw-as-mini"><RasheedAvatar size={40} /></div>
-                <div>
-                  <p className="who">يسأل رشيد</p>
-                  <p className="sub">{currentQuestion.phaseLabel} — سؤال {(currentIndex % 3) + 1} من 3</p>
-                </div>
-              </div>
-
-              <div className="dw-as-card-body">
-                <p className="dw-as-q">{currentQuestion.question}</p>
-
-                <div className={`dw-as-opts${gridCols}`}>
-                  {currentQuestion.options.map((opt, i) => {
-                    const isSelected = selectedOption === opt
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        disabled={!!selectedOption}
-                        onClick={() => !selectedOption && handleSelect(opt)}
-                        className={`dw-as-opt${isSelected ? ' on' : ''}`}
-                      >
-                        <span className="bub">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
-                        <span className="tx">{opt}</span>
-                        {isSelected && <span className="ck" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg></span>}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {selectedOption && !isLoadingInsight && (
-              <button onClick={handleNext} className="dw-as-next">
-                {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'} ←
-              </button>
-            )}
-          </div>
-
+        <div className="a-shell">
           {/* Rasheed panel */}
-          <aside className="dw-as-rpanel" aria-live="polite">
-            <div className={`dw-as-bubble${selectedOption ? ' on' : ''}`}>
-              <strong>رشيد</strong>
+          <aside className={`r-panel${isReacting ? ' reacting' : ''}`} aria-live="polite">
+            <div className="r-say">
+              <b>رشيد</b><span className="muted small"> · مرشدك المهني</span>
               {isLoadingInsight ? (
-                <div className="dw-as-typing inline">
-                  {[0, 1, 2].map(i => <i key={i} style={{ animation: `dw-as-dot ${0.8 + i * 0.15}s ease infinite alternate` }} />)}
+                <div className="dots3" aria-label="رشيد يكتب">
+                  <i /><i /><i />
                 </div>
               ) : (
                 <p>{bubbleText}</p>
               )}
             </div>
-            <div className="dw-as-figure">
-              <span className="blobbg" aria-hidden="true" />
-              <div className={`fig${isReacting ? ' jump' : ''}`}><RasheedAvatar size={176} /></div>
+            <div className="r-figure">
+              <span className="r-blob" aria-hidden="true" />
+              <RasheedAvatar size={96} />
             </div>
-            <div className="dw-as-dots" aria-hidden="true">
-              {PHASES.map((ph, i) => (
-                <i key={ph.id} className={i < currentPhaseIdx ? 'done' : i === currentPhaseIdx ? 'now' : ''} />
+            <div className="r-steps" aria-hidden="true">
+              {ALL_QUESTIONS.map((q, i) => (
+                <i key={q.id} className={i < currentIndex ? 'done' : i === currentIndex ? 'now' : ''} />
               ))}
             </div>
           </aside>
+
+          {/* Question area */}
+          <div className="a-main">
+            <div className="a-progress">
+              <span>القسم {currentPhaseIdx + 1} من {PHASES.length} · السؤال {currentIndex + 1} من {ALL_QUESTIONS.length}</span>
+              <span className="a-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>
+                <span style={{ width: `${progressPercent}%` }} />
+              </span>
+              <span className="cast"><CharacterAvatar id="sa2" size={30} /><CharacterAvatar id="eg1" size={30} /></span>
+            </div>
+
+            <div className="qcard">
+              <div className="r-ask">
+                <RasheedAvatar size={34} />
+                <span>
+                  <b>يسأل رشيد</b> · <span className="muted">{phaseLabel}</span>
+                </span>
+              </div>
+              <h2>{currentQuestion.question}</h2>
+
+              <div className="opts" role="radiogroup" aria-label={currentQuestion.question}>
+                {currentQuestion.options.map((opt, i) => {
+                  const isSelected = selectedOption === opt
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      disabled={!!selectedOption}
+                      onClick={() => !selectedOption && handleSelect(opt)}
+                      className={`opt${isSelected ? ' on' : ''}`}
+                    >
+                      <span className="o-ic">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
+                      <span>{opt}</span>
+                      <span className="o-check" aria-hidden="true">{CHECK_SVG}</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="a-nav">
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  disabled={!selectedOption || isLoadingInsight}
+                  className="btn btn-primary"
+                >
+                  {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
+                  <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -3037,95 +3037,179 @@ a.dw-instructor:hover { color: var(--accent); }
 	.dw-as-figure .blobbg, .dw-as-figure .fig.jump { animation: none; }
 }
 
-/* ── Assessment intro hero (centered) ── */
-.ri-hero {
-	position: relative;
-	overflow: hidden;
-	padding-block: 40px 56px;
-	min-height: calc(100vh - 90px);
-	display: flex;
-	align-items: center;
-}
-.ri-wrap { max-width: var(--wrap); width: 100%; margin-inline: auto; padding-inline: 20px; }
-.ri-center {
-	position: relative; display: flex; flex-direction: column; align-items: center;
-	text-align: center; gap: 16px; max-width: 860px; margin: 0 auto; width: 100%;
-}
-.r-figure { position: relative; margin: 0; }
-.r-blob {
-	position: absolute; inset: 14% 4% 0; border-radius: 46% 54% 40% 60% / 55% 45% 55% 45%;
-	background: linear-gradient(160deg, var(--wash), var(--wash-2));
-	animation: dw-as-rblob 9s ease-in-out infinite;
-}
-.r-figure .ri-char { position: relative; z-index: 1; display: block; }
-.r-figure .ri-char svg { display: block; width: 100%; height: auto; }
-.ri-center .ri-figure { width: 300px; margin: 0; }
-.ri-center .ri-lines { max-width: 720px; display: grid; gap: 10px; justify-items: center; }
-.ri-line {
-	margin: 0; font-size: 18px; line-height: 1.6; color: var(--ink-2);
-	padding: 14px 18px; border-radius: 20px; border-start-start-radius: 4px; background: var(--wash);
-	opacity: 0; transform: translateY(10px);
-	transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
-}
-.ri-line.big {
-	font-size: clamp(30px, 4vw, 46px); font-weight: 800; line-height: 1.25;
-	color: var(--ink); background: none; padding: 0;
-}
-.ri-line.on { opacity: 1; transform: none; }
-.ri-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 8px; }
-.ri-secs { width: 100%; margin-top: 18px; opacity: 0; transition: opacity 0.6s var(--ease) 0.3s; }
-.ri-secs.on { opacity: 1; }
-.ri-secs ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
-.ri-secs li {
-	display: flex; flex-direction: column; align-items: center; gap: 8px;
-	padding: 14px 8px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line);
-	font-size: 13px; font-weight: 700; color: var(--ink-2);
-	animation: dw-as-pop 0.4s var(--ease) both; animation-delay: var(--d, 0ms);
-}
-.ri-secs li .sb-ic { width: 36px; height: 36px; border-radius: 11px; color: var(--brand); background: var(--wash); border-color: var(--wash-2); }
+/* ── ASSESSMENT PAGE (spec rebuild) ─────────────────────────────────
+   Replaces the earlier intro / secbar / figure rules. Scoped to .dw-assess. */
 
-/* ── Section progress bar ── */
-.secbar {
-	list-style: none; margin: 8px 0 26px; padding: 0;
-	display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;
-}
-.secbar li {
-	position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px;
-	text-align: center; font-size: 13px; font-weight: 700; color: var(--ink-3);
-}
-.secbar li::before {
-	content: ""; position: absolute; top: 19px; inset-inline-start: calc(-50% + 24px);
-	width: calc(100% - 40px); height: 3px; border-radius: 3px; background: var(--line);
-}
-.secbar li:first-child::before { display: none; }
-.secbar li.done::before, .secbar li.now::before { background: linear-gradient(90deg, var(--purple), var(--lavender)); }
-.sb-ic {
-	position: relative; z-index: 1; display: grid; place-items: center;
-	width: 40px; height: 40px; border-radius: 14px;
-	background: var(--surface); border: 1.5px solid var(--line-2); color: var(--ink-3);
-	transition: transform 0.3s var(--ease), background 0.3s;
-}
-.secbar li.done .sb-ic { background: var(--wash); border-color: var(--wash-2); color: var(--brand); }
-.secbar li.now { color: var(--ink); }
-.secbar li.now .sb-ic {
-	background: linear-gradient(135deg, var(--purple), var(--lavender)); border-color: transparent; color: #fff;
-	transform: scale(1.08); box-shadow: 0 8px 20px -8px rgb(84 20 246 / 0.6);
-}
-.sb-l { font-size: 12px; }
+.dw-assess .muted { color: var(--ink-3); }
+.dw-assess .small { font-size: 12px; }
+.dw-assess .btn-lg { min-height: 52px; padding: 0 28px; font-size: 16px; }
+.dw-assess .btn-sm { min-height: 40px; padding: 0 18px; font-size: 14px; }
+.dw-assess .eyebrow svg { width: 14px !important; height: 14px !important; }
+
+/* Intro hero */
+.dw-assess .ri-hero { position: relative; isolation: isolate; padding-block: clamp(72px, 10vw, 120px) clamp(48px, 6vw, 80px); text-align: center; overflow: hidden; min-height: 0; display: block; }
+.dw-assess .hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.dw-assess .hero-bg .b1 { position: absolute; width: 520px; height: 520px; background: var(--lavender); border-radius: 50%; filter: blur(60px); opacity: 0.4; inset-inline-end: -120px; top: -140px; animation: dw-drift 18s ease-in-out infinite alternate; }
+.dw-assess .hero-bg .b2 { position: absolute; width: 420px; height: 420px; background: var(--wash-2); border-radius: 50%; filter: blur(60px); opacity: 0.55; inset-inline-start: -160px; bottom: -160px; animation: dw-drift 18s ease-in-out infinite alternate; animation-delay: -6s; }
+.dw-assess .hero-bg .dots { position: absolute; inset: 0; background-image: radial-gradient(var(--line-2) 1px, transparent 1px); background-size: 26px 26px; -webkit-mask-image: radial-gradient(ellipse at 70% 30%, var(--ink) 10%, transparent 65%); mask-image: radial-gradient(ellipse at 70% 30%, var(--ink) 10%, transparent 65%); opacity: 0.6; }
+.dw-assess .ri-center { display: flex; flex-direction: column; align-items: center; gap: clamp(20px, 2.5vw, 28px); max-width: 720px; margin-inline: auto; width: 100%; padding-inline: clamp(16px, 4vw, 40px); }
+.dw-assess .ri-lines { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 600px; }
+.dw-assess .ri-line { margin: 0; padding: 0; background: none; border-radius: 0; font-size: clamp(15px, 1.3vw, 17px); line-height: 1.7; color: var(--ink-2); opacity: 0; transform: translateY(10px); transition: opacity .5s, transform .5s; }
+.dw-assess .ri-line.on { opacity: 1; transform: none; }
+.dw-assess .ri-line.big { font-size: clamp(20px, 2.2vw, 26px); font-weight: 700; line-height: 1.4; color: var(--ink); }
+.dw-assess .ri-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 0; opacity: 0; transform: translateY(10px); transition: opacity .5s .2s, transform .5s .2s; }
+.dw-assess .ri-cta.on { opacity: 1; transform: none; }
+.dw-assess .ri-cta .btn:hover svg.go { transform: translateY(3px); }
+.dw-assess .ri-meta { display: inline-flex; align-items: center; gap: 6px; }
+.dw-assess .ri-secs { width: 100%; margin-top: 0; opacity: 0; transform: translateY(10px); transition: opacity .5s .4s, transform .5s .4s; }
+.dw-assess .ri-secs.on { opacity: 1; transform: none; }
+.dw-assess .ri-secs ol { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; list-style: none; padding: 0; margin: 0; }
+.dw-assess .ri-secs li { display: flex; flex-direction: row; align-items: center; gap: 6px; padding: 0; border: 0; background: none; border-radius: 0; font-size: 14px; font-weight: 500; color: var(--ink-2); animation: dw-as-pop 0.4s var(--ease) both; animation-delay: var(--d, 0ms); }
+.dw-assess .ri-secs li b { color: var(--brand); font-size: 12px; background: var(--surface); border-radius: 50%; width: 20px; height: 20px; display: inline-grid; place-items: center; margin-inline-end: 2px; }
+.dw-assess .ri-secs li .sb-ic { width: 24px; height: 24px; border-radius: 8px; color: var(--brand); background: var(--wash); border: 0; }
+.dw-assess .ri-secs li .sb-ic svg { width: 14px !important; height: 14px !important; }
+
+/* Rasheed figure / blob */
+.dw-assess .r-figure { position: relative; display: flex; align-items: center; justify-content: center; width: clamp(100px, 12vw, 140px); height: clamp(100px, 12vw, 140px); background: none; border: none; padding: 0; margin: 0; }
+.dw-assess .r-figure.ri-figure { width: clamp(100px, 12vw, 140px); }
+.dw-assess .r-figure.static { width: 72px; height: 72px; flex: none; }
+.dw-assess .r-blob { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 15%, transparent), color-mix(in srgb, var(--lavender) 20%, transparent)); z-index: 0; animation: none; }
+.dw-assess .r-figure .dw-rasheed { position: relative; z-index: 1; width: 78% !important; height: 78% !important; border-radius: 50%; overflow: hidden; background: var(--wash); }
+.dw-assess .r-figure.static .dw-rasheed { width: 74% !important; height: 74% !important; }
+
+/* Section stepper bar */
+.dw-assess .secbar { display: flex; gap: 0; list-style: none; padding: 0; margin: 0 0 clamp(20px, 3vw, 32px); border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.dw-assess .secbar li { position: static; flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: flex-start; text-align: start; gap: 6px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: var(--ink-3); border-inline-end: 1px solid var(--line); transition: background .2s; white-space: nowrap; overflow: hidden; }
+.dw-assess .secbar li::before { display: none; }
+.dw-assess .secbar li:last-child { border-inline-end: none; }
+.dw-assess .secbar li.done { background: color-mix(in srgb, var(--brand) 8%, transparent); color: var(--brand); }
+.dw-assess .secbar li.now { background: var(--brand); color: #fff; }
+.dw-assess .sb-ic { position: static; width: 16px; height: 16px; flex-shrink: 0; display: grid; place-items: center; border: 0; background: none; border-radius: 0; color: inherit; transform: none; box-shadow: none; }
+.dw-assess .secbar li.done .sb-ic, .dw-assess .secbar li.now .sb-ic { background: none; color: inherit; transform: none; box-shadow: none; border: 0; }
+.dw-assess .sb-ic svg { width: 16px !important; height: 16px !important; }
+.dw-assess .sb-l { font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) {
-	.secbar .sb-l { display: none; }
-	.secbar li.now .sb-l { display: block; position: absolute; top: 46px; white-space: nowrap; }
-	.secbar { margin-bottom: 40px; }
-	.ri-secs ol { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-	.ri-center .ri-figure { width: 220px; }
+	.dw-assess .secbar .sb-l { display: none; }
+	.dw-assess .secbar li { justify-content: center; padding: 10px 6px; }
+	.dw-assess .secbar li.now .sb-l { display: block; position: static; }
+	.dw-assess .secbar li.now { flex: 3; }
 }
+
+/* Quiz shell: side panel + main */
+.dw-assess .a-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: clamp(20px, 3vw, 36px); align-items: start; }
+@media (max-width: 860px) { .dw-assess .a-shell { grid-template-columns: 1fr; } .dw-assess .r-panel { display: none; } }
+
+/* Rasheed side panel */
+.dw-assess .r-panel { position: sticky; top: 88px; display: flex; flex-direction: column; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+.dw-assess .r-panel.reacting .r-figure { animation: rBounce .4s; }
+@keyframes rBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.dw-assess .r-panel .r-figure { align-self: center; }
+.dw-assess .r-say { font-size: 14px; color: var(--ink-2); }
+.dw-assess .r-say b { color: var(--ink); margin-bottom: 2px; }
+.dw-assess .r-say p { margin: 8px 0 0; line-height: 1.55; }
+.dw-assess .r-say .dots3 { margin-top: 10px; }
+.dw-assess .r-steps { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.dw-assess .r-steps i { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); transition: background .2s; }
+.dw-assess .r-steps i.now { background: var(--brand); }
+.dw-assess .r-steps i.done { background: color-mix(in srgb, var(--brand) 50%, transparent); }
+
+/* Progress bar */
+.dw-assess .a-top { margin-bottom: clamp(16px, 2.5vw, 28px); text-align: center; padding: clamp(40px, 6vw, 72px) 0 clamp(8px, 1vw, 12px); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.dw-assess .a-top-sm { padding-top: clamp(24px, 3vw, 40px); }
+.dw-assess .a-top h1 { margin: 0; font-size: clamp(28px, 3.5vw, 46px); font-weight: 800; color: var(--ink); }
+.dw-assess .a-top h2 { margin: 0; }
+.dw-assess .a-top-sm h2 { font-size: clamp(22px, 2.8vw, 32px); font-weight: 800; color: var(--ink); }
+.dw-assess .a-top .lede { max-width: 56ch; margin: 0 auto; color: var(--ink-2); }
+.dw-assess .a-progress { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-2); margin-bottom: 16px; }
+.dw-assess .a-track { flex: 1; height: 5px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.dw-assess .a-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--brand), var(--lavender)); border-radius: 99px; transition: width .5s cubic-bezier(.4, 0, .2, 1); }
+[dir='rtl'] .dw-assess .a-track span { background: linear-gradient(270deg, var(--brand), var(--lavender)); }
+.dw-assess .cast { display: flex; }
+.dw-assess .cast > * { border-radius: 50%; box-shadow: 0 0 0 2px var(--surface); margin-inline-start: -6px; }
+.dw-assess .cast > *:first-child { margin-inline-start: 0; }
+
+/* Question card */
+.dw-assess .qcard { padding: clamp(24px, 3.5vw, 40px); border-radius: 20px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-sm); }
+.dw-assess .r-ask { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 14px; color: var(--ink-2); }
+.dw-assess .r-ask .dw-rasheed { border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.dw-assess .r-ask b { color: var(--ink); }
+.dw-assess .qcard h2 { margin: 0 0 6px; font-size: clamp(18px, 2vw, 24px); font-weight: 700; line-height: 1.5; color: var(--ink); }
+
+/* Answer options */
+.dw-assess .opts { display: flex; flex-direction: column; gap: 10px; margin-block: 20px; }
+.dw-assess .opt { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg-2); cursor: pointer; text-align: start; font-size: 15px; color: var(--ink); transition: border-color .15s, background .15s; }
+.dw-assess .opt:not(:disabled):hover { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 5%, transparent); }
+.dw-assess .opt:disabled { cursor: default; }
+.dw-assess .opt.on { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 8%, transparent); font-weight: 600; }
+.dw-assess .opt.on .o-check { opacity: 1; }
+.dw-assess .o-ic { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); flex-shrink: 0; color: var(--ink-2); font-size: 14px; font-weight: 800; }
+.dw-assess .opt.on .o-ic { color: var(--brand); border-color: var(--brand); }
+.dw-assess .o-check { width: 20px; height: 20px; opacity: 0; margin-inline-start: auto; flex-shrink: 0; color: var(--brand); transition: opacity .15s; display: grid; place-items: center; }
+.dw-assess .o-check svg { width: 16px !important; height: 16px !important; }
+
+/* Quiz navigation */
+.dw-assess .a-nav { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.dw-assess .a-nav .btn { min-width: 120px; }
+.dw-assess .a-nav .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Thinking loader */
+.dw-assess .dots3 { display: flex; gap: 4px; }
+.dw-assess .dots3 i { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); animation: dot3 1.2s infinite; }
+.dw-assess .dots3 i:nth-child(2) { animation-delay: .2s; }
+.dw-assess .dots3 i:nth-child(3) { animation-delay: .4s; }
+@keyframes dot3 { 0%, 80%, 100% { opacity: .3; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+
+/* Results page */
+.dw-assess .r-intro { display: flex; align-items: flex-start; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px 24px; margin-bottom: 28px; }
+.dw-assess .r-bubble { font-size: 14px; color: var(--ink-2); }
+.dw-assess .r-bubble b { color: var(--ink); }
+.dw-assess .r-bubble p { margin: 6px 0 0; line-height: 1.65; }
+.dw-assess .rc-list { display: flex; flex-direction: column; gap: 20px; }
+.dw-assess .rc { border: 1.5px solid var(--line); border-radius: 20px; overflow: hidden; background: var(--surface); animation: fadeUp .5s both; }
+.dw-assess .rc.best { border-color: var(--brand); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.dw-assess .rc-head { display: flex; align-items: center; gap: 14px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+.dw-assess .rc-ic { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+.dw-assess .rc-ic svg { width: 24px !important; height: 24px !important; }
+.dw-assess .rc-title { flex: 1; min-width: 0; }
+.dw-assess .rc-rank { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
+.dw-assess .rc-rank svg { width: 12px !important; height: 12px !important; color: var(--brand); }
+.dw-assess .rc-title h3 { margin: 0; font-size: clamp(16px, 1.8vw, 20px); font-weight: 700; color: var(--ink); }
+.dw-assess .rc-title p { margin: 0; font-size: 13px; color: var(--ink-2); }
+.dw-assess .rc-match { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.dw-assess .rc-match small { font-size: 11px; color: var(--ink-3); }
+.dw-assess .rc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+@media (max-width: 680px) { .dw-assess .rc-grid { grid-template-columns: 1fr; } }
+.dw-assess .rc-sec { padding: 16px 24px; border-bottom: 1px solid var(--line); border-inline-end: 1px solid var(--line); }
+.dw-assess .rc-sec:nth-child(2n) { border-inline-end: none; }
+.dw-assess .rc-sec h4 { margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--ink-3); letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }
+.dw-assess .rc-sec h4 svg { width: 14px !important; height: 14px !important; }
+.dw-assess .rc-why ul.reasons { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.dw-assess .rc-why li { display: flex; gap: 8px; font-size: 14px; color: var(--ink-2); align-items: flex-start; line-height: 1.6; }
+.dw-assess .rc-why li svg { width: 14px !important; height: 14px !important; color: var(--brand); flex-shrink: 0; margin-top: 4px; }
+.dw-assess .rc-step { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink); }
+.dw-assess .skills { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw-assess .skills span { padding: 3px 10px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12px; font-weight: 600; border: 1px solid var(--line); }
+.dw-assess .rc-foot { display: flex; align-items: center; justify-content: flex-end; padding: 14px 24px; gap: 12px; flex-wrap: wrap; }
+.dw-assess .rc-actions { display: flex; gap: 8px; }
+.dw-assess .rc-bottom { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; padding-bottom: 48px; }
+
+/* Ring (match % donut) */
+.dw-assess .ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.dw-assess .ring-wrap b { position: absolute; font-size: clamp(11px, 1vw, 13px); font-weight: 700; color: var(--ink); }
+.dw-assess .ring-svg .bg { fill: none; stroke: var(--line); }
+.dw-assess .ring-svg .fg { fill: none; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; animation: ringIn .8s cubic-bezier(.4, 0, .2, 1) both; }
+@keyframes ringIn { from { stroke-dashoffset: var(--len); } }
+
+/* Dark mode */
+.dark .dw-assess .opt { background: color-mix(in srgb, var(--surface) 60%, transparent); }
 
 /* Quiz scroll anchor */
-.assess-q { scroll-margin-top: 80px; padding-top: 40px; background: var(--bg); }
+.assess-q { scroll-margin-top: 80px; padding-top: 0; background: var(--bg); }
 @keyframes dw-as-pop { from { opacity: 0; transform: translateY(8px) scale(0.96); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
-	.r-blob, .ri-secs li { animation: none; }
-	.ri-line, .ri-secs { transition: none; }
+	.dw-assess .hero-bg .b1, .dw-assess .hero-bg .b2, .dw-assess .ri-secs li, .dw-assess .rc, .dw-assess .ring-svg .fg, .dw-assess .r-panel.reacting .r-figure { animation: none; }
+	.dw-assess .ri-line, .dw-assess .ri-cta, .dw-assess .ri-secs { transition: none; }
 }
 
 
