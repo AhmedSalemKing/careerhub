@@ -30,7 +30,6 @@ type PathDetail = {
   jobTitles?: string[] | null
   demandLevel?: string | null
   courses?: PathCourse[] | null
-  stats?: { totalCourses?: number } | null
 }
 
 const LEVELS_AR: Record<string, string> = { BEGINNER: 'مبتدئ', INTERMEDIATE: 'متوسط', ADVANCED: 'متقدم' }
@@ -41,10 +40,6 @@ function formatMinutes(minutes: number, isAr: boolean): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return isAr ? `${h} ساعة${m ? ` و${m} دقيقة` : ''}` : `${h}h${m ? ` ${m}m` : ''}`
-}
-
-function card(extra?: React.CSSProperties): React.CSSProperties {
-  return { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 20, ...extra }
 }
 
 export default function CareerPathDetailPage() {
@@ -78,7 +73,18 @@ export default function CareerPathDetailPage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  // Level / vision metadata that lives in the catalogue entry with the same id as the slug
+  // Same endpoint /coaching uses; used only to show the real starting per-session price
+  const { data: consultants = [] } = useQuery({
+    queryKey: ['career-detail-consultants'],
+    queryFn: async () => {
+      const res = await get('/consulting/consultants', { params: { limit: 50 } })
+      const d = (res?.data as any)?.data
+      return Array.isArray(d) ? d : []
+    },
+    staleTime: 60000,
+  })
+
+  // Level lives in the catalogue entry whose id equals the slug
   const catalogue = CAREER_PATHS.flatMap((c) => c.paths).find((p) => p.id === slug)
 
   const courses: PathCourse[] = path?.courses ?? []
@@ -91,6 +97,17 @@ export default function CareerPathDetailPage() {
   const description = path?.description || (isAr ? catalogue?.descriptionAr : catalogue?.descriptionEn) || ''
   const level = catalogue?.level
   const demand = path?.demandLevel ? (isAr ? DEMAND_AR[path.demandLevel] ?? path.demandLevel : path.demandLevel) : null
+  const nf = isAr ? 'ar-EG' : 'en-US'
+  const salaryText =
+    sal?.min != null && sal?.max != null
+      ? `${Number(sal.min).toLocaleString(nf)} – ${Number(sal.max).toLocaleString(nf)} ${sal.currency ?? ''}${isAr ? ' / شهريًا' : ' / month'}`
+      : null
+
+  const sessionPrices = (consultants as any[])
+    .map((c: any) => ({ price: Number(c.profile?.sessionPrice ?? c.hourlyRate ?? 0) || 0, minutes: Number(c.profile?.sessionDuration ?? 60) || 60 }))
+    .filter((x) => x.price > 0)
+    .sort((a, b) => a.price - b.price)
+  const cheapest = sessionPrices[0]
 
   const enroll = async () => {
     if (!path?.id || enrolling) return
@@ -111,142 +128,169 @@ export default function CareerPathDetailPage() {
     }
   }
 
-  const chip: React.CSSProperties = { padding: '4px 12px', borderRadius: 999, fontSize: 12, background: 'var(--surface-2)', color: 'var(--foreground)' }
+  const dir = isAr ? 'rtl' : 'ltr'
 
   if (isError) {
     return (
-      <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 720, margin: '60px auto', padding: 16 }}>
-        <div style={card({ textAlign: 'center' })}>
-          <p style={{ color: 'var(--muted)', margin: '0 0 16px' }}>{isAr ? 'تعذر تحميل المسار المهني' : 'Failed to load this career path'}</p>
-          <button type="button" onClick={() => refetch()} style={{ padding: '10px 22px', borderRadius: 10, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground)', cursor: 'pointer' }}>
-            {isAr ? 'إعادة المحاولة' : 'Retry'}
-          </button>
-          <div style={{ marginTop: 12 }}>
-            <Link href={`/${locale}/careers`} style={{ color: 'var(--primary)', fontSize: 13 }}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
-          </div>
+      <div className="dw2-path" dir={dir}>
+        <div className="dw2-section" style={{ textAlign: 'center' }}>
+          <p className="dw2-section-sub">{isAr ? 'تعذر تحميل المسار المهني' : 'Failed to load this career path'}</p>
+          <button type="button" className="dw2-btn primary" onClick={() => refetch()}>{isAr ? 'إعادة المحاولة' : 'Retry'}</button>
+          <p style={{ marginTop: 14 }}>
+            <Link href={`/${locale}/careers`} style={{ color: 'var(--purple)', fontSize: 13 }}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
+          </p>
         </div>
       </div>
     )
   }
 
-  return (
-    <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 1100, margin: '0 auto', padding: 'clamp(16px,3vw,32px)', color: 'var(--foreground)' }}>
-      <Link href={`/${locale}/careers`} style={{ fontSize: 13, color: 'var(--muted)', textDecoration: 'none' }}>
-        {isAr ? '← كل المسارات المهنية' : '← All career paths'}
-      </Link>
+  const enrollBtn = (block?: boolean) => (
+    <button type="button" className={`dw2-btn primary${block ? ' block' : ''}`} onClick={enroll} disabled={enrolling || isLoading || !path?.id}>
+      {enrolling ? (isAr ? 'جارٍ التسجيل...' : 'Enrolling...') : (isAr ? 'سجّل في المسار الكامل' : 'Enroll in the full path')}
+    </button>
+  )
 
-      {/* Header */}
-      <header style={{ margin: '16px 0 24px' }}>
+  return (
+    <div className="dw2-path" dir={dir}>
+      {/* 1 — breadcrumb + header */}
+      <nav className="dw2-crumbs" aria-label="breadcrumb">
+        <Link href={`/${locale}/careers`}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
+        <span aria-hidden="true">{isAr ? '‹' : '›'}</span>
+        <span>{title}</span>
+      </nav>
+
+      <header className="dw2-path-hero">
         {isLoading ? (
           <>
-            <Skeleton className="h-9 w-72" />
-            <Skeleton className="mt-3 h-5 w-full max-w-2xl" />
+            <Skeleton className="h-10 w-80" />
+            <Skeleton className="mt-4 h-5 w-full max-w-2xl" />
           </>
         ) : (
           <>
-            <h1 style={{ fontSize: 'clamp(24px,4vw,34px)', fontWeight: 900, margin: '0 0 8px' }}>{title}</h1>
-            <p style={{ margin: 0, color: 'var(--muted)', fontSize: 15, lineHeight: 1.8, maxWidth: 760 }}>{description}</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
-              {totalMinutes > 0 && <span style={chip}>{isAr ? 'المدة' : 'Duration'}: {formatMinutes(totalMinutes, isAr)}</span>}
-              {level && <span style={chip}>{isAr ? 'المستوى' : 'Level'}: {level}</span>}
-              {demand && <span style={chip}>{demand}</span>}
-              <span style={chip}>{isAr ? 'اللغة: العربية' : 'Language: Arabic'}</span>
+            <h1>{title}</h1>
+            {description && <p className="dw2-lede">{description}</p>}
+            <div className="dw2-stats">
+              <span className="dw2-stat-pill">{isAr ? `${courses.length} دورات` : `${courses.length} courses`}</span>
+              {totalMinutes > 0 && <span className="dw2-stat-pill">{formatMinutes(totalMinutes, isAr)}</span>}
+              {level && <span className="dw2-stat-pill">{isAr ? 'المستوى' : 'Level'}: {level}</span>}
+              {demand && <span className="dw2-stat-pill">{demand}</span>}
             </div>
+            <div className="dw2-cta-row">
+              {enrollBtn()}
+              <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
+            </div>
+            {enrollError && <p className="dw2-error" role="alert" style={{ marginTop: 10 }}>{enrollError}</p>}
           </>
         )}
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 24, alignItems: 'start' }} className="cpd-grid">
-        <style>{`@media (max-width: 900px) { .cpd-grid { grid-template-columns: 1fr !important; } }`}</style>
+      {/* 2 — jobs */}
+      {jobs.length > 0 && (
+        <section className="dw2-section">
+          <h2 className="dw2-section-title">{isAr ? 'وظائف يؤهلك لها هذا المسار' : 'Jobs this path qualifies you for'}</h2>
+          <div className="dw2-jobs" style={{ marginTop: 20 }}>
+            {jobs.slice(0, 6).map((j) => (
+              <div key={j} className="dw2-job-card">
+                <h3>{j}</h3>
+                {salaryText && <div className="dw2-salary">{salaryText}</div>}
+              </div>
+            ))}
+          </div>
+          {salaryText && (
+            <p className="dw2-muted">{isAr ? 'نطاق الراتب المعروض هو النطاق الشهري العام لهذا المسار المهني.' : 'The salary shown is the general monthly range for this career path.'}</p>
+          )}
+        </section>
+      )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
-          {/* Jobs */}
-          <section style={card()}>
-            <h2 style={{ margin: '0 0 12px', fontSize: 17, fontWeight: 800 }}>{isAr ? 'الوظائف التي يؤهلك لها المسار' : 'Jobs this path qualifies you for'}</h2>
-            {jobs.length === 0 ? (
-              <p style={{ margin: 0, color: 'var(--muted)', fontSize: 13 }}>{isAr ? 'لا توجد بيانات' : 'No data available'}</p>
-            ) : (
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {jobs.map((j) => (
-                  <li key={j} style={{ padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 10, fontSize: 14 }}>{j}</li>
-                ))}
-              </ul>
-            )}
-            {sal?.min != null && sal?.max != null && (
-              <p style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--muted)' }}>
-                {isAr ? 'نطاق الراتب الشهري' : 'Monthly salary range'}:{' '}
-                <b style={{ color: 'var(--foreground)' }}>
-                  {Number(sal.min).toLocaleString(isAr ? 'ar-EG' : 'en-US')} – {Number(sal.max).toLocaleString(isAr ? 'ar-EG' : 'en-US')} {sal.currency ?? ''}
-                </b>
+      {/* 4 — skills */}
+      {skills.length > 0 && (
+        <section className="dw2-section">
+          <h2 className="dw2-section-title">{isAr ? 'المهارات التي ستبنيها' : "Skills you'll build"}</h2>
+          <div className="dw2-skills" style={{ marginTop: 20 }}>
+            {skills.map((s) => <span key={s} className="dw2-skill-tag">{s}</span>)}
+          </div>
+        </section>
+      )}
+
+      {/* 5 — course plan */}
+      <section className="dw2-section">
+        <h2 className="dw2-section-title">{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
+        <p className="dw2-section-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : courses.length === 0 ? (
+          <p className="dw2-section-sub">{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
+        ) : (
+          <ol className="dw2-plan">
+            {courses.map((c, i) => (
+              <li key={c.id}>
+                <a href={learnCourseLink(c.id, locale)} className="dw2-course-row">
+                  <span className="dw2-course-num">{i + 1}</span>
+                  <span className="dw2-course-info">
+                    <b>{c.title}</b>
+                    <small>
+                      {[c.level ? (isAr ? LEVELS_AR[c.level] ?? c.level : c.level) : null, c.duration ? formatMinutes(c.duration, isAr) : null].filter(Boolean).join(' · ')}
+                    </small>
+                  </span>
+                  <span className="dw2-course-price">{c.price ? formatMoney(c.price, c.priceDisplay) : (isAr ? 'مجاني' : 'Free')}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      {/* 6 — pricing */}
+      <section className="dw2-section">
+        <div className="dw2-price-grid">
+          <div className="dw2-price-card featured">
+            <h3>{isAr ? 'المسار الكامل' : 'Full path'}</h3>
+            <div className="dw2-big-price">{isLoading ? <Skeleton className="h-9 w-32" /> : totalPrice > 0 ? formatMoney(totalPrice) : (isAr ? 'مجاني' : 'Free')}</div>
+            <p>{isAr ? 'مجموع أسعار دورات المسار.' : 'Total of the path course prices.'}</p>
+            <ul className="dw2-checklist">
+              <li>{isAr ? `${courses.length} دورات في الخطة` : `${courses.length} courses in the plan`}</li>
+              {totalMinutes > 0 && <li>{isAr ? `${formatMinutes(totalMinutes, true)} من المحتوى` : `${formatMinutes(totalMinutes, false)} of content`}</li>}
+              <li>{isAr ? 'متابعة تقدّمك في مكان واحد' : 'Track your progress in one place'}</li>
+            </ul>
+            <div className="dw2-grow" />
+            {enrollBtn(true)}
+          </div>
+
+          <div className="dw2-price-card">
+            <h3>{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</h3>
+            <p>{isAr ? 'إرشاد فردي: احجز جلسة مع مرشد في هذا المجال متى احتجت، دون الحاجة للتسجيل في المسار.' : 'One-to-one mentoring: book a session with a mentor whenever you need, no path enrollment required.'}</p>
+            {cheapest && (
+              <p>
+                <span className="dw2-big-price" style={{ fontSize: 28 }}>{formatMoney(cheapest.price)}</span>{' '}
+                <small>{isAr ? `/ جلسة ${cheapest.minutes} دقيقة (تبدأ من)` : `/ ${cheapest.minutes}-min session (from)`}</small>
               </p>
             )}
-          </section>
-
-          {/* Skills */}
-          <section style={card()}>
-            <h2 style={{ margin: '0 0 12px', fontSize: 17, fontWeight: 800 }}>{isAr ? 'المهارات التي ستبنيها' : "Skills you'll build"}</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {skills.length === 0 && <span style={{ color: 'var(--muted)', fontSize: 13 }}>{isAr ? 'لا توجد بيانات' : 'No data available'}</span>}
-              {skills.map((s) => <span key={s} style={chip}>{s}</span>)}
-            </div>
-          </section>
-
-          {/* Course plan */}
-          <section style={card()}>
-            <h2 style={{ margin: '0 0 12px', fontSize: 17, fontWeight: 800 }}>{isAr ? 'خطة الكورسات' : 'Course plan'}</h2>
-            {isLoading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : courses.length === 0 ? (
-              <p style={{ margin: 0, color: 'var(--muted)', fontSize: 13 }}>{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
-            ) : (
-              <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {courses.map((c, i) => (
-                  <li key={c.id}>
-                    <a href={learnCourseLink(c.id, locale)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid var(--border)', borderRadius: 12, textDecoration: 'none', color: 'inherit' }}>
-                      <span style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary)', color: 'var(--primary-foreground)', fontSize: 13, fontWeight: 700 }}>{i + 1}</span>
-                      <span style={{ flex: 1, minWidth: 0 }}>
-                        <b style={{ display: 'block', fontSize: 14 }}>{c.title}</b>
-                        <small style={{ color: 'var(--muted)', fontSize: 12 }}>
-                          {[c.level ? (isAr ? LEVELS_AR[c.level] ?? c.level : c.level) : null, c.duration ? formatMinutes(c.duration, isAr) : null].filter(Boolean).join(' · ')}
-                        </small>
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{c.price ? formatMoney(c.price, c.priceDisplay) : (isAr ? 'مجاني' : 'Free')}</span>
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-        </div>
-
-        {/* Pricing */}
-        <aside style={card({ position: 'sticky', top: 16 })}>
-          <h2 style={{ margin: '0 0 4px', fontSize: 17, fontWeight: 800 }}>{isAr ? 'المسار الكامل' : 'Full path'}</h2>
-          <p style={{ margin: '0 0 12px', fontSize: 12, color: 'var(--muted)' }}>
-            {isAr ? `${courses.length} كورسات في الخطة` : `${courses.length} courses in the plan`}
-          </p>
-          <div style={{ fontSize: 28, fontWeight: 900, marginBottom: 14 }}>
-            {isLoading ? <Skeleton className="h-8 w-32" /> : totalPrice > 0 ? formatMoney(totalPrice) : (isAr ? 'مجاني' : 'Free')}
+            <div className="dw2-grow" />
+            <Link href={`/${locale}/coaching`} className="dw2-btn ghost block">{isAr ? 'احجز جلسة مدفوعة' : 'Book a paid session'}</Link>
           </div>
-          <button
-            type="button"
-            onClick={enroll}
-            disabled={enrolling || isLoading || !path?.id}
-            style={{ width: '100%', padding: '12px 0', borderRadius: 10, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground)', fontWeight: 700, fontSize: 14, cursor: enrolling ? 'wait' : 'pointer', opacity: enrolling || isLoading || !path?.id ? 0.6 : 1 }}
-          >
-            {enrolling ? (isAr ? 'جارٍ التسجيل...' : 'Enrolling...') : (isAr ? 'سجّل في المسار' : 'Enroll in path')}
-          </button>
-          {enrollError && <p role="alert" style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--error)' }}>{enrollError}</p>}
+        </div>
+      </section>
 
-          <div style={{ borderTop: '1px solid var(--border)', margin: '16px 0 12px' }} />
-          <p style={{ margin: '0 0 10px', fontSize: 13, color: 'var(--muted)' }}>
-            {isAr ? 'تفضّل الدفع لكل جلسة؟ احجز جلسة مع مرشد في هذا المجال.' : 'Prefer to pay per session? Book a session with a mentor in this field.'}
-          </p>
-          <Link href={`/${locale}/coaching`} style={{ display: 'block', textAlign: 'center', padding: '10px 0', borderRadius: 10, border: '1px solid var(--border)', color: 'var(--foreground)', textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
-            {isAr ? 'احجز جلسة بالدفع لكل جلسة' : 'Book a pay-per-session mentor'}
-          </Link>
-        </aside>
-      </div>
+      {/* 7 — free */}
+      <section className="dw2-section">
+        <h2 className="dw2-section-title">{isAr ? 'ما هو مجاني' : "What's free"}</h2>
+        <ul className="dw2-checklist" style={{ marginTop: 16 }}>
+          <li><Link href={`/${locale}/dashboard/assessment`}>{isAr ? 'التقييم المهني بالذكاء الاصطناعي' : 'AI career assessment'}</Link></li>
+          <li>{isAr ? 'خطة المسار وتفاصيل كل دورة قبل التسجيل' : 'The path plan and course details before you enroll'}</li>
+        </ul>
+      </section>
+
+      {/* 8 — why */}
+      {(description || demand || salaryText) && (
+        <section className="dw2-section">
+          <h2 className="dw2-section-title">{isAr ? 'لماذا هذا المسار' : 'Why this path'}</h2>
+          {description && <p className="dw2-section-sub" style={{ marginBottom: 12 }}>{description}</p>}
+          <ul className="dw2-checklist">
+            {demand && <li>{demand}</li>}
+            {salaryText && <li>{isAr ? 'نطاق الراتب الشهري' : 'Monthly salary range'}: {salaryText}</li>}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }

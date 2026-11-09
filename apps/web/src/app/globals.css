@@ -3938,3 +3938,52 @@ svg.go { transition: transform .2s; }
 
 /* Global UI font: IBM Plex Sans Arabic (RTL) / Inter (LTR), loaded in the root layout */
 :root, html, body { font-family: var(--font-ui); }
+
+/* ── Career path detail page (dw2-) ── */
+.dw2-path { max-width: 1100px; margin: 0 auto; padding: 0 clamp(16px, 3vw, 32px) 64px; color: var(--ink); }
+.dw2-crumbs { display: flex; align-items: center; gap: 8px; padding-top: 24px; font-size: 13px; color: var(--ink-3); }
+.dw2-crumbs a { color: var(--purple); text-decoration: none; }
+.dw2-path-hero { padding: 24px 0 32px; border-bottom: 1px solid var(--line); }
+.dw2-path-hero h1 { margin: 0 0 12px; font-size: clamp(28px, 4.5vw, 42px); font-weight: 800; line-height: 1.2; }
+.dw2-lede { margin: 0 0 18px; max-width: 760px; font-size: 16px; line-height: 1.9; color: var(--ink-2); }
+.dw2-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.dw2-stat-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; font-size: 13px; color: var(--ink-2); }
+.dw2-cta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.dw2-btn { display: inline-flex; align-items: center; justify-content: center; padding: 11px 22px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; border: 1.5px solid var(--purple); transition: opacity .15s; font-family: inherit; }
+.dw2-btn.primary { background: var(--purple); color: #fff; }
+.dw2-btn.ghost { background: transparent; color: var(--purple); }
+.dw2-btn.block { width: 100%; box-sizing: border-box; }
+.dw2-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.dw2-btn:hover:not(:disabled) { opacity: 0.88; }
+.dw2-section { padding: 48px 0; border-bottom: 1px solid var(--line); }
+.dw2-section:last-child { border-bottom: none; }
+.dw2-section-title { margin: 0 0 8px; font-size: 22px; font-weight: 700; }
+.dw2-section-sub { margin: 0 0 24px; color: var(--ink-2); font-size: 14px; line-height: 1.8; }
+.dw2-muted { color: var(--ink-3); font-size: 12px; line-height: 1.7; margin: 12px 0 0; }
+.dw2-jobs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dw2-job-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.dw2-job-card h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.dw2-salary { font-size: 18px; font-weight: 700; color: var(--purple); }
+.dw2-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+.dw2-skill-tag { padding: 6px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 99px; font-size: 13px; }
+.dw2-plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.dw2-course-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-decoration: none; color: inherit; }
+.dw2-course-row:hover { border-color: var(--purple); }
+.dw2-course-num { width: 28px; height: 28px; border-radius: 50%; background: var(--purple); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.dw2-course-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dw2-course-info b { font-size: 15px; }
+.dw2-course-info small { font-size: 12px; color: var(--ink-3); }
+.dw2-course-price { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.dw2-price-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: stretch; }
+.dw2-price-card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 10px; }
+.dw2-price-card.featured { border-color: var(--purple); }
+.dw2-price-card h3 { margin: 0; font-size: 18px; font-weight: 700; }
+.dw2-price-card p { margin: 0; font-size: 13px; color: var(--ink-2); line-height: 1.8; }
+.dw2-big-price { font-size: 36px; font-weight: 800; color: var(--ink); }
+.dw2-checklist { list-style: none; margin: 0; padding: 0; }
+.dw2-checklist li { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 14px; }
+.dw2-checklist li::before { content: "✓"; color: var(--purple); font-weight: 700; }
+.dw2-checklist a { color: inherit; text-decoration: underline; }
+.dw2-grow { flex: 1; }
+.dw2-error { color: var(--error); font-size: 13px; margin: 0; }
+@media (max-width: 900px) { .dw2-jobs { grid-template-columns: 1fr; } .dw2-price-grid { grid-template-columns: 1fr; } }
