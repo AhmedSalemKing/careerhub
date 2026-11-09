@@ -374,6 +374,7 @@ function StudentOverview() {
 
   const selectedPaths: any[] = allPaths.filter((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
   const [pathIdx, setPathIdx] = useState(0)
+  const [showAllEnrolled, setShowAllEnrolled] = useState(false)
   const safePathIdx = selectedPaths.length ? ((pathIdx % selectedPaths.length) + selectedPaths.length) % selectedPaths.length : 0
   const selectedPathRaw: any = selectedPaths[safePathIdx]
 
@@ -600,9 +601,11 @@ function StudentOverview() {
                       </p>
                     )
                   }
+                  const visibleEnrolled = showAllEnrolled ? enrolledCourses : enrolledCourses.slice(0, 3)
                   return (
+                    <>
                     <div className="dw-clist" style={{ marginTop: 0 }}>
-                      {enrolledCourses.map(({ e, c: course }: any, i: number) => {
+                      {visibleEnrolled.map(({ e, c: course }: any, i: number) => {
                         const c = { id: course.id, name: titleOf(course) }
                         const prog = progressForEnrollment(e)
                         const isDone = prog >= 100
@@ -623,6 +626,17 @@ function StudentOverview() {
                         )
                       })}
                     </div>
+                    {enrolledCourses.length > 3 && (
+                      <button
+                        type="button"
+                        className="dw-btn dw-btn-ghost dw-btn-sm"
+                        style={{ marginTop: '10px' }}
+                        onClick={() => setShowAllEnrolled((v) => !v)}
+                      >
+                        {showAllEnrolled ? 'عرض أقل' : `عرض المزيد (${enrolledCourses.length})`}
+                      </button>
+                    )}
+                    </>
                   )
                 })()}
 
