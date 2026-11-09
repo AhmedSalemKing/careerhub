@@ -3873,3 +3873,8 @@ svg.go { transition: transform .2s; }
 .dw-dashboard .dw-credits b { font-size: 40px !important; font-weight: 700 !important; line-height: 1; }
 .dw-dashboard .dw-ms li::before { top: 24px; }
 .dw-dashboard .dw-m-dot { z-index: 1; }
+
+/* ═══ Dashboard home — reference parity (dw2-) ═══ */
+.dw-dashboard .dw2-lc-host { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+.dw-dashboard .dw2-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--wash); color: var(--brand); font-weight: 700; font-size: 15px; }
+.dw-dashboard .dw2-host-name { font-size: 13px; color: var(--night-ink-2); }

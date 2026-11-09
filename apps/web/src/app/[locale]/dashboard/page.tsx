@@ -391,6 +391,14 @@ function StudentOverview() {
   const studentStats = statsData?.stats
   const mySessions: any[] = sessionsData?.mySessions ?? []
 
+  const [rasheedResult, setRasheedResult] = useState<{ topCareers: { name: string; nameEn: string; match: number }[] } | null>(null)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('rasheed_quiz_result')
+      if (raw) setRasheedResult(JSON.parse(raw))
+    } catch {}
+  }, [])
+
   if (isLoading) {
     return (
       <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'البيانات قيد التحميل...' : 'Loading your data...'}>
@@ -536,6 +544,12 @@ function StudentOverview() {
                   <div>
                     <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
                     <p className="dw-muted">{(selectedPath.roles ?? []).slice(0, 3).join(' · ')}</p>
+                    <div style={{ marginTop: '14px' }}>
+                      <Link href={`/${locale}/dashboard/career-path`} className="dw-btn dw-btn-primary dw-btn-sm">
+                        تابع
+                        <OpenArrow />
+                      </Link>
+                    </div>
                   </div>
                 </div>
                 {/* Section 1: courses the student is enrolled in within this path */}
@@ -557,7 +571,7 @@ function StudentOverview() {
                         const isDone = prog >= 100
                         const isDoing = !isDone && prog > 0
                         return (
-                          <div key={c.id ?? i} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
+                          <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
                             <span className="dw-dot">
                               {isDone ? <Check size={14} /> : isDoing ? <PlayIcon /> : i + 1}
                             </span>
@@ -568,7 +582,7 @@ function StudentOverview() {
                             <span className={`dw-status ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
                               {isDone ? 'مكتمل' : isDoing ? 'قيد التقدّم' : 'مشترك'}
                             </span>
-                          </div>
+                          </a>
                         )
                       })}
                       {enrolledInPath.length > 3 && (
@@ -584,13 +598,13 @@ function StudentOverview() {
                   {pathCourses.slice(0, 4).map((c: any, i: number) => {
                     const isEnrolled = !!enrollmentFor(c)
                     return (
-                      <div key={c.id ?? i} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
+                      <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
                         <span className="dw-dot">{i + 1}</span>
                         <span className="dw-crow-info"><h4>{c.name}</h4></span>
                         <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
                           {isEnrolled ? 'مشترك' : 'متاح'}
                         </span>
-                      </div>
+                      </a>
                     )
                   })}
                 </div>
@@ -631,7 +645,14 @@ function StudentOverview() {
                 <p className="dw-lc-sub">
                   {upcomingSession.topic ?? upcomingSession.sessionName ?? 'جلسة استشارية'}
                 </p>
-                {upcomingMentor && <p className="dw-lc-provider">{upcomingMentor}</p>}
+                {upcomingMentor && (
+                  <div className="dw2-lc-host">
+                    {upcomingSession?.consultant?.profile?.avatar
+                      ? <img src={upcomingSession.consultant.profile.avatar} alt="" className="dw2-av" />
+                      : <span className="dw2-av">{upcomingMentor[0]}</span>}
+                    <span className="dw2-host-name">{upcomingMentor}</span>
+                  </div>
+                )}
                 <Link
                   href={upcomingSession.status === 'IN_PROGRESS'
                     ? `/${locale}/dashboard/consulting/${upcomingSession.id}/go-live`
@@ -708,18 +729,35 @@ function StudentOverview() {
           </ol>
         </div>
 
-        {/* ===== AI CHAT — s6 ===== */}
+        {/* ===== RASHEED RECOMMENDATIONS — s6 ===== */}
         <div className="dw-card s6">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <h3>رشيد — مساعدك الذكي</h3>
+            <h3>ترشيحات رشيد</h3>
           </div>
-          <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-            يحلّل مهاراتك ويرشدك لأفضل مسار مهني مناسب لك.
-          </p>
-          <Link href={`/${locale}/dashboard/ai-chat`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
-            فتح المساعد الذكي →
-          </Link>
+          {rasheedResult?.topCareers?.length ? (
+            <div className="dw-clist" style={{ marginTop: 0 }}>
+              {rasheedResult.topCareers.slice(0, 3).map((c, k) => (
+                <Link key={k} href={`/${locale}/dashboard/career-path`} className="dw-crow">
+                  <span className="dw-dot">{k + 1}</span>
+                  <span className="dw-crow-info">
+                    <h4>{isAr ? c.name : (c.nameEn || c.name)}</h4>
+                    <small>{c.match}% توافق</small>
+                  </span>
+                  <OpenArrow />
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                يحلّل مهاراتك ويرشدك لأفضل مسار مهني مناسب لك.
+              </p>
+              <Link href={`/${locale}/dashboard/ai-chat`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
+                ابدأ التقييم المجاني
+              </Link>
+            </>
+          )}
         </div>
 
       </div>
