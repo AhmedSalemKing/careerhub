@@ -257,7 +257,11 @@ export default function CareersPage() {
               <article
                 key={path.id}
                 className="tcard rv"
-                style={{ ['--d' as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties}
+                role="link"
+                tabIndex={0}
+                onClick={() => router.push(`/${locale}/careers/${path.id}`)}
+                onKeyDown={(e) => { if (e.key === "Enter" && e.target === e.currentTarget) router.push(`/${locale}/careers/${path.id}`) }}
+                style={{ cursor: "pointer", ...({ ["--d" as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties) }}
               >
                 <div className="t-media">
                   <span className="t-watermark" aria-hidden="true"><IconComp size={72} /></span>
@@ -292,11 +296,11 @@ export default function CareersPage() {
                     <button
                       type="button"
                       className="t-btn"
-                      onClick={(e) => { e.stopPropagation(); setDetailPath(path); setDetailTab('tasks') }}
+                      onClick={(e) => { e.stopPropagation(); router.push(`/${locale}/careers/${path.id}`) }}
                     >
                       {isAr ? 'تفاصيل' : 'Details'}
                     </button>
-                    <button type="button" className="t-btn primary" onClick={() => requestStartPath(path)}>
+                    <button type="button" className="t-btn primary" onClick={(e) => { e.stopPropagation(); requestStartPath(path) }}>
                       {isAr ? 'ابدأ المسار' : 'Start Path'}
                     </button>
                   </div>
