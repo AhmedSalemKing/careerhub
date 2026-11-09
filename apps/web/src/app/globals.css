@@ -3781,8 +3781,9 @@ svg.go { transition: transform .2s; }
 .dw-dashboard .dw-btn-light:hover { background:rgba(255,255,255,.25); }
 
 /* ═══ Dashboard home — pixel-match corrections ═══ */
-.dw-dashboard, .dw-dashboard * {
-	font-family: "IBM Plex Sans Arabic", "Inter", sans-serif !important;
+/* Beats the [dir="rtl"] h1..h4 !important font override */
+.dw-dashboard :is(h1,h2,h3,h4,h5,h6,p,span,div,button,a,small,b,li,label) {
+	font-family: var(--font-ui) !important;
 }
 .dw-dashboard .dgrid { gap: 18px; }
 .dw-dashboard .dw-card-h h2,
@@ -3851,3 +3852,24 @@ svg.go { transition: transform .2s; }
 .dw-dashboard .dw-ms li.doing { color: var(--brand); font-weight: 700; }
 .dw-dashboard .dw-ms li.done .dw-m-dot { background: var(--good-bg); border-color: var(--good); color: var(--good); }
 .dw-dashboard .dw-ms li.doing .dw-m-dot { background: var(--wash); border-color: var(--brand); color: var(--brand); }
+
+/* ═══ Dashboard home — reference sizing round 2 ═══ */
+.dw-dashboard .dw-card-h h2,
+.dw-dashboard .dw-card-h h3 { font-size: 16px !important; font-weight: 700 !important; }
+.dw-dashboard .dw-big-ring b { font-size: 26px; font-weight: 700; line-height: 1; }
+.dw-dashboard .dw-big-ring small { font-size: 10px; }
+.dw-dashboard .dw-rec > div > h3 { font-size: 20px !important; font-weight: 700 !important; }
+.dw-dashboard .dw-crow { cursor: pointer; }
+.dw-dashboard .dw-crow:hover { opacity: .8; }
+.dw-dashboard .dw-crow-info h4 { font-size: 15px !important; font-weight: 700 !important; margin: 0; }
+.dw-dashboard .dw-crow-info small { font-size: 12px; color: var(--ink-3); }
+.dw-dashboard .dw-status { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.dw-dashboard .dw-crow.doing .dw-status { background: var(--wash); color: var(--brand); }
+.dw-dashboard .dw-crow.done .dw-status { background: var(--good-bg); color: var(--good); }
+.dw-dashboard .dw-crow.todo .dw-status { background: var(--bg-2); color: var(--ink-3); border: 1px solid var(--line); }
+.dw-dashboard .dw-section-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; margin: 18px 0 8px; padding: 0 4px; }
+.dw-dashboard .dw-clist + .dw-section-label { margin-top: 20px; }
+.dw-dashboard .dw-lc-when { font-size: 20px !important; font-weight: 700 !important; }
+.dw-dashboard .dw-credits b { font-size: 40px !important; font-weight: 700 !important; line-height: 1; }
+.dw-dashboard .dw-ms li::before { top: 24px; }
+.dw-dashboard .dw-m-dot { z-index: 1; }

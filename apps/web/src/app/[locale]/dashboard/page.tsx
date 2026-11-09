@@ -473,6 +473,9 @@ function StudentOverview() {
   const OpenArrow = () => (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : 'none' }} aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
   )
+  const PlayIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>
+  )
   const Check = ({ size }: { size: number }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
   )
@@ -508,7 +511,6 @@ function StudentOverview() {
               const e = enrollmentFor(c)
               return e && progressForEnrollment(e) >= 100
             }).length
-            const enrolledInPath = enrollments.filter((e: any) => pathCourses.some((c: any) => c.id === (e.courseId ?? courseOf(e)?.id ?? e.id)))
             const pct = pathCourses.length > 0 ? Math.round((done / pathCourses.length) * 100) : 0
             const C = 2 * Math.PI * 60
             const offset = C - (pct / 100) * C
@@ -537,46 +539,57 @@ function StudentOverview() {
                   </div>
                 </div>
                 {/* Section 1: courses the student is enrolled in within this path */}
-                <p className="dw-subhead">الكورسات المشترك فيها</p>
-                {enrolledInPath.length === 0 ? (
-                  <p className="dw-empty-inline">لم تبدأ أي كورس في هذا المسار بعد</p>
-                ) : (
-                  <div className="dw-clist">
-                    {enrolledInPath.slice(0, 3).map((e: any, i: number) => {
-                      const prog = progressForEnrollment(e)
-                      const isDone = prog >= 100
-                      const isDoing = !isDone && prog > 0
-                      return (
-                        <div key={e.id ?? i} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : ''}`}>
-                          <span className="dw-dot">
-                            {isDone ? <Check size={12} />
-                              : isDoing ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>
-                              : i + 1}
-                          </span>
-                          <span className="dw-crow-info">
-                            <h4>{titleOf(courseOf(e))}</h4>
-                            {isDoing && <div className="dw-mini-prog"><span style={{ width: `${prog}%` }}/></div>}
-                          </span>
-                          <span className="dw-crow-status">{isDone ? 'مكتمل' : isDoing ? 'قيد التقدّم' : 'لم تبدأ'}</span>
-                        </div>
-                      )
-                    })}
-                    {enrolledInPath.length > 3 && (
-                      <Link href={`/${locale}/dashboard/my-courses`} className="dw-more">عرض الكل</Link>
-                    )}
-                  </div>
-                )}
+                <p className="dw-section-label">الكورسات المشترك فيها</p>
+                {(() => {
+                  const enrolledInPath = pathCourses.filter((c: any) => enrollmentFor(c))
+                  if (enrolledInPath.length === 0) {
+                    return (
+                      <p style={{ fontSize: '13px', color: 'var(--ink-3)', padding: '8px 4px' }}>
+                        لم تبدأ أي كورس في هذا المسار بعد
+                      </p>
+                    )
+                  }
+                  return (
+                    <div className="dw-clist" style={{ marginTop: 0 }}>
+                      {enrolledInPath.slice(0, 3).map((c: any, i: number) => {
+                        const e = enrollmentFor(c)
+                        const prog = e ? progressForEnrollment(e) : 0
+                        const isDone = prog >= 100
+                        const isDoing = !isDone && prog > 0
+                        return (
+                          <div key={c.id ?? i} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
+                            <span className="dw-dot">
+                              {isDone ? <Check size={14} /> : isDoing ? <PlayIcon /> : i + 1}
+                            </span>
+                            <span className="dw-crow-info">
+                              <h4>{c.name}</h4>
+                              <small>{isDoing && <span className="dw-mini-prog"><span style={{ width: `${prog}%` }}/></span>}</small>
+                            </span>
+                            <span className={`dw-status ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
+                              {isDone ? 'مكتمل' : isDoing ? 'قيد التقدّم' : 'مشترك'}
+                            </span>
+                          </div>
+                        )
+                      })}
+                      {enrolledInPath.length > 3 && (
+                        <Link href={`/${locale}/dashboard/my-courses`} className="dw-more">عرض الكل</Link>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* Section 2: all courses of the path */}
-                <p className="dw-subhead">كورسات المسار</p>
-                <div className="dw-clist">
+                <p className="dw-section-label" style={{ marginTop: '20px' }}>كورسات المسار</p>
+                <div className="dw-clist" style={{ marginTop: 0 }}>
                   {pathCourses.slice(0, 4).map((c: any, i: number) => {
-                    const enrolled = !!enrollmentFor(c)
+                    const isEnrolled = !!enrollmentFor(c)
                     return (
-                      <div key={c.id ?? i} className={`dw-crow ${enrolled ? 'doing' : ''}`}>
+                      <div key={c.id ?? i} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
                         <span className="dw-dot">{i + 1}</span>
                         <span className="dw-crow-info"><h4>{c.name}</h4></span>
-                        <span className="dw-crow-status">{enrolled ? 'مشترك' : 'متاح'}</span>
+                        <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
+                          {isEnrolled ? 'مشترك' : 'متاح'}
+                        </span>
                       </div>
                     )
                   })}
