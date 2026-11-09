@@ -3591,3 +3591,143 @@ svg.go { transition: transform .2s; }
 .careers-page .t-btn:hover { border-color: var(--brand); color: var(--brand); }
 .careers-page .t-btn.primary { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
 .careers-page .t-btn.primary:hover { background: var(--brand-hover); color: var(--on-brand); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD DESIGN SYSTEM SCOPE (.dw-dashboard)
+   Tokens are scoped to the dashboard layout so the rest of the app
+   keeps its current look. Added to the dashboard layout root element.
+   ═══════════════════════════════════════════════════════════════════ */
+.dw-dashboard {
+	--surface: #ffffff;
+	--bg: #fbfaff;
+	--bg-2: #f3f0fd;
+	--ink: #120e2b;
+	--ink-2: #4a4664;
+	--ink-3: #7a7694;
+	--line: #e7e3f4;
+	--line-2: #d5cdee;
+	--brand: #5414f6;
+	--brand-hover: #4710d6;
+	--wash: #efe9ff;
+	--shadow-sm: 0 1px 2px rgb(18 14 43 / 0.06);
+	--shadow: 0 2px 4px rgb(18 14 43 / 0.04), 0 12px 32px -14px rgb(18 14 43 / 0.22);
+	--good: #137a45;
+	--good-bg: #e2f5ea;
+	--warn: #8a4b00;
+	--warn-bg: #fff2dd;
+	background-color: var(--bg);
+}
+.dark .dw-dashboard {
+	--surface: #151036;
+	--bg: #0b0820;
+	--bg-2: #110d2c;
+	--ink: #f3f0ff;
+	--ink-2: #bdb6dc;
+	--ink-3: #8e88b0;
+	--line: #2a2356;
+	--line-2: #3a3170;
+	--brand: #6229ff;
+	--wash: #241b5a;
+	--good: #4ade80;
+	--good-bg: rgb(74 222 128 / 0.12);
+	--warn: #fbbf24;
+	--warn-bg: rgb(251 191 36 / 0.12);
+	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+	--shadow: 0 2px 4px rgb(0 0 0 / 0.3), 0 14px 34px -14px rgb(0 0 0 / 0.75);
+}
+
+/* Main content area */
+.dw-dashboard .main-content { background-color: var(--bg); }
+.dw-dashboard .page-content {
+	background: var(--bg);
+	color: var(--ink);
+	padding: 24px clamp(16px, 3vw, 32px);
+}
+
+/* Sidebar (mobile drawer) */
+.dw-dash-drawer {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	z-index: 50;
+	width: 260px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 20px 12px;
+	background: var(--surface);
+	border-inline-end: 1px solid var(--line);
+	box-shadow: var(--shadow);
+	overflow-y: auto;
+}
+.dw-dash-drawer .dw-dash-logo {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--brand);
+}
+.dw-dash-link {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 14px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink-2);
+	text-decoration: none;
+	background: transparent;
+	border: none;
+	width: 100%;
+	cursor: pointer;
+	font-family: inherit;
+	transition: background .2s ease, color .2s ease;
+}
+.dw-dash-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+.dw-dash-link:hover { background: var(--bg-2); color: var(--ink); }
+.dw-dash-link.active,
+.dw-dash-link.active:hover { background: var(--wash); color: var(--brand); font-weight: 700; }
+.dw-dash-link.logout { color: var(--ink-3); }
+.dw-dash-link.logout:hover { background: var(--bg-2); color: #d32f2f; }
+.dw-dash-user {
+	margin: 4px 2px 8px;
+	padding: 12px 14px;
+	border-radius: 14px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+}
+.dw-dash-user .name { font-size: 14px; font-weight: 700; color: var(--ink); margin: 0; }
+.dw-dash-user .email { font-size: 12px; color: var(--ink-3); margin: 4px 0 0; }
+.dw-dash-close {
+	width: 32px; height: 32px;
+	display: flex; align-items: center; justify-content: center;
+	border-radius: 10px; border: none; cursor: pointer;
+	background: var(--bg-2); color: var(--ink-3);
+}
+
+/* Desktop sidebar / dock switch */
+.dw-dash-body { display: block; }
+.dw-dashboard-sidebar { display: none; }
+@media (min-width: 1024px) {
+	.dw-dash-body { display: flex; align-items: flex-start; }
+	.dw-dashboard-sidebar {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		position: sticky;
+		top: 64px;
+		height: calc(100vh - 64px);
+		width: 260px;
+		flex-shrink: 0;
+		padding: 20px 12px;
+		background: var(--surface);
+		border-inline-end: 1px solid var(--line);
+		overflow-y: auto;
+	}
+	.dw-dashboard-dock { display: none; }
+	.dw-dash-body > .main-content { flex: 1; min-width: 0; }
+}
+.dw-dash-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
+.dw-dash-side-user { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
+.dw-dash-side-user .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.dw-dash-side-user .avatar.fallback { display: inline-flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-weight: 700; }
+.dw-dash-side-user .name { font-size: 14px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

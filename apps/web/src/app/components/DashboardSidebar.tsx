@@ -1,81 +1,70 @@
 'use client'
 
 import Link from 'next/link'
-import { useLocale, useTranslations } from 'next-intl'
-import { learnUrlWithToken } from '../../lib/learn-link'
+import { usePathname } from 'next/navigation'
+import { useLocale } from 'next-intl'
+import { LogOut } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 
-export function DashboardSidebar() {
-  const locale = useLocale() as 'ar' | 'en'
-  const t = useTranslations('dashboard')
-  const nav = useTranslations('nav')
-  const logout = useAuthStore((s) => s.logout)
-  const user = useAuthStore((s) => s.user)
-  const isConsultant = user?.accountType === 'CONSULTANT'
+export interface SidebarItem {
+  icon: React.ComponentType<{ className?: string }>
+  labelAr: string
+  labelEn: string
+  href: string
+}
 
-  const base = `/${locale}/dashboard`
+/**
+ * Desktop (lg+) dashboard sidebar. Receives the same role-aware items the
+ * BottomDock uses, so links and routing are identical. Hidden below lg via CSS.
+ */
+export function DashboardSidebar({ items, onLogout }: { items: SidebarItem[]; onLogout?: () => void }) {
+  const locale = useLocale()
+  const pathname = usePathname() || ''
+  const user = useAuthStore((s) => s.user)
   const isAr = locale === 'ar'
+  const firstName = user?.profile?.firstName || user?.email?.split('@')[0] || ''
+  const initials = firstName[0]?.toUpperCase() || '?'
 
   return (
-    <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-64 shrink-0 border-e border-[color:var(--border)] bg-[color:var(--surface)] md:block">
-      <div className="flex h-full flex-col p-4">
-        <div className="text-xs font-medium text-[color:var(--muted)]">{nav('dashboard')}</div>
-        <nav className="mt-3 space-y-1">
-          <Item href={`${base}`} label={t('overview')} />
-          <Item href={`${base}/assessment`} label={t('start_assessment')} />
-          <Item href={`${base}/career-path`} label={t('my_career')} />
-          {isConsultant ? (
-            <>
-              <Item href={`${base}/client-sessions`} label={isAr ? 'جلسات عملائي' : 'Client Sessions'} />
-              <Item href={`${base}/schedule`} label={isAr ? 'جدول مواعيدي' : 'My Schedule'} />
-              <Item href={`${base}/earnings`} label={isAr ? 'أرباحي' : 'Earnings'} />
-            </>
-          ) : (
-            <>
-              <Item href={`${base}/my-sessions`} label={isAr ? 'جلساتي' : 'My Sessions'} />
-              <Item href={`${base}/coaching`} label={t('coaching')} />
-            </>
-          )}
-          <Item href={`${base}/certificates`} label={t('certificates')} />
-          <Item href={`${base}/notifications`} label={t('notifications')} />
-          <Item href={`${base}/settings`} label={t('settings')} />
-        </nav>
+    <aside className="dw-dashboard-sidebar">
+      <nav className="flex flex-col gap-1">
+        {items.map((item) => {
+          const Icon = item.icon
+          const isActive =
+            pathname === item.href ||
+            (item.href !== `/${locale}/dashboard` && pathname.startsWith(item.href + '/'))
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`dw-dash-link${isActive ? ' active' : ''}`}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <Icon />
+              <span>{isAr ? item.labelAr : item.labelEn}</span>
+            </Link>
+          )
+        })}
+      </nav>
 
-        <div className="mt-6 text-xs font-medium text-[color:var(--muted)]">{t('courses')}</div>
-        <div className="mt-2">
-          {/* External training link only */}
-          <a
-            href={learnUrlWithToken('/')}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)]"
-          >
-            {t('courses')} ↗
-          </a>
-        </div>
-
-        <div className="mt-auto pt-4">
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)]"
-          >
-            {nav('logout')}
+      <div className="dw-dash-side-foot">
+        {user && (
+          <div className="dw-dash-side-user">
+            {user.profile?.avatar ? (
+              <img src={user.profile.avatar} alt="" className="avatar" />
+            ) : (
+              <span className="avatar fallback">{initials}</span>
+            )}
+            <span className="name">{user.profile?.firstName || user.email}</span>
+          </div>
+        )}
+        {onLogout && (
+          <button type="button" onClick={onLogout} className="dw-dash-link logout">
+            <LogOut />
+            <span>{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
           </button>
-        </div>
+        )}
       </div>
     </aside>
   )
 }
-
-function Item({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="block rounded-xl px-3 py-2 text-sm font-medium text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] hover:text-foreground"
-    >
-      {label}
-    </Link>
-  )
-}
-

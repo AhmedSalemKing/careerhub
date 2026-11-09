@@ -8,6 +8,7 @@ import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
+import { DashboardSidebar } from '../../components/DashboardSidebar'
 import { RealTimeClock } from '../../../components/RealTimeClock'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
@@ -172,7 +173,7 @@ return [
   }
 
   return (
-    <div className="min-h-screen dashboard-root bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ overflowX: 'clip' }}>
+    <div className="min-h-screen dashboard-root dw-dashboard bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ overflowX: 'clip' }}>
       
       {/* MOBILE DRAWER - only rendered when open to prevent overflow from off-screen transforms */}
       {isMobile && sidebarOpen && (
@@ -181,85 +182,45 @@ return [
           <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" />
           
           {/* Drawer */}
-          <div className="fixed top-0 bottom-0 z-50 w-[280px] shadow-2xl" style={{
-            right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0,
-            background: 'rgba(13, 13, 13, 0.97)',
-            backdropFilter: 'blur(20px)',
-            borderLeft: '1px solid rgba(255,255,255,0.06)',
-          }}>
+          <div className="dw-dash-drawer" style={{ right: isAr ? 0 : 'auto', left: isAr ? 'auto' : 0 }}>
             {/* Drawer header */}
-            <div className="flex items-center justify-between p-5">
-              <span className="font-bold text-white text-lg">
-                <span style={{ color: '#5120C8' }}>Deve</span>Way
-              </span>
-              <button onClick={() => setSidebarOpen(false)}
-                style={{
-                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: 'none', cursor: 'pointer',
-                }}>
-                <X className="h-4 w-4" style={{ color: 'rgba(255,255,255,0.5)' }} />
+            <div className="flex items-center justify-between px-2 pb-3">
+              <span className="dw-dash-logo">DeveWay</span>
+              <button onClick={() => setSidebarOpen(false)} className="dw-dash-close" aria-label="Close menu">
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* User info */}
             {user && (
-              <div style={{
-                margin: '0 12px 12px', padding: '12px 16px', borderRadius: '12px',
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#fff', margin: 0 }}>{user?.profile?.firstName || (user as any)?.name || ''}</p>
-                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', margin: '4px 0 0' }}>{user?.email}</p>
+              <div className="dw-dash-user">
+                <p className="name">{user?.profile?.firstName || (user as any)?.name || ''}</p>
+                <p className="email">{user?.email}</p>
               </div>
             )}
-            
+
             {/* Drawer nav items */}
-            <nav className="p-3 space-y-1">
+            <nav className="flex flex-col gap-1">
               {dockItems.map((item: any, i: number) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
                   <a key={i} href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '10px',
-                      padding: '11px 16px', borderRadius: '10px',
-                      textDecoration: 'none', fontSize: '14px', fontWeight: 600,
-                      background: isActive ? 'rgba(81,32,200,0.15)' : 'transparent',
-                      color: isActive ? '#5120C8' : 'rgba(255,255,255,0.6)',
-                      border: isActive ? '1px solid rgba(81,32,200,0.25)' : '1px solid transparent',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s ease, color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#fff' }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }
-                    }}
+                    className={`dw-dash-link${isActive ? ' active' : ''}`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon />
                     <span>{isAr ? item.labelAr : item.labelEn}</span>
                   </a>
                 )
               })}
-              
+
               {/* Divider */}
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', margin: '12px 0' }} />
+              <div style={{ height: '1px', background: 'var(--line)', margin: '12px 0' }} />
 
               {/* Logout */}
-              <button onClick={handleLogout}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  width: '100%', padding: '11px 16px', borderRadius: '10px',
-                  background: 'rgba(22, 163, 74, 0.1)',
-                  color: 'rgb(22, 163, 74)',
-                  border: '1px solid rgba(22, 163, 74, 0.3)',
-                  cursor: 'pointer', fontSize: '14px', fontWeight: 600,
-                  fontFamily: 'inherit',
-                }}
-              >
-                <LogOut className="h-5 w-5" />
+              <button onClick={handleLogout} className="dw-dash-link logout">
+                <LogOut />
                 <span>{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
               </button>
             </nav>
@@ -277,15 +238,20 @@ return [
         </div>
       )}
 
-      {/* Page content */}
-      <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
-        <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
-          {children}
-        </div>
-      </main>
+      <div className="dw-dash-body">
+        <DashboardSidebar items={dockItems} onLogout={handleLogout} />
+        {/* Page content */}
+        <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
+          <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
+            {children}
+          </div>
+        </main>
+      </div>
 
       {/* Bottom Dock */}
-      <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
+      <div className="dw-dashboard-dock">
+        <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
+      </div>
       <RealTimeClock locale={locale} />
       {/* Floating AI Button — students/consultants/instructors only */}
       <StopSpeechOnNav />
