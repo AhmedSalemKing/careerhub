@@ -303,6 +303,7 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
   const [tab, setTab] = useState(initialIdx)
   const [mentor, setMentor] = useState<any>(null)
   const [slot, setSlot] = useState<string | null>(null)
+  const [dayKey, setDayKey] = useState<string | null>(null)
   const [topic, setTopic] = useState('')
   const [booking, setBooking] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -370,7 +371,19 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
     }
   }
 
-  const fmtDay = (iso: string) => new Date(iso).toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' })
+  const dayKeyOf = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+  }
+  const fmtDayTab = (iso: string) => new Date(iso).toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'short' })
+  const days: { key: string; label: string; slots: any[] }[] = []
+  for (const s of slots as any[]) {
+    const k = dayKeyOf(s.time)
+    let g = days.find((x) => x.key === k)
+    if (!g) { g = { key: k, label: fmtDayTab(s.time), slots: [] }; days.push(g) }
+    g.slots.push(s)
+  }
+  const activeDay = days.find((x) => x.key === dayKey) ?? days[0]
   const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
   const canConfirm = !!mentor && !!slot && !booking
 
@@ -435,14 +448,22 @@ function BookingModal({ paths, initialIdx, onClose, onBooked }: {
             ) : slots.length === 0 ? (
               <p className="book-note">لا توجد مواعيد متاحة خلال الأسبوع القادم</p>
             ) : (
-              <div className="book-slots">
-                {slots.map((s: any) => (
-                  <button key={s.time} type="button" className={`slot-btn${slot === s.time ? ' on' : ''}`} onClick={() => setSlot(s.time)}>
-                    <span>{fmtDay(s.time)}</span>
-                    <b>{fmtTime(s.time)}</b>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="book-tabs" role="tablist">
+                  {days.map((d) => (
+                    <button key={d.key} type="button" role="tab" aria-selected={d.key === activeDay?.key} className={`book-tab${d.key === activeDay?.key ? ' on' : ''}`} onClick={() => setDayKey(d.key)}>
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="book-slots">
+                  {(activeDay?.slots ?? []).map((s: any) => (
+                    <button key={s.time} type="button" className={`slot-btn${slot === s.time ? ' on' : ''}`} onClick={() => setSlot(s.time)}>
+                      <b>{fmtTime(s.time)}</b>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
             {slot && (
               <input className="book-topic" value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={`موضوع الجلسة (${pathName || 'جلسة استشارية'})`} />

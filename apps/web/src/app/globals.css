@@ -3926,7 +3926,7 @@ svg.go { transition: transform .2s; }
 .mentor-info small { font-size: 11px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mentor-pick { width: 100%; text-align: center; font-size: 12px; padding: 4px 0; border-radius: 8px; border: 1px solid var(--line-2); color: var(--purple); }
 .mentor-card.on .mentor-pick { background: var(--purple); border-color: var(--purple); color: #fff; }
-.book-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.book-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .slot-btn { padding: 10px 8px; font-size: 13px; text-align: center; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; background: var(--surface); color: inherit; display: flex; flex-direction: column; gap: 2px; }
 .slot-btn b { font-weight: 700; }
 .slot-btn.on { background: var(--purple); color: #fff; border-color: var(--purple); }
@@ -3934,4 +3934,4 @@ svg.go { transition: transform .2s; }
 .book-error { margin: 12px 0 0; font-size: 13px; color: var(--error); }
 .book-confirm { width: 100%; margin-top: 16px; padding: 11px 0; border: none; border-radius: 10px; background: var(--purple); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
 .book-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
-@media (max-width: 520px) { .book-slots { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .book-slots { grid-template-columns: repeat(3, 1fr); } }
