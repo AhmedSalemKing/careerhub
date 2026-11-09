@@ -98,7 +98,7 @@ export function CompassFlow() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>
             بوصلة المسار المهني
           </h1>
           <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
@@ -138,7 +138,7 @@ export function CompassFlow() {
             padding: '12px 28px', borderRadius: 12, border: 'none',
             background: submitting ? 'var(--muted)' : 'linear-gradient(135deg,#6366f1,#4338ca)',
             color: '#fff', fontWeight: 600, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer',
-            fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+            fontFamily: 'var(--font-ui)',
           }}
         >
           {submitting ? 'جارٍ الحفظ...' : currentStage === totalStages ? 'إنهاء الاختبار' : 'التالي'}

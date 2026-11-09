@@ -48,7 +48,7 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
     <div dir="rtl" style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 60px' }}>
       {/* Header */}
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
           تقرير بوصلة المسار المهني
         </h1>
         {/* Provisional notice */}
@@ -112,7 +112,7 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
             {report.candidatePaths.map((path) => (
               <div key={path.pathSlug} style={{ padding: 18, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>{path.titleAr}</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>{path.titleAr}</h3>
                   <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{path.titleEn}</span>
                   {path.marketReadinessLevel && (
                     <span style={{ marginRight: 'auto', fontSize: 11, color: MARKET_COLOR[path.marketReadinessLevel] ?? 'var(--muted-foreground)', fontWeight: 600 }}>

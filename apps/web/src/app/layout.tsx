@@ -24,14 +24,14 @@ const madinetAlBat = localFont({
 // Exposed as --font-plex-ar / --font-inter and combined into --font-ui in globals.css.
 const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-plex-ar',
   display: 'swap',
 })
 
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-inter',
   display: 'swap',
 })

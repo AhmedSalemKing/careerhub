@@ -124,10 +124,10 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 20, background: 'color-mix(in srgb, var(--primary) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)', marginBottom: 16 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success, #22c55e)' }} />
-            <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--primary)' }}>تحليل مكتمل</span>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--primary)' }}>تحليل مكتمل</span>
           </div>
-          <h1 style={{ fontSize: 28, fontFamily: 'PingAR', fontWeight: 900, margin: '0 0 8px', color: 'var(--foreground)' }}>نتيجة تقييمك المهني</h1>
-          <p style={{ fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', margin: 0 }}>بناءً على محادثتنا، هذا المسار الأنسب لك</p>
+          <h1 style={{ fontSize: 28, fontFamily: 'var(--font-ui)', fontWeight: 900, margin: '0 0 8px', color: 'var(--foreground)' }}>نتيجة تقييمك المهني</h1>
+          <p style={{ fontSize: 14, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', margin: 0 }}>بناءً على محادثتنا، هذا المسار الأنسب لك</p>
         </div>
 
         {/* Score + primary path */}
@@ -140,34 +140,34 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
                 style={{ transition: 'stroke-dashoffset 1s ease' }} />
             </svg>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-              <span style={{ fontSize: 24, fontFamily: 'PingAR', fontWeight: 900, color: 'var(--foreground)' }}>{score}%</span>
-              <span style={{ fontSize: 9, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>تطابق</span>
+              <span style={{ fontSize: 24, fontFamily: 'var(--font-ui)', fontWeight: 900, color: 'var(--foreground)' }}>{score}%</span>
+              <span style={{ fontSize: 9, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>تطابق</span>
             </div>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 4 }}>المسار الأساسي الموصى به</div>
-            <div style={{ fontSize: 22, fontFamily: 'PingAR', fontWeight: 900, color: 'var(--foreground)', marginBottom: 8 }}>{result.primaryPath}</div>
-            {result.summary && <p style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', margin: 0, lineHeight: 1.6 }}>{result.summary}</p>}
+            <div style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 4 }}>المسار الأساسي الموصى به</div>
+            <div style={{ fontSize: 22, fontFamily: 'var(--font-ui)', fontWeight: 900, color: 'var(--foreground)', marginBottom: 8 }}>{result.primaryPath}</div>
+            {result.summary && <p style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', margin: 0, lineHeight: 1.6 }}>{result.summary}</p>}
           </div>
         </div>
 
         {/* Grid: strengths + next steps */}
         <div className="interview-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 12 }}>نقاط قوتك</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 12 }}>نقاط قوتك</div>
             {(result.strengths ?? []).map((s, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--success, #22c55e)" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--foreground)' }}>{s}</span>
+                <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--foreground)' }}>{s}</span>
               </div>
             ))}
           </div>
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 18 }}>
-            <div style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 12 }}>خطواتك التالية</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 12 }}>خطواتك التالية</div>
             {(result.nextSteps ?? []).map((s, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 900, color: 'var(--primary)', flexShrink: 0, marginTop: 1 }}>{i + 1}.</span>
-                <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--foreground)', lineHeight: 1.4 }}>{s}</span>
+                <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 900, color: 'var(--primary)', flexShrink: 0, marginTop: 1 }}>{i + 1}.</span>
+                <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--foreground)', lineHeight: 1.4 }}>{s}</span>
               </div>
             ))}
           </div>
@@ -176,10 +176,10 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         {/* Secondary paths */}
         {(result.secondaryPaths ?? []).length > 0 && (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 10 }}>مسارات بديلة مناسبة</div>
+            <div style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 10 }}>مسارات بديلة مناسبة</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {result.secondaryPaths.map((p, i) => (
-                <span key={i} style={{ padding: '4px 14px', borderRadius: 20, border: '1px solid color-mix(in srgb, var(--primary) 35%, transparent)', background: 'color-mix(in srgb, var(--primary) 8%, transparent)', fontSize: 12, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--primary)' }}>
+                <span key={i} style={{ padding: '4px 14px', borderRadius: 20, border: '1px solid color-mix(in srgb, var(--primary) 35%, transparent)', background: 'color-mix(in srgb, var(--primary) 8%, transparent)', fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--primary)' }}>
                   {p}
                 </span>
               ))}
@@ -191,7 +191,7 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         {result.timeline && (
           <div style={{ background: 'color-mix(in srgb, var(--primary) 7%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', borderRadius: 12, padding: '12px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--primary)' }}>الجدول الزمني المتوقع: {result.timeline}</span>
+            <span style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--primary)' }}>الجدول الزمني المتوقع: {result.timeline}</span>
           </div>
         )}
 
@@ -199,13 +199,13 @@ function CareerResultCard({ result, onRestart }: { result: CareerResult; onResta
         <div className="interview-actions" style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={() => router.push(`/${locale}/dashboard/career-path`)}
-            style={{ flex: 1, padding: '13px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}
+            style={{ flex: 1, padding: '13px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}
           >
             ابدأ مسارك الآن
           </button>
           <button
             onClick={onRestart}
-            style={{ padding: '13px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
+            style={{ padding: '13px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}
           >
             إعادة التقييم
           </button>
@@ -424,8 +424,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       <div className="interview-timer-wrap" style={{ position: 'absolute', bottom: 100, right: 24, zIndex: 10 }}>
         <div className="interview-timer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: 'var(--card)', border: '1px solid var(--border)' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>الوقت المتبقي</span>
-          <span style={{ fontSize: 16, fontFamily: 'PingAR', fontWeight: 900, color: timeLeft < 300 ? 'var(--error, #ef4444)' : 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>الوقت المتبقي</span>
+          <span style={{ fontSize: 16, fontFamily: 'var(--font-ui)', fontWeight: 900, color: timeLeft < 300 ? 'var(--error, #ef4444)' : 'var(--primary)', fontVariantNumeric: 'tabular-nums' }}>
             {mm}:{ss}
           </span>
         </div>
@@ -435,8 +435,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
       <div className="interview-stages" style={{ position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 18px', minWidth: 190 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--muted-foreground)' }}>مراحل المقابلة</span>
-            <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 900, color: 'var(--primary)' }}>{currentStage + 1} / {STAGES.length}</span>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--muted-foreground)' }}>مراحل المقابلة</span>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 900, color: 'var(--primary)' }}>{currentStage + 1} / {STAGES.length}</span>
           </div>
           <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, marginBottom: 14, overflow: 'hidden' }}>
             <div style={{ height: '100%', width: `${((currentStage + 1) / STAGES.length) * 100}%`, background: 'var(--primary)', borderRadius: 2, transition: 'width .5s ease' }} />
@@ -450,7 +450,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
                 boxShadow: i === currentStage ? '0 0 8px color-mix(in srgb, var(--primary) 60%, transparent)' : undefined,
               }} />
               <span style={{
-                fontSize: 11, fontFamily: 'PingAR',
+                fontSize: 11, fontFamily: 'var(--font-ui)',
                 color: i === currentStage ? 'var(--foreground)' : i < currentStage ? 'var(--success, #6ee7b7)' : 'var(--muted-foreground)',
                 fontWeight: i === currentStage ? 500 : 300,
               }}>{s}</span>
@@ -466,7 +466,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         <div className="interview-header" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', zIndex: 10 }}>
           <button
             onClick={() => { stopSpeaking(); onEnd() }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'PingAR', fontWeight: 300 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)', cursor: 'pointer', fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 300 }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
             إنهاء المقابلة
@@ -477,8 +477,8 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary-foreground, white)" strokeWidth="1.8"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
             </div>
             <div>
-              <div style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 500, color: 'var(--foreground)' }}>رشيد · DeveWay</div>
-              <div style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--success, #22c55e)', fontFamily: 'PingAR', fontWeight: 300 }}>
+              <div style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 500, color: 'var(--foreground)' }}>رشيد · DeveWay</div>
+              <div style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--success, #22c55e)', fontFamily: 'var(--font-ui)', fontWeight: 300 }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--success, #22c55e)' }} />
                 متصل الآن
               </div>
@@ -486,13 +486,13 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>الصوت:</span>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>الصوت:</span>
             <span style={{
               padding: '4px 12px', borderRadius: 20,
               border: '1px solid color-mix(in srgb, var(--primary) 60%, transparent)',
               background: 'color-mix(in srgb, var(--primary) 15%, transparent)',
               color: 'var(--primary)',
-              fontSize: 11, fontFamily: 'PingAR', fontWeight: 500,
+              fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 500,
             }}>
               رشيد · ذكر
             </span>
@@ -510,7 +510,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
                 background: 'color-mix(in srgb, var(--primary) 15%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--primary) 40%, transparent)',
                 color: 'var(--primary)',
-                fontFamily: 'PingAR', fontWeight: 500, fontSize: 12,
+                fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 12,
                 cursor: 'pointer',
               }}
             >
@@ -528,7 +528,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
                 background: 'transparent',
                 border: '1px solid var(--border)',
                 color: 'var(--muted-foreground)',
-                fontFamily: 'PingAR', fontWeight: 300, fontSize: 12,
+                fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 12,
                 cursor: 'pointer',
               }}
             >
@@ -553,7 +553,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         </div>
 
         {/* Status */}
-        <div style={{ fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', marginBottom: ttsError ? 8 : 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ fontSize: 14, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', marginBottom: ttsError ? 8 : 20, display: 'flex', alignItems: 'center', gap: 8 }}>
           {(isListening || isSpeaking || isLoading) && (
             <span style={{ display: 'inline-flex', gap: 3 }}>
               {[0, 1, 2].map(i => (
@@ -578,7 +578,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
               ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/></svg>
             }
-            <span style={{ fontSize: 11, fontFamily: 'PingAR', fontWeight: 500, color: handsFreePaused ? 'var(--muted-foreground)' : 'var(--primary)' }}>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-ui)', fontWeight: 500, color: handsFreePaused ? 'var(--muted-foreground)' : 'var(--primary)' }}>
               {handsFreePaused ? 'موقف مؤقتاً — انقر للاستئناف' : 'محادثة صوتية تلقائية — انقر للإيقاف المؤقت'}
             </span>
           </div>
@@ -591,7 +591,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
             border: '1px solid color-mix(in srgb, var(--error, #ef4444) 25%, transparent)',
           }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error, #ef4444)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style={{ flex: 1, fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
+            <span style={{ flex: 1, fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
               تعذر الوصول للميكروفون. تحقق من إعدادات المتصفح وأعط الإذن.
             </span>
             <button onClick={() => setMicError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)', padding: 2, display: 'flex' }}>
@@ -604,7 +604,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
         {ttsError && (
           <div style={{ maxWidth: 460, width: '90%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 10, background: 'color-mix(in srgb, var(--error, #ef4444) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--error, #ef4444) 25%, transparent)', marginBottom: 14 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--error, #ef4444)" strokeWidth="2" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'color-mix(in srgb, var(--error, #ef4444) 90%, var(--foreground))' }}>
               {ttsError === 'quota_exceeded'
                 ? 'تم استنفاد حصة الصوت اليومية. يمكنك متابعة المقابلة نصياً.'
                 : ttsError === 'timeout'
@@ -616,7 +616,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 
         {/* Last AI message */}
         {cleanAI && (
-          <div style={{ maxWidth: 520, width: '90%', background: 'color-mix(in srgb, var(--foreground) 5%, transparent)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', marginBottom: 20, lineHeight: 1.7, fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, textAlign: 'center', color: 'var(--foreground)' }}>
+          <div style={{ maxWidth: 520, width: '90%', background: 'color-mix(in srgb, var(--foreground) 5%, transparent)', border: '1px solid var(--border)', borderRadius: 16, padding: '16px 20px', marginBottom: 20, lineHeight: 1.7, fontSize: 14, fontFamily: 'var(--font-ui)', fontWeight: 300, textAlign: 'center', color: 'var(--foreground)' }}>
             {cleanAI.length > 220 ? cleanAI.slice(0, 220) + '...' : cleanAI}
           </div>
         )}
@@ -630,7 +630,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
               placeholder="اكتب إجابتك..."
               disabled={isLoading || micState !== 'idle'}
-              style={{ flex: 1, padding: '12px 18px', borderRadius: 24, border: '1px solid var(--border)', background: 'color-mix(in srgb, var(--foreground) 5%, transparent)', color: 'var(--foreground)', fontSize: 14, fontFamily: 'PingAR', fontWeight: 300, outline: 'none', direction: 'rtl' }}
+              style={{ flex: 1, padding: '12px 18px', borderRadius: 24, border: '1px solid var(--border)', background: 'color-mix(in srgb, var(--foreground) 5%, transparent)', color: 'var(--foreground)', fontSize: 14, fontFamily: 'var(--font-ui)', fontWeight: 300, outline: 'none', direction: 'rtl' }}
             />
             <button
               onClick={handleMic}
@@ -1059,9 +1059,9 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
         <div style={{ width: 64, height: 64, borderRadius: 18, background: 'color-mix(in srgb, var(--primary) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.5"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>
         </div>
-        <h1 style={{ fontSize: 32, fontFamily: 'PingAR', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>اكتشف مسارك المهني</h1>
-        <p style={{ fontSize: 15, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 4px' }}>مع مساعدك الذكي في DeveWay</p>
-        <p style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>اختر الطريقة التي تناسبك لاكتشاف فرصك المهنية.</p>
+        <h1 style={{ fontSize: 32, fontFamily: 'var(--font-ui)', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>اكتشف مسارك المهني</h1>
+        <p style={{ fontSize: 15, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 4px' }}>مع مساعدك الذكي في DeveWay</p>
+        <p style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>اختر الطريقة التي تناسبك لاكتشاف فرصك المهنية.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20, width: '100%', maxWidth: 640 }}>
@@ -1070,15 +1070,15 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
           <div style={{ width: 52, height: 52, borderRadius: 14, background: 'color-mix(in srgb, var(--primary) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--primary) 25%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="1.7"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
-          <h2 style={{ fontSize: 20, fontFamily: 'PingAR', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>مقابلة مع AI</h2>
-          <p style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.6, flex: 1 }}>
+          <h2 style={{ fontSize: 20, fontFamily: 'var(--font-ui)', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>مقابلة مع AI</h2>
+          <p style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.6, flex: 1 }}>
             حاور مساعدك الذكي في حوار تفاعلي يستكشف اهتماماتك وخبراتك ويقدم توصيات مخصصة.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success, #22c55e)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>المدة التقريبية: 25-30 دقيقة</span>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>المدة التقريبية: 25-30 دقيقة</span>
           </div>
-          <button onClick={() => onSelect('interview')} style={{ padding: '12px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'PingAR', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={() => onSelect('interview')} style={{ padding: '12px 20px', borderRadius: 12, border: 'none', background: 'var(--primary)', color: 'var(--primary-foreground, #fff)', fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 14, cursor: 'pointer' }}>
             ابدأ المقابلة
           </button>
         </div>
@@ -1088,21 +1088,21 @@ function ModeSelect({ onSelect }: { onSelect: (m: 'interview' | 'quiz') => void 
           <div style={{ width: 52, height: 52, borderRadius: 14, background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent, #2bbfa3)" strokeWidth="1.7"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           </div>
-          <h2 style={{ fontSize: 20, fontFamily: 'PingAR', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>اختبار تفاعلي</h2>
-          <p style={{ fontSize: 13, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.6, flex: 1 }}>
+          <h2 style={{ fontSize: 20, fontFamily: 'var(--font-ui)', fontWeight: 900, margin: '0 0 10px', color: 'var(--foreground)' }}>اختبار تفاعلي</h2>
+          <p style={{ fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.6, flex: 1 }}>
             أسئلة ذكية تتكيف مع إجاباتك لتحديد أنسب المسارات المهنية لك بدقة عالية.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--success, #22c55e)" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span style={{ fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>المدة التقريبية: 15-20 دقيقة</span>
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>المدة التقريبية: 15-20 دقيقة</span>
           </div>
-          <button onClick={() => onSelect('quiz')} style={{ padding: '12px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'PingAR', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}>
+          <button onClick={() => onSelect('quiz')} style={{ padding: '12px 20px', borderRadius: 12, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 14, cursor: 'pointer' }}>
             ابدأ الاختبار
           </button>
         </div>
       </div>
 
-      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: 'PingAR', fontWeight: 300, color: 'var(--muted-foreground)' }}>
+      <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontFamily: 'var(--font-ui)', fontWeight: 300, color: 'var(--muted-foreground)' }}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         التوصيات مبنية على المعلومات التي تشاركها معنا، وهي إرشاد مهني وليست ضماناً لوظيفة معينة.
       </div>

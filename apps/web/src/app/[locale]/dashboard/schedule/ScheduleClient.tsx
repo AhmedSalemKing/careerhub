@@ -343,11 +343,11 @@ export default function ScheduleClient() {
         onClick={(e: { target: EventTarget | null; currentTarget: EventTarget | null }) => { if (e.target === e.currentTarget) setSelected(null) }}
         style={{ position:'fixed', inset:0, zIndex:500, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.72)', backdropFilter:'blur(8px)', padding:16 }}
       >
-        <div style={{ width:'100%', maxWidth:420, borderRadius:20, border:`1px solid ${st.border}`, background:'#141414', padding:28, boxShadow:'0 32px 80px rgba(0,0,0,0.7)', maxHeight:'90vh', overflowY:'auto', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+        <div style={{ width:'100%', maxWidth:420, borderRadius:20, border:`1px solid ${st.border}`, background:'#141414', padding:28, boxShadow:'0 32px 80px rgba(0,0,0,0.7)', maxHeight:'90vh', overflowY:'auto', fontFamily: 'var(--font-ui)' }}>
 
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <span style={{ fontWeight:500, fontSize:16, color:'#f1f5f9', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>تفاصيل الجلسة</span>
+            <span style={{ fontWeight:500, fontSize:16, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>تفاصيل الجلسة</span>
             <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--foreground) 10%, transparent)', background:'color-mix(in srgb, var(--foreground) 5%, transparent)', color:'var(--muted-foreground)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
           </div>
 
@@ -359,10 +359,10 @@ export default function ScheduleClient() {
                 : initials}
             </div>
             <div>
-              <div style={{ fontWeight:500, fontSize:14, color:'#f1f5f9', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{userName(other)}</div>
-              <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{s.student || s.user ? 'عميل' : 'مستشار'}</div>
+              <div style={{ fontWeight:500, fontSize:14, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
+              <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مستشار'}</div>
             </div>
-            <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+            <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               {STATUS_AR[s.status] ?? s.status}
             </span>
           </div>
@@ -371,37 +371,37 @@ export default function ScheduleClient() {
           <div style={{ background:'var(--card)', border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:12, display:'flex', flexDirection:'column', gap:8 }}>
             {(s.topic || s.sessionName) && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', flexShrink:0 }}>الموضوع</span>
-                <span style={{ color:'#f1f5f9', fontWeight:500, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{s.topic || s.sessionName}</span>
+                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الموضوع</span>
+                <span style={{ color:'#f1f5f9', fontWeight:500, fontFamily: 'var(--font-ui)' }}>{s.topic || s.sessionName}</span>
               </div>
             )}
             {startD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', flexShrink:0 }}>التاريخ</span>
-                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{fmtDateAr(startD)}</span>
+                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>التاريخ</span>
+                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmtDateAr(startD)}</span>
               </div>
             )}
             {startD && endD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', flexShrink:0 }}>الوقت</span>
-                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{fmt12(startD)} — {fmt12(endD)}</span>
+                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الوقت</span>
+                <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmt12(startD)} — {fmt12(endD)}</span>
               </div>
             )}
             <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-              <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', flexShrink:0 }}>المدة</span>
-              <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{s.duration ?? 60} دقيقة</span>
+              <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>المدة</span>
+              <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} دقيقة</span>
             </div>
             {s.meetingLink && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', flexShrink:0 }}>رابط</span>
-                <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>فتح الرابط</a>
+                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>رابط</span>
+                <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', fontWeight:300, fontFamily: 'var(--font-ui)' }}>فتح الرابط</a>
               </div>
             )}
           </div>
 
           {/* Countdown */}
           {s.status === 'CONFIRMED' && minsUntil > 0 && (
-            <div style={{ fontSize:11, color:'var(--muted-foreground)', textAlign:'center', marginBottom:14, fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+            <div style={{ fontSize:11, color:'var(--muted-foreground)', textAlign:'center', marginBottom:14, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               تبدأ خلال {minsUntil < 60 ? `${Math.round(minsUntil)} دقيقة` : `${(minsUntil/60).toFixed(1)} ساعة`}
             </div>
           )}
@@ -409,14 +409,14 @@ export default function ScheduleClient() {
           {/* Buttons */}
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {canAct && (
-              <button onClick={() => isLive ? handleJoinRoom(s.id) : handleStartRoom(s.id)} disabled={acting} style={{ padding:'12px 20px', borderRadius:12, border:'none', background:isLive ? '#8b5cf6' : '#14b8a6', color:'var(--primary-foreground)', fontWeight:500, fontSize:14, cursor:acting ? 'wait' : 'pointer', opacity:acting ? 0.7 : 1, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+              <button onClick={() => isLive ? handleJoinRoom(s.id) : handleStartRoom(s.id)} disabled={acting} style={{ padding:'12px 20px', borderRadius:12, border:'none', background:isLive ? '#8b5cf6' : '#14b8a6', color:'var(--primary-foreground)', fontWeight:500, fontSize:14, cursor:acting ? 'wait' : 'pointer', opacity:acting ? 0.7 : 1, fontFamily: 'var(--font-ui)' }}>
                 {acting ? 'جاري...' : isLive ? 'متابعة الجلسة' : 'بدء الجلسة'}
               </button>
             )}
-            <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ padding:'12px 20px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, color:st.text, cursor:'pointer', fontWeight:500, fontSize:13, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+            <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ padding:'12px 20px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, color:st.text, cursor:'pointer', fontWeight:500, fontSize:13, fontFamily: 'var(--font-ui)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
               عرض التفاصيل ←
             </button>
-            <button onClick={() => setSelected(null)} style={{ padding:'8px 20px', borderRadius:10, border:'1px solid color-mix(in srgb, var(--foreground) 8%, transparent)', background:'transparent', color:'var(--muted-foreground)', cursor:'pointer', fontSize:12, fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+            <button onClick={() => setSelected(null)} style={{ padding:'8px 20px', borderRadius:10, border:'1px solid color-mix(in srgb, var(--foreground) 8%, transparent)', background:'transparent', color:'var(--muted-foreground)', cursor:'pointer', fontSize:12, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               إغلاق
             </button>
           </div>
@@ -443,20 +443,20 @@ export default function ScheduleClient() {
             <button
               key={s.id}
               onClick={() => setSelected(s)}
-              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, cursor:'pointer', textAlign:'right', width:'100%', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}
+              style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, cursor:'pointer', textAlign:'right', width:'100%', fontFamily: 'var(--font-ui)' }}
             >
               <div style={{ width:3, alignSelf:'stretch', borderRadius:2, background:st.border, flexShrink:0 }} />
               <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:500, fontSize:13, color:st.text, marginBottom:3, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+                <div style={{ fontWeight:500, fontSize:13, color:st.text, marginBottom:3, fontFamily: 'var(--font-ui)' }}>
                   {s.topic || s.sessionName || 'جلسة استشارية'}
                 </div>
-                <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+                <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                   {userName(other)}
                   {startD ? ` · ${fmtDateAr(startD)}` : ' · تاريخ غير محدد'}
                   {startD && endD ? ` · ${fmt12(startD)} — ${fmt12(endD)}` : ''}
                 </div>
               </div>
-              <span style={{ background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:300, flexShrink:0, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+              <span style={{ background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'2px 10px', fontSize:10, fontWeight:300, flexShrink:0, fontFamily: 'var(--font-ui)' }}>
                 {STATUS_AR[s.status] ?? s.status}
               </span>
             </button>
@@ -473,8 +473,8 @@ export default function ScheduleClient() {
       {/* Page title */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <h1 style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>جدول مواعيدي</h1>
-          <p style={{ fontSize:12, color:'var(--muted)', margin:0, fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>نظم جلساتك ومواعيدك بسهولة</p>
+          <h1 style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>جدول مواعيدي</h1>
+          <p style={{ fontSize:12, color:'var(--muted)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>نظم جلساتك ومواعيدك بسهولة</p>
         </div>
         <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -492,9 +492,9 @@ export default function ScheduleClient() {
           <div key={label} style={{ borderRadius:14, border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)', background:'var(--card)', padding:'16px 20px', display:'flex', flexDirection:'column', gap:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" style={{ opacity:0.8 }}><path d={icon}/></svg>
-              <div style={{ fontSize:12, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{label}</div>
+              <div style={{ fontSize:12, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{label}</div>
             </div>
-            <div style={{ fontSize:28, fontWeight:300, color, lineHeight:1, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{value}</div>
+            <div style={{ fontSize:28, fontWeight:300, color, lineHeight:1, fontFamily: 'var(--font-ui)' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -554,8 +554,8 @@ export default function ScheduleClient() {
                   })
                   return (
                     <div key={i} style={{ padding:'8px 4px', textAlign:'center', borderRight:i<6 ? '1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' : undefined }}>
-                      <div style={{ fontSize:11, fontWeight:500, color:'var(--muted-foreground)', marginBottom:4, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>{DAYS_AR[d.getDay()]}</div>
-                      <div style={{ width:30, height:30, borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:300, background:isToday ? '#5120c8' : 'transparent', color:isToday ? 'var(--primary-foreground)' : 'var(--foreground)', position:'relative', fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+                      <div style={{ fontSize:11, fontWeight:500, color:'var(--muted-foreground)', marginBottom:4, fontFamily: 'var(--font-ui)' }}>{DAYS_AR[d.getDay()]}</div>
+                      <div style={{ width:30, height:30, borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:300, background:isToday ? '#5120c8' : 'transparent', color:isToday ? 'var(--primary-foreground)' : 'var(--foreground)', position:'relative', fontFamily: 'var(--font-ui)' }}>
                         {d.getDate()}
                         {hasSess && !isToday && (
                           <span style={{ position:'absolute', bottom:1, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#14b8a6' }} />
@@ -572,7 +572,7 @@ export default function ScheduleClient() {
                 {/* Hour labels */}
                 <div style={{ borderRight:'1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' }}>
                   {HOURS.map((h: number) => (
-                    <div key={h} style={{ height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--foreground) 4%, transparent)', boxSizing:'border-box', display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+                    <div key={h} style={{ height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--foreground) 4%, transparent)', boxSizing:'border-box', display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                       {hourLabel(h)}
                     </div>
                   ))}
@@ -650,7 +650,7 @@ export default function ScheduleClient() {
                               display: 'flex',
                               flexDirection: 'column',
                               gap: 2,
-                              fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+                              fontFamily: 'var(--font-ui)',
                             }}
                           >
                             <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontWeight:500, fontSize:10 }}>
@@ -763,7 +763,7 @@ export default function ScheduleClient() {
           { label:'بانتظار الموافقة', color:'var(--muted-foreground)' },
           { label:'ملغاة',             color:'#ef4444' },
         ].map(({ label, color }: { label: string; color: string }) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily:'"PingAR","Plus Jakarta Sans",sans-serif' }}>
+          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
             {label}
           </div>

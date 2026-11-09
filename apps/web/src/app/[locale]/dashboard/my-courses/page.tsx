@@ -156,7 +156,7 @@ export default function MyCoursesPage() {
 				width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
 				background: 'var(--background)',
 				minHeight: '100vh',
-				fontFamily: "'PingAR', sans-serif",
+				fontFamily: 'var(--font-ui)',
 			}}>
 				<style>{`
 					@font-face { font-family:'PingAR'; src:url('/fonts/alfont_com_PingARLT-Black.otf') format('opentype'); font-weight:700; }
@@ -185,7 +185,7 @@ export default function MyCoursesPage() {
 								color: 'var(--foreground)',
 								margin: 0,
 								marginBottom: 4,
-								fontFamily: "'PingAR', sans-serif",
+								fontFamily: 'var(--font-ui)',
 							}}>
 								{isAr ? "كورساتي" : "My Courses"}
 							</h1>
@@ -194,7 +194,7 @@ export default function MyCoursesPage() {
 								fontSize: '0.88rem',
 								color: 'var(--muted)',
 								margin: 0,
-								fontFamily: "'PingAR', sans-serif",
+								fontFamily: 'var(--font-ui)',
 							}}>
 								{isAr ? "إدارة ومتابعة الكورسات التي أنشأتها" : "Manage and track the courses you created"}
 							</p>
@@ -208,7 +208,7 @@ export default function MyCoursesPage() {
 								fontSize: '0.85rem',
 								fontWeight: 500,
 								color: 'var(--foreground)',
-								fontFamily: "'PingAR', sans-serif",
+								fontFamily: 'var(--font-ui)',
 							}}>
 								{courses.length} {isAr ? "كورس" : "Course"}
 							</div>
@@ -226,7 +226,7 @@ export default function MyCoursesPage() {
 									fontWeight: 500,
 									textDecoration: 'none',
 									cursor: 'pointer',
-									fontFamily: "'PingAR', sans-serif",
+									fontFamily: 'var(--font-ui)',
 								}}>
 									<svg width="16" height="16" viewBox="0 0 24 24" fill="none"
 										stroke="#fff" strokeWidth="2" strokeLinecap="round">
@@ -304,10 +304,10 @@ export default function MyCoursesPage() {
 										{stat.icon}
 									</div>
 									<div style={{ flex: 1 }}>
-										<div style={{ fontWeight: 300, fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4, fontFamily: "'PingAR', sans-serif" }}>
+										<div style={{ fontWeight: 300, fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-ui)' }}>
 											{stat.label}
 										</div>
-										<div style={{ fontWeight: 500, fontSize: '1.5rem', color: 'var(--foreground)', fontFamily: "'PingAR', sans-serif" }}>
+										<div style={{ fontWeight: 500, fontSize: '1.5rem', color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>
 											{stat.value}
 										</div>
 									</div>
@@ -343,7 +343,7 @@ export default function MyCoursesPage() {
 									padding: '10px 16px',
 									paddingRight: 40,
 									color: 'var(--foreground)',
-									fontFamily: "'PingAR', sans-serif",
+									fontFamily: 'var(--font-ui)',
 									fontWeight: 300,
 									fontSize: '0.88rem',
 									boxSizing: 'border-box',
@@ -366,7 +366,7 @@ export default function MyCoursesPage() {
 										whiteSpace: 'nowrap',
 										background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
 										color: activeTab === tab.key ? '#fff' : 'var(--muted)',
-										fontFamily: "'PingAR', sans-serif",
+										fontFamily: 'var(--font-ui)',
 									}}
 								>
 									{tab.label}
@@ -379,7 +379,7 @@ export default function MyCoursesPage() {
 							borderRadius: 12,
 							padding: '10px 14px',
 							color: 'var(--foreground)',
-							fontFamily: "'PingAR', sans-serif",
+							fontFamily: 'var(--font-ui)',
 							fontWeight: 300,
 							fontSize: '0.85rem',
 							cursor: 'pointer',
@@ -520,7 +520,7 @@ export default function MyCoursesPage() {
 												display: 'flex',
 												alignItems: 'center',
 												gap: 6,
-												fontFamily: "'PingAR', sans-serif",
+												fontFamily: 'var(--font-ui)',
 											}}>
 												{statusConfig.hasDot && (
 													<span style={{
@@ -547,7 +547,7 @@ export default function MyCoursesPage() {
 												WebkitBoxOrient: 'vertical',
 												overflow: 'hidden',
 												lineHeight: 1.4,
-												fontFamily: "'PingAR', sans-serif",
+												fontFamily: 'var(--font-ui)',
 											}}>
 												{title}
 											</div>
@@ -560,7 +560,7 @@ export default function MyCoursesPage() {
 												color: 'var(--muted)',
 												fontWeight: 300,
 												marginBottom: 12,
-												fontFamily: "'PingAR', sans-serif",
+												fontFamily: 'var(--font-ui)',
 											}}>
 												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
 													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -597,7 +597,7 @@ export default function MyCoursesPage() {
 															fontSize: '0.85rem',
 															fontWeight: 500,
 															textDecoration: 'none',
-															fontFamily: "'PingAR', sans-serif",
+															fontFamily: 'var(--font-ui)',
 														}}>
 															{isAr ? "إدارة" : "Manage"}
 														</Link>
@@ -629,7 +629,7 @@ export default function MyCoursesPage() {
 																	padding: '8px 18px',
 																	fontSize: '0.85rem',
 																	fontWeight: 500,
-																	fontFamily: "'PingAR', sans-serif",
+																	fontFamily: 'var(--font-ui)',
 																	cursor: 'pointer',
 																	boxShadow: '0 0 18px rgba(220,38,38,0.35)',
 																	transition: 'all 0.2s',
@@ -707,7 +707,7 @@ export default function MyCoursesPage() {
 															fontSize: '0.85rem',
 															fontWeight: 500,
 															textDecoration: 'none',
-															fontFamily: "'PingAR', sans-serif",
+															fontFamily: 'var(--font-ui)',
 														}}>
 														{isAr ? "متابعة" : "Continue"}
 													</a>

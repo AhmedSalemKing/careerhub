@@ -117,7 +117,7 @@ export default function TTSTestPage() {
     : 'Audio locked'
 
   return (
-    <div dir="rtl" style={{ padding: 24, maxWidth: 760, margin: '0 auto', fontFamily: 'PingAR, sans-serif', color: 'var(--foreground)' }}>
+    <div dir="rtl" style={{ padding: 24, maxWidth: 760, margin: '0 auto', fontFamily: 'var(--font-ui)', color: 'var(--foreground)' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>

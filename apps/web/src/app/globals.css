@@ -195,10 +195,10 @@ input:-webkit-autofill:active {
 	--sidebar-bg: #ffffff;
 
 	/* ── Typography ── */
-	--font-display: "Plus Jakarta Sans", sans-serif;
-	--font-body: "PingAR", "Arial Black", "sans-serif";
-	--font-madinet: "PingAR", "Cairo", sans-serif;
-	--font-brand: "PingAR", "Arial Black", sans-serif;
+	--font-display: var(--font-ui);
+	--font-body: var(--font-ui);
+	--font-madinet: var(--font-ui);
+	--font-brand: var(--font-ui);
 
 	/* ── Radius ── */
 	--radius-sm: 8px;
@@ -357,7 +357,7 @@ h4:lang(ar),
 [dir="rtl"] h3,
 [dir="rtl"] h4,
 .font-madinet {
-	font-family: "PingAR", "Cairo", sans-serif !important;
+	font-family: var(--font-ui)!important;
 }
 
 /* ── English Headings → Plus Jakarta Sans ── */
@@ -369,7 +369,7 @@ h4:lang(en),
 [dir="ltr"] h2,
 [dir="ltr"] h3,
 [dir="ltr"] h4 {
-	font-family: "Plus Jakarta Sans", sans-serif !important;
+	font-family: var(--font-ui)!important;
 }
 
 h1,
@@ -607,7 +607,7 @@ img {
 	gap: 8px;
 	background-color: #5120c8;
 	color: #ffffff;
-	font-family: "PingAR", "Arial Black", sans-serif;
+	font-family: var(--font-ui);
 	font-weight: 900;
 	font-size: 14px;
 	padding: 10px 20px;
@@ -638,7 +638,7 @@ img {
 	gap: 8px;
 	background-color: transparent;
 	color: #5120c8;
-	font-family: "PingAR", "Arial Black", sans-serif;
+	font-family: var(--font-ui);
 	font-weight: 900;
 	font-size: 14px;
 	padding: 10px 20px;
@@ -661,7 +661,7 @@ img {
 	padding: 14px 36px;
 	border-radius: var(--radius-lg);
 	font-weight: 900;
-	font-family: "PingAR", "Arial Black", sans-serif;
+	font-family: var(--font-ui);
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
@@ -801,7 +801,7 @@ h3 {
 
 .section-title {
 	font-size: clamp(22px, 3.5vw, 40px);
-	font-family: "PingAR", "Cairo", sans-serif;
+	font-family: var(--font-ui);
 }
 
 /* ══════════════════════════════════════
@@ -1510,7 +1510,7 @@ button.btn-primary {
 	background-color: #5120c8 !important;
 	color: #ffffff !important;
 	border: none !important;
-	font-family: "PingAR", "Arial Black", sans-serif !important;
+	font-family: var(--font-ui)!important;
 	letter-spacing: -0.01em !important;
 	box-shadow: none !important;
 }
@@ -1529,7 +1529,7 @@ button.btn-cta-primary:hover {
 button,
 a[role="button"],
 [class*="btn"] {
-	font-family: "PingAR", "Arial Black", sans-serif !important;
+	font-family: var(--font-ui)!important;
 	box-shadow: none !important;
 }
 
@@ -1537,7 +1537,7 @@ a[role="button"],
 button[class*="bg-primary"],
 a[class*="bg-primary"] {
 	background-color: #5120c8 !important;
-	font-family: "PingAR", "Cairo", sans-serif !important;
+	font-family: var(--font-ui)!important;
 	box-shadow: none !important;
 }
 
@@ -1547,13 +1547,13 @@ a[class*="bg-primary"] {
 .fx-title,
 .feature-title,
 .feature-cta {
-	font-family: "PingAR", "Arial Black", sans-serif !important;
+	font-family: var(--font-ui)!important;
 }
 
 h1:not(:lang(ar)):not([dir="rtl"]),
 h2:not(:lang(ar)):not([dir="rtl"]),
 h3:not(:lang(ar)):not([dir="rtl"]) {
-	font-family: "Plus Jakarta Sans", sans-serif !important;
+	font-family: var(--font-ui)!important;
 }
 
 h1:lang(ar),
@@ -1562,7 +1562,7 @@ h3:lang(ar),
 [dir="rtl"] h1,
 [dir="rtl"] h2,
 [dir="rtl"] h3 {
-	font-family: "PingAR", "Cairo", sans-serif !important;
+	font-family: var(--font-ui)!important;
 }
 
 /* ══════════════════════════════════════
@@ -3935,3 +3935,6 @@ svg.go { transition: transform .2s; }
 .book-confirm { width: 100%; margin-top: 16px; padding: 11px 0; border: none; border-radius: 10px; background: var(--purple); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
 .book-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 520px) { .book-slots { grid-template-columns: repeat(3, 1fr); } }
+
+/* Global UI font: IBM Plex Sans Arabic (RTL) / Inter (LTR), loaded in the root layout */
+:root, html, body { font-family: var(--font-ui); }

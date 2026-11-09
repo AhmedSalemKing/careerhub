@@ -733,7 +733,7 @@ export default function CreateCoursePage() {
                     padding: '12px 16px',
                     color: '#f3f4f6',
                     fontSize: '0.95rem',
-                    fontFamily: "'PingAR', sans-serif",
+                    fontFamily: 'var(--font-ui)',
                     direction: 'rtl',
                     outline: 'none',
                   }}
@@ -863,7 +863,7 @@ export default function CreateCoursePage() {
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 width: '100%', padding: '32px 16px 64px',
-                fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+                fontFamily: 'var(--font-ui)', direction: 'rtl',
               }}>
 
                 {/* Page title */}
@@ -1078,7 +1078,7 @@ export default function CreateCoursePage() {
                             borderRadius: 12, padding: '14px 16px',
                             cursor: 'pointer', textAlign: 'right',
                             display: 'flex', flexDirection: 'column', gap: 4,
-                            fontFamily: "'PingAR', sans-serif",
+                            fontFamily: 'var(--font-ui)',
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

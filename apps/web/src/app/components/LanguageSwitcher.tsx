@@ -160,7 +160,7 @@ export function LanguageSwitcher() {
             style={{
               color: 'var(--muted)',
               borderBottom: `1px solid var(--border)`,
-              fontFamily: "'PingARLT', sans-serif",
+              fontFamily: 'var(--font-ui)',
               letterSpacing: '0.08em',
             }}
           >

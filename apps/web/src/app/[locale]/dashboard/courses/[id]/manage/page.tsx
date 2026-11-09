@@ -986,7 +986,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          color: '#9ca3af', fontFamily: "'PingAR', sans-serif",
+          color: '#9ca3af', fontFamily: 'var(--font-ui)',
           fontWeight: 300, fontSize: '0.9rem',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -1106,7 +1106,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
   return (
     <div style={{
       minHeight: '100vh', background: '#090b10',
-      fontFamily: "'PingAR', sans-serif", direction: 'rtl',
+      fontFamily: 'var(--font-ui)', direction: 'rtl',
       color: '#f3f4f6', padding: '24px 20px',
     }}>
       {/* Breadcrumb */}
@@ -1149,7 +1149,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             borderRadius: 10, padding: '8px 16px', color: '#9ca3af',
             fontWeight: 300, fontSize: '0.85rem', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: 8,
-            fontFamily: "'PingAR', sans-serif",
+            fontFamily: 'var(--font-ui)',
           }}
         >
           <SvgBackArrow />
@@ -1244,7 +1244,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
               <button onClick={() => window.open(recUrl, '_blank')} style={{
                 background: '#7c3aed', color: '#fff', border: 'none',
                 borderRadius: 8, padding: '8px 12px', fontSize: '0.82rem',
-                fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
                 <SvgPlay />
@@ -1254,7 +1254,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                 background: 'transparent', color: '#9ca3af',
                 border: '1px solid #1e2333', borderRadius: 8,
                 padding: '8px 12px', fontSize: '0.82rem', fontWeight: 300,
-                cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                cursor: 'pointer', fontFamily: 'var(--font-ui)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}>
                 <SvgCopy />
@@ -1278,7 +1278,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
             color: activeTab === i ? '#fff' : '#9ca3af',
             fontWeight: activeTab === i ? 500 : 300, fontSize: '0.88rem',
             cursor: 'pointer', whiteSpace: 'nowrap',
-            fontFamily: "'PingAR', sans-serif",
+            fontFamily: 'var(--font-ui)',
           }}>
             {tab}
           </button>
@@ -1426,7 +1426,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                     <button onClick={() => window.open(recUrl, '_blank')} style={{
                       flex: 1, background: '#7c3aed', color: '#fff', border: 'none',
                       borderRadius: 8, padding: '9px', fontSize: '0.82rem',
-                      fontWeight: 500, cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                      fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-ui)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}>
                       <SvgExternal />
@@ -1436,7 +1436,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                       flex: 1, background: 'transparent', color: '#9ca3af',
                       border: '1px solid #1e2333', borderRadius: 8,
                       padding: '9px', fontSize: '0.82rem', fontWeight: 300,
-                      cursor: 'pointer', fontFamily: "'PingAR', sans-serif",
+                      cursor: 'pointer', fontFamily: 'var(--font-ui)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                     }}>
                       <SvgCopy />
@@ -1486,7 +1486,7 @@ function LiveManageView({ courseId, locale }: { courseId: string; locale: string
                   borderRadius: 10, padding: '9px 14px', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 6,
                   color: '#a78bfa', fontWeight: 500, fontSize: '0.82rem',
-                  fontFamily: "'PingAR', sans-serif",
+                  fontFamily: 'var(--font-ui)',
                 }}
               >
                 <SvgGradCap />

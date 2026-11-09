@@ -258,7 +258,7 @@ export default function LoginPage() {
               className="text-2xl font-bold mb-2 transition-colors duration-300"
               style={{ 
                 color: colors.titleColor, 
-                fontFamily: ar ? "'PingARLT', sans-serif" : "'Plus Jakarta Sans', sans-serif" 
+                fontFamily: 'var(--font-ui)' 
               }}
             >
               {ar ? 'طلبك قيد المراجعة' : 'Application Under Review'}

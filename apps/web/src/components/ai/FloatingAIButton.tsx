@@ -61,7 +61,7 @@ export function FloatingAIButton() {
               <button
                 key={item.path}
                 onClick={() => { router.push(item.path); setOpen(false) }}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', textAlign: 'right', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif', fontWeight: 300, fontSize: 13 }}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', textAlign: 'right', fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 13 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.08)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
               >

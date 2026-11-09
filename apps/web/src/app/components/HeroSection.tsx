@@ -124,7 +124,7 @@ export default function HomePage() {
               className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-200 hover:shadow-lg"
               style={{
                 background: '#5120c8',
-                fontFamily: locale === 'ar' ? "'alfont_com_PingARLT-Black', sans-serif" : 'inherit',
+                fontFamily: 'var(--font-ui)',
                 textDecoration: 'none',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(81,32,200,0.3)'; }}
@@ -139,7 +139,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 border border-white/20 hover:bg-white/5"
               style={{
                 color: '#F8F8FA',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: 'var(--font-ui)',
                 textDecoration: 'none',
               }}
             >
@@ -366,7 +366,7 @@ export default function HomePage() {
               className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-200 hover:shadow-lg"
               style={{
                 background: '#5120c8',
-                fontFamily: locale === 'ar' ? "'alfont_com_PingARLT-Black', sans-serif" : 'inherit',
+                fontFamily: 'var(--font-ui)',
                 textDecoration: 'none',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(81,32,200,0.3)'; }}
@@ -383,7 +383,7 @@ export default function HomePage() {
                 border: '1.5px solid rgba(248,248,250,0.25)',
                 color: '#F8F8FA',
                 textDecoration: 'none',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: 'var(--font-ui)',
               }}
             >
               {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}

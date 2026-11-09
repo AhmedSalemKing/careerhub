@@ -308,7 +308,7 @@ export default function SettingsPage() {
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: 'PingARLT, Plus Jakarta Sans, sans-serif', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--foreground)', margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--foreground)', margin: 0 }}>
           {isAr ? 'الإعدادات' : 'Settings'}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 14, margin: '4px 0 0', fontFamily: 'DM Sans, sans-serif' }}>

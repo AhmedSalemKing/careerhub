@@ -99,7 +99,7 @@ export default function FloatingCareerOrb() {
                 color: 'var(--foreground)',
                 cursor: 'pointer',
                 textAlign: 'right',
-                fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+                fontFamily: 'var(--font-ui)',
                 fontWeight: 300,
                 fontSize: 13,
                 transition: 'background 0.1s',

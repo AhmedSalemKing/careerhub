@@ -44,7 +44,7 @@ export function PageLoader({ show }: { show: boolean }) {
             display: 'none',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: "'Plus Jakarta Sans', sans-serif",
+            fontFamily: 'var(--font-ui)',
             fontWeight: 800,
             fontSize: 28,
             color: 'var(--foreground)',
@@ -54,7 +54,7 @@ export function PageLoader({ show }: { show: boolean }) {
           DeveWay
         </span>
         <span style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontFamily: 'var(--font-ui)',
           fontWeight: 800,
           fontSize: 28,
           color: 'var(--foreground)',

@@ -51,7 +51,7 @@ export function QuestionCard({ question, index, value, isAnswered, onChange }: Q
       </div>
 
       {/* Question text */}
-      <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: 'var(--foreground)', lineHeight: 1.6, fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>
+      <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: 'var(--foreground)', lineHeight: 1.6, fontFamily: 'var(--font-ui)' }}>
         {question.textAr}
       </p>
       {question.hintAr && (
@@ -91,7 +91,7 @@ function SingleChoiceInput({ question, value, onChange }: Pick<QuestionCardProps
             background: selected === opt.id ? 'rgba(99,102,241,0.15)' : 'var(--secondary)',
             outline: selected === opt.id ? '2px solid rgba(99,102,241,0.5)' : 'none',
             color: 'var(--foreground)', fontSize: 14, cursor: 'pointer',
-            fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+            fontFamily: 'var(--font-ui)',
             transition: 'all 0.15s',
           }}
         >
@@ -129,7 +129,7 @@ function MultiSelectInput({ question, value, onChange }: Pick<QuestionCardProps,
               background: selected.has(opt.id) ? 'rgba(99,102,241,0.15)' : 'var(--secondary)',
               outline: selected.has(opt.id) ? '2px solid rgba(99,102,241,0.5)' : 'none',
               color: 'var(--foreground)', fontSize: 14, cursor: 'pointer',
-              fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+              fontFamily: 'var(--font-ui)',
             }}
           >
             {opt.textAr}
@@ -183,7 +183,7 @@ function TextInput({ question, value, onChange }: Pick<QuestionCardProps, 'quest
         style={{
           width: '100%', padding: 12, borderRadius: 10, border: '1px solid var(--border)',
           background: 'var(--secondary)', color: 'var(--foreground)',
-          fontSize: 14, resize: 'vertical', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif',
+          fontSize: 14, resize: 'vertical', fontFamily: 'var(--font-ui)',
           outline: 'none', boxSizing: 'border-box',
         }}
       />
@@ -225,7 +225,7 @@ function RankingInput({ question, value, onChange }: Pick<QuestionCardProps, 'qu
         {orderedOptions.map((opt, idx) => (
           <div key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--secondary)', borderRadius: 10, padding: '8px 12px' }}>
             <span style={{ fontSize: 12, color: 'var(--muted-foreground)', minWidth: 20 }}>{idx + 1}</span>
-            <span style={{ flex: 1, fontSize: 14, color: 'var(--foreground)', fontFamily: '"PingAR","Plus Jakarta Sans",sans-serif' }}>{opt.textAr}</span>
+            <span style={{ flex: 1, fontSize: 14, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>{opt.textAr}</span>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => move(opt.id, 'up')} disabled={idx === 0}
                 style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'var(--border)', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}>↑</button>

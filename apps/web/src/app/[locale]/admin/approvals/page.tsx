@@ -298,7 +298,7 @@ export default function ApprovalsPage() {
                               border: '1px solid var(--border)',
                               background: 'transparent',
                               color: 'var(--muted-foreground)',
-                              fontFamily: 'PingAR', fontWeight: 300, fontSize: 11,
+                              fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 11,
                               cursor: 'pointer',
                             }}
                           >
@@ -485,7 +485,7 @@ export default function ApprovalsPage() {
                               border: '1px solid var(--border)',
                               background: 'transparent',
                               color: 'var(--muted-foreground)',
-                              fontFamily: 'PingAR', fontWeight: 300, fontSize: 11,
+                              fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 11,
                               cursor: 'pointer',
                             }}
                           >
@@ -660,10 +660,10 @@ export default function ApprovalsPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 16, color: 'var(--foreground)', marginBottom: 4 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 16, color: 'var(--foreground)', marginBottom: 4 }}>
               {isAr ? 'تعديل السعر' : 'Edit price'}
             </div>
-            <div style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 20 }}>
               {priceModal.name}
             </div>
 
@@ -675,10 +675,10 @@ export default function ApprovalsPage() {
                 display: 'flex', justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>
                 {isAr ? 'السعر الحالي' : 'Current price'}
               </span>
-              <span style={{ fontFamily: 'PingAR', fontWeight: 500, fontSize: 13, color: 'var(--foreground)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 13, color: 'var(--foreground)' }}>
                 {priceModal.currentPrice} {currencyLabel(priceModal.currency)}
               </span>
             </div>
@@ -686,7 +686,7 @@ export default function ApprovalsPage() {
             <div style={{ marginBottom: 20 }}>
               <label
                 style={{
-                  fontFamily: 'PingAR', fontWeight: 300, fontSize: 12,
+                  fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 12,
                   color: 'var(--muted-foreground)', display: 'block', marginBottom: 6,
                 }}
               >
@@ -703,7 +703,7 @@ export default function ApprovalsPage() {
                   width: '100%', padding: '10px 12px', borderRadius: 8,
                   border: '1px solid var(--border)', background: 'var(--card)',
                   color: 'var(--foreground)',
-                  fontFamily: 'PingAR', fontWeight: 300, fontSize: 14,
+                  fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 14,
                   outline: 'none', boxSizing: 'border-box',
                 }}
               />
@@ -720,7 +720,7 @@ export default function ApprovalsPage() {
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
-              <span style={{ fontFamily: 'PingAR', fontWeight: 300, fontSize: 11, color: 'var(--foreground)' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 11, color: 'var(--foreground)' }}>
                 {isAr ? 'سيتم إرسال إشعار للمعني بتحديث السعر' : 'The owner will be notified of the price change'}
               </span>
             </div>
@@ -732,7 +732,7 @@ export default function ApprovalsPage() {
                   flex: 1, padding: '10px 0', borderRadius: 8,
                   border: '1px solid var(--border)', background: 'transparent',
                   color: 'var(--foreground)',
-                  fontFamily: 'PingAR', fontWeight: 300, fontSize: 13, cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontWeight: 300, fontSize: 13, cursor: 'pointer',
                 }}
               >
                 {isAr ? 'إلغاء' : 'Cancel'}
@@ -744,7 +744,7 @@ export default function ApprovalsPage() {
                   flex: 2, padding: '10px 0', borderRadius: 8, border: 'none',
                   background: priceValid ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 12%, transparent)',
                   color: priceValid ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
-                  fontFamily: 'PingAR', fontWeight: 500, fontSize: 13,
+                  fontFamily: 'var(--font-ui)', fontWeight: 500, fontSize: 13,
                   cursor: priceValid ? 'pointer' : 'not-allowed',
                   opacity: savingPrice ? 0.7 : 1,
                 }}
