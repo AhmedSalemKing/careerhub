@@ -589,19 +589,22 @@ function StudentOverview() {
                 {/* Section 1: every course the student is enrolled in for this path */}
                 <p className="dw-section-label">الكورسات المشترك فيها</p>
                 {(() => {
-                  const enrolledInPath = pathCourses.filter((c: any) => enrollmentFor(c))
-                  if (enrolledInPath.length === 0) {
+                  // Same source as /dashboard/my-courses (/courses/enrolled); not filtered by path
+                  const enrolledCourses = enrollments
+                    .map((e: any) => ({ e, c: courseOf(e) }))
+                    .filter(({ c }: any) => c && c.id)
+                  if (enrolledCourses.length === 0) {
                     return (
                       <p style={{ fontSize: '13px', color: 'var(--ink-3)', padding: '8px 4px' }}>
-                        لم تبدأ أي كورس في هذا المسار بعد
+                        لم تبدأ أي كورس بعد
                       </p>
                     )
                   }
                   return (
                     <div className="dw-clist" style={{ marginTop: 0 }}>
-                      {enrolledInPath.map((c: any, i: number) => {
-                        const e = enrollmentFor(c)
-                        const prog = e ? progressForEnrollment(e) : 0
+                      {enrolledCourses.map(({ e, c: course }: any, i: number) => {
+                        const c = { id: course.id, name: titleOf(course) }
+                        const prog = progressForEnrollment(e)
                         const isDone = prog >= 100
                         const isDoing = !isDone && prog > 0
                         return (
@@ -628,7 +631,7 @@ function StudentOverview() {
                 {pathCourses.length === 0 ? (
                   <div className="dw2-empty-courses">
                     <p>لا توجد كورسات مرتبطة بهذا المسار بعد.</p>
-                    <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-ghost dw-btn-sm">تصفح كل الكورسات</a>
+                    <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-primary dw-btn-sm">تصفح كل الكورسات</a>
                   </div>
                 ) : (
                   <div className="dw-clist dw2-scroll" style={{ marginTop: 0 }}>
