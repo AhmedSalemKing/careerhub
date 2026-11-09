@@ -14,6 +14,7 @@ import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
 import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
+import { CHARACTERS } from '../../components/characters'
 import { DashboardShell } from '../../components/DashboardShell'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
 import { Skeleton } from '../../components/ui/Skeleton'
@@ -370,7 +371,10 @@ function StudentOverview() {
     retry: 1, staleTime: 30000,
   })
 
-  const selectedPathRaw: any = allPaths.find((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
+  const selectedPaths: any[] = allPaths.filter((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
+  const [pathIdx, setPathIdx] = useState(0)
+  const safePathIdx = selectedPaths.length ? ((pathIdx % selectedPaths.length) + selectedPaths.length) % selectedPaths.length : 0
+  const selectedPathRaw: any = selectedPaths[safePathIdx]
 
   const { data: pathCoursesData = [] } = useQuery({
     queryKey: ['dash-path-courses', selectedPathRaw?.slug, locale],
@@ -462,9 +466,8 @@ function StudentOverview() {
   const selectedPath: any = selectedPathRaw
     ? {
         name: (isAr ? selectedPathRaw.titleAr : selectedPathRaw.titleEn) || selectedPathRaw.titleEn || selectedPathRaw.titleAr || '',
-        roles: Array.isArray(selectedPathRaw.roles) ? selectedPathRaw.roles : [],
+        roles: (isAr ? selectedPathRaw.jobTitlesAr : selectedPathRaw.jobTitlesEn) ?? [],
         courses: pathCoursesData.map((c: any) => ({ id: c.id, name: titleOf(c) })),
-        includedSessions: selectedPathRaw.includedSessions,
       }
     : null
 
@@ -475,7 +478,9 @@ function StudentOverview() {
   const upcomingDate = parseSessionDate(upcomingSession?.scheduledAt)
   const upcomingMentor = `${upcomingSession?.consultant?.profile?.firstName || ''} ${upcomingSession?.consultant?.profile?.lastName || ''}`.trim()
   const completedSessionsCount = mySessions.filter((s: any) => s.status === 'COMPLETED').length
-  const freeSessionsRemaining = selectedPath ? 2 : 0
+  const countBy = (statuses: string[]) => mySessions.filter((x: any) => statuses.includes(x.status)).length
+  const upcomingCount = countBy(['CONFIRMED', 'IN_PROGRESS'])
+  const pendingCount = countBy(['PENDING', 'PENDING_APPROVAL', 'AWAITING_PAYMENT', 'RESCHEDULE_REQUESTED'])
   const dateLocale = isAr ? 'ar-EG' : 'en-US'
 
   const OpenArrow = () => (
@@ -493,8 +498,8 @@ function StudentOverview() {
 
       {/* HEADER */}
       <div className="dw-dash-head">
-        <div className="dw-avatar">{userName?.[0]?.toUpperCase() ?? 'م'}</div>
-        <div>
+        <span className="dw2-char-av" aria-hidden="true" dangerouslySetInnerHTML={{ __html: CHARACTERS.sa2 }} />
+        <div className="dw2-grow">
           <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
           <h1>{userName}</h1>
         </div>
@@ -507,6 +512,13 @@ function StudentOverview() {
           <div className="dw-card-h">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
             <h2 style={{ flex: 1 }}>المسار المهني</h2>
+            {selectedPaths.length > 1 && (
+              <div className="dw2-pager" role="group" aria-label="التنقل بين المسارات">
+                <button type="button" onClick={() => setPathIdx(safePathIdx - 1)} aria-label="المسار السابق"><ChevronLeft size={14} style={{ transform: 'scaleX(-1)' }} /></button>
+                <span>{safePathIdx + 1} / {selectedPaths.length}</span>
+                <button type="button" onClick={() => setPathIdx(safePathIdx + 1)} aria-label="المسار التالي"><ChevronLeft size={14} /></button>
+              </div>
+            )}
             <Link href={`/${locale}/dashboard/career-path`} className="dw-open-btn">
               فتح المسار المهني
               <OpenArrow />
@@ -552,7 +564,7 @@ function StudentOverview() {
                     </div>
                   </div>
                 </div>
-                {/* Section 1: courses the student is enrolled in within this path */}
+                {/* Section 1: every course the student is enrolled in for this path */}
                 <p className="dw-section-label">الكورسات المشترك فيها</p>
                 {(() => {
                   const enrolledInPath = pathCourses.filter((c: any) => enrollmentFor(c))
@@ -565,13 +577,13 @@ function StudentOverview() {
                   }
                   return (
                     <div className="dw-clist" style={{ marginTop: 0 }}>
-                      {enrolledInPath.slice(0, 3).map((c: any, i: number) => {
+                      {enrolledInPath.map((c: any, i: number) => {
                         const e = enrollmentFor(c)
                         const prog = e ? progressForEnrollment(e) : 0
                         const isDone = prog >= 100
                         const isDoing = !isDone && prog > 0
                         return (
-                          <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
+                          <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/my-courses`} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : 'todo'}`}>
                             <span className="dw-dot">
                               {isDone ? <Check size={14} /> : isDoing ? <PlayIcon /> : i + 1}
                             </span>
@@ -585,29 +597,33 @@ function StudentOverview() {
                           </a>
                         )
                       })}
-                      {enrolledInPath.length > 3 && (
-                        <Link href={`/${locale}/dashboard/my-courses`} className="dw-more">عرض الكل</Link>
-                      )}
                     </div>
                   )
                 })()}
 
-                {/* Section 2: all courses of the path */}
+                {/* Section 2: all courses of this path, enrolled or not */}
                 <p className="dw-section-label" style={{ marginTop: '20px' }}>كورسات المسار</p>
-                <div className="dw-clist" style={{ marginTop: 0 }}>
-                  {pathCourses.slice(0, 4).map((c: any, i: number) => {
-                    const isEnrolled = !!enrollmentFor(c)
-                    return (
-                      <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
-                        <span className="dw-dot">{i + 1}</span>
-                        <span className="dw-crow-info"><h4>{c.name}</h4></span>
-                        <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
-                          {isEnrolled ? 'مشترك' : 'متاح'}
-                        </span>
-                      </a>
-                    )
-                  })}
-                </div>
+                {pathCourses.length === 0 ? (
+                  <div className="dw2-empty-courses">
+                    <p>لا توجد كورسات مرتبطة بهذا المسار بعد.</p>
+                    <a href={learnCoursesLink(locale)} className="dw-btn dw-btn-ghost dw-btn-sm">تصفح كل الكورسات</a>
+                  </div>
+                ) : (
+                  <div className="dw-clist dw2-scroll" style={{ marginTop: 0 }}>
+                    {pathCourses.map((c: any, i: number) => {
+                      const isEnrolled = !!enrollmentFor(c)
+                      return (
+                        <a key={c.id ?? i} href={c.id ? learnCourseLink(c.id, locale) : `/${locale}/dashboard/career-path`} className={`dw-crow ${isEnrolled ? 'doing' : 'todo'}`}>
+                          <span className="dw-dot">{i + 1}</span>
+                          <span className="dw-crow-info"><h4>{c.name}</h4></span>
+                          <span className={`dw-status ${isEnrolled ? 'doing' : 'todo'}`}>
+                            {isEnrolled ? 'مشترك' : 'متاح'}
+                          </span>
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
               </>
             )
           })() : (
@@ -623,14 +639,14 @@ function StudentOverview() {
         {/* ===== RIGHT COLUMN — s4 ===== */}
         <div className="s4-col">
 
-          {/* === DARK SESSION CARD === */}
+          {/* === DARK SESSION CARD (real data from /consulting/sessions) === */}
           <div className="dw-card dw-live-card">
             <div className="dw-card-h">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>
               </svg>
               <h3>الجلسة المباشرة القادمة</h3>
-              <span className="dw-live-dot"/>
+              {upcomingSession && <span className="dw-live-dot"/>}
             </div>
 
             {upcomingSession ? (
@@ -662,7 +678,21 @@ function StudentOverview() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M8 5v14l11-7Z"/>
                   </svg>
-                  انضم إلى الجلسة
+                  {upcomingSession.status === 'IN_PROGRESS' ? 'انضم إلى الجلسة' : 'تفاصيل الجلسة'}
+                </Link>
+                {upcomingCount > 1 && (
+                  <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-lc-more">
+                    +{upcomingCount - 1} جلسات قادمة أخرى
+                  </Link>
+                )}
+              </>
+            ) : pendingCount > 0 ? (
+              <>
+                <p className="dw-lc-sub" style={{ marginBottom: '14px' }}>
+                  لديك {pendingCount} {pendingCount === 1 ? 'جلسة' : 'جلسات'} بانتظار الموافقة أو الدفع
+                </p>
+                <Link href={`/${locale}/dashboard/my-sessions`} className="dw-btn dw-btn-light dw-btn-sm dw-btn-block">
+                  عرض جلساتي
                 </Link>
               </>
             ) : (
@@ -677,7 +707,7 @@ function StudentOverview() {
             )}
           </div>
 
-          {/* === MENTOR SUPPORT CARD === */}
+          {/* === MENTOR SUPPORT CARD (real counts from the same sessions query) === */}
           <div className="dw-card">
             <div className="dw-card-h">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -688,20 +718,21 @@ function StudentOverview() {
               <h3>دعم المرشدين</h3>
             </div>
 
-            <p className="dw-credits">
-              <b>{freeSessionsRemaining}</b>
-              <span className="dw-muted">جلسة مجانية متبقية، مشمولة في مسارك</span>
-            </p>
+            <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-stats" aria-label="جلساتي">
+              <span><b>{upcomingCount}</b><small>قادمة</small></span>
+              <span><b>{pendingCount}</b><small>بانتظار الموافقة</small></span>
+              <span><b>{completedSessionsCount}</b><small>مكتملة</small></span>
+            </Link>
 
             <Link href={`/${locale}/coaching`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/>
               </svg>
-              احجز جلسة
+              احجز جلسة جديدة
             </Link>
 
-            <Link href={`/${locale}/coaching`} className="dw-link-sm">
-              احجز جلسة مدفوعة · 150 ر.س
+            <Link href={`/${locale}/dashboard/my-sessions`} className="dw-link-sm">
+              عرض كل جلساتي
             </Link>
           </div>
 

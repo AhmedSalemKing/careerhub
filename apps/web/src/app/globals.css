@@ -3878,3 +3878,20 @@ svg.go { transition: transform .2s; }
 .dw-dashboard .dw2-lc-host { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
 .dw-dashboard .dw2-av { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--wash); color: var(--brand); font-weight: 700; font-size: 15px; }
 .dw-dashboard .dw2-host-name { font-size: 13px; color: var(--night-ink-2); }
+
+/* ═══ Dashboard home — header, path pager, sessions (dw2-) ═══ */
+.dw-dashboard .dw2-char-av { width: 64px; height: 64px; flex-shrink: 0; display: inline-flex; border-radius: 18px; overflow: hidden; }
+.dw-dashboard .dw2-char-av svg { width: 100%; height: 100%; display: block; }
+.dw-dashboard .dw2-grow { flex: 1; min-width: 0; }
+.dw-dashboard .dw2-pager { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.dw-dashboard .dw2-pager button { width: 28px; height: 28px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--wash); color: var(--brand); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.dw-dashboard .dw2-pager button:hover { background: var(--line-2); }
+.dw-dashboard .dw2-scroll { max-height: 360px; overflow-y: auto; padding-inline-end: 2px; }
+.dw-dashboard .dw2-empty-courses { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 8px 4px; }
+.dw-dashboard .dw2-empty-courses p { margin: 0; font-size: 13px; color: var(--ink-3); }
+.dw-dashboard .dw2-lc-more { display: block; text-align: center; margin-top: 10px; font-size: 12px; font-weight: 600; color: var(--night-ink-2); text-decoration: none; }
+.dw-dashboard .dw2-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; text-decoration: none; color: inherit; }
+.dw-dashboard .dw2-stats span { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px; border-radius: 14px; background: var(--bg-2); text-align: center; transition: opacity .15s; }
+.dw-dashboard .dw2-stats:hover span { opacity: .85; }
+.dw-dashboard .dw2-stats b { font-size: 28px; font-weight: 700; line-height: 1; color: var(--brand); }
+.dw-dashboard .dw2-stats small { font-size: 11px; color: var(--ink-3); font-weight: 600; }
