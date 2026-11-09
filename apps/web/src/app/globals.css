@@ -3704,30 +3704,78 @@ svg.go { transition: transform .2s; }
 	background: var(--bg-2); color: var(--ink-3);
 }
 
-/* Desktop sidebar / dock switch */
-.dw-dash-body { display: block; }
-.dw-dashboard-sidebar { display: none; }
-@media (min-width: 1024px) {
-	.dw-dash-body { display: flex; align-items: flex-start; }
-	.dw-dashboard-sidebar {
-		display: flex;
-		flex-direction: column;
-		gap: 4px;
-		position: sticky;
-		top: 64px;
-		height: calc(100vh - 64px);
-		width: 260px;
-		flex-shrink: 0;
-		padding: 20px 12px;
-		background: var(--surface);
-		border-inline-end: 1px solid var(--line);
-		overflow-y: auto;
-	}
-	.dw-dashboard-dock { display: none; }
-	.dw-dash-body > .main-content { flex: 1; min-width: 0; }
+/* ═══ Dashboard home (student) ═══ */
+.dw-dashboard .dw-open-btn { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--brand); background:var(--wash); border:1px solid var(--line-2); border-radius:999px; padding:4px 11px; text-decoration:none; transition:background .15s; white-space:nowrap; }
+.dw-dashboard .dw-open-btn:hover { background:var(--line-2); }
+
+.dw-dashboard .dgrid { display:grid; grid-template-columns:repeat(12,1fr); gap:20px; align-items:start; }
+.dw-dashboard .dgrid .s8 { grid-column:span 8; }
+.dw-dashboard .dgrid .s6 { grid-column:span 6; }
+.dw-dashboard .dgrid .s4-col { grid-column:span 4; display:flex; flex-direction:column; gap:18px; }
+@media (max-width:1100px) {
+  .dw-dashboard .dgrid .s8,
+  .dw-dashboard .dgrid .s6,
+  .dw-dashboard .dgrid .s4-col { grid-column:span 12; }
 }
-.dw-dash-side-foot { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--line); }
-.dw-dash-side-user { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
-.dw-dash-side-user .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.dw-dash-side-user .avatar.fallback { display: inline-flex; align-items: center; justify-content: center; background: var(--brand); color: #fff; font-weight: 700; }
-.dw-dash-side-user .name { font-size: 14px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dw-dashboard .dw-card { background:var(--surface); border-radius:18px; padding:22px; box-shadow:var(--shadow); border:1px solid var(--line); color:var(--ink); }
+.dw-dashboard .dw-card-h { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+.dw-dashboard .dw-card-h h2,.dw-dashboard .dw-card-h h3 { margin:0; font-size:16px; font-weight:700; }
+.dw-dashboard .dw-dash-wrap { max-width:1100px; margin:0 auto; padding:0 0 48px; }
+.dw-dashboard .dw-dash-head { display:flex; align-items:center; gap:16px; padding:24px 0 20px; }
+.dw-dashboard .dw-dash-head h1 { margin:0; font-size:26px; font-weight:800; color:var(--ink); }
+.dw-dashboard .dw-avatar { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--brand) 0%,#bf78fb 100%); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#fff; flex-shrink:0; }
+
+.dw-dashboard .dw-rec { display:flex; align-items:center; gap:24px; margin-bottom:20px; }
+.dw-dashboard .dw-big-ring { position:relative; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.dw-dashboard .dw-ring-svg { transform:rotate(-90deg); }
+.dw-dashboard .dw-ring-bg { fill:none; stroke:var(--line-2); }
+.dw-dashboard .dw-ring-fg { fill:none; stroke-linecap:round; transition:stroke-dashoffset .6s ease; }
+.dw-dashboard .dw-big-ring b { position:absolute; font-size:22px; font-weight:900; color:var(--brand); top:50%; left:50%; transform:translate(-50%,-58%); }
+.dw-dashboard .dw-big-ring small { position:absolute; font-size:10px; color:var(--ink-3); top:50%; left:50%; transform:translate(-50%,30%); white-space:nowrap; }
+
+.dw-dashboard .dw-clist { display:flex; flex-direction:column; gap:2px; }
+.dw-dashboard .dw-crow { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; border:none; background:transparent; width:100%; text-align:start; transition:background .15s; text-decoration:none; color:inherit; }
+.dw-dashboard .dw-crow:hover { background:var(--bg-2); }
+.dw-dashboard .dw-crow.doing { background:var(--bg-2); }
+.dw-dashboard .dw-dot { width:32px; height:32px; border-radius:50%; background:var(--bg-2); border:2px solid var(--line-2); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:var(--ink-3); flex-shrink:0; }
+.dw-dashboard .dw-crow.doing .dw-dot { background:var(--brand); border-color:var(--brand); color:#fff; }
+.dw-dashboard .dw-crow.done .dw-dot { background:var(--good-bg); border-color:var(--good); color:var(--good); }
+.dw-dashboard .dw-crow-info { flex:1; min-width:0; }
+.dw-dashboard .dw-crow-info h4 { margin:0 0 2px; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.dw-dashboard .dw-crow-info small { font-size:12px; color:var(--ink-3); }
+.dw-dashboard .dw-mini-prog { margin-top:5px; height:3px; border-radius:2px; background:var(--line); overflow:hidden; }
+.dw-dashboard .dw-mini-prog span { display:block; height:100%; background:var(--brand); border-radius:2px; }
+
+.dw-dashboard .dw-ms { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+.dw-dashboard .dw-ms li { display:flex; align-items:center; gap:10px; font-size:14px; font-weight:500; color:var(--ink-2); }
+.dw-dashboard .dw-ms li.done { color:var(--good); }
+.dw-dashboard .dw-ms li.doing { color:var(--brand); font-weight:700; }
+.dw-dashboard .dw-m-dot { width:26px; height:26px; border-radius:50%; flex-shrink:0; background:var(--bg-2); border:2px solid var(--line-2); display:flex; align-items:center; justify-content:center; font-size:11px; }
+.dw-dashboard .dw-ms li.done .dw-m-dot { background:var(--good-bg); border-color:var(--good); color:var(--good); }
+.dw-dashboard .dw-ms li.doing .dw-m-dot { background:var(--wash); border-color:var(--brand); color:var(--brand); }
+
+.dw-dashboard .dw-live-card { background:linear-gradient(135deg,var(--navy,#100c2e) 0%,#2d1a6e 100%); border-color:transparent; color:#fff; }
+.dw-dashboard .dw-live-card h3 { color:rgba(255,255,255,.9); flex:1; }
+.dw-dashboard .dw-lc-when { font-size:13px; font-weight:600; color:rgba(255,255,255,.7); margin:0 0 4px; }
+.dw-dashboard .dw-lc-sub { font-size:15px; font-weight:700; color:#fff; margin:0 0 14px; }
+.dw-dashboard .dw-lc-provider { font-size:13px; color:rgba(255,255,255,.65); margin:-8px 0 14px; font-weight:500; }
+.dw-dashboard .dw-live-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,.25); flex-shrink:0; }
+
+.dw-dashboard .dw-muted { color:var(--ink-3); font-size:13px; margin:4px 0 0; }
+.dw-dashboard .dw-credits { margin:0 0 14px; font-size:14px; color:var(--ink-2); display:flex; align-items:baseline; gap:6px; }
+.dw-dashboard .dw-credits b { font-size:28px; font-weight:900; color:var(--brand); }
+.dw-dashboard .dw-credits .dw-muted { margin:0; }
+.dw-dashboard .dw-empty-state { padding:24px; text-align:center; color:var(--ink-3); display:flex; flex-direction:column; align-items:center; gap:12px; }
+.dw-dashboard .dw-link-sm { display:block; text-align:center; margin-top:8px; font-size:13px; font-weight:500; color:var(--brand); text-decoration:none; transition:opacity .15s; }
+.dw-dashboard .dw-link-sm:hover { opacity:.75; }
+
+.dw-dashboard .dw-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .15s; text-decoration:none; font-family:inherit; }
+.dw-dashboard .dw-btn-sm { padding:9px 16px; }
+.dw-dashboard .dw-btn-block { width:100%; }
+.dw-dashboard .dw-btn-primary { background:var(--brand); color:#fff; }
+.dw-dashboard .dw-btn-primary:hover { background:var(--brand-hover,#4710d6); }
+.dw-dashboard .dw-btn-ghost { background:var(--bg-2); color:var(--brand); border:1px solid var(--line-2); }
+.dw-dashboard .dw-btn-ghost:hover { background:var(--wash); }
+.dw-dashboard .dw-btn-light { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.2); }
+.dw-dashboard .dw-btn-light:hover { background:rgba(255,255,255,.25); }

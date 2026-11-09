@@ -332,10 +332,64 @@ function StudentOverview() {
     retry: 1, staleTime: 30000,
   })
 
+  // Sessions: same endpoint/cache key as /dashboard/my-sessions
+  const { data: sessionsData } = useQuery({
+    queryKey: ['my-sessions'],
+    queryFn: async () => {
+      const r = await get('/consulting/sessions')
+      const data = r.data?.data
+      return { mySessions: data?.mySessions ?? [], clientSessions: data?.clientSessions ?? [] }
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 30000,
+  })
+
+  // Career paths: same endpoints as /dashboard/career-path
+  const { data: allPaths = [] } = useQuery({
+    queryKey: ['dash-career-paths'],
+    queryFn: async () => {
+      const res = await get('/career/paths')
+      const d = (res?.data as any)
+      const arr = d?.data?.careerPaths ?? d?.data ?? d ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+    retry: 1, staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: myPathIds = [] } = useQuery({
+    queryKey: ['dash-my-path-ids'],
+    queryFn: async () => {
+      const res = await get('/career/paths/my')
+      const d = (res?.data as any)
+      const paths = d?.data?.paths ?? d?.data ?? []
+      return Array.isArray(paths)
+        ? (paths.map((p: any) => p.careerPathId ?? p.pathId ?? p.id).filter(Boolean) as string[])
+        : []
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 30000,
+  })
+
+  const selectedPathRaw: any = allPaths.find((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
+
+  const { data: pathCoursesData = [] } = useQuery({
+    queryKey: ['dash-path-courses', selectedPathRaw?.slug, locale],
+    queryFn: async () => {
+      const res = await get('/courses', {
+        params: { page: 1, limit: 100, language: locale === 'ar' ? 'ar' : 'en', careerPath: selectedPathRaw.slug },
+      })
+      const d = (res?.data as any)
+      const arr = d?.data?.courses ?? d?.data ?? d ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+    enabled: !!selectedPathRaw?.slug,
+    retry: 1, staleTime: 60000,
+  })
+
   const enrollments = enrollmentData ?? []
   const certificates = certData ?? []
   const studentStats = statsData?.stats
-  const [tab, setTab] = useState<'all' | 'active' | 'done'>('all')
+  const mySessions: any[] = sessionsData?.mySessions ?? []
 
   if (isLoading) {
     return (
@@ -380,375 +434,262 @@ function StudentOverview() {
   const firstName = isAr
     ? (user?.profile?.firstName || 'الطالب')
     : (user?.profile?.firstName || 'Student')
-  const arrow = { transform: isAr ? 'none' : 'rotate(180deg)' } as const
-  const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`
-
   const progressOf = (e: any): number => Number(e.progress ?? e.enrollment?.progress ?? 0) || 0
   const courseOf = (e: any) => e.course || e
   const titleOf = (c: any): string =>
     (isAr ? (c?.titleAr || c?.title) : (c?.titleEn || c?.title)) || (isAr ? 'كورس' : 'Course')
-  const levelLabel = (lvl?: string | null): string => {
-    if (!lvl) return ''
-    const map: Record<string, [string, string]> = {
-      BEGINNER: ['مبتدئ', 'Beginner'],
-      INTERMEDIATE: ['متوسط', 'Intermediate'],
-      ADVANCED: ['متقدم', 'Advanced'],
-    }
-    const hit = map[String(lvl).toUpperCase()]
-    return hit ? (isAr ? hit[0] : hit[1]) : String(lvl)
-  }
-  const lessonsLabel = (e: any): string =>
-    `${e.completedLessons ?? 0}/${e.totalLessons ?? 0} ${isAr ? 'درس' : 'lessons'}`
-
-  const enrolledCount = enrollments.length || studentStats?.enrolledCourses || 0
   const completedCount = enrollments.filter((e: any) => progressOf(e) >= 100).length || studentStats?.completedCourses || 0
   const certificatesCount = certificates.length || studentStats?.certificatesEarned || 0
 
-  const visible = enrollments.filter((e: any) =>
-    tab === 'all' ? true : tab === 'done' ? progressOf(e) >= 100 : progressOf(e) < 100,
-  )
-  // unfinished courses first, so the table reads as "what to do next"
-  const upNext = [...enrollments].sort((x: any, y: any) => Number(progressOf(x) >= 100) - Number(progressOf(y) >= 100))
+  const userName = user?.profile?.firstName || user?.email?.split('@')[0] || ''
 
-  // Side card: a recommended course if the API sends one, else the next unfinished enrollment
-  const recommended: any = (statsData as any)?.recommendedCourses?.[0]
-  const nextEnrollment: any = upNext[0]
-  const sideCourse: any = recommended || (nextEnrollment ? courseOf(nextEnrollment) : null)
-  const sideHref = sideCourse?.id ? learnCourseLink(sideCourse.id, locale) : learnCoursesLink(locale)
-  const sideThumb = getMediaUrl(sideCourse?.thumbnail ?? sideCourse?.thumbnailUrl)
-  const sideLevel = levelLabel(sideCourse?.level)
-
-  const tabs: { key: 'all' | 'active' | 'done'; label: string }[] = [
-    { key: 'all', label: isAr ? 'الكل' : 'All' },
-    { key: 'active', label: isAr ? 'مسجل' : 'Active' },
-    { key: 'done', label: isAr ? 'مكتمل' : 'Completed' },
-  ]
-
-  const sectionTitle: React.CSSProperties = { fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }
-  const viewAll: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 4,
-    fontWeight: 300, fontSize: 12, color: 'var(--primary)', textDecoration: 'none',
+  const progressForEnrollment = (e: any): number => {
+    const p = progressOf(e)
+    if (p > 0) return p
+    return e?.totalLessons > 0 ? ((e.completedLessons ?? 0) / e.totalLessons) * 100 : 0
   }
+  const enrollmentFor = (c: any) =>
+    enrollments.find((e: any) => e.courseId === c.id || courseOf(e)?.id === c.id || e.id === c.id)
+
+  const selectedPath: any = selectedPathRaw
+    ? {
+        name: (isAr ? selectedPathRaw.titleAr : selectedPathRaw.titleEn) || selectedPathRaw.titleEn || selectedPathRaw.titleAr || '',
+        roles: Array.isArray(selectedPathRaw.roles) ? selectedPathRaw.roles : [],
+        courses: pathCoursesData.map((c: any) => ({ id: c.id, name: titleOf(c) })),
+        includedSessions: selectedPathRaw.includedSessions,
+      }
+    : null
+
+  const now = Date.now()
+  const upcomingSession: any = [...mySessions]
+    .filter((s: any) => ['CONFIRMED', 'IN_PROGRESS'].includes(s.status) && (s.status === 'IN_PROGRESS' || (parseSessionDate(s.scheduledAt)?.getTime() ?? 0) >= now))
+    .sort((x: any, y: any) => (parseSessionDate(x.scheduledAt)?.getTime() ?? 0) - (parseSessionDate(y.scheduledAt)?.getTime() ?? 0))[0]
+  const upcomingDate = parseSessionDate(upcomingSession?.scheduledAt)
+  const upcomingMentor = `${upcomingSession?.consultant?.profile?.firstName || ''} ${upcomingSession?.consultant?.profile?.lastName || ''}`.trim()
+  const completedSessionsCount = mySessions.filter((s: any) => s.status === 'COMPLETED').length
+  const freeSessionsRemaining = Math.max(0, (selectedPath?.includedSessions ?? 2) - completedSessionsCount)
+  const dateLocale = isAr ? 'ar-EG' : 'en-US'
+
+  const OpenArrow = () => (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : 'none' }} aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  )
+  const Check = ({ size }: { size: number }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+  )
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px', width: '100%' }}>
-      <style>{`
-        .sd-layout { display: flex; gap: 24px; align-items: flex-start; }
-        .sd-side { width: 280px; flex-shrink: 0; }
-        .sd-cards { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; scroll-snap-type: x proximity; }
-        .sd-card { flex: 0 0 230px; scroll-snap-align: start; transition: transform 0.15s ease; }
-        .sd-card:hover { transform: translateY(-2px); }
-        .sd-row { display: grid; grid-template-columns: 1fr 160px 90px; align-items: center; gap: 12px; }
-        .sd-row-link { transition: background 0.15s ease; }
-        .sd-row-link:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); }
-        .sd-tab { transition: background 0.15s ease, color 0.15s ease; }
-        @media (max-width: 1000px) {
-          .sd-layout { flex-direction: column; }
-          .sd-side { width: 100%; }
-        }
-        @media (max-width: 640px) {
-          .sd-row { grid-template-columns: 1fr 70px; }
-          .sd-mid { display: none !important; }
-        }
-      `}</style>
+    <div className="dw-dash-wrap">
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
-            {isAr ? `مرحباً بك، ${firstName}` : `Welcome back, ${firstName}`}
-          </h1>
-          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
-            {isAr ? 'واصل رحلتك التعليمية' : 'Continue your learning journey'}
-          </p>
-        </div>
-        <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)' }}>
-          {new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
+      {/* HEADER */}
+      <div className="dw-dash-head">
+        <div className="dw-avatar">{userName?.[0]?.toUpperCase() ?? 'م'}</div>
+        <div>
+          <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
+          <h1>{userName}</h1>
         </div>
       </div>
 
-      <div className="sd-layout">
-        {/* Main */}
-        <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
-          {/* Course cards */}
-          <section style={{ marginBottom: 32 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>{isAr ? 'كورساتي' : 'My Courses'}</h2>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {tabs.map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      className="sd-tab"
-                      onClick={() => setTab(t.key)}
-                      style={{
-                        padding: '4px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                        fontWeight: 500, fontSize: 12,
-                        background: tab === t.key ? mix('var(--primary)', 12) : 'transparent',
-                        color: tab === t.key ? 'var(--primary)' : 'var(--muted)',
-                      }}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <a href={`/${locale}/dashboard/my-courses`} style={viewAll}>
-                {isAr ? 'عرض الكل' : 'View all'}
-                <ChevronLeft size={14} style={arrow} />
-              </a>
-            </div>
+      <div className="dgrid">
 
-            {visible.length > 0 ? (
-              <div className="sd-cards">
-                {visible.slice(0, 8).map((enrollment: any) => {
-                  const course = courseOf(enrollment)
-                  const progress = Math.min(100, Math.round(progressOf(enrollment)))
-                  const courseId = course?.id || enrollment.courseId
-                  const thumb = getMediaUrl(course?.thumbnail)
-                  const level = levelLabel(course?.level)
-                  return (
-                    <a
-                      key={enrollment.id || courseId}
-                      href={learnCourseLink(courseId, locale)}
-                      target="_blank" rel="noopener noreferrer"
-                      className="sd-card"
-                      style={{
-                        minWidth: 220, maxWidth: 240, borderRadius: 14, overflow: 'hidden',
-                        border: '1px solid var(--border)', background: 'var(--card)',
-                        textDecoration: 'none', display: 'flex', flexDirection: 'column',
-                      }}
-                    >
-                      <div style={{
-                        width: '100%', height: 130, position: 'relative', flexShrink: 0, overflow: 'hidden',
-                        background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {thumb
-                          ? <img src={thumb} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <BookOpen size={28} color="var(--muted-foreground)" />}
-                        {level && (
-                          <span style={{
-                            position: 'absolute', top: 10, insetInlineEnd: 10,
-                            background: 'var(--overlay-strong)', color: 'var(--primary-foreground)',
-                            borderRadius: 6, padding: '3px 8px', fontSize: 10, fontWeight: 500,
-                            backdropFilter: 'blur(4px)',
-                          }}>
-                            {level}
-                          </span>
-                        )}
-                      </div>
-
-                      <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-                        <div style={{
-                          fontWeight: 500, fontSize: 13, color: 'var(--foreground)', lineHeight: 1.4,
-                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        }}>
-                          {titleOf(course)}
-                        </div>
-
-                        <div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 300, color: 'var(--muted)', marginBottom: 5 }}>
-                            <span>{isAr ? 'تقدمك' : 'Progress'}</span>
-                            <span>{lessonsLabel(enrollment)}</span>
-                          </div>
-                          <div style={{ height: 3, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
-                            <div style={{
-                              height: '100%', borderRadius: 2, width: `${progress}%`,
-                              background: progress >= 100 ? 'var(--success)' : 'var(--primary)',
-                              transition: 'width 0.3s ease',
-                            }} />
-                          </div>
-                        </div>
-
-                        <div style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
-                          padding: '5px 10px', borderRadius: 7, marginTop: 'auto',
-                          background: 'var(--primary)', color: 'var(--primary-foreground)',
-                          fontSize: 12, fontWeight: 500,
-                        }}>
-                          {progress >= 100 ? (isAr ? 'مراجعة' : 'Review') : (isAr ? 'متابعة' : 'Continue')}
-                          <ChevronLeft size={12} style={arrow} />
-                        </div>
-                      </div>
-                    </a>
-                  )
-                })}
-              </div>
-            ) : (
-              <div style={{
-                textAlign: 'center', padding: '32px 0', color: 'var(--muted)',
-                border: '1px dashed var(--border)', borderRadius: 16,
-              }}>
-                <BookOpen size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
-                <p style={{ margin: '0 0 16px', fontWeight: 300, fontSize: 13 }}>
-                  {enrollments.length === 0
-                    ? (isAr ? 'لم تشترك في أي كورس بعد' : 'No courses yet')
-                    : (isAr ? 'لا توجد كورسات في هذا التصنيف' : 'No courses in this view')}
-                </p>
-                {enrollments.length === 0 && (
-                  <a href={learnCoursesLink(locale)} target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-block', padding: '8px 20px', borderRadius: 8,
-                    background: 'var(--primary)', color: 'var(--primary-foreground)',
-                    textDecoration: 'none', fontSize: 13, fontWeight: 500,
-                  }}>
-                    {isAr ? 'ابدأ التعلم' : 'Start Learning'}
-                  </a>
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Stats grid */}
-          <style>{`
-            .sd-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
-            .sd-tile { transition: border-color 0.15s ease; }
-            .sd-tile:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
-            @media (max-width: 900px) { .sd-grid { grid-template-columns: repeat(2, 1fr); } }
-            @media (max-width: 520px) { .sd-grid { grid-template-columns: 1fr; } }
-          `}</style>
-          <div className="sd-grid">
-            {[
-              {
-                Icon: BookOpen, color: 'var(--primary)',
-                label: isAr ? 'كورسات مسجلة' : 'Enrolled Courses',
-                value: enrolledCount as number | null,
-                sub: isAr ? 'إجمالي الكورسات' : 'Total courses',
-                href: `/${locale}/dashboard/my-courses`,
-              },
-              {
-                Icon: CheckCircle, color: 'var(--success)',
-                label: isAr ? 'كورسات مكتملة' : 'Completed Courses',
-                value: completedCount as number | null,
-                sub: isAr
-                  ? `${enrolledCount ? Math.round((completedCount / enrolledCount) * 100) : 0}% من إجمالي الكورسات`
-                  : `${enrolledCount ? Math.round((completedCount / enrolledCount) * 100) : 0}% of all courses`,
-                href: `/${locale}/dashboard/my-courses`,
-              },
-              {
-                Icon: Award, color: 'var(--warning)',
-                label: isAr ? 'شهادات محققة' : 'Certificates',
-                value: certificatesCount as number | null,
-                sub: isAr ? 'شهادة معتمدة' : 'Verified certificates',
-                href: `/${locale}/dashboard/certificates`,
-              },
-              {
-                Icon: CreditCard, color: 'var(--muted-foreground)',
-                label: isAr ? 'المدفوعات' : 'Payments',
-                value: null as number | null,
-                sub: isAr ? 'عرض السجل' : 'View history',
-                href: `/${locale}/dashboard/invoices`,
-              },
-              {
-                Icon: Calendar, color: 'var(--muted-foreground)',
-                label: isAr ? 'جلساتي' : 'My Sessions',
-                value: null as number | null,
-                sub: isAr ? 'جلسات الكوتشينج' : 'Coaching sessions',
-                href: `/${locale}/dashboard/my-sessions`,
-              },
-              {
-                Icon: Settings, color: 'var(--muted-foreground)',
-                label: isAr ? 'الإعدادات' : 'Settings',
-                value: null as number | null,
-                sub: isAr ? 'إعدادات الحساب' : 'Account settings',
-                href: `/${locale}/dashboard/settings`,
-              },
-            ].map(({ Icon, color, label, value, sub, href }) => (
-              <a
-                key={label}
-                href={href}
-                className="sd-tile"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14, minWidth: 0,
-                  padding: '16px 18px', borderRadius: 12,
-                  border: '1px solid var(--border)', background: 'var(--card)',
-                  textDecoration: 'none',
-                }}
-              >
-                <div style={{
-                  width: 42, height: 42, borderRadius: 10, flexShrink: 0,
-                  background: mix(color, 12),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Icon size={18} color={color} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  {value !== null && (
-                    <div style={{ fontWeight: 900, fontSize: 22, color: 'var(--foreground)', lineHeight: 1 }}>
-                      {value}
-                    </div>
-                  )}
-                  <div style={{ fontWeight: 500, fontSize: 13, color: 'var(--foreground)', marginTop: value !== null ? 2 : 0 }}>
-                    {label}
-                  </div>
-                  <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                    {sub}
-                  </div>
-                </div>
-              </a>
-            ))}
+        {/* ===== CAREER PATH CARD — s8 ===== */}
+        <div className="dw-card s8">
+          <div className="dw-card-h">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <h2 style={{ flex: 1 }}>المسار المهني</h2>
+            <Link href={`/${locale}/dashboard/career-path`} className="dw-open-btn">
+              فتح المسار المهني
+              <OpenArrow />
+            </Link>
           </div>
+
+          {selectedPath ? (() => {
+            const pathCourses: any[] = selectedPath.courses ?? []
+            const done = pathCourses.filter((c: any) => {
+              const e = enrollmentFor(c)
+              return e && progressForEnrollment(e) >= 100
+            }).length
+            const pct = pathCourses.length > 0 ? Math.round((done / pathCourses.length) * 100) : 0
+            const C = 2 * Math.PI * 60
+            const offset = C - (pct / 100) * C
+            return (
+              <>
+                <div className="dw-rec">
+                  <span className="dw-big-ring">
+                    <svg viewBox="0 0 132 132" width="132" height="132" className="dw-ring-svg">
+                      <defs>
+                        <linearGradient id="dw-rg" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0" stopColor="#5414F6"/>
+                          <stop offset="1" stopColor="#BF78FB"/>
+                        </linearGradient>
+                      </defs>
+                      <circle className="dw-ring-bg" cx="66" cy="66" r="60" strokeWidth="12"/>
+                      <circle className="dw-ring-fg" cx="66" cy="66" r="60" strokeWidth="12"
+                        strokeDasharray={C} strokeDashoffset={offset}
+                        style={{ stroke: 'url(#dw-rg)' }}/>
+                    </svg>
+                    <b>{pct}%</b>
+                    <small>اكتملت</small>
+                  </span>
+                  <div>
+                    <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
+                    <p className="dw-muted">{(selectedPath.roles ?? []).slice(0, 3).join(' · ')}</p>
+                  </div>
+                </div>
+                <div className="dw-clist">
+                  {pathCourses.slice(0, 5).map((c: any, i: number) => {
+                    const e = enrollmentFor(c)
+                    const prog = e ? progressForEnrollment(e) : 0
+                    const isDone = !!e && prog >= 100
+                    const isDoing = !!e && !isDone && prog > 0
+                    return (
+                      <div key={c.id ?? i} className={`dw-crow ${isDone ? 'done' : isDoing ? 'doing' : ''}`}>
+                        <span className="dw-dot">
+                          {isDone ? <Check size={12} />
+                            : isDoing ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M8 5v14l11-7Z"/></svg>
+                            : i + 1}
+                        </span>
+                        <span className="dw-crow-info">
+                          <h4>{c.name}</h4>
+                          <small>{isDone ? 'مكتمل' : isDoing ? 'قيد التقدّم' : 'لم تبدأ'}</small>
+                          {isDoing && <div className="dw-mini-prog"><span style={{ width: `${prog}%` }}/></div>}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )
+          })() : (
+            <div className="dw-empty-state">
+              <p>لم تختر مساراً مهنياً بعد</p>
+              <Link href={`/${locale}/dashboard/career-path`} className="dw-btn dw-btn-primary dw-btn-sm">
+                اختر مسارك →
+              </Link>
+            </div>
+          )}
         </div>
 
-        {/* Side card */}
-        <aside className="sd-side" style={{
-          background: 'color-mix(in srgb, var(--primary) 8%, var(--background))',
-          border: '1px solid ' + mix('var(--primary)', 20),
-          borderRadius: 16, padding: 20,
-          display: 'flex', flexDirection: 'column', gap: 16,
-        }}>
-          <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)' }}>
-            {recommended ? (isAr ? 'مقترح لك' : 'Recommended for you') : (isAr ? 'تابع من حيث توقفت' : 'Pick up where you left off')}
+        {/* ===== RIGHT COLUMN — s4 ===== */}
+        <div className="s4-col">
+
+          {/* === DARK SESSION CARD === */}
+          <div className="dw-card dw-live-card">
+            <div className="dw-card-h">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>
+              </svg>
+              <h3>الجلسة المباشرة القادمة</h3>
+              <span className="dw-live-dot"/>
+            </div>
+
+            {upcomingSession ? (
+              <>
+                {upcomingDate && (
+                  <p className="dw-lc-when">
+                    {upcomingDate.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {' · '}
+                    {upcomingDate.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                )}
+                <p className="dw-lc-sub">
+                  {upcomingSession.topic ?? upcomingSession.sessionName ?? 'جلسة استشارية'}
+                </p>
+                {upcomingMentor && <p className="dw-lc-provider">{upcomingMentor}</p>}
+                <Link
+                  href={upcomingSession.status === 'IN_PROGRESS'
+                    ? `/${locale}/dashboard/consulting/${upcomingSession.id}/go-live`
+                    : `/${locale}/dashboard/my-sessions`}
+                  className="dw-btn dw-btn-light dw-btn-sm dw-btn-block"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M8 5v14l11-7Z"/>
+                  </svg>
+                  انضم إلى الجلسة
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="dw-lc-sub" style={{ marginBottom: '14px' }}>
+                  لا توجد جلسات قادمة
+                </p>
+                <Link href={`/${locale}/coaching`} className="dw-btn dw-btn-light dw-btn-sm dw-btn-block">
+                  احجز جلستك الأولى
+                </Link>
+              </>
+            )}
           </div>
 
-          <a href={sideHref} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textDecoration: 'none', borderRadius: 12, overflow: 'hidden' }}>
-            <div style={{
-              height: 120, position: 'relative', overflow: 'hidden', background: 'var(--primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {sideThumb
-                ? <img src={sideThumb} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <BookOpen size={32} color="var(--primary-foreground)" />}
+          {/* === MENTOR SUPPORT CARD === */}
+          <div className="dw-card">
+            <div className="dw-card-h">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <h3>دعم المرشدين</h3>
             </div>
-            <div style={{
-              padding: '10px 14px 14px', background: 'var(--card)',
-              border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 12px 12px',
-            }}>
-              <div style={{ fontWeight: 900, fontSize: 14, color: 'var(--foreground)', lineHeight: 1.3 }}>
-                {sideCourse ? titleOf(sideCourse) : (isAr ? 'ابدأ كورسك القادم' : 'Start your next course')}
-              </div>
-              {sideLevel && (
-                <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{sideLevel}</div>
-              )}
-            </div>
-          </a>
 
-          {[
-            { label: isAr ? 'كورسات مسجلة' : 'Enrolled', value: enrolledCount, Icon: BookOpen, href: `/${locale}/dashboard/my-courses` },
-            { label: isAr ? 'كورسات مكتملة' : 'Completed', value: completedCount, Icon: CheckCircle, href: `/${locale}/dashboard/my-courses` },
-            { label: isAr ? 'شهادات' : 'Certificates', value: certificatesCount, Icon: Award, href: `/${locale}/dashboard/certificates` },
-          ].map(({ label, value, Icon, href }) => (
-            <a key={label} href={href} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'var(--foreground)' }}>
-              <Icon size={15} color="var(--primary)" />
-              <span style={{ flex: 1, fontWeight: 300, fontSize: 13 }}>{label}</span>
-              <span style={{ fontWeight: 500, fontSize: 14 }}>{value}</span>
-            </a>
-          ))}
+            <p className="dw-credits">
+              <b>{freeSessionsRemaining}</b>
+              <span className="dw-muted">جلسات مجانية متبقية، مشمولة في مسارك</span>
+            </p>
 
-          <a href={learnCoursesLink(locale)} target="_blank" rel="noopener noreferrer" style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            padding: 10, borderRadius: 10,
-            background: 'var(--primary)', color: 'var(--primary-foreground)',
-            fontWeight: 500, fontSize: 13, textDecoration: 'none', marginTop: 'auto',
-          }}>
-            {isAr ? 'استعرض الكل' : 'Browse all'}
-            <ChevronLeft size={14} style={arrow} />
-          </a>
-        </aside>
+            <Link href={`/${locale}/coaching`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/>
+              </svg>
+              احجز جلسة
+            </Link>
+
+            <Link href={`/${locale}/dashboard/my-sessions`} className="dw-link-sm">
+              جلساتي
+            </Link>
+          </div>
+
+        </div>
+
+        {/* ===== MILESTONES — s6 ===== */}
+        <div className="dw-card s6">
+          <div className="dw-card-h">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
+            <h3>المحطات</h3>
+          </div>
+          <ol className="dw-ms">
+            {[
+              { label: 'إنشاء حسابك', done: true, doing: false },
+              { label: 'اختيار مسارك المهني', done: !!selectedPath, doing: !selectedPath },
+              { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0, doing: !!selectedPath && (completedCount ?? 0) === 0 },
+              { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0, doing: (completedCount ?? 0) > 0 && (completedSessionsCount ?? 0) === 0 },
+              { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0, doing: false },
+            ].map((s, i) => (
+              <li key={i} className={s.done ? 'done' : s.doing ? 'doing' : ''}>
+                <span className="dw-m-dot">{s.done && <Check size={11} />}</span>
+                <span>{s.label}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* ===== AI CHAT — s6 ===== */}
+        <div className="dw-card s6">
+          <div className="dw-card-h">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <h3>رشيد — مساعدك الذكي</h3>
+          </div>
+          <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+            يحلّل مهاراتك ويرشدك لأفضل مسار مهني مناسب لك.
+          </p>
+          <Link href={`/${locale}/dashboard/ai-chat`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
+            فتح المساعد الذكي →
+          </Link>
+        </div>
+
       </div>
     </div>
   )
 }
+
 
 /* Stat Component — Enhanced */
 function Stat({ 

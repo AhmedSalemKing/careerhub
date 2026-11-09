@@ -8,7 +8,6 @@ import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
 import BottomDock from '../../../components/BottomDock'
-import { DashboardSidebar } from '../../components/DashboardSidebar'
 import { RealTimeClock } from '../../../components/RealTimeClock'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
@@ -238,20 +237,15 @@ return [
         </div>
       )}
 
-      <div className="dw-dash-body">
-        <DashboardSidebar items={dockItems} onLogout={handleLogout} />
-        {/* Page content */}
-        <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
-          <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Page content */}
+      <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
+        <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
+          {children}
+        </div>
+      </main>
 
       {/* Bottom Dock */}
-      <div className="dw-dashboard-dock">
-        <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
-      </div>
+      <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
       <RealTimeClock locale={locale} />
       {/* Floating AI Button — students/consultants/instructors only */}
       <StopSpeechOnNav />
