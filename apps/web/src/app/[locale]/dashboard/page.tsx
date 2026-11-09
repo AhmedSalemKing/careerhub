@@ -9,7 +9,7 @@ import {
   CheckCircle, Award, Bookmark, CreditCard, Settings,
   TrendingUp, DollarSign, BarChart2, Plus, Bell,
 } from 'lucide-react'
-import { get } from '../../../lib/api'
+import { get, post } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
 import { getMediaUrl } from '../../../lib/media'
 import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
@@ -289,6 +289,190 @@ function InstructorOverview() {
    STUDENT OVERVIEW — ENHANCED
    ════════════════════════════════════════════════════════ */
 
+/* ════════════════════════════════════════════════════════
+   BOOKING MODAL — same endpoints as /coaching and /coaching/[id]/book
+   ════════════════════════════════════════════════════════ */
+
+function mentorName(c: any): string {
+  return `${c?.profile?.firstName || ''} ${c?.profile?.lastName || ''}`.trim() || c?.email || 'مرشد'
+}
+
+function BookingModal({ paths, initialIdx, onClose, onBooked }: {
+  paths: any[]; initialIdx: number; onClose: () => void; onBooked: () => void
+}) {
+  const [tab, setTab] = useState(initialIdx)
+  const [mentor, setMentor] = useState<any>(null)
+  const [slot, setSlot] = useState<string | null>(null)
+  const [topic, setTopic] = useState('')
+  const [booking, setBooking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const path: any = paths[tab]
+  const pathName: string = path ? (path.titleAr || path.titleEn || '') : ''
+
+  const { data: mentors = [], isLoading: loadingMentors } = useQuery({
+    queryKey: ['booking-modal-consultants'],
+    queryFn: async () => {
+      const res = await get('/consulting/consultants', { params: { limit: 50 } })
+      const d = (res?.data as any)?.data
+      return Array.isArray(d) ? d : []
+    },
+    staleTime: 60000,
+  })
+
+  // Mentors whose speciality / bio / areas mention the path title, slug or job titles
+  const { matched, filtered } = useMemo(() => {
+    const words = [
+      path?.titleAr, path?.titleEn, ...(path?.jobTitlesAr ?? []), ...(path?.jobTitlesEn ?? []),
+      ...String(path?.slug ?? '').split('-'),
+    ]
+      .map((w: any) => String(w ?? '').toLowerCase().trim())
+      .filter((w: string) => w.length > 2)
+    const list = (mentors as any[]).filter((c: any) => {
+      const hay = [c.profile?.speciality, c.profile?.bio, ...(c.profile?.consultingAreas ?? [])].join(' ').toLowerCase()
+      return words.some((w: string) => hay.includes(w))
+    })
+    return { matched: list.length > 0, filtered: list.length > 0 ? list : (mentors as any[]) }
+  }, [mentors, path])
+
+  const duration = Number(mentor?.profile?.sessionDuration ?? 60) || 60
+  const { data: slots = [], isLoading: loadingSlots } = useQuery({
+    queryKey: ['booking-modal-slots', mentor?.id, duration],
+    queryFn: async () => {
+      const from = new Date()
+      const to = new Date(Date.now() + 7 * 86400000)
+      const k = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const res = await get(`/consulting/consultants/${mentor.id}/slots`, { params: { from: k(from), to: k(to), duration } })
+      const s = (res?.data as any)?.data?.slots
+      return (Array.isArray(s) ? s : []).filter((x: any) => x.available && new Date(x.time).getTime() > Date.now())
+    },
+    enabled: !!mentor?.id,
+    staleTime: 30000,
+  })
+
+  const pickTab = (i: number) => { setTab(i); setMentor(null); setSlot(null); setError(null) }
+
+  const confirm = async () => {
+    if (!mentor || !slot || booking) return
+    const t = (topic.trim() || pathName || 'جلسة استشارية')
+    setBooking(true); setError(null)
+    try {
+      await post('/consulting/sessions/book', {
+        consultantId: mentor.id, scheduledAt: slot, duration, topic: t, sessionName: t,
+      })
+      onBooked()
+      onClose()
+    } catch (e: any) {
+      const m = e?.response?.data?.message
+      setError((Array.isArray(m) ? m.join(' - ') : m) || 'تعذر حجز الجلسة، حاول مرة أخرى')
+    } finally {
+      setBooking(false)
+    }
+  }
+
+  const fmt = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.toLocaleDateString('ar-EG', { weekday: 'short', day: 'numeric', month: 'short' })} · ${d.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}`
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+    >
+      <div
+        dir="rtl" role="dialog" aria-modal="true" aria-label="حجز جلسة جديدة"
+        onClick={(e) => e.stopPropagation()}
+        style={{ position: 'relative', width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}
+      >
+        <button type="button" onClick={onClose} aria-label="إغلاق"
+          style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 20, lineHeight: 1 }}>×</button>
+        <h3 style={{ margin: '0 0 12px', paddingRight: 28, fontSize: 16, fontWeight: 800 }}>احجز جلسة جديدة</h3>
+
+        {paths.length > 1 && (
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 12 }}>
+            {paths.map((p: any, i: number) => (
+              <button key={p.id ?? i} type="button" onClick={() => pickTab(i)}
+                style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 999, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap',
+                  border: i === tab ? '1px solid var(--purple)' : '1px solid var(--border)',
+                  background: i === tab ? 'var(--purple)' : 'transparent', color: i === tab ? '#fff' : 'var(--ink-2)' }}>
+                {p.titleAr || p.titleEn}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {loadingMentors ? (
+          <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>جارٍ تحميل المرشدين...</p>
+        ) : filtered.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>لا يوجد مرشدون متاحون حالياً</p>
+        ) : (
+          <>
+            {!matched && (
+              <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 8px' }}>لا يوجد مرشدون مطابقون لهذا المسار، عرض كل المرشدين</p>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {filtered.map((c: any) => {
+                const active = mentor?.id === c.id
+                const name = mentorName(c)
+                return (
+                  <button key={c.id} type="button" onClick={() => { setMentor(c); setSlot(null); setError(null) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, textAlign: 'right', cursor: 'pointer', borderRadius: 12,
+                      background: 'transparent', color: 'inherit', border: active ? '1.5px solid var(--purple)' : '1px solid var(--border)' }}>
+                    {c.profile?.avatar
+                      ? <img src={c.profile.avatar} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      : <span style={{ width: 48, height: 48, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', fontWeight: 800 }}>{name[0]}</span>}
+                    <span style={{ minWidth: 0, flex: 1 }}>
+                      <b style={{ display: 'block', fontSize: 14 }}>{name}</b>
+                      <small style={{ display: 'block', fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {c.profile?.speciality || 'استشارات مهنية'}
+                      </small>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {mentor && (
+          <div style={{ marginTop: 14 }}>
+            <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 700 }}>المواعيد المتاحة مع {mentorName(mentor)}</p>
+            {loadingSlots ? (
+              <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>جارٍ تحميل المواعيد...</p>
+            ) : slots.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--ink-3)' }}>لا توجد مواعيد متاحة خلال الأسبوع القادم</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {slots.map((s: any) => (
+                  <button key={s.time} type="button" onClick={() => setSlot(s.time)}
+                    style={{ padding: '8px 12px', fontSize: 13, borderRadius: 10, cursor: 'pointer',
+                      border: slot === s.time ? '1.5px solid var(--purple)' : '1px solid var(--border)',
+                      background: slot === s.time ? 'var(--purple)' : 'transparent', color: slot === s.time ? '#fff' : 'inherit' }}>
+                    {fmt(s.time)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {slot && (
+              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder={`موضوع الجلسة (${pathName || 'جلسة استشارية'})`}
+                style={{ width: '100%', marginTop: 10, padding: '8px 12px', fontSize: 13, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'inherit', boxSizing: 'border-box' }} />
+            )}
+          </div>
+        )}
+
+        {error && <p role="alert" style={{ margin: '12px 0 0', fontSize: 13, color: 'var(--error)' }}>{error}</p>}
+
+        <button type="button" onClick={confirm} disabled={!mentor || !slot || booking}
+          className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block"
+          style={{ marginTop: 14, opacity: !mentor || !slot || booking ? 0.5 : 1, cursor: !mentor || !slot || booking ? 'not-allowed' : 'pointer' }}>
+          {booking ? 'جارٍ الحجز...' : 'تأكيد الحجز'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 type DashboardData = {
   stats?: { enrolledCourses?: number; completedCourses?: number; certificatesEarned?: number }
   recommendedCourses?: CourseCardCourse[]
@@ -375,6 +559,8 @@ function StudentOverview() {
   const selectedPaths: any[] = allPaths.filter((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
   const [pathIdx, setPathIdx] = useState(0)
   const [showAllEnrolled, setShowAllEnrolled] = useState(false)
+  const [bookingOpen, setBookingOpen] = useState(false)
+  const queryClient = useQueryClient()
   const safePathIdx = selectedPaths.length ? ((pathIdx % selectedPaths.length) + selectedPaths.length) % selectedPaths.length : 0
   const selectedPathRaw: any = selectedPaths[safePathIdx]
 
@@ -763,12 +949,12 @@ function StudentOverview() {
               <span><b>{completedSessionsCount}</b><small>مكتملة</small></span>
             </Link>
 
-            <Link href={`/${locale}/coaching`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+            <button type="button" onClick={() => setBookingOpen(true)} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4"/>
               </svg>
               احجز جلسة جديدة
-            </Link>
+            </button>
 
             <Link href={`/${locale}/dashboard/my-sessions`} className="dw-link-sm">
               عرض كل جلساتي
@@ -831,6 +1017,15 @@ function StudentOverview() {
         </div>
 
       </div>
+
+      {bookingOpen && (
+        <BookingModal
+          paths={selectedPaths}
+          initialIdx={safePathIdx}
+          onClose={() => setBookingOpen(false)}
+          onBooked={() => { queryClient.invalidateQueries({ queryKey: ['my-sessions'] }) }}
+        />
+      )}
     </div>
   )
 }
