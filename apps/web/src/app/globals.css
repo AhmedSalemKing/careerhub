@@ -2226,7 +2226,10 @@ a.dw-instructor:hover { color: var(--accent); }
 	inset-inline-start: 0;
 	width: 100%;
 	z-index: 100;
-	background: transparent;
+	background: rgba(255, 255, 255, 0.82);
+	backdrop-filter: blur(14px);
+	-webkit-backdrop-filter: blur(14px);
+	border-bottom: 1px solid rgba(84, 20, 246, 0.12);
 	font-family: var(--font-ui);
 	transition: background .22s ease, box-shadow .22s ease, backdrop-filter .22s ease;
 }
@@ -2237,14 +2240,16 @@ a.dw-instructor:hover { color: var(--accent); }
 	box-shadow: 0 1px 0 var(--line);
 }
 
+.dark .header { background: color-mix(in srgb, var(--background) 82%, transparent); border-bottom-color: var(--line); }
+
 /* ── Inner wrap ── */
 .header .wrap {
 	display: flex;
 	align-items: center;
 	height: 64px;
-	max-width: 1240px;
+	max-width: 1280px;
 	margin-inline: auto;
-	padding-inline: clamp(16px, 4vw, 48px);
+	padding-inline: 24px;
 	gap: 0;
 }
 
@@ -2281,7 +2286,7 @@ a.dw-instructor:hover { color: var(--accent); }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 2px;
+	gap: 28px;
 }
 .header .nav a {
 	display: inline-flex;
@@ -2331,8 +2336,8 @@ a.dw-instructor:hover { color: var(--accent); }
 	border-radius: 8px;
 }
 .mkt button {
-	padding: 3px 10px;
-	border-radius: 6px;
+	padding: 4px 10px;
+	border-radius: 20px;
 	font-size: .75rem;
 	font-weight: 700;
 	letter-spacing: .03em;
@@ -2344,9 +2349,9 @@ a.dw-instructor:hover { color: var(--accent); }
 	line-height: 1.5;
 }
 .mkt button.on {
-	background: var(--bg, var(--background));
-	color: var(--ink);
-	box-shadow: 0 1px 3px color-mix(in srgb, var(--night) 14%, transparent);
+	background: var(--purple, #5414f6);
+	color: #fff;
+	border-radius: 20px;
 }
 .mkt button:hover:not(.on) { color: var(--ink-2); }
 

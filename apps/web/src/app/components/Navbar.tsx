@@ -103,6 +103,32 @@ function ThemeToggle() {
 }
 
 /* ════════════════════════════════════════
+   Market Switcher (KSA / EG) — drives the `market` cookie read by api.ts
+   ════════════════════════════════════════ */
+function MarketSwitcher() {
+  const [market, setMarket] = useState<'SAR' | 'EGP' | null>(null)
+
+  useEffect(() => {
+    const m = document.cookie.match(/(?:^|;\s*)market=([^;]*)/)?.[1]
+    setMarket(m === 'EGP' ? 'EGP' : 'SAR')
+  }, [])
+
+  const choose = (next: 'SAR' | 'EGP') => {
+    if (next === market) return
+    document.cookie = `market=${next};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`
+    setMarket(next)
+    window.location.reload()
+  }
+
+  return (
+    <div className="mkt hide-sm" role="group" aria-label="Market">
+      <button type="button" className={market === 'SAR' ? 'on' : undefined} aria-pressed={market === 'SAR'} onClick={() => choose('SAR')}>KSA</button>
+      <button type="button" className={market === 'EGP' ? 'on' : undefined} aria-pressed={market === 'EGP'} onClick={() => choose('EGP')}>EG</button>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════
    User Dropdown
    ════════════════════════════════════════ */
 function UserDropdown({ locale }: { locale: string }) {
@@ -466,6 +492,7 @@ export function Navbar() {
               <SearchBar />
 
               <div className="hidden sm:flex items-center gap-1 border-e border-[color:var(--line)] pe-2 me-1">
+                <MarketSwitcher />
                 <LanguageSwitcher />
                 <ThemeToggle />
                 {mounted && isLoggedIn && (
