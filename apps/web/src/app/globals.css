@@ -3895,3 +3895,10 @@ svg.go { transition: transform .2s; }
 .dw-dashboard .dw2-stats:hover span { opacity: .85; }
 .dw-dashboard .dw2-stats b { font-size: 28px; font-weight: 700; line-height: 1; color: var(--brand); }
 .dw-dashboard .dw2-stats small { font-size: 11px; color: var(--ink-3); font-weight: 600; }
+
+/* ═══ Dashboard home — ring + avatar ═══ */
+.dw-dashboard .ring-svg { transform: rotate(-90deg); }
+.dw-dashboard .ring-svg .bg { fill: none; stroke: var(--line-2); }
+.dw-dashboard .ring-svg .fg { fill: none; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.dw-dashboard .dw2-char-photo { object-fit: cover; border-radius: 50%; }
+.dw-dashboard .dw2-char-letter { align-items: center; justify-content: center; border-radius: 50%; background: var(--brand); color: #fff; font-size: 26px; font-weight: 700; }

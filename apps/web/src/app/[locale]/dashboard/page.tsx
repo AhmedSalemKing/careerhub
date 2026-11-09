@@ -313,10 +313,11 @@ function StudentOverview() {
   const { data: enrollmentData } = useQuery({
     queryKey: ['student-enrollments'],
     queryFn: async () => {
-      const res = await get('/courses/my-courses')
+      // Same endpoint the student /dashboard/my-courses page uses
+      const res = await get('/courses/enrolled')
       const raw = res?.data
       const d = (raw as any)?.data?.enrollments ?? (raw as any)?.data ?? raw ?? []
-      return Array.isArray(d) ? d : []
+      return Array.isArray(d) ? d : (Array.isArray((d as any)?.courses) ? (d as any).courses : [])
     },
     enabled: !!user,
     retry: 1, staleTime: 30000,
@@ -395,6 +396,18 @@ function StudentOverview() {
   const studentStats = statsData?.stats
   const mySessions: any[] = sessionsData?.mySessions ?? []
 
+  // /auth/me does not return gender; /users/profile returns the full profile row
+  const { data: fullProfile } = useQuery({
+    queryKey: ['dash-full-profile'],
+    queryFn: async () => {
+      const res = await get('/users/profile')
+      const d = (res?.data as any)?.data?.profile ?? {}
+      return (d.profile ?? d) as { gender?: string | null; avatar?: string | null }
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 5 * 60 * 1000,
+  })
+
   const [rasheedResult, setRasheedResult] = useState<{ topCareers: { name: string; nameEn: string; match: number }[] } | null>(null)
   useEffect(() => {
     try {
@@ -454,6 +467,8 @@ function StudentOverview() {
   const certificatesCount = certificates.length || studentStats?.certificatesEarned || 0
 
   const userName = user?.profile?.firstName || user?.email?.split('@')[0] || ''
+  const avatarUrl: string | null = user?.profile?.avatar || fullProfile?.avatar || null
+  const gender = String(fullProfile?.gender ?? '').toUpperCase()
 
   const progressForEnrollment = (e: any): number => {
     const p = progressOf(e)
@@ -498,7 +513,13 @@ function StudentOverview() {
 
       {/* HEADER */}
       <div className="dw-dash-head">
-        <span className="dw2-char-av" aria-hidden="true" dangerouslySetInnerHTML={{ __html: CHARACTERS.sa2 }} />
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="dw2-char-av dw2-char-photo" />
+        ) : gender === 'FEMALE' || gender === 'MALE' ? (
+          <span className="dw2-char-av" aria-hidden="true" dangerouslySetInnerHTML={{ __html: gender === 'FEMALE' ? CHARACTERS.sa2 : CHARACTERS.eg1 }} />
+        ) : (
+          <span className="dw2-char-av dw2-char-letter" aria-hidden="true">{userName?.[0]?.toUpperCase() ?? '?'}</span>
+        )}
         <div className="dw2-grow">
           <p style={{ margin: '0 0 2px', fontSize: '13px', color: 'var(--ink-3)' }}>مرحباً بعودتك</p>
           <h1>{userName}</h1>
@@ -532,23 +553,24 @@ function StudentOverview() {
               return e && progressForEnrollment(e) >= 100
             }).length
             const pct = pathCourses.length > 0 ? Math.round((done / pathCourses.length) * 100) : 0
-            const C = 2 * Math.PI * 60
-            const offset = C - (pct / 100) * C
             return (
               <>
                 <div className="dw-rec">
                   <span className="dw-big-ring">
-                    <svg viewBox="0 0 132 132" width="132" height="132" className="dw-ring-svg">
+                    <svg className="ring-svg" viewBox="0 0 132 132" style={{ width: '132px', height: '132px' }}>
                       <defs>
-                        <linearGradient id="dw-rg" x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient id="rg" x1="0" y1="0" x2="1" y2="1">
                           <stop offset="0" stopColor="#5414F6"/>
                           <stop offset="1" stopColor="#BF78FB"/>
                         </linearGradient>
                       </defs>
-                      <circle className="dw-ring-bg" cx="66" cy="66" r="60" strokeWidth="12"/>
-                      <circle className="dw-ring-fg" cx="66" cy="66" r="60" strokeWidth="12"
-                        strokeDasharray={C} strokeDashoffset={offset}
-                        style={{ stroke: 'url(#dw-rg)' }}/>
+                      <circle className="bg" cx="66" cy="66" r="60" style={{ strokeWidth: 12 }}/>
+                      <circle className="fg" cx="66" cy="66" r="60" style={{
+                        strokeWidth: 12,
+                        stroke: 'url(#rg)',
+                        strokeDasharray: 376.99,
+                        strokeDashoffset: 376.99 - (376.99 * pct / 100),
+                      }}/>
                     </svg>
                     <b>{pct}%</b>
                     <small>اكتملت</small>
