@@ -10,7 +10,7 @@ import { SearchBar } from './SearchBar'
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
 import Image from 'next/image'
-import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar } from 'lucide-react'
+import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
 import { LEARN_URL } from '../../lib/constants'
@@ -297,6 +297,24 @@ function UserDropdown({ locale }: { locale: string }) {
               {locale === 'ar' ? 'لوحة المستشار' : 'Consultant Panel'}
             </Link>
           )}
+
+          {/* Settings link */}
+          <Link
+            href={`/${locale}/dashboard/settings`}
+            onClick={() => setOpen(false)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 14px', borderRadius: '10px',
+              color: 'var(--foreground)', textDecoration: 'none',
+              fontSize: '14px', fontWeight: '500',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--surface)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+          >
+            <Settings size={16} />
+            {locale === 'ar' ? 'الإعدادات' : 'Settings'}
+          </Link>
 
           {/* Divider */}
           <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />

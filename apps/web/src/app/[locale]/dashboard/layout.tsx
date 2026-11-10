@@ -7,7 +7,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
-import BottomDock from '../../../components/BottomDock'
 import { RealTimeClock } from '../../../components/RealTimeClock'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
@@ -239,13 +238,11 @@ return [
 
       {/* Page content */}
       <main className="main-content overflow-x-hidden w-full max-w-[100vw]" style={{ overflowX: 'clip', maxWidth: '100%', minWidth: 0 }}>
-        <div className="page-content" style={{ paddingBottom: '100px', paddingTop: '24px' }}>
+        <div className="page-content" style={{ paddingBottom: '24px', paddingTop: '24px' }}>
           {children}
         </div>
       </main>
 
-      {/* Bottom Dock */}
-      <BottomDock items={dockItems} onLogout={handleLogout} position="bottom" />
       <RealTimeClock locale={locale} />
       {/* Floating AI Button — students/consultants/instructors only */}
       <StopSpeechOnNav />

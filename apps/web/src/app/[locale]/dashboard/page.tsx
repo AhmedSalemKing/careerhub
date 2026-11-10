@@ -22,7 +22,7 @@ import VerifiedBadge from '../../../components/VerifiedBadge'
 import { useToast } from '../../../lib/toast'
 import { useAuthStore } from '../../../stores/authStore'
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
-import { formatCoursePrice } from '../../../lib/market'
+import { formatCoursePrice, formatMoney } from '../../../lib/market'
 
 function parseSessionDate(raw: unknown): Date | null {
   if (!raw) return null
@@ -526,6 +526,22 @@ function StudentOverview() {
     retry: 1, staleTime: 30000,
   })
 
+  // Payments: same endpoint as /dashboard/invoices (only the latest item + summary are used)
+  const { data: paymentsData } = useQuery({
+    queryKey: ['dash-payments'],
+    queryFn: async () => {
+      const res = await get('/payments/my/invoices', { params: { page: 1, limit: 1 } })
+      const body = (res?.data as any)?.data ?? (res?.data as any) ?? {}
+      return {
+        last: Array.isArray(body.items) ? body.items[0] ?? null : null,
+        total: Number(body.total ?? 0) || 0,
+        totalSpent: body.summary?.totalSpent ?? null,
+      }
+    },
+    enabled: !!user,
+    retry: 1, staleTime: 30000,
+  })
+
   // Sessions: same endpoint/cache key as /dashboard/my-sessions
   const { data: sessionsData } = useQuery({
     queryKey: ['my-sessions'],
@@ -1019,6 +1035,65 @@ function StudentOverview() {
               </p>
               <Link href={`/${locale}/dashboard/ai-chat`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
                 ابدأ التقييم المجاني
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* ===== CERTIFICATES — s6 ===== */}
+        <div className="dw-card s6">
+          <div className="dw-card-h">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
+            <h3>شهاداتي</h3>
+          </div>
+          {certificatesCount > 0 ? (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                حصلت على <b style={{ color: 'var(--ink)', fontSize: '20px' }}>{certificatesCount}</b> {certificatesCount === 1 ? 'شهادة' : 'شهادات'}
+              </p>
+              <Link href={`/${locale}/dashboard/certificates`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+                عرض شهاداتي
+              </Link>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                لم تحصل على شهادات بعد
+              </p>
+              <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
+                اكمل أول كورس
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* ===== PAYMENTS — s6 ===== */}
+        <div className="dw-card s6">
+          <div className="dw-card-h">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2z"/><path d="M8 8h8M8 12h8"/></svg>
+            <h3>المدفوعات</h3>
+          </div>
+          {paymentsData?.last ? (
+            <>
+              <p style={{ margin: '0 0 4px', fontSize: '13px', color: 'var(--ink-3)' }}>آخر عملية دفع</p>
+              <p style={{ margin: '0 0 4px', fontSize: '14px', fontWeight: 700 }}>{paymentsData.last.itemName}</p>
+              <p style={{ margin: '0 0 14px', fontSize: '13px', color: 'var(--ink-2)' }}>
+                {formatMoney(paymentsData.last.amount)}
+                {' · '}
+                {new Date(paymentsData.last.date).toLocaleDateString('ar-EG-u-ca-gregory', { year: 'numeric', month: 'short', day: 'numeric' })}
+                {paymentsData.total > 1 ? ` · ${paymentsData.total} عمليات` : ''}
+              </p>
+              <Link href={`/${locale}/dashboard/invoices`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+                عرض سجل المدفوعات
+              </Link>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                لا توجد مدفوعات بعد
+              </p>
+              <Link href={`/${locale}/dashboard/invoices`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+                سجل المدفوعات
               </Link>
             </>
           )}
