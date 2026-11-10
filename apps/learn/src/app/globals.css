@@ -1487,60 +1487,123 @@ h6,
   font-weight: 500;
 }
 
-/* ── Learn home (dw2-l-) ── */
-.dw2-learn { font-size: 13px; line-height: 1.5; color: var(--foreground); background: var(--background); }
-.dw2-learn :is(h1, h2, h3) { font-family: inherit; color: var(--foreground); margin: 0; letter-spacing: 0; line-height: 1.2; }
+/* ── Learn home (reference classes, scoped to .dw2-learn) ── */
+.dw2-learn {
+	--ring-a: #5414f6;
+	--ring-b: #bf78fb;
+	--wash: #ece7ff;
+	--wash-2: #d9ceff;
+	--lavender: #bf78fb;
+	--night: #100c2e;
+	--night-2: #1a1245;
+	--font-ui: var(--font-plex-ar), var(--font-inter), system-ui, sans-serif;
+	font-family: var(--font-ui);
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--foreground);
+	background: var(--background);
+}
+[dir="ltr"] .dw2-learn { --font-ui: var(--font-inter), var(--font-plex-ar), system-ui, sans-serif; }
+.dark .dw2-learn { --wash: #241b5a; --wash-2: #2f2370; }
+.dw2-learn :is(h1, h2, h3, h4, p, a, span, button, b, strong, small, em) { font-family: var(--font-ui); }
+.dw2-learn :is(h1, h2, h3) { color: var(--foreground); margin: 0; letter-spacing: 0; line-height: 1.2; }
 .dw2-learn h1 { font-size: 32px; font-weight: 800; }
-.dw2-learn h2 { font-size: 22px; font-weight: 700; }
+.dw2-learn h2, .dw2-learn .h2 { font-size: 22px; font-weight: 700; }
 .dw2-learn h3 { font-size: 16px; font-weight: 700; }
 .dw2-learn p { margin: 0; font-size: 13px; }
-.dw2-l-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-.dw2-l-sec { padding: 40px 0; }
-.dw2-l-sec.alt { background: var(--surface-2); }
-.dw2-l-eyebrow { display: inline-block; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px; border-radius: 99px; background: var(--primary-subtle); color: var(--primary); }
-.dw2-l-head { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 20px; }
-.dw2-l-head.center { align-items: center; text-align: center; }
-.dw2-l-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--primary); box-sizing: border-box; }
-.dw2-l-btn.primary { background: var(--primary); color: var(--primary-fg); }
-.dw2-l-btn.ghost { background: transparent; color: var(--foreground); border-color: var(--border-strong); }
-.dw2-l-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; }
+.dw2-learn .muted { color: var(--muted); }
+.dw2-learn .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.dw2-learn .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.dw2-learn .sec { padding: 40px 0; }
+.dw2-learn .sec-alt { background: var(--surface-2); }
+.dw2-learn .sec-head { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 20px; }
+.dw2-learn .sec-head.center { align-items: center; text-align: center; }
+.dw2-learn .eyebrow { display: inline-block; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px; border-radius: 99px; background: var(--primary-subtle); color: var(--primary); }
+.dw2-learn .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--primary); box-sizing: border-box; transition: opacity .15s; }
+.dw2-learn .btn:hover { opacity: 0.88; }
+.dw2-learn .btn-primary { background: var(--primary); color: var(--primary-fg); }
+.dw2-learn .btn-ghost { background: transparent; color: var(--foreground); border-color: var(--border-strong); }
+.dw2-learn .link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; }
+
 /* hero */
-.dw2-l-hero { position: relative; overflow: hidden; padding: 40px 0 36px; border-bottom: 1px solid var(--border); }
-.dw2-l-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
-.dw2-l-hero-copy { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
-.dw2-l-lede { color: var(--muted); max-width: 480px; }
-.dw2-l-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
-.dw2-l-scene { position: relative; height: 200px; border-radius: 16px; overflow: hidden; background: var(--primary-subtle); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
-.dw2-l-orb { position: absolute; border-radius: 50%; filter: blur(24px); opacity: 0.5; background: var(--primary); }
-.dw2-l-orb.o1 { width: 120px; height: 120px; top: -30px; inset-inline-start: -20px; }
-.dw2-l-orb.o2 { width: 100px; height: 100px; bottom: -30px; inset-inline-end: -10px; background: var(--accent); }
-.dw2-l-duo { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); max-width: 85%; }
-.dw2-l-duo p { font-size: 11px; color: var(--muted); }
-.dw2-l-duo strong { font-size: 13px; }
-.dw2-l-duo-ring { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 4px solid var(--primary); }
-.dw2-l-duo-ring b { font-size: 12px; }
+.dw2-learn .phero { position: relative; overflow: hidden; padding: 32px 0 40px; border-bottom: 1px solid var(--border); isolation: isolate; }
+.dw2-learn .hero-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.dw2-learn .hero-bg .dots { position: absolute; inset: 0; opacity: 0.4; background-image: radial-gradient(var(--border-strong) 1px, transparent 1px); background-size: 20px 20px; }
+.dw2-learn .hero-bg .b1, .dw2-learn .hero-bg .b2 { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.25; background: var(--primary); }
+.dw2-learn .hero-bg .b1 { width: 260px; height: 260px; top: -90px; inset-inline-start: -60px; }
+.dw2-learn .hero-bg .b2 { width: 220px; height: 220px; bottom: -90px; inset-inline-end: -40px; background: var(--lavender); }
+.dw2-learn .phero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
+.dw2-learn .phero-copy { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.dw2-learn .lede { color: var(--muted); max-width: 480px; }
+.dw2-learn .hero-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.dw2-learn .phero-media { position: relative; height: 280px; }
+
+/* illustrated scene */
+.dw2-learn .ph.scene { position: absolute; inset: 0; overflow: hidden; isolation: isolate; border-radius: 16px; background: radial-gradient(120% 90% at 20% 10%, var(--wash) 0%, var(--wash-2) 55%, color-mix(in srgb, var(--lavender) 60%, var(--wash-2)) 100%); }
+.dw2-learn .sc-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+.dw2-learn .sc-orb.o1 { width: 46%; aspect-ratio: 1; top: 8%; inset-inline-end: 8%; background: color-mix(in srgb, var(--primary-fg) 35%, transparent); }
+.dw2-learn .sc-orb.o2 { width: 22%; aspect-ratio: 1; bottom: 12%; inset-inline-start: 6%; border: 2px dashed color-mix(in srgb, var(--primary) 25%, transparent); animation: dw2-l-float 7s ease-in-out infinite; }
+.dw2-learn .duo { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; z-index: 1; }
+.dw2-learn .duo-p { position: relative; height: 88%; aspect-ratio: 1; max-width: 62%; transition: transform 0.6s ease; }
+.dw2-learn .duo.n2 .duo-p + .duo-p { margin-inline-start: -14%; }
+.dw2-learn .duo.n2 .duo-p:first-child { z-index: 2; }
+.dw2-learn .char-wrap { display: block; width: 100%; height: 100%; }
+.dw2-learn .char-wrap .char, .dw2-learn .char { width: 100%; height: 100%; display: block; }
+/* the SVGs carry their own background tile; hide it so the scene gradient shows through */
+.dw2-learn .char > g > rect:first-child,
+.dw2-learn .char > g > circle:nth-of-type(1) { opacity: 0; }
+.dw2-learn .duo-flag { position: absolute; top: 4%; inset-inline-start: 50%; transform: translateX(-50%); white-space: nowrap; font-style: normal; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface); border: 1px solid currentColor; box-shadow: var(--shadow-sm); z-index: 3; }
+[dir="rtl"] .dw2-learn .duo-flag { transform: translateX(50%); }
+.dw2-learn .duo-flag.sa { color: var(--success); }
+.dw2-learn .duo-flag.eg { color: var(--error); }
+
+/* floating progress card */
+.dw2-learn .float { position: absolute; z-index: 4; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); animation: dw2-l-float 6s ease-in-out infinite; }
+.dw2-learn .float.f-fit { top: auto; bottom: -20px; inset-inline-start: -14px; }
+.dw2-learn .float p { font-size: 11px; color: var(--muted); }
+.dw2-learn .float strong { font-size: 13px; }
+.dw2-learn .ring-wrap { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.dw2-learn .ring-svg { transform: rotate(-90deg); }
+.dw2-learn .ring-svg circle.bg { fill: none; stroke: var(--border); }
+.dw2-learn .ring-svg circle.fg { fill: none; stroke: url(#rg); stroke-linecap: round; animation: dw2-l-ring 1.2s ease-out both; }
+.dw2-learn .ring-wrap b { position: absolute; font-size: 12px; font-weight: 800; }
+@keyframes dw2-l-float { 50% { transform: translateY(-8px); } }
+@keyframes dw2-l-ring { from { stroke-dashoffset: var(--len); } }
+
 /* tiles */
-.dw2-l-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-.dw2-l-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
-.dw2-l-tile p { color: var(--muted); }
-.dw2-l-tile-n { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--primary-subtle); color: var(--primary); font-size: 12px; font-weight: 700; }
+.dw2-learn .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dw2-learn .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.dw2-learn .tile p { color: var(--muted); }
+.dw2-learn .feat-ic { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--primary-subtle); color: var(--primary); }
+
 /* personas */
-.dw2-l-personas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.dw2-l-pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
-.dw2-l-pcard:hover { border-color: var(--primary); }
-.dw2-l-pcard p { color: var(--muted); flex: 1; }
+.dw2-learn .personas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dw2-learn .pcard { position: relative; display: block; border-radius: 16px; overflow: hidden; aspect-ratio: 4 / 5; isolation: isolate; text-decoration: none; color: var(--primary-fg); box-shadow: var(--shadow-sm); }
+.dw2-learn .pcard .ph.scene { border-radius: 0; }
+.dw2-learn .pcard .ph.scene.top .duo { bottom: 34%; }
+.dw2-learn .pcard .ph.scene.top .duo-p { height: 100%; max-width: 58%; }
+.dw2-learn .pcard::after { content: ''; position: absolute; inset: 0; z-index: 2; background: linear-gradient(180deg, transparent 30%, color-mix(in srgb, var(--night) 85%, transparent) 78%); }
+.dw2-learn .p-body { position: absolute; inset-inline: 0; bottom: 0; z-index: 3; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+.dw2-learn .p-body h3 { color: var(--primary-fg); font-size: 16px; }
+.dw2-learn .p-body p { color: color-mix(in srgb, var(--primary-fg) 85%, transparent); font-size: 12px; }
+.dw2-learn .p-cta { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+
 /* tracks */
-.dw2-l-tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.dw2-l-tcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; transition: border-color .15s; }
-.dw2-l-tcard:hover { border-color: var(--primary); }
-.dw2-l-tdesc { color: var(--muted); }
-.dw2-l-roles { display: flex; flex-wrap: wrap; gap: 6px; }
-.dw2-l-roles span { font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--foreground-2); }
-.dw2-l-sal { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); }
-.dw2-l-sal b { font-size: 13px; color: var(--success); }
-.dw2-l-tfoot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+.dw2-learn .tracks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dw2-learn .tcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; text-decoration: none; color: inherit; transition: border-color .15s; display: flex; }
+.dw2-learn .tcard:hover { border-color: var(--primary); }
+.dw2-learn .t-body { padding: 18px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.dw2-learn .t-body p { color: var(--muted); }
+.dw2-learn .roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw2-learn .roles span { font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--foreground-2); }
+.dw2-learn .t-sal { display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
+.dw2-learn .t-sal b { font-size: 13px; color: var(--success); }
+.dw2-learn .t-foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+
 @media (max-width: 900px) {
-	.dw2-l-hero-grid, .dw2-l-personas, .dw2-l-tracks { grid-template-columns: 1fr; }
-	.dw2-l-tiles { grid-template-columns: repeat(2, 1fr); }
+	.dw2-learn .phero-grid, .dw2-learn .personas, .dw2-learn .tracks-grid { grid-template-columns: 1fr; }
+	.dw2-learn .tiles { grid-template-columns: repeat(2, 1fr); }
+	.dw2-learn .phero-media { height: 240px; margin-bottom: 20px; }
 }
-@media (max-width: 520px) { .dw2-l-tiles { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .dw2-learn .tiles { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .dw2-learn * { animation: none !important; } }

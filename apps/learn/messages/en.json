@@ -221,7 +221,12 @@
     "tracksAll": "See all tracks",
     "viewTrack": "View track",
     "salaryLabel": "Typical monthly salary",
-    "salaryUnit": "k SAR"
+    "salaryUnit": "k SAR",
+    "flagKsa": "Saudi Arabia",
+    "flagEg": "Egypt",
+    "sceneTrack": "Digital marketing",
+    "tracksEmpty": "Career tracks are coming soon.",
+    "tracksLoading": "Loading tracks..."
   },
   "learn": {
     "backToCourse": "Back to Course",
@@ -376,4 +381,3 @@
     "moneyBack": "30-day money-back guarantee"
   }
 }
-

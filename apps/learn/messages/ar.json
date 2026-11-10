@@ -221,7 +221,12 @@
     "tracksAll": "عرض كل المسارات",
     "viewTrack": "عرض المسار",
     "salaryLabel": "الراتب الشهري المعتاد",
-    "salaryUnit": "ألف ر.س"
+    "salaryUnit": "ألف ر.س",
+    "flagKsa": "السعودية",
+    "flagEg": "مصر",
+    "sceneTrack": "التسويق الرقمي",
+    "tracksEmpty": "المسارات المهنية ستتوفر قريبًا.",
+    "tracksLoading": "جارٍ تحميل المسارات..."
   },
   "learn": {
     "backToCourse": "العودة للكورس",
