@@ -1,68 +1,61 @@
 'use client'
 
-import { useTranslations, useLocale } from 'next-intl'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState, useEffect, useRef } from 'react'
-import {
-  Play, Users, BookOpen, Clock, ArrowRight,
-  Award, Globe, Code, Palette,
-  BarChart3, Briefcase, Sparkles, Laptop, CheckCircle2
-} from 'lucide-react'
-import { CareerPathsSection } from '../components/CareerPathsSection'
-import { Button } from '../components/ui/button'
+import { useLocale, useTranslations } from 'next-intl'
 import { get } from '../../lib/api'
-import { formatCoursePrice } from '../../lib/market'
 import { syncAuthUser } from '../../lib/auth-sync'
 import { useAuthStore } from '../../stores/authStore'
 
 const MAIN_SITE_URL = (() => {
   const envUrl = process.env.NEXT_PUBLIC_MAIN_URL
-  return (envUrl && envUrl.trim()) ? envUrl : 'https://deveway-teal.vercel.app'
+  return envUrl && envUrl.trim() ? envUrl : 'https://deveway-teal.vercel.app'
 })()
 
-function thumbUrl(path?: string | null): string | null {
-  if (!path || typeof path !== 'string') return null
-  if (path.startsWith('http')) return path
-  return path.startsWith('/') ? path : `/${path}`
+type TrackCard = {
+  id: string
+  slug: string
+  title: string
+  description: string
+  roles: string[]
+  salary: string | null
 }
 
-// Auth state comes from the shared auth store (hydrated app-wide from
-// persisted storage + the single-flight /auth/me refresh in lib/auth-sync).
-// The previous local implementation duplicated the store and read a different
-// token key ('auth_token'), causing an extra /auth/me request per load.
-function useAuth() {
-  const user = useAuthStore((s) => s.user)
-  const token = useAuthStore((s) => s.token)
-  const isLoading = useAuthStore((s) => s.isLoading)
-
-  return {
-    isAuthenticated: !!token,
-    isLoading,
-    user,
+function parseSalary(raw: unknown, unit: string, locale: string): string | null {
+  try {
+    const o = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const min = Number((o as any)?.min)
+    const max = Number((o as any)?.max)
+    if (!isFinite(min) || !isFinite(max) || max <= 0) return null
+    // API stores full monthly amounts; the card shows thousands
+    const k = (n: number) => (n / 1000).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 1 })
+    return `${k(min)} – ${k(max)} ${unit}`
+  } catch {
+    return null
   }
 }
 
-export default function HomePage() {
-  const t = useTranslations()
-  const tl = useTranslations('learn')
-  const locale = useLocale() as 'ar' | 'en'
-  const router = useRouter()
-  const [showStickyCta, setShowStickyCta] = useState(false)
-  const heroRef = useRef<HTMLDivElement>(null)
-  const [apiCourses, setApiCourses] = useState<any[]>([])
-  const [isMobile, setIsMobile] = useState(false)
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+function Arrow({ flip }: { flip: boolean }) {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: flip ? 'scaleX(-1)' : 'none' }}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  )
+}
 
-  // Enrolled courses for the logged-in user (featured carousel badges)
+export default function HomePage() {
+  const t = useTranslations('learnHome')
+  const locale = useLocale() as 'ar' | 'en'
+  const isAr = locale === 'ar'
   const authUser = useAuthStore((s) => s.user)
   const authToken = useAuthStore((s) => s.token)
-  const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set())
 
-  // Ensure the auth store is populated before checking enrollment. The store is
-  // hydrated app-wide from the persisted user; if only a token is present (e.g.
-  // cross-domain login), refresh the user via the single-flight helper so this
-  // page does not add another duplicate /auth/me request.
+  const [tracks, setTracks] = useState<TrackCard[]>([])
+  const [current, setCurrent] = useState<{ title: string; progress: number } | null>(null)
+
+  const assessmentHref = `${MAIN_SITE_URL}/${locale}/dashboard/assessment`
+
+  // Hydrate the user from the token (single-flight helper shared app-wide)
   useEffect(() => {
     if (authUser || !authToken) return
     let cancelled = false
@@ -75,9 +68,37 @@ export default function HomePage() {
     }
   }, [authUser, authToken])
 
+  // Career tracks (same endpoint the main site uses)
+  useEffect(() => {
+    let cancelled = false
+    get('/career/paths')
+      .then((res: any) => {
+        const d = res?.data
+        const arr = d?.data?.careerPaths ?? d?.data ?? d ?? []
+        const unit = t('salaryUnit')
+        const list: TrackCard[] = (Array.isArray(arr) ? arr : []).slice(0, 6).map((p: any) => ({
+          id: p.id,
+          slug: p.slug,
+          title: (isAr ? p.titleAr : p.titleEn) || p.title || '',
+          description: (isAr ? p.descriptionAr : p.descriptionEn) || '',
+          roles: ((isAr ? p.jobTitlesAr : p.jobTitlesEn) ?? []).slice(0, 3),
+          salary: parseSalary(isAr ? p.salaryRangeAr : p.salaryRangeEn, unit, locale),
+        }))
+        if (!cancelled) setTracks(list)
+      })
+      .catch(() => {
+        if (!cancelled) setTracks([])
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale])
+
+  // Learner progress shown in the hero scene (only for signed-in learners with an enrollment)
   useEffect(() => {
     if (!authUser) {
-      setEnrolledIds(new Set())
+      setCurrent(null)
       return
     }
     let cancelled = false
@@ -86,531 +107,125 @@ export default function HomePage() {
         const body = res?.data?.data
         const data = body?.items || body || res?.data || []
         const list = Array.isArray(data) ? data : []
-        const ids = new Set<string>(
-          list
-            .map((e: any) => e?.courseId || e?.course?.id || e?.id)
-            .filter(Boolean)
-        )
-        if (!cancelled) setEnrolledIds(ids)
+        const first = list[0]
+        const course = first?.course || first
+        if (!first || !course) return
+        const title = (isAr ? course.titleAr : course.titleEn) || course.titleAr || course.titleEn || course.title || ''
+        const progress = Math.max(0, Math.min(100, Math.round(Number(first.progress ?? 0) || 0)))
+        if (!cancelled) setCurrent({ title, progress })
       })
       .catch(() => {
-        if (!cancelled) setEnrolledIds(new Set())
+        if (!cancelled) setCurrent(null)
       })
     return () => {
       cancelled = true
     }
-  }, [authUser])
+  }, [authUser, isAr])
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const heroHeight = heroRef.current?.offsetHeight || 0
-      setShowStickyCta(window.scrollY > heroHeight * 0.5)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const [apiCategories, setApiCategories] = useState<any[]>([])
-  const [courseSort, setCourseSort] = useState<'popular' | 'newest'>('popular')
-
-  useEffect(() => {
-    setApiCourses([])
-    get('/courses?limit=6&language=' + locale + (courseSort === 'newest' ? '&sort=newest' : ''))
-      .then((res) => {
-        const d = (res as any)?.data?.data ?? (res as any)?.data
-        const courses = d?.courses ?? (Array.isArray(d) ? d : [])
-        setApiCourses(courses.slice(0, 6))
-      })
-      .catch(() => setApiCourses([]))
-  }, [locale, courseSort])
-
-  useEffect(() => {
-    get('/courses/categories?language=' + locale)
-      .then((res: any) => {
-        const payload = res?.data
-        const list = Array.isArray(payload) ? payload : (payload?.data ?? [])
-        setApiCategories(list.filter((c: any) => !c.parentId).slice(0, 4))
-      })
-      .catch(() => setApiCategories([]))
-  }, [locale])
-
-  const iconMap: Record<string, React.ComponentType<any>> = {
-    Code, Palette, BarChart3, Briefcase,
-    Laptop, BookOpen, Globe, Award,
-  }
-
-  const categories = apiCategories.length > 0
-    ? apiCategories.map((cat: any) => ({
-        id: cat.id,
-        slug: cat.slug,
-        icon: iconMap[cat.icon as string] || Code,
-        name: { ar: cat.nameAr || cat.name, en: cat.nameEn || cat.name },
-        count: cat.courseCount || 0,
-        bg: 'color-mix(in srgb, var(--primary) 10%, transparent)',
-        color: 'var(--primary)',
-      }))
-    : []
-
-  const featuredCourses = apiCourses.map((c: any) => ({
-    id: c.id,
-    title: typeof c.title === 'string' ? c.title : (locale === 'ar' ? c.titleAr || c.titleEn : c.titleEn || c.titleAr) || 'Course',
-    duration: c.duration || 0,
-    students: c._count?.enrollments || 0,
-    price: c.price ?? 0,
-    priceDisplay: c.priceDisplay ?? null,
-    isMostPopular: c.isMostPopular === true,
-    createdAt: c.createdAt,
-    enrollmentCount: c._count?.enrollments || 0,
-    thumbnail: c.thumbnail,
-    // Kept so the card can route live sessions to /live/[id] and show a live badge.
-    type: c.type,
-    liveStatus: c.liveStatus,
-  }))
-
-  const sortedCourses = [...featuredCourses].sort((a, b) => {
-    if (courseSort === 'popular') {
-      return (b.enrollmentCount || 0) - (a.enrollmentCount || 0)
-    }
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  })
-
-  const maxEnrollment = Math.max(...featuredCourses.map(c => c.enrollmentCount), 0)
-
-  // A course is a live session when the backend marks it as type "live" (it also
-  // carries liveStatus: scheduled | live | ended).
-  const isLiveCourse = (c: any) => c?.type === 'live'
-  const isLiveNow = (c: any) => c?.liveStatus === 'live'
-
-  // Handler for Start Free button
-  const handleStartFreeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    
-    if (authLoading) return // Don't do anything while loading
-    
-    if (isAuthenticated) {
-      // User is logged in - redirect to dashboard
-      window.location.href = `${MAIN_SITE_URL}/${locale}/dashboard`
-    } else {
-      // User is not logged in - redirect to login/register
-      window.location.href = `${MAIN_SITE_URL}/${locale}/login`
-    }
-  }
-
-  // Handler for Browse Courses button
-  const handleBrowseCoursesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    router.push(`/${locale}/courses`)
-  }
+  const tiles = [1, 2, 3, 4].map((n) => ({ t: t(`tile${n}t`), d: t(`tile${n}d`) }))
+  const personas = [1, 2, 3].map((n) => ({ t: t(`persona${n}t`), d: t(`persona${n}d`) }))
 
   return (
-    <div className="min-h-screen">
-      {/* ========== HERO - REVERSED LAYOUT ========== */}
-      <section
-        ref={heroRef}
-        className="relative min-h-[92vh] overflow-hidden"
-        style={{ background: 'var(--background)', color: 'var(--foreground)', isolation: 'isolate', zIndex: 0 }}
-      >
-        {/* Background ambient lights */}
-        <div style={{
-          position: 'absolute',
-          top: '-20%',
-          right: '5%',
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-15%',
-          left: '10%',
-          width: 500,
-          height: 500,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, color-mix(in srgb, var(--teal) 10%, transparent) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 1,
-        }} />
-
-        {/* Main Content Grid */}
-        <div className="relative z-10 min-h-[92vh] flex items-center pt-10 pb-28 sm:pb-32 lg:pb-40">
-          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-              
-              {/* ========== LEFT SIDE - CONTENT ========== */}
-              <div className="space-y-8 order-1">
-                <div
-                  className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium"
-                  style={{
-                    background: 'color-mix(in srgb, var(--primary) 12%, transparent)',
-                    border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)',
-                    color: 'var(--primary)',
-                  }}
-                >
-                  <Sparkles className="h-4 w-4" style={{ color: 'var(--gold)' }} />
-                  <span>{locale === 'ar' ? 'أكثر من 10,000 متعلم حققوا أهدافهم' : 'Over 10,000 learners achieved their goals'}</span>
-                </div>
-
-                <h1 
-                  className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black font-madinet leading-tight break-words"
-                  style={{ color: 'var(--foreground)' }}
-                >
-                  {locale === 'ar' ? 'تعلم مهارة' : 'Learn a Skill'}
-                  <span className="block mt-3" style={{ color: 'var(--primary)' }}>
-                    {locale === 'ar' ? tl('changeFuture') : 'Change Your Future'}
-                  </span>
-                </h1>
-
-                <p className="text-lg sm:text-xl leading-relaxed max-w-xl" style={{ color: 'var(--muted)' }}>
-                  {locale === 'ar'
-                    ? 'منصة تعليمية متكاملة مع كورسات احترافية وكوتشينج شخصي لمساعدتك على تحقيق أهدافك المهنية'
-                    : 'A comprehensive learning platform with professional courses and personal coaching to help you achieve your career goals'}
-                </p>
-
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 [&>a]:w-full sm:[&>a]:w-auto">
-                  {/* ===== START FREE NOW BUTTON ===== */}
-                  <a
-                    href="#"
-                    onClick={handleStartFreeClick}
-                    className={`btn-cta-primary text-base inline-flex items-center justify-center gap-2 group ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
-                    aria-disabled={authLoading}
-                    role="button"
-                    tabIndex={authLoading ? -1 : 0}
-                  >
-                    {authLoading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-                      </>
-                    ) : (
-                      <>
-                        {locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}
-                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
-                      </>
-                    )}
-                  </a>
-                  
-                  {/* ===== BROWSE COURSES BUTTON ===== */}
-                  <a
-                    href="#"
-                    onClick={handleBrowseCoursesClick}
-                    className="inline-flex items-center justify-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
-                    style={{
-                      background: 'transparent',
-                      border: '1.5px solid color-mix(in srgb, var(--foreground) 45%, transparent)',
-                      color: 'var(--foreground)',
-                      fontFamily: "'Plus Jakarta Sans', sans-serif",
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}
-                  </a>
-                </div>
-              </div>
-
-              {/* ========== RIGHT SIDE - IMAGE ========== */}
-              <div className="flex justify-center lg:justify-end order-2 px-6 sm:px-0">
-                <div 
-                  className="absolute rounded-3xl blur-3xl opacity-30"
-                  style={{
-                    width: 'min(450px, 80vw)',
-                    height: 'min(450px, 80vw)',
-                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 40%, transparent) 0%, color-mix(in srgb, var(--teal) 30%, transparent) 100%)',
-                    top: '50%',
-                    right: '8%',
-                    transform: 'translateY(-50%)',
-                  }}
-                />
-                
-                <div className="relative animate-float">
-                  <img
-                    src="/Remove_the_background_from_this_laptop_image_showi-1776361981480.png"
-                    alt="Learning Platform"
-                    className="relative w-full max-w-[260px] sm:max-w-lg lg:max-w-xl object-contain drop-shadow-2xl"
-                    style={{ filter: 'drop-shadow(0 25px 50px color-mix(in srgb, var(--primary) 25%, transparent))' }}
-                  />
-                  
-                  <div className="absolute -top-4 -left-4 w-20 h-20 rounded-full opacity-60" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 55%, var(--background)) 100%)', filter: 'blur(1px)' }} />
-                  <div className="absolute -bottom-6 -right-6 w-16 h-16 rounded-lg opacity-40 rotate-12" style={{ background: 'linear-gradient(135deg, var(--teal) 0%, color-mix(in srgb, var(--teal) 55%, var(--background)) 100%)', filter: 'blur(1px)' }} />
-                  
-                  <div className="absolute top-1/4 -left-3 sm:-left-14 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl backdrop-blur-md border animate-float-badge-reverse" style={{ background: 'color-mix(in srgb, var(--surface) 75%, transparent)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-lg)', color: 'var(--foreground)' }}>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--gold) 0%, color-mix(in srgb, var(--gold) 55%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--gold) 40%, transparent)' }}>
-                        <Sparkles className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
-                      </div>
-                      <span className="text-sm font-medium whitespace-nowrap tracking-wide">Interactive</span>
-                    </div>
-                  </div>
-                  
-                  <div className="absolute bottom-1/3 -right-3 sm:-right-12 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl backdrop-blur-md border animate-float-badge" style={{ background: 'color-mix(in srgb, var(--primary) 14%, transparent)', borderColor: 'color-mix(in srgb, var(--primary) 30%, transparent)', boxShadow: 'var(--shadow-lg)', color: 'var(--foreground)' }}>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 60%, var(--background)) 100%)', boxShadow: '0 4px 12px color-mix(in srgb, var(--primary) 40%, transparent)' }}>
-                        <Award className="h-4 w-4" style={{ color: 'var(--primary-fg)' }} />
-                      </div>
-                      <span className="text-sm font-medium whitespace-nowrap tracking-wide">Certified</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+    <main className="dw2-learn" dir={isAr ? 'rtl' : 'ltr'}>
+      {/* HERO */}
+      <section className="dw2-l-hero">
+        <div className="dw2-l-wrap dw2-l-hero-grid">
+          <div className="dw2-l-hero-copy">
+            <span className="dw2-l-eyebrow">{t('eyebrow')}</span>
+            <h1>{t('title')}</h1>
+            <p className="dw2-l-lede">{t('lede')}</p>
+            <div className="dw2-l-ctas">
+              <a className="dw2-l-btn primary" href={assessmentHref}>
+                {t('ctaAssessment')}
+                <Arrow flip={isAr} />
+              </a>
+              <Link className="dw2-l-btn ghost" href={`/${locale}/my-courses`}>{t('ctaLearning')}</Link>
             </div>
           </div>
-        </div>
-
-        {/* ========== ADAPTIVE WAVE DIVIDER ========== */}
-        <div className="absolute bottom-0 left-0 right-0 overflow-hidden leading-none z-10">
-          <svg 
-            className="relative block w-full h-[120px] sm:h-[150px] lg:h-[180px]" 
-            viewBox="0 0 1440 180" 
-            preserveAspectRatio="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path d="M0,90 C240,140 480,40 720,80 C960,120 1200,60 1440,100 L1440,180 L0,180 Z" style={{ fill: 'var(--background)' }} />
-          </svg>
+          <div className="dw2-l-scene" role="img" aria-label={t('title')}>
+            <span className="dw2-l-orb o1" />
+            <span className="dw2-l-orb o2" />
+            {current && (
+              <div className="dw2-l-duo">
+                <span className="dw2-l-duo-ring"><b>{current.progress}%</b></span>
+                <div>
+                  <p>{t('sceneProgress')}</p>
+                  <strong>{current.title}</strong>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* ========== CAREER PATHS ========== */}
-      <CareerPathsSection />
-
-      {/* ========== COURSES ========== */}
-      <section style={{ background: 'var(--background)' }} className="py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-3xl sm:text-4xl font-medium font-madinet" style={{ color: 'var(--foreground)' }}>
-                {locale === 'ar' ? 'الكورسات المميزة' : 'Featured Courses'}
-              </h2>
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[
-                { key: 'popular' as const, ar: 'الأكثر طلباً', en: 'Most Popular' },
-                { key: 'newest' as const, ar: 'الأحدث', en: 'Newest' },
-              ].map(tab => (
-                <button key={tab.key} onClick={() => setCourseSort(tab.key)}
-                  style={{
-                    padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-                    cursor: 'pointer', border: courseSort === tab.key ? 'none' : '1px solid var(--border)',
-                    background: courseSort === tab.key ? 'var(--primary)' : 'transparent',
-                    color: courseSort === tab.key ? 'var(--primary-fg)' : 'var(--muted)',
-                    transition: 'all 0.15s',
-                  }}>
-                  {locale === 'ar' ? tab.ar : tab.en}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-            <Button variant="outline" asChild className="shrink-0">
-              <Link href={`/${locale}/courses`}>
-                {locale === 'ar' ? 'عرض الكل' : 'View All'}
-                <ArrowRight className="h-4 w-4" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
-              </Link>
-            </Button>
-          </div>
-
-          {sortedCourses.length === 0 && (
-            <div className="text-center py-12" style={{ color: 'var(--muted)' }}>
-              {locale === 'ar' ? tl('loadingCourses') : 'Loading courses...'}
-            </div>
-          )}
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile 
-              ? 'repeat(2, 1fr)'
-              : 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: isMobile ? 12 : 20,
-          }}>
-            {sortedCourses.map((course, index) => (
-              <div key={course.id} className="group relative rounded-xl overflow-hidden card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                <div className="relative aspect-video overflow-hidden" style={{ background: 'var(--surface-2)' }}>
-                  {thumbUrl(course.thumbnail) ? (
-                    <img src={thumbUrl(course.thumbnail)!} alt="" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Laptop className="h-10 w-10 text-primary" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" style={{ background: 'var(--overlay)' }}>
-                    <div className="h-14 w-14 rounded-full flex items-center justify-center" style={{ background: 'var(--surface)' }}>
-                      <Play className="h-6 w-6" style={{ color: 'var(--primary)', transform: 'translateX(2px)' }} />
-                    </div>
-                  </div>
-                  {courseSort === 'popular' && course.enrollmentCount === maxEnrollment && maxEnrollment > 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--gold)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'الأكثر طلباً' : 'Popular'}</div>
-                  )}
-                  {courseSort === 'newest' && index === 0 && (
-                    <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 px-3 py-1 rounded-full text-xs font-medium" style={{ background: 'var(--primary)', color: 'var(--primary-fg)' }}>{locale === 'ar' ? 'جديد' : 'New'}</div>
-                  )}
-                  {isLiveNow(course) && (
-                    <div
-                      className="absolute top-3 left-3 rtl:left-auto rtl:right-3 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5"
-                      style={{ background: 'var(--error)', color: 'var(--primary-fg)', animation: 'livePulse 1.5s infinite', zIndex: 2 }}
-                    >
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary-fg)', display: 'inline-block' }} />
-                      {locale === 'ar' ? 'مباشر الآن' : 'LIVE NOW'}
-                    </div>
-                  )}
-                  <div className="absolute bottom-3 right-3 rtl:right-auto rtl:left-3 px-2 py-1 rounded text-xs flex items-center gap-1" style={{ background: 'var(--overlay-strong)', color: 'var(--primary-fg)', backdropFilter: 'blur(4px)' }}><Clock className="h-3 w-3" />{course.duration}h</div>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-lg font-medium mb-3 line-clamp-2 transition-colors" style={{ color: 'var(--foreground)' }}>{typeof course.title === 'string' ? course.title : ''}</h3>
-                  <div className="flex items-center gap-4 text-sm mb-4" style={{ color: 'var(--muted)' }}>
-                    <div className="flex items-center gap-1"><Users className="h-4 w-4" /><span>{course.students.toLocaleString()}</span></div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                    <div className="text-xl font-medium" style={{ color: 'var(--primary)' }}>{formatCoursePrice(course)}</div>
-                    {enrolledIds.has(course.id) ? (
-                      <Link
-                        href={
-                          isLiveCourse(course)
-                            ? course.liveStatus === 'ended'
-                              ? `/${locale}/courses/${course.id}`
-                              : `/${locale}/live/${course.id}`
-                            : `/${locale}/learn/${course.id}`
-                        }
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '8px 16px',
-                          borderRadius: '10px',
-                          background: 'color-mix(in srgb, var(--success) 12%, transparent)',
-                          border: '1px solid color-mix(in srgb, var(--success) 40%, transparent)',
-                          color: 'var(--success)',
-                          fontSize: 13,
-                          fontWeight: 500,
-                          textDecoration: 'none',
-                        }}>
-                        <CheckCircle2 size={14} />
-                        {locale === 'ar' ? 'مشترك بالفعل' : 'Already Enrolled'}
-                      </Link>
-                    ) : (
-                      <Link href={`/${locale}/courses/${course.id}`} className="btn-primary" style={{ fontSize: 13, padding: '8px 16px' }}>{locale === 'ar' ? 'التحقق الآن' : 'Enroll'}</Link>
-                    )}
-                  </div>
-                </div>
+      {/* TILES */}
+      <section className="dw2-l-sec alt">
+        <div className="dw2-l-wrap">
+          <div className="dw2-l-tiles">
+            {tiles.map((x, i) => (
+              <div key={i} className="dw2-l-tile">
+                <span className="dw2-l-tile-n">{i + 1}</span>
+                <h3>{x.t}</h3>
+                <p>{x.d}</p>
               </div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-16">
-            <h3 className="text-xl font-medium text-center mb-6 font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'تصفح حسب المجال' : 'Browse by Category'}</h3>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {categories.map((category, index) => (
-                <Link key={category.slug || index} href={`/${locale}/courses?categoryId=${category.id}`} className="group flex items-center gap-4 p-4 rounded-xl card-hover" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                  <div className="shrink-0 h-12 w-12 rounded-lg flex items-center justify-center" style={{ background: category.bg }}><category.icon className="h-6 w-6" style={{ color: category.color }} /></div>
-                  <div><h4 className="font-medium" style={{ color: 'var(--foreground)' }}>{category.name[locale]}</h4><p className="text-sm" style={{ color: 'var(--muted)' }}>{category.count} {locale === 'ar' ? 'كورس' : 'Courses'}</p></div>
-                </Link>
+      {/* PERSONAS */}
+      <section className="dw2-l-sec">
+        <div className="dw2-l-wrap">
+          <div className="dw2-l-head center">
+            <span className="dw2-l-eyebrow">{t('personasEyebrow')}</span>
+            <h2>{t('personasTitle')}</h2>
+          </div>
+          <div className="dw2-l-personas">
+            {personas.map((x, i) => (
+              <a key={i} className="dw2-l-pcard" href={assessmentHref}>
+                <h3>{x.t}</h3>
+                <p>{x.d}</p>
+                <span className="dw2-l-link">{t('startHere')}<Arrow flip={isAr} /></span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* TRACKS */}
+      {tracks.length > 0 && (
+        <section className="dw2-l-sec alt">
+          <div className="dw2-l-wrap">
+            <div className="dw2-l-head">
+              <span className="dw2-l-eyebrow">{t('tracksEyebrow')}</span>
+              <h2>{t('tracksTitle')}</h2>
+            </div>
+            <div className="dw2-l-tracks">
+              {tracks.map((p) => (
+                <a key={p.id} className="dw2-l-tcard" href={`${MAIN_SITE_URL}/${locale}/careers/${p.slug}`}>
+                  <h3>{p.title}</h3>
+                  {p.description && <p className="dw2-l-tdesc">{p.description}</p>}
+                  {p.roles.length > 0 && (
+                    <div className="dw2-l-roles">
+                      {p.roles.map((r) => <span key={r}>{r}</span>)}
+                    </div>
+                  )}
+                  {p.salary && (
+                    <p className="dw2-l-sal">
+                      <span>{t('salaryLabel')}</span>
+                      <b>{p.salary}</b>
+                    </p>
+                  )}
+                  <span className="dw2-l-link dw2-l-tfoot">{t('viewTrack')}<Arrow flip={isAr} /></span>
+                </a>
               ))}
             </div>
+            <div style={{ marginTop: 20 }}>
+              <a className="dw2-l-link" href={`${MAIN_SITE_URL}/${locale}/careers`}>{t('tracksAll')}<Arrow flip={isAr} /></a>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* ========== CTA ========== */}
-      <section className="relative py-16 sm:py-24 overflow-hidden" style={{ background: 'color-mix(in srgb, var(--primary) 8%, var(--background))', color: 'var(--foreground)' }}>
-        <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm mb-6" style={{ background: 'color-mix(in srgb, var(--foreground) 7%, transparent)', border: '1px solid var(--border)', color: 'var(--muted)' }}><Globe className="h-4 w-4" /><span>{locale === 'ar' ? 'شهادات معتمدة عالمياً' : 'Globally Certified'}</span></div>
-          <h2 className="text-3xl sm:text-4xl font-medium font-madinet" style={{ color: 'var(--foreground)' }}>{locale === 'ar' ? 'جاهز تبدأ رحلتك؟' : 'Ready to Start?'}</h2>
-          <p className="mt-4 text-lg" style={{ color: 'var(--muted)' }}>{locale === 'ar' ? tl('joinLearners') : 'Join thousands of learners and start today'}</p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center [&>a]:w-full sm:[&>a]:w-auto">
-            {/* ===== CTA START FREE BUTTON ===== */}
-            <a
-              href="#"
-              onClick={handleStartFreeClick}
-              className={`btn-cta-primary text-base inline-flex items-center justify-center gap-2 ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
-              aria-disabled={authLoading}
-              role="button"
-              tabIndex={authLoading ? -1 : 0}
-            >
-              {authLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-                </>
-              ) : (
-                <>
-                  {locale === 'ar' ? 'ابدأ مجاناً الآن' : 'Start Free Now'}
-                  <ArrowRight className="h-5 w-5" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
-                </>
-              )}
-            </a>
-            
-            {/* ===== CTA BROWSE COURSES BUTTON ===== */}
-            <a
-              href="#"
-              onClick={handleBrowseCoursesClick}
-              className="inline-flex items-center justify-center gap-2 text-base font-medium rounded-xl px-8 py-3.5 transition-all duration-200 hover:bg-[color-mix(in_srgb,var(--foreground)_10%,transparent)]"
-              style={{
-                background: 'transparent',
-                border: '1.5px solid var(--border-strong)',
-                color: 'var(--foreground)',
-                textDecoration: 'none',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                cursor: 'pointer',
-              }}
-            >
-              {locale === 'ar' ? 'تصفح الكورسات' : 'Browse Courses'}
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* ========== STICKY CTA ========== */}
-      <div className={`floating-cta ${showStickyCta ? 'visible' : ''}`}>
-        <a
-          href="#"
-          onClick={handleStartFreeClick}
-          className={`btn-primary w-full justify-center ${authLoading ? 'opacity-75 pointer-events-none' : ''}`}
-          aria-disabled={authLoading}
-          role="button"
-          tabIndex={authLoading ? -1 : 0}
-        >
-          {authLoading ? (
-            <>
-              <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-            </>
-          ) : (
-            <>
-              {locale === 'ar' ? 'ابدأ التعلم الآن' : 'Start Learning Now'}
-              <ArrowRight className="h-4 w-4" style={{ transform: locale === 'ar' ? 'scaleX(-1)' : 'none' }} />
-            </>
-          )}
-        </a>
-      </div>
-
-      {/* ========== ANIMATIONS ========== */}
-      <style>{`
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-        @keyframes floatBadge { 0%, 100% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
-        @keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        .animate-float-badge { animation: floatBadge 7s ease-in-out infinite; }
-        .animate-float-badge-reverse { animation: floatBadge 5s ease-in-out infinite reverse; }
-      `}</style>
-    </div>
+        </section>
+      )}
+    </main>
   )
 }

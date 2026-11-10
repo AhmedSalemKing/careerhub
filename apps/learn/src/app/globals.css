@@ -1486,3 +1486,61 @@ h6,
 .font-semibold:not(h1):not(h2):not(h3):not(h4):not(.h1):not(.h2):not(.h3):not(.h4) {
   font-weight: 500;
 }
+
+/* ── Learn home (dw2-l-) ── */
+.dw2-learn { font-size: 13px; line-height: 1.5; color: var(--foreground); background: var(--background); }
+.dw2-learn :is(h1, h2, h3) { font-family: inherit; color: var(--foreground); margin: 0; letter-spacing: 0; line-height: 1.2; }
+.dw2-learn h1 { font-size: 32px; font-weight: 800; }
+.dw2-learn h2 { font-size: 22px; font-weight: 700; }
+.dw2-learn h3 { font-size: 16px; font-weight: 700; }
+.dw2-learn p { margin: 0; font-size: 13px; }
+.dw2-l-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.dw2-l-sec { padding: 40px 0; }
+.dw2-l-sec.alt { background: var(--surface-2); }
+.dw2-l-eyebrow { display: inline-block; font-size: 11px; font-weight: 600; line-height: 1; padding: 5px 10px; border-radius: 99px; background: var(--primary-subtle); color: var(--primary); }
+.dw2-l-head { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-bottom: 20px; }
+.dw2-l-head.center { align-items: center; text-align: center; }
+.dw2-l-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 20px; border-radius: 10px; font-size: 13px; font-weight: 600; text-decoration: none; cursor: pointer; border: 1px solid var(--primary); box-sizing: border-box; }
+.dw2-l-btn.primary { background: var(--primary); color: var(--primary-fg); }
+.dw2-l-btn.ghost { background: transparent; color: var(--foreground); border-color: var(--border-strong); }
+.dw2-l-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--primary); text-decoration: none; }
+/* hero */
+.dw2-l-hero { position: relative; overflow: hidden; padding: 40px 0 36px; border-bottom: 1px solid var(--border); }
+.dw2-l-hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
+.dw2-l-hero-copy { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.dw2-l-lede { color: var(--muted); max-width: 480px; }
+.dw2-l-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.dw2-l-scene { position: relative; height: 200px; border-radius: 16px; overflow: hidden; background: var(--primary-subtle); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.dw2-l-orb { position: absolute; border-radius: 50%; filter: blur(24px); opacity: 0.5; background: var(--primary); }
+.dw2-l-orb.o1 { width: 120px; height: 120px; top: -30px; inset-inline-start: -20px; }
+.dw2-l-orb.o2 { width: 100px; height: 100px; bottom: -30px; inset-inline-end: -10px; background: var(--accent); }
+.dw2-l-duo { position: relative; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); max-width: 85%; }
+.dw2-l-duo p { font-size: 11px; color: var(--muted); }
+.dw2-l-duo strong { font-size: 13px; }
+.dw2-l-duo-ring { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 4px solid var(--primary); }
+.dw2-l-duo-ring b { font-size: 12px; }
+/* tiles */
+.dw2-l-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.dw2-l-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.dw2-l-tile p { color: var(--muted); }
+.dw2-l-tile-n { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: var(--primary-subtle); color: var(--primary); font-size: 12px; font-weight: 700; }
+/* personas */
+.dw2-l-personas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dw2-l-pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; transition: border-color .15s; }
+.dw2-l-pcard:hover { border-color: var(--primary); }
+.dw2-l-pcard p { color: var(--muted); flex: 1; }
+/* tracks */
+.dw2-l-tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dw2-l-tcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit; transition: border-color .15s; }
+.dw2-l-tcard:hover { border-color: var(--primary); }
+.dw2-l-tdesc { color: var(--muted); }
+.dw2-l-roles { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw2-l-roles span { font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--surface-2); color: var(--foreground-2); }
+.dw2-l-sal { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: var(--muted); }
+.dw2-l-sal b { font-size: 13px; color: var(--success); }
+.dw2-l-tfoot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border); }
+@media (max-width: 900px) {
+	.dw2-l-hero-grid, .dw2-l-personas, .dw2-l-tracks { grid-template-columns: 1fr; }
+	.dw2-l-tiles { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) { .dw2-l-tiles { grid-template-columns: 1fr; } }
