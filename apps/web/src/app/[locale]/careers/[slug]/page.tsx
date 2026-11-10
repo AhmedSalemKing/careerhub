@@ -393,8 +393,8 @@ export default function CareerPathDetailPage() {
 
           {/* ASIDE: sticky cards */}
           <aside className="dw2-aside">
-            <div className="dw2-card featured">
-              <span className="dw2-card-label">
+            <div className="dw2-pcard featured">
+              <span className="dw2-pcard-label">
                 {isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}
                 {isMock && <span className="dw2-badge">{isAr ? 'نموذج' : 'Sample'}</span>}
               </span>
@@ -408,8 +408,8 @@ export default function CareerPathDetailPage() {
               {enrollBtn(true)}
             </div>
 
-            <div className="dw2-card alt">
-              <span className="dw2-card-label"><span className="dw2-badge">{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</span></span>
+            <div className="dw2-pcard alt">
+              <span className="dw2-pcard-label"><span className="dw2-badge">{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</span></span>
               {avatarRow}
               <h3>{isAr ? 'إرشاد فردي' : 'One-to-one mentoring'}</h3>
               <p>{isAr ? 'احجز جلسة مع مرشد في هذا المجال متى احتجت، دون الحاجة للتسجيل في المسار.' : 'Book a session with a mentor whenever you need, no path enrollment required.'}</p>
@@ -422,7 +422,7 @@ export default function CareerPathDetailPage() {
               <Link href={`/${locale}/coaching`} className="dw2-btn ghost sm block">{isAr ? 'احجز جلسة مدفوعة' : 'Book a paid session'}</Link>
             </div>
 
-            <div className="dw2-card">
+            <div className="dw2-pcard">
               <details open>
                 <summary>✦ {isAr ? 'ما هو مجاني' : "What's free"}</summary>
                 <ul className="dw2-checklist">
@@ -433,16 +433,16 @@ export default function CareerPathDetailPage() {
             </div>
 
             {mentors.length > 0 && (
-              <div className="dw2-card">
-                <span className="dw2-card-title">{isAr ? 'الدعم في هذا المسار' : 'Support on this path'}</span>
+              <div className="dw2-pcard">
+                <span className="dw2-pcard-title">{isAr ? 'الدعم في هذا المسار' : 'Support on this path'}</span>
                 <p>{isAr ? 'مرشدون متاحون لمساعدتك أثناء رحلتك.' : 'Mentors are available to help along the way.'}</p>
                 {avatarRow}
               </div>
             )}
 
             {(view.description || view.demand || (view.salaryText && !isMock)) && (
-              <div className="dw2-card">
-                <span className="dw2-card-title">{isAr ? 'لماذا هذا المسار' : 'Why this path'}</span>
+              <div className="dw2-pcard">
+                <span className="dw2-pcard-title">{isAr ? 'لماذا هذا المسار' : 'Why this path'}</span>
                 {view.description && <p>{view.description}</p>}
                 <ul className="dw2-checklist">
                   {view.demand && <li>{view.demand}</li>}

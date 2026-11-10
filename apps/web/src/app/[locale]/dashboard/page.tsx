@@ -720,7 +720,7 @@ function StudentOverview() {
   )
 
   return (
-    <div className="dw-dash-wrap">
+    <div className="dw-dash-wrap dw2-dash-wrap">
 
       {/* HEADER */}
       <div className="dw-dash-head">
@@ -737,10 +737,9 @@ function StudentOverview() {
         </div>
       </div>
 
-      <div className="dgrid">
-
-        {/* ===== CAREER PATH CARD — s8 ===== */}
-        <div className="dw-card s8">
+      <div className="dw2-dash-body">
+        <div className="dw2-dash-right">
+        <div className="dw-card dw2-card">
           <div className="dw-card-h">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
             <h2 style={{ flex: 1 }}>المسار المهني</h2>
@@ -884,12 +883,11 @@ function StudentOverview() {
             </div>
           )}
         </div>
-
-        {/* ===== RIGHT COLUMN — s4 ===== */}
-        <div className="s4-col">
+        </div>
+        <div className="dw2-dash-left">
 
           {/* === DARK SESSION CARD (real data from /consulting/sessions) === */}
-          <div className="dw-card dw-live-card">
+          <div className="dw-card dw2-card dw-live-card">
             <div className="dw-card-h">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/>
@@ -957,7 +955,7 @@ function StudentOverview() {
           </div>
 
           {/* === MENTOR SUPPORT CARD (real counts from the same sessions query) === */}
-          <div className="dw-card">
+          <div className="dw-card dw2-card">
             <div className="dw-card-h">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -984,33 +982,11 @@ function StudentOverview() {
               عرض كل جلساتي
             </Link>
           </div>
-
         </div>
+      </div>
 
-        {/* ===== MILESTONES — s6 ===== */}
-        <div className="dw-card s6">
-          <div className="dw-card-h">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
-            <h3>المحطات</h3>
-          </div>
-          <ol className="dw-ms">
-            {[
-              { label: 'إنشاء حسابك', done: true, doing: false },
-              { label: 'اختيار مسارك المهني', done: !!selectedPath, doing: !selectedPath },
-              { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0, doing: !!selectedPath && (completedCount ?? 0) === 0 },
-              { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0, doing: (completedCount ?? 0) > 0 && (completedSessionsCount ?? 0) === 0 },
-              { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0, doing: false },
-            ].map((s, i) => (
-              <li key={i} className={s.done ? 'done' : s.doing ? 'doing' : ''}>
-                <span className="dw-m-dot">{s.done && <Check size={11} />}</span>
-                <span>{s.label}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* ===== RASHEED RECOMMENDATIONS — s6 ===== */}
-        <div className="dw-card s6">
+      <div className="dw2-dash-row2">
+        <div className="dw-card dw2-card">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             <h3>ترشيحات رشيد</h3>
@@ -1040,35 +1016,30 @@ function StudentOverview() {
           )}
         </div>
 
-        {/* ===== CERTIFICATES — s6 ===== */}
-        <div className="dw-card s6">
+        <div className="dw-card dw2-card">
           <div className="dw-card-h">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
-            <h3>شهاداتي</h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>
+            <h3>المحطات</h3>
           </div>
-          {certificatesCount > 0 ? (
-            <>
-              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                حصلت على <b style={{ color: 'var(--ink)', fontSize: '20px' }}>{certificatesCount}</b> {certificatesCount === 1 ? 'شهادة' : 'شهادات'}
-              </p>
-              <Link href={`/${locale}/dashboard/certificates`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
-                عرض شهاداتي
-              </Link>
-            </>
-          ) : (
-            <>
-              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
-                لم تحصل على شهادات بعد
-              </p>
-              <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
-                اكمل أول كورس
-              </Link>
-            </>
-          )}
+          <ol className="dw-ms">
+            {[
+              { label: 'إنشاء حسابك', done: true, doing: false },
+              { label: 'اختيار مسارك المهني', done: !!selectedPath, doing: !selectedPath },
+              { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0, doing: !!selectedPath && (completedCount ?? 0) === 0 },
+              { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0, doing: (completedCount ?? 0) > 0 && (completedSessionsCount ?? 0) === 0 },
+              { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0, doing: false },
+            ].map((s, i) => (
+              <li key={i} className={s.done ? 'done' : s.doing ? 'doing' : ''}>
+                <span className="dw-m-dot">{s.done && <Check size={11} />}</span>
+                <span>{s.label}</span>
+              </li>
+            ))}
+          </ol>
         </div>
+      </div>
 
-        {/* ===== PAYMENTS — s6 ===== */}
-        <div className="dw-card s6">
+      <div className="dw2-dash-row2">
+        <div className="dw-card dw2-card">
           <div className="dw-card-h">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 2v20l3-2 2 2 3-2 3 2 2-2 3 2V2l-3 2-2-2-3 2-3-2-2 2z"/><path d="M8 8h8M8 12h8"/></svg>
             <h3>المدفوعات</h3>
@@ -1099,6 +1070,31 @@ function StudentOverview() {
           )}
         </div>
 
+        <div className="dw-card dw2-card">
+          <div className="dw-card-h">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg>
+            <h3>شهاداتي</h3>
+          </div>
+          {certificatesCount > 0 ? (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                حصلت على <b style={{ color: 'var(--ink)', fontSize: '20px' }}>{certificatesCount}</b> {certificatesCount === 1 ? 'شهادة' : 'شهادات'}
+              </p>
+              <Link href={`/${locale}/dashboard/certificates`} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
+                عرض شهاداتي
+              </Link>
+            </>
+          ) : (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>
+                لم تحصل على شهادات بعد
+              </p>
+              <Link href={`/${locale}/dashboard/my-courses`} className="dw-btn dw-btn-primary dw-btn-sm dw-btn-block">
+                اكمل أول كورس
+              </Link>
+            </>
+          )}
+        </div>
       </div>
 
       {bookingOpen && (

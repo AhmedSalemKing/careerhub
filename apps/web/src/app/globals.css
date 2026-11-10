@@ -4036,14 +4036,14 @@ a.dw2-course-row:hover { border-color: var(--purple); }
 .dw2-course-price { font-size: 13px; font-weight: 700; flex-shrink: 0; }
 
 /* aside cards */
-.dw2-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.dw2-card.featured { border-color: var(--purple); padding: 24px; }
-.dw2-card.alt { background: var(--surface-2); }
-.dw2-card-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+.dw2-pcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+.dw2-pcard.featured { border-color: var(--purple); padding: 24px; }
+.dw2-pcard.alt { background: var(--surface-2); }
+.dw2-pcard-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
 .dw2-badge { font-size: 11px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); }
 .dw2-big-price { font-size: 32px; font-weight: 800; line-height: 1.2; }
 .dw2-mid-price { font-size: 20px; font-weight: 700; }
-.dw2-card p, .dw2-card small { font-size: 13px; color: var(--ink-2); }
+.dw2-pcard p, .dw2-pcard small { font-size: 13px; color: var(--ink-2); }
 .dw2-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .dw2-checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; }
 .dw2-checklist li::before { content: "✓"; color: var(--purple); font-weight: 700; }
@@ -4051,10 +4051,10 @@ a.dw2-course-row:hover { border-color: var(--purple); }
 .dw2-avatars { display: flex; }
 .dw2-avatars > * { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--surface); margin-inline-start: -8px; object-fit: cover; background: var(--wash, #e9e3ff); color: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
 .dw2-avatars > *:first-child { margin-inline-start: 0; }
-.dw2-card details summary { cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; display: flex; align-items: center; gap: 8px; }
-.dw2-card details summary::-webkit-details-marker { display: none; }
-.dw2-card details[open] summary { margin-bottom: 10px; }
-.dw2-card-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.dw2-pcard details summary { cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; display: flex; align-items: center; gap: 8px; }
+.dw2-pcard details summary::-webkit-details-marker { display: none; }
+.dw2-pcard details[open] summary { margin-bottom: 10px; }
+.dw2-pcard-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .dw2-grow { flex: 1; }
 
 @media (max-width: 960px) {
@@ -4062,4 +4062,20 @@ a.dw2-course-row:hover { border-color: var(--purple); }
 	.dw2-aside { position: static; }
 	.dw2-page h1 { font-size: 34px !important; }
 	.dw2-hero { min-height: 0; }
+}
+
+/* ── Dashboard layout grid (dw2-dash-) ── */
+.dw-dashboard .dw2-dash-wrap { max-width: 1100px; margin: 0 auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+.dw-dashboard .dw2-dash-wrap .dw-dash-head { padding: 0; }
+.dw2-dash-body { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; }
+.dw2-dash-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.dw2-dash-right { min-height: 400px; min-width: 0; }
+.dw2-dash-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
+/* All dashboard cards share one look */
+.dw-dashboard .dw-card.dw2-card { border-radius: 16px; padding: 20px; margin: 0; }
+.dw-dashboard .dw-card.dw2-card:not(.dw-live-card) { background: var(--surface, #151036); border: 1px solid var(--line, #2a2550); }
+@media (max-width: 768px) {
+	.dw2-dash-body { grid-template-columns: 1fr; }
+	.dw2-dash-row2 { grid-template-columns: 1fr; }
+	.dw2-dash-right { min-height: 0; }
 }
