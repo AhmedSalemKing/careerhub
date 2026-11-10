@@ -56,18 +56,19 @@ const MOCK_PATH = {
   id: 'mock',
   slug: 'frontend-developer',
   title: 'مطور واجهات',
-  description: 'تعلّم بناء واجهات ويب تفاعلية باستخدام أحدث التقنيات. مبني حول الأدوات الأكثر طلبًا في سوق العمل.',
+  description: 'تعلّم بناء واجهات ويب تفاعلية باستخدام أحدث التقنيات. مبني حول الأدوات الأكثر طلبًا في سوق العمل السعودي والمصري.',
   coursesCount: 4,
   durationWeeks: 20,
   level: 'مبتدئ ← متوسط',
   languages: ['العربية', 'الإنجليزية'],
-  vision2030: true,
+  vision2030SA: true,
+  vision2030EG: false,
   price: 2900,
   skills: ['HTML', 'CSS', 'JavaScript', 'React', 'TypeScript'],
   jobs: [
-    { title: 'مطور واجهات', description: 'بناء واجهات ويب تفاعلية', salaryMin: 8, salaryMax: 25, vision2030: true },
-    { title: 'مطور React', description: 'تطوير تطبيقات بـ React', salaryMin: 10, salaryMax: 28, vision2030: false },
-    { title: 'مهندس UI', description: 'تصميم وتطوير واجهات المستخدم', salaryMin: 9, salaryMax: 22, vision2030: true },
+    { title: 'مطور واجهات', description: 'بناء واجهات ويب تفاعلية وتطبيقات متجاوبة', salaryMin: 8, salaryMax: 25, vision2030: true },
+    { title: 'مطور React', description: 'تطوير تطبيقات SPA باستخدام React وحالاتها', salaryMin: 10, salaryMax: 28, vision2030: false },
+    { title: 'مهندس UI', description: 'تصميم وتطوير مكونات واجهة المستخدم', salaryMin: 9, salaryMax: 22, vision2030: true },
   ],
   courses: [
     { order: 1, title: 'أساسيات HTML و CSS', type: 'ذاتي التعلّم', weeks: 4, provider: 'أكاديمية بوصلة', language: 'العربية' },
@@ -106,7 +107,7 @@ export default function CareerPathDetailPage() {
         return d && typeof d === 'object' && d.id ? (d as PathDetail) : null
       } catch (e: any) {
         console.log('[career-path-detail] slug:', slug, 'error status:', e?.response?.status, 'body:', e?.response?.data ?? e?.message)
-        if (e?.response?.status === 404) return null
+        if (e?.response?.status === 404 || e?.response?.status === 500) return null
         throw e
       }
     },
@@ -143,7 +144,7 @@ export default function CareerPathDetailPage() {
   const view: View | null = (() => {
     if (isLoading || isError) return null
     if (!path) {
-      const m = MOCK_PATH
+      const m = { ...MOCK_PATH, slug }
       return {
         title: m.title,
         description: m.description,
@@ -151,7 +152,7 @@ export default function CareerPathDetailPage() {
         durationText: `${m.durationWeeks.toLocaleString(nf)} ${isAr ? 'أسبوعًا' : 'weeks'}`,
         level: m.level,
         languages: m.languages,
-        vision2030: m.vision2030,
+        vision2030: m.vision2030SA || m.vision2030EG,
         totalPrice: m.price,
         skills: m.skills,
         jobs: m.jobs.map((j) => ({
@@ -275,7 +276,7 @@ export default function CareerPathDetailPage() {
             <h1>
               {view.title}
               {isMock && (
-                <span className="dw2-stat-pill" style={{ marginInlineStart: 12, fontSize: 12, verticalAlign: 'middle', color: 'var(--purple)' }}>
+                <span className="dw2-stat-pill" style={{ marginInlineStart: 12, fontSize: 12, verticalAlign: 'middle', background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
                   {isAr ? 'بيانات تجريبية' : 'Sample data'}
                 </span>
               )}
