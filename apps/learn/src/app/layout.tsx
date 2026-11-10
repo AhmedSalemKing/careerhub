@@ -4,7 +4,6 @@ import { getLocale, getMessages } from 'next-intl/server'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from 'sonner'
 import { Suspense } from 'react'
-import { IBM_Plex_Sans_Arabic, Inter } from 'next/font/google'
 import './globals.css'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
@@ -14,10 +13,6 @@ import { LoadingProvider } from './components/PageLoader'
 import { TokenSync } from './components/TokenSync'
 import KeepAlivePing from './components/KeepAlivePing'
 import NumberInputGuard from './components/NumberInputGuard'
-
-// Home redesign fonts (same pair as the reference): Plex Arabic for RTL, Inter for LTR.
-const plexArabic = IBM_Plex_Sans_Arabic({ subsets: ['arabic', 'latin'], weight: ['300', '400', '500', '600', '700'], variable: '--font-plex-ar', display: 'swap' })
-const inter = Inter({ subsets: ['latin'], weight: ['300', '400', '500', '600', '700', '800'], variable: '--font-inter', display: 'swap' })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://devewayhub.vercel.app'),
@@ -62,10 +57,13 @@ export default async function RootLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`no-transition ${plexArabic.variable} ${inter.variable}`}
+      className="no-transition"
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <link rel="preconnect" href="https://api.deveways.com" />
         <link rel="dns-prefetch" href="https://api.deveways.com" />
         <meta name="theme-color" content="#5120C8" />
