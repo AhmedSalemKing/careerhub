@@ -179,7 +179,11 @@
     "logout": "Logout",
     "profile": "Profile",
     "admin": "Admin Panel",
-    "courses": "Courses"
+    "courses": "Courses",
+    "learners": "For learners",
+    "mentors": "For mentors",
+    "providers": "For training providers",
+    "corporates": "For companies"
   },
   "hero": {
     "badge": "For learners in Saudi Arabia and Egypt",

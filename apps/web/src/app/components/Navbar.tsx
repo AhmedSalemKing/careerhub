@@ -4,12 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
-import { SearchBar } from './SearchBar' 
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
-import Image from 'next/image'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
 import { useAuthStore } from '../../stores/authStore'
 import { get } from '../../lib/api'
@@ -61,43 +59,24 @@ function ThemeToggle() {
 
   useEffect(() => setMounted(true), [])
 
-  if (!mounted) {
-    return (
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-xl"
-        style={{ background: 'var(--surface-2)' }}
-      >
-        <div className="h-4 w-4 rounded-full" style={{ background: 'var(--border)' }} />
-      </div>
-    )
-  }
-
-  const isDark = resolvedTheme === 'dark'
+  const isDark = mounted && resolvedTheme === 'dark'
+  const label = isDark ? 'Switch to light mode' : 'Switch to dark mode'
 
   return (
     <button
+      type='button'
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="icon-btn theme-btn"
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className='icon-btn'
+      aria-label={label}
+      title={label}
     >
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all duration-200"
-        style={{
-          opacity: isDark ? 1 : 0,
-          transform: isDark ? 'rotate(0deg) scale(1)' : 'rotate(90deg) scale(0.5)',
-        }}
-      >
-        <Moon className="h-[15px] w-[15px]" style={{ color: 'var(--brand)' }} />
-      </div>
-      <div
-        className="absolute inset-0 flex items-center justify-center transition-all duration-200"
-        style={{
-          opacity: isDark ? 0 : 1,
-          transform: isDark ? 'rotate(-90deg) scale(0.5)' : 'rotate(0deg) scale(1)',
-        }}
-      >
-        <Sun className="h-[15px] w-[15px]" style={{ color: '#F59E0B' }} />
-      </div>
+      <svg className='icon' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.9' strokeLinecap='round' strokeLinejoin='round' aria-hidden='true'>
+        {isDark ? (
+          <path d='M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4' />
+        ) : (
+          <path d='M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z' />
+        )}
+      </svg>
     </button>
   )
 }
@@ -392,39 +371,17 @@ export function Navbar() {
     ? `${user.profile.firstName?.[0] ?? ''}${user.profile.lastName?.[0] ?? ''}`.toUpperCase()
     : ''
 
-  /* ═══ Navigation Links ═══ */
-  const links: { href: string; label: string; isAnchor?: boolean; sectionId?: string }[] = [
-    { href: `/${locale}/careers`, label: t('careers') },
-    { href: `/${locale}/coaching`, label: t('coaches') },
+  /* ═══ Navigation Links (same five items as the reference nav) ═══ */
+  type NavItem = { key: string; href: string; label: string; external?: boolean }
+  const navItems: NavItem[] = [
+    { key: 'careers', href: `/${locale}/careers`, label: t('careers') },
+    { key: 'learners', href: learnUrlWithToken(`/${locale}`), label: t('learners'), external: true },
+    { key: 'mentors', href: `/${locale}/coaching`, label: t('mentors') },
+    { key: 'providers', href: `/${locale}#providers`, label: t('providers') },
+    { key: 'corporates', href: `/${locale}#corporates`, label: t('corporates') },
   ]
 
   const isActive = (href: string) => pathname === href
-
-  const learnDesktop = (
-            <a
-              key="learn"
-              href={learnUrlWithToken(`/${locale}`)}
-              target={isLearnRelative ? '_self' : '_blank'}
-              rel="noopener noreferrer"
-            >
-              {t('training')}
-              <span className="inline-block ms-1 text-[10px] opacity-35">↗</span>
-            </a>
-  )
-
-  const learnMobile = (
-              <a
-              key="learn"
-                href={learnUrlWithToken(`/${locale}`)}
-                target={isLearnRelative ? '_self' : '_blank'}
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
-                style={{ fontWeight: 500, fontFamily: NAV_FONT, color: 'var(--foreground)', letterSpacing: '-0.01em' }}
-              >
-                {t('training')} <span className="text-xs opacity-30">↗</span>
-              </a>
-  )
 
   return (
     <>
@@ -442,139 +399,107 @@ export function Navbar() {
       <header className={`header dw-header${scrolled ? ' scrolled' : ''}`}>
         <div className="wrap">
 
-          {/* ═══ Branding (Logo + Text) ═══ */}
-          <Link href={`/${locale}`} className="logo">
-            <Image
-              src="/logo-icon.png"
-              alt="DeveWay"
-              width={52}
-              height={52}
-              priority
-              className="object-contain transition-opacity duration-200 hover:opacity-80"
-            />
-            {/* ✅ تم تعديل اللون هنا ليكون ديناميكياً حسب الوضع */}
-            <span className="logo-text hidden sm:inline-block">
-              DeveWay
-            </span>
+          {/* Logo (wordmark image, light/dark swap handled in CSS) */}
+          <Link href={`/${locale}`} className="logo" aria-label="DeveWay">
+            <img className="on-light" src="/logo-wordmark-light.webp" alt="DeveWay" />
+            <img className="on-dark" src="/logo-wordmark-dark.webp" alt="" />
           </Link>
 
-          {/* ═══ Navigation Links (Desktop) ═══ */}
-          <nav className="nav">
-            {links.map((l, i) => {
+          {/* Main nav */}
+          <nav className="nav" aria-label="Main">
+            {navItems.map((l) => {
               const active = isActive(l.href)
-              return (
-                <Fragment key={l.href}>
-                {i === 1 && learnDesktop}
-                <Link
+              return l.external ? (
+                <a
+                  key={l.key}
                   href={l.href}
-                  onClick={(e) => {
-                    if (l.isAnchor) {
-                      e.preventDefault()
-                      const sectionId = l.sectionId || 'career-paths'
-                      scrollToSection(sectionId, locale)
-                    }
-                  }}
+                  target={isLearnRelative ? '_self' : '_blank'}
+                  rel="noopener noreferrer"
+                >
+                  {l.label}
+                </a>
+              ) : (
+                <Link
+                  key={l.key}
+                  href={l.href}
                   className={active ? 'active' : undefined}
                   aria-current={active ? 'page' : undefined}
                 >
                   {l.label}
                 </Link>
-              </Fragment>
               )
             })}
           </nav>
 
-          {/* ═══ Actions ═══ */}
+          {/* Tools: market, language, theme, auth, menu */}
           <div className="hdr-tools">
+            <MarketSwitcher />
+            <LanguageSwitcher />
+            <ThemeToggle />
 
-            {/* Icon buttons row */}
-            <div className="flex items-center gap-1">
-              
-              <SearchBar />
-
-              <div className="hidden sm:flex items-center gap-1 border-e border-[color:var(--line)] pe-2 me-1">
-                <MarketSwitcher />
-                <LanguageSwitcher />
-                <ThemeToggle />
-                {mounted && isLoggedIn && (
-                  <Link
-                    href={`/${locale}/dashboard/ai-chat`}
-                    title="DeveWay AI"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors duration-150"
-                    style={{ background: 'rgba(81, 32, 200, 0.10)' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.18)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(81, 32, 200, 0.10)' }}
-                  >
-                    <Sparkles className="h-[14px] w-[14px]" style={{ color: 'var(--brand)' }} />
-                  </Link>
-                )}
-              </div>
-
-              <NotificationBell />
-            </div>
-
-            {/* Separator */}
             {mounted && isLoggedIn && (
-              <div className="hidden lg:block h-6 w-px mx-0.5" style={{ background: 'var(--border)' }} />
+              <>
+                <NotificationBell />
+                <Link href={`/${locale}/dashboard/ai-chat`} title="DeveWay AI" aria-label="DeveWay AI" className="icon-btn hide-sm">
+                  <Sparkles className="icon" />
+                </Link>
+                <div className="hidden lg:block">
+                  {user?.role === 'ADMIN' || user?.accountType === 'ADMIN' ? (
+                    <Link
+                      href={`/${locale}/admin`}
+                      className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-colors duration-150"
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                    >
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        {user?.profile?.avatar ? (
+                          <img
+                            src={user.profile.avatar}
+                            alt="avatar"
+                            className="h-7 w-7 rounded-full object-cover"
+                            style={{ boxShadow: '0 0 0 2px var(--error)' }}
+                          />
+                        ) : (
+                          <div
+                            className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold"
+                            style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
+                          >
+                            {initials || 'A'}
+                          </div>
+                        )}
+                        {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
+                      </div>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                        style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
+                      >
+                        Admin
+                      </span>
+                    </Link>
+                  ) : (
+                    <UserDropdown locale={locale} />
+                  )}
+                </div>
+              </>
             )}
 
-            {/* Auth (desktop) */}
-            {!mounted ? (
-              <div className="h-9 w-[130px] hidden lg:block" />
-            ) : isLoggedIn ? (
-              <div className="hidden lg:block">
-                {user?.role === 'ADMIN' || user?.accountType === 'ADMIN' ? (
-                  <Link
-                    href={`/${locale}/admin`}
-                    className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-sm font-medium transition-colors duration-150"
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--error-subtle)' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                    {user?.profile?.avatar ? (
-                      <img
-                        src={user.profile.avatar}
-                        alt="avatar"
-                        className="h-7 w-7 rounded-full object-cover"
-                        style={{ boxShadow: '0 0 0 2px var(--error)' }}
-                      />
-                    ) : (
-                      <div
-                        className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold"
-                        style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
-                      >
-                        {initials || 'A'}
-                      </div>
-                    )}
-                    {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
-                  </div>
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                      style={{ background: 'var(--error-subtle)', color: 'var(--error)', fontFamily: NAV_FONT }}
-                    >
-                      Admin
-                    </span>
-                  </Link>
-                ) : (
-                  <UserDropdown locale={locale} />
-                )}
-              </div>
-            ) : (
-              <div className="hidden lg:flex items-center gap-2">
-                <Link href={`/${locale}/login`} className="btn btn-ghost btn-sm">
+            {mounted && !isLoggedIn && (
+              <>
+                <Link href={`/${locale}/login`} className="btn btn-ghost btn-sm hide-md">
                   {t('login')}
                 </Link>
-                <Link href={`/${locale}/register`} className="btn btn-primary btn-sm">
+                <Link href={`/${locale}/register`} className="btn btn-primary btn-sm hide-sm">
                   {t('start_assessment')}
                 </Link>
-              </div>
+              </>
             )}
 
-            {/* Mobile toggle */}
+            {/* Hamburger */}
             <button
+              type="button"
               onClick={() => setMobileOpen(!mobileOpen)}
               className="icon-btn menu-btn"
-              aria-label="Toggle menu"
+              aria-label="Menu"
               aria-expanded={mobileOpen}
             >
               {mobileOpen ? <X className="icon" /> : <Menu className="icon" />}
@@ -596,35 +521,37 @@ export function Navbar() {
           <div className="px-4 py-5 space-y-5">
             {/* Nav links */}
             <nav className="flex flex-col gap-0.5">
-              {links.map((l, i) => {
+              {navItems.map((l) => {
                 const active = isActive(l.href)
-                return (
-                  <Fragment key={l.href}>
-                {i === 1 && learnMobile}
-                <Link
+                const style = {
+                  fontWeight: 500,
+                  fontFamily: NAV_FONT,
+                  color: active ? 'var(--brand)' : 'var(--foreground)',
+                  background: active ? 'var(--surface-2)' : 'transparent',
+                  letterSpacing: '-0.01em',
+                } as const
+                return l.external ? (
+                  <a
+                    key={l.key}
                     href={l.href}
-                    onClick={(e) => {
-                      if (l.isAnchor) {
-                        e.preventDefault()
-                        const sectionId = l.sectionId || 'career-paths'
-                        scrollToSection(sectionId, locale)
-                        setMobileOpen(false)
-                      } else {
-                        setMobileOpen(false)
-                      }
-                    }}
+                    target={isLearnRelative ? '_self' : '_blank'}
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
                     className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
-                    style={{
-                      fontWeight: 500,
-                      fontFamily: NAV_FONT,
-                      color: active ? 'var(--brand)' : 'var(--foreground)',
-                      background: active ? 'var(--surface-2)' : 'transparent',
-                      letterSpacing: '-0.01em',
-                    }}
+                    style={style}
+                  >
+                    {l.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={l.key}
+                    href={l.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-4 py-3.5 text-[15px] transition-colors duration-150"
+                    style={style}
                   >
                     {l.label}
                   </Link>
-              </Fragment>
                 )
               })}
             </nav>

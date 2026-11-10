@@ -2392,7 +2392,7 @@ a.dw-instructor:hover { color: var(--accent); }
 
 /* ── Responsive visibility ── */
 @media (max-width: 639px)  { .hide-sm { display: none !important; } }
-@media (min-width: 768px)  { .hide-md { display: none !important; } }
+@media (max-width: 767px)  { .hide-md { display: none !important; } }
 
 /* ── Large screens: hide hamburger ── */
 @media (min-width: 1024px) { .menu-btn { display: none !important; } }
