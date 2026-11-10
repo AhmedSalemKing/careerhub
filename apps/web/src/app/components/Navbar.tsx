@@ -406,23 +406,6 @@ export function Navbar() {
               href={learnUrlWithToken(`/${locale}`)}
               target={isLearnRelative ? '_self' : '_blank'}
               rel="noopener noreferrer"
-              className="px-[18px] py-[9px] rounded-xl transition-colors duration-150"
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                letterSpacing: '-0.01em',
-                fontFamily: NAV_FONT,
-                color: 'var(--foreground)',
-                opacity: 0.85,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--surface-2)'
-                e.currentTarget.style.opacity = '1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.opacity = '0.85'
-              }}
             >
               {t('training')}
               <span className="inline-block ms-1 text-[10px] opacity-35">↗</span>
