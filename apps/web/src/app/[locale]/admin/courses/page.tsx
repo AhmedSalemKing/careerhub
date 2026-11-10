@@ -11,6 +11,7 @@ import {
 
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { formatCoursePrice } from '../../../../lib/market'
+import { PackageModal } from './PackageModal'
 
 type AdminCourse = {
   id: string
@@ -44,6 +45,8 @@ export default function AdminCoursesPage() {
   const [processing, setProcessing] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [counts, setCounts] = useState({ all: 0, published: 0, draft: 0, pending: 0 })
+  const [packageOpen, setPackageOpen] = useState(false)
+  const [packageToast, setPackageToast] = useState(false)
 
   useEffect(() => {
     api.get('/admin/courses/counts')
@@ -85,6 +88,11 @@ export default function AdminCoursesPage() {
     try { await api.patch(`/admin/courses/${id}/reject`, { reason }); fetchCourses() }
     catch (e) { console.error(e) }
     finally { setProcessing(null) }
+  }
+
+  function onPackageCreated() {
+    setPackageToast(true)
+    setTimeout(() => setPackageToast(false), 3000)
   }
 
   function goToCreateCourse() {
@@ -157,6 +165,7 @@ export default function AdminCoursesPage() {
             {total} {isAr ? 'كورس' : 'courses'}
           </span>
         </div>
+        <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={goToCreateCourse}
           className="flex items-center gap-2 font-medium px-5 py-2.5 rounded-xl transition-all group"
@@ -170,6 +179,14 @@ export default function AdminCoursesPage() {
           {isAr ? 'إضافة كورس جديد' : 'Add New Course'}
           <ExternalLink size={14} style={{ opacity: 0.6 }} />
         </button>
+        <button
+          type="button"
+          onClick={() => setPackageOpen(true)}
+          style={{ background: 'var(--purple)', color: '#fff', borderRadius: 8, padding: '0 16px', fontSize: 13, height: 44 }}
+        >
+          {isAr ? 'إنشاء باكدج' : 'Create Package'}
+        </button>
+        </div>
       </div>
 
       {/* ─── Stats Row ─── */}
@@ -508,6 +525,8 @@ export default function AdminCoursesPage() {
           </div>
         </div>
       )}
+      {packageOpen && <PackageModal onClose={() => setPackageOpen(false)} onCreated={onPackageCreated} />}
+      {packageToast && <div className="dw2-pk-toast" role="status">تم إنشاء الباكدج بنجاح ✓</div>}
     </div>
   )
 }
