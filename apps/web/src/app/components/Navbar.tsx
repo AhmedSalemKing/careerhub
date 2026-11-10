@@ -377,8 +377,6 @@ export function Navbar() {
     { key: 'careers', href: `/${locale}/careers`, label: t('careers') },
     { key: 'learners', href: learnUrlWithToken(`/${locale}`), label: t('learners'), external: true },
     { key: 'mentors', href: `/${locale}/coaching`, label: t('mentors') },
-    { key: 'providers', href: `/${locale}#providers`, label: t('providers') },
-    { key: 'corporates', href: `/${locale}#corporates`, label: t('corporates') },
   ]
 
   const isActive = (href: string) => pathname === href

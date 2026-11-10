@@ -339,7 +339,7 @@ html {
 
 body {
 	font-family: var(--font-body);
-	font-size: 15px;
+	font-size: 14px;
 	line-height: 1.65;
 	color: var(--foreground);
 	background-color: var(--background);
@@ -787,17 +787,18 @@ select:focus {
    ══════════════════════════════════════ */
 
 h1 {
-	font-size: clamp(24px, 4vw, 48px) !important;
+	font-size: clamp(28px, 4vw, 42px) !important;
 	line-height: 1.15 !important;
 }
 h2 {
-	font-size: clamp(20px, 3vw, 36px) !important;
+	font-size: clamp(20px, 3vw, 28px) !important;
 	line-height: 1.2 !important;
 }
 h3 {
-	font-size: clamp(16px, 2vw, 24px) !important;
+	font-size: 18px !important;
 	line-height: 1.3 !important;
 }
+h4 { font-size: 15px; }
 
 .section-title {
 	font-size: clamp(22px, 3.5vw, 40px);
@@ -1907,10 +1908,10 @@ h6,
 	letter-spacing: 0;
 }
 [dir="ltr"] .dw-home.dw-home :is(h1, h2) { letter-spacing: -0.02em; }
-.dw-home.dw-home h1 { font-weight: 800; font-size: clamp(40px, 5.6vw, 74px) !important; line-height: 1.02 !important; }
+.dw-home.dw-home h1 { font-weight: 800; font-size: clamp(28px, 5vw, 48px) !important; line-height: 1.02 !important; }
 [dir="ltr"] .dw-home.dw-home h1 { letter-spacing: -0.04em; }
 [dir="rtl"] .dw-home.dw-home h1 { letter-spacing: 0; line-height: 1.25 !important; }
-.dw-home.dw-home h2 { font-weight: 800; font-size: clamp(30px, 3.4vw, 46px) !important; line-height: 1.2 !important; }
+.dw-home.dw-home h2 { font-weight: 800; font-size: clamp(20px, 3vw, 28px) !important; line-height: 1.2 !important; }
 .dw-home.dw-home h3 { font-weight: 700; font-size: 16px !important; line-height: 1.35 !important; }
 
 /* ── Buttons ───────────────────────────────────────────────────────── */
@@ -2326,34 +2327,9 @@ a.dw-instructor:hover { color: var(--accent); }
 @media (max-width: 1023px) { .hdr-tools { margin-inline-start: 0; } }
 
 /* ── Market switcher (KSA / EG) ── */
-.mkt {
-	display: inline-flex;
-	align-items: center;
-	padding: 2px;
-	gap: 2px;
-	background: var(--surface);
-	border: 1px solid var(--line);
-	border-radius: 8px;
-}
-.mkt button {
-	padding: 4px 10px;
-	border-radius: 20px;
-	font-size: .75rem;
-	font-weight: 700;
-	letter-spacing: .03em;
-	color: var(--ink-3);
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	transition: color .14s ease, background .14s ease, box-shadow .14s ease;
-	line-height: 1.5;
-}
-.mkt button.on {
-	background: var(--purple, #5414f6);
-	color: #fff;
-	border-radius: 20px;
-}
-.mkt button:hover:not(.on) { color: var(--ink-2); }
+.mkt { display: flex; align-items: center; background: var(--surface-2, #1e1a3a); border-radius: 99px; padding: 3px; gap: 2px; }
+.mkt button { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: none; cursor: pointer; color: var(--ink-2); background: transparent; transition: all 0.15s; }
+.mkt button.on { background: var(--purple, #5414f6); color: #fff; box-shadow: 0 1px 4px rgba(84, 20, 246, 0.3); }
 
 /* ── Icon buttons (lang, theme, menu) ── */
 .icon-btn {
@@ -3408,16 +3384,16 @@ a.dw-instructor:hover { color: var(--accent); }
 .eyebrow::before { content: ''; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
 
 /* ── Layout ── */
-.sec { padding-block: clamp(72px, 9vw, 120px); position: relative; }
+.sec { padding-block: 48px; position: relative; }
 .sec-alt { background: var(--bg-2); }
 .sec-head { display: flex; flex-direction: column; gap: 14px; max-width: 720px; margin-bottom: clamp(36px, 5vw, 56px); }
 .sec-head.center { margin-inline: auto; text-align: center; align-items: center; }
 .sec-head h2, .sec-head p { margin: 0; }
-.wrap { max-width: 1160px; margin-inline: auto; padding-inline: clamp(16px, 4vw, 40px); }
+.wrap { max-width: 1100px; margin-inline: auto; padding-inline: 20px; }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
 
 /* ── Buttons ── */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px; font-weight: 700; font-size: 15px; cursor: pointer; transition: opacity .15s; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 0; padding: 9px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: opacity .15s; }
 .btn-primary { background: var(--brand); color: var(--on-brand); box-shadow: 0 10px 24px -10px rgb(84 20 246 / 0.7); }
 .btn-ghost { border: 1.5px solid var(--line-2); background: var(--surface); color: var(--ink); }
 .btn-light { background: #fff; color: var(--purple); }
@@ -4079,3 +4055,11 @@ a.dw2-course-row:hover { border-color: var(--purple); }
 	.dw2-dash-row2 { grid-template-columns: 1fr; }
 	.dw2-dash-right { min-height: 0; }
 }
+
+/* ── Global size reduction ── */
+p { font-size: 14px; }
+.btn-lg { padding: 11px 22px; font-size: 14px; }
+.card { padding: 18px; border-radius: 14px; gap: 12px; }
+section.dw-hero, section[class*="hero"] { padding-block: 60px; }
+[class*="hero"] h1 { font-size: clamp(28px, 5vw, 48px); }
+.gap-section { gap: 32px; }

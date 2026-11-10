@@ -181,9 +181,7 @@
     "admin": "Admin Panel",
     "courses": "Courses",
     "learners": "For learners",
-    "mentors": "For mentors",
-    "providers": "For training providers",
-    "corporates": "For companies"
+    "mentors": "For mentors"
   },
   "hero": {
     "badge": "For learners in Saudi Arabia and Egypt",
