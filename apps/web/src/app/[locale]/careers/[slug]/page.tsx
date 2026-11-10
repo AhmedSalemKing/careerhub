@@ -9,6 +9,7 @@ import { get, post } from '../../../../lib/api'
 import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
+import { Briefcase } from 'lucide-react'
 import { Skeleton } from '../../../components/ui/Skeleton'
 
 type PathCourse = {
@@ -34,7 +35,7 @@ type PathDetail = {
 
 /** Shape the page renders, whether it came from the API or from the sample data. */
 type ViewJob = { title: string; description?: string; salaryText?: string | null; vision2030?: boolean }
-type ViewCourse = { key: string; href?: string; title: string; type?: string; meta: string[]; priceText?: string }
+type ViewCourse = { key: string; href?: string; title: string; type?: string; meta: string[]; priceText?: string; included?: boolean }
 type View = {
   title: string
   description: string
@@ -166,7 +167,7 @@ export default function CareerPathDetailPage() {
           title: c.title,
           type: c.type,
           meta: [`${c.weeks.toLocaleString(nf)} ${isAr ? 'أسبوع' : 'wk'}`, c.provider, c.language],
-          priceText: isAr ? 'مشمولة في المسار' : 'Included in the path',
+          included: true,
         })),
       }
     }
@@ -228,13 +229,23 @@ export default function CareerPathDetailPage() {
   }
 
   const dir = isAr ? 'rtl' : 'ltr'
+  const mentors = (consultants as any[]).slice(0, 3)
+  const avatarRow = mentors.length > 0 && (
+    <div className="dw2-avatars" aria-hidden="true">
+      {mentors.map((c: any) =>
+        c.profile?.avatar
+          ? <img key={c.id} src={c.profile.avatar} alt="" />
+          : <span key={c.id}>{(c.profile?.firstName || '?')[0]}</span>,
+      )}
+    </div>
+  )
 
   if (isError) {
     return (
-      <div className="dw2-path" dir={dir}>
-        <div className="dw2-section" style={{ textAlign: 'center' }}>
-          <h2 className="dw2-section-title">{isAr ? 'تعذر تحميل المسار المهني' : 'Failed to load this career path'}</h2>
-          <p className="dw2-section-sub">{isAr ? 'تحقق من اتصالك بالإنترنت ثم أعد المحاولة.' : 'Check your connection and try again.'}</p>
+      <div className="dw2-page" dir={dir}>
+        <div className="dw2-wrap" style={{ padding: '80px 24px', textAlign: 'center' }}>
+          <h2>{isAr ? 'تعذر تحميل المسار المهني' : 'Failed to load this career path'}</h2>
+          <p className="dw2-sub" style={{ margin: '8px 0 20px' }}>{isAr ? 'تحقق من اتصالك بالإنترنت ثم أعد المحاولة.' : 'Check your connection and try again.'}</p>
           <div className="dw2-cta-row" style={{ justifyContent: 'center' }}>
             <button type="button" className="dw2-btn primary" onClick={() => refetch()}>{isAr ? 'إعادة المحاولة' : 'Retry'}</button>
             <Link href={`/${locale}/careers`} className="dw2-btn ghost">{isAr ? 'كل المسارات' : 'All paths'}</Link>
@@ -256,186 +267,191 @@ export default function CareerPathDetailPage() {
     </button>
   )
 
-  return (
-    <div className="dw2-path" dir={dir}>
-      {/* 1 — breadcrumb + header */}
-      <nav className="dw2-crumbs" aria-label="breadcrumb">
-        <Link href={`/${locale}/careers`}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
-        <span aria-hidden="true">{isAr ? '‹' : '›'}</span>
-        <span>{view?.title}</span>
-      </nav>
+  const typeClass = (t?: string) => (t?.includes('ذاتي') ? 'self' : t?.includes('دفعة') ? 'cohort' : 'blended')
+  const visionJobs = (view?.jobs ?? []).filter((j) => j.vision2030).map((j) => j.title)
 
-      <header className="dw2-path-hero">
-        {!view ? (
-          <>
-            <Skeleton className="h-10 w-80" />
-            <Skeleton className="mt-4 h-5 w-full max-w-2xl" />
-          </>
-        ) : (
-          <>
-            <h1>
-              {view.title}
-              {isMock && (
-                <span className="dw2-stat-pill" style={{ marginInlineStart: 12, fontSize: 12, verticalAlign: 'middle', background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>
-                  {isAr ? 'بيانات تجريبية' : 'Sample data'}
-                </span>
-              )}
-            </h1>
-            {view.description && <p className="dw2-lede">{view.description}</p>}
-            <div className="dw2-stats">
-              <span className="dw2-stat-pill">{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات` : `${view.coursesCount} courses`}</span>
-              {view.durationText && <span className="dw2-stat-pill">{view.durationText}</span>}
-              {view.level && <span className="dw2-stat-pill">{isAr ? 'المستوى' : 'Level'}: {view.level}</span>}
-              {view.demand && <span className="dw2-stat-pill">{view.demand}</span>}
-              {view.languages && view.languages.length > 0 && <span className="dw2-stat-pill">{view.languages.join(' · ')}</span>}
-              {view.vision2030 && (
-                <span className="dw2-stat-pill" style={{ color: 'var(--success)', borderColor: 'var(--success)' }}>
-                  🇸🇦 {isAr ? 'متوافق مع رؤية 2030' : 'Vision 2030 aligned'}
-                </span>
-              )}
-            </div>
-            <div className="dw2-cta-row">
-              {enrollBtn()}
-              <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
-            </div>
-            {enrollError && <p className="dw2-error" role="alert" style={{ marginTop: 10 }}>{enrollError}</p>}
-          </>
-        )}
-      </header>
+  return (
+    <div className="dw2-page" dir={dir}>
+      {/* HERO */}
+      <section className="dw2-hero">
+        <div className="dw2-wrap">
+          <nav className="dw2-crumbs" aria-label="breadcrumb">
+            <Link href={`/${locale}/careers`}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
+            <span aria-hidden="true">{isAr ? '‹' : '›'}</span>
+            <span>{view?.title}</span>
+          </nav>
+
+          {!view ? (
+            <>
+              <Skeleton className="h-10 w-80" />
+              <Skeleton className="mt-4 h-5 w-full max-w-2xl" />
+            </>
+          ) : (
+            <>
+              <span className="dw2-hero-icon" aria-hidden="true"><Briefcase size={20} /></span>
+              <h1>{view.title}</h1>
+              {view.description && <p className="dw2-lede">{view.description}</p>}
+              <div className="dw2-stats">
+                {isMock && <span className="dw2-stat-pill dw2-pill-yellow">{isAr ? 'بيانات تجريبية' : 'Sample data'}</span>}
+                <span className="dw2-stat-pill">{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات` : `${view.coursesCount} courses`}</span>
+                {view.durationText && <span className="dw2-stat-pill">{view.durationText}</span>}
+                {view.level && <span className="dw2-stat-pill">{isAr ? 'المستوى' : 'Level'}: {view.level}</span>}
+                {view.demand && <span className="dw2-stat-pill">{view.demand}</span>}
+                {view.languages && view.languages.length > 0 && <span className="dw2-stat-pill">{view.languages.join(' · ')}</span>}
+                {view.vision2030 && <span className="dw2-stat-pill dw2-pill-green">🇸🇦 {isAr ? 'متوافق مع رؤية 2030' : 'Vision 2030 aligned'}</span>}
+              </div>
+              <div className="dw2-cta-row">
+                {enrollBtn()}
+                <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
+              </div>
+              {enrollError && <p className="dw2-error" role="alert" style={{ marginTop: 10 }}>{enrollError}</p>}
+            </>
+          )}
+        </div>
+      </section>
 
       {view && (
-        <>
-          {/* 2 — jobs */}
-          {view.jobs.length > 0 && (
-            <section className="dw2-section">
-              <h2 className="dw2-section-title">{isAr ? 'وظائف يؤهلك لها هذا المسار' : 'Jobs this path qualifies you for'}</h2>
-              <div className="dw2-jobs" style={{ marginTop: 20 }}>
-                {view.jobs.map((j) => (
-                  <div key={j.title} className="dw2-job-card">
-                    <h3>{j.title}</h3>
-                    {j.description && <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)' }}>{j.description}</p>}
-                    {j.salaryText && <div className="dw2-salary">{j.salaryText}</div>}
-                    {j.vision2030 && (
-                      <span className="dw2-stat-pill" style={{ alignSelf: 'flex-start', color: 'var(--success)', borderColor: 'var(--success)' }}>
-                        🇸🇦 {isAr ? 'رؤية 2030' : 'Vision 2030'}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {view.salaryText && !isMock && (
-                <p className="dw2-muted">{isAr ? 'نطاق الراتب المعروض هو النطاق الشهري العام لهذا المسار المهني.' : 'The salary shown is the general monthly range for this career path.'}</p>
+        <div className="dw2-wrap dw2-cols">
+          {/* MAIN */}
+          <div className="dw2-main">
+            {view.jobs.length > 0 && (
+              <section>
+                <h2>{isAr ? 'وظائف يؤهلك لها هذا المسار' : 'Jobs this path qualifies you for'}</h2>
+                <div className="dw2-jobs">
+                  {view.jobs.map((j) => (
+                    <div key={j.title} className="dw2-job-card">
+                      <div className="dw2-job-body">
+                        <h3>{j.title}</h3>
+                        {j.description && <span className="dw2-job-desc">{j.description}</span>}
+                        {j.salaryText && <span className="dw2-salary">{j.salaryText}</span>}
+                      </div>
+                      {j.vision2030 && <span className="dw2-stat-pill dw2-pill-green" style={{ flexShrink: 0 }}>🇸🇦 {isAr ? 'رؤية 2030' : 'Vision 2030'}</span>}
+                    </div>
+                  ))}
+                </div>
+                {view.salaryText && !isMock && (
+                  <p className="dw2-note">{isAr ? 'نطاق الراتب المعروض هو النطاق الشهري العام لهذا المسار المهني.' : 'The salary shown is the general monthly range for this career path.'}</p>
+                )}
+              </section>
+            )}
+
+            {view.vision2030 && (
+              <section>
+                <h2>{isAr ? 'التوافق مع رؤية 2030' : 'Vision 2030 alignment'}</h2>
+                <p className="dw2-sub">{isAr ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.'}</p>
+                <div className="dw2-vision">
+                  <span className="dw2-vision-title">🇸🇦 {isAr ? 'رؤية السعودية 2030' : 'Saudi Vision 2030'}</span>
+                  <p>{isAr ? 'التحول الرقمي ممكّن أساسي لرؤية 2030، ويحتاج إلى مطورين قادرين على بناء الخدمات الرقمية.' : 'Digital transformation is a key enabler of Vision 2030 and needs developers able to build digital services.'}</p>
+                  {visionJobs.length > 0 && <span className="dw2-jobs-label">{isAr ? 'الوظائف المتوافقة:' : 'Aligned jobs:'} {visionJobs.join(isAr ? '، ' : ', ')}</span>}
+                  <span className="dw2-disclaimer">{isAr ? 'تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر).' : 'Vision 2030 badges follow the market you selected (Saudi Arabia or Egypt).'}</span>
+                  <div className="dw2-warn">{isAr ? 'يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : 'Alignment reflects DeveWay’s reading of announced national priorities, not an official endorsement.'}</div>
+                </div>
+              </section>
+            )}
+
+            {view.skills.length > 0 && (
+              <section>
+                <h2>{isAr ? 'المهارات التي ستبنيها' : "Skills you'll build"}</h2>
+                <div className="dw2-skills">
+                  {view.skills.map((s) => <span key={s} className="dw2-skill-tag">{s}</span>)}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h2>{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
+              <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
+              {view.courses.length === 0 ? (
+                <p className="dw2-sub">{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
+              ) : (
+                <ol className="dw2-plan">
+                  {view.courses.map((c, i) => {
+                    const inner = (
+                      <>
+                        <span className="dw2-course-num">{i + 1}</span>
+                        <span className="dw2-course-title">
+                          <b>{c.title}</b>
+                          <span className="dw2-course-meta">
+                            {c.type && <span className={`dw2-type ${typeClass(c.type)}`}>{c.type}</span>}
+                            {c.meta.filter(Boolean).map((m) => <span key={m}>{m}</span>)}
+                          </span>
+                        </span>
+                        {c.included && <span className="dw2-included">{isAr ? 'مشمولة في المسار' : 'Included in the path'}</span>}
+                        {c.priceText && <span className="dw2-course-price">{c.priceText}</span>}
+                      </>
+                    )
+                    return (
+                      <li key={c.key}>
+                        {c.href ? <a href={c.href} className="dw2-course-row">{inner}</a> : <div className="dw2-course-row">{inner}</div>}
+                      </li>
+                    )
+                  })}
+                </ol>
               )}
             </section>
-          )}
+          </div>
 
-          {/* 3 — vision 2030 (sample data only; the API has no such field) */}
-          {view.vision2030 && (
-            <section className="dw2-section">
-              <h2 className="dw2-section-title">{isAr ? 'التوافق مع رؤية 2030' : 'Vision 2030 alignment'}</h2>
-              <p className="dw2-section-sub">{isAr ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.'}</p>
-              <div className="dw2-job-card">
-                <h3>🇸🇦 {isAr ? 'رؤية السعودية 2030' : 'Saudi Vision 2030'}</h3>
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)' }}>
-                  {isAr ? 'التحول الرقمي ممكّن أساسي لرؤية 2030، ويحتاج إلى مطوري واجهات قادرين على بناء الخدمات الرقمية.' : 'Digital transformation is a key enabler of Vision 2030 and needs developers able to build digital services.'}
-                </p>
-              </div>
-              <p className="dw2-muted">{isAr ? 'يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : 'Alignment reflects DeveWay’s reading of announced national priorities, not an official endorsement.'}</p>
-            </section>
-          )}
-
-          {/* 4 — skills */}
-          {view.skills.length > 0 && (
-            <section className="dw2-section">
-              <h2 className="dw2-section-title">{isAr ? 'المهارات التي ستبنيها' : "Skills you'll build"}</h2>
-              <div className="dw2-skills" style={{ marginTop: 20 }}>
-                {view.skills.map((s) => <span key={s} className="dw2-skill-tag">{s}</span>)}
-              </div>
-            </section>
-          )}
-
-          {/* 5 — course plan */}
-          <section className="dw2-section">
-            <h2 className="dw2-section-title">{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
-            <p className="dw2-section-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
-            {view.courses.length === 0 ? (
-              <p className="dw2-section-sub">{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
-            ) : (
-              <ol className="dw2-plan">
-                {view.courses.map((c, i) => {
-                  const inner = (
-                    <>
-                      <span className="dw2-course-num">{i + 1}</span>
-                      <span className="dw2-course-info">
-                        <b>{c.title}</b>
-                        <small>{c.meta.filter(Boolean).join(' · ')}</small>
-                      </span>
-                      {c.type && <span className="dw2-stat-pill">{c.type}</span>}
-                      {c.priceText && <span className="dw2-course-price">{c.priceText}</span>}
-                    </>
-                  )
-                  return (
-                    <li key={c.key}>
-                      {c.href ? <a href={c.href} className="dw2-course-row">{inner}</a> : <div className="dw2-course-row">{inner}</div>}
-                    </li>
-                  )
-                })}
-              </ol>
-            )}
-          </section>
-
-          {/* 6 — pricing */}
-          <section className="dw2-section">
-            <div className="dw2-price-grid">
-              <div className="dw2-price-card featured">
-                <h3>{isAr ? 'المسار الكامل' : 'Full path'}</h3>
-                <div className="dw2-big-price">{view.totalPrice > 0 ? formatMoney(view.totalPrice) : (isAr ? 'مجاني' : 'Free')}</div>
-                <p>{isMock ? (isAr ? 'سعر واحد للمسار كاملًا.' : 'One price for the whole path.') : (isAr ? 'مجموع أسعار دورات المسار.' : 'Total of the path course prices.')}</p>
-                <ul className="dw2-checklist">
-                  <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
-                  {view.durationText && <li>{view.durationText}</li>}
-                  <li>{isAr ? 'متابعة تقدّمك في مكان واحد' : 'Track your progress in one place'}</li>
-                </ul>
-                <div className="dw2-grow" />
-                {enrollBtn(true)}
-              </div>
-
-              <div className="dw2-price-card">
-                <h3>{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</h3>
-                <p>{isAr ? 'إرشاد فردي: احجز جلسة مع مرشد في هذا المجال متى احتجت، دون الحاجة للتسجيل في المسار.' : 'One-to-one mentoring: book a session with a mentor whenever you need, no path enrollment required.'}</p>
-                {cheapest && (
-                  <p>
-                    <span className="dw2-big-price" style={{ fontSize: 28 }}>{formatMoney(cheapest.price)}</span>{' '}
-                    <small>{isAr ? `/ جلسة ${cheapest.minutes} دقيقة (تبدأ من)` : `/ ${cheapest.minutes}-min session (from)`}</small>
-                  </p>
-                )}
-                <div className="dw2-grow" />
-                <Link href={`/${locale}/coaching`} className="dw2-btn ghost block">{isAr ? 'احجز جلسة مدفوعة' : 'Book a paid session'}</Link>
-              </div>
-            </div>
-          </section>
-
-          {/* 7 — free */}
-          <section className="dw2-section">
-            <h2 className="dw2-section-title">{isAr ? 'ما هو مجاني' : "What's free"}</h2>
-            <ul className="dw2-checklist" style={{ marginTop: 16 }}>
-              <li><Link href={`/${locale}/dashboard/assessment`}>{isAr ? 'التقييم المهني بالذكاء الاصطناعي' : 'AI career assessment'}</Link></li>
-              <li>{isAr ? 'خطة المسار وتفاصيل كل دورة قبل التسجيل' : 'The path plan and course details before you enroll'}</li>
-            </ul>
-          </section>
-
-          {/* 8 — why */}
-          {(view.description || view.demand || view.salaryText) && (
-            <section className="dw2-section">
-              <h2 className="dw2-section-title">{isAr ? 'لماذا هذا المسار' : 'Why this path'}</h2>
-              {view.description && <p className="dw2-section-sub" style={{ marginBottom: 12 }}>{view.description}</p>}
+          {/* ASIDE: sticky cards */}
+          <aside className="dw2-aside">
+            <div className="dw2-card featured">
+              <span className="dw2-card-label">
+                {isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}
+                {isMock && <span className="dw2-badge">{isAr ? 'نموذج' : 'Sample'}</span>}
+              </span>
+              <div className="dw2-big-price">{view.totalPrice > 0 ? formatMoney(view.totalPrice) : (isAr ? 'مجاني' : 'Free')}</div>
+              <p>{isMock ? (isAr ? 'سعر واحد للمسار كاملًا.' : 'One price for the whole path.') : (isAr ? 'مجموع أسعار دورات المسار.' : 'Total of the path course prices.')}</p>
               <ul className="dw2-checklist">
-                {view.demand && <li>{view.demand}</li>}
-                {view.salaryText && !isMock && <li>{isAr ? 'نطاق الراتب الشهري' : 'Monthly salary range'}: {view.salaryText}</li>}
+                <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
+                {view.durationText && <li>{view.durationText}</li>}
+                <li>{isAr ? 'متابعة تقدّمك في مكان واحد' : 'Track your progress in one place'}</li>
               </ul>
-            </section>
-          )}
-        </>
+              {enrollBtn(true)}
+            </div>
+
+            <div className="dw2-card alt">
+              <span className="dw2-card-label"><span className="dw2-badge">{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</span></span>
+              {avatarRow}
+              <h3>{isAr ? 'إرشاد فردي' : 'One-to-one mentoring'}</h3>
+              <p>{isAr ? 'احجز جلسة مع مرشد في هذا المجال متى احتجت، دون الحاجة للتسجيل في المسار.' : 'Book a session with a mentor whenever you need, no path enrollment required.'}</p>
+              {cheapest && (
+                <div>
+                  <span className="dw2-mid-price">{formatMoney(cheapest.price)}</span>{' '}
+                  <small>{isAr ? `/ جلسة ${cheapest.minutes} دقيقة (تبدأ من)` : `/ ${cheapest.minutes}-min session (from)`}</small>
+                </div>
+              )}
+              <Link href={`/${locale}/coaching`} className="dw2-btn ghost sm block">{isAr ? 'احجز جلسة مدفوعة' : 'Book a paid session'}</Link>
+            </div>
+
+            <div className="dw2-card">
+              <details open>
+                <summary>✦ {isAr ? 'ما هو مجاني' : "What's free"}</summary>
+                <ul className="dw2-checklist">
+                  <li><Link href={`/${locale}/dashboard/assessment`}>{isAr ? 'التقييم المهني بالذكاء الاصطناعي' : 'AI career assessment'}</Link></li>
+                  <li>{isAr ? 'خطة المسار وتفاصيل كل دورة قبل التسجيل' : 'The path plan and course details before you enroll'}</li>
+                </ul>
+              </details>
+            </div>
+
+            {mentors.length > 0 && (
+              <div className="dw2-card">
+                <span className="dw2-card-title">{isAr ? 'الدعم في هذا المسار' : 'Support on this path'}</span>
+                <p>{isAr ? 'مرشدون متاحون لمساعدتك أثناء رحلتك.' : 'Mentors are available to help along the way.'}</p>
+                {avatarRow}
+              </div>
+            )}
+
+            {(view.description || view.demand || (view.salaryText && !isMock)) && (
+              <div className="dw2-card">
+                <span className="dw2-card-title">{isAr ? 'لماذا هذا المسار' : 'Why this path'}</span>
+                {view.description && <p>{view.description}</p>}
+                <ul className="dw2-checklist">
+                  {view.demand && <li>{view.demand}</li>}
+                  {view.salaryText && !isMock && <li>{view.salaryText}</li>}
+                </ul>
+              </div>
+            )}
+          </aside>
+        </div>
       )}
     </div>
   )
