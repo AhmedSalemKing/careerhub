@@ -222,7 +222,7 @@ export default function CoursesPage() {
   const activeTabConfig = TABS.find(t => t.key === activeTab)!
 
   return (
-    <div className="dw2-cp" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
+    <div className="dw2-cp dw2-courses-page" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
         @keyframes liveGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.4)} 50%{box-shadow:0 0 0 8px rgba(220,38,38,0)} }
@@ -232,12 +232,12 @@ export default function CoursesPage() {
       `}</style>
 
       {/* Hero */}
-      <div className="dw2-cp-head">
+      <div className="dw2-cp-head dw2-courses-header">
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 8 }}>
-          <h1>
+          <h1 className="dw2-courses-h1">
             {tl('discoverCourses')}
           </h1>
-          <p className="dw2-cp-sub">
+          <p className="dw2-cp-sub dw2-courses-sub">
             {tl('heroDescription')}
           </p>
 
@@ -301,7 +301,7 @@ export default function CoursesPage() {
           {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
-              className={`dw2-pill${selectedMainCat === cat.id ? ' active' : ''}`}>
+              className={`dw2-pill${selectedMainCat === cat.id ? ' active dw2-pill--active' : ''}`}>
               {isAr ? cat.nameAr : cat.nameEn}
             </button>
           ))}
@@ -311,14 +311,14 @@ export default function CoursesPage() {
         {!isLoading && (
           <div>
             {/* Sort + Level + Price row */}
-            <div className="dw2-cp-bar">
+            <div className="dw2-cp-bar dw2-filter-row">
               {/* Sort */}
               {[
                 { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
                 { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
               ].map(s => (
                 <button key={s.id} onClick={() => setSortBy(s.id as any)}
-                  className={`dw2-pill${sortBy === s.id ? ' active' : ''}`}>
+                  className={`dw2-pill${sortBy === s.id ? ' active dw2-pill--active' : ''}`}>
                   {s.label}
                 </button>
               ))}
@@ -333,7 +333,7 @@ export default function CoursesPage() {
                 { id: 'ADVANCED', label: isAr ? 'متقدم' : 'Advanced' },
               ].map(opt => (
                 <button key={opt.id} onClick={() => setLevel(opt.id)}
-                  className={`dw2-pill${level === opt.id ? ' active' : ''}`}>
+                  className={`dw2-pill${level === opt.id ? ' active dw2-pill--active' : ''}`}>
                   {opt.label}
                 </button>
               ))}
@@ -347,7 +347,7 @@ export default function CoursesPage() {
                 { id: 'paid', label: isAr ? 'مدفوع' : 'Paid' },
               ].map(opt => (
                 <button key={opt.id} onClick={() => setPriceFilter(opt.id)}
-                  className={`dw2-pill${priceFilter === opt.id ? ' active' : ''}`}>
+                  className={`dw2-pill${priceFilter === opt.id ? ' active dw2-pill--active' : ''}`}>
                   {opt.label}
                 </button>
               ))}
@@ -357,7 +357,7 @@ export default function CoursesPage() {
 
         {/* Loading */}
         {isLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full dw2-cg">
             {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface-2)' }} />)}
           </div>
         )}
@@ -390,7 +390,7 @@ export default function CoursesPage() {
 
         {/* RECORDED */}
         {!isLoading && activeTab === 'recorded' && filtered.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full dw2-cg">
             {visibleCourses.map((course: any, idx: number) => (
               <RecordedCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
@@ -408,7 +408,7 @@ export default function CoursesPage() {
 
         {/* OFFLINE */}
         {!isLoading && activeTab === 'offline' && filtered.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full dw2-cg">
             {visibleCourses.map((course: any, idx: number) => (
               <OfflineCard key={course.id} course={course} idx={idx} isAr={isAr} locale={locale} router={router} token={token} tl={tl} />
             ))}
@@ -418,7 +418,7 @@ export default function CoursesPage() {
         {/* Load More */}
         {!isLoading && hasMore && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <button className="dw2-btn-outline"
+            <button className="dw2-btn-outline dw2-load-more"
               onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
               {isAr
                 ? `عرض المزيد (${sortedCourses.length - visibleCount} كورس متبقي)`
@@ -439,11 +439,11 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const isEnrolled = course.isEnrolled === true
 
   return (
-    <div className="course-card dw2-cp-card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s` }}
+    <div className="course-card dw2-cp-card dw2-cc" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s` }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
 
       {/* Thumbnail */}
-      <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)' }}>
+      <div className="dw2-cc-thumb" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <Video size={10} />
           {tl('recordedBadge')}
@@ -457,8 +457,8 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
         {!course.thumbnail && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Play size={32} color="rgba(255,255,255,0.3)" /></div>}
       </div>
 
-      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 'clamp(12px, 3.5vw, 15px)', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <div className="dw2-cc-body">
+                <h3 className="dw2-cc-title">
           {getTitle(course, locale)}
         </h3>
 
@@ -475,7 +475,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           </a>
         )}
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="dw2-cc-meta">
           {course._count?.lessons !== undefined && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
               <BookOpen size={11} />{course._count.lessons} {tl('lesson')}
@@ -488,11 +488,11 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           )}
         </div>
 
-        <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ color: '#5120c8', fontSize: 16, fontWeight: 500 }}>
+        <div className="dw2-cc-foot">
+          <div className="dw2-cc-price">
             {formatCoursePrice(course)}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#5120c8', fontSize: 12, fontWeight: 500 }}>
+          <div className="dw2-cc-cta" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             {isEnrolled ? tl('continueBtn') : tl('viewBtn')}
             <ChevronRight size={13} style={{ transform: isAr ? 'rotate(180deg)' : 'none' }} />
           </div>
@@ -768,11 +768,11 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
   }
 
   return (
-    <div className="course-card dw2-cp-card" style={{ animationDelay: `${(idx % 12) * 0.05}s` }}
+    <div className="course-card dw2-cp-card dw2-cc" style={{ animationDelay: `${(idx % 12) * 0.05}s` }}
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
       
       {/* Map preview or thumbnail */}
-      <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>
+      <div className="dw2-cc-thumb" style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <MapPin size={10} />
           {tl('physicalBadge')}
@@ -789,8 +789,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         )}
       </div>
 
-      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 500, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+      <div className="dw2-cc-body">
+                <h3 className="dw2-cc-title">
           {getTitle(course, locale)}
         </h3>
 
@@ -839,8 +839,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         )}
 
         {/* Price + CTA */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-          <div style={{ color: '#16a34a', fontSize: 16, fontWeight: 500 }}>
+        <div className="dw2-cc-foot">
+          <div className="dw2-cc-price">
             {course.priceDisplay ?? (price > 0
               ? `${price} ${tl('sar')}`
               : course.offlinePaymentType === 'on_site'
