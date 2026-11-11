@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import {
   Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
   PenLine, UserRound, ShieldCheck, Check, Loader2,
 } from 'lucide-react'
 import { get, post } from '@/lib/api'
+import { setToken, setUser } from '@/lib/auth'
+import { useAuthStore } from '@/stores/authStore'
 
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
 
@@ -352,6 +355,8 @@ function validate(f: FormState): FormErrors {
 
 export default function CoachingPage() {
   const locale = useLocale()
+  const router = useRouter()
+  const authStore = useAuthStore()
 
   const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', cvUrl: '', cvName: '', country: '', field: '', exp: '', langs: ['العربية'], msg: '' })
   const [errors, setErrors] = useState<FormErrors>({})
@@ -448,9 +453,34 @@ export default function CoachingPage() {
       if (Number.isFinite(years)) payload.experience = years
       if (bio) payload.bio = bio
 
-      await post(REGISTER_ENDPOINT, payload)
+      const reg = await post(REGISTER_ENDPOINT, payload)
       try { localStorage.setItem('coaching_applied', 'true') } catch { /* storage unavailable */ }
-      setPhase('sent')
+
+      // A pending account gets no token from /auth/register, so sign in with the credentials just
+      // submitted (the login endpoint issues a limited token for PENDING accounts).
+      let token: string | undefined = reg?.data?.data?.accessToken
+      let user: any = reg?.data?.data?.user
+      if (!token) {
+        try {
+          const res = await post('/auth/login', { email: form.email.trim(), password: form.password })
+          token = res?.data?.data?.accessToken
+          user = res?.data?.data?.user
+        } catch { /* fall through to the applied=true redirect */ }
+      }
+      if (token && user) {
+        authStore.setToken(token)
+        setToken(token)
+        localStorage.setItem('deveway_token', token)
+        localStorage.setItem('careerhub_token', token)
+        authStore.setUser(user)
+        setUser(user)
+        localStorage.setItem('deveway_user', JSON.stringify(user))
+        localStorage.setItem('careerhub_user', JSON.stringify(user))
+        window.dispatchEvent(new Event('auth:updated'))
+        router.push(`/${locale}/dashboard`)
+      } else {
+        setPhase('sent')
+      }
     } catch (e) {
       setErrorText(applyErrorText(e))
       setPhase('error')
