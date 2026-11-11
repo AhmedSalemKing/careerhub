@@ -117,6 +117,22 @@ input:-webkit-autofill:active {
    DESIGN TOKENS — LIGHT MODE
    Pure White Theme • Clean & Minimal
    ══════════════════════════════════════ */
+/* Theme-aware coaching scene tokens */
+:root {
+	--scene-bg-from: #ede8ff;
+	--scene-bg-to: #d4c8ff;
+	--duo-tile-bg: rgba(255, 255, 255, 0.60);
+	--duo-tile-border: rgba(140, 100, 220, 0.20);
+	--duo-tile-shadow: 0 4px 24px rgba(84, 20, 246, 0.10);
+}
+.dark, [data-theme='dark'] {
+	--scene-bg-from: #1a1040;
+	--scene-bg-to: #0f0828;
+	--duo-tile-bg: rgba(80, 40, 160, 0.22);
+	--duo-tile-border: rgba(140, 100, 220, 0.18);
+	--duo-tile-shadow: 0 4px 24px rgba(0, 0, 0, 0.30);
+}
+
 :root {
 	/* ── Brand Colors ── */
 	--purple: #5120c8;
@@ -4182,3 +4198,61 @@ section[class*="hero"] { padding-block: 48px }
 .cch .split-media { border-radius: 16px; }
 .cch .duo .char > g > rect,
 .cch .duo .char > g > circle { display: none; }
+
+/* === theme-aware hero scene === */
+.ph.scene,
+.cch .ph.scene,
+.cch .split-media .ph.scene {
+	background: linear-gradient(135deg, var(--scene-bg-from), var(--scene-bg-to));
+}
+.duo-p,
+.cch .duo-p {
+	background: var(--duo-tile-bg);
+	border: 1px solid var(--duo-tile-border);
+	box-shadow: var(--duo-tile-shadow);
+	border-radius: 23%;
+}
+
+/* === polished form inputs === */
+.form-card .field input:not([type="checkbox"]),
+.form-card .field select,
+.form-card .field textarea {
+	width: 100%;
+	padding: 10px 14px;
+	border-radius: 10px;
+	border: 1.5px solid var(--line);
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	font-size: 0.95rem;
+	transition: border-color 0.2s, box-shadow 0.2s;
+	outline: none;
+	-webkit-appearance: none;
+	appearance: none;
+	display: block;
+}
+.form-card .field input:not([type="checkbox"]):focus,
+.form-card .field select:focus,
+.form-card .field textarea:focus {
+	border-color: var(--brand);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent);
+}
+.form-card .field > label {
+	display: block;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--ink);
+	margin-bottom: 6px;
+	opacity: 0.75;
+}
+.form-card .field select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: left 14px center;
+	padding-left: 36px;
+	cursor: pointer;
+}
+.form-card .field textarea {
+	resize: vertical;
+	min-height: 100px;
+}
