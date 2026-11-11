@@ -4,13 +4,6 @@
    ═════════════════════════════════════════════════════════════════ */
 
 /* ── Font Imports ── */
-@import "@fontsource/plus-jakarta-sans/400.css";
-@import "@fontsource/plus-jakarta-sans/500.css";
-@import "@fontsource/plus-jakarta-sans/600.css";
-@import "@fontsource/plus-jakarta-sans/700.css";
-@import "@fontsource/plus-jakarta-sans/800.css";
-@import "@fontsource/dm-sans/400.css";
-@import "@fontsource/dm-sans/500.css";
 
 @tailwind base;
 @tailwind components;
@@ -172,7 +165,7 @@
 
     /* ── Typography ── */
     --font-display: "Plus Jakarta Sans", sans-serif;
-    --font-body: 'PingAR', 'Arial Black', 'sans-serif';
+    --font-body: var(--font-ar);
     --font-brand: "PingAR", "Arial Black", sans-serif;
     --font-medium: "PingARLT-Medium", "PingAR", sans-serif;
     --font-light: "PingARLT-Light", "PingAR", sans-serif;
@@ -424,13 +417,13 @@ body::before {
 h1:lang(ar), h2:lang(ar), h3:lang(ar), h4:lang(ar),
 [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3, [dir="rtl"] h4,
 .font-madinet {
-    font-family: "PingAR", "Cairo", sans-serif !important;
+    font-family: var(--font) !important;
 }
 
 /* ── English Headings → Plus Jakarta Sans ── */
 h1:lang(en), h2:lang(en), h3:lang(en), h4:lang(en),
 [dir="ltr"] h1, [dir="ltr"] h2, [dir="ltr"] h3, [dir="ltr"] h4 {
-    font-family: "Plus Jakarta Sans", sans-serif !important;
+    font-family: var(--font) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -1351,7 +1344,7 @@ button.btn-primary {
     background-color: #5120c8 !important;
     color: #ffffff !important;
     border: none !important;
-    font-family: "PingAR", "Arial Black", sans-serif !important;
+    font-family: var(--font) !important;
     letter-spacing: -0.01em !important;
     box-shadow: none !important;
 }
@@ -1370,7 +1363,7 @@ button.btn-cta-primary:hover {
 button,
 a[role="button"],
 [class*="btn"] {
-    font-family: "PingAR", "Arial Black", sans-serif !important;
+    font-family: var(--font) !important;
     box-shadow: none !important;
 }
 
@@ -1378,7 +1371,7 @@ a[role="button"],
 button[class*="bg-primary"],
 a[class*="bg-primary"] {
     background-color: #5120c8 !important;
-    font-family: 'PingAR', 'Cairo', sans-serif !important;
+    font-family: var(--font) !important;
     box-shadow: none !important;
 }
 
@@ -1388,18 +1381,18 @@ a[class*="bg-primary"] {
 .fx-title,
 .feature-title,
 .feature-cta {
-    font-family: 'PingAR', 'Arial Black', sans-serif !important;
+    font-family: var(--font) !important;
 }
 
 h1:not(:lang(ar)):not([dir="rtl"]),
 h2:not(:lang(ar)):not([dir="rtl"]),
 h3:not(:lang(ar)):not([dir="rtl"]) {
-    font-family: "Plus Jakarta Sans", sans-serif !important;
+    font-family: var(--font) !important;
 }
 
 h1:lang(ar), h2:lang(ar), h3:lang(ar),
 [dir="rtl"] h1, [dir="rtl"] h2, [dir="rtl"] h3 {
-    font-family: "PingAR", 'Cairo', sans-serif !important;
+    font-family: var(--font) !important;
 }
 
 /* ══════════════════════════════════════
@@ -1465,7 +1458,7 @@ a[href*="/courses"] img {
 /* Toast: top-center, slide-down, green frame */
 .deveway-toast [data-sonner-toast],
 [data-sonner-toast].deveway-toast {
-  font-family: var(--font-body) !important;
+  font-family: var(--font) !important;
   background: var(--card-bg) !important;
   border: 1px solid rgba(16,185,129,0.4) !important;
   color: var(--foreground) !important;
@@ -1795,3 +1788,15 @@ body { font-family: var(--font) }
 .dw2-courses-page a[class*="primary"] { background: var(--brand) !important; color: var(--on-brand) !important }
 .dw2-courses-page input,
 .dw2-courses-page select { background: var(--surface) !important; border-color: var(--line) !important; color: var(--ink) !important }
+
+/* force font override */
+html, body, * {
+  font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif !important;
+}
+[lang='en'] *, [dir='ltr'] * {
+  font-family: 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif !important;
+}
+/* code stays monospace */
+code, pre, kbd, samp, code *, pre * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+}
