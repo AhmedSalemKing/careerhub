@@ -4142,3 +4142,26 @@ section[class*="hero"] { padding-block: 48px }
 .cch .checkset label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; cursor: pointer; }
 .cch .btn-block { display: flex; width: 100%; align-items: center; justify-content: center; gap: 8px; }
 @media (max-width: 600px) { .cch .form { grid-template-columns: 1fr; } .cch .ph.scene, .cch .split-media .ph.scene { height: 240px; } }
+
+/* === coaching page scene (visual pass; scoped to .cch, tokens only) === */
+.cch .phero-media { min-width: min(420px, 100%); min-height: 460px; }
+.cch .ph.scene { min-height: 460px; height: 100%; background: linear-gradient(140deg, var(--night-2) 0%, var(--brand) 100%); border-color: transparent; }
+.cch .split-media .ph.scene { min-height: 400px; height: 100%; background: linear-gradient(135deg, var(--wash) 0%, var(--brand) 100%); }
+.cch .split-media { border-radius: var(--r-lg); overflow: hidden; }
+.cch .sc-orb.o1 { width: 300px; height: 300px; max-width: 80%; aspect-ratio: 1; top: 45%; left: 50%; inset-inline-end: auto; transform: translate(-50%, -50%); background: color-mix(in srgb, var(--lavender) 38%, transparent); }
+.cch .sc-orb.o2 { width: 180px; height: 180px; top: 14%; bottom: auto; right: 10%; inset-inline-start: auto; background: color-mix(in srgb, var(--on-brand) 14%, transparent); border: 0; animation: none; }
+.cch .duo-p { height: 94%; max-width: 64%; }
+.cch .duo-p .char { width: 100%; height: 100%; }
+.cch .duo-flag { top: 12px; bottom: auto; left: auto; inset-inline-start: 12px; transform: none; z-index: 2; background: var(--on-brand); color: var(--ink); border: 0; border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+.cch .float.f-live { min-width: 220px; background: var(--glass); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.cch .float.f-live .f-title { font-size: 14px; }
+.cch .cast .char-av + .char-av { margin-inline-start: -12px; }
+.cch .cast .char-av { border-radius: 10px; }
+/* media sits at the visual left in RTL, text at the right */
+.cch .cch-split.rev > :first-child { order: 2; }
+@media (max-width: 768px) {
+  .cch .phero-media { min-width: 0; min-height: 320px; }
+  .cch .ph.scene, .cch .split-media .ph.scene { min-height: 320px; }
+  .cch .duo-p { max-width: 160px; }
+  .cch .cch-split.rev > :first-child { order: 0; }
+}

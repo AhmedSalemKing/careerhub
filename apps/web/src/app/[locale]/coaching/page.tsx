@@ -353,7 +353,7 @@ export default function CoachingPage() {
 
       {/* E) COACHING METHODS */}
       <section className="cch-band">
-        <div className="cch-in cch-split">
+        <div className="cch-in cch-split rev">
           <div className="split-media rv">
             <div className="ph scene" role="img" aria-label="طرق الإرشاد">
               <span className="sc-orb o1"></span>
