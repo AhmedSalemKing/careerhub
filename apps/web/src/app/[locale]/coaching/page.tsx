@@ -477,7 +477,7 @@ export default function CoachingPage() {
         localStorage.setItem('deveway_user', JSON.stringify(user))
         localStorage.setItem('careerhub_user', JSON.stringify(user))
         window.dispatchEvent(new Event('auth:updated'))
-        router.push(`/${locale}/dashboard`)
+        router.push(`/${locale}/pending-approval`)
       } else {
         setPhase('sent')
       }
