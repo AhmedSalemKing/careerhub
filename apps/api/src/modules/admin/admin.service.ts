@@ -1231,6 +1231,7 @@ export class AdminService {
               firstName: true,
               lastName: true,
               avatar: true,
+              country: true,
             }
           }
         },

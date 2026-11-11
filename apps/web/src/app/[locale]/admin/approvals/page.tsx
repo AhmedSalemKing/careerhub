@@ -25,7 +25,7 @@ export default function ApprovalsPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const qc = useQueryClient()
-  const [activeTab, setActiveTab] = useState<'users' | 'courses' | 'verification'>('users')
+  const [activeTab, setActiveTab] = useState<'users' | 'coaches' | 'courses' | 'verification'>('users')
   const [rejectingId, setRejectingId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [priceModal, setPriceModal] = useState<{
@@ -160,7 +160,19 @@ export default function ApprovalsPage() {
     onError: () => notify.error(isAr ? 'فشل رفض الكورس' : 'Failed to reject course'),
   })
 
-  const isLoading = activeTab === 'users' ? usersLoading : coursesLoading
+  const coaches = (users as any[]).filter((u) => u.accountType === 'CONSULTANT')
+  const COUNTRY_LABELS: Record<string, string> = { SA: 'السعودية', EG: 'مصر' }
+  // The coaching form folds the coaching languages and free-text notes into `bio`.
+  const parseCoachBio = (bio?: string | null) => {
+    const lines = (bio || '').split('\n')
+    const langLine = lines.find((l) => l.startsWith('لغات الإرشاد: '))
+    return {
+      languages: langLine ? langLine.replace('لغات الإرشاد: ', '') : '',
+      notes: lines.filter((l) => l !== langLine).join('\n').trim(),
+    }
+  }
+
+  const isLoading = activeTab === 'users' || activeTab === 'coaches' ? usersLoading : coursesLoading
 
   if (isLoading) {
     return (
@@ -193,6 +205,21 @@ export default function ApprovalsPage() {
           {users.length > 0 && (
             <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
               {users.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('coaches')}
+          className={`rounded-xl px-4 py-2 text-sm font-medium transition ${
+            activeTab === 'coaches'
+              ? 'bg-primary text-white'
+              : 'border border-[color:var(--border)] text-[color:var(--muted)] hover:bg-[color:var(--surface-2)]'
+          }`}
+        >
+          {isAr ? 'المرشدون' : 'Coaches'}
+          {coaches.length > 0 && (
+            <span className="mr-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
+              {coaches.length}
             </span>
           )}
         </button>
@@ -433,6 +460,165 @@ export default function ApprovalsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Coaches tab ────────────────────────────────────────── */}
+      {activeTab === 'coaches' && (
+        <>
+          {coaches.length === 0 ? (
+            <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-12 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10">
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+              <h3 className="font-madinet text-xl font-medium text-foreground">{isAr ? 'لا توجد طلبات معلقة' : 'No pending requests'}</h3>
+              <p className="mt-2 text-sm text-[color:var(--muted)]">{isAr ? 'جميع الطلبات تمت مراجعتها' : 'All requests have been reviewed'}</p>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {coaches.map((u) => {
+                const { languages, notes } = parseCoachBio(u.bio)
+                const country = u.profile?.country ? COUNTRY_LABELS[u.profile.country] || u.profile.country : ''
+                return (
+                  <div key={u.id} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-white font-medium text-lg">
+                        {u.profile?.firstName?.[0] || u.email[0].toUpperCase()}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-foreground">{u.profile?.firstName} {u.profile?.lastName}</h3>
+                        <p className="text-sm text-[color:var(--muted)]">{u.email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="rounded-full bg-purple-500/20 px-2 py-0.5 text-xs font-medium text-purple-400">
+                            {isAr ? 'مرشد' : 'Coach'}
+                          </span>
+                          <span className="flex items-center gap-1 text-xs text-[color:var(--muted)]">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(u.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-4">
+                      {country && (
+                        <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'الدولة' : 'Country'}</p>
+                          <p className="text-sm font-medium text-foreground">{country}</p>
+                        </div>
+                      )}
+                      {u.speciality && (
+                        <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'المجال' : 'Field'}</p>
+                          <p className="text-sm font-medium text-foreground">{u.speciality}</p>
+                        </div>
+                      )}
+                      {u.experience != null && (
+                        <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'سنوات الخبرة' : 'Years of Experience'}</p>
+                          <p className="text-sm font-medium text-foreground">{u.experience} {isAr ? 'سنة' : 'years'}</p>
+                        </div>
+                      )}
+                      {languages && (
+                        <div className="rounded-xl bg-[color:var(--surface-2)] p-3">
+                          <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'لغات الإرشاد' : 'Coaching Languages'}</p>
+                          <p className="text-sm font-medium text-foreground">{languages}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {notes && (
+                      <div className="rounded-xl bg-[color:var(--surface-2)] p-3 mb-4">
+                        <p className="text-xs text-[color:var(--muted)] mb-1">{isAr ? 'ملاحظات' : 'Notes'}</p>
+                        <p className="text-sm text-foreground whitespace-pre-line">{notes}</p>
+                      </div>
+                    )}
+
+                    <div className="flex gap-3 mb-4">
+                      {u.cvUrl && u.cvUrl.startsWith('http') ? (
+                        <>
+                          <a
+                            href={u.cvUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
+                          >
+                            <Eye className="h-4 w-4" />
+                            {isAr ? 'عرض السيرة الذاتية' : 'View CV'}
+                          </a>
+                          <a
+                            href={u.cvUrl}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm hover:bg-[color:var(--surface-2)] transition text-foreground"
+                          >
+                            <Download className="h-4 w-4" />
+                            {isAr ? 'تحميل' : 'Download'}
+                          </a>
+                        </>
+                      ) : (
+                        <span className="flex items-center gap-1 rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm text-orange-400">
+                          {isAr ? 'السيرة الذاتية غير متاحة' : 'CV unavailable'}
+                        </span>
+                      )}
+                    </div>
+
+                    {rejectingId === u.id && (
+                      <div className="mb-4">
+                        <textarea
+                          placeholder={isAr ? 'سبب الرفض (اختياري)...' : 'Rejection reason (optional)...'}
+                          value={rejectReason}
+                          onChange={(e) => setRejectReason(e.target.value)}
+                          className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] p-3 text-sm text-foreground focus:border-primary focus:outline-none resize-none"
+                          rows={2}
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      {rejectingId === u.id ? (
+                        <>
+                          <button
+                            onClick={() => rejectUser.mutate({ id: u.id, reason: rejectReason || undefined })}
+                            disabled={rejectUser.isPending}
+                            className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60 transition"
+                          >
+                            <X className="h-4 w-4" />
+                            {isAr ? 'تأكيد الرفض' : 'Confirm Rejection'}
+                          </button>
+                          <button
+                            onClick={() => { setRejectingId(null); setRejectReason('') }}
+                            className="rounded-xl border border-[color:var(--border)] px-4 py-2 text-sm text-foreground hover:bg-[color:var(--surface-2)] transition"
+                          >
+                            {isAr ? 'إلغاء' : 'Cancel'}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => approveUser.mutate({ userId: u.id })}
+                            disabled={approveUser.isPending}
+                            className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60 transition"
+                          >
+                            <Check className="h-4 w-4" />
+                            {approveUser.isPending ? (isAr ? 'جاري القبول...' : 'Approving...') : (isAr ? 'قبول' : 'Approve')}
+                          </button>
+                          <button
+                            onClick={() => setRejectingId(u.id)}
+                            className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/20 transition"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            {isAr ? 'رفض' : 'Reject'}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </>
