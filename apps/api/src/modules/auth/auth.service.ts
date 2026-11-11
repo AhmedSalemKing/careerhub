@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../email/email.service';
+import { verifyAutoLoginToken } from './auto-login-token';
 
 @Injectable()
 export class AuthService {
@@ -282,6 +283,28 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  /** Exchange an emailed auto-login token for a normal session (approved accounts only). */
+  async autoLogin(token: string) {
+    const payload = verifyAutoLoginToken(token);
+    if (!payload) throw new UnauthorizedException('Invalid or expired link');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      include: { profile: true },
+    });
+    if (!user || !user.isActive || user.status !== 'ACTIVE' || user.email !== payload.email) {
+      throw new UnauthorizedException('Invalid or expired link');
+    }
+
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    await this.storeRefreshToken(user.id, refreshToken);
+    await this.prisma.userActivity.create({
+      data: { userId: user.id, action: 'LOGIN', entity: 'User', entityId: user.id, metadata: { email: user.email, method: 'auto-login' } },
+    }).catch((e) => this.logger.warn(`[AUTO-LOGIN] Failed to log activity: ${e}`));
+
+    return { user: this.sanitizeUser(user as any), accessToken, refreshToken };
   }
 
   async refreshTokens(userId: string) {

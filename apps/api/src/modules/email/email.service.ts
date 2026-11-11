@@ -61,11 +61,19 @@ export class EmailService {
         'ابدأ رحلتك', `${process.env.FRONTEND_URL || 'http://localhost:3000'}/ar/dashboard/assessment`));
   }
 
-  async sendApproval(email: string, name: string, role: string) {
+  async sendApproval(email: string, name: string, role: string, autoLoginUrl?: string) {
+    const frontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (role === 'CONSULTANT' && autoLoginUrl) {
+      await this.send(email, 'تم قبول طلبك في DeveWay 🎉',
+        this.template(`مبروك يا ${name}!`,
+          `<p>تم قبول طلبك كمرشد في منصة DeveWay.</p><p>اضغط على الزر التالي لتسجيل الدخول مباشرة. الرابط صالح لمدة 48 ساعة.</p>`,
+          'ادخل إلى حسابك', autoLoginUrl));
+      return;
+    }
     await this.send(email, 'تم قبول طلبك في DeveWay ✅',
       this.template(`تهانينا يا ${name}!`,
         `<p>يسعدنا إخبارك بأنه تم قبولك كـ<strong style="color:#5120c8">${role === 'INSTRUCTOR' ? 'محاضر' : 'مستشار'}</strong> في منصة DeveWay.</p>`,
-        'تسجيل الدخول', `${process.env.FRONTEND_URL || 'http://localhost:3000'}/ar/login`));
+        'تسجيل الدخول', `${frontend}/ar/login`));
   }
 
   async sendRejection(email: string, name: string, reason?: string) {

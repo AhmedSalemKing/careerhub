@@ -23,6 +23,7 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { AutoLoginDto } from './dto/auto-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -588,6 +589,27 @@ export class AuthController {
     },
   ) {
     return this.authService.updateProFields(user.id, body);
+  }
+
+  @Throttle({ short: { ttl: 60000, limit: 10 } })
+  @Post('auto-login')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Log in with the emailed auto-login token (approved consultants)' })
+  async autoLogin(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) dto: AutoLoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.autoLogin(dto.token);
+    const secure = process.env.NODE_ENV === 'production';
+    const sameSite = secure ? 'none' : 'strict';
+    response.cookie('refresh_token', result.refreshToken, { httpOnly: true, secure, sameSite, maxAge: 7 * 24 * 60 * 60 * 1000, path: '/' });
+    response.cookie('access_token', result.accessToken, { httpOnly: false, secure, sameSite, maxAge: 15 * 60 * 1000, path: '/' });
+    return {
+      success: true,
+      message: 'Login successful',
+      data: { user: result.user, accessToken: result.accessToken },
+    };
   }
 
   @Post('test-login')

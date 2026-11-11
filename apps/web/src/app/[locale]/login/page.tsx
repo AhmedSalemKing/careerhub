@@ -81,6 +81,12 @@ export default function LoginPage() {
   }, [ar])
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') === 'expired') {
+      setLoginError(ar ? 'انتهت صلاحية الرابط' : 'This link has expired')
+    }
+  }, [ar])
+
+  useEffect(() => {
     if (token && user) {
       const params = new URLSearchParams(window.location.search)
       const redirectTo = params.get('redirect')

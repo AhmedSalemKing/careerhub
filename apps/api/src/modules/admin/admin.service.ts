@@ -1,3 +1,4 @@
+import { signAutoLoginToken } from '../auth/auto-login-token';
 import {
   Injectable,
   Logger,
@@ -1381,7 +1382,14 @@ export class AdminService {
     });
     await this.log('APPROVE_USER', 'User', userId, adminId, { email: user.email, accountType: user.accountType });
     const name = `${user.profile?.firstName || ''} ${user.profile?.lastName || ''}`.trim() || user.email;
-    this.emailService.sendApproval(user.email, name, user.accountType).catch(() => {});
+    let autoLoginUrl: string | undefined;
+    if (user.accountType === 'CONSULTANT') {
+      try {
+        const frontend = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/$/, '');
+        autoLoginUrl = `${frontend}/ar/auto-login?token=${encodeURIComponent(signAutoLoginToken(user))}`;
+      } catch { /* no secret configured: fall back to the plain login link */ }
+    }
+    this.emailService.sendApproval(user.email, name, user.accountType, autoLoginUrl).catch(() => {});
     return user;
   }
 
