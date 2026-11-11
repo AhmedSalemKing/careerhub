@@ -222,7 +222,7 @@ export default function CoursesPage() {
   const activeTabConfig = TABS.find(t => t.key === activeTab)!
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', direction: isAr ? 'rtl' : 'ltr' }}>
+    <div className="dw2-cp" style={{ direction: isAr ? 'rtl' : 'ltr' }}>
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
         @keyframes liveGlow { 0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.4)} 50%{box-shadow:0 0 0 8px rgba(220,38,38,0)} }
@@ -232,22 +232,22 @@ export default function CoursesPage() {
       `}</style>
 
       {/* Hero */}
-      <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', padding: '48px 24px 0' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ color: 'var(--foreground)', fontSize: 'clamp(24px,4vw,40px)', fontWeight: 900, margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+      <div className="dw2-cp-head">
+        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center', marginBottom: 8 }}>
+          <h1>
             {tl('discoverCourses')}
           </h1>
-          <p style={{ color: 'var(--muted-foreground)', fontSize: 14, margin: '0 0 24px', lineHeight: 1.7 }}>
+          <p className="dw2-cp-sub">
             {tl('heroDescription')}
           </p>
 
           {/* Search */}
           <div style={{ position: 'relative', maxWidth: 480, margin: '0 auto' }}>
-            <Search size={15} color='var(--muted-foreground)' style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
+            <Search size={15} color='var(--ink-3)' style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'right' : 'left']: 14, pointerEvents: 'none' }} />
             <input type="text" placeholder={tl('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '13px 44px', borderRadius: 12, border: `1.5px solid ${search ? '#5120c8' : 'var(--border)'}`, background: 'var(--background)', color: 'var(--foreground)', fontSize: 13, outline: 'none', boxSizing: 'border-box' }} />
+              className={`dw2-cp-search${search ? ' has-value' : ''}`} />
             {search && (
-              <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-foreground)' }}>
+              <button onClick={() => setSearch('')} style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', [isAr ? 'left' : 'right']: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
                 <X size={14} />
               </button>
             )}
@@ -255,12 +255,12 @@ export default function CoursesPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '8px', width: '100%', paddingBottom: '2px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none', gap: '8px', width: '100%', paddingBottom: '2px' }}>
           {TABS.map(tab => {
             const Icon = tab.icon
             const active = activeTab === tab.key
             return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '14px 24px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: active ? tab.color : 'var(--muted-foreground)', borderBottom: `2.5px solid ${active ? tab.color : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s', position: 'relative' }}>
+              <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`dw2-cp-tab${active ? ' active' : ''}`}>
                 {tab.key === 'live' && (
                   <span style={{ position: 'absolute', top: 10, [isAr ? 'left' : 'right']: 12, width: 6, height: 6, borderRadius: '50%', background: '#dc2626' }} className="live-dot" />
                 )}
@@ -276,15 +276,15 @@ export default function CoursesPage() {
       <div style={{ width: '100%', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 80px', overflowX: 'hidden', boxSizing: 'border-box' }}>
 
         {/* Tab description */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '14px 18px', borderRadius: 12, border: `1px solid ${activeTabConfig.color}25`, background: `${activeTabConfig.color}08` }}>
-          <activeTabConfig.icon size={18} color={activeTabConfig.color} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, padding: '14px 18px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)' }}>
+          <activeTabConfig.icon size={18} color='var(--brand)' />
           <div>
-            <span style={{ color: activeTabConfig.color, fontSize: 13, fontWeight: 500 }}>
+            <span style={{ color: 'var(--ink)', fontSize: 13, fontWeight: 500 }}>
               {activeTab === 'recorded' && tl('recordedTabDesc')}
               {activeTab === 'live' && tl('liveTabDesc')}
               {activeTab === 'offline' && tl('offlineTabDesc')}
             </span>
-            <span style={{ color: 'var(--muted-foreground)', fontSize: 12, marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0 }}>
+            <span style={{ color: 'var(--ink-2)', fontSize: 12, marginRight: isAr ? 0 : 8, marginLeft: isAr ? 8 : 0 }}>
               ({filtered.length} {tl('courseCount')})
             </span>
           </div>
@@ -297,17 +297,11 @@ export default function CoursesPage() {
         </div>
 
         {/* Category pills */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%', overflowX: 'hidden', marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
           {([{ id: null, nameAr: 'الكل', nameEn: 'All' }, ...MAIN_CATS.map(c => ({ ...c, nameEn: c.nameAr }))] as any[]).map(cat => (
             <button key={cat.id || 'all'}
               onClick={() => setSelectedMainCat(cat.id)}
-              style={{
-                padding: '7px 18px', borderRadius: '20px', border: 'none',
-                fontWeight: '500', fontSize: '13px', cursor: 'pointer',
-                background: selectedMainCat === cat.id ? '#5120C8' : 'var(--surface-2)',
-                color: selectedMainCat === cat.id ? '#fff' : 'var(--muted)',
-                transition: 'all 0.15s',
-              }}>
+              className={`dw2-pill${selectedMainCat === cat.id ? ' active' : ''}`}>
               {isAr ? cat.nameAr : cat.nameEn}
             </button>
           ))}
@@ -315,28 +309,21 @@ export default function CoursesPage() {
 
         {/* Filters */}
         {!isLoading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+          <div>
             {/* Sort + Level + Price row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', width: '100%' }}>
+            <div className="dw2-cp-bar">
               {/* Sort */}
               {[
                 { id: 'newest', label: isAr ? 'الأحدث' : 'Newest' },
                 { id: 'popular', label: isAr ? 'الأكثر طلباً' : 'Most Popular' },
               ].map(s => (
                 <button key={s.id} onClick={() => setSortBy(s.id as any)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
-                    fontWeight: 500, cursor: 'pointer',
-                    border: sortBy === s.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
-                    background: sortBy === s.id ? '#5120C8' : 'var(--surface)',
-                    color: sortBy === s.id ? '#fff' : 'var(--muted)',
-                    transition: 'all 0.15s ease',
-                  }}>
+                  className={`dw2-pill${sortBy === s.id ? ' active' : ''}`}>
                   {s.label}
                 </button>
               ))}
 
-              <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+              <div className="dw2-cp-sep" />
 
               {/* Level */}
               {[
@@ -346,19 +333,12 @@ export default function CoursesPage() {
                 { id: 'ADVANCED', label: isAr ? 'متقدم' : 'Advanced' },
               ].map(opt => (
                 <button key={opt.id} onClick={() => setLevel(opt.id)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
-                    fontWeight: 500, cursor: 'pointer',
-                    border: level === opt.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
-                    background: level === opt.id ? '#5120C8' : 'var(--surface)',
-                    color: level === opt.id ? '#fff' : 'var(--muted)',
-                    transition: 'all 0.15s ease',
-                  }}>
+                  className={`dw2-pill${level === opt.id ? ' active' : ''}`}>
                   {opt.label}
                 </button>
               ))}
 
-              <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+              <div className="dw2-cp-sep" />
 
               {/* Price */}
               {[
@@ -367,14 +347,7 @@ export default function CoursesPage() {
                 { id: 'paid', label: isAr ? 'مدفوع' : 'Paid' },
               ].map(opt => (
                 <button key={opt.id} onClick={() => setPriceFilter(opt.id)}
-                  style={{
-                    padding: '6px 14px', borderRadius: 20, fontSize: 13,
-                    fontWeight: 500, cursor: 'pointer',
-                    border: priceFilter === opt.id ? '1.5px solid #5120C8' : '1px solid var(--border)',
-                    background: priceFilter === opt.id ? '#5120C8' : 'var(--surface)',
-                    color: priceFilter === opt.id ? '#fff' : 'var(--muted)',
-                    transition: 'all 0.15s ease',
-                  }}>
+                  className={`dw2-pill${priceFilter === opt.id ? ' active' : ''}`}>
                   {opt.label}
                 </button>
               ))}
@@ -445,17 +418,8 @@ export default function CoursesPage() {
         {/* Load More */}
         {!isLoading && hasMore && (
           <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <button
-              onClick={() => setVisibleCount(v => v + PAGE_SIZE)}
-              style={{
-                padding: '12px 32px', borderRadius: 12,
-                background: 'rgba(81,32,200,0.1)',
-                border: '1px solid rgba(81,32,200,0.3)',
-                color: '#5120C8', fontWeight: 500, fontSize: 14,
-                cursor: 'pointer', transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#5120C8'; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(81,32,200,0.1)'; e.currentTarget.style.color = '#5120C8' }}>
+            <button className="dw2-btn-outline"
+              onClick={() => setVisibleCount(v => v + PAGE_SIZE)}>
               {isAr
                 ? `عرض المزيد (${sortedCourses.length - visibleCount} كورس متبقي)`
                 : `Load more (${sortedCourses.length - visibleCount} remaining)`}
@@ -475,10 +439,8 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
   const isEnrolled = course.isEnrolled === true
 
   return (
-    <div className="course-card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column', cursor: 'pointer', transition: 'all 0.2s' }}
-      onClick={() => router.push(`/${locale}/courses/${course.id}`)}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(81,32,200,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+    <div className="course-card dw2-cp-card" style={{ width: '100%', minWidth: 0, boxSizing: 'border-box', animationDelay: `${(idx % 12) * 0.05}s` }}
+      onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
 
       {/* Thumbnail */}
       <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)' }}>
@@ -806,10 +768,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
   }
 
   return (
-    <div className="course-card" style={{ animationDelay: `${(idx % 12) * 0.05}s`, background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.2s' }}
-      onClick={() => router.push(`/${locale}/courses/${course.id}`)}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(22,163,74,0.35)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(0,0,0,0.12)' }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+    <div className="course-card dw2-cp-card" style={{ animationDelay: `${(idx % 12) * 0.05}s` }}
+      onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
       
       {/* Map preview or thumbnail */}
       <div style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>

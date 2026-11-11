@@ -226,7 +226,14 @@
     "flagEg": "مصر",
     "sceneTrack": "التسويق الرقمي",
     "tracksEmpty": "المسارات المهنية ستتوفر قريبًا.",
-    "tracksLoading": "جارٍ تحميل المسارات..."
+    "tracksLoading": "جارٍ تحميل المسارات...",
+    "coursesEyebrow": "التدريب",
+    "coursesTitle": "اكتشف كورساتك",
+    "coursesSub": "كورسات مسجلة، بث مباشر، ومقرات تدريبية فعلية — كل ما تحتاجه في مكان واحد",
+    "coursesAll": "عرض كل الكورسات",
+    "coursesAllArrow": "عرض كل الكورسات ←",
+    "coursesView": "عرض",
+    "coursesStudents": "طالب"
   },
   "learn": {
     "backToCourse": "العودة للكورس",

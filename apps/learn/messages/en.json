@@ -226,7 +226,14 @@
     "flagEg": "Egypt",
     "sceneTrack": "Digital marketing",
     "tracksEmpty": "Career tracks are coming soon.",
-    "tracksLoading": "Loading tracks..."
+    "tracksLoading": "Loading tracks...",
+    "coursesEyebrow": "Training",
+    "coursesTitle": "Discover your courses",
+    "coursesSub": "Recorded courses, live streams and in-person training — everything in one place",
+    "coursesAll": "View all courses",
+    "coursesAllArrow": "View all courses →",
+    "coursesView": "View",
+    "coursesStudents": "students"
   },
   "learn": {
     "backToCourse": "Back to Course",

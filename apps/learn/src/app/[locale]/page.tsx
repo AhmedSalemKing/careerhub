@@ -5,6 +5,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { get } from '../../lib/api'
 import { syncAuthUser } from '../../lib/auth-sync'
 import { CHARS } from '../../lib/characters'
+import { formatCoursePrice } from '../../lib/market'
+import { instructorDisplayName } from '../../lib/instructor'
 import { useAuthStore } from '../../stores/authStore'
 
 const MAIN_SITE_URL = (() => {
@@ -109,6 +111,7 @@ export default function HomePage() {
 
   const [tracks, setTracks] = useState<TrackCard[]>([])
   const [tracksLoaded, setTracksLoaded] = useState(false)
+  const [courses, setCourses] = useState<any[]>([])
   const [current, setCurrent] = useState<{ title: string; progress: number } | null>(null)
 
   const assessmentHref = `${MAIN_SITE_URL}/${locale}/dashboard/assessment`
@@ -154,6 +157,22 @@ export default function HomePage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale])
+
+  // Latest courses preview (same endpoint as the courses page)
+  useEffect(() => {
+    let cancelled = false
+    get('/courses', { params: { limit: 6, type: 'recorded' } })
+      .then((res: any) => {
+        const d = res?.data?.data?.courses ?? res?.data?.data ?? res?.data?.courses ?? []
+        if (!cancelled) setCourses(Array.isArray(d) ? d.slice(0, 6) : [])
+      })
+      .catch(() => {
+        if (!cancelled) setCourses([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Signed-in learners see their own progress in the hero card
   useEffect(() => {
@@ -299,6 +318,49 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      {/* COURSES */}
+      {courses.length > 0 && (
+        <section className="dw2-home-courses">
+          <div className="dw2-wrap">
+            <div className="dw2-sec-head">
+              <div>
+                <span className="dw2-eyebrow">{t('coursesEyebrow')}</span>
+                <h2>{t('coursesTitle')}</h2>
+                <p className="dw2-sec-sub">{t('coursesSub')}</p>
+              </div>
+              <a href={`/${locale}/courses`} className="dw2-view-all">{t('coursesAllArrow')}</a>
+            </div>
+            <div className="dw2-courses-grid">
+              {courses.map((course: any) => {
+                const title = (isAr ? course.titleAr || course.titleEn : course.titleEn || course.titleAr) || course.title || ''
+                const instructor = instructorDisplayName(course.instructor, '')
+                const students = course._count?.enrollments ?? course.studentsCount ?? 0
+                return (
+                  <div key={course.id} className="dw2-course-card">
+                    <div className="dw2-course-thumb">
+                      {course.thumbnail ? <img src={course.thumbnail} alt={title} /> : <div className="dw2-thumb-placeholder">{title.charAt(0)}</div>}
+                    </div>
+                    <div className="dw2-course-info">
+                      <h3 className="dw2-course-title">{title}</h3>
+                      <div className="dw2-course-meta">
+                        {instructor && <><span>{instructor}</span><span>·</span></>}
+                        <span>{students} {t('coursesStudents')}</span>
+                      </div>
+                      <div className="dw2-course-footer">
+                        <span className="dw2-course-price">{formatCoursePrice(course)}</span>
+                        <a href={`/${locale}/courses/${course.id}`} className="dw2-course-btn">{t('coursesView')}</a>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 24 }}>
+              <a href={`/${locale}/courses`} className="dw2-btn-outline">{t('coursesAll')}</a>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   )
 }
