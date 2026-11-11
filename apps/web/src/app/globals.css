@@ -4092,5 +4092,14 @@ section, .section, [class*="sec-"], [class*="-sec"] { padding-block: 40px }
 .wrap, .container, [class*="wrap"], [class*="container"] { padding-inline: 20px; max-width: 1100px }
 .card, [class*="-card"], [class*="card-"] { padding: 16px; border-radius: 12px }
 .btn, button[class*="btn"] { font-size: 13px; padding: 8px 16px; height: auto; min-height: unset }
-[class*="hero"] { padding-block: 48px }
+section[class*="hero"] { padding-block: 48px }
 [class*="hero"] h1 { font-size: clamp(24px, 4vw, 40px) !important }
+
+/* === hero spacing tighten === */
+.dw-hero { padding-block: clamp(40px, 5vw, 64px); }
+.dw-hero-grid { gap: clamp(20px, 3vw, 24px); }
+.dw-hero-copy h1 { margin: 8px 0 0; }
+.dw-hero .dw-hero-sub { margin-top: 16px; margin-bottom: 0; }
+.dw-hero-actions { margin-top: 24px; }
+.dw-hero-note { margin-top: 16px; }
+.dw-hero-copy .dw-stats { margin-top: 16px; padding-top: 16px; }
