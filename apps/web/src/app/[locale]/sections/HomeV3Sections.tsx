@@ -163,7 +163,7 @@ export function MomentsV3Section() {
               </div>
               <div className="moment-title">{t(`moments.card${n}.title`)}</div>
               <div className="moment-body">{t(`moments.card${n}.body`)}</div>
-              <Link href={`/${locale}/register`} className="btn btn-ghost" style={{ marginTop: 16 }}>
+              <Link href={`/${locale}/dashboard/assessment`} className="btn btn-ghost" style={{ marginTop: 16 }}>
                 {t(`moments.card${n}.cta`)}
                 <GoArrow />
               </Link>
@@ -233,7 +233,7 @@ export function MentorsSection() {
         <div>
           <SecHead eyebrow={t('mentors.eyebrow')} title={t('mentors.title')} lede={t('mentors.lede')} />
           <div className="rv" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 24 }}>
-            <Link href={`/${locale}/contact`} className="btn btn-ghost">
+            <Link href={`/${locale}/coaching`} className="btn btn-ghost">
               {t('mentors.joinCta')}
             </Link>
             <span className="pill">{t('mentors.comingSoon')}</span>
@@ -246,43 +246,6 @@ export function MentorsSection() {
               <div className="mentor-type-body">{t(`mentors.type${n}.body`)}</div>
             </div>
           ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-/* 8. providers */
-export function ProvidersSection() {
-  const t = useTranslations('homeV3')
-  const locale = useLocale()
-  return (
-    <section className="sec night">
-      <div className="wrap">
-        <SecHead eyebrow={t('providers.eyebrow')} title={t('providers.title')} lede={t('providers.lede')} />
-        <Link href={`/${locale}/contact`} className="btn btn-light rv" style={{ marginTop: 8 }}>
-          {t('providers.cta')}
-          <GoArrow />
-        </Link>
-        <div className="resp-table">
-          <div className="rv">
-            <div className="resp-col-title">{t('providers.col1')}</div>
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="resp-item">{t(`providers.yours${n}`)}</div>
-            ))}
-          </div>
-          <div className="rv">
-            <div className="resp-col-title">{t('providers.col2')}</div>
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="resp-item">{t(`providers.dw${n}`)}</div>
-            ))}
-          </div>
-          <div className="rv resp-wide">
-            <div className="resp-col-title">{t('providers.col3')}</div>
-            {[1, 2].map((n) => (
-              <div key={n} className="resp-item">{t(`providers.learner${n}`)}</div>
-            ))}
-          </div>
         </div>
       </div>
     </section>

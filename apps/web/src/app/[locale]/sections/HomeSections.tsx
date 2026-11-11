@@ -88,7 +88,7 @@ export function MomentsSection() {
         </div>
         <div className="dw-personas">
           {items.map(({ title, desc }, i) => (
-            <Link key={title} href={`/${locale}/register`} className="dw-pcard">
+            <Link key={title} href={`/${locale}/dashboard/assessment`} className="dw-pcard">
               <CharacterScene
                 ids={PERSONA_CAST[i]}
                 label={title}

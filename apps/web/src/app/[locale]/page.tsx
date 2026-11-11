@@ -8,7 +8,6 @@ import {
   MomentsV3Section,
   WhySection,
   MentorsSection,
-  ProvidersSection,
   RegionsSection,
   CtaBandSection,
 } from './sections/HomeV3Sections'
@@ -114,7 +113,6 @@ export default async function HomePage() {
         <MomentsV3Section />
         <WhySection />
         <MentorsSection />
-        <ProvidersSection />
         <RegionsSection />
         <CtaBandSection />
       </main>
