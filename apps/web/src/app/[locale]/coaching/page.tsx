@@ -72,18 +72,219 @@ function applyErrorText(err: unknown): string {
   return 'تعذّر إرسال الطلب، يرجى مراجعة البيانات والمحاولة مرة أخرى.'
 }
 
-// Illustrated cast copied verbatim from the reference design (static, trusted markup).
-const CHARS: Record<'eg7' | 'sa5' | 'eg4' | 'sa4', string> = {
-  eg7: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-eg7-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F6EAFF\"></stop><stop offset=\"1\" stop-color=\"#E6CEFF\"></stop></linearGradient><clipPath id=\"dw-eg7-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-eg7-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-eg7-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#6B3A9C\"></path><path d=\"M50 85 L60 106 L70 85 Z\" fill=\"#FFFFFF\"></path><path d=\"M48 86 L56 104 L50 108 L42 92 Z\" fill=\"#572E82\"></path><path d=\"M72 86 L64 104 L70 108 L78 92 Z\" fill=\"#572E82\"></path><circle cx=\"60\" cy=\"113\" r=\"1.6\" fill=\"#572E82\"></circle></g><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#D6A27C\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#BE8A65\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#BE8A65\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#BE8A65\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path></g><g><path d=\"M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"#E3A9BB\" fill-rule=\"evenodd\"></path><path d=\"M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"none\" stroke=\"#C98AA0\" stroke-width=\"1.2\"></path><path d=\"M47 89 C52 84 56 80 58 76\" stroke=\"#C98AA0\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"></path></g></g></svg>",
-  sa5: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-sa5-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#EEE7FF\"></stop><stop offset=\"1\" stop-color=\"#D6C9FF\"></stop></linearGradient><clipPath id=\"dw-sa5-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-sa5-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-sa5-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#F6F4FA\"></path><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"none\" stroke=\"#DCD6EA\" stroke-width=\"1\"></path><path d=\"M53 84 Q60 90 67 84\" stroke=\"#CFC8E3\" stroke-width=\"2\" fill=\"none\"></path><path d=\"M60 89 L60 110\" stroke=\"#CFC8E3\" stroke-width=\"1.5\"></path><circle cx=\"60\" cy=\"95\" r=\"1.2\" fill=\"#B9B0D6\"></circle><circle cx=\"60\" cy=\"102\" r=\"1.2\" fill=\"#B9B0D6\"></circle></g><path d=\"M52 66 L52 80 Q60 85 68 80 L68 66 Z\" fill=\"#9C6A45\"></path><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#B58058\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#9C6A45\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#9C6A45\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#9C6A45\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M43.5 55 C44 67 51 73.5 60 73.5 C69 73.5 76 67 76.5 55 C74 62 69 64.5 66 64 C63 63 57 63 54 64 C51 64.5 46 62 43.5 55 Z\" fill=\"#8F8A9C\"></path><path d=\"M54 61.6 Q60 59.2 66 61.6 Q60 60.8 54 61.6 Z\" fill=\"#8F8A9C\" stroke=\"#8F8A9C\" stroke-width=\"1.6\" stroke-linejoin=\"round\"></path><path d=\"M56.5 65.2 Q60 67.2 63.5 65.2\" stroke=\"#F3E9F0\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><g><path d=\"M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z\" fill=\"#FBFAFD\"></path><path d=\"M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z\" fill=\"none\" stroke=\"#D9D3E8\" stroke-width=\"0.9\"></path><path d=\"M40 60 C39 72 37 84 33 94\" stroke=\"#D9D3E8\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.6\"></path><path d=\"M80 60 C81 72 83 84 87 94\" stroke=\"#D9D3E8\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.6\"></path><path d=\"M41 30.5 Q60 23.5 79 30.5\" stroke=\"#15111F\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.85\"></path><path d=\"M38.5 30 Q60 38 81.5 30\" stroke=\"#15111F\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M38 34 Q60 42 82 34\" stroke=\"#15111F\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"></path></g></g></svg>",
-  eg4: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-eg4-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ECE6FF\"></stop><stop offset=\"1\" stop-color=\"#D3C7FF\"></stop></linearGradient><clipPath id=\"dw-eg4-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-eg4-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-eg4-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#100C2E\"></path><path d=\"M50 85 L60 106 L70 85 Z\" fill=\"#DCD3FF\"></path><path d=\"M48 86 L56 104 L50 108 L42 92 Z\" fill=\"#241B55\"></path><path d=\"M72 86 L64 104 L70 108 L78 92 Z\" fill=\"#241B55\"></path><circle cx=\"60\" cy=\"113\" r=\"1.6\" fill=\"#241B55\"></circle></g><path d=\"M52 66 L52 80 Q60 85 68 80 L68 66 Z\" fill=\"#966442\"></path><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#B07A54\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#966442\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#966442\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#966442\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M46 60 C48 68 53 72 60 72 C67 72 72 68 74 60 C70 66 66 67.5 60 67.5 C54 67.5 50 66 46 60 Z\" fill=\"#21182B\" opacity=\"0.22\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><path d=\"M42.5 49 C41 36 49 28.5 60 28.5 C71 28.5 79 36 77.5 49 C76 42 72 38.5 66 37.5 C60 39 52 39 46 40 C44 43 43 46 42.5 49 Z\" fill=\"#21182B\"></path></g></svg>",
-  sa4: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-sa4-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F1E9FF\"></stop><stop offset=\"1\" stop-color=\"#E0CFFF\"></stop></linearGradient><clipPath id=\"dw-sa4-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-sa4-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-sa4-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#1A1626\"></path><path d=\"M44 88 C50 96 54 108 55 122\" stroke=\"#C9B8FD\" stroke-width=\"1.6\" fill=\"none\" opacity=\"0.9\"></path><path d=\"M76 88 C70 96 66 108 65 122\" stroke=\"#C9B8FD\" stroke-width=\"1.6\" fill=\"none\" opacity=\"0.9\"></path></g><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#C99670\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#B07E59\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#B07E59\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#B07E59\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><g><path d=\"M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"#4A2470\" fill-rule=\"evenodd\"></path><path d=\"M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"none\" stroke=\"#6B3A9C\" stroke-width=\"1.2\"></path><path d=\"M47 89 C52 84 56 80 58 76\" stroke=\"#6B3A9C\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"></path></g></g></svg>",
+// Illustrated cast copied verbatim from the reference design, converted to JSX.
+// The <svg> is rendered directly (no wrapper element), as in the reference.
+const CharEg7 = () => (
+  <>
+    <svg className="char" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+    <linearGradient id="dw-eg7-0" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stopColor="#F6EAFF" />
+    <stop offset="1" stopColor="#E6CEFF" />
+    </linearGradient>
+    <clipPath id="dw-eg7-1">
+    <rect width="120" height="120" rx="28" />
+    </clipPath>
+    </defs>
+    <g clipPath="url(#dw-eg7-1)">
+    <rect width="120" height="120" fill="url(#dw-eg7-0)" />
+    <circle cx="98" cy="22" r="26" fill="#ffffff" opacity="0.35" />
+    <g>
+    <path d="M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z" fill="#6B3A9C" />
+    <path d="M50 85 L60 106 L70 85 Z" fill="#FFFFFF" />
+    <path d="M48 86 L56 104 L50 108 L42 92 Z" fill="#572E82" />
+    <path d="M72 86 L64 104 L70 108 L78 92 Z" fill="#572E82" />
+    <circle cx="60" cy="113" r="1.6" fill="#572E82" />
+    </g>
+    <g>
+    <ellipse cx="60" cy="52" rx="17" ry="20" fill="#D6A27C" />
+    <ellipse cx="43.5" cy="54" rx="3" ry="4.5" fill="#BE8A65" />
+    <ellipse cx="76.5" cy="54" rx="3" ry="4.5" fill="#BE8A65" />
+    <path d="M50 45.5 Q53.5 43.8 57 45.2" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <path d="M63 45.2 Q66.5 43.8 70 45.5" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <ellipse cx="53.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <ellipse cx="66.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <path d="M60 52.5 Q58.2 57 60.6 57.6" stroke="#BE8A65" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    <ellipse cx="50" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <ellipse cx="70" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <path d="M55.5 62 Q60 65.6 64.5 62" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    </g>
+    <g>
+    <path d="M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z" fill="#E3A9BB" fillRule="evenodd" />
+    <path d="M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z" fill="none" stroke="#C98AA0" strokeWidth="1.2" />
+    <path d="M47 89 C52 84 56 80 58 76" stroke="#C98AA0" strokeWidth="1" fill="none" opacity="0.7" />
+    </g>
+    </g>
+    </svg>
+  </>
+)
+
+const CharSa5 = () => (
+  <>
+    <svg className="char" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+    <linearGradient id="dw-sa5-0" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stopColor="#EEE7FF" />
+    <stop offset="1" stopColor="#D6C9FF" />
+    </linearGradient>
+    <clipPath id="dw-sa5-1">
+    <rect width="120" height="120" rx="28" />
+    </clipPath>
+    </defs>
+    <g clipPath="url(#dw-sa5-1)">
+    <rect width="120" height="120" fill="url(#dw-sa5-0)" />
+    <circle cx="98" cy="22" r="26" fill="#ffffff" opacity="0.35" />
+    <g>
+    <path d="M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z" fill="#F6F4FA" />
+    <path d="M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z" fill="none" stroke="#DCD6EA" strokeWidth="1" />
+    <path d="M53 84 Q60 90 67 84" stroke="#CFC8E3" strokeWidth="2" fill="none" />
+    <path d="M60 89 L60 110" stroke="#CFC8E3" strokeWidth="1.5" />
+    <circle cx="60" cy="95" r="1.2" fill="#B9B0D6" />
+    <circle cx="60" cy="102" r="1.2" fill="#B9B0D6" />
+    </g>
+    <path d="M52 66 L52 80 Q60 85 68 80 L68 66 Z" fill="#9C6A45" />
+    <g>
+    <ellipse cx="60" cy="52" rx="17" ry="20" fill="#B58058" />
+    <ellipse cx="43.5" cy="54" rx="3" ry="4.5" fill="#9C6A45" />
+    <ellipse cx="76.5" cy="54" rx="3" ry="4.5" fill="#9C6A45" />
+    <path d="M50 45.5 Q53.5 43.8 57 45.2" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <path d="M63 45.2 Q66.5 43.8 70 45.5" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <ellipse cx="53.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <ellipse cx="66.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <path d="M60 52.5 Q58.2 57 60.6 57.6" stroke="#9C6A45" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    <ellipse cx="50" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <ellipse cx="70" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <path d="M43.5 55 C44 67 51 73.5 60 73.5 C69 73.5 76 67 76.5 55 C74 62 69 64.5 66 64 C63 63 57 63 54 64 C51 64.5 46 62 43.5 55 Z" fill="#8F8A9C" />
+    <path d="M54 61.6 Q60 59.2 66 61.6 Q60 60.8 54 61.6 Z" fill="#8F8A9C" stroke="#8F8A9C" strokeWidth="1.6" strokeLinejoin="round" />
+    <path d="M56.5 65.2 Q60 67.2 63.5 65.2" stroke="#F3E9F0" strokeWidth="1.3" fill="none" strokeLinecap="round" />
+    <g stroke="#1D1530" strokeWidth="1.5" fill="#ffffff" fillOpacity="0.18">
+    <rect x="47.5" y="46.5" width="11" height="9" rx="3.5" />
+    <rect x="61.5" y="46.5" width="11" height="9" rx="3.5" />
+    <path d="M58.5 50 Q60 49 61.5 50" fill="none" />
+    </g>
+    </g>
+    <g>
+    <path d="M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z" fill="#FBFAFD" />
+    <path d="M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z" fill="none" stroke="#D9D3E8" strokeWidth="0.9" />
+    <path d="M40 60 C39 72 37 84 33 94" stroke="#D9D3E8" strokeWidth="0.9" fill="none" opacity="0.6" />
+    <path d="M80 60 C81 72 83 84 87 94" stroke="#D9D3E8" strokeWidth="0.9" fill="none" opacity="0.6" />
+    <path d="M41 30.5 Q60 23.5 79 30.5" stroke="#15111F" strokeWidth="2.2" fill="none" strokeLinecap="round" opacity="0.85" />
+    <path d="M38.5 30 Q60 38 81.5 30" stroke="#15111F" strokeWidth="3" fill="none" strokeLinecap="round" />
+    <path d="M38 34 Q60 42 82 34" stroke="#15111F" strokeWidth="3" fill="none" strokeLinecap="round" />
+    </g>
+    </g>
+    </svg>
+  </>
+)
+
+const CharEg4 = () => (
+  <>
+    <svg className="char" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+    <linearGradient id="dw-eg4-0" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stopColor="#ECE6FF" />
+    <stop offset="1" stopColor="#D3C7FF" />
+    </linearGradient>
+    <clipPath id="dw-eg4-1">
+    <rect width="120" height="120" rx="28" />
+    </clipPath>
+    </defs>
+    <g clipPath="url(#dw-eg4-1)">
+    <rect width="120" height="120" fill="url(#dw-eg4-0)" />
+    <circle cx="98" cy="22" r="26" fill="#ffffff" opacity="0.35" />
+    <g>
+    <path d="M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z" fill="#100C2E" />
+    <path d="M50 85 L60 106 L70 85 Z" fill="#DCD3FF" />
+    <path d="M48 86 L56 104 L50 108 L42 92 Z" fill="#241B55" />
+    <path d="M72 86 L64 104 L70 108 L78 92 Z" fill="#241B55" />
+    <circle cx="60" cy="113" r="1.6" fill="#241B55" />
+    </g>
+    <path d="M52 66 L52 80 Q60 85 68 80 L68 66 Z" fill="#966442" />
+    <g>
+    <ellipse cx="60" cy="52" rx="17" ry="20" fill="#B07A54" />
+    <ellipse cx="43.5" cy="54" rx="3" ry="4.5" fill="#966442" />
+    <ellipse cx="76.5" cy="54" rx="3" ry="4.5" fill="#966442" />
+    <path d="M50 45.5 Q53.5 43.8 57 45.2" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <path d="M63 45.2 Q66.5 43.8 70 45.5" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <ellipse cx="53.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <ellipse cx="66.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <path d="M60 52.5 Q58.2 57 60.6 57.6" stroke="#966442" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    <ellipse cx="50" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <ellipse cx="70" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <path d="M55.5 62 Q60 65.6 64.5 62" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <path d="M46 60 C48 68 53 72 60 72 C67 72 72 68 74 60 C70 66 66 67.5 60 67.5 C54 67.5 50 66 46 60 Z" fill="#21182B" opacity="0.22" />
+    <g stroke="#1D1530" strokeWidth="1.5" fill="#ffffff" fillOpacity="0.18">
+    <rect x="47.5" y="46.5" width="11" height="9" rx="3.5" />
+    <rect x="61.5" y="46.5" width="11" height="9" rx="3.5" />
+    <path d="M58.5 50 Q60 49 61.5 50" fill="none" />
+    </g>
+    </g>
+    <path d="M42.5 49 C41 36 49 28.5 60 28.5 C71 28.5 79 36 77.5 49 C76 42 72 38.5 66 37.5 C60 39 52 39 46 40 C44 43 43 46 42.5 49 Z" fill="#21182B" />
+    </g>
+    </svg>
+  </>
+)
+
+const CharSa4 = () => (
+  <>
+    <svg className="char" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+    <linearGradient id="dw-sa4-0" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stopColor="#F1E9FF" />
+    <stop offset="1" stopColor="#E0CFFF" />
+    </linearGradient>
+    <clipPath id="dw-sa4-1">
+    <rect width="120" height="120" rx="28" />
+    </clipPath>
+    </defs>
+    <g clipPath="url(#dw-sa4-1)">
+    <rect width="120" height="120" fill="url(#dw-sa4-0)" />
+    <circle cx="98" cy="22" r="26" fill="#ffffff" opacity="0.35" />
+    <g>
+    <path d="M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z" fill="#1A1626" />
+    <path d="M44 88 C50 96 54 108 55 122" stroke="#C9B8FD" strokeWidth="1.6" fill="none" opacity="0.9" />
+    <path d="M76 88 C70 96 66 108 65 122" stroke="#C9B8FD" strokeWidth="1.6" fill="none" opacity="0.9" />
+    </g>
+    <g>
+    <ellipse cx="60" cy="52" rx="17" ry="20" fill="#C99670" />
+    <ellipse cx="43.5" cy="54" rx="3" ry="4.5" fill="#B07E59" />
+    <ellipse cx="76.5" cy="54" rx="3" ry="4.5" fill="#B07E59" />
+    <path d="M50 45.5 Q53.5 43.8 57 45.2" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <path d="M63 45.2 Q66.5 43.8 70 45.5" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <ellipse cx="53.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <ellipse cx="66.5" cy="51" rx="1.7" ry="2.1" fill="#1D1530" />
+    <path d="M60 52.5 Q58.2 57 60.6 57.6" stroke="#B07E59" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+    <ellipse cx="50" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <ellipse cx="70" cy="58" rx="3" ry="1.6" fill="#E77A8A" opacity="0.22" />
+    <path d="M55.5 62 Q60 65.6 64.5 62" stroke="#1D1530" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+    <g stroke="#1D1530" strokeWidth="1.5" fill="#ffffff" fillOpacity="0.18">
+    <rect x="47.5" y="46.5" width="11" height="9" rx="3.5" />
+    <rect x="61.5" y="46.5" width="11" height="9" rx="3.5" />
+    <path d="M58.5 50 Q60 49 61.5 50" fill="none" />
+    </g>
+    </g>
+    <g>
+    <path d="M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z" fill="#4A2470" fillRule="evenodd" />
+    <path d="M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z" fill="none" stroke="#6B3A9C" strokeWidth="1.2" />
+    <path d="M47 89 C52 84 56 80 58 76" stroke="#6B3A9C" strokeWidth="1" fill="none" opacity="0.7" />
+    </g>
+    </g>
+    </svg>
+  </>
+)
+
+type CharId = 'eg7' | 'sa5' | 'eg4' | 'sa4'
+
+const CHAR_SVG: Record<CharId, () => React.JSX.Element> = {
+  eg7: CharEg7,
+  sa5: CharSa5,
+  eg4: CharEg4,
+  sa4: CharSa4,
 }
 
-type CharId = keyof typeof CHARS
-
 function Char({ id }: { id: CharId }) {
-  return <span className="char-wrap" dangerouslySetInnerHTML={{ __html: CHARS[id] }} />
+  const Svg = CHAR_SVG[id]
+  return <Svg />
 }
 
 function Cast({ ids, size }: { ids: CharId[]; size: number }) {
@@ -479,9 +680,10 @@ export default function CoachingPage() {
 
                   <div className="full">
                     <button type="submit" className="btn btn-primary btn-block" disabled={phase === 'sending'}>
-                      {phase === 'sending' ? <Loader2 size={18} className="cch-spin" aria-hidden="true" /> : null}
-                      إرسال الطلب
-                      {phase !== 'sending' && <ArrowLeft size={18} aria-hidden="true" />}
+                      {phase === 'sending' ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
+                      {phase !== 'sending' && (
+                        <svg className="icon go flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                      )}
                     </button>
                   </div>
                 </form>

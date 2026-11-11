@@ -4165,3 +4165,7 @@ section[class*="hero"] { padding-block: 48px }
   .cch .duo-p { max-width: 160px; }
   .cch .cch-split.rev > :first-child { order: 0; }
 }
+
+/* coaching page: reference arrow icon in the submit button */
+.cch .btn .icon { width: 18px; height: 18px; flex-shrink: 0; }
+[dir='rtl'] .cch .icon.flip { transform: scaleX(-1); }
