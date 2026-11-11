@@ -4169,3 +4169,10 @@ section[class*="hero"] { padding-block: 48px }
 /* coaching page: reference arrow icon in the submit button */
 .cch .btn .icon { width: 18px; height: 18px; flex-shrink: 0; }
 [dir='rtl'] .cch .icon.flip { transform: scaleX(-1); }
+
+/* coaching scene: size tiles so both characters fit inside the card; pill text stays dark on its white pill */
+.cch .duo-p { height: auto; width: 56%; max-width: none; aspect-ratio: 1; }
+.cch .duo.n1 .duo-p { width: 74%; }
+.cch .duo.n2 .duo-p + .duo-p { margin-inline-start: -12%; }
+.cch .duo-flag { color: var(--navy); }
+@media (max-width: 768px) { .cch .duo-p { max-width: none; } }
