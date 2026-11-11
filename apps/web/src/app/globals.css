@@ -4335,3 +4335,31 @@ section[class*="hero"] { padding-block: 48px }
 @media (max-width: 520px) { .dw-footer .f-grid { grid-template-columns: 1fr; } }
 /* the dashboard theme forces inputs onto --input-bg with !important; point it at the page background here */
 .cch .form-card { --input-bg: var(--bg); }
+
+/* score ring: the size-reduction [class*="wrap"] rule padded the 56px box and pushed the % out of the ring */
+.dw-hero .dw-ring-wrap { padding: 0; max-width: none; width: 64px; height: 64px; }
+.dw-hero .dw-ring-svg { width: 64px; height: 64px; }
+.dw-hero .dw-ring-wrap b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; line-height: 1; text-align: center; }
+
+/* hero subtitle line (title2) */
+.dw-hero h1 .grad { font-size: 1.05rem; font-weight: 600; opacity: 0.85; line-height: 1.5; }
+
+/* footer: page background and brand-token colours */
+.dw-footer { background: var(--bg); color: var(--ink); border-top: 1px solid var(--line); padding: 48px 0 24px; }
+.dw-footer .f-grid { grid-template-columns: 2fr 1fr 1fr 1fr; gap: 40px; padding-block: 0 40px; }
+.dw-footer h4 { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em; color: var(--ink); opacity: 0.45; margin-bottom: 14px; }
+.dw-footer ul li a, .dw-footer .footer-link { color: var(--ink); font-size: 0.9rem; opacity: 0.75; transition: opacity 0.15s; }
+.dw-footer ul li a:hover, .dw-footer .footer-link:hover { opacity: 1; color: var(--ink); }
+.dw-footer .f-brand p { font-size: 0.88rem; color: var(--ink); opacity: 0.55; margin-top: 12px; line-height: 1.6; max-width: 220px; }
+.dw-footer .f-bottom { border-top: 1px solid var(--line); padding: 20px 0 0; gap: 8px; font-size: 0.78rem; color: var(--ink); }
+.dw-footer .f-bottom span { font-size: 0.78rem; opacity: 0.45; }
+.dw-footer .f-bottom .footer-link { font-size: 0.78rem; opacity: 0.45; }
+.dw-footer .logo .on-light { display: block; }
+.dw-footer .logo .on-dark { display: none; }
+.dark .dw-footer .logo .on-light { display: none; }
+.dark .dw-footer .logo .on-dark { display: block; }
+@media (max-width: 768px) {
+	.dw-footer .f-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+	.dw-footer .f-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) { .dw-footer .f-grid { grid-template-columns: 1fr 1fr; } }
