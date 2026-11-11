@@ -4256,3 +4256,22 @@ section[class*="hero"] { padding-block: 48px }
 	resize: vertical;
 	min-height: 100px;
 }
+
+/* === compact hero scene (overrides earlier sizing; scoped to .cch) === */
+.cch .phero-media { max-width: 380px; min-width: 0; min-height: 0; margin-inline: auto; position: relative; }
+.cch .ph.scene,
+.cch .split-media .ph.scene { border-radius: 20px; padding: 24px 20px 32px; overflow: hidden; position: relative; aspect-ratio: 1 / 1; max-height: 360px; min-height: 0; height: auto; }
+.cch .sc-orb { width: 160px; height: 160px; border-radius: 50%; position: absolute; max-width: none; }
+.cch .sc-orb.o1 { width: 180px; height: 180px; top: -30px; bottom: auto; left: 20%; right: auto; transform: none; }
+.cch .sc-orb.o2 { width: 160px; height: 160px; top: -20px; bottom: auto; right: 20%; left: auto; inset-inline: auto; }
+.cch .duo.n2 { display: flex; gap: 8px; align-items: flex-end; justify-content: center; padding-top: 40px; }
+.cch .duo-p { width: 46%; max-width: none; aspect-ratio: 1; border-radius: 16px; padding: 8px 8px 0; overflow: hidden; }
+.cch .duo.n2 .duo-p + .duo-p { margin-inline-start: 0; }
+.cch .duo.n1 .duo-p { width: 56%; }
+.cch .duo-p .char { width: 100%; height: auto; display: block; }
+.cch .duo-flag { font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; display: inline-block; top: 8px; }
+@media (max-width: 768px) {
+  .cch .phero-media { max-width: 340px; }
+  .cch .duo-p { max-width: none; }
+}
+.cch .phero-media { width: 100%; }
