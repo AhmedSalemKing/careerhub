@@ -1,17 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { useLocale } from 'next-intl'
 import {
-  Info, X, Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
+  Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
   PenLine, UserRound, ShieldCheck, Check, Loader2,
 } from 'lucide-react'
 import { get, post } from '@/lib/api'
 
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
-
-const DEMO_TEXT = 'موقع تجريبي: الدورات وجهات التدريب والأسعار ولوحات المتابعة بيانات نموذجية، ولا يُرسل أي شيء تُدخله إلى أي جهة.'
 
 const STEPS = [
   { Icon: LogIn, t: 'قدّم طلبك', d: 'أخبرنا بمجالك وخبرتك واللغات التي تتحدثها.' },
@@ -74,6 +72,30 @@ function applyErrorText(err: unknown): string {
   return 'تعذّر إرسال الطلب، يرجى مراجعة البيانات والمحاولة مرة أخرى.'
 }
 
+// Illustrated cast copied verbatim from the reference design (static, trusted markup).
+const CHARS: Record<'eg7' | 'sa5' | 'eg4' | 'sa4', string> = {
+  eg7: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-eg7-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F6EAFF\"></stop><stop offset=\"1\" stop-color=\"#E6CEFF\"></stop></linearGradient><clipPath id=\"dw-eg7-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-eg7-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-eg7-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#6B3A9C\"></path><path d=\"M50 85 L60 106 L70 85 Z\" fill=\"#FFFFFF\"></path><path d=\"M48 86 L56 104 L50 108 L42 92 Z\" fill=\"#572E82\"></path><path d=\"M72 86 L64 104 L70 108 L78 92 Z\" fill=\"#572E82\"></path><circle cx=\"60\" cy=\"113\" r=\"1.6\" fill=\"#572E82\"></circle></g><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#D6A27C\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#BE8A65\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#BE8A65\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#BE8A65\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path></g><g><path d=\"M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"#E3A9BB\" fill-rule=\"evenodd\"></path><path d=\"M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"none\" stroke=\"#C98AA0\" stroke-width=\"1.2\"></path><path d=\"M47 89 C52 84 56 80 58 76\" stroke=\"#C98AA0\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"></path></g></g></svg>",
+  sa5: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-sa5-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#EEE7FF\"></stop><stop offset=\"1\" stop-color=\"#D6C9FF\"></stop></linearGradient><clipPath id=\"dw-sa5-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-sa5-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-sa5-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#F6F4FA\"></path><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"none\" stroke=\"#DCD6EA\" stroke-width=\"1\"></path><path d=\"M53 84 Q60 90 67 84\" stroke=\"#CFC8E3\" stroke-width=\"2\" fill=\"none\"></path><path d=\"M60 89 L60 110\" stroke=\"#CFC8E3\" stroke-width=\"1.5\"></path><circle cx=\"60\" cy=\"95\" r=\"1.2\" fill=\"#B9B0D6\"></circle><circle cx=\"60\" cy=\"102\" r=\"1.2\" fill=\"#B9B0D6\"></circle></g><path d=\"M52 66 L52 80 Q60 85 68 80 L68 66 Z\" fill=\"#9C6A45\"></path><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#B58058\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#9C6A45\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#9C6A45\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#9C6A45\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M43.5 55 C44 67 51 73.5 60 73.5 C69 73.5 76 67 76.5 55 C74 62 69 64.5 66 64 C63 63 57 63 54 64 C51 64.5 46 62 43.5 55 Z\" fill=\"#8F8A9C\"></path><path d=\"M54 61.6 Q60 59.2 66 61.6 Q60 60.8 54 61.6 Z\" fill=\"#8F8A9C\" stroke=\"#8F8A9C\" stroke-width=\"1.6\" stroke-linejoin=\"round\"></path><path d=\"M56.5 65.2 Q60 67.2 63.5 65.2\" stroke=\"#F3E9F0\" stroke-width=\"1.3\" fill=\"none\" stroke-linecap=\"round\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><g><path d=\"M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z\" fill=\"#FBFAFD\"></path><path d=\"M60 21 C39 21 33 37 33 54 C33 70 30 86 25 100 C36 98 45 92 49 82 C45 74 42.5 64 43 53 C43.5 40 50 33.5 60 33.5 C70 33.5 76.5 40 77 53 C77.5 64 75 74 71 82 C75 92 84 98 95 100 C90 86 87 70 87 54 C87 37 81 21 60 21 Z\" fill=\"none\" stroke=\"#D9D3E8\" stroke-width=\"0.9\"></path><path d=\"M40 60 C39 72 37 84 33 94\" stroke=\"#D9D3E8\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.6\"></path><path d=\"M80 60 C81 72 83 84 87 94\" stroke=\"#D9D3E8\" stroke-width=\"0.9\" fill=\"none\" opacity=\"0.6\"></path><path d=\"M41 30.5 Q60 23.5 79 30.5\" stroke=\"#15111F\" stroke-width=\"2.2\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.85\"></path><path d=\"M38.5 30 Q60 38 81.5 30\" stroke=\"#15111F\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M38 34 Q60 42 82 34\" stroke=\"#15111F\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\"></path></g></g></svg>",
+  eg4: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-eg4-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ECE6FF\"></stop><stop offset=\"1\" stop-color=\"#D3C7FF\"></stop></linearGradient><clipPath id=\"dw-eg4-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-eg4-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-eg4-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#100C2E\"></path><path d=\"M50 85 L60 106 L70 85 Z\" fill=\"#DCD3FF\"></path><path d=\"M48 86 L56 104 L50 108 L42 92 Z\" fill=\"#241B55\"></path><path d=\"M72 86 L64 104 L70 108 L78 92 Z\" fill=\"#241B55\"></path><circle cx=\"60\" cy=\"113\" r=\"1.6\" fill=\"#241B55\"></circle></g><path d=\"M52 66 L52 80 Q60 85 68 80 L68 66 Z\" fill=\"#966442\"></path><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#B07A54\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#966442\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#966442\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#966442\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M46 60 C48 68 53 72 60 72 C67 72 72 68 74 60 C70 66 66 67.5 60 67.5 C54 67.5 50 66 46 60 Z\" fill=\"#21182B\" opacity=\"0.22\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><path d=\"M42.5 49 C41 36 49 28.5 60 28.5 C71 28.5 79 36 77.5 49 C76 42 72 38.5 66 37.5 C60 39 52 39 46 40 C44 43 43 46 42.5 49 Z\" fill=\"#21182B\"></path></g></svg>",
+  sa4: "<svg class=\"char\" viewBox=\"0 0 120 120\" aria-hidden=\"true\"><defs><linearGradient id=\"dw-sa4-0\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F1E9FF\"></stop><stop offset=\"1\" stop-color=\"#E0CFFF\"></stop></linearGradient><clipPath id=\"dw-sa4-1\"><rect width=\"120\" height=\"120\" rx=\"28\"></rect></clipPath></defs><g clip-path=\"url(#dw-sa4-1)\"><rect width=\"120\" height=\"120\" fill=\"url(#dw-sa4-0)\"></rect><circle cx=\"98\" cy=\"22\" r=\"26\" fill=\"#ffffff\" opacity=\"0.35\"></circle><g><path d=\"M12 122 C14 97 33 85 60 85 C87 85 106 97 108 122 Z\" fill=\"#1A1626\"></path><path d=\"M44 88 C50 96 54 108 55 122\" stroke=\"#C9B8FD\" stroke-width=\"1.6\" fill=\"none\" opacity=\"0.9\"></path><path d=\"M76 88 C70 96 66 108 65 122\" stroke=\"#C9B8FD\" stroke-width=\"1.6\" fill=\"none\" opacity=\"0.9\"></path></g><g><ellipse cx=\"60\" cy=\"52\" rx=\"17\" ry=\"20\" fill=\"#C99670\"></ellipse><ellipse cx=\"43.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#B07E59\"></ellipse><ellipse cx=\"76.5\" cy=\"54\" rx=\"3\" ry=\"4.5\" fill=\"#B07E59\"></ellipse><path d=\"M50 45.5 Q53.5 43.8 57 45.2\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><path d=\"M63 45.2 Q66.5 43.8 70 45.5\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"53.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><ellipse cx=\"66.5\" cy=\"51\" rx=\"1.7\" ry=\"2.1\" fill=\"#1D1530\"></ellipse><path d=\"M60 52.5 Q58.2 57 60.6 57.6\" stroke=\"#B07E59\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\"></path><ellipse cx=\"50\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><ellipse cx=\"70\" cy=\"58\" rx=\"3\" ry=\"1.6\" fill=\"#E77A8A\" opacity=\"0.22\"></ellipse><path d=\"M55.5 62 Q60 65.6 64.5 62\" stroke=\"#1D1530\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"></path><g stroke=\"#1D1530\" stroke-width=\"1.5\" fill=\"#ffffff\" fill-opacity=\"0.18\"><rect x=\"47.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><rect x=\"61.5\" y=\"46.5\" width=\"11\" height=\"9\" rx=\"3.5\"></rect><path d=\"M58.5 50 Q60 49 61.5 50\" fill=\"none\"></path></g></g><g><path d=\"M60 25 C41 25 36 39 36 55 C36 70 40 82 47 89 C40 92 34 95 30 99 C44 104 76 104 90 99 C86 95 80 92 73 89 C80 82 84 70 84 55 C84 39 79 25 60 25 Z M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"#4A2470\" fill-rule=\"evenodd\"></path><path d=\"M60 34 C49 34 44.5 42 44.5 52.5 C44.5 64 51 72.5 60 72.5 C69 72.5 75.5 64 75.5 52.5 C75.5 42 71 34 60 34 Z\" fill=\"none\" stroke=\"#6B3A9C\" stroke-width=\"1.2\"></path><path d=\"M47 89 C52 84 56 80 58 76\" stroke=\"#6B3A9C\" stroke-width=\"1\" fill=\"none\" opacity=\"0.7\"></path></g></g></svg>",
+}
+
+type CharId = keyof typeof CHARS
+
+function Char({ id }: { id: CharId }) {
+  return <span className="char-wrap" dangerouslySetInnerHTML={{ __html: CHARS[id] }} />
+}
+
+function Cast({ ids, size }: { ids: CharId[]; size: number }) {
+  return (
+    <span className="cast">
+      {ids.map((id) => (
+        <span key={id} className="char-av" style={{ width: size, height: size }}><Char id={id} /></span>
+      ))}
+    </span>
+  )
+}
+
 /* ───────────────────────── types ───────────────────────── */
 
 interface ConsultantProfile {
@@ -131,7 +153,6 @@ function validate(f: FormState): FormErrors {
 export default function CoachingPage() {
   const locale = useLocale()
 
-  const [banner, setBanner] = useState(true)
   const [market, setMarket] = useState<string>('مصر')
 
   const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', cvUrl: '', cvName: '', country: '', field: '', exp: '', langs: ['العربية'], msg: '' })
@@ -155,6 +176,21 @@ export default function CoachingPage() {
 
   const toggleLang = (l: string) =>
     setForm((p) => ({ ...p, langs: p.langs.includes(l) ? p.langs.filter((x) => x !== l) : [...p.langs, l] }))
+
+  useEffect(() => {
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>('.cch .rv'))
+    if (typeof IntersectionObserver === 'undefined') {
+      nodes.forEach((n) => n.classList.add('in'))
+      return
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) }
+      })
+    }, { threshold: 0.12 })
+    nodes.forEach((n) => io.observe(n))
+    return () => io.disconnect()
+  }, [])
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
@@ -249,19 +285,6 @@ export default function CoachingPage() {
     <main className="dw-home cch" dir="rtl" lang="ar">
       <style>{CSS}</style>
 
-      {/* A) DEMO BANNER */}
-      {banner && (
-        <div className="cch-demo" role="note">
-          <div className="cch-in cch-demo-row">
-            <Info size={18} aria-hidden="true" />
-            <p>{DEMO_TEXT}</p>
-            <button type="button" className="cch-icon-btn" aria-label="إغلاق" onClick={() => setBanner(false)}>
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* B) INTRO */}
       <section className="cch-band cch-intro-band">
         <div className="cch-bg" aria-hidden="true"><span className="cch-dots" /><span className="cch-b1" /><span className="cch-b2" /></div>
@@ -286,20 +309,26 @@ export default function CoachingPage() {
             </div>
           </div>
 
-          <div className="cch-media" aria-hidden="true">
-            <div className="cch-scene">
-              <span className="cch-orb o1" /><span className="cch-orb o2" />
-              <div className="cch-duo">
-                <span className="cch-face">م</span>
-                <span className="cch-face alt">س</span>
+          <div className="phero-media">
+            <div className="ph scene" role="img" aria-label="للمرشدين">
+              <span className="sc-orb o1"></span>
+              <span className="sc-orb o2"></span>
+              <div className="duo n2">
+                <span className="duo-p" style={{ ['--i' as string]: 0 }}>
+                  <Char id="eg7" />
+                  <em className="duo-flag eg">مصر</em>
+                </span>
+                <span className="duo-p" style={{ ['--i' as string]: 1 }}>
+                  <Char id="sa5" />
+                  <em className="duo-flag sa">السعودية</em>
+                </span>
               </div>
             </div>
-            {/* C) LIVE CLINIC BANNER */}
-            <div className="cch-live">
-              <span className="cch-live-dot" />
+            <div className="float f-live" style={{ position: 'absolute', top: 'auto', bottom: '-20px', insetInlineStart: '-14px' }}>
+              <Cast ids={['sa5', 'eg7', 'eg4']} size={34} />
               <div>
-                <p className="cch-live-label">العيادات الجماعية</p>
-                <p className="cch-live-title">الأحد · 7:00 مساءً</p>
+                <p className="f-label">العيادات الجماعية</p>
+                <p className="f-title">الأحد · 7:00 مساءً</p>
               </div>
             </div>
           </div>
@@ -325,8 +354,17 @@ export default function CoachingPage() {
       {/* E) COACHING METHODS */}
       <section className="cch-band">
         <div className="cch-in cch-split">
-          <div className="cch-split-media" aria-hidden="true">
-            <div className="cch-scene tall"><span className="cch-orb o1" /><span className="cch-orb o2" /><div className="cch-duo"><span className="cch-face">م</span></div></div>
+          <div className="split-media rv">
+            <div className="ph scene" role="img" aria-label="طرق الإرشاد">
+              <span className="sc-orb o1"></span>
+              <span className="sc-orb o2"></span>
+              <div className="duo n1">
+                <span className="duo-p" style={{ ['--i' as string]: 0 }}>
+                  <Char id="eg4" />
+                  <em className="duo-flag eg">مصر</em>
+                </span>
+              </div>
+            </div>
           </div>
           <div>
             <div className="cch-head tight"><span className="cch-eyebrow">للمرشدين</span><h2>طرق الإرشاد</h2></div>
@@ -347,16 +385,27 @@ export default function CoachingPage() {
       </section>
 
       {/* F) WHO WE LOOK FOR  +  G) APPLICATION FORM */}
-      <section className="cch-band alt" id="mentor-apply">
-        <div className="cch-in cch-split top">
-          <div>
-            <div className="cch-head"><span className="cch-eyebrow">قدّم كمرشد</span><h2>من نبحث عنه</h2></div>
-            <ul className="cch-checks">
-              {WHO.map((x) => (<li key={x}><Check size={18} aria-hidden="true" /><span>{x}</span></li>))}
+      <section className="sec sec-alt" id="mentor-apply">
+        <div className="wrap split" style={{ alignItems: 'start' }}>
+          <div className="rv">
+            <div className="sec-head">
+              <span className="eyebrow">قدّم كمرشد</span>
+              <h2 className="h2">من نبحث عنه</h2>
+            </div>
+            <ul className="checks" style={{ fontSize: '17px' }}>
+              {WHO.map((x) => (
+                <li key={x}>
+                  <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                  <span>{x}</span>
+                </li>
+              ))}
             </ul>
+            <div style={{ marginTop: '24px' }}>
+              <Cast ids={['sa5', 'eg7', 'eg4', 'sa4']} size={52} />
+            </div>
           </div>
 
-          <div className="cch-panel">
+          <div className="card form-card rv">
             {phase === 'sent' ? (
               <div className="cch-success" role="status">
                 <span className="cch-success-ic"><Check size={28} aria-hidden="true" /></span>
@@ -365,63 +414,63 @@ export default function CoachingPage() {
             ) : (
               <>
                 <h2>طلب الانضمام كمرشد</h2>
-                <form className="cch-form" onSubmit={onSubmit} noValidate>
-                  <div className={`cch-field${errors.name ? ' bad' : ''}`}>
+                <form className="form" onSubmit={onSubmit} noValidate>
+                  <div className={'field' + (errors.name ? ' bad' : '')}>
                     <label htmlFor="m-name">الاسم الكامل</label>
-                    <input id="m-name" type="text" value={form.name} onChange={(e) => setField('name', e.target.value)} aria-invalid={!!errors.name} />
-                    {errors.name && <span className="cch-msg">{errors.name}</span>}
+                    <input id="m-name" type="text" required value={form.name} onChange={(e) => setField('name', e.target.value)} aria-invalid={!!errors.name} />
+                    {errors.name && <span className="msg">{errors.name}</span>}
                   </div>
-                  <div className={`cch-field${errors.email ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.email ? ' bad' : '')}>
                     <label htmlFor="m-email">البريد الإلكتروني</label>
-                    <input id="m-email" type="email" autoComplete="email" value={form.email} onChange={(e) => setField('email', e.target.value)} aria-invalid={!!errors.email} />
-                    {errors.email && <span className="cch-msg">{errors.email}</span>}
+                    <input id="m-email" type="email" required autoComplete="email" value={form.email} onChange={(e) => setField('email', e.target.value)} aria-invalid={!!errors.email} />
+                    {errors.email && <span className="msg">{errors.email}</span>}
                   </div>
-                  <div className={`cch-field${errors.password ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.password ? ' bad' : '')}>
                     <label htmlFor="m-pass">كلمة المرور</label>
-                    <input id="m-pass" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setField('password', e.target.value)} aria-invalid={!!errors.password} />
-                    {errors.password && <span className="cch-msg">{errors.password}</span>}
+                    <input id="m-pass" type="password" required autoComplete="new-password" value={form.password} onChange={(e) => setField('password', e.target.value)} aria-invalid={!!errors.password} />
+                    {errors.password && <span className="msg">{errors.password}</span>}
                   </div>
-                  <div className={`cch-field${errors.cv ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.cv ? ' bad' : '')}>
                     <label htmlFor="m-cv">السيرة الذاتية</label>
                     <input id="m-cv" type="file" accept=".pdf,.doc,.docx" onChange={onCvChange} disabled={cvUploading} aria-invalid={!!errors.cv} />
-                    <span className="cch-hint">
+                    <span className="hint">
                       {cvUploading ? 'جارٍ رفع الملف…' : form.cvName ? form.cvName : 'PDF أو Word — حجم أقصى 5MB'}
                     </span>
-                    {errors.cv && <span className="cch-msg">{errors.cv}</span>}
+                    {errors.cv && <span className="msg">{errors.cv}</span>}
                   </div>
-                  <div className={`cch-field${errors.country ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.country ? ' bad' : '')}>
                     <label htmlFor="m-country">الدولة</label>
-                    <select id="m-country" value={form.country} onChange={(e) => setField('country', e.target.value)} aria-invalid={!!errors.country}>
+                    <select id="m-country" required value={form.country} onChange={(e) => setField('country', e.target.value)} aria-invalid={!!errors.country}>
                       <option value="" />
                       {COUNTRIES.map((c) => (<option key={c} value={c}>{c}</option>))}
                     </select>
-                    {errors.country && <span className="cch-msg">{errors.country}</span>}
+                    {errors.country && <span className="msg">{errors.country}</span>}
                   </div>
-                  <div className={`cch-field${errors.field ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.field ? ' bad' : '')}>
                     <label htmlFor="m-field">المجال</label>
-                    <select id="m-field" value={form.field} onChange={(e) => setField('field', e.target.value)} aria-invalid={!!errors.field}>
+                    <select id="m-field" required value={form.field} onChange={(e) => setField('field', e.target.value)} aria-invalid={!!errors.field}>
                       <option value="" />
                       {FIELDS.map((c) => (<option key={c} value={c}>{c}</option>))}
                     </select>
-                    {errors.field && <span className="cch-msg">{errors.field}</span>}
+                    {errors.field && <span className="msg">{errors.field}</span>}
                   </div>
-                  <div className={`cch-field${errors.exp ? ' bad' : ''}`}>
+                  <div className={'field' + (errors.exp ? ' bad' : '')}>
                     <label htmlFor="m-exp">سنوات الخبرة</label>
-                    <select id="m-exp" value={form.exp} onChange={(e) => setField('exp', e.target.value)} aria-invalid={!!errors.exp}>
+                    <select id="m-exp" required value={form.exp} onChange={(e) => setField('exp', e.target.value)} aria-invalid={!!errors.exp}>
                       <option value="" />
                       {EXPERIENCE.map((c) => (<option key={c} value={c}>{c}</option>))}
                     </select>
-                    {errors.exp && <span className="cch-msg">{errors.exp}</span>}
+                    {errors.exp && <span className="msg">{errors.exp}</span>}
                   </div>
-                  <div className="cch-field">
-                    <span className="cch-label">لغات الإرشاد</span>
-                    <div className="cch-checkset">
+                  <div className="field">
+                    <label>لغات الإرشاد</label>
+                    <div className="checkset">
                       {LANGS.map((l) => (
-                        <label key={l}><input type="checkbox" checked={form.langs.includes(l)} onChange={() => toggleLang(l)} />{l}</label>
+                        <label key={l}><input type="checkbox" name="mlang" checked={form.langs.includes(l)} onChange={() => toggleLang(l)} />{l}</label>
                       ))}
                     </div>
                   </div>
-                  <div className="cch-field full">
+                  <div className="field full">
                     <label htmlFor="m-msg">هل هناك ما تودّ إضافته؟</label>
                     <textarea id="m-msg" value={form.msg} onChange={(e) => setField('msg', e.target.value)} />
                   </div>
@@ -429,7 +478,7 @@ export default function CoachingPage() {
                   {phase === 'error' && <p className="cch-alert full" role="alert">{errorText}</p>}
 
                   <div className="full">
-                    <button type="submit" className="cch-cta primary block" disabled={phase === 'sending'}>
+                    <button type="submit" className="btn btn-primary btn-block" disabled={phase === 'sending'}>
                       {phase === 'sending' ? <Loader2 size={18} className="cch-spin" aria-hidden="true" /> : null}
                       إرسال الطلب
                       {phase !== 'sending' && <ArrowLeft size={18} aria-hidden="true" />}
@@ -501,11 +550,6 @@ const CSS = `
 .cch section.cch-intro-band { padding-block: 56px 64px; overflow: hidden; isolation: isolate; }
 .cch h1, .cch h2, .cch h3, .cch h4 { color: var(--ink); }
 
-.cch-demo { background: var(--wash); border-bottom: 1px solid var(--line); color: var(--ink-2); }
-.cch-demo-row { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
-.cch-demo-row p { flex: 1; margin: 0; font-size: 13px; line-height: 1.6; color: var(--ink-2); }
-.cch-icon-btn { display: inline-flex; padding: 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink-2); cursor: pointer; }
-.cch-icon-btn:hover { background: var(--wash-2); }
 
 .cch-bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 .cch-dots { position: absolute; inset: 0; background-image: radial-gradient(var(--line-2) 1px, transparent 1px); background-size: 22px 22px; opacity: .6; }
@@ -532,21 +576,6 @@ const CSS = `
 .cch-cta.block { width: 100%; }
 .cch-cta:disabled { opacity: .7; cursor: wait; }
 
-.cch-media { position: relative; min-height: 300px; }
-.cch-scene { position: relative; height: 300px; border-radius: var(--r-lg); overflow: hidden; background: linear-gradient(135deg, var(--wash), var(--wash-2)); border: 1px solid var(--line); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; }
-.cch-scene.tall { height: 360px; }
-.cch-orb { position: absolute; border-radius: 50%; background: var(--surface); opacity: .35; }
-.cch-orb.o1 { width: 180px; height: 180px; inset-block-start: -50px; inset-inline-end: -40px; }
-.cch-orb.o2 { width: 120px; height: 120px; inset-block-end: -30px; inset-inline-start: 20px; }
-.cch-duo { position: relative; display: flex; gap: 14px; }
-.cch-face { display: grid; place-items: center; width: 96px; height: 96px; border-radius: 28px; background: var(--brand); color: var(--on-brand); font-size: 38px; font-weight: 700; box-shadow: var(--shadow); }
-.cch-face.alt { background: var(--night-2); color: var(--night-ink); }
-.cch-live { position: absolute; inset-block-end: -20px; inset-inline-start: -14px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--r); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.cch-live p { margin: 0; }
-.cch-live-label { font-size: 11px; color: var(--ink-3); }
-.cch-live-title { font-size: 13px; font-weight: 700; color: var(--ink); }
-.cch-live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--error); box-shadow: 0 0 0 0 var(--error); animation: cch-pulse 1.8s infinite; }
-@keyframes cch-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--error) 50%, transparent); } 100% { box-shadow: 0 0 0 10px transparent; } }
 
 .cch-head { margin-bottom: 28px; }
 .cch-head.tight { margin-bottom: 12px; }
@@ -571,25 +600,7 @@ const CSS = `
 .cch-note svg { flex-shrink: 0; color: var(--brand); margin-top: 2px; }
 .cch-note span { font-size: 13px; }
 
-.cch-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
-.cch-checks li { display: flex; align-items: flex-start; gap: 10px; color: var(--ink); }
-.cch-checks li span { font-size: 17px; line-height: 1.6; }
-.cch-checks svg { flex-shrink: 0; margin-top: 4px; color: var(--brand); }
 
-.cch-panel { padding: 24px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
-.cch-panel h2 { margin: 0 0 16px; font-size: 20px; font-weight: 800; }
-.cch-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.cch-form .full { grid-column: 1 / -1; }
-.cch-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.cch-field label, .cch-label { font-size: 13px; font-weight: 600; color: var(--ink); }
-.cch-field input[type="text"], .cch-field input[type="email"], .cch-field input[type="password"], .cch-field input[type="file"], .cch-field select, .cch-field textarea { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 14px; outline: none; }
-.cch-field textarea { min-height: 96px; resize: vertical; }
-.cch-field input:focus, .cch-field select:focus, .cch-field textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--wash); }
-.cch-field.bad input, .cch-field.bad select, .cch-field.bad textarea { border-color: var(--error); }
-.cch-hint { font-size: 12px; color: var(--ink-3); }
-.cch-msg { font-size: 12px; color: var(--error); }
-.cch-checkset { display: flex; gap: 18px; padding-block: 8px; }
-.cch-checkset label { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 400; cursor: pointer; }
 .cch-alert { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--error); color: var(--error); font-size: 13px; }
 .cch-success { text-align: center; padding: 32px 8px; }
 .cch-success h3 { margin: 14px 0 0; font-size: 18px; line-height: 1.6; }
@@ -616,11 +627,9 @@ const CSS = `
   .cch-intro-grid, .cch-split { grid-template-columns: 1fr; }
   .cch-steps { grid-template-columns: repeat(2, 1fr); }
   .cch-grid { grid-template-columns: repeat(2, 1fr); }
-  .cch-live { inset-inline-start: 8px; }
 }
 @media (max-width: 600px) {
-  .cch-steps, .cch-grid, .cch-form { grid-template-columns: 1fr; }
-  .cch-scene, .cch-scene.tall { height: 240px; }
+  .cch-steps, .cch-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .cch * { animation: none !important; } }
 `
