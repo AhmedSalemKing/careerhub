@@ -4176,3 +4176,9 @@ section[class*="hero"] { padding-block: 48px }
 .cch .duo.n2 .duo-p + .duo-p { margin-inline-start: -12%; }
 .cch .duo-flag { color: var(--navy); }
 @media (max-width: 768px) { .cch .duo-p { max-width: none; } }
+
+/* coaching scene: characters float on the gradient (no light tile behind them); lighter frame */
+.cch .ph.scene { border-radius: 16px; box-shadow: none; border: 0; }
+.cch .split-media { border-radius: 16px; }
+.cch .duo .char > g > rect,
+.cch .duo .char > g > circle { display: none; }
