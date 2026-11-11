@@ -103,21 +103,21 @@
     --gold: #f5a623;
 
     /* ── Core Palette ── */
-    --background: #FFFFFF;
-    --foreground: #111111;
+    --background: var(--bg);
+    --foreground: var(--ink);
     --surface: #FFFFFF;
-    --surface-2: #F7F7F9;
+    --surface-2: #f6f3ff;
     --surface-3: #EFEFF1;
-    --border: #E5E5EA;
+    --border: var(--line);
     --border-strong: #D1D1D6;
     --muted: #6E6E73;
-    --muted-foreground: #AEAEB2;
+    --muted-foreground: var(--ink-2);
     --foreground-2: #333338;
 
     /* ── Primary Purple ── */
-    --primary: #5120c8;
-    --primary-hover: #4318a8;
-    --primary-fg: #FFFFFF;
+    --primary: var(--brand);
+    --primary-hover: var(--brand-hover);
+    --primary-fg: var(--on-brand);
     --primary-subtle: rgba(81, 32, 200, 0.06);
     --primary-light: rgba(81, 32, 200, 0.06);
     --primary-muted: rgba(81, 32, 200, 0.10);
@@ -150,8 +150,8 @@
     --ring: rgba(81, 32, 200, 0.25);
 
     /* ── Component Tokens ── */
-    --input-bg: #FFFFFF;
-    --card-bg: #FFFFFF;
+    --input-bg: var(--surface);
+    --card-bg: var(--surface);
     --code-bg: #F2F2F7;
     --skeleton: #E5E5EA;
 
@@ -166,8 +166,8 @@
     --cta-shadow-hover: 0 4px 12px rgba(81, 32, 200, 0.18);
 
     /* ── Navigation ── */
-    --navbar-bg: #FFFFFF;
-    --navbar-border: #E5E5EA;
+    --navbar-bg: var(--surface);
+    --navbar-border: var(--line);
     --sidebar-bg: #FFFFFF;
 
     /* ── Typography ── */
@@ -211,23 +211,23 @@
 .dark {
     
     /* ── Core Palette ── */
-    --background: #0D0D0D;
+    --background: var(--bg);
     --background-2: #141414;
-    --foreground: #F5F5F7;
-    --surface: #1C1C1E;
-    --surface-2: #2C2C2E;
+    --foreground: var(--ink);
+    --surface: #151036;
+    --surface-2: #1b1542;
     --surface-3: #3A3A3C;
-    --border: #38383A;
+    --border: var(--line);
     --border-2: #48484A;
     --border-strong: #636366;
     --muted: #98989D;
-    --muted-foreground: rgba(255, 255, 255, 0.30);
+    --muted-foreground: var(--ink-2);
     --foreground-2: #EBEBF5;
 
     /* ── Primary Purple (Same in both modes) ── */
-    --primary: #5120c8;
-    --primary-hover: #4318a8;
-    --primary-fg: #FFFFFF;
+    --primary: var(--brand);
+    --primary-hover: var(--brand-hover);
+    --primary-fg: var(--on-brand);
     --primary-subtle: rgba(81, 32, 200, 0.10);
     --primary-light: rgba(81, 32, 200, 0.12);
     --primary-muted: rgba(81, 32, 200, 0.16);
@@ -260,8 +260,8 @@
     --ring: rgba(81, 32, 200, 0.40);
 
     /* ── Component Tokens ── */
-    --input-bg: #2C2C2E;
-    --card-bg: #1C1C1E;
+    --input-bg: var(--surface);
+    --card-bg: var(--surface);
     --code-bg: #2C2C2E;
     --skeleton: #38383A;
 
@@ -276,8 +276,8 @@
     --cta-shadow-hover: 0 6px 18px rgba(81, 32, 200, 0.28);
 
     /* ── Navigation ── */
-    --navbar-bg: #0D0D0D;
-    --navbar-border: #38383A;
+    --navbar-bg: var(--surface);
+    --navbar-border: var(--line);
     --sidebar-bg: #0D0D0D;
 }
 
@@ -370,15 +370,14 @@
 }
 
 html {
-    font-family: var(--font-body);
-    color: var(--foreground);
-    background-color: var(--background);
-    color-scheme: dark;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
     scroll-padding-top: 90px;
     -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
 }
 
 html.light {
@@ -400,13 +399,23 @@ body {
 
 body {
     margin: 0;
+    background: var(--bg);
+    color: var(--ink);
     font-family: var(--font);
     font-size: 16px;
     line-height: 1.6;
-    color: var(--foreground);
-    background-color: inherit;
+    -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
     max-width: 100%;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0 0 auto;
+    height: env(safe-area-inset-top, 0px);
+    z-index: 100;
+    background: var(--surface);
 }
 
 [dir='rtl'] body { line-height: 1.75; }
