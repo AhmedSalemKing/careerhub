@@ -29,7 +29,7 @@ const API_BASE = (() => {
 const PAGE_SIZE = 15
 
 const TABS = [
-  { key: 'recorded', labelKey: 'recordedTab', icon: Video, color: '#5120c8' },
+  { key: 'recorded', labelKey: 'recordedTab', icon: Video, color: 'var(--brand)' },
   { key: 'live', labelKey: 'liveTab', icon: Radio, color: '#dc2626' },
   { key: 'offline', labelKey: 'offlineTab', icon: MapPin, color: '#16a34a' },
 ]
@@ -358,7 +358,7 @@ export default function CoursesPage() {
         {/* Loading */}
         {isLoading && (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 w-full dw2-cg">
-            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--surface-2)' }} />)}
+            {[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{ height: 300, borderRadius: 16, animation: 'pulse 1.5s infinite', background: 'var(--bg-2)' }} />)}
           </div>
         )}
 
@@ -369,7 +369,7 @@ export default function CoursesPage() {
             <p style={{ color: '#dc2626', fontSize: 14, marginBottom: 16 }}>
               {tl('failedLoadCourses')}
             </p>
-            <button onClick={() => setFetchKey(k => k + 1)} style={{ padding: '10px 22px', borderRadius: 10, background: '#5120c8', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+            <button onClick={() => setFetchKey(k => k + 1)} style={{ padding: '10px 22px', borderRadius: 10, background: 'var(--brand)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
               {tl('tryAgain')}
             </button>
           </div>
@@ -378,11 +378,11 @@ export default function CoursesPage() {
         {/* Empty */}
         {!isLoading && filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 24px' }}>
-            <activeTabConfig.icon size={48} color='var(--muted-foreground)' style={{ marginBottom: 16, opacity: 0.4 }} />
-            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>
+            <activeTabConfig.icon size={48} color='var(--ink-2)' style={{ marginBottom: 16, opacity: 0.4 }} />
+            <h3 style={{ color: 'var(--ink)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>
               {tl('noCoursesFound')}
             </h3>
-            <p style={{ color: 'var(--muted-foreground)', fontSize: 13 }}>
+            <p style={{ color: 'var(--ink-2)', fontSize: 13 }}>
               {search ? tl('tryDifferentSearch') : tl('noCoursesSection')}
             </p>
           </div>
@@ -443,7 +443,7 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
 
       {/* Thumbnail */}
-      <div className="dw2-cc-thumb" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)' }}>
+      <div className="dw2-cc-thumb" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', position: 'relative', flexShrink: 0, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--bg-2)' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(81,32,200,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <Video size={10} />
           {tl('recordedBadge')}
@@ -470,19 +470,19 @@ function RecordedCard({ course, idx, isAr, locale, router, token, tl }: any) {
           >
             {course.instructor.profile.avatar
               ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
-            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
+              : <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
+            <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
           </a>
         )}
 
         <div className="dw2-cc-meta">
           {course._count?.lessons !== undefined && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ink-2)', fontSize: 11 }}>
               <BookOpen size={11} />{course._count.lessons} {tl('lesson')}
             </span>
           )}
           {course._count?.enrollments !== undefined && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--muted-foreground)', fontSize: 11 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--ink-2)', fontSize: 11 }}>
               <Users size={11} />{course._count.enrollments} {tl('students')}
             </span>
           )}
@@ -579,7 +579,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
   }
 
   return (
-    <div className="course-card" style={{ animationDelay: `${idx * 0.06}s`, background: 'var(--surface)', borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : 'var(--border)'}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
+    <div className="course-card" style={{ animationDelay: `${idx * 0.06}s`, background: 'var(--surface)', borderRadius: 18, border: `1.5px solid ${isLive ? 'rgba(220,38,38,0.5)' : 'var(--line)'}`, overflow: 'hidden', boxShadow: isLive ? '0 0 0 4px rgba(220,38,38,0.06)' : 'none', transition: 'all 0.2s' }}>
 
       {/* Live/Scheduled Banner */}
       {isLive && (
@@ -610,9 +610,9 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
       )}
 
       {isScheduled && liveDate && (
-        <div style={{ padding: '8px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Clock size={13} color='var(--muted-foreground)' />
-          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 500 }}>
+        <div style={{ padding: '8px 20px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Clock size={13} color='var(--ink-2)' />
+          <span style={{ color: 'var(--ink-2)', fontSize: 12, fontWeight: 500 }}>
             {isUpcoming
               ? tl('startsIn', { hours: hoursUntil, minutes: minutesUntil })
               : tl('scheduledLabel')}
@@ -622,9 +622,9 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
       {/* The stream is over: an honest "ended" banner and no join button. */}
       {isEnded && (
-        <div style={{ padding: '10px 20px', background: 'var(--surface-2)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Square size={13} color='var(--muted-foreground)' />
-          <span style={{ color: 'var(--muted-foreground)', fontSize: 12, fontWeight: 500 }}>
+        <div style={{ padding: '10px 20px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Square size={13} color='var(--ink-2)' />
+          <span style={{ color: 'var(--ink-2)', fontSize: 12, fontWeight: 500 }}>
             {isAr ? 'انتهى البث' : 'Stream ended'}
           </span>
         </div>
@@ -649,7 +649,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 200 }}>
-          <h3 style={{ color: 'var(--foreground)', fontSize: 16, fontWeight: 500, margin: '0 0 4px' }}>
+          <h3 style={{ color: 'var(--ink)', fontSize: 16, fontWeight: 500, margin: '0 0 4px' }}>
             {getTitle(course, locale)}
           </h3>
           {course.instructor?.profile && (
@@ -660,27 +660,27 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
             >
               {course.instructor.profile.avatar
                 ? <img src={course.instructor.profile.avatar} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
-                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#5120c8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
-              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
+                : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 500 }}>{instructorDisplayName(course.instructor, '')[0]}</div>}
+              <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>{instructorDisplayName(course.instructor, '')}</span>
             </a>
           )}
           {liveDate && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <Calendar size={12} color='var(--muted-foreground)' />
-              <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
+              <Calendar size={12} color='var(--ink-2)' />
+              <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>
                 {formatLiveDateTime(liveDate, locale)}
               </span>
             </div>
           )}
           {course.description && (
-            <p style={{ color: 'var(--muted-foreground)', fontSize: 12, lineHeight: 1.6, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p style={{ color: 'var(--ink-2)', fontSize: 12, lineHeight: 1.6, margin: '0 0 12px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {course.description || course.descriptionEn || course.descriptionAr}
             </p>
           )}
 
           {/* Price + CTA */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ color: isLive ? '#dc2626' : '#5120c8', fontSize: 18, fontWeight: 500 }}>
+            <div style={{ color: isLive ? '#dc2626' : 'var(--brand)', fontSize: 18, fontWeight: 500 }}>
             {formatCoursePrice(course)}
             </div>
 
@@ -688,7 +688,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
               <button onClick={handleJoinLive} disabled={joining} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '10px 20px', borderRadius: 11,
-                background: isPaid || price === 0 ? '#dc2626' : '#5120c8',
+                background: isPaid || price === 0 ? '#dc2626' : 'var(--brand)',
                 color: '#ffffff', border: 'none', cursor: joining ? 'wait' : 'pointer',
                 fontSize: 13, fontWeight: 500, opacity: joining ? 0.7 : 1,
               }}>
@@ -707,7 +707,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
                 } else {
                   router.push(`/${locale}/courses/${course.id}`)
                 }
-              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 11, background: price > 0 && !isPaid ? '#5120c8' : 'rgba(220,38,38,0.1)', color: price > 0 && !isPaid ? '#ffffff' : '#dc2626', border: price > 0 && !isPaid ? 'none' : '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+              }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', borderRadius: 11, background: price > 0 && !isPaid ? 'var(--brand)' : 'rgba(220,38,38,0.1)', color: price > 0 && !isPaid ? '#ffffff' : '#dc2626', border: price > 0 && !isPaid ? 'none' : '1px solid rgba(220,38,38,0.3)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 {price > 0 && !isPaid
                   ? <><Lock size={12} />{tl('enrollAndWait')}</>
                   : <><Calendar size={12} />{tl('addToCalendar')}</>}
@@ -719,7 +719,7 @@ function LiveCard({ course, idx, isAr, locale, router, token, API, tl }: any) {
               <button onClick={() => router.push(`/${locale}/courses/${course.id}`)} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '10px 18px', borderRadius: 11,
-                background: 'rgba(81,32,200,0.1)', color: '#5120c8',
+                background: 'rgba(81,32,200,0.1)', color: 'var(--brand)',
                 border: '1px solid rgba(81,32,200,0.3)', cursor: 'pointer',
                 fontSize: 12, fontWeight: 500,
               }}>
@@ -772,7 +772,7 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
       onClick={() => router.push(`/${locale}/courses/${course.id}`)}>
       
       {/* Map preview or thumbnail */}
-      <div className="dw2-cc-thumb" style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--surface-2)', position: 'relative', overflow: 'hidden' }}>
+      <div className="dw2-cc-thumb" style={{ height: 140, background: course.thumbnail ? `url(${course.thumbnail}) center/cover no-repeat` : 'var(--bg-2)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 10, [isAr ? 'right' : 'left']: 10, display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.9)', color: '#fff', fontSize: 10, fontWeight: 500 }}>
           <MapPin size={10} />
           {tl('physicalBadge')}
@@ -799,8 +799,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
             <MapPin size={13} color="#16a34a" style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
-              <div style={{ color: 'var(--foreground)', fontSize: 13, fontWeight: 500 }}>{course.locationName}</div>
-              {course.locationAddress && <div style={{ color: 'var(--muted-foreground)', fontSize: 11 }}>{course.locationAddress}</div>}
+              <div style={{ color: 'var(--ink)', fontSize: 13, fontWeight: 500 }}>{course.locationName}</div>
+              {course.locationAddress && <div style={{ color: 'var(--ink-2)', fontSize: 11 }}>{course.locationAddress}</div>}
             </div>
           </div>
         )}
@@ -808,8 +808,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         {/* Date */}
         {offlineDate && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Calendar size={12} color='var(--muted-foreground)' />
-            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
+            <Calendar size={12} color='var(--ink-2)' />
+            <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>
               {formatLiveDateTime(offlineDate, locale)}
             </span>
           </div>
@@ -818,8 +818,8 @@ function OfflineCard({ course, idx, isAr, locale, router, token, tl }: any) {
         {/* Max attendees */}
         {course.maxAttendees && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Users size={12} color='var(--muted-foreground)' />
-            <span style={{ color: 'var(--muted-foreground)', fontSize: 12 }}>
+            <Users size={12} color='var(--ink-2)' />
+            <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>
               {tl('maxAttendees', { count: course.maxAttendees })}
             </span>
           </div>

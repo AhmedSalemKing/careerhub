@@ -1761,3 +1761,28 @@ body { font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Segoe UI', Taho
 :root[dir='rtl'] { --font: var(--font-ar) }
 body { font-family: var(--font) }
 [dir='rtl'] body, [lang='ar'] body { font-family: var(--font-ar) }
+
+/* courses page token override */
+.dw2-courses-page,
+.dw2-courses-page * {
+  --background: var(--bg);
+  --foreground: var(--ink);
+  --muted-foreground: var(--ink-2);
+  --border: var(--line);
+  --card-bg: var(--surface);
+  --primary: var(--brand);
+  --primary-fg: var(--on-brand);
+}
+
+.dw2-courses-page { background: var(--bg) !important; color: var(--ink) !important }
+.dw2-courses-page h1,
+.dw2-courses-page h2,
+.dw2-courses-page h3 { color: var(--ink) !important }
+.dw2-courses-page [class*="card"],
+.dw2-courses-page [class*="Card"] { background: var(--surface) !important; border-color: var(--line) !important }
+.dw2-courses-page [class*="badge"],
+.dw2-courses-page [class*="Badge"] { font-size: 11px }
+.dw2-courses-page button[class*="primary"],
+.dw2-courses-page a[class*="primary"] { background: var(--brand) !important; color: var(--on-brand) !important }
+.dw2-courses-page input,
+.dw2-courses-page select { background: var(--surface) !important; border-color: var(--line) !important; color: var(--ink) !important }
