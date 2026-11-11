@@ -1,16 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import {
   Sparkles, ArrowLeft, LogIn, Users, CalendarDays, Star,
-  PenLine, UserRound, ShieldCheck, Check, Loader2,
+  PenLine, UserRound, ShieldCheck, Loader2, Lock, Mail, KeyRound, FileText, MapPin, Briefcase, Clock, Languages, MessageSquare,
 } from 'lucide-react'
-import { get, post } from '@/lib/api'
-import { setToken, setUser } from '@/lib/auth'
-import { useAuthStore } from '@/stores/authStore'
+import { get } from '@/lib/api'
 
 /* ───────────────────────── content (from the reference design) ───────────────────────── */
 
@@ -33,46 +29,6 @@ const WHO = [
   'معرفة بسوق العمل السعودي أو المصري',
   'تواصل واضح ومشجّع',
 ]
-
-const COUNTRIES = ['السعودية', 'مصر']
-const FIELDS = ['تحليل البيانات', 'التسويق الرقمي', 'تصميم تجربة وواجهة المستخدم', 'إدارة المشاريع', 'تطوير البرمجيات', 'الأمن السيبراني']
-const EXPERIENCE = ['5–7', '8–12', '13+']
-const LANGS = ['العربية', 'الإنجليزية']
-
-const MSG_REQUIRED = 'يرجى تعبئة هذا الحقل.'
-const MSG_EMAIL = 'يرجى إدخال بريد إلكتروني صحيح.'
-const MSG_NAME = 'يرجى كتابة الاسم الأول واسم العائلة.'
-const MSG_PASSWORD = '8 أحرف على الأقل، وحرف كبير وصغير ورقم ورمز خاص (@$!%*?&).'
-const MSG_CV = 'السيرة الذاتية مطلوبة.'
-
-/**
- * Mentors apply through the existing registration flow: POST /auth/register with
- * accountType 'CONSULTANT'. The account is created as PENDING and an admin approves it.
- * The DTO whitelists its fields (forbidNonWhitelisted), so languages and notes are
- * folded into `bio`, and the CV is required by the API for consultants.
- */
-const REGISTER_ENDPOINT = '/auth/register'
-const CV_MAX_BYTES = 5 * 1024 * 1024
-const COUNTRY_API: Record<string, string> = { 'السعودية': 'Saudi Arabia', 'مصر': 'Egypt' }
-const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/
-
-interface ApiErrorShape {
-  response?: { status?: number; data?: { message?: string | string[] } }
-}
-
-function applyErrorText(err: unknown): string {
-  const r = (err as ApiErrorShape)?.response
-  const raw = r?.data?.message
-  const msg = (Array.isArray(raw) ? raw.join(' ') : raw ?? '').toLowerCase()
-  if (r?.status === 429) return 'محاولات كثيرة، يرجى الانتظار دقيقة ثم إعادة المحاولة.'
-  if (msg.includes('email already exists')) return 'هذا البريد الإلكتروني مسجّل مسبقًا. جرّب تسجيل الدخول أو استخدم بريدًا آخر.'
-  if (msg.includes('password')) return 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف كبير وصغير ورقم ورمز خاص (@$!%*?&).'
-  if (msg.includes('cv')) return 'السيرة الذاتية مطلوبة، يرجى رفعها ثم إعادة المحاولة.'
-  if (msg.includes('email')) return 'يرجى إدخال بريد إلكتروني صحيح.'
-  if (r?.status && r.status >= 500) return 'حدث خطأ في الخادم، يرجى المحاولة لاحقًا.'
-  if (!r) return 'تعذّر الاتصال بالخادم، تحقّق من اتصالك وأعد المحاولة.'
-  return 'تعذّر إرسال الطلب، يرجى مراجعة البيانات والمحاولة مرة أخرى.'
-}
 
 // Illustrated cast copied verbatim from the reference design, converted to JSX.
 // The <svg> is rendered directly (no wrapper element), as in the reference.
@@ -299,6 +255,18 @@ function Cast({ ids, size }: { ids: CharId[]; size: number }) {
   )
 }
 
+const LOCKED_FIELDS = [
+  { Icon: UserRound, label: 'الاسم الكامل' },
+  { Icon: Mail, label: 'البريد الإلكتروني' },
+  { Icon: KeyRound, label: 'كلمة المرور' },
+  { Icon: FileText, label: 'السيرة الذاتية (PDF أو Word)' },
+  { Icon: MapPin, label: 'الدولة' },
+  { Icon: Briefcase, label: 'المجال التخصصي' },
+  { Icon: Clock, label: 'سنوات الخبرة' },
+  { Icon: Languages, label: 'لغات الإرشاد' },
+  { Icon: MessageSquare, label: 'ملاحظات إضافية' },
+] as const
+
 /* ───────────────────────── types ───────────────────────── */
 
 interface ConsultantProfile {
@@ -314,70 +282,22 @@ interface Consultant {
   profile?: ConsultantProfile | null
 }
 
-interface FormState {
-  name: string
-  email: string
-  password: string
-  cvUrl: string
-  cvName: string
-  country: string
-  field: string
-  exp: string
-  langs: string[]
-  msg: string
-}
-type FormErrors = Partial<Record<'name' | 'email' | 'password' | 'cv' | 'country' | 'field' | 'exp', string>>
-type Phase = 'idle' | 'sending' | 'sent' | 'error'
-
 function initials(c: Consultant): string {
   const f = c.profile?.firstName?.trim()?.[0] ?? ''
   const l = c.profile?.lastName?.trim()?.[0] ?? ''
   return (f + l) || '؟'
 }
 
-function validate(f: FormState): FormErrors {
-  const e: FormErrors = {}
-  const parts = f.name.trim().split(/\s+/).filter(Boolean)
-  if (!f.name.trim()) e.name = MSG_REQUIRED
-  else if (parts.length < 2 || parts.some((x) => x.length < 2)) e.name = MSG_NAME
-  if (!f.email.trim()) e.email = MSG_REQUIRED
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) e.email = MSG_EMAIL
-  if (!f.password) e.password = MSG_REQUIRED
-  else if (!PASSWORD_RE.test(f.password)) e.password = MSG_PASSWORD
-  if (!f.cvUrl) e.cv = MSG_CV
-  if (!f.country) e.country = MSG_REQUIRED
-  if (!f.field) e.field = MSG_REQUIRED
-  if (!f.exp) e.exp = MSG_REQUIRED
-  return e
-}
-
 /* ───────────────────────── page ───────────────────────── */
 
 export default function CoachingPage() {
   const locale = useLocale()
-  const router = useRouter()
-  const authStore = useAuthStore()
-
-  const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', cvUrl: '', cvName: '', country: '', field: '', exp: '', langs: ['العربية'], msg: '' })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [phase, setPhase] = useState<Phase>('idle')
-  // Show the success state again after a refresh once an application was sent from this browser.
-  useEffect(() => {
-    try { if (localStorage.getItem('coaching_applied') === 'true') setPhase('sent') } catch { /* storage unavailable */ }
-  }, [])
-  const [errorText, setErrorText] = useState('')
-  const [cvUploading, setCvUploading] = useState(false)
 
   const [showCoaches, setShowCoaches] = useState(false)
   const [coaches, setCoaches] = useState<Consultant[]>([])
   const [coachesLoading, setCoachesLoading] = useState(false)
   const [coachesError, setCoachesError] = useState(false)
   const [coachesLoaded, setCoachesLoaded] = useState(false)
-
-  const setField = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((p) => ({ ...p, [k]: v }))
-
-  const toggleLang = (l: string) =>
-    setForm((p) => ({ ...p, langs: p.langs.includes(l) ? p.langs.filter((x) => x !== l) : [...p.langs, l] }))
 
   useEffect(() => {
     const nodes = Array.from(document.querySelectorAll<HTMLElement>('.cch .rv'))
@@ -395,97 +315,6 @@ export default function CoachingPage() {
   }, [])
 
   const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-
-  async function onCvChange(ev: ChangeEvent<HTMLInputElement>) {
-    const file = ev.target.files?.[0]
-    ev.target.value = ''
-    if (!file) return
-    if (file.size > CV_MAX_BYTES) {
-      setErrors((p) => ({ ...p, cv: 'حجم الملف أكبر من 5MB.' }))
-      return
-    }
-    setCvUploading(true)
-    setErrors((p) => ({ ...p, cv: undefined }))
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await post<{ data?: { url?: string }; url?: string }>('/upload/cv', fd)
-      const url = res.data?.data?.url ?? res.data?.url
-      if (!url) throw new Error('no-url')
-      setForm((p) => ({ ...p, cvUrl: url, cvName: file.name }))
-    } catch {
-      setErrors((p) => ({ ...p, cv: 'تعذّر رفع الملف، تأكد أنه PDF أو Word ولا يتجاوز 5MB.' }))
-    } finally {
-      setCvUploading(false)
-    }
-  }
-
-  async function onSubmit(ev: FormEvent<HTMLFormElement>) {
-    ev.preventDefault()
-    const errs = validate(form)
-    setErrors(errs)
-    if (Object.keys(errs).length > 0 || cvUploading) return
-
-    setPhase('sending')
-    setErrorText('')
-    try {
-      const parts = form.name.trim().split(/\s+/)
-      const firstName = parts[0]
-      const lastName = parts.slice(1).join(' ')
-      const years = parseInt(form.exp, 10)
-      const notes = form.msg.trim()
-      const bio = [form.langs.length ? 'لغات الإرشاد: ' + form.langs.join('، ') : '', notes]
-        .filter(Boolean)
-        .join('\n')
-        .slice(0, 1000)
-
-      const payload: Record<string, unknown> = {
-        firstName,
-        lastName,
-        email: form.email.trim(),
-        password: form.password,
-        accountType: 'CONSULTANT',
-        country: COUNTRY_API[form.country] ?? form.country,
-        speciality: form.field,
-        language: 'ar',
-        cvUrl: form.cvUrl,
-      }
-      if (Number.isFinite(years)) payload.experience = years
-      if (bio) payload.bio = bio
-
-      const reg = await post(REGISTER_ENDPOINT, payload)
-      try { localStorage.setItem('coaching_applied', 'true') } catch { /* storage unavailable */ }
-
-      // A pending account gets no token from /auth/register, so sign in with the credentials just
-      // submitted (the login endpoint issues a limited token for PENDING accounts).
-      let token: string | undefined = reg?.data?.data?.accessToken
-      let user: any = reg?.data?.data?.user
-      if (!token) {
-        try {
-          const res = await post('/auth/login', { email: form.email.trim(), password: form.password })
-          token = res?.data?.data?.accessToken
-          user = res?.data?.data?.user
-        } catch { /* fall through to the applied=true redirect */ }
-      }
-      if (token && user) {
-        authStore.setToken(token)
-        setToken(token)
-        localStorage.setItem('deveway_token', token)
-        localStorage.setItem('careerhub_token', token)
-        authStore.setUser(user)
-        setUser(user)
-        localStorage.setItem('deveway_user', JSON.stringify(user))
-        localStorage.setItem('careerhub_user', JSON.stringify(user))
-        window.dispatchEvent(new Event('auth:updated'))
-        router.push(`/${locale}/pending-approval`)
-      } else {
-        setPhase('sent')
-      }
-    } catch (e) {
-      setErrorText(applyErrorText(e))
-      setPhase('error')
-    }
-  }
 
   function toggleCoaches() {
     const next = !showCoaches
@@ -627,92 +456,23 @@ export default function CoachingPage() {
             </div>
           </div>
 
-          <div className="card form-card rv">
-            {phase === 'sent' ? (
-              <div className="cch-success" role="status">
-                <span className="cch-success-ic"><Check size={28} aria-hidden="true" /></span>
-                <h3>تم استلام طلبك بنجاح</h3>
-                <p>تم إرسال طلبك، في انتظار موافقة الإدارة. سيتم مراجعة طلبك والتواصل معك قريباً</p>
-              </div>
-            ) : (
-              <>
-                <h2>طلب الانضمام كمرشد</h2>
-                <form className="form" onSubmit={onSubmit} noValidate>
-                  <div className={'field' + (errors.name ? ' bad' : '')}>
-                    <label htmlFor="m-name">الاسم الكامل</label>
-                    <input id="m-name" type="text" required value={form.name} onChange={(e) => setField('name', e.target.value)} aria-invalid={!!errors.name} />
-                    {errors.name && <span className="msg">{errors.name}</span>}
-                  </div>
-                  <div className={'field' + (errors.email ? ' bad' : '')}>
-                    <label htmlFor="m-email">البريد الإلكتروني</label>
-                    <input id="m-email" type="email" required autoComplete="email" value={form.email} onChange={(e) => setField('email', e.target.value)} aria-invalid={!!errors.email} />
-                    {errors.email && <span className="msg">{errors.email}</span>}
-                  </div>
-                  <div className={'field' + (errors.password ? ' bad' : '')}>
-                    <label htmlFor="m-pass">كلمة المرور</label>
-                    <input id="m-pass" type="password" required autoComplete="new-password" value={form.password} onChange={(e) => setField('password', e.target.value)} aria-invalid={!!errors.password} />
-                    {errors.password && <span className="msg">{errors.password}</span>}
-                  </div>
-                  <div className={'field' + (errors.cv ? ' bad' : '')}>
-                    <label htmlFor="m-cv">السيرة الذاتية</label>
-                    <label className="file-trigger" htmlFor="m-cv">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-                      <span>{cvUploading ? 'جارٍ رفع الملف…' : form.cvName ? form.cvName : 'اختر ملف السيرة الذاتية'}</span>
-                    </label>
-                    <input id="m-cv" className="file-input" type="file" accept=".pdf,.doc,.docx" onChange={onCvChange} disabled={cvUploading} aria-invalid={!!errors.cv} />
-                    <span className="hint">PDF أو Word — حجم أقصى 5MB</span>
-                    {errors.cv && <span className="msg">{errors.cv}</span>}
-                  </div>
-                  <div className={'field' + (errors.country ? ' bad' : '')}>
-                    <label htmlFor="m-country">الدولة</label>
-                    <select id="m-country" required value={form.country} onChange={(e) => setField('country', e.target.value)} aria-invalid={!!errors.country}>
-                      <option value="" />
-                      {COUNTRIES.map((c) => (<option key={c} value={c}>{c}</option>))}
-                    </select>
-                    {errors.country && <span className="msg">{errors.country}</span>}
-                  </div>
-                  <div className={'field' + (errors.field ? ' bad' : '')}>
-                    <label htmlFor="m-field">المجال</label>
-                    <select id="m-field" required value={form.field} onChange={(e) => setField('field', e.target.value)} aria-invalid={!!errors.field}>
-                      <option value="" />
-                      {FIELDS.map((c) => (<option key={c} value={c}>{c}</option>))}
-                    </select>
-                    {errors.field && <span className="msg">{errors.field}</span>}
-                  </div>
-                  <div className={'field' + (errors.exp ? ' bad' : '')}>
-                    <label htmlFor="m-exp">سنوات الخبرة</label>
-                    <select id="m-exp" required value={form.exp} onChange={(e) => setField('exp', e.target.value)} aria-invalid={!!errors.exp}>
-                      <option value="" />
-                      {EXPERIENCE.map((c) => (<option key={c} value={c}>{c}</option>))}
-                    </select>
-                    {errors.exp && <span className="msg">{errors.exp}</span>}
-                  </div>
-                  <div className="field">
-                    <label>لغات الإرشاد</label>
-                    <div className="checkset">
-                      {LANGS.map((l) => (
-                        <label key={l}><input type="checkbox" name="mlang" checked={form.langs.includes(l)} onChange={() => toggleLang(l)} />{l}</label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="field full">
-                    <label htmlFor="m-msg">هل هناك ما تودّ إضافته؟</label>
-                    <textarea id="m-msg" value={form.msg} onChange={(e) => setField('msg', e.target.value)} />
-                  </div>
-
-                  {phase === 'error' && <p className="cch-alert full" role="alert">{errorText}</p>}
-
-                  <div className="full">
-                    <button type="submit" className="btn btn-primary btn-block" disabled={phase === 'sending'}>
-                      {phase === 'sending' ? 'جارٍ الإرسال...' : 'إرسال الطلب'}
-                      {phase !== 'sending' && (
-                        <svg className="icon go flip" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </>
-            )}
+          <div className="cch-lock rv" aria-disabled="true">
+            <div className="cch-lock-head">
+              <h2>طلب الانضمام كمرشد</h2>
+              <span className="cch-lock-badge" aria-hidden="true"><Lock size={16} /></span>
+            </div>
+            <ul className="cch-lock-grid">
+              {LOCKED_FIELDS.map(({ Icon, label }) => (
+                <li key={label} className="cch-lock-chip">
+                  <Icon size={15} aria-hidden="true" />
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="cch-lock-btn" disabled>
+              <Lock size={16} aria-hidden="true" />
+              التسجيل مغلق حالياً
+            </button>
           </div>
         </div>
       </section>
@@ -819,16 +579,21 @@ const CSS = `
 .cch-feat-ic { flex-shrink: 0; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--wash); color: var(--brand); }
 .cch-feat h4 { margin: 0 0 4px; font-size: 15px; }
 .cch-feat p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--ink-2); }
+.cch-lock { padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); direction: rtl; text-align: right; }
+.cch-lock-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.cch-lock-head h2 { margin: 0; font-size: 20px; font-weight: 800; color: var(--ink); }
+.cch-lock-badge { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--wash); color: var(--brand); flex: none; }
+.cch-lock-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.cch-lock-chip { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink-2); font-size: 13px; min-width: 0; }
+.cch-lock-chip svg { flex: none; color: var(--ink-3); }
+.cch-lock-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cch-lock-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--wash); color: var(--ink-2); font: inherit; font-weight: 700; cursor: not-allowed; opacity: .6; }
+@media (max-width: 480px) { .cch-lock-grid { grid-template-columns: 1fr; } }
 .cch-note { display: flex; align-items: flex-start; gap: 10px; margin: 20px 0; padding: 12px 14px; border-radius: var(--r); background: var(--wash); color: var(--ink-2); font-size: 13px; line-height: 1.7; }
 .cch-note svg { flex-shrink: 0; color: var(--brand); margin-top: 2px; }
 .cch-note span { font-size: 13px; }
 
 
-.cch-alert { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--error); color: var(--error); font-size: 13px; }
-.cch-success { text-align: center; padding: 32px 8px; }
-.cch-success p { margin: 8px 0 0; color: var(--ink-2); line-height: 1.7; }
-.cch-success h3 { margin: 14px 0 0; font-size: 18px; line-height: 1.6; }
-.cch-success-ic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand); color: var(--on-brand); }
 
 .cch-center { display: flex; justify-content: center; }
 .cch-coaches { margin-top: 28px; }
