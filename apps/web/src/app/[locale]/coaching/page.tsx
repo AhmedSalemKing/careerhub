@@ -356,6 +356,10 @@ export default function CoachingPage() {
   const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', cvUrl: '', cvName: '', country: '', field: '', exp: '', langs: ['العربية'], msg: '' })
   const [errors, setErrors] = useState<FormErrors>({})
   const [phase, setPhase] = useState<Phase>('idle')
+  // Show the success state again after a refresh once an application was sent from this browser.
+  useEffect(() => {
+    try { if (localStorage.getItem('coaching_applied') === 'true') setPhase('sent') } catch { /* storage unavailable */ }
+  }, [])
   const [errorText, setErrorText] = useState('')
   const [cvUploading, setCvUploading] = useState(false)
 
@@ -445,6 +449,7 @@ export default function CoachingPage() {
       if (bio) payload.bio = bio
 
       await post(REGISTER_ENDPOINT, payload)
+      try { localStorage.setItem('coaching_applied', 'true') } catch { /* storage unavailable */ }
       setPhase('sent')
     } catch (e) {
       setErrorText(applyErrorText(e))
@@ -596,7 +601,8 @@ export default function CoachingPage() {
             {phase === 'sent' ? (
               <div className="cch-success" role="status">
                 <span className="cch-success-ic"><Check size={28} aria-hidden="true" /></span>
-                <h3>تم إرسال طلبك، في انتظار موافقة الإدارة</h3>
+                <h3>تم استلام طلبك بنجاح</h3>
+                <p>تم إرسال طلبك، في انتظار موافقة الإدارة. سيتم مراجعة طلبك والتواصل معك قريباً</p>
               </div>
             ) : (
               <>
@@ -790,6 +796,7 @@ const CSS = `
 
 .cch-alert { margin: 0; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--error); color: var(--error); font-size: 13px; }
 .cch-success { text-align: center; padding: 32px 8px; }
+.cch-success p { margin: 8px 0 0; color: var(--ink-2); line-height: 1.7; }
 .cch-success h3 { margin: 14px 0 0; font-size: 18px; line-height: 1.6; }
 .cch-success-ic { display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 50%; background: var(--brand); color: var(--on-brand); }
 

@@ -4411,3 +4411,16 @@ section[class*="hero"] { padding-block: 48px }
 .dw-assess .a-nav { gap: .75rem; margin-top: 1rem; }
 .dw-assess .a-top .eyebrow { font-size: .82rem; color: var(--ink-3); display: flex; align-items: center; justify-content: center; gap: .35rem; }
 .dw-assess .a-top .h2, .dw-assess .a-top h2 { font-size: 2rem; font-weight: 800; margin: .5rem 0 0; }
+
+/* === Login role-picker modal === */
+.modal-overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--night, #000) 55%, transparent); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-box { background: var(--bg); color: var(--ink); border-radius: 20px; padding: 2rem; max-width: 420px; width: 100%; position: relative; border: 1px solid var(--line); box-shadow: var(--shadow); font-family: var(--font-ui); }
+.modal-box h2 { margin: 0; color: var(--ink); }
+.modal-box .muted { margin: 6px 0 0; color: var(--ink-3); }
+.modal-close { position: absolute; top: 1rem; inset-inline-start: 1rem; background: none; border: none; cursor: pointer; color: var(--ink-3); padding: 4px; border-radius: 6px; }
+.modal-close:hover { background: var(--surface); }
+.roles-pick { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; }
+.role-btn { display: flex; align-items: center; gap: .75rem; padding: .9rem 1rem; border: 1.5px solid var(--line); border-radius: 12px; color: var(--ink); text-decoration: none; transition: all .15s; font-weight: 600; }
+.role-btn:hover { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 5%, var(--bg)); }
+.role-btn .icon { width: 20px; height: 20px; margin-inline-start: auto; opacity: .4; }
+[dir="rtl"] .role-btn .icon.flip { transform: scaleX(-1); }

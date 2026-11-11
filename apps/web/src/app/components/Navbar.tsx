@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { LoginRoleModal } from './LoginRoleModal'
 import { NotificationBell } from './NotificationBell'
 import VerifiedBadge from '../../components/VerifiedBadge'
 import { Sparkles, Menu, X, LogOut, ChevronDown, LayoutDashboard, Sun, Moon, Shield, BookOpen, Calendar, Settings } from 'lucide-react'
@@ -332,6 +333,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
   const { user, token, hydrate } = useAuthStore()
 
   // Every link to the learn app carries the current token, even ones rendered
@@ -483,9 +485,9 @@ export function Navbar() {
 
             {mounted && !isLoggedIn && (
               <>
-                <Link href={`/${locale}/login`} className="btn btn-ghost btn-sm hide-md">
+                <button type="button" onClick={() => setShowLoginModal(true)} className="btn btn-ghost btn-sm hide-md">
                   {t('login')}
-                </Link>
+                </button>
                 <Link href={`/${locale}/register`} className="btn btn-primary btn-sm hide-sm">
                   {t('start_assessment')}
                 </Link>
@@ -505,6 +507,8 @@ export function Navbar() {
           </div>
         </div>
       </header>
+
+      {showLoginModal && <LoginRoleModal onClose={() => setShowLoginModal(false)} />}
 
       {/* ═══ Mobile Menu ═══ */}
       {mobileOpen && (
@@ -634,13 +638,13 @@ export function Navbar() {
               </div>
             ) : mounted ? (
               <div className="flex flex-col gap-2.5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
-                <Link
-                  href={`/${locale}/login`}
-                  onClick={() => setMobileOpen(false)}
+                <button
+                  type="button"
+                  onClick={() => { setMobileOpen(false); setShowLoginModal(true) }}
                   className="btn btn-ghost w-full"
                 >
                   {t('login')}
-                </Link>
+                </button>
                 <Link
                   href={`/${locale}/register`}
                   onClick={() => setMobileOpen(false)}
