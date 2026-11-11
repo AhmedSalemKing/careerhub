@@ -32,7 +32,6 @@ const WHO = [
 ]
 
 const COUNTRIES = ['السعودية', 'مصر']
-const MARKETS = ['مصر', 'السعودية']
 const FIELDS = ['تحليل البيانات', 'التسويق الرقمي', 'تصميم تجربة وواجهة المستخدم', 'إدارة المشاريع', 'تطوير البرمجيات', 'الأمن السيبراني']
 const EXPERIENCE = ['5–7', '8–12', '13+']
 const LANGS = ['العربية', 'الإنجليزية']
@@ -354,8 +353,6 @@ function validate(f: FormState): FormErrors {
 export default function CoachingPage() {
   const locale = useLocale()
 
-  const [market, setMarket] = useState<string>('مصر')
-
   const [form, setForm] = useState<FormState>({ name: '', email: '', password: '', cvUrl: '', cvName: '', country: '', field: '', exp: '', langs: ['العربية'], msg: '' })
   const [errors, setErrors] = useState<FormErrors>({})
   const [phase, setPhase] = useState<Phase>('idle')
@@ -369,11 +366,6 @@ export default function CoachingPage() {
   const [coachesLoaded, setCoachesLoaded] = useState(false)
 
   const setField = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((p) => ({ ...p, [k]: v }))
-
-  const pickMarket = (m: string) => {
-    setMarket(m)
-    setForm((p) => (p.country ? p : { ...p, country: m === 'مصر' ? 'مصر' : 'السعودية' }))
-  }
 
   const toggleLang = (l: string) =>
     setForm((p) => ({ ...p, langs: p.langs.includes(l) ? p.langs.filter((x) => x !== l) : [...p.langs, l] }))
@@ -495,12 +487,6 @@ export default function CoachingPage() {
             <h1>للمرشدين</h1>
             <p className="cch-lede">شارك خبرتك مع المتعلّمين في اللحظات التي يصنع فيها الإرشاد الفرق الأكبر.</p>
             <p className="cch-pill"><Sparkles size={16} aria-hidden="true" />مرونة كاملة، أجر عن كل جلسة، بالعربية أو الإنجليزية.</p>
-
-            <div className="cch-market" role="group" aria-label="السوق">
-              {MARKETS.map((m) => (
-                <button key={m} type="button" className={`cch-seg${market === m ? ' on' : ''}`} aria-pressed={market === m} onClick={() => pickMarket(m)}>{m}</button>
-              ))}
-            </div>
 
             <div className="cch-actions">
               <a className="cch-cta primary" href="#mentor-apply" onClick={(e) => { e.preventDefault(); scrollTo('mentor-apply') }}>
@@ -633,10 +619,12 @@ export default function CoachingPage() {
                   </div>
                   <div className={'field' + (errors.cv ? ' bad' : '')}>
                     <label htmlFor="m-cv">السيرة الذاتية</label>
-                    <input id="m-cv" type="file" accept=".pdf,.doc,.docx" onChange={onCvChange} disabled={cvUploading} aria-invalid={!!errors.cv} />
-                    <span className="hint">
-                      {cvUploading ? 'جارٍ رفع الملف…' : form.cvName ? form.cvName : 'PDF أو Word — حجم أقصى 5MB'}
-                    </span>
+                    <label className="file-trigger" htmlFor="m-cv">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      <span>{cvUploading ? 'جارٍ رفع الملف…' : form.cvName ? form.cvName : 'اختر ملف السيرة الذاتية'}</span>
+                    </label>
+                    <input id="m-cv" className="file-input" type="file" accept=".pdf,.doc,.docx" onChange={onCvChange} disabled={cvUploading} aria-invalid={!!errors.cv} />
+                    <span className="hint">PDF أو Word — حجم أقصى 5MB</span>
                     {errors.cv && <span className="msg">{errors.cv}</span>}
                   </div>
                   <div className={'field' + (errors.country ? ' bad' : '')}>
@@ -765,9 +753,6 @@ const CSS = `
 .cch-copy h1 { margin: 0; font-weight: 800; line-height: 1.15; }
 .cch-lede { margin: 16px 0 0; max-width: 560px; font-size: 16px; line-height: 1.8; color: var(--ink-2); }
 .cch-pill { display: inline-flex; align-items: center; gap: 8px; margin: 16px 0 0; padding: 7px 14px; border-radius: 99px; background: var(--wash); border: 1px solid var(--line); color: var(--brand); font-size: 13px; font-weight: 500; }
-.cch-market { display: inline-flex; margin-top: 16px; padding: 3px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); }
-.cch-seg { padding: 5px 16px; border: 0; border-radius: 99px; background: transparent; color: var(--ink-2); font: inherit; font-size: 12px; cursor: pointer; }
-.cch-seg.on { background: var(--brand); color: var(--on-brand); }
 .cch-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 
 .cch-cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; border-radius: 10px; border: 1px solid var(--brand); font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; transition: background .15s, box-shadow .15s; }
