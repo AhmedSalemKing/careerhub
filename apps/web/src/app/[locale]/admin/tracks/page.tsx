@@ -329,6 +329,7 @@ export default function AdminTracksPage() {
                   <td>
                     <b>{t.nameAr}</b>
                     <code className="tk-slug">/{t.slug}</code>
+                    <span className="tk-counts">{isAr ? `${parseJsonArray(t.jobs).length} وظائف · ${parseJsonArray(t.courses).length} دورات` : `${parseJsonArray(t.jobs).length} jobs · ${parseJsonArray(t.courses).length} courses`}</span>
                   </td>
                   <td dir="ltr">{t.nameEn}</td>
                   <td>
@@ -600,6 +601,7 @@ export default function AdminTracksPage() {
         .tk-table td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
         .tk-table tr:last-child td { border-bottom: 0; }
         .tk-slug { display: block; margin-top: 2px; font-size: 11px; color: var(--ink-3); direction: ltr; text-align: start; }
+        .tk-counts { display: block; margin-top: 2px; font-size: 11px; color: var(--ink-3); }
         .tk-status { margin-inline-start: 8px; font-size: 12px; font-weight: 700; color: var(--ink-3); }
         .tk-status.on { color: var(--brand); }
         .tk-actions { white-space: nowrap; text-align: end; }

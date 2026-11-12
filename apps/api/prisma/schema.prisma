@@ -1668,3 +1668,22 @@ model Track {
   @@index([isActive])
   @@map("tracks")
 }
+
+/// A priced bundle of courses sold for one learning track (or career path); created from the admin "إنشاء باكدج" form.
+model Package {
+  id            String   @id @default(cuid())
+  /// id of the Track (kind TRACK) or CareerPath (kind CAREER_PATH) the bundle belongs to
+  pathId        String
+  pathKind      String   @default("TRACK") // "TRACK" | "CAREER_PATH"
+  courseIds     String[]
+  originalPrice Float? // SAR, the platform base currency
+  finalPrice    Float // SAR
+  notes         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([pathId])
+  @@index([isActive])
+  @@map("packages")
+}

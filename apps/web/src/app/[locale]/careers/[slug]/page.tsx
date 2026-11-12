@@ -404,6 +404,13 @@ export default function CareerPathDetailPage() {
               </section>
             )}
 
+            {track && view.jobs.length === 0 && (
+              <section>
+                <h2>{isAr ? 'وظائف يؤهلك لها هذا المسار' : 'Jobs this path qualifies you for'}</h2>
+                <p className="dw2-sub">{isAr ? 'لا توجد وظائف مرتبطة بهذا المسار بعد' : 'No jobs linked to this track yet'}</p>
+              </section>
+            )}
+
             {view.skills.length > 0 && (
               <section>
                 <h2>{isAr ? 'المهارات التي ستبنيها' : "Skills you'll build"}</h2>

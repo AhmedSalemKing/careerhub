@@ -11,6 +11,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CareerModule } from './modules/career/career.module';
 import { TracksModule } from './modules/tracks/tracks.module';
+import { PackagesModule } from './modules/packages/packages.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { VideoModule } from './modules/video/video.module';
@@ -92,6 +93,7 @@ import { CurrencyInterceptor } from './common/interceptors/currency.interceptor'
     UsersModule,
     CareerModule,
     TracksModule,
+    PackagesModule,
     CoursesModule,
     LessonsModule,
     VideoModule,

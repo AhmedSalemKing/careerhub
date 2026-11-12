@@ -229,16 +229,28 @@ export class TracksService implements OnModuleInit {
     }
   }
 
+  /** Logs what was actually stored and returns the row with jobs / courses as real arrays. */
+  private verified(op: string, row: Track, sent: { jobs?: unknown; courses?: unknown }) {
+    const stored = { jobs: toJsonArray(row.jobs).length, courses: toJsonArray(row.courses).length };
+    const wanted = { jobs: sent.jobs === undefined ? stored.jobs : toJsonArray(sent.jobs).length, courses: sent.courses === undefined ? stored.courses : toJsonArray(sent.courses).length };
+    const line = `[Tracks] ${op} ${row.slug}: jobs ${stored.jobs}/${wanted.jobs}, courses ${stored.courses}/${wanted.courses} (stored/sent)`;
+    if (stored.jobs !== wanted.jobs || stored.courses !== wanted.courses) this.logger.error(`${line} MISMATCH`);
+    else this.logger.log(line);
+    return { ...row, jobs: toJsonArray(row.jobs), courses: toJsonArray(row.courses) };
+  }
+
   async create(dto: CreateTrackDto) {
     try {
-      return await this.prisma.track.create({
+      const row = await this.prisma.track.create({
         data: {
           ...dto,
           jobs: toJsonArray(dto.jobs) as Prisma.InputJsonValue,
           courses: toJsonArray(dto.courses) as Prisma.InputJsonValue,
         },
       });
+      return this.verified('create', row, dto);
     } catch (e: any) {
+      if (e instanceof HttpException) throw e;
       if (e?.code === 'P2002') throw new ConflictException('A track with this slug already exists');
       this.fail('create', e);
     }
@@ -247,7 +259,7 @@ export class TracksService implements OnModuleInit {
   async update(id: string, dto: UpdateTrackDto) {
     const { jobs, courses, ...rest } = dto;
     try {
-      return await this.prisma.track.update({
+      const row = await this.prisma.track.update({
         where: { id },
         data: {
           ...rest,
@@ -255,7 +267,9 @@ export class TracksService implements OnModuleInit {
           ...(courses ? { courses: toJsonArray(courses) as Prisma.InputJsonValue } : {}),
         },
       });
+      return this.verified('update', row, { jobs, courses });
     } catch (e: any) {
+      if (e instanceof HttpException) throw e;
       if (e?.code === 'P2025') throw new NotFoundException('Track not found');
       if (e?.code === 'P2002') throw new ConflictException('A track with this slug already exists');
       this.fail('update', e);
