@@ -3316,7 +3316,7 @@ a.dw-instructor:hover { color: var(--accent); }
 .dw-assess .o-check svg { width: 16px !important; height: 16px !important; }
 
 /* Quiz navigation */
-.dw-assess .a-nav { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.dw-assess .a-nav { display: flex; gap: 10px; justify-content: space-between; margin-top: 20px; }
 .dw-assess .a-nav .btn { min-width: 120px; }
 .dw-assess .a-nav .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 

@@ -823,7 +823,6 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const [isReacting,      setIsReacting]      = useState(false)
   const [currentIndex,    setCurrentIndex]    = useState(0)
   const [answers,         setAnswers]         = useState<Record<string, string>>({})
-  const [selectedOption,  setSelectedOption]  = useState<string | null>(null)
   const [insight,         setInsight]         = useState('')
   const [isLoadingInsight,setIsLoadingInsight]= useState(false)
   const [isAnalyzing,     setIsAnalyzing]     = useState(false)
@@ -831,6 +830,17 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
 
   const currentQuestion  = ALL_QUESTIONS[currentIndex]
   const currentPhaseIdx  = PHASES.findIndex(p => p.id === currentQuestion.phase)
+  const selectedOption   = answers[currentQuestion.id] ?? null
+
+  // Auto-advance 800ms after a choice; any new choice, "previous" or "next" cancels the pending advance.
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const nextRef         = useRef<() => void>(() => {})
+  const indexRef        = useRef(currentIndex)
+  indexRef.current = currentIndex
+  const clearAdvance = () => {
+    if (advanceTimerRef.current) { clearTimeout(advanceTimerRef.current); advanceTimerRef.current = null }
+  }
+  useEffect(() => clearAdvance, [])
 
   const callChat = async (prompt: string): Promise<string> => {
     const token = getToken()
@@ -844,9 +854,13 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   }
 
   const handleSelect = async (opt: string) => {
-    if (selectedOption) return
-    setSelectedOption(opt)
+    const qIndex = currentIndex
     setAnswers(prev => ({ ...prev, [currentQuestion.id]: opt }))
+
+    clearAdvance()
+    if (qIndex < ALL_QUESTIONS.length - 1) {
+      advanceTimerRef.current = setTimeout(() => { advanceTimerRef.current = null; nextRef.current() }, 800)
+    }
 
     const pool = RASHEED_REACTIONS[currentPhaseIdx] ?? RASHEED_REACTIONS[0]
     setReaction(pool[Math.floor(Math.random() * pool.length)])
@@ -859,16 +873,27 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
       const text = await callChat(
         `أنت رشيد مساعد DeveWay. المستخدم اختار: "${opt}" كإجابة على سؤال "${currentQuestion.question}". اكتب تعليقاً تشجيعياً ذكياً بالعربية في جملة واحدة فقط (15 كلمة كحد أقصى). لا تبدأ بـ"اختيار ممتاز" — كن محدداً وطبيعياً.`
       )
-      setInsight(text.trim())
+      if (indexRef.current === qIndex) setInsight(text.trim())
     } catch { /* insight failure is non-critical */ }
-    finally { setIsLoadingInsight(false) }
+    finally { if (indexRef.current === qIndex) setIsLoadingInsight(false) }
+  }
+
+  const handlePrev = () => {
+    clearAdvance()
+    if (currentIndex === 0) return
+    setCurrentIndex(currentIndex - 1)
+    setInsight('')
+    setReaction('')
+    setIsLoadingInsight(false)
   }
 
   const handleNext = async () => {
+    clearAdvance()
+    if (!selectedOption) return
     const nextIndex = currentIndex + 1
     if (nextIndex >= ALL_QUESTIONS.length) {
       setIsAnalyzing(true)
-      const finalAnswers = { ...answers, [currentQuestion.id]: selectedOption ?? '' }
+      const finalAnswers = answers
       const answersText  = ALL_QUESTIONS.map(q =>
         `[${q.phaseLabel}] ${q.question}\nإجابته: ${finalAnswers[q.id] || 'لم يجب'}`
       ).join('\n\n')
@@ -918,16 +943,17 @@ ${answersText}
     }
 
     setCurrentIndex(nextIndex)
-    setSelectedOption(null)
     setInsight('')
     setReaction('')
+    setIsLoadingInsight(false)
   }
+  nextRef.current = handleNext
 
   if (result) {
     return (
       <QuizResultCard
         result={result}
-        onRestart={() => { setCurrentIndex(0); setAnswers({}); setSelectedOption(null); setInsight(''); setResult(null) }}
+        onRestart={() => { clearAdvance(); setCurrentIndex(0); setAnswers({}); setInsight(''); setResult(null) }}
       />
     )
   }
@@ -1020,8 +1046,7 @@ ${answersText}
                       type="button"
                       role="radio"
                       aria-checked={isSelected}
-                      disabled={!!selectedOption}
-                      onClick={() => !selectedOption && handleSelect(opt)}
+                      onClick={() => handleSelect(opt)}
                       className={`opt${isSelected ? ' on' : ''}`}
                     >
                       <span className="o-ic">{OPT_LETTERS[i] ?? String.fromCharCode(65 + i)}</span>
@@ -1035,8 +1060,18 @@ ${answersText}
               <div className="a-nav">
                 <button
                   type="button"
+                  onClick={handlePrev}
+                  disabled={currentIndex === 0}
+                  className="btn btn-secondary"
+                  style={{ opacity: currentIndex === 0 ? 0.4 : 1 }}
+                >
+                  <svg className="icon go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  السابق
+                </button>
+                <button
+                  type="button"
                   onClick={handleNext}
-                  disabled={!selectedOption || isLoadingInsight}
+                  disabled={!selectedOption}
                   className="btn btn-primary"
                 >
                   {currentIndex === ALL_QUESTIONS.length - 1 ? 'عرض نتيجتي' : 'التالي'}
