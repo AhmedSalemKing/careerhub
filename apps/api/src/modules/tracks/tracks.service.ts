@@ -13,8 +13,7 @@ interface JobRow {
   salaryMinEG?: number | null; salaryMaxEG?: number | null; salaryMinKSA?: number | null; salaryMaxKSA?: number | null;
   vision?: string[] | string;
 }
-interface CourseRow { order?: number; titleAr?: string; titleEn?: string; type?: string; typeEn?: string; weeks?: number; provider?: string; language?: string }
-interface PackageRow { nameAr?: string; nameEn?: string; descAr?: string; descEn?: string; priceEG?: number | null; priceKSA?: number | null; sessions?: number | null; isActive?: boolean }
+interface CourseRow { order?: number; titleAr?: string; titleEn?: string; type?: string; typeEn?: string; weeks?: number; provider?: string; language?: string; courseId?: string }
 
 const asArray = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 const asVision = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
@@ -25,7 +24,8 @@ const COLUMNS: Array<[string, string]> = [
   ['slug', 'TEXT'], ['nameAr', 'TEXT'], ['nameEn', 'TEXT'], ['descAr', 'TEXT'], ['descEn', 'TEXT'],
   ['weeks', 'INTEGER'], ['level', 'TEXT'], ['levelEn', 'TEXT'], ['languages', 'TEXT'],
   ['coverImage', 'TEXT'], ['vision2030', 'TEXT[]'], ['skills', 'TEXT[]'], ['skillsEn', 'TEXT[]'],
-  ['jobs', "JSONB NOT NULL DEFAULT '[]'"], ['courses', "JSONB NOT NULL DEFAULT '[]'"], ['packages', "JSONB NOT NULL DEFAULT '[]'"],
+  ['jobs', "JSONB NOT NULL DEFAULT '[]'"], ['courses', "JSONB NOT NULL DEFAULT '[]'"],
+  ['sessionPrice', 'DOUBLE PRECISION'], ['speciality', 'TEXT'], ['visionDescKSA', 'TEXT'], ['visionDescEG', 'TEXT'],
   ['freeItemsAr', 'TEXT[]'], ['freeItemsEn', 'TEXT[]'],
   ['isActive', 'BOOLEAN NOT NULL DEFAULT true'], ['country', "TEXT NOT NULL DEFAULT 'BOTH'"],
   ['createdAt', 'TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP'], ['updatedAt', 'TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP'],
@@ -89,18 +89,15 @@ export class TracksService implements OnModuleInit {
     const ksa = country === 'KSA';
     const currency = ksa ? 'SAR' : 'EGP';
 
-    const jobs = asArray<JobRow>(t.jobs).map((j) => {
-      const min = ksa ? j.salaryMinKSA : j.salaryMinEG;
-      const max = ksa ? j.salaryMaxKSA : j.salaryMaxEG;
-      return {
-        title: pick(en, j.titleAr, j.titleEn),
-        desc: pick(en, j.descAr, j.descEn),
-        salaryMin: min ?? null,
-        salaryMax: max ?? null,
-        currency,
-        vision: asVision(j.vision),
-      };
-    });
+    const range = (min?: number | null, max?: number | null) => ({ min: min ?? null, max: max ?? null });
+    const jobs = asArray<JobRow>(t.jobs).map((j) => ({
+      title: pick(en, j.titleAr, j.titleEn),
+      desc: pick(en, j.descAr, j.descEn),
+      titleAr: j.titleAr || j.titleEn || '',
+      salaryEG: range(j.salaryMinEG, j.salaryMaxEG),
+      salaryKSA: range(j.salaryMinKSA, j.salaryMaxKSA),
+      vision: asVision(j.vision),
+    }));
 
     const courses = asArray<CourseRow>(t.courses)
       .map((c) => ({
@@ -110,18 +107,9 @@ export class TracksService implements OnModuleInit {
         weeks: c.weeks ?? 0,
         provider: c.provider || '',
         language: c.language || '',
+        courseId: c.courseId || null,
       }))
       .sort((a, b) => a.order - b.order);
-
-    const packages = asArray<PackageRow>(t.packages)
-      .filter((p) => p.isActive !== false)
-      .map((p) => ({
-        name: pick(en, p.nameAr, p.nameEn),
-        desc: pick(en, p.descAr, p.descEn),
-        price: (ksa ? p.priceKSA : p.priceEG) ?? null,
-        currency,
-        sessions: p.sessions ?? 0,
-      }));
 
     return {
       id: t.id,
@@ -132,13 +120,15 @@ export class TracksService implements OnModuleInit {
       level: en ? t.levelEn : t.level,
       languages: t.languages,
       coverImage: t.coverImage ?? null,
+      speciality: t.speciality ?? null,
+      visionDescKSA: t.visionDescKSA ?? null,
+      visionDescEG: t.visionDescEG ?? null,
       vision2030: t.vision2030,
       skills: en ? t.skillsEn : t.skills,
       jobs,
       jobCount: jobs.length,
       courses,
       courseCount: courses.length,
-      packages,
       freeItems: en ? t.freeItemsEn : t.freeItemsAr,
       country: t.country,
       currency,
@@ -170,7 +160,43 @@ export class TracksService implements OnModuleInit {
       this.logger.error(`[Tracks] getBySlug failed: ${e?.message ?? e}`);
     }
     if (!t) throw new NotFoundException('Track not found');
-    return this.localise(t, lang, country);
+    const consultants = await this.findConsultants(t.speciality);
+    const prices = consultants.map((c) => c.sessionPrice).filter((n): n is number => n != null && n > 0);
+    // an explicit price set by the admin wins; otherwise the cheapest matching consultant; otherwise none
+    const sessionPrice = t.sessionPrice ?? (prices.length ? Math.min(...prices) : null);
+    return { ...this.localise(t, lang, country), consultants, sessionPrice };
+  }
+
+  /** Active consultants whose speciality matches the track's (amounts are SAR, the platform's base currency). */
+  private async findConsultants(speciality?: string | null) {
+    const spec = (speciality || '').trim();
+    if (!spec) return [];
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          accountType: 'CONSULTANT',
+          status: 'ACTIVE',
+          isActive: true,
+          OR: [
+            { speciality: { contains: spec, mode: 'insensitive' } },
+            { profile: { speciality: { contains: spec, mode: 'insensitive' } } },
+          ],
+        },
+        select: { id: true, hourlyRate: true, profile: { select: { firstName: true, lastName: true, avatar: true, sessionPrice: true } } },
+        take: 12,
+      });
+      return users
+        .map((u) => ({
+          id: u.id,
+          name: `${u.profile?.firstName ?? ''} ${u.profile?.lastName ?? ''}`.trim(),
+          avatar: u.profile?.avatar ?? null,
+          sessionPrice: u.profile?.sessionPrice ?? u.hourlyRate ?? null,
+        }))
+        .sort((a, b) => (a.sessionPrice ?? Infinity) - (b.sessionPrice ?? Infinity));
+    } catch (e: any) {
+      this.logger.error(`[Tracks] consultants lookup failed: ${e?.message ?? e}`);
+      return [];
+    }
   }
 
   // ── admin ──
@@ -189,7 +215,6 @@ export class TracksService implements OnModuleInit {
           ...dto,
           jobs: dto.jobs as Prisma.InputJsonValue,
           courses: dto.courses as Prisma.InputJsonValue,
-          packages: (dto.packages ?? []) as Prisma.InputJsonValue,
         },
       });
     } catch (e: any) {
@@ -199,7 +224,7 @@ export class TracksService implements OnModuleInit {
   }
 
   async update(id: string, dto: UpdateTrackDto) {
-    const { jobs, courses, packages, ...rest } = dto;
+    const { jobs, courses, ...rest } = dto;
     try {
       return await this.prisma.track.update({
         where: { id },
@@ -207,7 +232,6 @@ export class TracksService implements OnModuleInit {
           ...rest,
           ...(jobs ? { jobs: jobs as Prisma.InputJsonValue } : {}),
           ...(courses ? { courses: courses as Prisma.InputJsonValue } : {}),
-          ...(packages ? { packages: packages as Prisma.InputJsonValue } : {}),
         },
       });
     } catch (e: any) {
@@ -257,7 +281,6 @@ export class TracksService implements OnModuleInit {
             skillsEn: p.skills,
             jobs: p.jobTitlesAr.map((titleAr, i) => ({ titleAr, titleEn: p.jobTitlesEn[i] ?? titleAr, descAr: '', descEn: '', vision: [] })) as Prisma.InputJsonValue,
             courses: [] as Prisma.InputJsonValue,
-            packages: [] as Prisma.InputJsonValue,
             freeItemsAr: [],
             freeItemsEn: [],
             isActive: false,

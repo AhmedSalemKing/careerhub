@@ -4,9 +4,10 @@ import { getCountryClient } from './market'
 
 export type TrackVision = 'KSA' | 'EG'
 
-export interface TrackJob { title: string; desc: string; salaryMin: number | null; salaryMax: number | null; currency: 'EGP' | 'SAR'; vision: TrackVision[] }
-export interface TrackPackage { name: string; desc: string; price: number | null; currency: 'EGP' | 'SAR'; sessions: number }
-export interface TrackCourse { order: number; title: string; type: string; weeks: number; provider: string; language: string }
+export interface SalaryRange { min: number | null; max: number | null }
+export interface TrackJob { title: string; titleAr: string; desc: string; salaryEG: SalaryRange; salaryKSA: SalaryRange; vision: TrackVision[] }
+export interface TrackCourse { order: number; title: string; type: string; weeks: number; provider: string; language: string; courseId: string | null }
+export interface TrackConsultant { id: string; name: string; avatar: string | null; sessionPrice: number | null }
 
 /** Public, already localised track returned by GET /tracks. */
 export interface Track {
@@ -18,12 +19,14 @@ export interface Track {
   level: string
   languages: string
   coverImage: string | null
+  speciality: string | null
+  visionDescKSA: string | null
+  visionDescEG: string | null
   vision2030: TrackVision[]
   currency: 'EGP' | 'SAR'
   skills: string[]
   jobs: TrackJob[]
   jobCount: number
-  packages: TrackPackage[]
   courses: TrackCourse[]
   courseCount: number
   freeItems: string[]
@@ -31,6 +34,9 @@ export interface Track {
 }
 
 /** The API expects EG or KSA; the site's market cookie uses EG / SA. */
+/** GET /tracks/:slug adds the matching consultants and the computed session price (SAR, base currency). */
+export interface TrackDetail extends Track { consultants: TrackConsultant[]; sessionPrice: number | null }
+
 export const trackCountry = (): 'EG' | 'KSA' => (getCountryClient() === 'EG' ? 'EG' : 'KSA')
 
 export async function fetchTracks(locale: string): Promise<Track[]> {
@@ -39,7 +45,7 @@ export async function fetchTracks(locale: string): Promise<Track[]> {
   return Array.isArray(d) ? d : []
 }
 
-export async function fetchTrack(slug: string, locale: string): Promise<Track | null> {
+export async function fetchTrack(slug: string, locale: string): Promise<TrackDetail | null> {
   try {
     const res = await get(`/tracks/${encodeURIComponent(slug)}`, { params: { country: trackCountry(), lang: locale === 'en' ? 'en' : 'ar' } })
     const d = (res?.data as any)?.data
@@ -73,8 +79,9 @@ export function formatSalaryRange(min: number | null, max: number | null, curren
 
 /** Overall salary range across a track's jobs for the visitor's market. */
 export function trackSalarySpan(t: Pick<Track, 'jobs' | 'currency'>, locale: string): string {
-  const mins = t.jobs.map((j) => j.salaryMin).filter((n): n is number => n != null)
-  const maxs = t.jobs.map((j) => j.salaryMax).filter((n): n is number => n != null)
+  const pick = (j: TrackJob) => (t.currency === 'EGP' ? j.salaryEG : j.salaryKSA)
+  const mins = t.jobs.map((j) => pick(j).min).filter((n): n is number => n != null)
+  const maxs = t.jobs.map((j) => pick(j).max).filter((n): n is number => n != null)
   if (!mins.length && !maxs.length) return ''
   return formatSalaryRange(mins.length ? Math.min(...mins) : null, maxs.length ? Math.max(...maxs) : null, t.currency, locale)
 }

@@ -20,13 +20,16 @@ export class CreateTrackDto {
   @IsOptional() @IsString() @MaxLength(1000) @Matches(/^(https?:\/\/|\/)\S+$/, { message: 'coverImage must be an http(s) URL or a /path' })
   coverImage?: string | null;
 
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) sessionPrice?: number | null;
+  @IsOptional() @IsString() @MaxLength(200) speciality?: string | null;
+  @IsOptional() @IsString() @MaxLength(1000) visionDescKSA?: string | null;
+  @IsOptional() @IsString() @MaxLength(1000) visionDescEG?: string | null;
+
   @IsArray() @IsIn(['KSA', 'EG'], { each: true }) vision2030: string[];
 
 
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skills: string[];
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skillsEn: string[];
-
-  @IsOptional() @IsArray() @ArrayMaxSize(50) packages?: Record<string, unknown>[];
 
   @IsArray() @ArrayMaxSize(50) jobs: Record<string, unknown>[];
   @IsArray() @ArrayMaxSize(50) courses: Record<string, unknown>[];

@@ -1645,15 +1645,19 @@ model Track {
   levelEn         String
   languages       String
   coverImage      String?
+  /// optional fixed session price (SAR); when null it is derived from the cheapest matching consultant
+  sessionPrice    Float?
+  /// matches UserProfile.speciality so consultants can be listed on the track
+  speciality      String?
+  visionDescKSA   String?
+  visionDescEG    String?
   vision2030      String[] // "KSA" | "EG"
   skills          String[]
   skillsEn        String[]
   /// [{ titleAr, titleEn, descAr, descEn, salaryMinEG, salaryMaxEG, salaryMinKSA, salaryMaxKSA, vision: ["KSA"|"EG"] }]
   jobs            Json     @default("[]")
-  /// [{ order, titleAr, titleEn, type, typeEn, weeks, provider, language }]
+  /// [{ order, titleAr, titleEn, type, typeEn, weeks, provider, language, courseId? }]
   courses         Json     @default("[]")
-  /// [{ nameAr, nameEn, descAr, descEn, priceEG, priceKSA, sessions, isActive }]
-  packages        Json     @default("[]")
   freeItemsAr     String[]
   freeItemsEn     String[]
   isActive        Boolean  @default(true)

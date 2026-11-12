@@ -3,7 +3,7 @@
 import type { TrackVision } from '../../lib/tracks'
 
 /* Flags are national artwork, so their colours are the flags' own, not theme tokens. */
-function Flag({ code }: { code: TrackVision }) {
+export function Flag({ code }: { code: TrackVision }) {
   return code === 'KSA' ? (
     <svg viewBox="0 0 30 20" width="22" height="15" aria-hidden="true">
       <rect width="30" height="20" rx="2" fill="#006C35" />
@@ -15,7 +15,7 @@ function Flag({ code }: { code: TrackVision }) {
       <rect width="30" height="6.67" rx="2" fill="#CE1126" />
       <rect y="6.67" width="30" height="6.67" fill="#fff" />
       <rect y="13.33" width="30" height="6.67" rx="2" fill="#000" />
-      <circle cx="15" cy="10" r="2" fill="#C09300" />
+      <circle cx="15" cy="10" r="2.5" fill="#C09300" />
     </svg>
   )
 }
@@ -38,6 +38,53 @@ export function VisionBadges({ vision, locale, compact }: { vision: readonly str
           <span>{locale === 'ar' ? LABEL[v].ar : LABEL[v].en}</span>
         </span>
       ))}
+    </div>
+  )
+}
+
+const DEFAULT_DESC = {
+  KSA: { ar: 'التحول الرقمي ممكّن أساسي لرؤية 2030.', en: 'Digital transformation is a key enabler of Vision 2030.' },
+  EG: { ar: 'ينسجم هذا المسار مع أولويات رؤية مصر 2030 في التحول الرقمي وبناء المهارات.', en: "This track fits Egypt Vision 2030's priorities in digital transformation and skills." },
+} as const
+
+/** "Vision 2030 alignment" block of the track page: one card per selected vision. */
+export function VisionBox({
+  vision, descKSA, descEG, jobTitles, locale,
+}: { vision: readonly string[]; descKSA?: string | null; descEG?: string | null; jobTitles: string[]; locale: string }) {
+  const ar = locale === 'ar'
+  const cards = (['KSA', 'EG'] as const).filter((v) => vision.includes(v))
+  if (cards.length === 0) return null
+  return (
+    <div className="vision-box">
+      <h2>{ar ? 'التوافق مع رؤية 2030' : 'Vision 2030 alignment'}</h2>
+      <p className="muted">{ar ? 'كيف يرتبط هذا المسار المهني بالأولويات الوطنية في السعودية ومصر.' : 'How this career path relates to national priorities in Saudi Arabia and Egypt.'}</p>
+      {cards.map((v) => {
+        const custom = ar ? (v === 'KSA' ? descKSA : descEG) : null
+        return (
+          <div key={v} className="v-card wide">
+            <span className={'v-logo lg ' + (v === 'KSA' ? 'sa' : 'eg')}>
+              <img src={LABEL[v].logo} alt={LABEL[v][ar ? 'ar' : 'en']} loading="lazy" />
+            </span>
+            <div>
+              <p className="v-name">
+                <span className="flag" role="img" aria-label={v === 'KSA' ? (ar ? 'السعودية' : 'Saudi Arabia') : ar ? 'مصر' : 'Egypt'}><Flag code={v} /></span>
+                {LABEL[v][ar ? 'ar' : 'en']}
+              </p>
+              <p>{custom || DEFAULT_DESC[v][ar ? 'ar' : 'en']}</p>
+              {jobTitles.length > 0 && <p className="muted small">{ar ? 'الوظائف المتوافقة: ' : 'Aligned jobs: '}{jobTitles.join(' · ')}</p>}
+            </div>
+          </div>
+        )
+      })}
+      <p className="muted small" style={{ marginTop: 10 }}>
+        {ar ? 'تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر) أعلى الصفحة.' : 'Vision 2030 badges follow the market you selected (Saudi Arabia or Egypt) at the top of the page.'}
+      </p>
+      <p className="note">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 11v5M12 8h.01" />
+        </svg>
+        <span>{ar ? 'يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.' : "Alignment reflects DeveWay's reading of announced national priorities, not an official endorsement."}</span>
+      </p>
     </div>
   )
 }
