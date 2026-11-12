@@ -445,7 +445,7 @@ export default function CareerPathDetailPage() {
             <section>
               <h2>{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
               {track && view.trackPackage ? (
-                <p className="dw2-sub" style={{ color: 'var(--brand)', fontWeight: 600 }}>{isAr ? `${view.courses.length.toLocaleString(nf)} دورة مشمولة في الباكدج` : `${view.courses.length} courses included in the package`}</p>
+                <p className="dw2-sub" style={{ color: 'var(--brand)', fontWeight: 600 }}>{isAr ? `${Math.max(view.courses.length, view.trackPackage.courseCount).toLocaleString(nf)} دورة مشمولة في الباكدج` : `${Math.max(view.courses.length, view.trackPackage.courseCount)} courses included in the package`}</p>
               ) : (
                 <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
               )}

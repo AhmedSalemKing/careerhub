@@ -27,6 +27,17 @@ type AdminCourse = {
   _count?: { enrollments: number }
 }
 
+type AdminPackage = {
+  id: string
+  pathId: string
+  pathKind: string
+  courseIds: string[]
+  originalPrice?: number | null
+  finalPrice: number
+  notes?: string | null
+  isActive: boolean
+}
+
 type StatusFilter = 'ALL' | 'PUBLISHED' | 'DRAFT' | 'PENDING_REVIEW' | 'ARCHIVED'
 
 export default function AdminCoursesPage() {
@@ -47,6 +58,25 @@ export default function AdminCoursesPage() {
   const [counts, setCounts] = useState({ all: 0, published: 0, draft: 0, pending: 0 })
   const [packageOpen, setPackageOpen] = useState(false)
   const [packageToast, setPackageToast] = useState(false)
+  const [packages, setPackages] = useState<AdminPackage[]>([])
+
+  function fetchPackages() {
+    api.get('/packages/admin/all')
+      .then((res) => { const d = res.data?.data ?? res.data; setPackages(Array.isArray(d) ? d : []) })
+      .catch(() => {})
+  }
+  useEffect(fetchPackages, [])
+
+  async function togglePackage(pkg: AdminPackage) {
+    try { await api.patch(`/packages/${pkg.id}`, { isActive: !pkg.isActive }); fetchPackages() }
+    catch (e) { console.error(e) }
+  }
+
+  async function deletePackage(id: string) {
+    if (!confirm(isAr ? 'هل أنت متأكد؟' : 'Are you sure?')) return
+    try { await api.delete(`/packages/${id}`); setPackages((prev) => prev.filter((p) => p.id !== id)) }
+    catch (e) { console.error(e) }
+  }
 
   useEffect(() => {
     api.get('/admin/courses/counts')
@@ -92,6 +122,7 @@ export default function AdminCoursesPage() {
 
   function onPackageCreated() {
     setPackageToast(true)
+    fetchPackages()
     setTimeout(() => setPackageToast(false), 3000)
   }
 
@@ -525,6 +556,38 @@ export default function AdminCoursesPage() {
           </div>
         </div>
       )}
+      <section>
+        <h2 className="text-base font-bold mb-3" style={{ color: 'var(--foreground)' }}>{isAr ? 'الباكدجات المُنشأة' : 'Created packages'}</h2>
+        {packages.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>{isAr ? 'لا توجد باكدجات بعد.' : 'No packages yet.'}</p>
+        ) : (
+          <div className="grid gap-3">
+            {packages.map((pkg) => (
+              <div key={pkg.id} className="rounded-xl p-4 border flex items-start justify-between gap-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                <div>
+                  <div className="text-sm font-semibold mb-1" style={{ color: 'var(--foreground)' }}>{pkg.notes || pkg.pathId}</div>
+                  <div className="flex gap-3 flex-wrap text-xs">
+                    <span style={{ color: 'var(--purple)', fontWeight: 500 }}>{pkg.finalPrice.toLocaleString()} SAR</span>
+                    {pkg.originalPrice != null && pkg.originalPrice > pkg.finalPrice && (
+                      <span style={{ color: 'var(--muted)' }}>{isAr ? 'خصم' : 'Discount'} {Math.round((1 - pkg.finalPrice / pkg.originalPrice) * 100)}%</span>
+                    )}
+                    <span style={{ color: 'var(--muted)' }}>{pkg.courseIds.length} {isAr ? 'دورة' : 'courses'}</span>
+                    <span style={{ color: pkg.isActive ? 'var(--foreground)' : 'var(--muted)' }}>{pkg.isActive ? (isAr ? 'نشط' : 'Active') : (isAr ? 'معطّل' : 'Disabled')}</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => togglePackage(pkg)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)' }}>
+                    {pkg.isActive ? (isAr ? 'تعطيل' : 'Disable') : (isAr ? 'تفعيل' : 'Enable')}
+                  </button>
+                  <button type="button" onClick={() => deletePackage(pkg.id)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: '#ef4444' }}>
+                    {isAr ? 'حذف' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
       {packageOpen && <PackageModal onClose={() => setPackageOpen(false)} onCreated={onPackageCreated} />}
       {packageToast && <div className="dw2-pk-toast" role="status">تم إنشاء الباكدج بنجاح ✓</div>}
     </div>
