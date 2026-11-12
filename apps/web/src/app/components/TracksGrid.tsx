@@ -16,6 +16,10 @@ export function TracksGrid({ tracks }: { tracks: Track[] }) {
         const salary = trackSalarySpan(t, locale)
         return (
           <Link key={t.id} href={`/${locale}/careers/${t.slug}`} className="dw-track-card rv">
+            {t.coverImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="dw-track-cover" src={t.coverImage} alt="" loading="lazy" />
+            )}
             <h3>{t.name}</h3>
             <p className="dw-track-meta">
               {ar

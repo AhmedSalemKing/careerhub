@@ -7,6 +7,8 @@ import { Plus, Pencil, Trash2, X, Download } from 'lucide-react'
 import { get, post, put, del } from '../../../../lib/api'
 import { notify } from '../../../../lib/notify'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
+import { CustomSelect } from '../../../components/CustomSelect'
+import { parseJsonArray } from '../../../../lib/tracks'
 
 /* ── types ─────────────────────────────────────────────── */
 type Vision = 'EG' | 'KSA'
@@ -67,6 +69,15 @@ interface FormState {
 
 type Tab = 'basics' | 'content' | 'jobs' | 'vision'
 
+const LEVELS = [
+  { ar: 'مبتدئ', en: 'Beginner' },
+  { ar: 'متوسط', en: 'Intermediate' },
+  { ar: 'متقدم', en: 'Advanced' },
+  { ar: 'مبتدئ ← متوسط', en: 'Beginner → Intermediate' },
+  { ar: 'متوسط ← متقدم', en: 'Intermediate → Advanced' },
+  { ar: 'جميع المستويات', en: 'All levels' },
+]
+
 const emptyJob = (): JobRow => ({ titleAr: '', titleEn: '', descAr: '', descEn: '', salaryMinEG: '', salaryMaxEG: '', salaryMinKSA: '', salaryMaxKSA: '' })
 const emptyCourse = (n: number): CourseRow => ({ order: String(n), titleAr: '', titleEn: '', type: '', typeEn: '', weeks: '', provider: '', language: '', courseId: '' })
 const emptyForm = (): FormState => ({
@@ -86,7 +97,7 @@ function fromRow(t: TrackRow): FormState {
     level: t.level, levelEn: t.levelEn, languages: t.languages, coverImage: t.coverImage ?? '', sessionPrice: str(t.sessionPrice),
     speciality: t.speciality ?? '', visionDescKSA: t.visionDescKSA ?? '', visionDescEG: t.visionDescEG ?? '',
     vision2030: visionOf(t.vision2030), skills: t.skills ?? [], skillsEn: t.skillsEn ?? [],
-    jobs: (t.jobs ?? []).map((j) => {
+    jobs: parseJsonArray<Record<string, any>>(t.jobs).map((j) => {
       // rows saved by the first version carried one salary range + currency; keep it under the matching market
       const legacyKsa = j.currency === 'SAR'
       return {
@@ -95,7 +106,7 @@ function fromRow(t: TrackRow): FormState {
         salaryMinKSA: str(j.salaryMinKSA ?? (legacyKsa ? j.salaryMin : '')), salaryMaxKSA: str(j.salaryMaxKSA ?? (legacyKsa ? j.salaryMax : '')),
       }
     }),
-    courses: (t.courses ?? []).map((c) => ({ order: str(c.order), titleAr: str(c.titleAr), titleEn: str(c.titleEn), type: str(c.type), typeEn: str(c.typeEn), weeks: str(c.weeks), provider: str(c.provider), language: str(c.language), courseId: str(c.courseId) })),
+    courses: parseJsonArray<Record<string, any>>(t.courses).map((c) => ({ order: str(c.order), titleAr: str(c.titleAr), titleEn: str(c.titleEn), type: str(c.type), typeEn: str(c.typeEn), weeks: str(c.weeks), provider: str(c.provider), language: str(c.language), courseId: str(c.courseId) })),
     freeItemsAr: t.freeItemsAr ?? [], freeItemsEn: t.freeItemsEn ?? [], isActive: t.isActive, country: t.country,
   }
 }
@@ -380,16 +391,30 @@ export default function AdminTracksPage() {
                     </Field>
                     <Field label="الوصف (عربي)"><textarea dir="rtl" rows={3} value={f.descAr} onChange={(e) => set({ descAr: e.target.value })} /></Field>
                     <Field label="Description (English)"><textarea dir="ltr" rows={3} value={f.descEn} onChange={(e) => set({ descEn: e.target.value })} /></Field>
+                    <div className="tk-span2">
+                      <Field label={isAr ? 'المستوى (اختيار سريع)' : 'Level (quick pick)'}>
+                        <CustomSelect
+                          value={LEVELS.find((l) => l.ar === f.level && l.en === f.levelEn)?.ar ?? ''}
+                          onChange={(v) => { const l = LEVELS.find((x) => x.ar === v); if (l) set({ level: l.ar, levelEn: l.en }) }}
+                          placeholder={isAr ? 'اختر المستوى…' : 'Choose a level…'}
+                          options={LEVELS.map((l) => ({ value: l.ar, label: isAr ? l.ar : l.en }))}
+                        />
+                      </Field>
+                    </div>
                     <Field label="المستوى (عربي)"><input dir="rtl" value={f.level} onChange={(e) => set({ level: e.target.value })} placeholder="مبتدئ ← متوسط" /></Field>
                     <Field label="Level (English)"><input dir="ltr" value={f.levelEn} onChange={(e) => set({ levelEn: e.target.value })} placeholder="Beginner → Intermediate" /></Field>
                     <Field label={isAr ? 'عدد الأسابيع' : 'Weeks'}><input type="number" min={1} value={f.weeks} onChange={(e) => set({ weeks: e.target.value })} /></Field>
                     <Field label={isAr ? 'اللغات' : 'Languages'}><input value={f.languages} onChange={(e) => set({ languages: e.target.value })} /></Field>
                     <Field label={isAr ? 'الدولة' : 'Market'}>
-                      <select value={f.country} onChange={(e) => set({ country: e.target.value as FormState['country'] })}>
-                        <option value="BOTH">{isAr ? 'الاثنان' : 'Both'}</option>
-                        <option value="EG">{isAr ? 'مصر' : 'Egypt'}</option>
-                        <option value="KSA">{isAr ? 'السعودية' : 'Saudi Arabia'}</option>
-                      </select>
+                      <CustomSelect
+                        value={f.country}
+                        onChange={(v) => set({ country: v as FormState['country'] })}
+                        options={[
+                          { value: 'BOTH', label: isAr ? 'الاثنان' : 'Both' },
+                          { value: 'EG', label: isAr ? 'مصر' : 'Egypt' },
+                          { value: 'KSA', label: isAr ? 'السعودية' : 'Saudi Arabia' },
+                        ]}
+                      />
                     </Field>
                     <Field label="Slug"><input dir="ltr" value={f.slug} onChange={(e) => set({ slug: slugify(e.target.value), slugTouched: true })} /></Field>
                     <Field label={isAr ? 'التخصص (لربط المرشدين)' : 'Speciality (links consultants)'} hint={isAr ? 'يُطابق تخصص المرشد في ملفه' : "Matched against the consultant's speciality"}>
@@ -451,16 +476,14 @@ export default function AdminTracksPage() {
                           <button type="button" className="tk-icon" onClick={() => set({ courses: f.courses.filter((_, k) => k !== i) })} aria-label="remove"><Trash2 size={15} /></button>
                         </div>
                         <Field label={isAr ? 'اختر كورس من المنصة (اختياري)' : 'Pick a platform course (optional)'}>
-                          <select
+                          <CustomSelect
                             value={c.courseId}
-                            onChange={(e) => {
-                              const picked = platformCourses.find((p) => p.id === e.target.value)
-                              upd({ courseId: e.target.value, ...(picked && !c.titleAr ? { titleAr: picked.title } : {}), ...(picked && !c.titleEn ? { titleEn: picked.title } : {}) })
+                            onChange={(v) => {
+                              const picked = platformCourses.find((p) => p.id === v)
+                              upd({ courseId: v, ...(picked && !c.titleAr ? { titleAr: picked.title } : {}), ...(picked && !c.titleEn ? { titleEn: picked.title } : {}) })
                             }}
-                          >
-                            <option value="">{isAr ? '— إدخال يدوي —' : '— Manual entry —'}</option>
-                            {platformCourses.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-                          </select>
+                            options={[{ value: '', label: isAr ? '— إدخال يدوي —' : '— Manual entry —' }, ...platformCourses.map((p) => ({ value: p.id, label: p.title }))]}
+                          />
                         </Field>
                         <div className="tk-grid2">
                           <Field label="العنوان (عربي)"><input dir="rtl" value={c.titleAr} onChange={(e) => upd({ titleAr: e.target.value })} /></Field>
@@ -596,6 +619,7 @@ export default function AdminTracksPage() {
         .tk-tab em { font-style: normal; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--wash); color: var(--ink-2); }
         .tk-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 2px 4px 6px 2px; }
         .tk-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+        .tk-span2 { grid-column: 1 / -1; }
         .tk-grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; align-items: end; }
         .tk-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .tk-field label, .tk-sal span, .tk-block-title { font-size: 12px; font-weight: 700; color: var(--ink-2); }

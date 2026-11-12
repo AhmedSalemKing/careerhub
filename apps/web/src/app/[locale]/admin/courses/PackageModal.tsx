@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api } from '../../../../lib/api'
 import { formatCoursePrice } from '../../../../lib/market'
 
-type PathOption = { id: string; title: string }
+type PathOption = { id: string; title: string; slug?: string }
 type CourseRow = {
   id: string
   title: string
@@ -22,7 +22,12 @@ const FALLBACK_PATHS: PathOption[] = [
 ]
 
 export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [paths, setPaths] = useState<PathOption[]>([])
+  const [builtIn, setBuiltIn] = useState<PathOption[]>([])
+  const [apiTracks, setApiTracks] = useState<PathOption[]>([])
+  const paths = useMemo(() => {
+    const taken = new Set(apiTracks.map((t) => t.slug ?? t.id))
+    return [...apiTracks, ...builtIn.filter((p) => !taken.has(p.slug ?? p.id))]
+  }, [apiTracks, builtIn])
   const [courses, setCourses] = useState<CourseRow[]>([])
   const [pathId, setPathId] = useState('')
   const [selected, setSelected] = useState<string[]>([])
@@ -41,14 +46,26 @@ export function PackageModal({ onClose, onCreated }: { onClose: () => void; onCr
         const d = (res.data as any)
         const arr = d?.data?.careerPaths ?? d?.data ?? d ?? []
         const list: PathOption[] = (Array.isArray(arr) ? arr : [])
-          .map((p: any) => ({ id: p.id, title: p.titleAr || p.title || p.titleEn || '' }))
+          .map((p: any) => ({ id: p.id, slug: p.slug, title: p.titleAr || p.title || p.titleEn || '' }))
           .filter((p: PathOption) => p.id && p.title)
-        if (!cancelled) setPaths(list.length ? list : FALLBACK_PATHS)
+        if (!cancelled) setBuiltIn(list.length ? list : FALLBACK_PATHS)
       })
       .catch((e) => {
         console.error('[PackageModal] GET /career/paths failed:', e?.response?.status, e?.response?.data ?? e?.message)
-        if (!cancelled) setPaths(FALLBACK_PATHS)
+        if (!cancelled) setBuiltIn(FALLBACK_PATHS)
       })
+
+    // tracks managed in the admin panel; they win over a built-in path with the same slug
+    api
+      .get('/tracks', { params: { lang: 'ar' } })
+      .then((res) => {
+        const arr = (res.data as any)?.data
+        const list: PathOption[] = (Array.isArray(arr) ? arr : [])
+          .map((t: any) => ({ id: t.id, slug: t.slug, title: t.name || '' }))
+          .filter((t: PathOption) => t.id && t.title)
+        if (!cancelled) setApiTracks(list)
+      })
+      .catch((e) => console.error('[PackageModal] GET /tracks failed:', e?.response?.status, e?.response?.data ?? e?.message))
 
     api
       .get('/admin/courses', { params: { page: 1, limit: 100 } })

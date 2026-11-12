@@ -313,7 +313,12 @@ export default function CareersPage() {
                 style={{ cursor: "pointer", ...({ ["--d" as string]: `${(idx % 3) * 80}ms` } as React.CSSProperties) }}
               >
                 <div className="t-media">
-                  <span className="t-watermark" aria-hidden="true"><IconComp size={72} /></span>
+                  {tk?.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img className="t-cover" src={tk.coverImage} alt="" loading="lazy" />
+                  ) : (
+                    <span className="t-watermark" aria-hidden="true"><IconComp size={72} /></span>
+                  )}
                   {!tk && (
                     <span className={`t-demand${isHigh ? ' high' : ''}`}>
                       {isHigh ? <Flame size={12} aria-hidden="true" /> : <Zap size={12} aria-hidden="true" />}

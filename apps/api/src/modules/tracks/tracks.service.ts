@@ -15,7 +15,27 @@ interface JobRow {
 }
 interface CourseRow { order?: number; titleAr?: string; titleEn?: string; type?: string; typeEn?: string; weeks?: number; provider?: string; language?: string; courseId?: string }
 
-const asArray = <T>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
+/**
+ * Json columns can come back as a real array, as a JSON string (double-encoded by an earlier writer),
+ * or as an object keyed by index. Always return a plain array of objects.
+ */
+export function toJsonArray<T = Record<string, unknown>>(value: unknown): T[] {
+  let v: unknown = value;
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+    try { v = JSON.parse(v); } catch { return []; }
+  }
+  if (v && typeof v === 'object' && !Array.isArray(v)) v = Object.values(v as Record<string, unknown>);
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((item) => {
+      let x: unknown = item;
+      if (typeof x === 'string') { try { x = JSON.parse(x); } catch { return null; } }
+      return x && typeof x === 'object' ? (x as T) : null;
+    })
+    .filter((x): x is T => x !== null);
+}
+
+const asArray = <T>(v: unknown): T[] => toJsonArray<T>(v);
 const asVision = (v: unknown): string[] => (Array.isArray(v) ? v.map(String) : typeof v === 'string' && v ? [v] : []);
 const pick = (en: boolean, ar?: string, enVal?: string) => ((en ? enVal : ar) || ar || enVal || '').toString();
 
@@ -202,7 +222,8 @@ export class TracksService implements OnModuleInit {
   // ── admin ──
   async adminList() {
     try {
-      return await this.prisma.track.findMany({ orderBy: { createdAt: 'desc' } });
+      const rows = await this.prisma.track.findMany({ orderBy: { createdAt: 'desc' } });
+      return rows.map((t) => ({ ...t, jobs: toJsonArray(t.jobs), courses: toJsonArray(t.courses) }));
     } catch (e) {
       this.fail('list', e);
     }
@@ -213,8 +234,8 @@ export class TracksService implements OnModuleInit {
       return await this.prisma.track.create({
         data: {
           ...dto,
-          jobs: dto.jobs as Prisma.InputJsonValue,
-          courses: dto.courses as Prisma.InputJsonValue,
+          jobs: toJsonArray(dto.jobs) as Prisma.InputJsonValue,
+          courses: toJsonArray(dto.courses) as Prisma.InputJsonValue,
         },
       });
     } catch (e: any) {
@@ -230,8 +251,8 @@ export class TracksService implements OnModuleInit {
         where: { id },
         data: {
           ...rest,
-          ...(jobs ? { jobs: jobs as Prisma.InputJsonValue } : {}),
-          ...(courses ? { courses: courses as Prisma.InputJsonValue } : {}),
+          ...(jobs ? { jobs: toJsonArray(jobs) as Prisma.InputJsonValue } : {}),
+          ...(courses ? { courses: toJsonArray(courses) as Prisma.InputJsonValue } : {}),
         },
       });
     } catch (e: any) {

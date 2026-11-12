@@ -85,3 +85,13 @@ export function trackSalarySpan(t: Pick<Track, 'jobs' | 'currency'>, locale: str
   if (!mins.length && !maxs.length) return ''
   return formatSalaryRange(mins.length ? Math.min(...mins) : null, maxs.length ? Math.max(...maxs) : null, t.currency, locale)
 }
+
+/** Json columns may arrive as a JSON string; always get an array of objects back. */
+export function parseJsonArray<T = Record<string, any>>(value: unknown): T[] {
+  let v: unknown = value
+  for (let i = 0; i < 3 && typeof v === 'string'; i++) {
+    try { v = JSON.parse(v) } catch { return [] }
+  }
+  if (v && typeof v === 'object' && !Array.isArray(v)) v = Object.values(v as Record<string, unknown>)
+  return Array.isArray(v) ? (v.filter((x) => x && typeof x === 'object') as T[]) : []
+}
