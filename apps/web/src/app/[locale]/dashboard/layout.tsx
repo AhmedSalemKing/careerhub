@@ -7,7 +7,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../../stores/authStore'
 import { get } from '../../../lib/api'
 import { Skeleton } from '../../components/ui/Skeleton'
-import { RealTimeClock } from '../../../components/RealTimeClock'
 import { StopSpeechOnNav } from '../../../components/ai/StopSpeechOnNav'
 import { 
   LayoutDashboard, BookOpen, PlusCircle, BarChart2,
@@ -243,7 +242,6 @@ return [
         </div>
       </main>
 
-      <RealTimeClock locale={locale} />
       {/* Floating AI Button — students/consultants/instructors only */}
       <StopSpeechOnNav />
     </div>
