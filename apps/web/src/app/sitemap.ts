@@ -30,10 +30,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/careers', '/faq', '/contact', '/help',
   ]
 
-  const [courses, careerPaths, coaches] = await Promise.allSettled([
+  const [courses, careerPaths, coaches, tracks] = await Promise.allSettled([
     safeFetch(`${API_URL}/courses?limit=100`),
     safeFetch(`${API_URL}/career/paths`),
     safeFetch(`${API_URL}/coaching/coaches`),
+    safeFetch(`${API_URL}/tracks?lang=ar`),
   ]).then(results => results.map(r =>
     r.status === 'fulfilled' ? r.value : []
   ))
@@ -67,8 +68,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  for (const path of (careerPaths || [])) {
-    if (!path?.slug) continue
+  const seenPaths = new Set<string>()
+  for (const path of [...(careerPaths || []), ...(tracks || [])]) {
+    if (!path?.slug || seenPaths.has(path.slug)) continue
+    seenPaths.add(path.slug)
     for (const locale of locales) {
       entries.push({
         url: `${BASE_URL}/${locale}/careers/${path.slug}`,

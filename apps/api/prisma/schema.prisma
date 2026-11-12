@@ -1645,16 +1645,14 @@ model Track {
   levelEn         String
   languages       String
   vision2030      String[] // "KSA" | "EG"
-  priceEG         Float?
-  priceKSA        Float?
-  sessionPrice    Float?
-  sessionPriceKSA Float?
   skills          String[]
   skillsEn        String[]
-  /// [{ titleAr, titleEn, descAr, descEn, salaryMin, salaryMax, currency, vision }]
+  /// [{ titleAr, titleEn, descAr, descEn, salaryMinEG, salaryMaxEG, salaryMinKSA, salaryMaxKSA, vision: ["KSA"|"EG"] }]
   jobs            Json     @default("[]")
   /// [{ order, titleAr, titleEn, type, typeEn, weeks, provider, language }]
   courses         Json     @default("[]")
+  /// [{ nameAr, nameEn, descAr, descEn, priceEG, priceKSA, sessions, isActive }]
+  packages        Json     @default("[]")
   freeItemsAr     String[]
   freeItemsEn     String[]
   isActive        Boolean  @default(true)

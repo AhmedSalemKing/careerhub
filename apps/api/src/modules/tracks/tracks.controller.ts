@@ -44,6 +44,11 @@ export class AdminTracksController {
     return { success: true, data: await this.tracks.create(dto) };
   }
 
+  @Post('import-career-paths')
+  async importPaths() {
+    return { success: true, data: await this.tracks.importCareerPaths() };
+  }
+
   @Put(':id')
   async update(@Param('id') id: string, @Body(pipe) dto: UpdateTrackDto) {
     return { success: true, data: await this.tracks.update(id, dto) };

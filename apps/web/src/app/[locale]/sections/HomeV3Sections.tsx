@@ -123,7 +123,12 @@ export function TracksSection() {
       <div className="wrap">
         <SecHead eyebrow={t('careers.eyebrow')} title={t('careers.title')} lede={t('careers.lede')} />
         {apiTracks.length > 0 ? (
-          <TracksGrid tracks={apiTracks} />
+          <>
+            <TracksGrid tracks={apiTracks} />
+            <div className="dw-tracks-more">
+              <Link href={`/${locale}/careers`} className="btn btn-ghost">{locale === 'ar' ? 'عرض جميع المسارات' : 'View all tracks'}</Link>
+            </div>
+          </>
         ) : (
         <div className="paths">
           {TRACKS.map((p) => (

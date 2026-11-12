@@ -4,7 +4,8 @@ import { getCountryClient } from './market'
 
 export type TrackVision = 'KSA' | 'EG'
 
-export interface TrackJob { title: string; desc: string; salaryMin: number | null; salaryMax: number | null; currency: string; vision: string }
+export interface TrackJob { title: string; desc: string; salaryMin: number | null; salaryMax: number | null; currency: 'EGP' | 'SAR'; vision: TrackVision[] }
+export interface TrackPackage { name: string; desc: string; price: number | null; currency: 'EGP' | 'SAR'; sessions: number }
 export interface TrackCourse { order: number; title: string; type: string; weeks: number; provider: string; language: string }
 
 /** Public, already localised track returned by GET /tracks. */
@@ -17,11 +18,11 @@ export interface Track {
   level: string
   languages: string
   vision2030: TrackVision[]
-  price: number | null
   currency: 'EGP' | 'SAR'
-  sessionPrice: number | null
   skills: string[]
   jobs: TrackJob[]
+  jobCount: number
+  packages: TrackPackage[]
   courses: TrackCourse[]
   courseCount: number
   freeItems: string[]
@@ -56,4 +57,23 @@ export function formatTrackPrice(price: number | null, currency: 'EGP' | 'SAR', 
   if (price == null) return ''
   const n = price.toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US')
   return currency === 'EGP' ? `${n} ${locale === 'ar' ? 'ج.م' : 'EGP'}` : `${n} ${locale === 'ar' ? 'ر.س' : 'SAR'}`
+}
+
+const CUR: Record<'EGP' | 'SAR', { ar: string; en: string }> = { EGP: { ar: 'ج.م', en: 'EGP' }, SAR: { ar: 'ر.س', en: 'SAR' } }
+
+/** "8,000 – 25,000 ج.م" (or just one bound), '' when neither is set. */
+export function formatSalaryRange(min: number | null, max: number | null, currency: 'EGP' | 'SAR', locale: string): string {
+  const nf = locale === 'ar' ? 'ar-EG' : 'en-US'
+  const cur = CUR[currency][locale === 'ar' ? 'ar' : 'en']
+  if (min != null && max != null) return `${min.toLocaleString(nf)} – ${max.toLocaleString(nf)} ${cur}`
+  const one = min ?? max
+  return one != null ? `${one.toLocaleString(nf)} ${cur}` : ''
+}
+
+/** Overall salary range across a track's jobs for the visitor's market. */
+export function trackSalarySpan(t: Pick<Track, 'jobs' | 'currency'>, locale: string): string {
+  const mins = t.jobs.map((j) => j.salaryMin).filter((n): n is number => n != null)
+  const maxs = t.jobs.map((j) => j.salaryMax).filter((n): n is number => n != null)
+  if (!mins.length && !maxs.length) return ''
+  return formatSalaryRange(mins.length ? Math.min(...mins) : null, maxs.length ? Math.max(...maxs) : null, t.currency, locale)
 }

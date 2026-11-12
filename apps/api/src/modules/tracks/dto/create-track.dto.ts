@@ -19,13 +19,11 @@ export class CreateTrackDto {
 
   @IsArray() @IsIn(['KSA', 'EG'], { each: true }) vision2030: string[];
 
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) priceEG?: number | null;
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) priceKSA?: number | null;
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) sessionPrice?: number | null;
-  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) sessionPriceKSA?: number | null;
 
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skills: string[];
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skillsEn: string[];
+
+  @IsOptional() @IsArray() @ArrayMaxSize(50) packages?: Record<string, unknown>[];
 
   @IsArray() @ArrayMaxSize(50) jobs: Record<string, unknown>[];
   @IsArray() @ArrayMaxSize(50) courses: Record<string, unknown>[];
