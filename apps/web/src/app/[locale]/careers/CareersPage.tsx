@@ -13,6 +13,8 @@ import {
   X, CheckCircle2
 } from 'lucide-react'
 import { CAREER_PATHS } from '@/lib/career-paths'
+import { useTracks } from '@/lib/tracks'
+import { TracksGrid } from '@/app/components/TracksGrid'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   code: Code2,
@@ -45,6 +47,7 @@ export default function CareersPage() {
   const locale = useLocale()
   const isAr = locale === 'ar'
   const router = useRouter()
+  const { data: learningTracks = [] } = useTracks(locale)
   
   const [activeCategory, setActiveCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -214,6 +217,13 @@ export default function CareersPage() {
       
       {/* Main content */}
       <div style={{ width:'100%', boxSizing:'border-box', maxWidth:1200, margin:'0 auto', padding:'32px 24px', overflowX:'hidden' }}>
+
+        {learningTracks.length > 0 && (
+          <section style={{ marginBottom: 32 }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 800, color: 'var(--ink)' }}>{isAr ? 'مسارات التعلّم' : 'Learning tracks'}</h2>
+            <TracksGrid tracks={learningTracks} />
+          </section>
+        )}
         
         {/* Filters: search + category chips */}
         <div className="filters">

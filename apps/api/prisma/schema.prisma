@@ -1631,3 +1631,37 @@ model CompassReport {
 }
 
 
+
+/// Learning tracks shown on the home page and /careers (managed from the admin panel).
+model Track {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  nameAr          String
+  nameEn          String
+  descAr          String
+  descEn          String
+  weeks           Int
+  level           String
+  levelEn         String
+  languages       String
+  vision2030      String[] // "KSA" | "EG"
+  priceEG         Float?
+  priceKSA        Float?
+  sessionPrice    Float?
+  sessionPriceKSA Float?
+  skills          String[]
+  skillsEn        String[]
+  /// [{ titleAr, titleEn, descAr, descEn, salaryMin, salaryMax, currency, vision }]
+  jobs            Json     @default("[]")
+  /// [{ order, titleAr, titleEn, type, typeEn, weeks, provider, language }]
+  courses         Json     @default("[]")
+  freeItemsAr     String[]
+  freeItemsEn     String[]
+  isActive        Boolean  @default(true)
+  country         String   @default("BOTH") // "EG" | "KSA" | "BOTH"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive])
+  @@map("tracks")
+}

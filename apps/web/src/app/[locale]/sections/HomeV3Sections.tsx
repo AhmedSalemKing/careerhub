@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useAuthStore } from '../../../stores/authStore'
 import { CharacterAvatar } from '../../components/CharacterDuo'
 import type { CharacterId } from '../../components/characters'
+import { TracksGrid } from '../../components/TracksGrid'
+import { useTracks } from '../../../lib/tracks'
 
 function GoArrow() {
   return (
@@ -115,10 +117,14 @@ export function TracksSection() {
   const t = useTranslations('homeV3')
   const tp = useTranslations('careerPaths')
   const locale = useLocale()
+  const { data: apiTracks = [] } = useTracks(locale)
   return (
     <section id="tracks" className="sec sec-alt">
       <div className="wrap">
         <SecHead eyebrow={t('careers.eyebrow')} title={t('careers.title')} lede={t('careers.lede')} />
+        {apiTracks.length > 0 ? (
+          <TracksGrid tracks={apiTracks} />
+        ) : (
         <div className="paths">
           {TRACKS.map((p) => (
             <Link key={p.title} href={`/${locale}/dashboard/assessment`} className="card rv">
@@ -134,6 +140,7 @@ export function TracksSection() {
             </Link>
           ))}
         </div>
+        )}
       </div>
     </section>
   )

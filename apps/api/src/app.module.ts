@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { CareerModule } from './modules/career/career.module';
+import { TracksModule } from './modules/tracks/tracks.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { VideoModule } from './modules/video/video.module';
@@ -90,6 +91,7 @@ import { CurrencyInterceptor } from './common/interceptors/currency.interceptor'
     AuthModule,
     UsersModule,
     CareerModule,
+    TracksModule,
     CoursesModule,
     LessonsModule,
     VideoModule,

@@ -4424,3 +4424,19 @@ section[class*="hero"] { padding-block: 48px }
 .role-btn:hover { border-color: var(--brand); background: color-mix(in srgb, var(--brand) 5%, var(--bg)); }
 .role-btn .icon { width: 20px; height: 20px; margin-inline-start: auto; opacity: .4; }
 [dir="rtl"] .role-btn .icon.flip { transform: scaleX(-1); }
+
+/* === Tracks: cards + Vision 2030 badges (tokens only; flags keep their own artwork colours) === */
+.dw-tracks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.dw-track-card { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); text-decoration: none; transition: border-color .15s, transform .15s; }
+.dw-track-card:hover { border-color: var(--brand); transform: translateY(-2px); }
+.dw-track-card h3 { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); }
+.dw-track-meta { margin: 0; font-size: 13px; color: var(--ink-3); }
+.dw-track-desc { margin: 0; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+.dw-track-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 6px; font-size: 14px; }
+.dw-track-foot b { color: var(--ink); }
+.dw-track-go { color: var(--brand); font-weight: 700; }
+.dw-vision-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.dw-vision-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.dw-vision-badge img { height: 24px; width: auto; max-width: 64px; object-fit: contain; border-radius: 4px; }
+.dw-vision-badge.sm { padding: 4px 8px; font-size: 12px; }
+.dw-vision-badge.sm img { height: 18px; }

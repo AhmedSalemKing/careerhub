@@ -10,6 +10,8 @@ import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { Skeleton } from '../../../components/ui/Skeleton'
+import { fetchTrack, formatTrackPrice } from '../../../../lib/tracks'
+import { VisionBadges } from '../../../components/VisionBadge'
 
 type PathCourse = {
   id: string
@@ -44,6 +46,10 @@ type View = {
   demand?: string | null
   languages?: string[]
   vision2030?: boolean
+  trackVision?: string[]
+  trackPriceText?: string
+  trackSessionText?: string
+  freeItems?: string[]
   totalPrice: number
   skills: string[]
   jobs: ViewJob[]
@@ -96,7 +102,14 @@ export default function CareerPathDetailPage() {
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState<string | null>(null)
 
-  const { data: path, isLoading, isError, refetch } = useQuery({
+  const { data: track, isLoading: trackLoading } = useQuery({
+    queryKey: ['career-track', slug, locale],
+    queryFn: () => fetchTrack(slug, locale),
+    staleTime: 60000,
+    retry: 0,
+  })
+
+  const { data: path, isLoading: pathLoading, isError, refetch } = useQuery({
     queryKey: ['career-path-detail', slug, locale],
     queryFn: async () => {
       try {
@@ -138,11 +151,43 @@ export default function CareerPathDetailPage() {
     staleTime: 60000,
   })
 
+  const isLoading = pathLoading || trackLoading
   const nf = isAr ? 'ar-EG' : 'en-US'
-  const isMock = !isLoading && !isError && !path
+  const isMock = !isLoading && !isError && !path && !track
 
   const view: View | null = (() => {
-    if (isLoading || isError) return null
+    if (isLoading) return null
+    if (track) {
+      const money = (n: number | null, cur: string) =>
+        n == null ? null : `${n.toLocaleString(nf)} ${cur === 'EGP' ? (isAr ? 'ج.م' : 'EGP') : cur === 'SAR' ? (isAr ? 'ر.س' : 'SAR') : cur}`
+      return {
+        title: track.name,
+        description: track.description,
+        coursesCount: track.courseCount,
+        durationText: `${track.weeks.toLocaleString(nf)} ${isAr ? 'أسبوعًا' : 'weeks'}`,
+        level: track.level,
+        languages: track.languages ? [track.languages] : [],
+        trackVision: track.vision2030,
+        trackPriceText: track.price != null ? formatTrackPrice(track.price, track.currency, locale) : undefined,
+        trackSessionText: track.sessionPrice != null ? formatTrackPrice(track.sessionPrice, track.currency, locale) : undefined,
+        freeItems: track.freeItems,
+        totalPrice: track.price ?? 0,
+        skills: track.skills,
+        jobs: track.jobs.map((j) => ({
+          title: j.title,
+          description: j.desc,
+          salaryText: j.salaryMin != null && j.salaryMax != null ? `${j.salaryMin.toLocaleString(nf)} – ${j.salaryMax.toLocaleString(nf)} ${money(0, j.currency)?.split(' ')[1] ?? j.currency}${isAr ? ' / شهريًا' : ' / month'}` : null,
+        })),
+        courses: track.courses.map((c) => ({
+          key: `track-${c.order}-${c.title}`,
+          title: c.title,
+          type: c.type,
+          meta: [`${c.weeks.toLocaleString(nf)} ${isAr ? 'أسبوع' : 'wk'}`, c.provider, c.language].filter(Boolean),
+          included: true,
+        })),
+      }
+    }
+    if (isError) return null
     if (!path) {
       const m = { ...MOCK_PATH, slug }
       return {
@@ -207,7 +252,7 @@ export default function CareerPathDetailPage() {
     .sort((a, b) => a.price - b.price)
   const cheapest = sessionPrices[0]
 
-  const canEnroll = !!path?.id && !isMock
+  const canEnroll = !!path?.id && !isMock && !track
   const enroll = async () => {
     if (!path?.id || isMock || enrolling) return
     setEnrolling(true)
@@ -258,7 +303,7 @@ export default function CareerPathDetailPage() {
 
   const typeClass = (t?: string) => (t?.includes('ذاتي') ? 'self' : t?.includes('دفعة') ? 'cohort' : 'blended')
   const visionJobs = (view?.jobs ?? []).filter((j) => j.vision2030).map((j) => j.title)
-  const showFullPricing = !!view && (isMock || view.totalPrice > 0)
+  const showFullPricing = !!view && (isMock || view.totalPrice > 0 || !!view.trackPriceText)
 
   return (
     <div className="dw2-page" dir={dir}>
@@ -287,6 +332,7 @@ export default function CareerPathDetailPage() {
               {view.demand && <span className="dw2-stat-pill">{view.demand}</span>}
               {view.languages && view.languages.length > 0 && <span className="dw2-stat-pill">{view.languages.join(' · ')}</span>}
               {view.vision2030 && <span className="dw2-stat-pill dw2-pill-green">🇸🇦 {isAr ? 'متوافق مع رؤية 2030' : 'Vision 2030 aligned'}</span>}
+              {view.trackVision && view.trackVision.length > 0 && <VisionBadges vision={view.trackVision} locale={locale} compact />}
             </div>
             <div className="dw2-cta-row">
               {enrollBtn()}
@@ -386,7 +432,7 @@ export default function CareerPathDetailPage() {
                   <span>{isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}</span>
                   {isMock && <span className="dw2-badge">{isAr ? 'نموذج' : 'Sample'}</span>}
                 </div>
-                <div className="dw2-big-price">{formatMoney(view.totalPrice)}</div>
+                <div className="dw2-big-price">{view.trackPriceText ?? formatMoney(view.totalPrice)}</div>
                 <p className="dw2-card-sub">{isMock ? (isAr ? 'سعر واحد للمسار كاملًا.' : 'One price for the whole path.') : (isAr ? 'مجموع أسعار دورات المسار.' : 'Total of the path course prices.')}</p>
                 <ul className="dw2-checklist">
                   <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
@@ -401,7 +447,13 @@ export default function CareerPathDetailPage() {
               <span className="dw2-pay-badge">{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</span>
               <h3>{isAr ? 'إرشاد فردي' : 'One-to-one mentoring'}</h3>
               <p className="dw2-card-sub" style={{ marginBottom: 0 }}>{isAr ? 'احجز جلسة مع مرشد في هذا المجال متى احتجت، دون الحاجة للتسجيل في المسار.' : 'Book a session with a mentor whenever you need, no path enrollment required.'}</p>
-              {cheapest && (
+              {view.trackSessionText && (
+                <div className="dw2-price-row">
+                  <span className="dw2-mid-price">{view.trackSessionText}</span>
+                  <small>{isAr ? '/ جلسة إرشاد' : '/ mentoring session'}</small>
+                </div>
+              )}
+              {!view.trackSessionText && cheapest && (
                 <div className="dw2-price-row">
                   <span className="dw2-mid-price">{formatMoney(cheapest.price)}</span>
                   <small>{isAr ? `/ جلسة ${cheapest.minutes} دقيقة (تبدأ من)` : `/ ${cheapest.minutes}-min session (from)`}</small>
@@ -413,8 +465,14 @@ export default function CareerPathDetailPage() {
             <div className="dw2-pcard">
               <div className="dw2-free-title"><span>✦ {isAr ? 'ما هو مجاني' : "What's free"}</span></div>
               <ul className="dw2-checklist">
-                <li><Link href={`/${locale}/dashboard/assessment`}>{isAr ? 'التقييم المهني بالذكاء الاصطناعي' : 'AI career assessment'}</Link></li>
-                <li>{isAr ? 'خطة المسار وتفاصيل كل دورة قبل التسجيل' : 'The path plan and course details before you enroll'}</li>
+                {view.freeItems && view.freeItems.length > 0 ? (
+                  view.freeItems.map((f) => <li key={f}>{f}</li>)
+                ) : (
+                  <>
+                    <li><Link href={`/${locale}/dashboard/assessment`}>{isAr ? 'التقييم المهني بالذكاء الاصطناعي' : 'AI career assessment'}</Link></li>
+                    <li>{isAr ? 'خطة المسار وتفاصيل كل دورة قبل التسجيل' : 'The path plan and course details before you enroll'}</li>
+                  </>
+                )}
               </ul>
             </div>
           </aside>
