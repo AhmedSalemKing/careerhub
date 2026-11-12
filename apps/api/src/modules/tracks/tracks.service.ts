@@ -184,7 +184,21 @@ export class TracksService implements OnModuleInit {
     const prices = consultants.map((c) => c.sessionPrice).filter((n): n is number => n != null && n > 0);
     // an explicit price set by the admin wins; otherwise the cheapest matching consultant; otherwise none
     const sessionPrice = t.sessionPrice ?? (prices.length ? Math.min(...prices) : null);
-    return { ...this.localise(t, lang, country), consultants, sessionPrice };
+    const pkg = await this.findPackage(t.id);
+    return { ...this.localise(t, lang, country), consultants, sessionPrice, package: pkg };
+  }
+
+  /** The newest active package of the track (prices are SAR, the platform base currency). */
+  private async findPackage(trackId: string) {
+    try {
+      const p = await this.prisma.package.findFirst({ where: { pathId: trackId, isActive: true }, orderBy: { createdAt: 'desc' } });
+      if (!p) return null;
+      const discountPct = p.originalPrice && p.originalPrice > p.finalPrice ? Math.round((1 - p.finalPrice / p.originalPrice) * 100) : null;
+      return { id: p.id, price: p.finalPrice, originalPrice: p.originalPrice ?? null, discountPct, notes: p.notes ?? null, courseCount: p.courseIds.length };
+    } catch (e: any) {
+      this.logger.error(`[Tracks] package lookup failed: ${e?.message ?? e}`);
+      return null;
+    }
   }
 
   /** Active consultants whose speciality matches the track's (amounts are SAR, the platform's base currency). */

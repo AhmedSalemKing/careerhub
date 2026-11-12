@@ -10,7 +10,7 @@ import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { Skeleton } from '../../../components/ui/Skeleton'
-import { fetchTrack, formatSalaryRange, type TrackConsultant } from '../../../../lib/tracks'
+import { fetchTrack, formatSalaryRange, type TrackConsultant, type TrackCourse, type TrackPackageInfo } from '../../../../lib/tracks'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
 
 type PathCourse = {
@@ -36,7 +36,7 @@ type PathDetail = {
 
 /** Shape the page renders, whether it came from the API or from the sample data. */
 type ViewJob = { title: string; description?: string; salaryText?: string | null; vision2030?: boolean; visionList?: string[] }
-type ViewCourse = { key: string; href?: string; title: string; type?: string; meta: string[]; priceText?: string; included?: boolean }
+type ViewCourse = { track?: TrackCourse; key: string; href?: string; title: string; type?: string; meta: string[]; priceText?: string; included?: boolean }
 type View = {
   title: string
   description: string
@@ -49,6 +49,7 @@ type View = {
   trackVision?: string[]
   trackVisionDesc?: { KSA?: string | null; EG?: string | null }
   trackConsultants?: TrackConsultant[]
+  trackPackage?: TrackPackageInfo | null
   trackSessionPrice?: number | null
   trackNote?: string
   freeItems?: string[]
@@ -103,6 +104,7 @@ export default function CareerPathDetailPage() {
   const router = useRouter()
   const [enrolling, setEnrolling] = useState(false)
   const [enrollError, setEnrollError] = useState<string | null>(null)
+  const [selectedCourse, setSelectedCourse] = useState<TrackCourse | null>(null)
 
   const { data: track, isLoading: trackLoading } = useQuery({
     queryKey: ['career-track', slug, locale],
@@ -176,6 +178,7 @@ export default function CareerPathDetailPage() {
         trackVision: track.vision2030,
         trackVisionDesc: { KSA: track.visionDescKSA, EG: track.visionDescEG },
         trackConsultants: track.consultants,
+        trackPackage: track.package,
         trackSessionPrice: track.sessionPrice,
         freeItems: track.freeItems,
         totalPrice: 0,
@@ -187,11 +190,11 @@ export default function CareerPathDetailPage() {
         })),
         courses: track.courses.map((c) => ({
           key: `track-${c.order}-${c.title}`,
-          href: c.courseId ? learnCourseLink(c.courseId, locale) : undefined,
+          track: c,
           title: c.title,
           type: c.type,
           meta: [`${c.weeks.toLocaleString(nf)} ${isAr ? 'أسبوع' : 'wk'}`, c.provider, c.language].filter(Boolean),
-          included: true,
+          included: !!track.package,
         })),
       }
     }
@@ -444,7 +447,9 @@ export default function CareerPathDetailPage() {
                     )
                     return (
                       <li key={c.key}>
-                        {c.href ? <a href={c.href} className="dw2-course-row">{inner}</a> : <div className="dw2-course-row">{inner}</div>}
+                        {c.track ? (
+                          <button type="button" className="dw2-course-row dw2-course-btn" onClick={() => setSelectedCourse(c.track!)} aria-haspopup="dialog">{inner}</button>
+                        ) : c.href ? <a href={c.href} className="dw2-course-row">{inner}</a> : <div className="dw2-course-row">{inner}</div>}
                       </li>
                     )
                   })}
@@ -455,6 +460,22 @@ export default function CareerPathDetailPage() {
 
           {/* SIDEBAR (sticky) */}
           <aside className="dw2-path-sidebar">
+            {track && view.trackPackage && (
+              <div className="dw2-pcard featured">
+                <div className="dw2-card-top"><span>{isAr ? 'سعر واحد للمسار كاملًا' : 'One price for the whole track'}</span></div>
+                <div className="dw2-big-price">{formatMoney(view.trackPackage.price)}</div>
+                {view.trackPackage.originalPrice != null && view.trackPackage.discountPct != null && (
+                  <p className="dw2-card-sub"><s>{formatMoney(view.trackPackage.originalPrice)}</s> · {isAr ? `خصم ${view.trackPackage.discountPct.toLocaleString(nf)}%` : `${view.trackPackage.discountPct}% off`}</p>
+                )}
+                <ul className="dw2-checklist">
+                  <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
+                  {view.durationText && <li>{view.durationText}</li>}
+                  <li>{isAr ? 'متابعة تقدّمك في مكان واحد' : 'Track your progress in one place'}</li>
+                </ul>
+                <Link href={`/${locale}/contact`} className="dw2-btn primary block">{isAr ? 'سجّل في المسار الكامل' : 'Enroll in the full track'}</Link>
+              </div>
+            )}
+
             {showFullPricing && (
               <div className="dw2-pcard featured">
                 <div className="dw2-card-top">
@@ -472,6 +493,7 @@ export default function CareerPathDetailPage() {
               </div>
             )}
 
+            {(!track || (view.trackConsultants?.length ?? 0) > 0) && (
             <div className="dw2-pcard">
               <span className="dw2-pay-badge">{isAr ? 'ادفع حسب الاستخدام' : 'Pay as you go'}</span>
               <h3>{isAr ? 'إرشاد فردي' : 'One-to-one mentoring'}</h3>
@@ -503,6 +525,7 @@ export default function CareerPathDetailPage() {
               )}
               <Link href={`/${locale}/coaching`} className="dw2-btn ghost block">{isAr ? 'احجز جلسة مدفوعة' : 'Book a paid session'}</Link>
             </div>
+            )}
 
             <div className="dw2-pcard">
               <div className="dw2-free-title"><span>✦ {isAr ? 'ما هو مجاني' : "What's free"}</span></div>
@@ -518,6 +541,30 @@ export default function CareerPathDetailPage() {
               </ul>
             </div>
           </aside>
+        </div>
+      )}
+
+      {selectedCourse && (
+        <div className="dw2-cm-overlay" onClick={() => setSelectedCourse(null)}>
+          <div className="dw2-cm" role="dialog" aria-modal="true" aria-label={selectedCourse.title} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="dw2-cm-x" onClick={() => setSelectedCourse(null)} aria-label={isAr ? 'إغلاق' : 'Close'}>×</button>
+            {selectedCourse.provider && <div className="dw2-cm-sub">{selectedCourse.provider}</div>}
+            <h3>{selectedCourse.title}</h3>
+            <div className="dw2-cm-grid">
+              {selectedCourse.type && <div><small>{isAr ? 'النمط' : 'Format'}</small><b>{selectedCourse.type}</b></div>}
+              {selectedCourse.weeks > 0 && <div><small>{isAr ? 'المدة' : 'Duration'}</small><b>{isAr ? `${selectedCourse.weeks.toLocaleString(nf)} أسبوع` : `${selectedCourse.weeks} weeks`}</b></div>}
+              <div><small>{isAr ? 'اللغة' : 'Language'}</small><b>{selectedCourse.language || (isAr ? 'العربية · الإنجليزية' : 'Arabic · English')}</b></div>
+              {track?.package && <div><small>{isAr ? 'السعر' : 'Price'}</small><b className="dw2-cm-in">{isAr ? 'مشمولة في المسار' : 'Included in the track'}</b></div>}
+            </div>
+            {track?.package ? (
+              <div className="dw2-cm-note">{isAr ? 'ابدأ في أي وقت. تُفتح في مشغّل جهة التدريب بتسجيل دخولك في DeveWay.' : "Start any time. It opens in the provider's player with your DeveWay sign-in."}</div>
+            ) : (
+              <div className="dw2-cm-note">{isAr ? 'لا تُباع الدورات بشكل منفصل في المسار المجمّع.' : 'Courses are not sold separately inside the bundled track.'}</div>
+            )}
+            {selectedCourse.courseId && (
+              <a className="dw2-btn ghost block" href={learnCourseLink(selectedCourse.courseId, locale)}>{isAr ? 'عرض الدورة' : 'View course'}</a>
+            )}
+          </div>
         </div>
       )}
     </div>

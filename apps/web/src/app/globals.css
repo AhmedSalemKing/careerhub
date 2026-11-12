@@ -4501,3 +4501,18 @@ section[class*="hero"] { padding-block: 48px }
 .cs-opt { padding: 9px 12px; border-radius: 7px; color: var(--ink); font-size: 13px; cursor: pointer; }
 .cs-opt:hover { background: var(--wash); }
 .cs-opt.on { color: var(--brand); font-weight: 700; }
+
+/* === Track course popup === */
+.dw2-course-btn { width: 100%; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.dw2-course-btn:hover { border-color: var(--brand); }
+.dw2-cm-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: color-mix(in srgb, var(--night, var(--ink)) 55%, transparent); backdrop-filter: blur(3px); }
+.dw2-cm { position: relative; width: min(480px, 90vw); max-height: 85vh; overflow-y: auto; padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); color: var(--ink); }
+.dw2-cm-x { position: absolute; top: 10px; inset-inline-end: 12px; width: 30px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--ink-3); font-size: 22px; line-height: 1; cursor: pointer; }
+.dw2-cm-x:hover { background: var(--wash); }
+.dw2-cm-sub { margin-bottom: 4px; font-size: 12px; color: var(--ink-3); }
+.dw2-cm h3 { margin: 0 0 14px; color: var(--ink); font-size: 18px; }
+.dw2-cm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.dw2-cm-grid small { display: block; font-size: 11px; color: var(--ink-3); }
+.dw2-cm-grid b { font-weight: 600; }
+.dw2-cm-in { color: var(--brand); }
+.dw2-cm-note { margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: var(--wash); color: var(--ink-2); font-size: 13px; line-height: 1.6; }
