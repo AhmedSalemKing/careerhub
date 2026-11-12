@@ -1679,6 +1679,8 @@ h6,
 .dw2-learn .roles span { padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); font-size: 12px; color: var(--ink-2); background: var(--bg-2); }
 .dw2-learn .t-sal { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin: 0; }
 .dw2-learn .t-sal b { color: var(--ink); font-weight: 600; margin-inline-start: auto; white-space: nowrap; }
+.dw2-learn .dw-vision-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.dw2-learn .dw-vision-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink-2); font-size: 12px; font-weight: 600; }
 .dw2-learn .t-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; }
 .dw2-learn .t-btn { min-height: 38px; padding: 0 16px; border-radius: 10px; border: 1.5px solid var(--brand); background: var(--brand); color: var(--on-brand); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 

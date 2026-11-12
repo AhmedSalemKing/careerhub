@@ -6,7 +6,7 @@ import { Rocket, Star } from 'lucide-react'
 import { get } from '../../lib/api'
 import { syncAuthUser } from '../../lib/auth-sync'
 import { CHARS } from '../../lib/characters'
-import { formatCoursePrice } from '../../lib/market'
+import { formatCoursePrice, getCountryClient } from '../../lib/market'
 import { instructorDisplayName } from '../../lib/instructor'
 import { useAuthStore } from '../../stores/authStore'
 
@@ -84,10 +84,10 @@ type TrackCard = {
   title: string
   description: string
   roles: string[]
-  salary: string | null
   coverImage: string | null
   coursesCount: number
   weeks: number
+  vision: string[]
 }
 
 function safeCount(raw: unknown, fallback?: number): number {
@@ -97,17 +97,29 @@ function safeCount(raw: unknown, fallback?: number): number {
   } catch { return Number(fallback) || 0 }
 }
 
-function parseSalary(raw: unknown, unit: string, locale: string): string | null {
+function parseVision(raw: unknown): string[] {
   try {
-    const o = typeof raw === 'string' ? JSON.parse(raw) : raw
-    const min = Number((o as any)?.min)
-    const max = Number((o as any)?.max)
-    if (!isFinite(min) || !isFinite(max) || max <= 0) return null
-    const k = (n: number) => (n / 1000).toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 1 })
-    return `${k(min)} – ${k(max)} ${unit}`
-  } catch {
-    return null
-  }
+    const v = typeof raw === 'string' ? JSON.parse(raw || '[]') : raw
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+  } catch { return [] }
+}
+
+/* Flags are national artwork, so their colours are the flags' own, not theme tokens. */
+function VisionFlag({ code }: { code: 'KSA' | 'EG' }) {
+  return code === 'KSA' ? (
+    <svg viewBox="0 0 30 20" width="22" height="15" aria-hidden="true">
+      <rect width="30" height="20" rx="2" fill="#006C35" />
+      <path d="M7 8.2c1.2-1.6 2.4 1 3.6-.4s1.6-1.6 2.6-.2 1.8.6 2.8-.6 1.6 1.4 3 .2 1.8-.6 3.6-.8" stroke="#fff" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      <path d="M8 13.4h13.5l-1.4 1.2M8 13.4l-.8-.9" stroke="#fff" strokeWidth="1.1" fill="none" strokeLinecap="round" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 30 20" width="22" height="15" aria-hidden="true">
+      <rect width="30" height="6.67" rx="2" fill="#CE1126" />
+      <rect y="6.67" width="30" height="6.67" fill="#fff" />
+      <rect y="13.33" width="30" height="6.67" rx="2" fill="#000" />
+      <circle cx="15" cy="10" r="2.5" fill="#C09300" />
+    </svg>
+  )
 }
 
 const PERSONA_CAST: string[][] = [['sa2', 'eg1'], ['eg2', 'sa3'], ['sa1', 'eg3']]
@@ -139,25 +151,28 @@ export default function HomePage() {
     }
   }, [authUser, authToken])
 
-  // Career tracks (same endpoint the main site uses)
+  // Featured tracks: first 6 from the admin-managed tracks API (same endpoint as the main site)
   useEffect(() => {
     let cancelled = false
-    get('/career/paths')
+    const country = getCountryClient() === 'EG' ? 'EG' : 'KSA'
+    get('/tracks', { params: { country, lang: isAr ? 'ar' : 'en' } })
       .then((res: any) => {
-        const d = res?.data
-        const arr = d?.data?.careerPaths ?? d?.data ?? d ?? []
-        const unit = t('salaryUnit')
-        const list: TrackCard[] = (Array.isArray(arr) ? arr : []).slice(0, 3).map((p: any) => ({
-          id: p.id,
-          slug: p.slug,
-          title: (isAr ? p.titleAr : p.titleEn) || p.title || '',
-          description: (isAr ? p.descriptionAr : p.descriptionEn) || '',
-          roles: ((isAr ? p.jobTitlesAr : p.jobTitlesEn) ?? []).slice(0, 3),
-          salary: parseSalary(isAr ? p.salaryRangeAr : p.salaryRangeEn, unit, locale),
-          coverImage: p.track?.coverImage ?? p.coverImage ?? null,
-          coursesCount: safeCount(p.track?.courses ?? p.courses, p.track?.courseCount ?? p.coursesCount),
-          weeks: Number(p.track?.weeks ?? p.durationWeeks ?? p.weeks) || 0,
-        }))
+        const d = res?.data?.data ?? res?.data
+        const arr: any[] = Array.isArray(d) ? d : []
+        const list: TrackCard[] = arr
+          .filter((tr) => tr && tr.isActive !== false)
+          .slice(0, 6)
+          .map((tr) => ({
+            id: tr.id,
+            slug: tr.slug,
+            title: tr.name || (isAr ? tr.nameAr : tr.nameEn) || '',
+            description: tr.description || (isAr ? tr.descAr : tr.descEn) || '',
+            roles: (Array.isArray(tr.jobs) ? tr.jobs : []).slice(0, 3).map((j: any) => j?.title).filter(Boolean),
+            coverImage: tr.coverImage ?? null,
+            coursesCount: safeCount(tr.courses, tr.courseCount),
+            weeks: Number(tr.weeks) || 0,
+            vision: parseVision(tr.vision2030),
+          }))
         if (!cancelled) setTracks(list)
       })
       .catch(() => {
@@ -331,11 +346,15 @@ export default function HomePage() {
                         {p.roles.map((r) => <span key={r}>{r}</span>)}
                       </div>
                     )}
-                    {p.salary && (
-                      <p className="t-sal">
-                        <span>{t('salaryLabel')}</span>
-                        <b>{p.salary}</b>
-                      </p>
+                    {p.vision.length > 0 && (
+                      <div className="dw-vision-badges">
+                        {(['KSA', 'EG'] as const).filter((v) => p.vision.includes(v)).map((v) => (
+                          <span key={v} className="dw-vision-badge sm">
+                            <VisionFlag code={v} />
+                            <span>{v === 'KSA' ? (isAr ? 'رؤية السعودية 2030' : 'Saudi Vision 2030') : (isAr ? 'رؤية مصر 2030' : 'Egypt Vision 2030')}</span>
+                          </span>
+                        ))}
+                      </div>
                     )}
                     <div className="t-foot">
                       <button type="button" className="t-btn">{isAr ? 'تفاصيل' : 'Details'}</button>
