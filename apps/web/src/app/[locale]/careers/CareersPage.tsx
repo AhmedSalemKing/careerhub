@@ -13,8 +13,8 @@ import {
   X, CheckCircle2
 } from 'lucide-react'
 import { CAREER_PATHS } from '@/lib/career-paths'
-import { useTracks } from '@/lib/tracks'
-import { TracksGrid } from '@/app/components/TracksGrid'
+import { useTracks, trackSalarySpan, type Track } from '@/lib/tracks'
+import { VisionBadges } from '@/app/components/VisionBadge'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   code: Code2,
@@ -40,6 +40,26 @@ const CATEGORIES = [
   { key: 'Business & Management', labelAr: 'الأعمال والإدارة', labelEn: 'Business' },
   { key: 'Hybrid Tech + Business', labelAr: 'تقنية وأعمال', labelEn: 'Hybrid' },
 ]
+
+const TRACKS_CATEGORY = '__tracks'
+
+/** A card in the merged grid: a managed track or a built-in catalogue path. */
+type PathItem = {
+  id: string
+  title?: string
+  titleAr?: string
+  descriptionAr?: string
+  descriptionEn?: string
+  level?: string
+  skills?: string[]
+  progression?: string[]
+  salary?: string
+  demand?: string
+  category: string
+  icon: string
+  track?: Track
+  [key: string]: any
+}
 
 export default function CareersPage() {
   const { theme } = useTheme()
@@ -122,11 +142,35 @@ export default function CareersPage() {
     setTimeout(() => router.push(`/${locale}/dashboard/career-path`), 800)
   }, [confirmPath, apiUrl, locale, isAr, router, showNotice])
   
-  const allPaths = useMemo(() => {
-    return CAREER_PATHS.flatMap(cat => 
+  // Tracks managed in the admin panel come first; the built-in catalogue fills in the rest.
+  // When both define the same slug, the managed track wins.
+  const allPaths: PathItem[] = useMemo(() => {
+    const managed: PathItem[] = learningTracks.map((t) => ({
+      id: t.slug,
+      title: t.name,
+      titleAr: t.name,
+      descriptionAr: t.description,
+      descriptionEn: t.description,
+      level: t.level,
+      skills: t.skills,
+      progression: t.jobs.map((j) => j.title),
+      salary: '',
+      demand: '',
+      category: TRACKS_CATEGORY,
+      icon: 'rocket',
+      track: t,
+    }))
+    const taken = new Set(managed.map((m) => m.id))
+    const builtIn: PathItem[] = CAREER_PATHS.flatMap(cat =>
       cat.paths.map(path => ({ ...path, category: cat.category, icon: cat.icon }))
-    )
-  }, [])
+    ).filter((p) => !taken.has(p.id))
+    return [...managed, ...builtIn]
+  }, [learningTracks])
+
+  const categoryChips = useMemo(
+    () => (learningTracks.length > 0 ? [{ key: TRACKS_CATEGORY, labelAr: 'مسارات DeveWay', labelEn: 'DeveWay tracks' }, ...CATEGORIES] : CATEGORIES),
+    [learningTracks.length],
+  )
   
   const filteredPaths = useMemo(() => {
     return allPaths.filter(path => {
@@ -218,12 +262,6 @@ export default function CareersPage() {
       {/* Main content */}
       <div style={{ width:'100%', boxSizing:'border-box', maxWidth:1200, margin:'0 auto', padding:'32px 24px', overflowX:'hidden' }}>
 
-        {learningTracks.length > 0 && (
-          <section style={{ marginBottom: 32 }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 800, color: 'var(--ink)' }}>{isAr ? 'مسارات التعلّم' : 'Learning tracks'}</h2>
-            <TracksGrid tracks={learningTracks} />
-          </section>
-        )}
         
         {/* Filters: search + category chips */}
         <div className="filters">
@@ -237,7 +275,7 @@ export default function CareersPage() {
               aria-label={isAr ? 'بحث' : 'Search'}
             />
           </label>
-          {CATEGORIES.map(cat => (
+          {categoryChips.map(cat => (
             <button
               key={cat.key}
               type="button"
@@ -260,6 +298,7 @@ export default function CareersPage() {
         <div key={`grid-${activeCategory}-${searchQuery}`} className="tracks-grid">
           {filteredPaths.map((path, idx) => {
             const IconComp = ICON_MAP[path.icon] || Briefcase
+            const tk = path.track
             const isHigh = (path.demand || '').toLowerCase().includes('very')
             const roles = (path.progression && path.progression.length > 0 ? path.progression : path.skills ?? []).slice(0, 3)
 
@@ -275,14 +314,18 @@ export default function CareersPage() {
               >
                 <div className="t-media">
                   <span className="t-watermark" aria-hidden="true"><IconComp size={72} /></span>
-                  <span className={`t-demand${isHigh ? ' high' : ''}`}>
-                    {isHigh ? <Flame size={12} aria-hidden="true" /> : <Zap size={12} aria-hidden="true" />}
-                    {isHigh ? (isAr ? 'طلب مرتفع' : 'High demand') : (isAr ? 'طلب جيد' : 'Good demand')}
-                  </span>
+                  {!tk && (
+                    <span className={`t-demand${isHigh ? ' high' : ''}`}>
+                      {isHigh ? <Flame size={12} aria-hidden="true" /> : <Zap size={12} aria-hidden="true" />}
+                      {isHigh ? (isAr ? 'طلب مرتفع' : 'High demand') : (isAr ? 'طلب جيد' : 'Good demand')}
+                    </span>
+                  )}
                   <span className="t-badge"><IconComp className="icon" size={18} aria-hidden="true" /></span>
                   <span className="t-count">
                     <Star className="icon" size={13} aria-hidden="true" />
-                    {path.level || 'All Levels'}
+                    {tk
+                      ? (isAr ? `${tk.courseCount} دورات · ${tk.weeks} أسبوعًا` : `${tk.courseCount} courses · ${tk.weeks} weeks`)
+                      : path.level || 'All Levels'}
                   </span>
                 </div>
 
@@ -296,11 +339,15 @@ export default function CareersPage() {
                     </div>
                   )}
 
-                  <p className="t-sal">
-                    <TrendingUp className="icon" size={15} aria-hidden="true" />
-                    <span>{isAr ? 'الراتب الشهري المعتاد' : 'Typical monthly salary'}</span>
-                    <b>{path.salary} SAR</b>
-                  </p>
+                  {tk && tk.vision2030.length > 0 && <VisionBadges vision={tk.vision2030} locale={locale} compact />}
+
+                  {(tk ? trackSalarySpan(tk, locale) : path.salary) && (
+                    <p className="t-sal">
+                      <TrendingUp className="icon" size={15} aria-hidden="true" />
+                      <span>{isAr ? 'الراتب الشهري المعتاد' : 'Typical monthly salary'}</span>
+                      <b>{tk ? trackSalarySpan(tk, locale) : `${path.salary} SAR`}</b>
+                    </p>
+                  )}
 
                   <div className="t-foot">
                     <button
@@ -310,9 +357,11 @@ export default function CareersPage() {
                     >
                       {isAr ? 'تفاصيل' : 'Details'}
                     </button>
-                    <button type="button" className="t-btn primary" onClick={(e) => { e.stopPropagation(); requestStartPath(path) }}>
-                      {isAr ? 'ابدأ المسار' : 'Start Path'}
-                    </button>
+                    {!tk && (
+                      <button type="button" className="t-btn primary" onClick={(e) => { e.stopPropagation(); requestStartPath(path) }}>
+                        {isAr ? 'ابدأ المسار' : 'Start Path'}
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>

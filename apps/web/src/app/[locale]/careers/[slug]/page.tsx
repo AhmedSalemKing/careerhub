@@ -308,7 +308,10 @@ export default function CareerPathDetailPage() {
   return (
     <div className="dw2-page" dir={dir}>
       {/* HERO */}
-      <section className="dw2-hero">
+      <section
+        className={'dw2-hero' + (track ? ' cover' : '')}
+        style={track?.coverImage ? { backgroundImage: `linear-gradient(180deg, color-mix(in srgb, var(--night, var(--ink)) 55%, transparent), color-mix(in srgb, var(--night, var(--ink)) 88%, transparent)), url("${encodeURI(track.coverImage)}")` } : undefined}
+      >
         <nav className="dw2-crumbs" aria-label="breadcrumb">
           <Link href={`/${locale}/careers`}>{isAr ? 'كل المسارات' : 'All paths'}</Link>
           <span aria-hidden="true">{isAr ? '‹' : '›'}</span>
@@ -335,7 +338,7 @@ export default function CareerPathDetailPage() {
               {view.trackVision && view.trackVision.length > 0 && <VisionBadges vision={view.trackVision} locale={locale} compact />}
             </div>
             <div className="dw2-cta-row">
-              {enrollBtn()}
+              {!track && enrollBtn()}
               <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
             </div>
             {enrollError && <p className="dw2-error" role="alert">{enrollError}</p>}

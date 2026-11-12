@@ -17,6 +17,9 @@ export class CreateTrackDto {
   @IsString() @MaxLength(100) levelEn: string;
   @IsString() @MaxLength(200) languages: string;
 
+  @IsOptional() @IsString() @MaxLength(1000) @Matches(/^(https?:\/\/|\/)\S+$/, { message: 'coverImage must be an http(s) URL or a /path' })
+  coverImage?: string | null;
+
   @IsArray() @IsIn(['KSA', 'EG'], { each: true }) vision2030: string[];
 
 

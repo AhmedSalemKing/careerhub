@@ -1644,6 +1644,7 @@ model Track {
   level           String
   levelEn         String
   languages       String
+  coverImage      String?
   vision2030      String[] // "KSA" | "EG"
   skills          String[]
   skillsEn        String[]

@@ -17,6 +17,7 @@ export interface Track {
   weeks: number
   level: string
   languages: string
+  coverImage: string | null
   vision2030: TrackVision[]
   currency: 'EGP' | 'SAR'
   skills: string[]

@@ -29,6 +29,7 @@ interface TrackRow {
   level: string
   levelEn: string
   languages: string
+  coverImage: string | null
   vision2030: Vision[]
   skills: string[]
   skillsEn: string[]
@@ -49,6 +50,7 @@ interface FormState {
   weeks: string
   level: string; levelEn: string
   languages: string
+  coverImage: string
   vision2030: Vision[]
   skills: string[]; skillsEn: string[]
   jobs: JobRow[]
@@ -65,7 +67,7 @@ const emptyJob = (): JobRow => ({ titleAr: '', titleEn: '', descAr: '', descEn: 
 const emptyCourse = (n: number): CourseRow => ({ order: String(n), titleAr: '', titleEn: '', type: '', typeEn: '', weeks: '', provider: '', language: '' })
 const emptyPackage = (): PackageRow => ({ nameAr: '', nameEn: '', descAr: '', descEn: '', priceEG: '', priceKSA: '', sessions: '', isActive: true })
 const emptyForm = (): FormState => ({
-  slug: '', slugTouched: false, nameAr: '', nameEn: '', descAr: '', descEn: '', weeks: '', level: '', levelEn: '', languages: 'العربية · الإنجليزية',
+  slug: '', slugTouched: false, nameAr: '', nameEn: '', descAr: '', descEn: '', weeks: '', level: '', levelEn: '', languages: 'العربية · الإنجليزية', coverImage: '',
   vision2030: [], skills: [], skillsEn: [], jobs: [], courses: [], packages: [], freeItemsAr: [], freeItemsEn: [], isActive: true, country: 'BOTH',
 })
 
@@ -77,7 +79,7 @@ const visionOf = (v: unknown): Vision[] => (Array.isArray(v) ? v : typeof v === 
 function fromRow(t: TrackRow): FormState {
   return {
     slug: t.slug, slugTouched: true, nameAr: t.nameAr, nameEn: t.nameEn, descAr: t.descAr, descEn: t.descEn, weeks: String(t.weeks),
-    level: t.level, levelEn: t.levelEn, languages: t.languages, vision2030: visionOf(t.vision2030),
+    level: t.level, levelEn: t.levelEn, languages: t.languages, coverImage: t.coverImage ?? '', vision2030: visionOf(t.vision2030),
     skills: t.skills ?? [], skillsEn: t.skillsEn ?? [],
     jobs: (t.jobs ?? []).map((j) => {
       // rows saved by the first version carried one salary range + currency; keep it under the matching market
@@ -101,6 +103,7 @@ function toPayload(f: FormState) {
     nameAr: f.nameAr.trim(), nameEn: f.nameEn.trim(), descAr: f.descAr.trim(), descEn: f.descEn.trim(),
     weeks: Number(f.weeks),
     level: f.level.trim(), levelEn: f.levelEn.trim(), languages: f.languages.trim(),
+    coverImage: f.coverImage.trim() || null,
     vision2030: f.vision2030,
     skills: f.skills, skillsEn: f.skillsEn,
     jobs: f.jobs.filter((j) => j.titleAr.trim() || j.titleEn.trim()).map((j) => ({
@@ -359,6 +362,17 @@ export default function AdminTracksPage() {
                     </Field>
                   </div>
                   <div className="tk-box">
+                    <Field label={isAr ? 'صورة المسار (اختياري) — رابط' : 'Track image (optional) — URL'}>
+                      <input dir="ltr" type="url" placeholder="https://…" value={f.coverImage} onChange={(e) => set({ coverImage: e.target.value })} />
+                    </Field>
+                    {f.coverImage.trim() && (
+                      <div className="tk-thumb">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={f.coverImage.trim()} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="tk-box">
                     <VisionChecks label={isAr ? 'رؤية 2030' : 'Vision 2030'} value={f.vision2030} onChange={(v) => set({ vision2030: v })} />
                     <VisionBadges vision={f.vision2030} locale={locale} />
                   </div>
@@ -516,7 +530,7 @@ export default function AdminTracksPage() {
         .tk-switch.on { background: var(--brand); }
         .tk-switch.on span { inset-inline-start: 19px; }
         .tk-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 16px; background: color-mix(in srgb, var(--night, var(--ink)) 55%, transparent); }
-        .tk-modal { width: 100%; max-width: 720px; max-height: 80vh; display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); font-size: 13px; }
+        .tk-modal { width: min(680px, 95vw); max-height: 75vh; display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); font-size: 13px; }
         .tk-modal-head, .tk-modal-foot, .tk-item-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .tk-modal-foot { justify-content: flex-end; }
         .tk-modal-head h2 { margin: 0; font-size: 17px; font-weight: 800; }
@@ -528,7 +542,9 @@ export default function AdminTracksPage() {
         .tk-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 10px; }
         .tk-grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 10px; align-items: end; }
         .tk-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-        .tk-field label, .tk-sal span { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+        .tk-thumb { width: 160px; height: 90px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--wash); }
+        .tk-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tk-field label, .tk-sal span { font-size: 11px; font-weight: 700; color: var(--ink-2); }
         .tk-modal input:not([type='checkbox']), .tk-modal select, .tk-modal textarea { width: 100%; padding: 7px 10px; border: 1.5px solid var(--line-2, var(--line)); border-radius: 9px; background: var(--bg) !important; color: var(--ink); font: inherit; font-size: 13px; outline: none; }
         .tk-modal input:focus, .tk-modal select:focus, .tk-modal textarea:focus { border-color: var(--brand); }
         .tk-box, .tk-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }

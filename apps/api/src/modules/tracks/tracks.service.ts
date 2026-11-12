@@ -24,7 +24,7 @@ const pick = (en: boolean, ar?: string, enVal?: string) => ((en ? enVal : ar) ||
 const COLUMNS: Array<[string, string]> = [
   ['slug', 'TEXT'], ['nameAr', 'TEXT'], ['nameEn', 'TEXT'], ['descAr', 'TEXT'], ['descEn', 'TEXT'],
   ['weeks', 'INTEGER'], ['level', 'TEXT'], ['levelEn', 'TEXT'], ['languages', 'TEXT'],
-  ['vision2030', 'TEXT[]'], ['skills', 'TEXT[]'], ['skillsEn', 'TEXT[]'],
+  ['coverImage', 'TEXT'], ['vision2030', 'TEXT[]'], ['skills', 'TEXT[]'], ['skillsEn', 'TEXT[]'],
   ['jobs', "JSONB NOT NULL DEFAULT '[]'"], ['courses', "JSONB NOT NULL DEFAULT '[]'"], ['packages', "JSONB NOT NULL DEFAULT '[]'"],
   ['freeItemsAr', 'TEXT[]'], ['freeItemsEn', 'TEXT[]'],
   ['isActive', 'BOOLEAN NOT NULL DEFAULT true'], ['country', "TEXT NOT NULL DEFAULT 'BOTH'"],
@@ -131,6 +131,7 @@ export class TracksService implements OnModuleInit {
       weeks: t.weeks,
       level: en ? t.levelEn : t.level,
       languages: t.languages,
+      coverImage: t.coverImage ?? null,
       vision2030: t.vision2030,
       skills: en ? t.skillsEn : t.skills,
       jobs,
