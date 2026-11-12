@@ -35,7 +35,7 @@ export interface Track {
 
 /** The API expects EG or KSA; the site's market cookie uses EG / SA. */
 /** GET /tracks/:slug adds the matching consultants and the computed session price (SAR, base currency). */
-export interface TrackPackageInfo { id: string; price: number; originalPrice: number | null; discountPct: number | null; notes: string | null; courseCount: number }
+export interface TrackPackageInfo { id: string; price: number; originalPrice: number | null; discountPct: number | null; notes: string | null; courseCount: number; courseIds: string[] }
 export interface TrackDetail extends Track { consultants: TrackConsultant[]; sessionPrice: number | null; package: TrackPackageInfo | null }
 
 export const trackCountry = (): 'EG' | 'KSA' => (getCountryClient() === 'EG' ? 'EG' : 'KSA')

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { CheckCircle2, ArrowRight, Video, Radio, MapPin } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Video, Radio, MapPin, Package } from 'lucide-react'
 import { webLoginUrl } from '../../../../lib/constants'
 
 const API = 'https://api.deveways.com/api'
@@ -15,6 +15,7 @@ export default function EnrollPaymentPage() {
   const searchParams = useSearchParams()
 
   const courseId = searchParams.get('courseId') || ''
+  const packageId = searchParams.get('packageId') || ''
   const amount = parseFloat(searchParams.get('amount') || '0')
   const rawDisplay = searchParams.get('amountDisplay')
 
@@ -30,6 +31,8 @@ export default function EnrollPaymentPage() {
   const amountDisplay = rawDisplay ? decodeURIComponent(rawDisplay) : fallbackDisplay
   const title = searchParams.get('title') || ''
   const courseType = searchParams.get('type') || 'recorded'
+  // a track package bundles several courses; courses and packages share this page
+  const isPackage = courseType === 'package'
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -44,11 +47,12 @@ export default function EnrollPaymentPage() {
     live: t('liveTab'),
     offline: t('physicalBadge') + ' Course',
   }
-  const typeLabel = typeLabels[courseType] || t('course')
+  const typeLabel = isPackage ? (isAr ? 'كورسات مجمعة للمسار' : 'Bundled track courses') : (typeLabels[courseType] || t('course'))
   const typeConfig = {
     recorded: { icon: Video, color: 'var(--primary)' },
     live: { icon: Radio, color: 'var(--error)' },
     offline: { icon: MapPin, color: 'var(--success)' },
+    package: { icon: Package, color: 'var(--primary)' },
   }[courseType] || { icon: Video, color: 'var(--primary)' }
 
   const TypeIcon = typeConfig.icon
@@ -58,10 +62,15 @@ export default function EnrollPaymentPage() {
       window.location.href = webLoginUrl(locale, window.location.pathname + window.location.search)
       return
     }
+    if (isPackage ? !packageId : !courseId) {
+      setError(isAr ? 'رابط الدفع غير مكتمل' : 'The payment link is incomplete')
+      return
+    }
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API}/payments/checkout/course/${courseId}`, {
+      const endpoint = isPackage ? `${API}/payments/checkout/package/${packageId}` : `${API}/payments/checkout/course/${courseId}`
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -107,7 +116,7 @@ export default function EnrollPaymentPage() {
 
         <div style={{ background: 'color-mix(in srgb, var(--foreground) 4%, transparent)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontFamily: 'PingAR, sans-serif', fontWeight: 300, fontSize: 14, color: 'var(--muted)' }}>{t('coursePrice')}</span>
+            <span style={{ fontFamily: 'PingAR, sans-serif', fontWeight: 300, fontSize: 14, color: 'var(--muted)' }}>{isPackage ? (isAr ? 'سعر الباكدج' : 'Package price') : t('coursePrice')}</span>
             <span style={{ fontFamily: 'PingAR, sans-serif', fontWeight: 300, fontSize: 14, color: 'var(--foreground)' }}>{amountDisplay}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid var(--border)' }}>

@@ -101,6 +101,122 @@ export class PaymentsService {
     return { success: true, data: { url: session.url, sessionId: session.id } }
   }
 
+  // Create checkout session for a track PACKAGE (a bundle of courses sold at one price, stored in SAR)
+  async createPackageCheckoutSession(packageId: string, userId: string, locale: string, market?: string) {
+    const pkg = await this.prisma.package.findFirst({ where: { id: packageId, isActive: true } })
+    if (!pkg) throw new NotFoundException('Package not found')
+    if (!pkg.courseIds.length) throw new BadRequestException('Package has no courses')
+    if (!(pkg.finalPrice > 0)) throw new BadRequestException('Package is free, no payment needed')
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { email: true } })
+
+    // The package name comes from the track (or career path) it belongs to.
+    let name = 'Package'
+    let slug = ''
+    if (pkg.pathKind === 'TRACK') {
+      const t = await this.prisma.track.findUnique({ where: { id: pkg.pathId }, select: { nameAr: true, nameEn: true, slug: true } })
+      name = (locale === 'en' ? t?.nameEn : t?.nameAr) || t?.nameAr || name
+      slug = t?.slug || ''
+    } else {
+      const p = await this.prisma.careerPath.findUnique({ where: { id: pkg.pathId }, select: { titleAr: true, titleEn: true, slug: true } })
+      name = (locale === 'en' ? p?.titleEn : p?.titleAr) || p?.titleAr || name
+      slug = p?.slug || ''
+    }
+
+    // Same currency handling as courses: stored in SAR, charged in the buyer's market currency.
+    const requested = String(market || 'SAR').toUpperCase()
+    const stripeCurrency = (STRIPE_CURRENCY_MAP[requested] || 'sar') as 'sar' | 'egp' | 'usd'
+    let chargeAmount = pkg.finalPrice
+    if (stripeCurrency !== 'sar') {
+      const rates = await this.exchangeRateService.getRates()
+      chargeAmount = pkg.finalPrice * (stripeCurrency === 'egp' ? rates.EGP : rates.USD)
+    }
+
+    const learnUrl = 'https://devewayhub.vercel.app'
+    const webUrl = process.env.NEXT_PUBLIC_WEB_URL || 'https://deveway-teal.vercel.app'
+    const apiUrl = (process.env.API_URL || 'https://api.deveways.com').replace(/\/$/, '')
+
+    const session = await this.stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      customer_email: user?.email,
+      line_items: [{
+        price_data: {
+          currency: stripeCurrency,
+          product_data: {
+            name: `${locale === 'en' ? 'Package' : 'باكدج'} ${name}`,
+            description: `${pkg.courseIds.length} ${locale === 'en' ? 'courses' : 'دورات'}`,
+            metadata: { packageId },
+          },
+          unit_amount: Math.round(chargeAmount * 100),
+        },
+        quantity: 1,
+      }],
+      metadata: { type: 'package_enrollment', packageId, userId, locale, trackSlug: slug },
+      success_url: `${apiUrl}/api/payments/confirm-package?session_id={CHECKOUT_SESSION_ID}&locale=${locale}`,
+      cancel_url: slug ? `${webUrl}/${locale}/careers/${slug}` : `${learnUrl}/${locale}/courses`,
+    })
+
+    return { success: true, data: { url: session.url, sessionId: session.id } }
+  }
+
+  /**
+   * Grants access to every course of a paid package and records ONE payment for the whole amount.
+   * Idempotent: Stripe retries the webhook and the success redirect also calls this.
+   * NOTE: no instructor earnings are credited for package purchases (no revenue-split rule exists yet).
+   */
+  async handlePackageEnrollment(session: Stripe.Checkout.Session) {
+    const { packageId, userId } = (session.metadata || {}) as Record<string, string>
+    if (!packageId || !userId) {
+      console.error('[PACKAGE] Missing packageId or userId in session metadata', session.id)
+      return false
+    }
+    if (session.payment_status && session.payment_status !== 'paid') return false
+
+    const pkg = await this.prisma.package.findUnique({ where: { id: packageId } })
+    if (!pkg) {
+      console.error('[PACKAGE] Package not found', packageId)
+      return false
+    }
+
+    for (const courseId of pkg.courseIds) {
+      const existing = await this.prisma.enrollment.findFirst({ where: { courseId, userId } })
+      if (existing) {
+        if (existing.status !== 'ACTIVE') await this.prisma.enrollment.update({ where: { id: existing.id }, data: { status: 'ACTIVE' } })
+      } else {
+        await this.prisma.enrollment.create({ data: { courseId, userId, status: 'ACTIVE' } })
+      }
+    }
+
+    const already = await this.prisma.payment.findUnique({ where: { transactionId: session.id } })
+    if (!already) {
+      await this.prisma.payment.create({
+        data: {
+          userId,
+          amount: (session.amount_total || 0) / 100,
+          currency: String(session.currency || 'sar').toUpperCase(),
+          status: 'COMPLETED',
+          method: 'STRIPE_CARD',
+          transactionId: session.id,
+          itemType: 'PACKAGE',
+          itemId: pkg.id,
+          description: 'Track package',
+          completedAt: new Date(),
+          metadata: { packageId: pkg.id, courseIds: pkg.courseIds },
+        },
+      })
+    }
+    console.log('[PACKAGE] Enrolled', userId, 'in', pkg.courseIds.length, 'courses')
+    return true
+  }
+
+  /** Success-redirect fallback: verify the Stripe session and enrol (trusts nothing but the session id). */
+  async confirmPackageSession(sessionId: string) {
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId)
+    if (session.metadata?.type !== 'package_enrollment') return false
+    return this.handlePackageEnrollment(session)
+  }
+
   // Create checkout session for CONSULTING SESSION
   async createConsultingCheckoutSession(sessionId: string, userId: string, locale: string) {
     const consultingSession = await this.prisma.consultingSession.findUnique({
@@ -198,6 +314,8 @@ export class PaymentsService {
         await this.handleCourseEnrollment(metadata)
       } else if (metadata.type === 'consulting_session') {
         await this.handleConsultingPayment(metadata, session.amount_total || 0)
+      } else if (metadata.type === 'package_enrollment') {
+        await this.handlePackageEnrollment(session)
       }
     }
 

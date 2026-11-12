@@ -10,6 +10,7 @@ import { learnCourseLink } from '../../../../lib/learn-link'
 import { formatMoney } from '../../../../lib/market'
 import { CAREER_PATHS } from '../../../../lib/career-paths'
 import { Skeleton } from '../../../components/ui/Skeleton'
+import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { fetchTrack, formatSalaryRange, type TrackConsultant, type TrackCourse, type TrackPackageInfo } from '../../../../lib/tracks'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
 
@@ -162,6 +163,9 @@ export default function CareerPathDetailPage() {
   const view: View | null = (() => {
     if (isLoading) return null
     if (track) {
+      const pkgIds = track.package?.courseIds ?? []
+      const inPackage = pkgIds.length ? track.courses.filter((c) => c.courseId && pkgIds.includes(c.courseId)) : []
+      const shownCourses = (inPackage.length ? inPackage : track.courses).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
       const salaryLine = (j: (typeof track.jobs)[number]) => {
         const eg = formatSalaryRange(j.salaryEG.min, j.salaryEG.max, 'EGP', locale)
         const ksa = formatSalaryRange(j.salaryKSA.min, j.salaryKSA.max, 'SAR', locale)
@@ -171,7 +175,7 @@ export default function CareerPathDetailPage() {
       return {
         title: track.name,
         description: track.description,
-        coursesCount: track.courseCount,
+        coursesCount: shownCourses.length,
         durationText: `${track.weeks.toLocaleString(nf)} ${isAr ? 'أسبوعًا' : 'weeks'}`,
         level: track.level,
         languages: track.languages ? [track.languages] : [],
@@ -188,7 +192,7 @@ export default function CareerPathDetailPage() {
           description: j.desc,
           salaryText: salaryLine(j),
         })),
-        courses: track.courses.map((c) => ({
+        courses: shownCourses.map((c) => ({
           key: `track-${c.order}-${c.title}`,
           track: c,
           title: c.title,
@@ -312,6 +316,21 @@ export default function CareerPathDetailPage() {
     </button>
   )
 
+  // Buying a track package goes through the learn app's payment page, which creates the Stripe checkout.
+  const paymentUrl = (() => {
+    const pk = view?.trackPackage
+    if (!track || !pk || !view) return ''
+    const params = new URLSearchParams({
+      packageId: pk.id,
+      amount: String(pk.price),
+      amountDisplay: formatMoney(pk.price),
+      title: `${isAr ? 'باكدج' : 'Package'} ${view.title}`,
+      type: 'package',
+      returnUrl: `/${locale}/careers/${track.slug}`,
+    })
+    return learnUrlWithToken(`/${locale}/payment/enroll?${params.toString()}`)
+  })()
+
   const typeClass = (t?: string) => (t?.includes('ذاتي') ? 'self' : t?.includes('دفعة') ? 'cohort' : 'blended')
   const visionJobs = (view?.jobs ?? []).filter((j) => j.vision2030).map((j) => j.title)
   const showFullPricing = !!view && !track && (isMock || view.totalPrice > 0)
@@ -425,7 +444,11 @@ export default function CareerPathDetailPage() {
 
             <section>
               <h2>{isAr ? 'خطة تعلّمك' : 'Your learning plan'}</h2>
-              <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
+              {track && view.trackPackage ? (
+                <p className="dw2-sub" style={{ color: 'var(--brand)', fontWeight: 600 }}>{isAr ? `${view.courses.length.toLocaleString(nf)} دورة مشمولة في الباكدج` : `${view.courses.length} courses included in the package`}</p>
+              ) : (
+                <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
+              )}
               {view.courses.length === 0 ? (
                 <p className="dw2-sub">{isAr ? 'لا توجد كورسات مرتبطة بهذا المسار بعد' : 'No courses linked to this path yet'}</p>
               ) : (
@@ -472,7 +495,7 @@ export default function CareerPathDetailPage() {
                   {view.durationText && <li>{view.durationText}</li>}
                   <li>{isAr ? 'متابعة تقدّمك في مكان واحد' : 'Track your progress in one place'}</li>
                 </ul>
-                <Link href={`/${locale}/contact`} className="dw2-btn primary block">{isAr ? 'سجّل في المسار الكامل' : 'Enroll in the full track'}</Link>
+                <a href={paymentUrl} className="dw2-btn primary block">{isAr ? 'سجّل في المسار الكامل' : 'Enroll in the full track'}</a>
               </div>
             )}
 

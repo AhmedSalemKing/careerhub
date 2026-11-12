@@ -194,7 +194,7 @@ export class TracksService implements OnModuleInit {
       const p = await this.prisma.package.findFirst({ where: { pathId: trackId, isActive: true }, orderBy: { createdAt: 'desc' } });
       if (!p) return null;
       const discountPct = p.originalPrice && p.originalPrice > p.finalPrice ? Math.round((1 - p.finalPrice / p.originalPrice) * 100) : null;
-      return { id: p.id, price: p.finalPrice, originalPrice: p.originalPrice ?? null, discountPct, notes: p.notes ?? null, courseCount: p.courseIds.length };
+      return { id: p.id, price: p.finalPrice, originalPrice: p.originalPrice ?? null, discountPct, notes: p.notes ?? null, courseCount: p.courseIds.length, courseIds: p.courseIds };
     } catch (e: any) {
       this.logger.error(`[Tracks] package lookup failed: ${e?.message ?? e}`);
       return null;

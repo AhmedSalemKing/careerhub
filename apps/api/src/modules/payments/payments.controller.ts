@@ -30,6 +30,31 @@ export class PaymentsController {
     )
   }
 
+  // Create checkout for a track package
+  @Post('checkout/package/:packageId')
+  @UseGuards(JwtAuthGuard)
+  async packageCheckout(
+    @Param('packageId') packageId: string,
+    @Request() req: any,
+    @Body() body: { locale?: string; currency?: string }
+  ) {
+    const country = String(req.headers?.['x-vercel-ip-country'] || req.headers?.['cf-ipcountry'] || '').toUpperCase()
+    const market = body.currency || req.cookies?.market || (country ? (country === 'EG' ? 'EGP' : 'SAR') : 'SAR')
+    return this.paymentsService.createPackageCheckoutSession(packageId, req.user.id, body.locale || 'ar', market)
+  }
+
+  // Stripe success_url for packages: verifies the session server-side, enrols, then sends the buyer to their courses
+  @Get('confirm-package')
+  async confirmPackage(@Query() q: Record<string, string>, @Res() res: any) {
+    const locale = q.locale === 'en' ? 'en' : 'ar'
+    try {
+      if (q.session_id) await this.paymentsService.confirmPackageSession(q.session_id)
+    } catch (e: any) {
+      console.error('[CONFIRM-PACKAGE] Error:', e?.message)
+    }
+    return res.redirect(302, `https://devewayhub.vercel.app/${locale}/my-courses`)
+  }
+
   // Create checkout for consulting session
   @Post('checkout/consulting/:sessionId')
   @UseGuards(JwtAuthGuard)
