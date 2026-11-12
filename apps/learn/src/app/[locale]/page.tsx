@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
+import { Rocket, Star } from 'lucide-react'
 import { get } from '../../lib/api'
 import { syncAuthUser } from '../../lib/auth-sync'
 import { CHARS } from '../../lib/characters'
@@ -84,6 +85,16 @@ type TrackCard = {
   description: string
   roles: string[]
   salary: string | null
+  coverImage: string | null
+  coursesCount: number
+  weeks: number
+}
+
+function safeCount(raw: unknown, fallback?: number): number {
+  try {
+    const c = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return Array.isArray(c) ? c.length : Number(fallback) || 0
+  } catch { return Number(fallback) || 0 }
 }
 
 function parseSalary(raw: unknown, unit: string, locale: string): string | null {
@@ -143,6 +154,9 @@ export default function HomePage() {
           description: (isAr ? p.descriptionAr : p.descriptionEn) || '',
           roles: ((isAr ? p.jobTitlesAr : p.jobTitlesEn) ?? []).slice(0, 3),
           salary: parseSalary(isAr ? p.salaryRangeAr : p.salaryRangeEn, unit, locale),
+          coverImage: p.track?.coverImage ?? p.coverImage ?? null,
+          coursesCount: safeCount(p.track?.courses ?? p.courses, p.track?.courseCount ?? p.coursesCount),
+          weeks: Number(p.track?.weeks ?? p.durationWeeks ?? p.weeks) || 0,
         }))
         if (!cancelled) setTracks(list)
       })
@@ -288,10 +302,30 @@ export default function HomePage() {
           {tracks.length > 0 ? (
             <div className="tracks-grid">
               {tracks.map((p) => (
-                <a key={p.id} className="tcard" href={`${MAIN_SITE_URL}/${locale}/careers/${p.slug}`}>
+                <article
+                  key={p.id}
+                  className="tcard"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => { window.location.href = `${MAIN_SITE_URL}/${locale}/careers/${p.slug}` }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) { window.location.href = `${MAIN_SITE_URL}/${locale}/careers/${p.slug}` } }}
+                >
+                  <div className="t-media">
+                    {p.coverImage && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="t-cover" src={p.coverImage} alt="" loading="lazy" />
+                    )}
+                    <span className="t-badge"><Rocket size={18} aria-hidden="true" /></span>
+                    {(p.coursesCount > 0 || p.weeks > 0) && (
+                      <span className="t-count">
+                        <Star size={13} aria-hidden="true" />
+                        {isAr ? `${p.coursesCount} دورات · ${p.weeks} أسبوعًا` : `${p.coursesCount} courses · ${p.weeks} weeks`}
+                      </span>
+                    )}
+                  </div>
                   <div className="t-body">
                     <h3>{p.title}</h3>
-                    {p.description && <p>{p.description}</p>}
+                    {p.description && <p className="t-desc">{p.description}</p>}
                     {p.roles.length > 0 && (
                       <div className="roles">
                         {p.roles.map((r) => <span key={r}>{r}</span>)}
@@ -304,10 +338,10 @@ export default function HomePage() {
                       </p>
                     )}
                     <div className="t-foot">
-                      <span className="link">{t('viewTrack')}<Icon name="arrow" flip={isAr} /></span>
+                      <button type="button" className="t-btn">{isAr ? 'تفاصيل' : 'Details'}</button>
                     </div>
                   </div>
-                </a>
+                </article>
               ))}
             </div>
           ) : (
