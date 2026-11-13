@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, ValidationPipe,
+  Body, Controller, Delete, Get, Logger, Param, Post, Put, Query, Req, UseGuards, ValidationPipe,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -32,7 +32,14 @@ export class TracksController {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminTracksController {
+  private readonly log = new Logger('AdminTracks');
   constructor(private readonly tracks: TracksService) {}
+
+  /** Raw request body vs the validated DTO: shows whether jobs / courses survive the pipes. */
+  private logReceived(op: string, req: any, dto: any) {
+    const n = (v: unknown) => (Array.isArray(v) ? v.length : typeof v === 'string' ? `string(${v.length})` : String(v));
+    this.log.log(`[Tracks] ${op} received raw body: courses=${n(req?.body?.courses)} jobs=${n(req?.body?.jobs)} | after validation: courses=${n(dto?.courses)} jobs=${n(dto?.jobs)}`);
+  }
 
   @Get()
   async list() {
@@ -40,7 +47,8 @@ export class AdminTracksController {
   }
 
   @Post()
-  async create(@Body(pipe) dto: CreateTrackDto) {
+  async create(@Body(pipe) dto: CreateTrackDto, @Req() req: any) {
+    this.logReceived('create', req, dto);
     return { success: true, data: await this.tracks.create(dto) };
   }
 
@@ -50,7 +58,8 @@ export class AdminTracksController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body(pipe) dto: UpdateTrackDto) {
+  async update(@Param('id') id: string, @Body(pipe) dto: UpdateTrackDto, @Req() req: any) {
+    this.logReceived('update', req, dto);
     return { success: true, data: await this.tracks.update(id, dto) };
   }
 
