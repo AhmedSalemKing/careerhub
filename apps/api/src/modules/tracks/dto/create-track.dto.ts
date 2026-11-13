@@ -36,11 +36,14 @@ export class CreateTrackDto {
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skills: string[];
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) skillsEn: string[];
 
-  /** accepts a real array or a JSON string of one */
-  @Transform(({ value }) => parseMaybeJson(value))
+  /**
+   * Accepts a real array or a JSON string of one. Reads the ORIGINAL body value (obj[key]): the app-wide
+   * enableImplicitConversion otherwise turns [{...}] into [[]] before this transform runs.
+   */
+  @Transform(({ obj, key }) => parseMaybeJson(obj[key]))
   @IsArray() @ArrayMaxSize(50) jobs: Record<string, unknown>[];
 
-  @Transform(({ value }) => parseMaybeJson(value))
+  @Transform(({ obj, key }) => parseMaybeJson(obj[key]))
   @IsArray() @ArrayMaxSize(50) courses: Record<string, unknown>[];
 
   @IsArray() @ArrayMaxSize(50) @IsString({ each: true }) freeItemsAr: string[];
