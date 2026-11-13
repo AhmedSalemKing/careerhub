@@ -152,6 +152,28 @@ export default function CareerPathDetailPage() {
     staleTime: 5 * 60 * 1000,
   })
 
+  // The package stores platform course ids. When the track's curated course list does not cover them
+  // (or is empty), load the package courses by id so the plan is never empty while the package says N courses.
+  const pkgCourseIds: string[] = track?.package?.courseIds ?? []
+  const { data: pkgCourses = [], isLoading: pkgCoursesLoading } = useQuery({
+    queryKey: ['career-package-courses', track?.package?.id, pkgCourseIds.join(',')],
+    queryFn: async () => {
+      const rows = await Promise.all(
+        pkgCourseIds.map(async (id) => {
+          try {
+            const res = await get(`/courses/${encodeURIComponent(id)}`, { params: { language: isAr ? 'ar' : 'en' } })
+            const c = (res?.data as any)?.data?.course
+            return c && c.id ? c : null
+          } catch { return null }
+        }),
+      )
+      return rows.filter(Boolean) as any[]
+    },
+    enabled: pkgCourseIds.length > 0,
+    staleTime: 60000,
+    retry: 0,
+  })
+
   // Recommended courses for this path, used when the plan itself has no courses yet
   const { data: recommended = [], isLoading: recLoading } = useQuery({
     queryKey: ['career-detail-recommended', slug, locale],
@@ -186,6 +208,7 @@ export default function CareerPathDetailPage() {
       const pkgIds = track.package?.courseIds ?? []
       const inPackage = pkgIds.length ? track.courses.filter((c) => c.courseId && pkgIds.includes(c.courseId)) : []
       const shownCourses = (inPackage.length ? inPackage : track.courses).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
+      const fromPackage = shownCourses.length === 0 && pkgCourses.length > 0
       // Only the selected market's salary range, in that market's currency.
       const salaryLine = (j: (typeof track.jobs)[number]) => {
         const r = market === 'EG' ? j.salaryEG : j.salaryKSA
@@ -195,7 +218,7 @@ export default function CareerPathDetailPage() {
       return {
         title: track.name,
         description: track.description,
-        coursesCount: shownCourses.length,
+        coursesCount: fromPackage ? pkgCourses.length : shownCourses.length,
         durationText: `${track.weeks.toLocaleString(nf)} ${isAr ? 'أسبوعًا' : 'weeks'}`,
         level: track.level,
         languages: track.languages ? [track.languages] : [],
@@ -212,7 +235,13 @@ export default function CareerPathDetailPage() {
           description: j.desc,
           salaryText: salaryLine(j),
         })),
-        courses: shownCourses.map((c) => ({
+        courses: fromPackage ? pkgCourses.map((c: any) => ({
+          key: `pkg-${c.id}`,
+          href: learnCourseLink(c.id, locale),
+          title: (isAr ? (c.titleAr || c.title) : (c.titleEn || c.title)) || '',
+          meta: [c.duration ? formatMinutes(Number(c.duration), isAr) : '', c.level ? (isAr ? LEVELS_AR[c.level] ?? c.level : c.level) : ''].filter(Boolean),
+          included: true,
+        })) : shownCourses.map((c) => ({
           key: `track-${c.order}-${c.title}`,
           track: c,
           title: c.title,
@@ -465,7 +494,7 @@ export default function CareerPathDetailPage() {
                 <p className="dw2-sub">{isAr ? 'الدورات بالترتيب الذي نوصي به.' : 'Courses in the order we recommend.'}</p>
               )}
               {view.courses.length === 0 ? (
-                recLoading ? (
+                recLoading || pkgCoursesLoading ? (
                   <div className="space-y-2" aria-busy="true">{[0, 1, 2].map((i) => <div key={i} className="skeleton-shimmer h-14 rounded-xl" />)}</div>
                 ) : recommended.length === 0 ? (
                   <p className="dw2-sub">{isAr ? 'سنضيف كورسات لهذا المسار قريبًا.' : 'Courses for this path are coming soon.'}</p>
