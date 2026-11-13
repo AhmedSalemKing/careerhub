@@ -1,5 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { UserAvatar } from '@/components/avatars/UserAvatar'
+import { MaleAvatar } from '@/components/avatars/MaleAvatar'
+import { FemaleAvatar } from '@/components/avatars/FemaleAvatar'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
@@ -171,6 +174,7 @@ export default function SettingsPage() {
     experience: '',
     hourlyRate: '',
     meetingMethod: '',
+    gender: 'MALE',
   })
   const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' })
   const [prefForm, setPrefForm] = useState({ emailNotifications: true, theme: 'dark' })
@@ -197,6 +201,7 @@ export default function SettingsPage() {
         experience: me.profile?.experience?.toString() || '',
         hourlyRate: me.hourlyRate?.toString() || me.profile?.sessionPrice?.toString() || '',
         meetingMethod: me.profile?.meetingMethod || '',
+        gender: me.profile?.gender === 'FEMALE' ? 'FEMALE' : 'MALE',
       })
       if (me.profile?.avatar) {
         const av = me.profile.avatar
@@ -237,6 +242,7 @@ export default function SettingsPage() {
         experience: profileForm.experience ? parseInt(profileForm.experience) : undefined,
         hourlyRate: profileForm.hourlyRate ? parseFloat(profileForm.hourlyRate) : undefined,
         meetingMethod: profileForm.meetingMethod,
+        gender: profileForm.gender,
       }
       if (avatarUrl !== undefined) body.avatar = avatarUrl
       return patch('/auth/profile', body)
@@ -253,6 +259,7 @@ export default function SettingsPage() {
             firstName: updatedProfile?.profile?.firstName ?? profileForm.firstName,
             lastName: updatedProfile?.profile?.lastName ?? profileForm.lastName,
             avatar: updatedProfile?.profile?.avatar ?? current.profile?.avatar,
+            gender: updatedProfile?.profile?.gender ?? profileForm.gender,
           },
         })
       }
@@ -348,7 +355,7 @@ export default function SettingsPage() {
               onMouseEnter={e => { const ov = e.currentTarget.querySelector('.av-overlay') as HTMLDivElement; if (ov) ov.style.opacity = '1' }}
               onMouseLeave={e => { const ov = e.currentTarget.querySelector('.av-overlay') as HTMLDivElement; if (ov) ov.style.opacity = '0' }}
             >
-              {avatarPreview ? <img src={avatarPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <User size={32} color="rgba(81,32,200,0.5)" />}
+              {avatarPreview ? <img src={avatarPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" /> : <UserAvatar user={{ gender: profileForm.gender }} size={80} />}
               <div className="av-overlay" style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.2s' }}>
                 <Camera size={20} color="#fff" />
               </div>
@@ -360,6 +367,23 @@ export default function SettingsPage() {
             <input type="file" accept="image/*" id="settings-avatar" style={{ display: 'none' }}
               onChange={e => { const file = e.target.files?.[0]; if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) } }}
             />
+          </div>
+
+          {/* Gender */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>{isAr ? 'الجنس' : 'Gender'}</label>
+            <div role="radiogroup" aria-label={isAr ? 'الجنس' : 'Gender'} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {([['MALE', isAr ? 'ذكر' : 'Male'], ['FEMALE', isAr ? 'أنثى' : 'Female']] as const).map(([val, text]) => {
+                const on = profileForm.gender === val
+                return (
+                  <button key={val} type="button" role="radio" aria-checked={on} onClick={() => setProfileForm(f => ({ ...f, gender: val }))}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, cursor: 'pointer', background: on ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', border: on ? '2px solid var(--primary)' : '1px solid var(--border)', color: 'var(--foreground)', fontSize: 14, fontWeight: 500 }}>
+                    {val === 'MALE' ? <MaleAvatar size={40} /> : <FemaleAvatar size={40} />}
+                    <span>{text}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
           {/* Fields */}

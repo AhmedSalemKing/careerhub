@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import { api } from '../../../../../lib/api'
 import StayPicker from '@/components/kokonutui/stay-picker'
+import { UserAvatar } from '@/components/avatars/UserAvatar'
 import { formatDateOnly, formatTimeOnly } from '@/lib/time'
 import toast from 'react-hot-toast'
 import { useMarket } from '../../../../contexts/MarketContext'
@@ -27,6 +28,7 @@ interface ConsultantProfile {
   firstName?: string | null
   lastName?: string | null
   avatar?: string | null
+  gender?: string | null
   bio?: string | null
   speciality?: string | null
   sessionPrice?: number | string | null
@@ -483,16 +485,7 @@ export default function BookConsultingPage() {
           <aside className="min-w-0 lg:sticky lg:top-0 lg:self-start">
             <div className={card} style={{ ...cardStyle, borderColor: 'var(--primary-border)' }}>
               <div className="flex items-center gap-3">
-                {consultant?.profile?.avatar ? (
-                  <img src={consultant.profile.avatar} alt={displayName} className="h-12 w-12 shrink-0 rounded-full object-cover" style={{ border: '1px solid var(--border)' }} />
-                ) : (
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-black"
-                    style={{ background: 'var(--primary-subtle)', color: 'var(--primary)' }}
-                  >
-                    {displayName ? displayName.charAt(0) : <User size={20} />}
-                  </div>
-                )}
+                <UserAvatar user={{ avatar: consultant?.profile?.avatar, gender: consultant?.profile?.gender, name: displayName }} size={48} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <h2 className="truncate text-sm font-black">{displayName || (isAr ? 'مستشار' : 'Consultant')}</h2>

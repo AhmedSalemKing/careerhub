@@ -4699,3 +4699,11 @@ h1, h2 { text-wrap: balance; }
 .dw-vision-badge { max-width: 100%; min-width: 0; }
 .dw-vision-badge img { flex: none; display: block; height: 24px !important; width: auto !important; max-width: 64px !important; max-height: 24px; object-fit: contain; }
 .dw-vision-badge.sm img { height: 18px !important; max-height: 18px; max-width: 48px !important; }
+
+/* Vision badge (track cards): compact pill, exact sizes */
+.dw-vision-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; line-height: 1.2; padding: 3px 7px; border-radius: 20px; background: var(--surface-2, rgba(255,255,255,0.07)); border: 1px solid var(--line, rgba(255,255,255,0.12)); white-space: nowrap; }
+.dw-vision-badge img { height: 14px !important; max-height: 14px; width: auto !important; max-width: 50px !important; object-fit: contain; flex-shrink: 0; border-radius: 0; }
+.dw-vision-badge svg { flex-shrink: 0; width: 22px; height: 15px; }
+.dw-vision-badge.sm { font-size: 10px; padding: 2px 5px; gap: 4px; }
+.dw-vision-badge.sm img { height: 12px !important; max-height: 12px; max-width: 40px !important; }
+.dw-vision-badge.sm svg { width: 18px; height: 12px; }

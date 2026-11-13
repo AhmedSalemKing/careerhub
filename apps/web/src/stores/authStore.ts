@@ -8,7 +8,7 @@ export type AuthUser = {
   accountType?: string // STUDENT | INSTRUCTOR | CONSULTANT | ADMIN
   status?: string
   isVerified?: boolean
-  profile?: { firstName?: string; lastName?: string; avatar?: string; language?: string }
+  profile?: { firstName?: string; lastName?: string; avatar?: string; gender?: string; language?: string }
 }
 
 type AuthState = {

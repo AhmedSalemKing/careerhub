@@ -10,6 +10,7 @@ import { SearchBar } from './SearchBar'
 import { Menu, X, LogOut, ChevronDown, LayoutDashboard, Sparkles, BookOpen, Bell, ArrowUpRight } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../stores/authStore'
+import { UserAvatar } from '../../components/avatars/UserAvatar'
 import { useMarket } from '../contexts/MarketContext'
 import { api } from '../../lib/api'
 import { MAIN_URL } from '../../lib/constants'
@@ -56,7 +57,7 @@ function Avatar({
   user,
   size,
 }: {
-  user: { email?: string; profile?: { firstName?: string; avatar?: string } } | null
+  user: { email?: string; profile?: { firstName?: string; avatar?: string; gender?: string } } | null
   size: 'sm' | 'md'
 }) {
   const src = user?.profile?.avatar
@@ -86,14 +87,7 @@ function Avatar({
     )
   }
 
-  return (
-    <span
-      className={`flex ${dim} items-center justify-center rounded-full ${size === 'sm' ? 'text-xs' : 'text-sm'} font-medium select-none`}
-      style={{ background: 'var(--primary)', fontFamily: NAV_FONT, color: 'var(--primary-fg)' }}
-    >
-      {initial}
-    </span>
-  )
+  return <UserAvatar user={{ gender: user?.profile?.gender, name: user?.profile?.firstName }} size={size === 'sm' ? 32 : 40} />
 }
 
 /* ════════════════════════════════════════

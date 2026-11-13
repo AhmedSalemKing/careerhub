@@ -7,6 +7,7 @@ import {
   PenLine, UserRound, ShieldCheck, Lock, Mail, KeyRound, FileText, MapPin, Briefcase, Clock, Languages, MessageSquare,
 } from 'lucide-react'
 import { get } from '@/lib/api'
+import { UserAvatar } from '@/components/avatars/UserAvatar'
 import { useMarket } from '../../contexts/MarketContext'
 import { formatCurrency } from '../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../lib/marketConfig'
@@ -279,6 +280,7 @@ interface ConsultantProfile {
   country?: string | null
   languages?: string[] | null
   avatar?: string | null
+  gender?: string | null
   yearsExperience?: number | null
   sessionPrice?: number | string | null
   sessionDuration?: number | null
@@ -519,9 +521,7 @@ export default function CoachingPage() {
                     const href = `/${locale}/coaching/${c.id}/book`
                     return (
                       <article key={c.id} className="cch-coach">
-                        {c.profile?.avatar
-                          ? <img className="cch-av" src={c.profile.avatar} alt="" />
-                          : <span className="cch-av">{initials(c)}</span>}
+                        <UserAvatar user={{ avatar: c.profile?.avatar, gender: c.profile?.gender, name }} size={64} />
                         <h3>{name}</h3>
                         <span className="cch-spec">{c.profile?.speciality || 'استشارات مهنية'}</span>
                         {years > 0 && <p className="cch-meta">{years} سنة خبرة</p>}

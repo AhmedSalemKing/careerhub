@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { UserAvatar } from '../../components/avatars/UserAvatar'
 import { usePathname } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import { useTheme } from 'next-themes'
@@ -135,21 +136,7 @@ function UserDropdown({ locale }: { locale: string }) {
         aria-label="User menu"
       >
         <div style={{ position: 'relative', display: 'inline-block' }}>
-          {user?.profile?.avatar ? (
-            <img
-              src={user.profile.avatar}
-              alt="avatar"
-              className="h-8 w-8 rounded-full object-cover"
-              style={{ boxShadow: '0 0 0 2px var(--border)' }}
-            />
-          ) : (
-            <span
-              className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold select-none"
-              style={{ background: 'var(--brand)', fontFamily: NAV_FONT, color: '#ffffff' }}
-            >
-              {initials}
-            </span>
-          )}
+          <UserAvatar user={{ avatar: user?.profile?.avatar, gender: user?.profile?.gender, name: user?.profile?.firstName }} size={32} />
           {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
         </div>
         <ChevronDown
@@ -441,21 +428,7 @@ export function Navbar() {
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                     >
                       <div style={{ position: 'relative', display: 'inline-block' }}>
-                        {user?.profile?.avatar ? (
-                          <img
-                            src={user.profile.avatar}
-                            alt="avatar"
-                            className="h-7 w-7 rounded-full object-cover"
-                            style={{ boxShadow: '0 0 0 2px var(--error)' }}
-                          />
-                        ) : (
-                          <div
-                            className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold"
-                            style={{ background: 'var(--error)', fontFamily: NAV_FONT, color: '#ffffff' }}
-                          >
-                            {initials || 'A'}
-                          </div>
-                        )}
+                        <UserAvatar user={{ avatar: user?.profile?.avatar, gender: user?.profile?.gender, name: user?.profile?.firstName }} size={28} />
                         {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
                       </div>
                       <span
@@ -571,21 +544,7 @@ export function Navbar() {
               <div className="flex flex-col gap-3 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
 <div className="flex items-center gap-3 px-2">
                   <div style={{ position: 'relative', display: 'inline-block' }}>
-                    {user?.profile?.avatar ? (
-                      <img
-                        src={user.profile.avatar}
-                        alt="avatar"
-                        className="h-10 w-10 rounded-full object-cover"
-                        style={{ boxShadow: '0 0 0 2px var(--border)' }}
-                      />
-                    ) : (
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
-                        style={{ background: 'var(--brand)', fontFamily: NAV_FONT, color: '#ffffff' }}
-                      >
-                        {initials || '?'}
-                      </div>
-                    )}
+                    <UserAvatar user={{ avatar: user?.profile?.avatar, gender: user?.profile?.gender, name: user?.profile?.firstName }} size={40} />
                     {user?.isVerified && <VerifiedBadge size="xs" onAvatar showTooltip={false} />}
                   </div>
                   <div className="min-w-0">

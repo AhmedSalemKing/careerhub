@@ -320,6 +320,7 @@ export class AuthController {
     hourlyRate?: number;
     sessionPrice?: number;
     meetingMethod?: string;
+    gender?: string;
   }) {
     return this.authService.updateProfile(user.id, body);
   }

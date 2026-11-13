@@ -104,7 +104,7 @@ export class ConsultingService {
         include: {
           profile: {
             select: {
-              firstName: true, lastName: true, avatar: true, bio: true,
+              firstName: true, lastName: true, avatar: true, gender: true, bio: true,
               speciality: true, yearsExperience: true,
               qualifications: true, consultingAreas: true,
               linkedinUrl: true, sessionPrice: true, sessionDuration: true,
@@ -170,7 +170,7 @@ export class ConsultingService {
       include: {
         profile: {
           select: {
-            firstName: true, lastName: true, avatar: true, bio: true,
+            firstName: true, lastName: true, avatar: true, gender: true, bio: true,
             speciality: true, yearsExperience: true,
             qualifications: true, consultingAreas: true,
             linkedinUrl: true, sessionPrice: true, sessionDuration: true,

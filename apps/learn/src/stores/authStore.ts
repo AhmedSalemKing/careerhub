@@ -5,7 +5,7 @@ export type AuthUser = {
   id: string
   email: string
   role?: string
-  profile?: { firstName?: string; lastName?: string; avatar?: string; language?: string }
+  profile?: { firstName?: string; lastName?: string; avatar?: string; gender?: string; language?: string }
 }
 
 type AuthState = {

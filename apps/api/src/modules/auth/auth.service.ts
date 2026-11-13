@@ -178,7 +178,7 @@ export class AuthService {
           accountType: true, status: true, cvUrl: true, bio: true, experience: true,
           speciality: true, linkedinUrl: true, hourlyRate: true, meetingMethod: true,
           approvedAt: true, rejectedAt: true, rejectedReason: true, lastSeenAt: true,
-          profile: { select: { firstName: true, lastName: true, avatar: true, language: true } }
+          profile: { select: { firstName: true, lastName: true, avatar: true, language: true, gender: true } }
         }
       });
     } catch (dbErr) {
@@ -223,7 +223,7 @@ export class AuthService {
       const newProfile = await this.prisma.userProfile.create({
         data: { userId: user.id, firstName: emailName, lastName: '' },
       });
-      user.profile = { firstName: newProfile.firstName, lastName: newProfile.lastName, avatar: newProfile.avatar, language: newProfile.language };
+      user.profile = { firstName: newProfile.firstName, lastName: newProfile.lastName, avatar: newProfile.avatar, language: newProfile.language, gender: newProfile.gender };
       this.logger.log(`[LOGIN] auto-created missing profile for ${email}`);
     }
 
@@ -526,7 +526,7 @@ export class AuthService {
         hourlyRate: true,
         profile: {
           select: {
-            firstName: true, lastName: true, avatar: true,
+            firstName: true, lastName: true, avatar: true, gender: true,
             bio: true, phone: true, language: true, timezone: true,
             sessionPrice: true,
           }
@@ -550,6 +550,7 @@ export class AuthService {
           firstName: profile.firstName,
           lastName: profile.lastName,
           avatar: profile.avatar,
+          gender: profile.gender,
           bio: profile.bio,
           phone: profile.phone,
           language: profile.language,
@@ -575,6 +576,7 @@ export class AuthService {
     hourlyRate?: number;
     sessionPrice?: number;
     meetingMethod?: string;
+    gender?: string;
   }) {
     this.logger.debug(`Updating user profile: ${userId}`)
     const profileData: any = {}
@@ -587,6 +589,11 @@ export class AuthService {
     if (data.city !== undefined) profileData.city = data.city
     if (data.linkedinUrl !== undefined) profileData.linkedinUrl = data.linkedinUrl
     if (data.sessionPrice !== undefined) profileData.sessionPrice = data.sessionPrice
+    if (data.gender !== undefined) {
+      const g = String(data.gender).toUpperCase()
+      if (!['MALE', 'FEMALE', 'OTHER'].includes(g)) throw new BadRequestException('Gender must be MALE, FEMALE, or OTHER')
+      profileData.gender = g
+    }
     
     
     const profile = await this.prisma.userProfile.upsert({
@@ -734,6 +741,7 @@ export class AuthService {
         firstName: user.profile.firstName,
         lastName: user.profile.lastName,
         avatar: user.profile.avatar,
+        gender: user.profile.gender,
         language: user.profile.language,
       } : null
     };

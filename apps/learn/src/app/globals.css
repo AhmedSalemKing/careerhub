@@ -1810,3 +1810,11 @@ html, body, * {
 code, pre, kbd, samp, code *, pre * {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
 }
+
+/* Vision badge: compact pill, exact sizes (same as web) */
+.dw2-learn .dw-vision-badge { gap: 5px; font-size: 11px; line-height: 1.2; padding: 3px 7px; border-radius: 20px; white-space: nowrap; }
+.dw2-learn .dw-vision-badge img { height: 14px !important; max-height: 14px; width: auto !important; max-width: 50px !important; object-fit: contain; flex-shrink: 0; }
+.dw2-learn .dw-vision-badge svg { flex-shrink: 0; width: 22px; height: 15px; }
+.dw2-learn .dw-vision-badge.sm { font-size: 10px; padding: 2px 5px; gap: 4px; }
+.dw2-learn .dw-vision-badge.sm img { height: 12px !important; max-height: 12px; max-width: 40px !important; }
+.dw2-learn .dw-vision-badge.sm svg { width: 18px; height: 12px; }
