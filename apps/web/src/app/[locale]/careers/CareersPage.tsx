@@ -15,6 +15,9 @@ import {
 import { CAREER_PATHS } from '@/lib/career-paths'
 import { useTracks, trackSalarySpan, type Track } from '@/lib/tracks'
 import { VisionBadges } from '@/app/components/VisionBadge'
+import { useMarket } from '@/app/contexts/MarketContext'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { toMarketAmount } from '@/lib/marketConfig'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   code: Code2,
@@ -66,6 +69,13 @@ export default function CareersPage() {
   const isDark = theme === 'dark'
   const locale = useLocale()
   const isAr = locale === 'ar'
+  const { market } = useMarket()
+  // Catalogue salaries are SAR ranges like "12,000-30,000"; show them in the selected market's currency.
+  const catalogSalary = (raw?: string) => {
+    const m = (raw || '').replace(/,/g, '').match(/(d+(?:.d+)?)s*-s*(d+(?:.d+)?)/)
+    if (!m) return raw ? `${raw}` : ''
+    return `${formatCurrency(toMarketAmount(Number(m[1]), market), market, locale)} – ${formatCurrency(toMarketAmount(Number(m[2]), market), market, locale)}`
+  }
   const router = useRouter()
   const { data: learningTracks = [] } = useTracks(locale)
   
@@ -350,7 +360,7 @@ export default function CareersPage() {
                     <p className="t-sal">
                       <TrendingUp className="icon" size={15} aria-hidden="true" />
                       <span>{isAr ? 'الراتب الشهري المعتاد' : 'Typical monthly salary'}</span>
-                      <b>{tk ? trackSalarySpan(tk, locale) : `${path.salary} SAR`}</b>
+                      <b>{tk ? trackSalarySpan(tk, locale) : catalogSalary(path.salary)}</b>
                     </p>
                   )}
 
@@ -362,11 +372,18 @@ export default function CareersPage() {
                     >
                       {isAr ? 'تفاصيل' : 'Details'}
                     </button>
-                    {!tk && (
-                      <button type="button" className="t-btn primary" onClick={(e) => { e.stopPropagation(); requestStartPath(path) }}>
-                        {isAr ? 'ابدأ المسار' : 'Start Path'}
-                      </button>
-                    )}
+                    {/* Always shown. Managed tracks start from their details page (package + enrollment). */}
+                    <button
+                      type="button"
+                      className="t-btn primary"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (tk) router.push(`/${locale}/careers/${tk.slug || tk.id || path.id}`)
+                        else requestStartPath(path)
+                      }}
+                    >
+                      {isAr ? 'ابدأ المسار' : 'Start Path'}
+                    </button>
                   </div>
                 </div>
               </article>

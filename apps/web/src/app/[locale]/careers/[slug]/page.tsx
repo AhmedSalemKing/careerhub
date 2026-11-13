@@ -14,6 +14,8 @@ import { Skeleton } from '../../../components/ui/Skeleton'
 import { learnUrlWithToken } from '../../../../lib/learn-link'
 import { fetchTrack, formatSalaryRange, type TrackConsultant, type TrackCourse, type TrackPackageInfo } from '../../../../lib/tracks'
 import { VisionBadges, VisionBox } from '../../../components/VisionBadge'
+import { formatCurrency } from '../../../../lib/formatCurrency'
+import { toMarketAmount } from '../../../../lib/marketConfig'
 
 type PathCourse = {
   id: string
@@ -103,7 +105,9 @@ export default function CareerPathDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const locale = useLocale()
   const isAr = locale === 'ar'
-  const { config: mkt } = useMarket()
+  const { config: mkt, market } = useMarket()
+  // Package, session and path prices are stored in SAR; EG shows the approximate EGP equivalent.
+  const money = (sar: number) => formatCurrency(toMarketAmount(sar, market), market, locale)
   const lang = isAr ? 'ar' : 'en'
   const router = useRouter()
   const [enrolling, setEnrolling] = useState(false)
@@ -169,11 +173,11 @@ export default function CareerPathDetailPage() {
       const pkgIds = track.package?.courseIds ?? []
       const inPackage = pkgIds.length ? track.courses.filter((c) => c.courseId && pkgIds.includes(c.courseId)) : []
       const shownCourses = (inPackage.length ? inPackage : track.courses).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
+      // Only the selected market's salary range, in that market's currency.
       const salaryLine = (j: (typeof track.jobs)[number]) => {
-        const eg = formatSalaryRange(j.salaryEG.min, j.salaryEG.max, 'EGP', locale)
-        const ksa = formatSalaryRange(j.salaryKSA.min, j.salaryKSA.max, 'SAR', locale)
-        const parts = [eg && `${isAr ? 'مصر' : 'Egypt'}: ${eg}`, ksa && `${isAr ? 'السعودية' : 'Saudi Arabia'}: ${ksa}`].filter(Boolean)
-        return parts.length ? `${parts.join('  ·  ')}${isAr ? ' / شهريًا' : ' / month'}` : null
+        const r = market === 'EG' ? j.salaryEG : j.salaryKSA
+        const txt = formatSalaryRange(r.min, r.max, market === 'EG' ? 'EGP' : 'SAR', locale)
+        return txt ? `${txt}${isAr ? ' / شهريًا' : ' / month'}` : null
       }
       return {
         title: track.name,
@@ -326,7 +330,7 @@ export default function CareerPathDetailPage() {
     const params = new URLSearchParams({
       packageId: pk.id,
       amount: String(pk.price),
-      amountDisplay: formatMoney(pk.price),
+      amountDisplay: money(pk.price),
       title: `${isAr ? 'باكدج' : 'Package'} ${view.title}`,
       type: 'package',
       returnUrl: `/${locale}/careers/${track.slug}`,
@@ -489,9 +493,9 @@ export default function CareerPathDetailPage() {
             {track && view.trackPackage && (
               <div className="dw2-pcard featured">
                 <div className="dw2-card-top"><span>{isAr ? 'سعر واحد للمسار كاملًا' : 'One price for the whole track'}</span></div>
-                <div className="dw2-big-price">{formatMoney(view.trackPackage.price)}</div>
+                <div className="dw2-big-price">{money(view.trackPackage.price)}</div>
                 {view.trackPackage.originalPrice != null && view.trackPackage.discountPct != null && (
-                  <p className="dw2-card-sub"><s>{formatMoney(view.trackPackage.originalPrice)}</s> · {isAr ? `خصم ${view.trackPackage.discountPct.toLocaleString(nf)}%` : `${view.trackPackage.discountPct}% off`}</p>
+                  <p className="dw2-card-sub"><s>{money(view.trackPackage.originalPrice)}</s> · {isAr ? `خصم ${view.trackPackage.discountPct.toLocaleString(nf)}%` : `${view.trackPackage.discountPct}% off`}</p>
                 )}
                 <ul className="dw2-checklist">
                   <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
@@ -502,13 +506,24 @@ export default function CareerPathDetailPage() {
               </div>
             )}
 
+            {track && !view.trackPackage && (
+              <div className="dw2-pcard featured">
+                <div className="dw2-card-top">
+                  <span>{isAr ? 'سعر واحد للمسار كاملًا' : 'One price for the whole track'}</span>
+                  <span className="dw2-badge">{isAr ? 'قريباً' : 'Coming soon'}</span>
+                </div>
+                <p className="dw2-card-sub">{isAr ? 'سيتوفر التسجيل في المسار الكامل قريبًا. يمكنك البدء بالتقييم المجاني الآن.' : 'Enrollment in the full track opens soon. You can start with the free assessment now.'}</p>
+                <Link href={`/${locale}/dashboard/assessment`} className="dw2-btn ghost block">{isAr ? 'ابدأ التقييم المجاني' : 'Start the free assessment'}</Link>
+              </div>
+            )}
+
             {showFullPricing && (
               <div className="dw2-pcard featured">
                 <div className="dw2-card-top">
                   <span>{isAr ? 'سعر واحد شامل' : 'One all-inclusive price'}</span>
                   {isMock && <span className="dw2-badge">{isAr ? 'نموذج' : 'Sample'}</span>}
                 </div>
-                <div className="dw2-big-price">{formatMoney(view.totalPrice)}</div>
+                <div className="dw2-big-price">{money(view.totalPrice)}</div>
                 <p className="dw2-card-sub">{isMock ? (isAr ? 'سعر واحد للمسار كاملًا.' : 'One price for the whole path.') : (isAr ? 'مجموع أسعار دورات المسار.' : 'Total of the path course prices.')}</p>
                 <ul className="dw2-checklist">
                   <li>{isAr ? `${view.coursesCount.toLocaleString(nf)} دورات في الخطة` : `${view.coursesCount} courses in the plan`}</li>
@@ -537,14 +552,14 @@ export default function CareerPathDetailPage() {
               {track ? (
                 view.trackSessionPrice != null && view.trackSessionPrice > 0 && (
                   <div className="dw2-price-row">
-                    <span className="dw2-mid-price">{formatMoney(view.trackSessionPrice)}</span>
+                    <span className="dw2-mid-price">{money(view.trackSessionPrice)}</span>
                     <small>{isAr ? '/ جلسة (يبدأ من)' : '/ session (from)'}</small>
                   </div>
                 )
               ) : (
                 cheapest && (
                   <div className="dw2-price-row">
-                    <span className="dw2-mid-price">{formatMoney(cheapest.price)}</span>
+                    <span className="dw2-mid-price">{money(cheapest.price)}</span>
                     <small>{isAr ? `/ جلسة ${cheapest.minutes} دقيقة (تبدأ من)` : `/ ${cheapest.minutes}-min session (from)`}</small>
                   </div>
                 )
