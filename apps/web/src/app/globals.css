@@ -4672,3 +4672,16 @@ h1, h2 { text-wrap: balance; }
   .dw-assess .opt { padding: .75rem .85rem; font-size: .9rem; }
   .dw-assess .a-progress { flex-wrap: wrap; }
 }
+
+/* === Header on phones: logo + tools must fit in one row === */
+.lang-btn .lang-short { display: none; }
+@media (max-width: 639px) {
+  .header .wrap { padding-inline: 12px; }
+  .header .logo { margin-inline-end: 6px; min-width: 0; flex-shrink: 1; }
+  .header .logo img { height: 24px; max-width: 100%; }
+  .hdr-tools { gap: 2px; flex-shrink: 1; min-width: 0; }
+  .hdr-tools .icon-btn { padding: 7px 6px; }
+  .mkt button { padding: 4px 7px; font-size: 11px; }
+  .lang-btn .lang-full { display: none; }
+  .lang-btn .lang-short { display: inline; font-weight: 600; }
+}
