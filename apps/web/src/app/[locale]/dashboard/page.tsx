@@ -583,7 +583,27 @@ function StudentOverview() {
     retry: 1, staleTime: 30000,
   })
 
-  const selectedPaths: any[] = allPaths.filter((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug))
+  // Admin tracks that have no career path of their own still show up once the user joins them
+  const { data: allTracks = [] } = useQuery({
+    queryKey: ['dash-tracks', locale],
+    queryFn: async () => {
+      const res = await get('/tracks', { params: { lang: isAr ? 'ar' : 'en' } })
+      const d = (res?.data as any)
+      const arr = d?.data?.tracks ?? d?.data ?? []
+      return Array.isArray(arr) ? arr : []
+    },
+    retry: 1, staleTime: 5 * 60 * 1000,
+  })
+  const trackAsPath = (t: any) => ({
+    id: t.id, slug: t.slug, titleAr: t.name, titleEn: t.name, descriptionAr: t.description, descriptionEn: t.description,
+    jobTitlesAr: (t.jobs ?? []).map((j: any) => j.title), jobTitlesEn: (t.jobs ?? []).map((j: any) => j.title), skills: t.skills ?? [],
+  })
+  const selectedPaths: any[] = [
+    ...allPaths.filter((p: any) => myPathIds.includes(p.id) || myPathIds.includes(p.slug)),
+    ...allTracks
+      .filter((t: any) => (myPathIds.includes(t.id) || myPathIds.includes(t.slug)) && !allPaths.some((p: any) => p.id === t.id || p.slug === t.slug))
+      .map(trackAsPath),
+  ]
   const [pathIdx, setPathIdx] = useState(0)
   const [showAllEnrolled, setShowAllEnrolled] = useState(false)
   const [bookingOpen, setBookingOpen] = useState(false)

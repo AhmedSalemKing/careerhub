@@ -48,13 +48,13 @@ export function CustomSelect({
     }
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); close() } }
     document.addEventListener('mousedown', onDown)
+    document.addEventListener('touchstart', onDown as any, { passive: true })
     document.addEventListener('keydown', onKey, true)
-    window.addEventListener('resize', close)
     window.addEventListener('scroll', onScroll, true)
     return () => {
       document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('touchstart', onDown as any)
       document.removeEventListener('keydown', onKey, true)
-      window.removeEventListener('resize', close)
       window.removeEventListener('scroll', onScroll, true)
     }
   }, [open])
@@ -81,6 +81,7 @@ export function CustomSelect({
           ref={listRef}
           role="listbox"
           className="cs-list"
+          onMouseDown={(e) => e.stopPropagation()}
           style={{ left: rect.left, width: rect.width, ...(rect.up ? { bottom: window.innerHeight - rect.top + 4 } : { top: rect.top + 4 }) }}
         >
           {options.map((o) => (
@@ -89,6 +90,7 @@ export function CustomSelect({
               role="option"
               aria-selected={o.value === value}
               className={'cs-opt' + (o.value === value ? ' on' : '')}
+              onMouseDown={(e) => { e.preventDefault(); onChange(o.value); setOpen(false) }}
               onClick={() => { onChange(o.value); setOpen(false) }}
             >
               {o.label}

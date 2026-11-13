@@ -101,12 +101,12 @@ function fromRow(t: TrackRow): FormState {
       // rows saved by the first version carried one salary range + currency; keep it under the matching market
       const legacyKsa = j.currency === 'SAR'
       return {
-        titleAr: str(j.titleAr), titleEn: str(j.titleEn), descAr: str(j.descAr), descEn: str(j.descEn),
+        titleAr: str(j.titleAr ?? j.title ?? j.name), titleEn: str(j.titleEn ?? j.title ?? j.name), descAr: str(j.descAr ?? j.description), descEn: str(j.descEn ?? j.description),
         salaryMinEG: str(j.salaryMinEG ?? (!legacyKsa ? j.salaryMin : '')), salaryMaxEG: str(j.salaryMaxEG ?? (!legacyKsa ? j.salaryMax : '')),
         salaryMinKSA: str(j.salaryMinKSA ?? (legacyKsa ? j.salaryMin : '')), salaryMaxKSA: str(j.salaryMaxKSA ?? (legacyKsa ? j.salaryMax : '')),
       }
     }),
-    courses: parseJsonArray<Record<string, any>>(t.courses).map((c) => ({ order: str(c.order), titleAr: str(c.titleAr), titleEn: str(c.titleEn), type: str(c.type), typeEn: str(c.typeEn), weeks: str(c.weeks), provider: str(c.provider), language: str(c.language), courseId: str(c.courseId) })),
+    courses: parseJsonArray<Record<string, any>>(t.courses).map((c, i) => ({ order: str(c.order ?? i + 1), titleAr: str(c.titleAr ?? c.title ?? c.name), titleEn: str(c.titleEn ?? c.title ?? c.name), type: str(c.type), typeEn: str(c.typeEn), weeks: str(c.weeks), provider: str(c.provider), language: str(c.language), courseId: str(c.courseId) })),
     freeItemsAr: t.freeItemsAr ?? [], freeItemsEn: t.freeItemsEn ?? [], isActive: t.isActive, country: t.country,
   }
 }
@@ -264,7 +264,15 @@ export default function AdminTracksPage() {
     setFormError('')
     setTab('basics')
     setImageMode('url')
-    setEditing({ id: t?.id ?? null, form: t ? fromRow(t) : emptyForm() })
+    const form = t ? fromRow(t) : emptyForm()
+    if (t) {
+      console.log('=== TRACK EDIT DEBUG ===')
+      console.log('Raw row:', JSON.stringify(t, null, 2))
+      console.log('courses field:', t.courses, typeof t.courses)
+      console.log('jobs field:', t.jobs, typeof t.jobs)
+      console.log('Form state after set:', JSON.stringify({ courses: form.courses, jobs: form.jobs, vision2030: form.vision2030 }, null, 2))
+    }
+    setEditing({ id: t?.id ?? null, form })
   }
 
   const f = editing?.form
@@ -396,6 +404,7 @@ export default function AdminTracksPage() {
       {editing && f && (
         <div className="tk-overlay" onClick={() => setEditing(null)}>
           <form
+            key={editing.id ?? 'new'}
             className="tk-modal"
             onClick={(e) => e.stopPropagation()}
             onSubmit={(e) => { e.preventDefault(); setFormError(''); if (valid) save.mutate(editing) }}

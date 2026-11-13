@@ -316,12 +316,13 @@ export default function CareerPathDetailPage() {
     .sort((a, b) => a.price - b.price)
   const cheapest = sessionPrices[0]
 
-  const canEnroll = !!path?.id && !isMock
+  // Free enrollment never depends on a career path: any track (or the path itself) can be joined
+  const enrollId = path?.id || track?.id || ''
   // Free enrollment in a career path (no package). Called from the confirmation popup, which shows any error.
   const enrollInPath = async () => {
-    if (!path?.id || isMock) return
+    if (!enrollId) return
     try {
-      await post(`/career/paths/add/${path.id}`, {}, { params: { source: 'MANUAL' } })
+      await post(`/career/paths/add/${enrollId}`, {}, { params: { source: 'MANUAL' } })
       router.push(`/${locale}/dashboard`)
     } catch (e: any) {
       if (e?.response?.status === 401) {
@@ -658,8 +659,7 @@ export default function CareerPathDetailPage() {
         coursesCount={view?.coursesCount ?? 0}
         price={track?.package?.price ?? (!track && view && view.totalPrice > 0 ? view.totalPrice : null)}
         paymentUrl={paymentUrl}
-        onEnroll={canEnroll ? enrollInPath : undefined}
-        comingSoon={!canEnroll}
+        onEnroll={enrollInPath}
       />
 
       {selectedCourse && (

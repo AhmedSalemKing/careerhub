@@ -20,11 +20,9 @@ interface Props {
   paymentUrl?: string
   /** Free enrollment: runs the enroll API call. Throw to show the error. */
   onEnroll?: () => Promise<void>
-  /** True when the track can't be joined for free yet (no matching career path). */
-  comingSoon?: boolean
 }
 
-export function EnrollConfirmModal({ isOpen, onClose, trackName, coursesCount, price, paymentUrl, onEnroll, comingSoon }: Props) {
+export function EnrollConfirmModal({ isOpen, onClose, trackName, coursesCount, price, paymentUrl, onEnroll }: Props) {
   const router = useRouter()
   const locale = useLocale()
   const isAr = locale === 'ar'
@@ -116,16 +114,13 @@ export function EnrollConfirmModal({ isOpen, onClose, trackName, coursesCount, p
           <button
             type="button"
             onClick={handleFree}
-            disabled={!!loading || (loggedIn && (!onEnroll || !!comingSoon))}
+            disabled={!!loading}
             className={primaryBtn}
-            style={{ background: 'var(--brand)', color: '#fff', opacity: loading || (loggedIn && (!onEnroll || comingSoon)) ? 0.6 : 1 }}
+            style={{ background: 'var(--brand)', color: '#fff', opacity: loading ? 0.6 : 1 }}
           >
             {loading === 'free' && <Loader2 size={16} className="animate-spin" />}
             {loggedIn ? tr('ابدأ المسار مجاناً', 'Start the track for free') : tr('إنشاء حساب', 'Create account')}
           </button>
-          {loggedIn && (!onEnroll || comingSoon) && (
-            <p className="mt-2 text-xs" style={{ color: 'var(--warn, var(--ink-3))' }}>{tr('التسجيل المجاني في هذا المسار غير متاح بعد.', 'Free enrollment is not open for this track yet.')}</p>
-          )}
         </div>
 
         {/* Package option: only if the track has a paid package */}

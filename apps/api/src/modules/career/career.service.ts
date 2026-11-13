@@ -89,11 +89,14 @@ export class CareerService {
       throw new BadRequestException('Maximum 5 career paths allowed')
     }
     const cp = await this.prisma.careerPath.findUnique({ where: { id: pathId } }).catch(() => null)
+    // Any admin track can be joined for free, with or without a matching career path
+    const track = cp ? null : await this.prisma.track.findFirst({ where: { OR: [{ id: pathId }, { slug: pathId }] }, select: { id: true, nameAr: true, nameEn: true } }).catch(() => null)
+    if (track) pathId = track.id
     const data = {
       userId,
       pathId,
-      pathTitle: cp?.titleEn || pathId,
-      pathCategory: cp?.titleAr || '',
+      pathTitle: cp?.titleEn || track?.nameEn || pathId,
+      pathCategory: cp?.titleAr || track?.nameAr || '',
       aiRecommended: source === 'ASSESSMENT' || source === 'RECOMMENDED',
     }
     let result = await this.prisma.userCareerPath.upsert({
