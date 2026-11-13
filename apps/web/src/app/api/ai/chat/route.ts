@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
     // userName is derived server-side from the verified JWT — never trusted from client body.
     // memoryContext may still come from the client: an authenticated user passing their own
     // memory context only affects their own session; prompt injection risk is low and bounded.
-    const { messages, memoryContext, mode, stream } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean }
+    const { messages, memoryContext, mode, stream, maxOutputTokens: reqMaxTokens } = await req.json() as { messages: unknown; memoryContext?: string; mode?: string; stream?: boolean; maxOutputTokens?: number }
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json(
@@ -310,6 +310,13 @@ export async function POST(req: NextRequest) {
       return streamChat({ apiKey, models, contents, systemPrompt, reqId, tStart })
     }
 
+    // Long structured replies (e.g. the assessment result JSON) ask for more tokens and get proportionally longer deadlines.
+    const maxTokens     = Number.isFinite(Number(reqMaxTokens)) ? Math.min(4096, Math.max(200, Math.floor(Number(reqMaxTokens)))) : 800
+    const longReply     = maxTokens > 800
+    const primaryMs     = longReply ? 18_000 : PRIMARY_TIMEOUT_MS
+    const fallbackMs    = longReply ? 22_000 : FALLBACK_TIMEOUT_MS
+    const totalBudgetMs = longReply ? 28_000 : TOTAL_BUDGET_MS
+
     const budgetStart = Date.now()
     let lastError     = ''
 
@@ -320,7 +327,7 @@ export async function POST(req: NextRequest) {
       // Check the shared budget BEFORE claiming a half-open probe slot, so an
       // exhausted budget can never strand the circuit breaker in probing state.
       const elapsed   = Date.now() - budgetStart
-      const remaining = TOTAL_BUDGET_MS - elapsed
+      const remaining = totalBudgetMs - elapsed
       if (remaining <= 500) {
         console.warn(`[AI Chat] req=${reqId} budget_exhausted elapsed=${elapsed}ms`)
         break
@@ -336,14 +343,14 @@ export async function POST(req: NextRequest) {
       const attemptTimeout = Math.max(
         250,
         isRetry
-          ? Math.min(remaining - 300, FALLBACK_TIMEOUT_MS)
-          : Math.min(remaining - 300, PRIMARY_TIMEOUT_MS)
+          ? Math.min(remaining - 300, fallbackMs)
+          : Math.min(remaining - 300, primaryMs)
       )
 
       const tAttempt = Date.now()
       const generationConfig = {
         temperature: 0.8,
-        maxOutputTokens: 800,
+        maxOutputTokens: maxTokens,
       }
       const baseBody = {
         contents,
@@ -413,9 +420,9 @@ export async function POST(req: NextRequest) {
             ]
             const contentsWithPrefix = [...syntheticPrefix, ...contents]
 
-            const rem2    = TOTAL_BUDGET_MS - (Date.now() - budgetStart)
+            const rem2    = totalBudgetMs - (Date.now() - budgetStart)
             const ctrl2   = new AbortController()
-            const timer2  = setTimeout(() => ctrl2.abort(), Math.min(rem2 - 300, FALLBACK_TIMEOUT_MS))
+            const timer2  = setTimeout(() => ctrl2.abort(), Math.min(rem2 - 300, fallbackMs))
             try {
               const geminiRes2 = await fetch(url, {
                 method:  'POST',

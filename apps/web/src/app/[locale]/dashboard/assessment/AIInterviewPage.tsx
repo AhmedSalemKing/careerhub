@@ -675,7 +675,7 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 }
 
 /* ── Quiz Result Card ─────────────────────────────────────── */
-function QuizResultCard({ result, answers, onRestart }: { result: QuizResult; answers: Record<string, string>; onRestart: () => void }) {
+export function QuizResultCard({ result, answers, onRestart }: { result: QuizResult; answers: Record<string, string>; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
   const RC_COLORS = ['var(--brand)', 'var(--purple)', 'var(--lavender)']
@@ -912,6 +912,38 @@ function QuizResultCard({ result, answers, onRestart }: { result: QuizResult; an
   )
 }
 
+/** Pull the result JSON out of the model reply: tolerant of a missing closing tag, code fences and surrounding prose. */
+function parseQuizResult(text: string): QuizResult | null {
+  const open = text.indexOf('[QUIZ_RESULT]')
+  let body = open >= 0 ? text.slice(open + '[QUIZ_RESULT]'.length) : text
+  const close = body.indexOf('[/QUIZ_RESULT]')
+  if (close >= 0) body = body.slice(0, close)
+  body = body.replace(/```(?:json)?/gi, '')
+  const start = body.indexOf('{')
+  const end = body.lastIndexOf('}')
+  if (start < 0 || end <= start) return null
+  try {
+    const r = JSON.parse(body.slice(start, end + 1)) as Partial<QuizResult>
+    if (!r || !Array.isArray(r.topCareers) || r.topCareers.length === 0) return null
+    return {
+      summary: r.summary ?? '',
+      topCareers: r.topCareers.slice(0, 3).map((c) => ({
+        name: c.name ?? '',
+        nameEn: c.nameEn ?? '',
+        trackSlug: c.trackSlug || undefined,
+        match: Number(c.match) || 0,
+        reason: c.reason ?? '',
+        strengths: Array.isArray(c.strengths) ? c.strengths : [],
+        skillsToLearn: Array.isArray(c.skillsToLearn) ? c.skillsToLearn : [],
+        nextStep: c.nextStep ?? '',
+      })),
+      overallStrengths: Array.isArray(r.overallStrengths) ? r.overallStrengths : [],
+      mainBarrier: r.mainBarrier ?? '',
+      personalNote: r.personalNote ?? '',
+    }
+  } catch { return null }
+}
+
 /* ── Quiz Mode ────────────────────────────────────────────── */
 const OPT_LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ']
 const RASHEED_REACTIONS: string[][] = [
@@ -945,6 +977,9 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const [isLoadingInsight,setIsLoadingInsight]= useState(false)
   const [isAnalyzing,     setIsAnalyzing]     = useState(false)
   const [result,          setResult]          = useState<QuizResult | null>(null)
+  const [analysisError,   setAnalysisError]   = useState(false)
+  const router = useRouter()
+  const locale = useLocale()
 
   const { data: platformTracks = [] } = useTracks('ar')
   const currentQuestion  = ALL_QUESTIONS[currentIndex]
@@ -961,13 +996,14 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   }
   useEffect(() => clearAdvance, [])
 
-  const callChat = async (prompt: string): Promise<string> => {
+  const callChat = async (prompt: string, maxOutputTokens?: number): Promise<string> => {
     const token = getToken()
     const res = await fetch('/api/ai/chat', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }] }),
+      body:    JSON.stringify({ messages: [{ role: 'user', content: prompt }], ...(maxOutputTokens ? { maxOutputTokens } : {}) }),
     })
+    if (!res.ok) throw new Error(`chat http=${res.status}`)
     const data = await res.json() as { content?: string }
     return data.content ?? ''
   }
@@ -1051,11 +1087,17 @@ ${trackList}
   "mainBarrier": "العائق الرئيسي اللي لاحظته من إجاباته وكيف يتغلب عليه",
   "personalNote": "ملاحظة شخصية من رشيد تشجيعية ومحددة ليه"
 }
-[/QUIZ_RESULT]`
+[/QUIZ_RESULT]`,
+          4096,
         )
-        const m = text.match(/\[QUIZ_RESULT\]([\s\S]*?)\[\/QUIZ_RESULT\]/)
-        if (m) setResult(JSON.parse(m[1].trim()) as QuizResult)
-      } catch { /* show error state handled below */ }
+        const parsed = parseQuizResult(text)
+        if (!parsed) throw new Error('unparseable result')
+        sessionStorage.setItem('assessmentResult', JSON.stringify({ result: parsed, answers: finalAnswers, timestamp: Date.now() }))
+        router.push(`/${locale}/dashboard/assessment/result`)
+      } catch (e) {
+        console.error('[Assessment] analysis failed', e)
+        setAnalysisError(true)
+      }
       finally { setIsAnalyzing(false) }
       return
     }
@@ -1074,6 +1116,21 @@ ${trackList}
         answers={answers}
         onRestart={() => { clearAdvance(); setCurrentIndex(0); setAnswers({}); setInsight(''); setResult(null) }}
       />
+    )
+  }
+
+  if (analysisError && !isAnalyzing) {
+    return (
+      <div dir="rtl" className="dw-assess">
+        <div className="dw-as-center">
+          <div className="dw-as-avatar"><RasheedAvatar size={96} /></div>
+          <h2>تعذّر إكمال التحليل</h2>
+          <p>إجاباتك محفوظة. اضغط لإعادة المحاولة.</p>
+          <button type="button" className="btn btn-primary" onClick={() => { setAnalysisError(false); void handleNext() }}>
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
     )
   }
 
