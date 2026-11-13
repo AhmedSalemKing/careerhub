@@ -63,9 +63,9 @@ export default function DashboardNotificationsPage() {
   return (
     <AuthGate>
       <DashboardShell title={t('title')} subtitle={t('subtitle')}>
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-sm">
+        <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-extrabold text-foreground">{t('inbox')}</div>
+            <div className="text-sm font-extrabold text-[var(--ink)]">{t('inbox')}</div>
             <Button type="button" variant="secondary" onClick={() => markAll.mutate()} disabled={markAll.isPending}>
               {markAll.isPending ? c('loading') : t('mark_all')}
             </Button>
@@ -78,8 +78,8 @@ export default function DashboardNotificationsPage() {
             <Skeleton className="h-24 rounded-2xl" />
           </div>
         ) : q.isError ? (
-          <div className="mt-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-            <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
+          <div className="mt-6 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6">
+            <div className="text-sm text-[color:var(--ink-2)]">{e('something_wrong')}</div>
             <button
               type="button"
               className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
@@ -105,13 +105,13 @@ export default function DashboardNotificationsPage() {
                 onKeyDown={(ev) => {
                   if (ev.key === 'Enter') router.push(getNotificationUrl(n as { type?: string; data?: unknown }, locale, accountType))
                 }}
-                className="cursor-pointer rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm"
+                className="cursor-pointer rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 shadow-sm"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <div className="text-sm font-extrabold text-foreground">{n.titleAr || n.titleEn || '-'}</div>
-                    <div className="mt-2 text-sm text-[color:var(--muted)]">{n.contentAr || n.contentEn || '-'}</div>
-                    <div className="mt-2 text-xs text-[color:var(--muted)]">{formatDateTimeAr(n.createdAt)}</div>
+                    <div className="text-sm font-extrabold text-[var(--ink)]">{n.titleAr || n.titleEn || '-'}</div>
+                    <div className="mt-2 text-sm text-[color:var(--ink-2)]">{n.contentAr || n.contentEn || '-'}</div>
+                    <div className="mt-2 text-xs text-[color:var(--ink-2)]">{formatDateTimeAr(n.createdAt)}</div>
                   </div>
                   {!n.isRead ? (
                     <Button
@@ -123,14 +123,14 @@ export default function DashboardNotificationsPage() {
                       {t('mark_read')}
                     </Button>
                   ) : (
-                    <span className="text-xs font-semibold text-[color:var(--muted)]">{t('read')}</span>
+                    <span className="text-xs font-semibold text-[color:var(--ink-2)]">{t('read')}</span>
                   )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="mt-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted)]">
+          <div className="mt-6 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-2)]">
             {t('empty')}
           </div>
         )}

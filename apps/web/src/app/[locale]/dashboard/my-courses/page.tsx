@@ -42,11 +42,11 @@ function getStatusConfig(status: string, course: any) {
 		case "PUBLISHED":
 			return { key: "published", ar: "منشور", color: "var(--success)", bg: "var(--success-subtle)", hasDot: true };
 		case "DRAFT":
-			return { key: "draft", ar: "مسودة", color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
+			return { key: "draft", ar: "مسودة", color: "var(--ink-2)", bg: "var(--surface-2)", hasDot: true };
 		case "PENDING_REVIEW":
-			return { key: "pending", ar: "قيد المراجعة", color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
+			return { key: "pending", ar: "قيد المراجعة", color: "var(--ink-2)", bg: "var(--surface-2)", hasDot: true };
 		default:
-			return { key: status, ar: status, color: "var(--muted)", bg: "var(--surface-2)", hasDot: true };
+			return { key: status, ar: status, color: "var(--ink-2)", bg: "var(--surface-2)", hasDot: true };
 	}
 }
 
@@ -154,7 +154,7 @@ export default function MyCoursesPage() {
 		<AuthGate>
 			<div dir="rtl" style={{
 				width: '100%', maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box',
-				background: 'var(--background)',
+				background: 'var(--bg)',
 				minHeight: '100vh',
 				fontFamily: 'var(--font-ui)',
 			}}>
@@ -182,7 +182,7 @@ export default function MyCoursesPage() {
 							<h1 style={{
 								fontWeight: 900,
 								fontSize: 'clamp(1.8rem,4vw,2.4rem)',
-								color: 'var(--foreground)',
+								color: 'var(--ink)',
 								margin: 0,
 								marginBottom: 4,
 								fontFamily: 'var(--font-ui)',
@@ -192,7 +192,7 @@ export default function MyCoursesPage() {
 							<p style={{
 								fontWeight: 300,
 								fontSize: '0.88rem',
-								color: 'var(--muted)',
+								color: 'var(--ink-2)',
 								margin: 0,
 								fontFamily: 'var(--font-ui)',
 							}}>
@@ -202,12 +202,12 @@ export default function MyCoursesPage() {
 						<div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
 							<div style={{
 								background: 'var(--surface)',
-								border: '1px solid var(--border)',
+								border: '1px solid var(--line)',
 								borderRadius: 999,
 								padding: '6px 16px',
 								fontSize: '0.85rem',
 								fontWeight: 500,
-								color: 'var(--foreground)',
+								color: 'var(--ink)',
 								fontFamily: 'var(--font-ui)',
 							}}>
 								{courses.length} {isAr ? "كورس" : "Course"}
@@ -284,7 +284,7 @@ export default function MyCoursesPage() {
 							].map((stat, i) => (
 								<div key={i} style={{
 									background: 'var(--surface)',
-									border: '1px solid var(--border)',
+									border: '1px solid var(--line)',
 									borderRadius: 16,
 									padding: 20,
 									display: 'flex',
@@ -304,10 +304,10 @@ export default function MyCoursesPage() {
 										{stat.icon}
 									</div>
 									<div style={{ flex: 1 }}>
-										<div style={{ fontWeight: 300, fontSize: '0.8rem', color: 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-ui)' }}>
+										<div style={{ fontWeight: 300, fontSize: '0.8rem', color: 'var(--ink-2)', marginBottom: 4, fontFamily: 'var(--font-ui)' }}>
 											{stat.label}
 										</div>
-										<div style={{ fontWeight: 500, fontSize: '1.5rem', color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>
+										<div style={{ fontWeight: 500, fontSize: '1.5rem', color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>
 											{stat.value}
 										</div>
 									</div>
@@ -325,7 +325,7 @@ export default function MyCoursesPage() {
 						flexWrap: 'wrap',
 					}}>
 						<div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+							<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
 								style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
 								<circle cx="11" cy="11" r="8" />
 								<line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -338,11 +338,11 @@ export default function MyCoursesPage() {
 								style={{
 									width: '100%',
 									background: 'var(--surface)',
-									border: '1px solid var(--border)',
+									border: '1px solid var(--line)',
 									borderRadius: 12,
 									padding: '10px 16px',
 									paddingRight: 40,
-									color: 'var(--foreground)',
+									color: 'var(--ink)',
 									fontFamily: 'var(--font-ui)',
 									fontWeight: 300,
 									fontSize: '0.88rem',
@@ -362,10 +362,10 @@ export default function MyCoursesPage() {
 										fontSize: '0.85rem',
 										fontWeight: 500,
 										cursor: 'pointer',
-										border: activeTab === tab.key ? '1px solid var(--primary)' : '1px solid var(--border)',
+										border: activeTab === tab.key ? '1px solid var(--primary)' : '1px solid var(--line)',
 										whiteSpace: 'nowrap',
 										background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface)',
-										color: activeTab === tab.key ? '#fff' : 'var(--muted)',
+										color: activeTab === tab.key ? '#fff' : 'var(--ink-2)',
 										fontFamily: 'var(--font-ui)',
 									}}
 								>
@@ -375,10 +375,10 @@ export default function MyCoursesPage() {
 						</div>
 						<select style={{
 							background: 'var(--surface)',
-							border: '1px solid var(--border)',
+							border: '1px solid var(--line)',
 							borderRadius: 12,
 							padding: '10px 14px',
-							color: 'var(--foreground)',
+							color: 'var(--ink)',
 							fontFamily: 'var(--font-ui)',
 							fontWeight: 300,
 							fontSize: '0.85rem',
@@ -398,7 +398,7 @@ export default function MyCoursesPage() {
 							{[1, 2, 3].map(i => (
 								<div key={i} style={{
 									background: 'var(--card-bg)',
-									border: '1px solid var(--border)',
+									border: '1px solid var(--line)',
 									borderRadius: 20,
 									overflow: 'hidden',
 								}}>
@@ -418,16 +418,16 @@ export default function MyCoursesPage() {
 							textAlign: 'center',
 							padding: '3rem 1rem',
 							background: 'var(--surface)',
-							border: '1px dashed var(--border)',
+							border: '1px dashed var(--line)',
 							borderRadius: 16,
 						}}>
-							<h3 style={{ fontSize: '1.1rem', fontWeight: 500, margin: '0 0 8px', color: 'var(--foreground)' }}>
+							<h3 style={{ fontSize: '1.1rem', fontWeight: 500, margin: '0 0 8px', color: 'var(--ink)' }}>
 								{isInstructor
 									? (isAr ? 'لا توجد كورسات بعد' : 'No courses yet')
 									: (isAr ? 'لم تشترك في أي كورس بعد' : 'Not enrolled in any course')}
 							</h3>
 							<p style={{
-								color: 'var(--muted)',
+								color: 'var(--ink-2)',
 								fontSize: '0.875rem',
 								margin: '0 0 1.5rem',
 								maxWidth: '300px',
@@ -476,7 +476,7 @@ export default function MyCoursesPage() {
 								return (
 									<div key={course.id} style={{
 										background: 'var(--card-bg)',
-										border: '1px solid var(--border)',
+										border: '1px solid var(--line)',
 										borderRadius: 20,
 										overflow: 'hidden',
 										transition: 'border-color 0.2s',
@@ -499,7 +499,7 @@ export default function MyCoursesPage() {
 													alignItems: 'center',
 													justifyContent: 'center',
 												}}>
-													<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+													<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 														<rect x="3" y="3" width="18" height="18" rx="2" />
 														<circle cx="8.5" cy="8.5" r="1.5" />
 														<polyline points="21,15 16,10 5,21" />
@@ -540,7 +540,7 @@ export default function MyCoursesPage() {
 											<div style={{
 												fontWeight: 500,
 												fontSize: '0.97rem',
-												color: 'var(--foreground)',
+												color: 'var(--ink)',
 												marginBottom: 8,
 												display: '-webkit-box',
 												WebkitLineClamp: 2,
@@ -557,13 +557,13 @@ export default function MyCoursesPage() {
 												display: 'flex',
 												gap: 16,
 												fontSize: '0.8rem',
-												color: 'var(--muted)',
+												color: 'var(--ink-2)',
 												fontWeight: 300,
 												marginBottom: 12,
 												fontFamily: 'var(--font-ui)',
 											}}>
 												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 														<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
 														<circle cx="9" cy="7" r="4" />
 														<path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -572,7 +572,7 @@ export default function MyCoursesPage() {
 													<span>{enrollments} {isAr ? "طالب" : "students"}</span>
 												</div>
 												<div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+													<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
 														<line x1="12" y1="1" x2="12" y2="23" />
 														<path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
 													</svg>
@@ -687,7 +687,7 @@ export default function MyCoursesPage() {
 																justifyContent: 'center',
 															}}
 														>
-															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+															<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
 																<circle cx="12" cy="5" r="1" />
 																<circle cx="12" cy="12" r="1" />
 																<circle cx="12" cy="19" r="1" />

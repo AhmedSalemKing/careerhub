@@ -23,7 +23,7 @@ export function StageView({ stage, followUpQuestions, answeredIds, pendingAnswer
               background: 'rgba(245,158,11,0.06)',
               border: '1px solid rgba(245,158,11,0.2)',
               borderRadius: 6,
-              fontSize: 11, color: 'var(--muted-foreground)',
+              fontSize: 11, color: 'var(--ink-3)',
             }}>
               ↳ {q.branchingReason}
             </div>

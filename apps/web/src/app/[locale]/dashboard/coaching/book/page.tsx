@@ -82,7 +82,7 @@ export default function DashboardBookCoachingPage() {
   return (
     <AuthGate>
       <DashboardShell title={header} subtitle={t('payment_method')}>
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-sm">
+        <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-4 shadow-sm">
           <div className="flex flex-wrap gap-2">
             {steps.map((s) => (
               <div
@@ -90,7 +90,7 @@ export default function DashboardBookCoachingPage() {
                 className={
                   s.n === step
                     ? 'rounded-full bg-primary px-3 py-1 text-xs font-bold text-white'
-                    : 'rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-semibold text-[color:var(--muted)]'
+                    : 'rounded-full border border-[color:var(--line)] bg-[color:var(--surface)] px-3 py-1 text-xs font-semibold text-[color:var(--ink-2)]'
                 }
               >
                 {s.label}
@@ -108,8 +108,8 @@ export default function DashboardBookCoachingPage() {
                 <Skeleton className="h-56 rounded-2xl" />
               </div>
             ) : coachesQ.isError ? (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-                <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
+              <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6">
+                <div className="text-sm text-[color:var(--ink-2)]">{e('something_wrong')}</div>
                 <button
                   type="button"
                   className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
@@ -142,7 +142,7 @@ export default function DashboardBookCoachingPage() {
                 </div>
               </>
             ) : (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted)]">
+              <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-2)]">
                 {c('empty')}
               </div>
             )}
@@ -150,7 +150,7 @@ export default function DashboardBookCoachingPage() {
         ) : null}
 
         {step === 2 ? (
-          <div className="mt-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 shadow-sm">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="md:col-span-1">
                 <Label htmlFor="date">{t('step2_title')}</Label>
@@ -175,16 +175,16 @@ export default function DashboardBookCoachingPage() {
                     <Skeleton className="h-14 rounded-2xl" />
                   </div>
                 ) : slotsQ.isError ? (
-                  <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
+                  <div className="text-sm text-[color:var(--ink-2)]">{e('something_wrong')}</div>
                 ) : slotsQ.data?.length ? (
                   <>
-                    <div className="text-sm font-extrabold text-foreground">{t('select_slot')}</div>
+                    <div className="text-sm font-extrabold text-[var(--ink)]">{t('select_slot')}</div>
                     <div className="mt-4">
                       <BookingCalendar slots={slotsQ.data} selectedSlotId={slotId} onSelect={(id) => setSlotId(id)} />
                     </div>
                   </>
                 ) : (
-                  <div className="text-sm text-[color:var(--muted)]">{c('empty')}</div>
+                  <div className="text-sm text-[color:var(--ink-2)]">{c('empty')}</div>
                 )}
               </div>
             </div>
@@ -192,16 +192,16 @@ export default function DashboardBookCoachingPage() {
         ) : null}
 
         {step === 3 ? (
-          <div className="mt-6 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-sm">
-            <div className="text-sm font-extrabold text-foreground">{t('payment_method')}</div>
+          <div className="mt-6 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 shadow-sm">
+            <div className="text-sm font-extrabold text-[var(--ink)]">{t('payment_method')}</div>
             <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
               <button
                 type="button"
                 onClick={() => setPayment('paymob')}
                 className={
                   payment === 'paymob'
-                    ? 'rounded-2xl border border-primary bg-[color:var(--surface)] p-5 text-sm font-bold text-foreground ring-2 ring-primary/20'
-                    : 'rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 text-sm font-bold text-foreground hover:bg-[color:var(--surface-2)]'
+                    ? 'rounded-2xl border border-primary bg-[color:var(--surface)] p-5 text-sm font-bold text-[var(--ink)] ring-2 ring-primary/20'
+                    : 'rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-5 text-sm font-bold text-[var(--ink)] hover:bg-[color:var(--surface-2)]'
                 }
               >
                 {t('paymob')}
@@ -211,8 +211,8 @@ export default function DashboardBookCoachingPage() {
                 onClick={() => setPayment('hyperpay')}
                 className={
                   payment === 'hyperpay'
-                    ? 'rounded-2xl border border-primary bg-[color:var(--surface)] p-5 text-sm font-bold text-foreground ring-2 ring-primary/20'
-                    : 'rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5 text-sm font-bold text-foreground hover:bg-[color:var(--surface-2)]'
+                    ? 'rounded-2xl border border-primary bg-[color:var(--surface)] p-5 text-sm font-bold text-[var(--ink)] ring-2 ring-primary/20'
+                    : 'rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-5 text-sm font-bold text-[var(--ink)] hover:bg-[color:var(--surface-2)]'
                 }
               >
                 {t('hyperpay')}
@@ -237,7 +237,7 @@ export default function DashboardBookCoachingPage() {
 
         {step === 4 ? (
           <div className="mt-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6">
-            <div className="text-sm font-extrabold text-foreground">{t('booking_confirmed')}</div>
+            <div className="text-sm font-extrabold text-[var(--ink)]">{t('booking_confirmed')}</div>
             {confirmation?.zoomJoinUrl ? (
               <div className="mt-4">
                 <a href={confirmation.zoomJoinUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline">

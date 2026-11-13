@@ -26,8 +26,8 @@ import StatusBadge from '@/components/quizzes/StatusBadge'
 import ConfirmModal from '@/components/ConfirmModal'
 
 const inputCls =
-  'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
-const labelCls = 'block text-sm font-semibold text-foreground mb-1.5'
+  'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
+const labelCls = 'block text-sm font-semibold text-[var(--ink)] mb-1.5'
 
 type QType = 'MCQ' | 'SHORT_ANSWER' | 'FILE_UPLOAD'
 
@@ -360,7 +360,7 @@ export default function QuizBuilderPage() {
   if (!quiz) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--muted)]">الاختبار غير موجود</p>
+        <p className="text-[color:var(--ink-2)]">الاختبار غير موجود</p>
       </div>
     )
   }
@@ -371,22 +371,22 @@ export default function QuizBuilderPage() {
         <button
           type="button"
           onClick={back}
-          className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+          className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
         >
           <ArrowRight className="h-4 w-4" />
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-bold font-madinet text-foreground">{settings.title || quiz.title || 'الاختبار'}</h1>
+            <h1 className="truncate text-xl font-bold font-madinet text-[var(--ink)]">{settings.title || quiz.title || 'الاختبار'}</h1>
             <StatusBadge status={quiz.status} />
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--muted)]">
+          <div className="mt-1 flex items-center gap-2 text-xs text-[color:var(--ink-2)]">
             <span>{questions.length} سؤال</span>
-            <span className="text-[color:var(--border)]">•</span>
+            <span className="text-[color:var(--line)]">•</span>
             <span>{totalPoints} نقطة</span>
-            <span className="text-[color:var(--border)]">•</span>
+            <span className="text-[color:var(--line)]">•</span>
             {saveState === 'saving' ? (
-              <span className="text-[color:var(--muted)]">جارٍ الحفظ...</span>
+              <span className="text-[color:var(--ink-2)]">جارٍ الحفظ...</span>
             ) : saveState === 'saved' ? (
               <span className="flex items-center gap-1 text-[#10b981]">
                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -399,7 +399,7 @@ export default function QuizBuilderPage() {
           <button
             type="button"
             onClick={() => publish('DRAFT')}
-            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
           >
             إيقاف النشر
           </button>
@@ -417,9 +417,9 @@ export default function QuizBuilderPage() {
 
       <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
         <div className="space-y-5 min-w-0">
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-bold text-foreground">الأسئلة</h2>
+              <h2 className="font-bold text-[var(--ink)]">الأسئلة</h2>
               <button
                 type="button"
                 onClick={openNew}
@@ -431,16 +431,16 @@ export default function QuizBuilderPage() {
             </div>
 
             {orderedQuestions.length === 0 ? (
-              <div className="rounded-[12px] border border-dashed border-[color:var(--border)] bg-[color:var(--surface-2)]/40 p-10 text-center">
-                <ListChecks className="mx-auto mb-3 h-8 w-8 text-[color:var(--muted)]" />
-                <p className="text-sm text-[color:var(--muted)]">لا توجد أسئلة بعد. أضف أول سؤال لبدء بناء الاختبار.</p>
+              <div className="rounded-[12px] border border-dashed border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-10 text-center">
+                <ListChecks className="mx-auto mb-3 h-8 w-8 text-[color:var(--ink-2)]" />
+                <p className="text-sm text-[color:var(--ink-2)]">لا توجد أسئلة بعد. أضف أول سؤال لبدء بناء الاختبار.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {orderedQuestions.map((q, index) => (
                   <div
                     key={q.id}
-                    className="rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/50 p-4"
+                    className="rounded-[12px] border border-[color:var(--line)] bg-[color:var(--surface-2)]/50 p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -448,18 +448,18 @@ export default function QuizBuilderPage() {
                           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                             {index + 1}
                           </span>
-                          <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
+                          <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--ink-2)] border border-[color:var(--line)]">
                             {TYPE_META[(q.type as QType) ?? 'MCQ']?.label ?? q.type}
                           </span>
-                          <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} نقطة</span>
+                          <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} نقطة</span>
                         </div>
-                        <p className="mt-2 text-sm font-medium text-foreground">{q.questionText}</p>
+                        <p className="mt-2 text-sm font-medium text-[var(--ink)]">{q.questionText}</p>
                         {q.type === 'MCQ' && (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {q.choices.map((c: any) => (
                               <span
                                 key={c.id}
-                                className="truncate rounded-full bg-[color:var(--surface-2)] px-2.5 py-1 text-xs text-[color:var(--muted)] border border-[color:var(--border)] max-w-[200px]"
+                                className="truncate rounded-full bg-[color:var(--surface-2)] px-2.5 py-1 text-xs text-[color:var(--ink-2)] border border-[color:var(--line)] max-w-[200px]"
                               >
                                 {c.text}
                               </span>
@@ -472,7 +472,7 @@ export default function QuizBuilderPage() {
                           type="button"
                           onClick={() => moveQuestion(index, -1)}
                           disabled={index === 0}
-                          className="rounded-lg p-2 text-[color:var(--muted)] hover:text-foreground hover:bg-[color:var(--surface-2)] transition-colors duration-150 disabled:opacity-30"
+                          className="rounded-lg p-2 text-[color:var(--ink-2)] hover:text-[var(--ink)] hover:bg-[color:var(--surface-2)] transition-colors duration-150 disabled:opacity-30"
                         >
                           <ArrowUp className="h-4 w-4" />
                         </button>
@@ -480,14 +480,14 @@ export default function QuizBuilderPage() {
                           type="button"
                           onClick={() => moveQuestion(index, 1)}
                           disabled={index === orderedQuestions.length - 1}
-                          className="rounded-lg p-2 text-[color:var(--muted)] hover:text-foreground hover:bg-[color:var(--surface-2)] transition-colors duration-150 disabled:opacity-30"
+                          className="rounded-lg p-2 text-[color:var(--ink-2)] hover:text-[var(--ink)] hover:bg-[color:var(--surface-2)] transition-colors duration-150 disabled:opacity-30"
                         >
                           <ArrowDown className="h-4 w-4" />
                         </button>
                         <button
                           type="button"
                           onClick={() => openEdit(q)}
-                          className="flex items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-foreground hover:opacity-80 transition-opacity duration-150"
+                          className="flex items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                         >
                           تحرير
                         </button>
@@ -509,13 +509,13 @@ export default function QuizBuilderPage() {
 
         <div className="space-y-5 min-w-0">
           {editorOpen && (
-            <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+            <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-bold text-foreground">{editId === '__new__' ? 'سؤال جديد' : 'تعديل السؤال'}</h2>
+                <h2 className="font-bold text-[var(--ink)]">{editId === '__new__' ? 'سؤال جديد' : 'تعديل السؤال'}</h2>
                 <button
                   type="button"
                   onClick={() => setEditorOpen(false)}
-                  className="rounded-lg p-2 text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+                  className="rounded-lg p-2 text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -554,7 +554,7 @@ export default function QuizBuilderPage() {
                       onChange={(e) => setQForm((f) => ({ ...f, questionImage: e.target.value }))}
                       placeholder="رابط الصورة"
                     />
-                    <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150">
+                    <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2.5 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150">
                       {uploadingImg ? (
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       ) : (
@@ -573,7 +573,7 @@ export default function QuizBuilderPage() {
                     </label>
                   </div>
                   {qForm.questionImage && (
-                    <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--muted)]">
+                    <div className="mt-2 flex items-center gap-2 text-xs text-[color:var(--ink-2)]">
                       <ImageIcon className="h-3.5 w-3.5" />
                       تم إرفاق صورة
                     </div>
@@ -602,9 +602,9 @@ export default function QuizBuilderPage() {
                 </div>
 
                 {qForm.type === 'MCQ' && (
-                  <div className="rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/40 p-4">
+                  <div className="rounded-[12px] border border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-4">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-sm font-bold text-foreground">الخيارات</h3>
+                      <h3 className="text-sm font-bold text-[var(--ink)]">الخيارات</h3>
                       <button
                         type="button"
                         onClick={addChoice}
@@ -631,7 +631,7 @@ export default function QuizBuilderPage() {
                             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
                               c.isCorrect
                                 ? 'border-[#10b981] bg-[#10b981] text-white'
-                                : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-transparent'
+                                : 'border-[color:var(--line)] bg-[color:var(--surface-2)] text-transparent'
                             }`}
                           >
                             <CheckCheck className="h-3.5 w-3.5" />
@@ -653,7 +653,7 @@ export default function QuizBuilderPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-[color:var(--muted)]">
+                    <p className="mt-2 text-xs text-[color:var(--ink-2)]">
                       {qForm.allowMultipleAnswers
                         ? 'حدد كل الإجابات الصحيحة. يتطابق الاختيار معها كاملاً للمطابقة.'
                         : 'حدد إجابة صحيحة واحدة (زر دائري).'}
@@ -662,13 +662,13 @@ export default function QuizBuilderPage() {
                 )}
 
                 {qForm.type === 'SHORT_ANSWER' && (
-                  <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--muted)]">
+                  <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--ink-2)]">
                     سؤال مقالي: يكتب الطالب إجابته نصياً، وتُصحَّح يدوياً من صفحة المحاولات.
                   </p>
                 )}
 
                 {qForm.type === 'FILE_UPLOAD' && (
-                  <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--muted)]">
+                  <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[color:var(--ink-2)]">
                     سؤال رفع ملفات: يرفع الطالب ملفاً كإجابة، وتُصحَّح يدوياً من صفحة المحاولات.
                   </p>
                 )}
@@ -690,8 +690,8 @@ export default function QuizBuilderPage() {
             </div>
           )}
 
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-foreground">إعدادات الاختبار</h2>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-4 font-bold text-[var(--ink)]">إعدادات الاختبار</h2>
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>عنوان الاختبار (عربي)</label>
@@ -730,8 +730,8 @@ export default function QuizBuilderPage() {
                 <ToggleSwitch checked={settings.showResults} onChange={(v) => setS('showResults', v)} label="إظهار النتيجة بعد التسليم" />
               </div>
 
-              <details className="mt-4 rounded-[12px] border border-[color:var(--border)] bg-[color:var(--surface-2)]/40 p-4">
-                <summary className="cursor-pointer text-sm font-bold text-foreground">سياسة إعادة المحاولة</summary>
+              <details className="mt-4 rounded-[12px] border border-[color:var(--line)] bg-[color:var(--surface-2)]/40 p-4">
+                <summary className="cursor-pointer text-sm font-bold text-[var(--ink)]">سياسة إعادة المحاولة</summary>
                 <div className="mt-4 space-y-4">
                   <ToggleSwitch
                     checked={settings.unlimitedRetakes}
@@ -770,7 +770,7 @@ export default function QuizBuilderPage() {
                     )}
                   </div>
 
-                  <p className="rounded-[10px] bg-[color:var(--surface)] p-3 text-xs leading-5 text-[color:var(--muted)]">
+                  <p className="rounded-[10px] bg-[color:var(--surface)] p-3 text-xs leading-5 text-[color:var(--ink-2)]">
                     {settings.unlimitedRetakes
                       ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${retakeThresholdNum}%.`
                       : `الطالب يقدّر يعيد المحاولة حتى ${maxAttemptsNum} مرة إذا كانت درجته أقل من ${retakeThresholdNum}%.`}

@@ -82,7 +82,7 @@ function VerificationSection({ user }: { user: any }) {
           <CheckCircle size={28} color="#16a34a" />
           <span style={{ color: '#16a34a', fontSize: 18, fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>هويتك موثقة بنجاح</span>
         </div>
-        <p style={{ color: 'var(--muted)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك</p>
+        <p style={{ color: 'var(--ink-2)', fontSize: 14, fontFamily: 'DM Sans, sans-serif' }}>تم التحقق من هويتك - يظهر شارة التوثيق بجانب اسمك</p>
       </div>
     )
   }
@@ -91,8 +91,8 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <Loader2 size={48} color="#f59e0b" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
-        <p style={{ color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.</p>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>طلب التوثيق قيد المراجعة</h3>
+        <p style={{ color: 'var(--ink-2)', fontFamily: 'DM Sans, sans-serif' }}>سيقوم فريقنا بمراجعة وثائقك. سيتم إشعارك عند الاكتمال.</p>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     )
@@ -102,9 +102,9 @@ function VerificationSection({ user }: { user: any }) {
     return (
       <div style={{ padding: 32, textAlign: 'center', direction: 'rtl' }}>
         <XCircle size={48} color="#ef4444" style={{ margin: '0 auto 16px' }} />
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>تم رفض طلب التوثيق</h3>
         {verificationStatus?.idRejectedReason && <p style={{ color: '#ef4444', fontSize: 14, marginBottom: 16, fontFamily: 'DM Sans, sans-serif' }}>السبب: {verificationStatus.idRejectedReason}</p>}
-        <p style={{ color: 'var(--muted)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
+        <p style={{ color: 'var(--ink-2)', marginBottom: 24, fontFamily: 'DM Sans, sans-serif' }}>يمكنك إعادة التقديم بوثائق أوضح</p>
         <button onClick={() => { setStatus('UNVERIFIED'); setFrontImage(''); setBackImage('') }} style={{ padding: '10px 24px', background: '#5120c8', color: '#fff', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 500, fontFamily: 'DM Sans, sans-serif' }}>إعادة التقديم</button>
       </div>
     )
@@ -114,7 +114,7 @@ function VerificationSection({ user }: { user: any }) {
   return (
     <div style={{ padding: '24px 0', direction: 'rtl' }}>
       <div style={{ marginBottom: 28 }}>
-        <h3 style={{ color: 'var(--foreground)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
+        <h3 style={{ color: 'var(--ink)', fontSize: 20, fontWeight: 500, marginBottom: 8, fontFamily: 'DM Sans, sans-serif' }}>توثيق الهوية</h3>
         <div style={{ background: 'rgba(81,32,200,0.08)', border: '1px solid rgba(81,32,200,0.2)', borderRadius: 12, padding: '14px 18px' }}>
           <p style={{ color: '#A78BFA', fontSize: 14, margin: 0, lineHeight: 1.7, fontFamily: 'DM Sans, sans-serif' }}>
             متطلبات التوثيق:
@@ -125,22 +125,22 @@ function VerificationSection({ user }: { user: any }) {
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ color: 'var(--muted)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>وجه البطاقة (الأمامية)</label>
-        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--border)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
-          {frontImage ? <img src={frontImage} alt="ID Front" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'front' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--muted)" />}
+        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>وجه البطاقة (الأمامية)</label>
+        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${frontImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: frontImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+          {frontImage ? <img src={frontImage} alt="ID Front" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'front' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'front')} />
         </label>
       </div>
 
       <div style={{ marginBottom: 28 }}>
-        <label style={{ color: 'var(--muted)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>ظهر البطاقة (الخلفية)</label>
-        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--border)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
-          {backImage ? <img src={backImage} alt="ID Back" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'back' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--muted)" />}
+        <label style={{ color: 'var(--ink-2)', fontSize: 14, display: 'block', marginBottom: 10, fontFamily: 'DM Sans, sans-serif' }}>ظهر البطاقة (الخلفية)</label>
+        <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, border: `2px dashed ${backImage ? '#16a34a' : 'var(--line)'}`, borderRadius: 14, padding: 24, background: backImage ? 'rgba(22,163,74,0.05)' : 'transparent', cursor: 'pointer' }}>
+          {backImage ? <img src={backImage} alt="ID Back" style={{ maxHeight: 120, borderRadius: 8, objectFit: 'contain' }} /> : uploading === 'back' ? <Loader2 size={32} color="#5120c8" style={{ animation: 'spin 1s linear infinite' }} /> : <CreditCard size={32} color="var(--ink-2)" />}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0], 'back')} />
         </label>
       </div>
 
-      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--border)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
+      <button onClick={() => submitMutation.mutate()} disabled={!frontImage || !backImage || submitting} style={{ width: '100%', padding: 14, borderRadius: 12, background: !frontImage || !backImage ? 'var(--line)' : '#5120c8', color: '#fff', border: 'none', cursor: !frontImage || !backImage ? 'not-allowed' : 'pointer', fontSize: 15, fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'DM Sans, sans-serif' }}>
         {submitting ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> : <Shield size={18} />}
         {submitting ? 'جاري الإرسال...' : 'تقديم طلب التوثيق'}
       </button>
@@ -303,22 +303,22 @@ export default function SettingsPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', maxWidth: '100%', padding: '10px 12px',
-    background: 'var(--surface-2)', border: '1px solid var(--border)',
-    borderRadius: 8, color: 'var(--foreground)', fontSize: 14,
+    background: 'var(--surface-2)', border: '1px solid var(--line)',
+    borderRadius: 8, color: 'var(--ink)', fontSize: 14,
     fontFamily: 'DM Sans, sans-serif', outline: 'none', boxSizing: 'border-box',
   }
   const labelStyle: React.CSSProperties = {
-    fontSize: 12, color: 'var(--muted)',
+    fontSize: 12, color: 'var(--ink-2)',
     fontFamily: 'DM Sans, sans-serif', display: 'block', marginBottom: 4,
   }
 
   return (
     <div dir={isAr ? 'rtl' : 'ltr'} style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--foreground)', margin: 0 }}>
+        <h1 style={{ fontFamily: 'var(--font-ui)', fontWeight: 900, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', margin: 0 }}>
           {isAr ? 'الإعدادات' : 'Settings'}
         </h1>
-        <p style={{ color: 'var(--muted)', fontSize: 14, margin: '4px 0 0', fontFamily: 'DM Sans, sans-serif' }}>
+        <p style={{ color: 'var(--ink-2)', fontSize: 14, margin: '4px 0 0', fontFamily: 'DM Sans, sans-serif' }}>
           {isAr ? 'إدارة حسابك وتفضيلاتك' : 'Manage your account and preferences'}
         </p>
       </div>
@@ -329,7 +329,7 @@ export default function SettingsPage() {
           const Icon = tab.icon
           const active = activeTab === tab.key
           return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--muted)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
+            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: 'none', background: active ? '#5120c8' : 'transparent', color: active ? '#fff' : 'var(--ink-2)', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'DM Sans, sans-serif', transition: 'all 0.15s ease', flex: '1 1 auto' }}>
               <Icon size={14} />
               {tab.label}
             </button>
@@ -347,9 +347,9 @@ export default function SettingsPage() {
 
       {/* PROFILE TAB */}
       {activeTab === 'profile' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: 24 }}>
           {/* Avatar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
             <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: 'rgba(81,32,200,0.1)', border: '3px solid rgba(81,32,200,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative', flexShrink: 0 }}
               onClick={() => document.getElementById('settings-avatar')?.click()}
               onMouseEnter={e => { const ov = e.currentTarget.querySelector('.av-overlay') as HTMLDivElement; if (ov) ov.style.opacity = '1' }}
@@ -361,8 +361,8 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <p style={{ fontWeight: 500, color: 'var(--foreground)', fontSize: 15, margin: '0 0 4px', fontFamily: 'DM Sans, sans-serif' }}>{profileForm.firstName} {profileForm.lastName}</p>
-              <p style={{ color: 'var(--muted)', fontSize: 12, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'اضغط لتغيير الصورة' : 'Click to change photo'}</p>
+              <p style={{ fontWeight: 500, color: 'var(--ink)', fontSize: 15, margin: '0 0 4px', fontFamily: 'DM Sans, sans-serif' }}>{profileForm.firstName} {profileForm.lastName}</p>
+              <p style={{ color: 'var(--ink-2)', fontSize: 12, margin: 0, fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'اضغط لتغيير الصورة' : 'Click to change photo'}</p>
             </div>
             <input type="file" accept="image/*" id="settings-avatar" style={{ display: 'none' }}
               onChange={e => { const file = e.target.files?.[0]; if (file) { setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)) } }}
@@ -377,7 +377,7 @@ export default function SettingsPage() {
                 const on = profileForm.gender === val
                 return (
                   <button key={val} type="button" role="radio" aria-checked={on} onClick={() => setProfileForm(f => ({ ...f, gender: val }))}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, cursor: 'pointer', background: on ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', border: on ? '2px solid var(--primary)' : '1px solid var(--border)', color: 'var(--foreground)', fontSize: 14, fontWeight: 500 }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, cursor: 'pointer', background: on ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', border: on ? '2px solid var(--primary)' : '1px solid var(--line)', color: 'var(--ink)', fontSize: 14, fontWeight: 500 }}>
                     {val === 'MALE' ? <MaleAvatar size={40} /> : <FemaleAvatar size={40} />}
                     <span>{text}</span>
                   </button>
@@ -422,8 +422,8 @@ export default function SettingsPage() {
           
           {/* Instructor/Consultant fields */}
           {(me?.accountType === 'INSTRUCTOR' || me?.accountType === 'CONSULTANT') && (
-            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20, marginTop: 8 }}>
-              <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>
+            <div style={{ borderTop: '1px solid var(--line)', paddingTop: 20, marginTop: 8 }}>
+              <h4 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>
                 {isAr ? 'معلومات المحاضر/المستشار' : 'Instructor/Consultant Info'}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -461,8 +461,8 @@ export default function SettingsPage() {
 
       {/* SECURITY TAB */}
       {activeTab === 'security' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تغيير كلمة المرور' : 'Change Password'}</h3>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: 24 }}>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'تغيير كلمة المرور' : 'Change Password'}</h3>
           {[
             { key: 'oldPassword', label: isAr ? 'كلمة المرور الحالية' : 'Current Password', show: showOldPass, toggle: () => setShowOldPass(p => !p) },
             { key: 'newPassword', label: isAr ? 'كلمة المرور الجديدة' : 'New Password', show: showNewPass, toggle: () => setShowNewPass(p => !p) },
@@ -472,7 +472,7 @@ export default function SettingsPage() {
               <label style={labelStyle}>{field.label}</label>
               <div style={{ position: 'relative' }}>
                 <input type={field.show ? 'text' : 'password'} value={(passwordForm as any)[field.key]} onChange={e => setPasswordForm(f => ({ ...f, [field.key]: e.target.value }))} style={{ ...inputStyle, paddingRight: 40 }} />
-                <button type="button" onClick={field.toggle} style={{ position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}>
+                <button type="button" onClick={field.toggle} style={{ position: 'absolute', top: '50%', right: 10, transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-2)' }}>
                   {field.show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
@@ -493,8 +493,8 @@ export default function SettingsPage() {
 
       {/* PREFERENCES TAB */}
       {activeTab === 'preferences' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'التفضيلات' : 'Preferences'}</h3>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: 24 }}>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'التفضيلات' : 'Preferences'}</h3>
           <div style={{ marginBottom: 20 }}>
             <label style={labelStyle}>{isAr ? 'المظهر' : 'Theme'}</label>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -502,7 +502,7 @@ export default function SettingsPage() {
                 const Icon = opt.icon
                 const active = prefForm.theme === opt.value
                 return (
-                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); setTheme(opt.value) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
+                  <button key={opt.value} onClick={() => { setPrefForm(f => ({ ...f, theme: opt.value })); setTheme(opt.value) }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--line)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--ink-2)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
                     <Icon size={16} />{opt.label}
                   </button>
                 )
@@ -516,7 +516,7 @@ export default function SettingsPage() {
                 const currentLang = typeof window !== 'undefined' ? (window.location.pathname.startsWith('/ar') ? 'ar' : 'en') : locale
                 const active = currentLang === opt.value
                 return (
-                  <button key={opt.value} onClick={() => { const path = window.location.pathname; window.location.href = opt.value === 'ar' ? path.replace('/en/', '/ar/') : path.replace('/ar/', '/en/') }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--border)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--muted)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
+                  <button key={opt.value} onClick={() => { const path = window.location.pathname; window.location.href = opt.value === 'ar' ? path.replace('/en/', '/ar/') : path.replace('/ar/', '/en/') }} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 10, border: active ? '2px solid #5120c8' : '1px solid var(--line)', background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface-2)', color: active ? '#A78BFA' : 'var(--ink-2)', cursor: 'pointer', fontFamily: 'DM Sans, sans-serif', fontSize: 13, fontWeight: 500 }}>
                     {opt.label}
                   </button>
                 )
@@ -528,15 +528,15 @@ export default function SettingsPage() {
 
       {/* NOTIFICATIONS TAB */}
       {activeTab === 'notifications' && (
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 24 }}>
-          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'إعدادات الإشعارات' : 'Notification Settings'}</h3>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: 24 }}>
+          <h3 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>{isAr ? 'إعدادات الإشعارات' : 'Notification Settings'}</h3>
           {[{ key: 'emailNotifications', label: isAr ? 'إشعارات البريد الإلكتروني' : 'Email Notifications', desc: isAr ? 'استقبل تحديثات عبر البريد' : 'Receive updates via email' }].map(item => (
-            <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
+            <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--line)' }}>
               <div>
-                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--foreground)', fontFamily: 'DM Sans, sans-serif' }}>{item.label}</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--muted)', fontFamily: 'DM Sans, sans-serif' }}>{item.desc}</p>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: 'var(--ink)', fontFamily: 'DM Sans, sans-serif' }}>{item.label}</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--ink-2)', fontFamily: 'DM Sans, sans-serif' }}>{item.desc}</p>
               </div>
-              <button onClick={() => setPrefForm(f => ({ ...f, [item.key]: !(f as any)[item.key] }))} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: (prefForm as any)[item.key] ? '#5120c8' : 'var(--border)', position: 'relative', transition: 'background 0.2s ease' }}>
+              <button onClick={() => setPrefForm(f => ({ ...f, [item.key]: !(f as any)[item.key] }))} style={{ width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: (prefForm as any)[item.key] ? '#5120c8' : 'var(--line)', position: 'relative', transition: 'background 0.2s ease' }}>
                 <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#fff', position: 'absolute', top: 3, transition: 'left 0.2s ease', left: (prefForm as any)[item.key] ? 23 : 3 }} />
               </button>
             </div>

@@ -4707,3 +4707,17 @@ h1, h2 { text-wrap: balance; }
 .dw-vision-badge.sm { font-size: 10px; padding: 2px 5px; gap: 4px; }
 .dw-vision-badge.sm img { height: 12px !important; max-height: 12px; max-width: 40px !important; }
 .dw-vision-badge.sm svg { width: 18px; height: 12px; }
+
+/* Dashboard: mentor-support stat cells, path count badge, milestone stepper */
+.dw-dashboard .dw3-count-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--wash); color: var(--brand); white-space: nowrap; }
+.dw-dashboard .dw2-stats .dw3-stat { border: 1px solid var(--line); background: var(--bg-2); color: var(--ink-2); }
+.dw-dashboard .dw3-stat svg { color: var(--brand); }
+.dw-dashboard .dw2-stats .dw3-stat b { font-size: 24px; font-weight: 700; color: var(--ink); }
+.dw-dashboard .dw2-stats .dw3-stat.warn { background: var(--warn-bg); border-color: var(--warn); }
+.dw-dashboard .dw2-stats .dw3-stat.warn svg, .dw-dashboard .dw2-stats .dw3-stat.warn b, .dw-dashboard .dw2-stats .dw3-stat.warn small { color: var(--warn); }
+.dw-dashboard .dw2-stats .dw3-stat.good svg { color: var(--good); }
+.dw-dashboard .dw-ms li.done .dw-m-dot { background: var(--good); border-color: var(--good); color: #fff; }
+.dw-dashboard .dw-ms li.done::before { background: var(--good); }
+.dw-dashboard .dw-ms li.doing .dw-m-dot { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 700; }
+.dw-dashboard .dw-ms li { align-items: center; }
+.dw-dashboard .dw-m-dot { font-weight: 600; color: var(--ink-3); }

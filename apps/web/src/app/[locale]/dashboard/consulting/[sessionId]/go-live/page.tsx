@@ -109,8 +109,8 @@ export default function ConsultingGoLivePage() {
       dir={isAr ? 'rtl' : 'ltr'}
       style={{
         minHeight: '100vh',
-        background: 'var(--background)',
-        color: 'var(--foreground)',
+        background: 'var(--bg)',
+        color: 'var(--ink)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -122,8 +122,8 @@ export default function ConsultingGoLivePage() {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '12px 24px',
-          borderBottom: '1px solid var(--border)',
-          background: 'var(--card)',
+          borderBottom: '1px solid var(--line)',
+          background: 'var(--surface)',
           flexShrink: 0,
         }}
       >
@@ -144,7 +144,7 @@ export default function ConsultingGoLivePage() {
             {isAr ? 'جلسة مباشرة' : 'Live Session'}
           </span>
           {roomData?.topic && (
-            <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+            <span style={{ color: 'var(--ink-2)', fontSize: '0.85rem' }}>
               {roomData.topic}
             </span>
           )}
@@ -213,7 +213,7 @@ export default function ConsultingGoLivePage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--muted)',
+              color: 'var(--ink-2)',
               fontSize: '1rem',
             }}
           >
@@ -273,7 +273,7 @@ export default function ConsultingGoLivePage() {
             <p style={{ fontSize: '1.2rem', fontWeight: 700 }}>
               {isAr ? 'تم إنهاء الجلسة بنجاح' : 'Session ended successfully'}
             </p>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+            <p style={{ color: 'var(--ink-2)', fontSize: '0.9rem' }}>
               {isAr ? 'جاري تحويلك...' : 'Redirecting...'}
             </p>
           </div>
@@ -286,7 +286,7 @@ export default function ConsultingGoLivePage() {
               minHeight: '500px',
               borderRadius: '12px',
               overflow: 'hidden',
-              border: '1px solid var(--border)',
+              border: '1px solid var(--line)',
               background: '#000',
             }}
           >

@@ -8,8 +8,8 @@ import { get, post } from '@/lib/api'
 import ToggleSwitch from '@/components/quizzes/ToggleSwitch'
 
 const inputCls =
-  'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
-const labelCls = 'block text-sm font-semibold text-foreground mb-1.5'
+  'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
+const labelCls = 'block text-sm font-semibold text-[var(--ink)] mb-1.5'
 
 export default function NewQuizPage() {
   const params = useParams()
@@ -99,18 +99,18 @@ export default function NewQuizPage() {
         <button
           type="button"
           onClick={back}
-          className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+          className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
         >
           <ArrowRight className="h-4 w-4" />
           الرجوع للاختبارات
         </button>
-        <h1 className="mt-3 text-xl font-bold font-madinet text-foreground">اختبار جديد</h1>
+        <h1 className="mt-3 text-xl font-bold font-madinet text-[var(--ink)]">اختبار جديد</h1>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-foreground">بيانات الاختبار</h2>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-4 font-bold text-[var(--ink)]">بيانات الاختبار</h2>
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>عنوان الاختبار *</label>
@@ -173,8 +173,8 @@ export default function NewQuizPage() {
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-foreground">الإعدادات</h2>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-4 font-bold text-[var(--ink)]">الإعدادات</h2>
             <div className="grid gap-5 sm:grid-cols-2">
               <ToggleSwitch checked={form.shuffleQuestions} onChange={(v) => set('shuffleQuestions', v)} label="خلط ترتيب الأسئلة" />
               <ToggleSwitch checked={form.shuffleChoices} onChange={(v) => set('shuffleChoices', v)} label="خلط ترتيب الخيارات" />
@@ -183,8 +183,8 @@ export default function NewQuizPage() {
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-4 font-bold text-foreground">سياسة إعادة المحاولة</h2>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-4 font-bold text-[var(--ink)]">سياسة إعادة المحاولة</h2>
             <div className="space-y-5">
               <ToggleSwitch
                 checked={form.unlimitedRetakes}
@@ -220,7 +220,7 @@ export default function NewQuizPage() {
                 />
               </div>
 
-              <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-xs leading-5 text-[color:var(--muted)]">
+              <p className="rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-xs leading-5 text-[color:var(--ink-2)]">
                 {form.unlimitedRetakes
                   ? `الطالب يقدّر يعيد المحاولة بدون حد إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`
                   : `الطالب يقدّر يعيد المحاولة حتى ${Math.max(1, parseInt(form.maxAttempts, 10) || 1)} مرة إذا كانت درجته أقل من ${Math.min(100, Math.max(0, parseInt(form.retakeThreshold, 10) || 0))}%.`}

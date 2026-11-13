@@ -281,16 +281,16 @@ function AddLectureModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" dir="rtl">
-      <div className="w-full max-w-2xl rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl rounded-3xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold font-madinet text-foreground flex items-center gap-2">
+          <h2 className="text-lg font-bold font-madinet text-[var(--ink)] flex items-center gap-2">
             <Plus className="h-5 w-5" />
             إضافة محاضرة جديدة
           </h2>
           <button onClick={onClose} className="rounded-full p-1.5 hover:bg-[color:var(--surface-2)] transition-colors">
-            <X className="h-4 w-4 text-[color:var(--muted)]" />
+            <X className="h-4 w-4 text-[color:var(--ink-2)]" />
           </button>
         </div>
 
@@ -352,34 +352,34 @@ function AddLectureModal({
 
           {/* Title Input */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">اسم المحاضرة *</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">اسم المحاضرة *</label>
             <input
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
               placeholder="مثال: مقدمة في البرمجة"
-              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+              className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">وصف (اختياري)</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">وصف (اختياري)</label>
             <textarea
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
               rows={2}
               placeholder="وصف مختصر للمحتوى..."
-              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
+              className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors resize-none"
             />
           </div>
 
           {/* Section Select */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">القسم *</label>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">القسم *</label>
             <select
               value={form.sectionId}
               onChange={(e) => set('sectionId', e.target.value)}
-              className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+              className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
             >
               {sections.map((s) => (
                 <option key={s.id} value={s.id}>{s.title}</option>
@@ -390,16 +390,16 @@ function AddLectureModal({
           {lessonType === 'VIDEO' && (
             <>
               {/* ═══════ MEDIA UPLOAD SECTION ═══════ */}
-              <div className="space-y-4 pt-2 border-t border-[color:var(--border)]">
-                <label className="block text-sm font-bold text-foreground flex items-center gap-2">
+              <div className="space-y-4 pt-2 border-t border-[color:var(--line)]">
+                <label className="block text-sm font-bold text-[var(--ink)] flex items-center gap-2">
                   <Upload className="h-4 w-4 text-primary" />
                   الوسائط التعليمية
-                  <span className="text-xs font-normal text-[color:var(--muted)]">(يمكن رفع أكثر من نوع)</span>
+                  <span className="text-xs font-normal text-[color:var(--ink-2)]">(يمكن رفع أكثر من نوع)</span>
                 </label>
                 
                 {/* Video Upload */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                  <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <Video className="h-3.5 w-3.5" />
                     فيديو (اختياري)
                   </label>
@@ -412,7 +412,7 @@ function AddLectureModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-green-400">تم رفع الفيديو</p>
-                          <p className="text-xs text-[color:var(--muted)]">جاهز للعرض</p>
+                          <p className="text-xs text-[color:var(--ink-2)]">جاهز للعرض</p>
                         </div>
                       </div>
                       <button
@@ -428,16 +428,16 @@ function AddLectureModal({
                       className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
                         uploading && uploadType === 'video'
                           ? 'border-primary/50 bg-primary/5'
-                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-primary/50 hover:bg-primary/5'
+                          : 'border-[color:var(--line)] bg-[color:var(--surface-2)] hover:border-primary/50 hover:bg-primary/5'
                       }`}
                     >
                       {uploading && uploadType === 'video' ? (
                         <div className="w-full space-y-2">
-                          <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                          <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
                             <span className="text-sm">جارٍ رفع الفيديو... {progress}%</span>
                           </div>
-                          <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                          <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
                               className="h-full rounded-full bg-primary transition-all duration-300"
                               style={{ width: `${progress}%` }}
@@ -446,8 +446,8 @@ function AddLectureModal({
                         </div>
                       ) : (
                         <>
-                          <Video className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
-                          <p className="text-xs text-[color:var(--muted)] text-center">MP4, WebM — حد أقصى 500MB</p>
+                          <Video className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">MP4, WebM — حد أقصى 500MB</p>
                           <span className="text-xs text-primary font-medium">اضغط لرفع الفيديو</span>
                         </>
                       )}
@@ -467,7 +467,7 @@ function AddLectureModal({
 
                 {/* File Upload (PDF, DOC, etc.) */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                  <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <FileText className="h-3.5 w-3.5" />
                     ملف PDF أو مستند (اختياري)
                   </label>
@@ -480,7 +480,7 @@ function AddLectureModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-white truncate max-w-[200px]">{form.fileName}</p>
-                          <p className="text-xs text-[color:var(--muted)] flex items-center gap-1">ملف مرفوع <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></p>
+                          <p className="text-xs text-[color:var(--ink-2)] flex items-center gap-1">ملف مرفوع <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg></p>
                         </div>
                       </div>
                       <button
@@ -496,16 +496,16 @@ function AddLectureModal({
                       className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
                         uploading && uploadType === 'file'
                           ? 'border-[#5120c8]/50 bg-[#5120c8]/5'
-                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-[#5120c8]/50 hover:bg-[#5120c8]/5'
+                          : 'border-[color:var(--line)] bg-[color:var(--surface-2)] hover:border-[#5120c8]/50 hover:bg-[#5120c8]/5'
                       }`}
                     >
                       {uploading && uploadType === 'file' ? (
                         <div className="w-full space-y-2">
-                          <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                          <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
                             <span className="text-sm">جارٍ رفع الملف... {progress}%</span>
                           </div>
-                          <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                          <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
                               className="h-full rounded-full bg-[#5120c8] transition-all duration-300"
                               style={{ width: `${progress}%` }}
@@ -514,8 +514,8 @@ function AddLectureModal({
                         </div>
                       ) : (
                         <>
-                          <FileText className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
-                          <p className="text-xs text-[color:var(--muted)] text-center">PDF, Word, PowerPoint, Excel — حد أقصى 100MB</p>
+                          <FileText className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">PDF, Word, PowerPoint, Excel — حد أقصى 100MB</p>
                           <span className="text-xs text-white font-medium">اضغط لرفع الملف</span>
                         </>
                       )}
@@ -535,7 +535,7 @@ function AddLectureModal({
 
                 {/* Image Upload */}
                 <div className="relative">
-                  <label className="block text-xs font-medium text-[color:var(--muted)] mb-1.5 flex items-center gap-1">
+                  <label className="block text-xs font-medium text-[color:var(--ink-2)] mb-1.5 flex items-center gap-1">
                     <Image className="h-3.5 w-3.5" />
                     صورة (اختياري)
                   </label>
@@ -543,7 +543,7 @@ function AddLectureModal({
                   {form.imageUrl ? (
                     <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <div className="h-12 w-12 rounded-lg overflow-hidden border border-[color:var(--border)]">
+                        <div className="h-12 w-12 rounded-lg overflow-hidden border border-[color:var(--line)]">
                           <img 
                             src={form.imageUrl} 
                             alt="Preview" 
@@ -552,7 +552,7 @@ function AddLectureModal({
                         </div>
                         <div>
                           <p className="text-sm font-medium text-purple-400">تم رفع الصورة</p>
-                          <p className="text-xs text-[color:var(--muted)]">جاهزة للعرض</p>
+                          <p className="text-xs text-[color:var(--ink-2)]">جاهزة للعرض</p>
                         </div>
                       </div>
                       <button
@@ -568,16 +568,16 @@ function AddLectureModal({
                       className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 cursor-pointer transition-all ${
                         uploading && uploadType === 'image'
                           ? 'border-purple-500/50 bg-purple-500/5'
-                          : 'border-[color:var(--border)] bg-[color:var(--surface-2)] hover:border-purple-500/50 hover:bg-purple-500/5'
+                          : 'border-[color:var(--line)] bg-[color:var(--surface-2)] hover:border-purple-500/50 hover:bg-purple-500/5'
                       }`}
                     >
                       {uploading && uploadType === 'image' ? (
                         <div className="w-full space-y-2">
-                          <div className="flex items-center gap-2 text-[color:var(--muted)] justify-center">
+                          <div className="flex items-center gap-2 text-[color:var(--ink-2)] justify-center">
                             <Upload className="h-4 w-4 animate-bounce" />
                             <span className="text-sm">جارٍ رفع الصورة... {progress}%</span>
                           </div>
-                          <div className="h-2 rounded-full bg-[color:var(--border)] overflow-hidden">
+                          <div className="h-2 rounded-full bg-[color:var(--line)] overflow-hidden">
                             <div
                               className="h-full rounded-full bg-purple-500 transition-all duration-300"
                               style={{ width: `${progress}%` }}
@@ -586,8 +586,8 @@ function AddLectureModal({
                         </div>
                       ) : (
                         <>
-                          <Image className="h-8 w-8 text-[color:var(--muted)] opacity-40" />
-                          <p className="text-xs text-[color:var(--muted)] text-center">JPG, PNG, WebP, GIF — حد أقصى 10MB</p>
+                          <Image className="h-8 w-8 text-[color:var(--ink-2)] opacity-40" />
+                          <p className="text-xs text-[color:var(--ink-2)] text-center">JPG, PNG, WebP, GIF — حد أقصى 10MB</p>
                           <span className="text-xs text-purple-500 font-medium">اضغط لرفع الصورة</span>
                         </>
                       )}
@@ -609,7 +609,7 @@ function AddLectureModal({
               {/* Content Type Indicator */}
               {(form.videoUrl || form.fileUrl || form.imageUrl) && (
                 <div className="rounded-xl bg-[color:var(--surface-2)] p-3 flex items-center gap-2">
-                  <span className="text-xs text-[color:var(--muted)]">نوع المحتوى:</span>
+                  <span className="text-xs text-[color:var(--ink-2)]">نوع المحتوى:</span>
                   <div className="flex gap-2">
                     {form.videoUrl && (
                       <span className="text-xs px-2 py-1 rounded-full bg-red-500/10 text-red-400 flex items-center gap-1">
@@ -638,7 +638,7 @@ function AddLectureModal({
               {/* Live Date */}
               <div>
                 <label style={{ display: 'block', marginBottom: '6px',
-                  fontSize: '0.875rem', color: 'var(--foreground)' }}>
+                  fontSize: '0.875rem', color: 'var(--ink)' }}>
                   تاريخ البث المباشر *
                 </label>
                 <input
@@ -651,7 +651,7 @@ function AddLectureModal({
                     background: 'transparent',
                     border: '1px solid rgba(255,255,255,0.12)',
                     borderRadius: '8px',
-                    color: 'var(--foreground)', fontSize: '0.9rem',
+                    color: 'var(--ink)', fontSize: '0.9rem',
                     fontFamily: 'inherit',
                   }}
                 />
@@ -660,7 +660,7 @@ function AddLectureModal({
               {/* Duration */}
               <div>
                 <label style={{ display: 'block', marginBottom: '6px',
-                  fontSize: '0.875rem', color: 'var(--foreground)' }}>
+                  fontSize: '0.875rem', color: 'var(--ink)' }}>
                   المدة المتوقعة
                 </label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -701,7 +701,7 @@ function AddLectureModal({
                       justifyContent: 'space-between',
                       cursor: 'pointer',
                       opacity: 1 }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--ink)' }}>
                       {toggle.labelAr}
                     </span>
                     <div
@@ -726,7 +726,7 @@ function AddLectureModal({
                     </div>
                   </label>
                 ))}
-                <p style={{ color: 'var(--muted)', fontSize: '0.8rem',
+                <p style={{ color: 'var(--ink-2)', fontSize: '0.8rem',
                   margin: 0, lineHeight: 1.6 }}>
                   {liveRecordingNote(locale)}
                 </p>
@@ -749,13 +749,13 @@ function AddLectureModal({
           {/* Free Toggle */}
           <div className="flex items-center justify-between rounded-xl bg-[color:var(--surface-2)] px-4 py-3">
             <div>
-              <div className="text-sm font-medium text-foreground">محاضرة مجانية؟</div>
-              <div className="text-xs text-[color:var(--muted)]">تُعرض للطلاب غير المشتركين</div>
+              <div className="text-sm font-medium text-[var(--ink)]">محاضرة مجانية؟</div>
+              <div className="text-xs text-[color:var(--ink-2)]">تُعرض للطلاب غير المشتركين</div>
             </div>
             <button
               type="button"
               onClick={() => set('isFree', !form.isFree)}
-              className={`relative h-6 w-11 rounded-full transition-all ${form.isFree ? 'bg-primary' : 'bg-[color:var(--border)]'}`}
+              className={`relative h-6 w-11 rounded-full transition-all ${form.isFree ? 'bg-primary' : 'bg-[color:var(--line)]'}`}
             >
               <span
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${form.isFree ? 'left-[calc(100%-1.375rem)]' : 'left-0.5'}`}
@@ -773,11 +773,11 @@ function AddLectureModal({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 mt-5 pt-4 border-t border-[color:var(--border)]">
+        <div className="flex gap-3 mt-5 pt-4 border-t border-[color:var(--line)]">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-[color:var(--border)] py-2.5 text-sm font-medium text-foreground hover:bg-[color:var(--surface-2)] transition-colors"
+            className="flex-1 rounded-xl border border-[color:var(--line)] py-2.5 text-sm font-medium text-[var(--ink)] hover:bg-[color:var(--surface-2)] transition-colors"
           >
             إلغاء
           </button>
@@ -1590,7 +1590,7 @@ export default function ManageCoursePage() {
   if (!course) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--muted)]">الكورس غير موجود أو ليس لديك صلاحية إدارته.</p>
+        <p className="text-[color:var(--ink-2)]">الكورس غير موجود أو ليس لديك صلاحية إدارته.</p>
       </div>
     )
   }
@@ -1612,8 +1612,8 @@ export default function ManageCoursePage() {
         <div className="mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold font-madinet text-foreground">{course.titleEn}</h1>
-              {course.titleAr && <p className="text-sm text-[color:var(--muted)] mt-0.5">{course.titleAr}</p>}
+              <h1 className="text-2xl font-bold font-madinet text-[var(--ink)]">{course.titleEn}</h1>
+              {course.titleAr && <p className="text-sm text-[color:var(--ink-2)] mt-0.5">{course.titleAr}</p>}
             </div>
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
@@ -1625,7 +1625,7 @@ export default function ManageCoursePage() {
               {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
             </span>
           </div>
-          <div className="mt-2 flex gap-4 text-sm text-[color:var(--muted)]">
+          <div className="mt-2 flex gap-4 text-sm text-[color:var(--ink-2)]">
             <span>{course._count?.enrollments ?? 0} مستخدم</span>
             <span>·</span>
             <span>{sections.length} قسم</span>
@@ -1633,7 +1633,7 @@ export default function ManageCoursePage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--border)] p-1 mb-6 overflow-x-auto">
+        <div className="flex gap-1 rounded-2xl bg-[color:var(--surface)] border border-[color:var(--line)] p-1 mb-6 overflow-x-auto">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -1648,7 +1648,7 @@ export default function ManageCoursePage() {
               className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all ${
                 activeTab === tab.key
                   ? 'bg-primary text-white shadow-md'
-                  : 'text-[color:var(--muted)] hover:bg-[color:var(--surface-2)] hover:text-foreground'
+                  : 'text-[color:var(--ink-2)] hover:bg-[color:var(--surface-2)] hover:text-[var(--ink)]'
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -1660,20 +1660,20 @@ export default function ManageCoursePage() {
         {/* ── Tab: Content ── */}
         {activeTab === 'content' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold font-madinet text-foreground">أقسام الكورس</h2>
+            <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">أقسام الكورس</h2>
             {sections.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-[color:var(--border)] p-8 text-center text-sm text-[color:var(--muted)]">
+              <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-8 text-center text-sm text-[color:var(--ink-2)]">
                 لا توجد أقسام بعد. أضف قسماً أولاً.
               </div>
             )}
             {sections.map((sec, i) => (
-              <div key={sec.id} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+              <div key={sec.id} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-4">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                     {i + 1}
                   </span>
-                  <h3 className="font-semibold text-foreground">{sec.title}</h3>
-                  <span className="text-xs text-[color:var(--muted)] mr-auto">
+                  <h3 className="font-semibold text-[var(--ink)]">{sec.title}</h3>
+                  <span className="text-xs text-[color:var(--ink-2)] mr-auto">
                     {sec.lessons?.length ?? 0} محاضرة
                   </span>
                 </div>
@@ -1694,9 +1694,9 @@ export default function ManageCoursePage() {
                         ) : lesson.imageUrl ? (
                           <Image className="h-3.5 w-3.5 text-purple-400 shrink-0" />
                         ) : (
-                          <File className="h-3.5 w-3.5 text-[color:var(--muted)] shrink-0" />
+                          <File className="h-3.5 w-3.5 text-[color:var(--ink-2)] shrink-0" />
                         )}
-                        <span className="flex-1 text-foreground truncate">{lesson.title}</span>
+                        <span className="flex-1 text-[var(--ink)] truncate">{lesson.title}</span>
                         
                         {/* Content type badges */}
                         <div className="flex gap-1">
@@ -1745,7 +1745,7 @@ export default function ManageCoursePage() {
                 onChange={(e) => setAddSectionTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
                 placeholder="اسم القسم الجديد"
-                className="flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+                className="flex-1 rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
               />
               <button
                 type="button"
@@ -1768,7 +1768,7 @@ export default function ManageCoursePage() {
         {activeTab === 'lectures' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold font-madinet text-foreground">المحاضرات</h2>
+              <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">المحاضرات</h2>
               {sections.length > 0 && (
                 <button
                   type="button"
@@ -1782,20 +1782,20 @@ export default function ManageCoursePage() {
             </div>
 
             {sections.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-[color:var(--border)] p-8 text-center text-sm text-[color:var(--muted)]">
+              <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-8 text-center text-sm text-[color:var(--ink-2)]">
                 أضف أقسام للكورس أولاً من تبويب "المحتوى"، ثم أضف المحاضرات.
               </div>
             )}
 
             {sections.map((sec) => (
-              <div key={sec.id} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden">
-                <div className="flex items-center gap-3 px-5 py-3 bg-[color:var(--surface-2)] border-b border-[color:var(--border)]">
+              <div key={sec.id} className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] overflow-hidden">
+                <div className="flex items-center gap-3 px-5 py-3 bg-[color:var(--surface-2)] border-b border-[color:var(--line)]">
                   <BookOpen className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold text-foreground text-sm">{sec.title}</h3>
-                  <span className="text-xs text-[color:var(--muted)] mr-auto">{sec.lessons?.length ?? 0} محاضرة</span>
+                  <h3 className="font-semibold text-[var(--ink)] text-sm">{sec.title}</h3>
+                  <span className="text-xs text-[color:var(--ink-2)] mr-auto">{sec.lessons?.length ?? 0} محاضرة</span>
                 </div>
                 {sec.lessons?.length > 0 ? (
-                  <div className="divide-y divide-[color:var(--border)]">
+                  <div className="divide-y divide-[color:var(--line)]">
                     {sec.lessons.map((lesson: any) => (
                       <div key={lesson.id} className="flex items-center gap-3 px-5 py-3 hover:bg-[color:var(--surface-2)] transition-colors">
                         {/* Enhanced icon display */}
@@ -1822,13 +1822,13 @@ export default function ManageCoursePage() {
                           )}
                           {!(lesson.type === 'LIVE') && !lesson.videoUrl && !lesson.fileUrl && !lesson.imageUrl && (
                             <div className="h-8 w-8 rounded-lg bg-[color:var(--surface-2)] flex items-center justify-center">
-                              <File className="h-4 w-4 text-[color:var(--muted)]" />
+                              <File className="h-4 w-4 text-[color:var(--ink-2)]" />
                             </div>
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">{lesson.title}</div>
+                          <div className="text-sm font-medium text-[var(--ink)] truncate">{lesson.title}</div>
                           <div className="flex gap-2 mt-1">
                             {(lesson.type === 'LIVE') && (
                               <span style={{
@@ -1875,7 +1875,7 @@ export default function ManageCoursePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="px-5 py-4 text-sm text-[color:var(--muted)]">لا توجد محاضرات في هذا القسم بعد.</div>
+                  <div className="px-5 py-4 text-sm text-[color:var(--ink-2)]">لا توجد محاضرات في هذا القسم بعد.</div>
                 )}
               </div>
             ))}
@@ -1885,17 +1885,17 @@ export default function ManageCoursePage() {
         {/* ── Tab: Students ── */}
         {activeTab === 'students' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-bold font-madinet text-foreground">
+            <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">
               الطلاب ({course._count?.enrollments ?? 0})
             </h2>
             {(course.enrollments ?? []).length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[color:var(--border)] p-10 text-center">
+              <div className="rounded-2xl border border-dashed border-[color:var(--line)] p-10 text-center">
                 <Users className="h-10 w-10 mx-auto opacity-20 mb-3" />
-                <p className="text-sm text-[color:var(--muted)]">لا يوجد طلاب مسجلون بعد</p>
+                <p className="text-sm text-[color:var(--ink-2)]">لا يوجد طلاب مسجلون بعد</p>
               </div>
             ) : (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden">
-                <div className="divide-y divide-[color:var(--border)]">
+              <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] overflow-hidden">
+                <div className="divide-y divide-[color:var(--line)]">
                   {course.enrollments.map((en: any) => {
                     const firstName = en.user?.profile?.firstName ?? ''
                     const lastName = en.user?.profile?.lastName ?? ''
@@ -1908,10 +1908,10 @@ export default function ManageCoursePage() {
                           ) : initials}
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-foreground">{firstName} {lastName}</div>
-                          <div className="text-xs text-[color:var(--muted)]">{en.user?.email}</div>
+                          <div className="text-sm font-semibold text-[var(--ink)]">{firstName} {lastName}</div>
+                          <div className="text-xs text-[color:var(--ink-2)]">{en.user?.email}</div>
                         </div>
-                        <div className="mr-auto text-xs text-[color:var(--muted)]">
+                        <div className="mr-auto text-xs text-[color:var(--ink-2)]">
                           تقدم: {Math.round(en.progress ?? 0)}%
                         </div>
                       </div>
@@ -2082,36 +2082,36 @@ function CourseSettingsTab({
 
   return (
     <div className="max-w-lg space-y-5">
-      <h2 className="text-lg font-bold font-madinet text-foreground">إعدادات الكورس</h2>
+      <h2 className="text-lg font-bold font-madinet text-[var(--ink)]">إعدادات الكورس</h2>
 
       {[
         { label: 'العنوان', key: 'title' as const },
         { label: 'العنوان بالعربية', key: 'titleAr' as const },
       ].map((field) => (
         <div key={field.key}>
-          <label className="block text-sm font-medium text-foreground mb-1.5">{field.label}</label>
+          <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">{field.label}</label>
           <input
             value={form[field.key]}
             onChange={(e) => setF(field.key, e.target.value)}
-            className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors"
+            className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors"
           />
         </div>
       ))}
 
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">الوصف</label>
+        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">الوصف</label>
         <textarea
           value={form.description}
           onChange={(e) => setF('description', e.target.value)}
           rows={3}
-          className="w-full rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors resize-none"
+          className="w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors resize-none"
         />
       </div>
 
       {/* Price and level are managed by admin only — hidden from instructor */}
 
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1.5">الحالة</label>
+        <label className="block text-sm font-medium text-[var(--ink)] mb-1.5">الحالة</label>
         <div className="flex gap-3">
           {[
             { value: 'DRAFT', label: 'مسودة' },
@@ -2125,7 +2125,7 @@ function CourseSettingsTab({
               className={`flex-1 rounded-xl border py-2.5 text-sm font-medium transition-all ${
                 form.status === opt.value
                   ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-[color:var(--border)] bg-[color:var(--surface-2)] text-[color:var(--muted)] hover:border-primary/50'
+                  : 'border-[color:var(--line)] bg-[color:var(--surface-2)] text-[color:var(--ink-2)] hover:border-primary/50'
               }`}
             >
               {opt.label}
@@ -2138,21 +2138,21 @@ function CourseSettingsTab({
       {isAdmin && (
         <div
           style={{
-            border: '1px solid var(--border)',
+            border: '1px solid var(--line)',
             borderRadius: '14px',
             padding: '1rem',
             background: 'var(--surface-2)',
           }}
         >
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label className="block text-sm font-medium text-[var(--ink)] mb-1">
             المسارات المهنية
           </label>
-          <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--muted)' }}>
+          <p style={{ margin: '0 0 10px', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
             يظهر الكورس فقط في المسارات المحددة. اترك القائمة فارغة لإزالته من كل المسارات.
           </p>
           <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
             {(careerPathOptions as any[]).length === 0 ? (
-              <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--ink-2)' }}>
                 لا توجد مسارات متاحة
               </div>
             ) : (
@@ -2163,7 +2163,7 @@ function CourseSettingsTab({
                 return (
                   <label
                     key={p.id || slug}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-foreground hover:bg-primary/5"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[var(--ink)] hover:bg-primary/5"
                   >
                     <input
                       type="checkbox"
@@ -2172,7 +2172,7 @@ function CourseSettingsTab({
                       className="h-4 w-4 accent-[color:var(--primary)]"
                     />
                     <span>{p.titleAr || p.titleEn || p.title || slug}</span>
-                    <span style={{ marginInlineStart: 'auto', fontSize: '0.7rem', color: 'var(--muted)' }}>
+                    <span style={{ marginInlineStart: 'auto', fontSize: '0.7rem', color: 'var(--ink-2)' }}>
                       {slug}
                     </span>
                   </label>
@@ -2180,7 +2180,7 @@ function CourseSettingsTab({
               })
             )}
           </div>
-          <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--muted)' }}>
+          <p style={{ margin: '10px 0 0', fontSize: '0.75rem', color: 'var(--ink-2)' }}>
             {careerPaths.length > 0
               ? `المحدد (${careerPaths.length}): ${careerPaths.join('، ')}`
               : 'لا مسارات محددة'}
@@ -2223,10 +2223,10 @@ function CourseSettingsTab({
             </svg>
           </div>
           <div>
-            <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:'var(--foreground)' }}>
+            <h3 style={{ margin:0, fontSize:'0.95rem', fontWeight:700, color:'var(--ink)' }}>
               إعدادات الشهادة
             </h3>
-            <p style={{ margin:0, fontSize:'0.78rem', color:'var(--muted-foreground)' }}>
+            <p style={{ margin:0, fontSize:'0.78rem', color:'var(--ink-3)' }}>
               {course?.isCompleted
                 ? (
                   <span className="flex items-center gap-1">
@@ -2246,7 +2246,7 @@ function CourseSettingsTab({
 
         {!course?.isCompleted && (
           <div style={{ marginBottom:'1rem' }}>
-            <label style={{ fontSize:'0.82rem', color:'var(--muted-foreground)',
+            <label style={{ fontSize:'0.82rem', color:'var(--ink-3)',
               display:'block', marginBottom:'6px' }}>
               العدد المتوقع للدروس النهائي
             </label>
@@ -2259,7 +2259,7 @@ function CourseSettingsTab({
                 width:'120px', padding:'8px 12px', borderRadius:'8px',
                 background:'rgba(255,255,255,0.05)',
                 border:'1px solid rgba(255,255,255,0.1)',
-                color:'var(--foreground)', fontFamily:'inherit', fontSize:'0.875rem',
+                color:'var(--ink)', fontFamily:'inherit', fontSize:'0.875rem',
               }}
             />
             <p style={{ fontSize:'0.75rem', color:'#666680', margin:'4px 0 0' }}>
@@ -2271,10 +2271,10 @@ function CourseSettingsTab({
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between',
           padding:'10px 0', borderTop:'1px solid rgba(255,255,255,0.06)', marginBottom:'1rem' }}>
           <div>
-            <p style={{ margin:0, fontSize:'0.875rem', fontWeight:600, color:'var(--foreground)' }}>
+            <p style={{ margin:0, fontSize:'0.875rem', fontWeight:600, color:'var(--ink)' }}>
               تفعيل الشهادات
             </p>
-            <p style={{ margin:0, fontSize:'0.75rem', color:'var(--muted-foreground)' }}>
+            <p style={{ margin:0, fontSize:'0.75rem', color:'var(--ink-3)' }}>
               تتوفر فقط عند إعلان اكتمال الكورس
             </p>
           </div>

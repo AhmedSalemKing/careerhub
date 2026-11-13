@@ -429,6 +429,10 @@ const [confirmModal, setConfirmModal] = useState<{
 
   return (
     <div style={{ minHeight: '100vh', background: bg, direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 24px', background: 'var(--wash, #efe9ff)', borderBottom: `1px solid ${border}`, fontSize: 13, color: text }}>
+        <span>{isAr ? 'هذه الصفحة انتقلت للداشبورد، وتجد مسارك الآن في بطاقة المسار المهني.' : 'This page has moved to the dashboard. Your path now lives in the career path card.'}</span>
+        <a href={`/${locale}/dashboard`} style={{ fontWeight: 700, color: 'var(--brand, #5414f6)', textDecoration: 'none' }}>{isAr ? 'العودة للداشبورد' : 'Back to dashboard'}</a>
+      </div>
       <div style={{ padding: '28px 24px 0', borderBottom: `1px solid ${border}`, background: cardBg }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ marginBottom: 20 }}>

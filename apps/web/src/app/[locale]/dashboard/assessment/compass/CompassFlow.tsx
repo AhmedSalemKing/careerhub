@@ -62,7 +62,7 @@ export function CompassFlow() {
 
   if (error) {
     return (
-      <div dir="rtl" style={{ padding: 24, textAlign: 'center', color: 'var(--muted-foreground)' }}>
+      <div dir="rtl" style={{ padding: 24, textAlign: 'center', color: 'var(--ink-3)' }}>
         <p style={{ marginBottom: 16 }}>{error}</p>
         <button
           onClick={() => void startSession()}
@@ -76,7 +76,7 @@ export function CompassFlow() {
 
   if (isLoading && !session) {
     return (
-      <div dir="rtl" style={{ padding: 40, textAlign: 'center', color: 'var(--muted-foreground)' }}>
+      <div dir="rtl" style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>
         جارٍ تحميل الاختبار...
       </div>
     )
@@ -98,22 +98,22 @@ export function CompassFlow() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>
             بوصلة المسار المهني
           </h1>
-          <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>
             المرحلة {currentStage} من {totalStages}
           </span>
         </div>
         {/* Progress bar */}
-        <div style={{ height: 4, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+        <div style={{ height: 4, background: 'var(--line)', borderRadius: 4, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${progressPct}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', transition: 'width 0.4s ease', borderRadius: 4 }} />
         </div>
-        <div style={{ marginTop: 6, fontSize: 12, color: 'var(--muted-foreground)' }}>
+        <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)' }}>
           {STAGE_TITLES_AR[currentStage] ?? ''}
         </div>
         {/* Evidence notice */}
-        <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8, fontSize: 11, color: 'var(--muted-foreground)' }}>
+        <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 8, fontSize: 11, color: 'var(--ink-3)' }}>
           النتائج مبنية على أدلة من إجاباتك — المسارات المقترحة مبدئية وتحتاج إلى مراجعة.
         </div>
       </div>
@@ -136,7 +136,7 @@ export function CompassFlow() {
           disabled={submitting || isLoading}
           style={{
             padding: '12px 28px', borderRadius: 12, border: 'none',
-            background: submitting ? 'var(--muted)' : 'linear-gradient(135deg,#6366f1,#4338ca)',
+            background: submitting ? 'var(--ink-2)' : 'linear-gradient(135deg,#6366f1,#4338ca)',
             color: '#fff', fontWeight: 600, fontSize: 14, cursor: submitting ? 'not-allowed' : 'pointer',
             fontFamily: 'var(--font-ui)',
           }}
@@ -146,7 +146,7 @@ export function CompassFlow() {
       </div>
 
       {/* Progress detail */}
-      <p style={{ marginTop: 16, fontSize: 11, color: 'var(--muted-foreground)', textAlign: 'center' }}>
+      <p style={{ marginTop: 16, fontSize: 11, color: 'var(--ink-3)', textAlign: 'center' }}>
         تمت الإجابة على {progress.answeredBaseline} من {progress.totalBaseline} سؤالًا أساسيًا
         {progress.answeredFollowUp > 0 && ` + ${progress.answeredFollowUp} سؤال إضافي`}
       </p>

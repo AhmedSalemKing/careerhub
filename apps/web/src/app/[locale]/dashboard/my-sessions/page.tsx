@@ -59,7 +59,7 @@ const STATUS_CONFIG: Record<string, any> = {
   AWAITING_PAYMENT:     { ar: 'بانتظار الدفع',           en: 'Awaiting Payment',   color: 'var(--warning)',  bg: 'var(--warning-subtle)' },
   CONFIRMED:            { ar: 'مؤكدة',                   en: 'Confirmed',          color: 'var(--primary)', bg: 'var(--primary-subtle)' },
   IN_PROGRESS:          { ar: 'جارية',                   en: 'In Progress',        color: 'var(--success)', bg: 'var(--success-subtle)' },
-  COMPLETED:            { ar: 'مكتملة',                  en: 'Completed',          color: 'var(--muted)',   bg: 'var(--surface-2)' },
+  COMPLETED:            { ar: 'مكتملة',                  en: 'Completed',          color: 'var(--ink-2)',   bg: 'var(--surface-2)' },
   CANCELLED:            { ar: 'ملغاة',                   en: 'Cancelled',          color: 'var(--error)',   bg: 'var(--error-subtle)' },
   RESCHEDULE_REQUESTED: { ar: 'تغيير موعد',              en: 'Reschedule Pending', color: 'var(--accent)',  bg: 'var(--accent-light)' },
 }
@@ -145,8 +145,8 @@ export default function MySessionsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--background)', direction: isAr ? 'rtl' : 'ltr' }}>
-      <div style={{ padding: '26px 24px 0', borderBottom: '1px solid var(--border)', background: 'var(--card)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', direction: isAr ? 'rtl' : 'ltr' }}>
+      <div style={{ padding: '26px 24px 0', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
@@ -154,16 +154,16 @@ export default function MySessionsPage() {
                 <Ic.user size={19} />
               </div>
               <div>
-                <h1 style={{ color: 'var(--foreground)', fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
+                <h1 style={{ color: 'var(--ink)', fontSize: 19, fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
                   {isAr ? 'جلساتي الاستشارية' : 'My Consulting Sessions'}
                 </h1>
-                <p style={{ color: 'var(--muted)', fontSize: 11, margin: 0 }}>
+                <p style={{ color: 'var(--ink-2)', fontSize: 11, margin: 0 }}>
                   {isAr ? `${mySessions.length} جلسة إجمالاً` : `${mySessions.length} total sessions`}
                 </p>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 7 }}>
-              <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
+              <button onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-2)', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
                 <Ic.refresh size={12} />{isAr ? 'تحديث' : 'Refresh'}
               </button>
               <button onClick={() => router.push(`/${locale}/coaching`)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 9, background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500 }}>
@@ -175,11 +175,11 @@ export default function MySessionsPage() {
           <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
             {[
               { val: mySessions.filter((s: any) => ['CONFIRMED','IN_PROGRESS'].includes(s.status)).length, ar: 'جلساتي القادمة', en: 'My Upcoming', color: 'var(--primary)', background: 'var(--primary-subtle)' },
-              { val: mySessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: 'var(--muted)', background: 'var(--surface-2)' },
+              { val: mySessions.filter((s: any) => s.status === 'COMPLETED').length, ar: 'مكتملة', en: 'Completed', color: 'var(--ink-2)', background: 'var(--surface-2)' },
             ].map((s, i) => (
-              <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)', background: s.background, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div key={i} style={{ padding: '9px 14px', borderRadius: 10, border: '1px solid var(--line)', background: s.background, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ color: s.color, fontSize: 18, fontWeight: 300 }}>{s.val}</span>
-                <span style={{ color: 'var(--muted)', fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
+                <span style={{ color: 'var(--ink-2)', fontSize: 11 }}>{isAr ? s.ar : s.en}</span>
               </div>
             ))}
           </div>
@@ -188,9 +188,9 @@ export default function MySessionsPage() {
             {TABS.map(tab => {
               const count = mySessions.filter((s: any) => tab.statuses.includes(s.status)).length
               return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: activeTab === tab.key ? 'var(--primary)' : 'var(--muted)', borderBottom: `2px solid ${activeTab === tab.key ? 'var(--primary)' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '11px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, color: activeTab === tab.key ? 'var(--primary)' : 'var(--ink-2)', borderBottom: `2px solid ${activeTab === tab.key ? 'var(--primary)' : 'transparent'}`, marginBottom: -1, transition: 'all 0.15s' }}>
                   {isAr ? tab.ar : tab.en}
-                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 300, background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface-2)', color: activeTab === tab.key ? 'var(--primary-foreground)' : 'var(--muted)' }}>{count}</span>}
+                  {count > 0 && <span style={{ padding: '1px 5px', borderRadius: 10, fontSize: 9, fontWeight: 300, background: activeTab === tab.key ? 'var(--primary)' : 'var(--surface-2)', color: activeTab === tab.key ? 'var(--primary-foreground)' : 'var(--ink-2)' }}>{count}</span>}
                 </button>
               )
             })}
@@ -207,9 +207,9 @@ export default function MySessionsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '70px 24px' }}>
-            <span style={{ color: 'var(--muted)', opacity: 0.4, display: 'block', marginBottom: 14 }}><Ic.calendar size={44} /></span>
-            <h3 style={{ color: 'var(--foreground)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
-            <p style={{ color: 'var(--muted)', fontSize: 13, marginBottom: 20 }}>
+            <span style={{ color: 'var(--ink-2)', opacity: 0.4, display: 'block', marginBottom: 14 }}><Ic.calendar size={44} /></span>
+            <h3 style={{ color: 'var(--ink)', fontSize: 18, fontWeight: 500, margin: '0 0 8px' }}>{isAr ? 'لا توجد جلسات' : 'No sessions found'}</h3>
+            <p style={{ color: 'var(--ink-2)', fontSize: 13, marginBottom: 20 }}>
               {activeTab === 'upcoming' ? (isAr ? 'احجز جلستك الأولى' : 'Book your first session') : (isAr ? 'لا توجد جلسات هنا' : 'No sessions here')}
             </p>
             {activeTab === 'upcoming' && (
@@ -230,8 +230,8 @@ export default function MySessionsPage() {
 
               return (
                 <div key={session.id} style={{
-                  background: 'var(--card)', borderRadius: 18,
-                  border: `1.5px solid ${soon ? 'var(--primary-border)' : (isRescheduleReq ? 'var(--accent)' : 'var(--border)')}`,
+                  background: 'var(--surface)', borderRadius: 18,
+                  border: `1.5px solid ${soon ? 'var(--primary-border)' : (isRescheduleReq ? 'var(--accent)' : 'var(--line)')}`,
                   overflow: 'hidden',
                   boxShadow: soon ? '0 0 0 4px var(--primary-subtle)' : 'none',
                   transition: 'all 0.2s',
@@ -274,20 +274,20 @@ export default function MySessionsPage() {
                           ? <img src={consultant.profile.avatar} alt="" style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
                           : <div style={{ width: 46, height: 46, borderRadius: 12, background: 'var(--primary-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontSize: 16, fontWeight: 500, flexShrink: 0 }}>{consultantName?.[0] || '?'}</div>}
                         <div>
-                          <div style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 300, marginBottom: 1 }}>
+                          <div style={{ color: 'var(--ink-2)', fontSize: 11, fontWeight: 300, marginBottom: 1 }}>
                             {isAr ? 'المستشار' : 'Consultant'}
                           </div>
-                          <div style={{ color: 'var(--foreground)', fontSize: 15, fontWeight: 500 }}>{consultantName}</div>
+                          <div style={{ color: 'var(--ink)', fontSize: 15, fontWeight: 500 }}>{consultantName}</div>
                           {consultant?.profile?.speciality && (
                             <div style={{ color: 'var(--primary)', fontSize: 11, fontWeight: 300 }}>{consultant.profile.speciality}</div>
                           )}
                           {session.sessionName && (
-                            <div style={{ color: 'var(--muted)', fontSize: 11, marginTop: 2 }}>
-                              {isAr ? 'الجلسة: ' : 'Session: '}<span style={{ color: 'var(--foreground)', fontWeight: 300 }}>{session.sessionName}</span>
+                            <div style={{ color: 'var(--ink-2)', fontSize: 11, marginTop: 2 }}>
+                              {isAr ? 'الجلسة: ' : 'Session: '}<span style={{ color: 'var(--ink)', fontWeight: 300 }}>{session.sessionName}</span>
                             </div>
                           )}
                           {session.topic && (
-                            <div style={{ color: 'var(--muted)', fontSize: 11 }}>
+                            <div style={{ color: 'var(--ink-2)', fontSize: 11 }}>
                               {isAr ? 'الموضوع: ' : 'Topic: '}{session.topic}
                             </div>
                           )}
@@ -307,23 +307,23 @@ export default function MySessionsPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: 12 }}>
+                    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', padding: '10px 14px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--line)', marginBottom: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Ic.calendar size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>{formatDate(session.scheduledAt, locale)}</span>
+                        <Ic.calendar size={12} color="var(--ink-2)" />
+                        <span style={{ color: 'var(--ink)', fontSize: 12, fontWeight: 300 }}>{formatDate(session.scheduledAt, locale)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Ic.clock size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>{formatTimeOnly(session.scheduledAt)}</span>
+                        <Ic.clock size={12} color="var(--ink-2)" />
+                        <span style={{ color: 'var(--ink)', fontSize: 12, fontWeight: 300 }}>{formatTimeOnly(session.scheduledAt)}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <Ic.video size={12} color="var(--muted)" />
-                        <span style={{ color: 'var(--foreground)', fontSize: 12, fontWeight: 300 }}>Daily.co</span>
+                        <Ic.video size={12} color="var(--ink-2)" />
+                        <span style={{ color: 'var(--ink)', fontSize: 12, fontWeight: 300 }}>Daily.co</span>
                       </div>
                       {session.duration && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <Ic.clock size={12} color="var(--muted)" />
-                          <span style={{ color: 'var(--muted)', fontSize: 12 }}>{session.duration} {isAr ? 'دقيقة' : 'min'}</span>
+                          <Ic.clock size={12} color="var(--ink-2)" />
+                          <span style={{ color: 'var(--ink-2)', fontSize: 12 }}>{session.duration} {isAr ? 'دقيقة' : 'min'}</span>
                         </div>
                       )}
                     </div>

@@ -157,23 +157,23 @@ const STATUS_AR: Record<string, string> = {
 function statusConfig(status: string): { bg: string; border: string; text: string; badge: string; badgeText: string } {
   switch (status) {
     case 'CONFIRMED':
-      return { bg:'rgba(59,130,246,0.15)', border:'#3b82f6', text:'var(--foreground)', badge:'rgba(59,130,246,0.25)', badgeText:'#2563eb' }
+      return { bg:'rgba(59,130,246,0.15)', border:'#3b82f6', text:'var(--ink)', badge:'rgba(59,130,246,0.25)', badgeText:'#2563eb' }
     case 'IN_PROGRESS':
-      return { bg:'rgba(139,92,246,0.15)', border:'#8b5cf6', text:'var(--foreground)', badge:'rgba(139,92,246,0.25)', badgeText:'#7c3aed' }
+      return { bg:'rgba(139,92,246,0.15)', border:'#8b5cf6', text:'var(--ink)', badge:'rgba(139,92,246,0.25)', badgeText:'#7c3aed' }
     case 'COMPLETED':
-      return { bg:'rgba(34,197,94,0.15)', border:'#22c55e', text:'var(--foreground)', badge:'rgba(34,197,94,0.25)', badgeText:'#16a34a' }
+      return { bg:'rgba(34,197,94,0.15)', border:'#22c55e', text:'var(--ink)', badge:'rgba(34,197,94,0.25)', badgeText:'#16a34a' }
     case 'AWAITING_PAYMENT':
-      return { bg:'rgba(234,179,8,0.15)', border:'#eab308', text:'var(--foreground)', badge:'rgba(234,179,8,0.25)', badgeText:'#ca8a04' }
+      return { bg:'rgba(234,179,8,0.15)', border:'#eab308', text:'var(--ink)', badge:'rgba(234,179,8,0.25)', badgeText:'#ca8a04' }
     case 'PENDING':
     case 'PENDING_APPROVAL':
-      return { bg:'color-mix(in srgb, var(--foreground) 6%, transparent)', border:'color-mix(in srgb, var(--foreground) 25%, transparent)', text:'var(--foreground)', badge:'color-mix(in srgb, var(--foreground) 10%, transparent)', badgeText:'var(--muted-foreground)' }
+      return { bg:'color-mix(in srgb, var(--ink) 6%, transparent)', border:'color-mix(in srgb, var(--ink) 25%, transparent)', text:'var(--ink)', badge:'color-mix(in srgb, var(--ink) 10%, transparent)', badgeText:'var(--ink-3)' }
     case 'CANCELLED':
     case 'REJECTED':
-      return { bg:'rgba(239,68,68,0.10)', border:'rgba(239,68,68,0.40)', text:'var(--foreground)', badge:'rgba(239,68,68,0.18)', badgeText:'#dc2626' }
+      return { bg:'rgba(239,68,68,0.10)', border:'rgba(239,68,68,0.40)', text:'var(--ink)', badge:'rgba(239,68,68,0.18)', badgeText:'#dc2626' }
     case 'EXPIRED':
-      return { bg:'color-mix(in srgb, var(--foreground) 5%, transparent)', border:'color-mix(in srgb, var(--foreground) 18%, transparent)', text:'var(--muted-foreground)', badge:'color-mix(in srgb, var(--foreground) 8%, transparent)', badgeText:'var(--muted-foreground)' }
+      return { bg:'color-mix(in srgb, var(--ink) 5%, transparent)', border:'color-mix(in srgb, var(--ink) 18%, transparent)', text:'var(--ink-3)', badge:'color-mix(in srgb, var(--ink) 8%, transparent)', badgeText:'var(--ink-3)' }
     default:
-      return { bg:'color-mix(in srgb, var(--foreground) 4%, transparent)', border:'color-mix(in srgb, var(--foreground) 12%, transparent)', text:'var(--foreground)', badge:'color-mix(in srgb, var(--foreground) 8%, transparent)', badgeText:'var(--muted-foreground)' }
+      return { bg:'color-mix(in srgb, var(--ink) 4%, transparent)', border:'color-mix(in srgb, var(--ink) 12%, transparent)', text:'var(--ink)', badge:'color-mix(in srgb, var(--ink) 8%, transparent)', badgeText:'var(--ink-3)' }
   }
 }
 
@@ -348,11 +348,11 @@ export default function ScheduleClient() {
           {/* Header */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
             <span style={{ fontWeight:500, fontSize:16, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>تفاصيل الجلسة</span>
-            <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--foreground) 10%, transparent)', background:'color-mix(in srgb, var(--foreground) 5%, transparent)', color:'var(--muted-foreground)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+            <button onClick={() => setSelected(null)} style={{ width:32, height:32, borderRadius:8, border:'1px solid color-mix(in srgb, var(--ink) 10%, transparent)', background:'color-mix(in srgb, var(--ink) 5%, transparent)', color:'var(--ink-3)', cursor:'pointer', fontSize:18, display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
           </div>
 
           {/* Person */}
-          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18, padding:'12px 14px', background:'color-mix(in srgb, var(--foreground) 4%, transparent)', borderRadius:12, border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18, padding:'12px 14px', background:'color-mix(in srgb, var(--ink) 4%, transparent)', borderRadius:12, border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)' }}>
             <div style={{ width:44, height:44, borderRadius:12, background:`rgba(${st.badge},0.3)`, border:`1px solid ${st.border}`, color:st.badgeText, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:500, flexShrink:0 }}>
               {other?.profile?.avatar
                 ? <img src={other.profile.avatar} alt="" style={{ width:44, height:44, borderRadius:12, objectFit:'cover' }} />
@@ -360,7 +360,7 @@ export default function ScheduleClient() {
             </div>
             <div>
               <div style={{ fontWeight:500, fontSize:14, color:'#f1f5f9', fontFamily: 'var(--font-ui)' }}>{userName(other)}</div>
-              <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مستشار'}</div>
+              <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.student || s.user ? 'عميل' : 'مستشار'}</div>
             </div>
             <span style={{ marginRight:'auto', background:st.badge, border:`1px solid ${st.border}`, color:st.badgeText, borderRadius:20, padding:'3px 10px', fontSize:10, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               {STATUS_AR[s.status] ?? s.status}
@@ -368,32 +368,32 @@ export default function ScheduleClient() {
           </div>
 
           {/* Info */}
-          <div style={{ background:'var(--card)', border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:12, display:'flex', flexDirection:'column', gap:8 }}>
+          <div style={{ background:'var(--surface)', border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)', borderRadius:12, padding:'12px 16px', marginBottom:16, fontSize:12, display:'flex', flexDirection:'column', gap:8 }}>
             {(s.topic || s.sessionName) && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الموضوع</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الموضوع</span>
                 <span style={{ color:'#f1f5f9', fontWeight:500, fontFamily: 'var(--font-ui)' }}>{s.topic || s.sessionName}</span>
               </div>
             )}
             {startD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>التاريخ</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>التاريخ</span>
                 <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmtDateAr(startD)}</span>
               </div>
             )}
             {startD && endD && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الوقت</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>الوقت</span>
                 <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{fmt12(startD)} — {fmt12(endD)}</span>
               </div>
             )}
             <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-              <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>المدة</span>
+              <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>المدة</span>
               <span style={{ color:'#cbd5e1', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{s.duration ?? 60} دقيقة</span>
             </div>
             {s.meetingLink && (
               <div style={{ display:'flex', gap:8, alignItems:'baseline' }}>
-                <span style={{ color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>رابط</span>
+                <span style={{ color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)', flexShrink:0 }}>رابط</span>
                 <a href={s.meetingLink} target="_blank" rel="noreferrer" style={{ color:'#60a5fa', fontWeight:300, fontFamily: 'var(--font-ui)' }}>فتح الرابط</a>
               </div>
             )}
@@ -401,7 +401,7 @@ export default function ScheduleClient() {
 
           {/* Countdown */}
           {s.status === 'CONFIRMED' && minsUntil > 0 && (
-            <div style={{ fontSize:11, color:'var(--muted-foreground)', textAlign:'center', marginBottom:14, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+            <div style={{ fontSize:11, color:'var(--ink-3)', textAlign:'center', marginBottom:14, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               تبدأ خلال {minsUntil < 60 ? `${Math.round(minsUntil)} دقيقة` : `${(minsUntil/60).toFixed(1)} ساعة`}
             </div>
           )}
@@ -416,7 +416,7 @@ export default function ScheduleClient() {
             <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ padding:'12px 20px', borderRadius:12, border:`1px solid ${st.border}`, background:st.bg, color:st.text, cursor:'pointer', fontWeight:500, fontSize:13, fontFamily: 'var(--font-ui)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
               عرض التفاصيل ←
             </button>
-            <button onClick={() => setSelected(null)} style={{ padding:'8px 20px', borderRadius:10, border:'1px solid color-mix(in srgb, var(--foreground) 8%, transparent)', background:'transparent', color:'var(--muted-foreground)', cursor:'pointer', fontSize:12, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+            <button onClick={() => setSelected(null)} style={{ padding:'8px 20px', borderRadius:10, border:'1px solid color-mix(in srgb, var(--ink) 8%, transparent)', background:'transparent', color:'var(--ink-3)', cursor:'pointer', fontSize:12, fontWeight:300, fontFamily: 'var(--font-ui)' }}>
               إغلاق
             </button>
           </div>
@@ -450,7 +450,7 @@ export default function ScheduleClient() {
                 <div style={{ fontWeight:500, fontSize:13, color:st.text, marginBottom:3, fontFamily: 'var(--font-ui)' }}>
                   {s.topic || s.sessionName || 'جلسة استشارية'}
                 </div>
-                <div style={{ fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+                <div style={{ fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                   {userName(other)}
                   {startD ? ` · ${fmtDateAr(startD)}` : ' · تاريخ غير محدد'}
                   {startD && endD ? ` · ${fmt12(startD)} — ${fmt12(endD)}` : ''}
@@ -468,13 +468,13 @@ export default function ScheduleClient() {
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
-    <div dir="rtl" style={{ background:'var(--background)', color:'var(--foreground)', padding:20, minHeight:'100vh' }}>
+    <div dir="rtl" style={{ background:'var(--bg)', color:'var(--ink)', padding:20, minHeight:'100vh' }}>
 
       {/* Page title */}
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20 }}>
         <div>
           <h1 style={{ fontSize:22, fontWeight:900, margin:'0 0 4px', fontFamily: 'var(--font-ui)' }}>جدول مواعيدي</h1>
-          <p style={{ fontSize:12, color:'var(--muted)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>نظم جلساتك ومواعيدك بسهولة</p>
+          <p style={{ fontSize:12, color:'var(--ink-2)', margin:0, fontWeight:300, fontFamily: 'var(--font-ui)' }}>نظم جلساتك ومواعيدك بسهولة</p>
         </div>
         <button onClick={() => router.push(`/${locale}/dashboard/client-sessions`)} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, border:'none', background:'var(--primary)', color:'var(--primary-foreground)', cursor:'pointer', fontWeight:500, fontSize:13 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -489,10 +489,10 @@ export default function ScheduleClient() {
           { label:'مواعيد قادمة',        value:upcomingCount,             color:'#a78bfa', icon:'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
           { label:'ساعات مكتملة',        value:doneHours,                 color:'#10b981', icon:'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z' },
         ] as const).map(({ label, value, color, icon }) => (
-          <div key={label} style={{ borderRadius:14, border:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)', background:'var(--card)', padding:'16px 20px', display:'flex', flexDirection:'column', gap:6 }}>
+          <div key={label} style={{ borderRadius:14, border:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)', background:'var(--surface)', padding:'16px 20px', display:'flex', flexDirection:'column', gap:6 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" style={{ opacity:0.8 }}><path d={icon}/></svg>
-              <div style={{ fontSize:12, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{label}</div>
+              <div style={{ fontSize:12, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>{label}</div>
             </div>
             <div style={{ fontSize:28, fontWeight:300, color, lineHeight:1, fontFamily: 'var(--font-ui)' }}>{value}</div>
           </div>
@@ -501,13 +501,13 @@ export default function ScheduleClient() {
 
       {/* Toolbar */}
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, flexWrap:'wrap' }}>
-        <button onClick={() => setWeekStart((w: Date) => addDays(w,-7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--foreground)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <button onClick={() => setWeekStart((w: Date) => addDays(w,-7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
 
         <span style={{ fontSize:13, fontWeight:500, minWidth:200, textAlign:'center' }}>{weekLabel}</span>
 
-        <button onClick={() => setWeekStart((w: Date) => addDays(w,7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--foreground)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <button onClick={() => setWeekStart((w: Date) => addDays(w,7))} style={{ width:32, height:32, borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
 
@@ -515,21 +515,21 @@ export default function ScheduleClient() {
           اليوم
         </button>
 
-        <div style={{ display:'flex', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
+        <div style={{ display:'flex', border:'1px solid var(--line)', borderRadius:8, overflow:'hidden', marginRight:'auto' }}>
           {(['calendar','list'] as const).map((v: 'calendar' | 'list') => (
-            <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:500, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--muted)', transition:'all 0.15s' }}>
+            <button key={v} onClick={() => setView(v)} style={{ padding:'5px 14px', fontSize:12, fontWeight:500, cursor:'pointer', border:'none', background:view===v ? 'var(--primary)' : 'transparent', color:view===v ? 'var(--primary-foreground)' : 'var(--ink-2)', transition:'all 0.15s' }}>
               {v === 'calendar' ? 'أسبوع' : 'قائمة'}
             </button>
           ))}
         </div>
 
-        <button onClick={load} disabled={loading} style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1px solid var(--border)', background:'var(--surface)', color:'var(--muted)', cursor:loading ? 'wait' : 'pointer', fontSize:11 }}>
+        <button onClick={load} disabled={loading} style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1px solid var(--line)', background:'var(--surface)', color:'var(--ink-2)', cursor:loading ? 'wait' : 'pointer', fontSize:11 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           {loading ? 'جاري...' : 'تحديث'}
         </button>
 
         {sessions.length > 0 && (
-          <span style={{ fontSize:10, color:'var(--muted)', opacity:0.6 }}>{sessions.length} جلسة</span>
+          <span style={{ fontSize:10, color:'var(--ink-2)', opacity:0.6 }}>{sessions.length} جلسة</span>
         )}
       </div>
 
@@ -540,12 +540,12 @@ export default function ScheduleClient() {
       {view === 'calendar' && (
         <>
           {/* Calendar grid */}
-          <div style={{ overflowX:'auto', borderRadius:12, border:'1px solid var(--border)' }}>
-            <div style={{ minWidth:780, background:'var(--card)' }}>
+          <div style={{ overflowX:'auto', borderRadius:12, border:'1px solid var(--line)' }}>
+            <div style={{ minWidth:780, background:'var(--surface)' }}>
 
               {/* Day headers */}
-              <div style={{ display:'grid', gridTemplateColumns:'64px repeat(7,1fr)', borderBottom:'1px solid color-mix(in srgb, var(--foreground) 7%, transparent)' }}>
-                <div style={{ height:56, borderRight:'1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' }} />
+              <div style={{ display:'grid', gridTemplateColumns:'64px repeat(7,1fr)', borderBottom:'1px solid color-mix(in srgb, var(--ink) 7%, transparent)' }}>
+                <div style={{ height:56, borderRight:'1px solid color-mix(in srgb, var(--ink) 6%, transparent)' }} />
                 {weekDays.map((d: Date, i: number) => {
                   const isToday = sameDay(now, d)
                   const hasSess = sessions.some((s: Session) => {
@@ -553,9 +553,9 @@ export default function ScheduleClient() {
                     return sd && sameDay(sd, d) && !['CANCELLED','REJECTED'].includes(s.status)
                   })
                   return (
-                    <div key={i} style={{ padding:'8px 4px', textAlign:'center', borderRight:i<6 ? '1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' : undefined }}>
-                      <div style={{ fontSize:11, fontWeight:500, color:'var(--muted-foreground)', marginBottom:4, fontFamily: 'var(--font-ui)' }}>{DAYS_AR[d.getDay()]}</div>
-                      <div style={{ width:30, height:30, borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:300, background:isToday ? '#5120c8' : 'transparent', color:isToday ? 'var(--primary-foreground)' : 'var(--foreground)', position:'relative', fontFamily: 'var(--font-ui)' }}>
+                    <div key={i} style={{ padding:'8px 4px', textAlign:'center', borderRight:i<6 ? '1px solid color-mix(in srgb, var(--ink) 6%, transparent)' : undefined }}>
+                      <div style={{ fontSize:11, fontWeight:500, color:'var(--ink-3)', marginBottom:4, fontFamily: 'var(--font-ui)' }}>{DAYS_AR[d.getDay()]}</div>
+                      <div style={{ width:30, height:30, borderRadius:'50%', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:300, background:isToday ? '#5120c8' : 'transparent', color:isToday ? 'var(--primary-foreground)' : 'var(--ink)', position:'relative', fontFamily: 'var(--font-ui)' }}>
                         {d.getDate()}
                         {hasSess && !isToday && (
                           <span style={{ position:'absolute', bottom:1, left:'50%', transform:'translateX(-50%)', width:4, height:4, borderRadius:'50%', background:'#14b8a6' }} />
@@ -570,9 +570,9 @@ export default function ScheduleClient() {
               <div style={{ display:'grid', gridTemplateColumns:'64px repeat(7,1fr)' }}>
 
                 {/* Hour labels */}
-                <div style={{ borderRight:'1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' }}>
+                <div style={{ borderRight:'1px solid color-mix(in srgb, var(--ink) 6%, transparent)' }}>
                   {HOURS.map((h: number) => (
-                    <div key={h} style={{ height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--foreground) 4%, transparent)', boxSizing:'border-box', display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+                    <div key={h} style={{ height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--ink) 4%, transparent)', boxSizing:'border-box', display:'flex', alignItems:'flex-start', justifyContent:'center', paddingTop:5, fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
                       {hourLabel(h)}
                     </div>
                   ))}
@@ -592,17 +592,17 @@ export default function ScheduleClient() {
                       style={{
                         position:'relative',
                         height: HOURS.length * ROW_H,
-                        borderRight: di < 6 ? '1px solid color-mix(in srgb, var(--foreground) 6%, transparent)' : undefined,
+                        borderRight: di < 6 ? '1px solid color-mix(in srgb, var(--ink) 6%, transparent)' : undefined,
                         background: isToday ? 'rgba(81,32,200,0.04)' : undefined,
                       }}
                     >
                       {/* Grid lines */}
                       {HOURS.map((h: number) => (
-                        <div key={h} style={{ position:'absolute', top:(h-GRID_START)*ROW_H, left:0, right:0, height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--foreground) 4%, transparent)', boxSizing:'border-box', pointerEvents:'none' }} />
+                        <div key={h} style={{ position:'absolute', top:(h-GRID_START)*ROW_H, left:0, right:0, height:ROW_H, borderBottom:'1px solid color-mix(in srgb, var(--ink) 4%, transparent)', boxSizing:'border-box', pointerEvents:'none' }} />
                       ))}
                       {/* Half-hour lines */}
                       {HOURS.map((h: number) => (
-                        <div key={`hf${h}`} style={{ position:'absolute', top:(h-GRID_START)*ROW_H+ROW_H/2, left:0, right:0, height:1, background:'color-mix(in srgb, var(--foreground) 2.5%, transparent)', pointerEvents:'none' }} />
+                        <div key={`hf${h}`} style={{ position:'absolute', top:(h-GRID_START)*ROW_H+ROW_H/2, left:0, right:0, height:1, background:'color-mix(in srgb, var(--ink) 2.5%, transparent)', pointerEvents:'none' }} />
                       ))}
 
                       {/* Current time indicator */}
@@ -697,8 +697,8 @@ export default function ScheduleClient() {
             const uniqueWeeks: Date[] = Array.from(weekMap.values()).sort((a: Date, b: Date) => a.getTime() - b.getTime()).slice(0, 8)
             if (uniqueWeeks.length === 0) return null
             return (
-              <div style={{ marginTop:16, padding:16, background:'var(--surface)', borderRadius:12, border:'1px dashed var(--border)' }}>
-                <div style={{ fontSize:13, color:'var(--muted)', marginBottom:12, textAlign:'center', fontWeight:500 }}>
+              <div style={{ marginTop:16, padding:16, background:'var(--surface)', borderRadius:12, border:'1px dashed var(--line)' }}>
+                <div style={{ fontSize:13, color:'var(--ink-2)', marginBottom:12, textAlign:'center', fontWeight:500 }}>
                   لا توجد جلسات في هذا الأسبوع — اختر أسبوعاً من الجلسات الموجودة:
                 </div>
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center' }}>
@@ -731,7 +731,7 @@ export default function ScheduleClient() {
               <div style={{ fontSize:13, color:'var(--warning)', fontWeight:500, marginBottom:6 }}>
                 تنبيه: {sessions.length} جلسة موجودة لكن بدون تاريخ صالح
               </div>
-              <div style={{ fontSize:11, color:'var(--muted)' }}>
+              <div style={{ fontSize:11, color:'var(--ink-2)' }}>
                 يرجى استخدام عرض القائمة لمشاهدة جميع الجلسات
               </div>
               <button onClick={() => setView('list')} style={{ marginTop:10, padding:'6px 18px', borderRadius:8, border:'1px solid var(--warning)', background:'transparent', color:'var(--warning)', cursor:'pointer', fontSize:12, fontWeight:500 }}>
@@ -742,7 +742,7 @@ export default function ScheduleClient() {
 
           {/* Completely empty */}
           {sessions.length === 0 && !loading && (
-            <div style={{ marginTop:40, textAlign:'center', padding:40, border:'2px dashed var(--border)', borderRadius:16, color:'var(--muted)' }}>
+            <div style={{ marginTop:40, textAlign:'center', padding:40, border:'2px dashed var(--line)', borderRadius:16, color:'var(--ink-2)' }}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ margin:'0 auto 12px', display:'block', opacity:0.4 }}>
                 <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
@@ -760,10 +760,10 @@ export default function ScheduleClient() {
           { label:'جارية الآن',        color:'#8b5cf6' },
           { label:'مكتملة',            color:'#22c55e' },
           { label:'بانتظار الدفع',    color:'#eab308' },
-          { label:'بانتظار الموافقة', color:'var(--muted-foreground)' },
+          { label:'بانتظار الموافقة', color:'var(--ink-3)' },
           { label:'ملغاة',             color:'#ef4444' },
         ].map(({ label, color }: { label: string; color: string }) => (
-          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--muted-foreground)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
+          <div key={label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'var(--ink-3)', fontWeight:300, fontFamily: 'var(--font-ui)' }}>
             <div style={{ width:7, height:7, borderRadius:'50%', background:color, flexShrink:0 }} />
             {label}
           </div>

@@ -11,8 +11,8 @@ import StatusBadge from '@/components/quizzes/StatusBadge'
 import ScoreCircle from '@/components/quizzes/ScoreCircle'
 
 const inputCls =
-  'w-full rounded-[10px] border border-[color:var(--border)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--muted)]'
-const labelCls = 'block text-sm font-semibold text-foreground mb-1.5'
+  'w-full rounded-[10px] border border-[color:var(--line)] bg-[color:var(--surface-2)] px-4 py-2.5 text-sm text-[var(--ink)] outline-none focus:border-primary transition-colors duration-150 placeholder:text-[color:var(--ink-2)]'
+const labelCls = 'block text-sm font-semibold text-[var(--ink)] mb-1.5'
 
 const TYPE_LABEL: Record<string, string> = {
   MCQ: 'اختيار من متعدد',
@@ -105,7 +105,7 @@ export default function ReviewAttemptPage() {
   if (!attempt) {
     return (
       <div className="p-6 text-center" dir="rtl">
-        <p className="text-[color:var(--muted)]">المحاولة غير موجودة</p>
+        <p className="text-[color:var(--ink-2)]">المحاولة غير موجودة</p>
       </div>
     )
   }
@@ -123,13 +123,13 @@ export default function ReviewAttemptPage() {
           <button
             type="button"
             onClick={back}
-            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold font-madinet text-foreground">مراجعة محاولة</h1>
-            <p className="text-sm text-[color:var(--muted)] mt-1">
+            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">مراجعة محاولة</h1>
+            <p className="text-sm text-[color:var(--ink-2)] mt-1">
               {attempt.quiz?.titleAr || attempt.quiz?.title || ''} — {name}
             </p>
           </div>
@@ -146,13 +146,13 @@ export default function ReviewAttemptPage() {
             const grade = answer ? grades[answer.id] : undefined
 
             return (
-              <div key={q.id} className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+              <div key={q.id} className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{index + 1}</span>
-                  <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--muted)] border border-[color:var(--border)]">
+                  <span className="rounded-full bg-[color:var(--surface-2)] px-2.5 py-0.5 text-xs font-semibold text-[color:var(--ink-2)] border border-[color:var(--line)]">
                     {TYPE_LABEL[q.type] ?? q.type}
                   </span>
-                  <span className="text-xs font-semibold text-[color:var(--muted)]">{q.points} نقطة</span>
+                  <span className="text-xs font-semibold text-[color:var(--ink-2)]">{q.points} نقطة</span>
                   {answer?.autoGrade != null && (
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
@@ -168,7 +168,7 @@ export default function ReviewAttemptPage() {
                   )}
                 </div>
 
-                <p className="mt-3 text-sm font-semibold text-foreground">{q.questionText}</p>
+                <p className="mt-3 text-sm font-semibold text-[var(--ink)]">{q.questionText}</p>
                 {q.questionImage && (
                   <img
                     src={q.questionImage}
@@ -178,7 +178,7 @@ export default function ReviewAttemptPage() {
                       maxHeight: '400px',
                       borderRadius: '12px',
                       marginTop: '12px',
-                      border: '1px solid var(--border)',
+                      border: '1px solid var(--line)',
                       display: 'block',
                     }}
                   />
@@ -189,7 +189,7 @@ export default function ReviewAttemptPage() {
                     {(q.choices ?? []).map((c: any) => {
                       const isSelected = selected.has(c.id)
                       const correct = c.isCorrect
-                      let cls = 'border-[color:var(--border)] bg-[color:var(--surface-2)]'
+                      let cls = 'border-[color:var(--line)] bg-[color:var(--surface-2)]'
                       if (correct) cls = 'border-[#10b981]/40 bg-[#10b981]/10'
                       else if (isSelected) cls = 'border-[#ef4444]/40 bg-[#ef4444]/10'
                       return (
@@ -199,9 +199,9 @@ export default function ReviewAttemptPage() {
                           ) : isSelected ? (
                             <XCircle className="h-4 w-4 shrink-0 text-[#ef4444]" />
                           ) : (
-                            <span className="h-4 w-4 shrink-0 rounded-full border border-[color:var(--border)]" />
+                            <span className="h-4 w-4 shrink-0 rounded-full border border-[color:var(--line)]" />
                           )}
-                          <span className="text-foreground">{c.text}</span>
+                          <span className="text-[var(--ink)]">{c.text}</span>
                         </div>
                       )
                     })}
@@ -210,7 +210,7 @@ export default function ReviewAttemptPage() {
                 )}
 
                 {q.type === 'SHORT_ANSWER' && (
-                  <div className="mt-3 rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-foreground">
+                  <div className="mt-3 rounded-[10px] bg-[color:var(--surface-2)]/60 p-3 text-sm text-[var(--ink)]">
                     {answer?.textAnswer ? (
                       answer.textAnswer
                     ) : (
@@ -228,7 +228,7 @@ export default function ReviewAttemptPage() {
                             src={getFilePreviewUrl(answer.fileUrl) ?? ''}
                             width="100%"
                             height="400"
-                            style={{ border: '1px solid var(--border)', borderRadius: 8, background: '#fff' }}
+                            style={{ border: '1px solid var(--line)', borderRadius: 8, background: '#fff' }}
                             title="معاينة ملف الطالب"
                           />
                         )}
@@ -241,7 +241,7 @@ export default function ReviewAttemptPage() {
                             <Download className="h-4 w-4" />
                             تحميل الملف{isPdfFile(answer.fileUrl, answer.fileName) ? ' (PDF)' : ''}
                           </button>
-                          <span className="max-w-[260px] truncate text-xs text-[color:var(--muted)]">
+                          <span className="max-w-[260px] truncate text-xs text-[color:var(--ink-2)]">
                             {getDownloadFilename(answer.fileUrl, answer.fileName)}
                           </span>
                         </div>
@@ -283,39 +283,39 @@ export default function ReviewAttemptPage() {
         </div>
 
         <div className="space-y-5 min-w-0">
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
-            <h2 className="mb-1 font-bold text-foreground">{name}</h2>
-            <p className="text-xs text-[color:var(--muted)]">{attempt.student?.email}</p>
-            <p className="mt-1 text-xs text-[color:var(--muted)]">بدأ في: {startDate}</p>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
+            <h2 className="mb-1 font-bold text-[var(--ink)]">{name}</h2>
+            <p className="text-xs text-[color:var(--ink-2)]">{attempt.student?.email}</p>
+            <p className="mt-1 text-xs text-[color:var(--ink-2)]">بدأ في: {startDate}</p>
             <div className="mt-2">
               <StatusBadge status={attempt.status} />
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5 text-center">
-            <h2 className="mb-3 font-bold text-foreground">النتيجة</h2>
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5 text-center">
+            <h2 className="mb-3 font-bold text-[var(--ink)]">النتيجة</h2>
             <div className="flex justify-center">
               <ScoreCircle percentage={attempt.percentage ?? 0} passed={attempt.status === 'GRADED' ? attempt.passed : null} />
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
-                <p className="text-lg font-extrabold text-foreground">{Math.round(attempt.autoScore ?? 0)}</p>
-                <p className="text-xs text-[color:var(--muted)]">تلقائي</p>
+                <p className="text-lg font-extrabold text-[var(--ink)]">{Math.round(attempt.autoScore ?? 0)}</p>
+                <p className="text-xs text-[color:var(--ink-2)]">تلقائي</p>
               </div>
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
-                <p className="text-lg font-extrabold text-foreground">{Math.round(attempt.manualScore ?? 0)}</p>
-                <p className="text-xs text-[color:var(--muted)]">يدوي</p>
+                <p className="text-lg font-extrabold text-[var(--ink)]">{Math.round(attempt.manualScore ?? 0)}</p>
+                <p className="text-xs text-[color:var(--ink-2)]">يدوي</p>
               </div>
               <div className="rounded-[10px] bg-[color:var(--surface-2)] p-2.5">
                 <p className="text-lg font-extrabold text-[#5120c8]">
                   {Math.round(attempt.totalScore ?? 0)}/{Math.round(attempt.maxScore ?? 0)}
                 </p>
-                <p className="text-xs text-[color:var(--muted)]">الإجمالي</p>
+                <p className="text-xs text-[color:var(--ink-2)]">الإجمالي</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+          <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-5">
             <label className={labelCls}>ملاحظات عامة للطالب</label>
             <textarea
               className={`${inputCls} min-h-[80px] resize-y`}

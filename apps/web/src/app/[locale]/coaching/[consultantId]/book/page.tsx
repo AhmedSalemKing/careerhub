@@ -20,7 +20,8 @@ import {
   Loader2,
   MessageSquareText,
   StickyNote,
-  X,
+  ArrowLeft,
+  ArrowRight,
   User,
 } from 'lucide-react'
 
@@ -279,50 +280,29 @@ export default function BookConsultingPage() {
   const displayName = userName(consultant)
   const freeSlots = slots.filter((slot) => slot.available).length
 
-  const closeModal = useCallback(() => {
+  const goBack = useCallback(() => {
     if (typeof window !== 'undefined' && window.history.length > 1) router.back()
     else router.push(`/${locale}/coaching`)
   }, [router, locale])
 
-  // Modal behaviour: Escape closes, page behind does not scroll.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
-    window.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
-    }
-  }, [closeModal])
-
   const card = 'rounded-2xl border p-4 sm:p-5'
-  const cardStyle = { background: 'var(--surface)', borderColor: 'var(--border)' } as const
+  const cardStyle = { background: 'var(--background)', borderColor: 'var(--border)' } as const
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-0 sm:p-4 sm:py-8"
-      onClick={(e) => { if (e.target === e.currentTarget) closeModal() }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={isAr ? 'حجز جلسة استشارية' : 'Book a consulting session'}
-    >
-      <div
-        dir={isAr ? 'rtl' : 'ltr'}
-        className="relative mx-auto w-full max-w-4xl rounded-none p-4 sm:rounded-2xl sm:p-6"
-        style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)', border: '1px solid var(--border)' }}
-      >
+    <div className="min-h-screen px-4 py-8" style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}>
+      <div dir={isAr ? 'rtl' : 'ltr'} className="mx-auto w-full max-w-4xl">
         <button
           type="button"
-          onClick={closeModal}
-          aria-label={isAr ? 'إغلاق' : 'Close'}
-          className="absolute top-3 flex h-9 w-9 items-center justify-center rounded-full transition-colors"
-          style={{ insetInlineStart: '0.75rem', background: 'var(--surface-2)', color: 'var(--foreground)', border: '1px solid var(--border)' }}
+          onClick={goBack}
+          className="mb-4 flex items-center gap-2 text-sm font-semibold transition-opacity hover:opacity-80"
+          style={{ color: 'var(--muted)' }}
         >
-          <X size={18} />
+          {isAr ? <ArrowRight className="h-4 w-4" /> : <ArrowLeft className="h-4 w-4" />}
+          <span>{isAr ? 'رجوع' : 'Back'}</span>
         </button>
 
-        <header className="mb-5 pe-0 ps-12">
+        <div className="rounded-2xl p-4 sm:p-6 lg:p-8" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <header className="mb-5">
           <p className="mb-1 text-xs font-bold" style={{ color: 'var(--accent)' }}>
             {isAr ? 'حجز جلسة استشارية' : 'Consulting session booking'}
           </p>
@@ -342,9 +322,9 @@ export default function BookConsultingPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Steps */}
-          <div className="min-w-0 space-y-4">
+          <div className="min-w-0 space-y-4 lg:col-span-2">
             <section className={card} style={cardStyle}>
               <StepTitle number={1}>{isAr ? 'اختر المدة' : 'Choose a duration'}</StepTitle>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -548,6 +528,7 @@ export default function BookConsultingPage() {
             {isAr ? 'جاري تحميل بيانات المستشار...' : 'Loading consultant...'}
           </div>
         )}
+        </div>
       </div>
     </div>
   )

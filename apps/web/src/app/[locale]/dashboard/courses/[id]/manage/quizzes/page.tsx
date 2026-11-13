@@ -49,13 +49,13 @@ export default function ManageQuizzesPage() {
           <button
             type="button"
             onClick={back}
-            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--muted)] hover:text-foreground transition-colors duration-150"
+            className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-3 py-2 text-sm font-semibold text-[color:var(--ink-2)] hover:text-[var(--ink)] transition-colors duration-150"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-xl font-bold font-madinet text-foreground">اختبارات الكورس</h1>
-            <p className="text-sm text-[color:var(--muted)] mt-1">أنشئ وادير اختبارات متعددة مع أسئلة اختيار من متعدد وأسئلة مقالية ورفع ملفات</p>
+            <h1 className="text-xl font-bold font-madinet text-[var(--ink)]">اختبارات الكورس</h1>
+            <p className="text-sm text-[color:var(--ink-2)] mt-1">أنشئ وادير اختبارات متعددة مع أسئلة اختيار من متعدد وأسئلة مقالية ورفع ملفات</p>
           </div>
         </div>
         <button
@@ -75,12 +75,12 @@ export default function ManageQuizzesPage() {
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-12 text-center">
+        <div className="rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-12 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--surface-2)]">
-            <FileQuestion className="h-8 w-8 text-[color:var(--muted)]" />
+            <FileQuestion className="h-8 w-8 text-[color:var(--ink-2)]" />
           </div>
-          <h3 className="text-lg font-bold text-foreground">لا توجد اختبارات بعد</h3>
-          <p className="mt-2 text-sm text-[color:var(--muted)]">ابدأ بإنشاء أول اختبار لطلاب هذا الكورس</p>
+          <h3 className="text-lg font-bold text-[var(--ink)]">لا توجد اختبارات بعد</h3>
+          <p className="mt-2 text-sm text-[color:var(--ink-2)]">ابدأ بإنشاء أول اختبار لطلاب هذا الكورس</p>
           <button
             type="button"
             onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/new`)}
@@ -95,7 +95,7 @@ export default function ManageQuizzesPage() {
           {list.map((quiz: any) => (
             <div
               key={quiz.id}
-              className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+              className="flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-[color:var(--line)] bg-[color:var(--surface)] p-4"
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[color:var(--surface-2)]">
@@ -103,10 +103,10 @@ export default function ManageQuizzesPage() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-foreground truncate">{quiz.titleAr || quiz.title}</h3>
+                    <h3 className="font-bold text-[var(--ink)] truncate">{quiz.titleAr || quiz.title}</h3>
                     <StatusBadge status={quiz.status} />
                   </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--muted)]">
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--ink-2)]">
                     {quiz.lessonTitleAr && <span className="truncate">{quiz.lessonTitleAr}</span>}
                     <span className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5" />
@@ -128,14 +128,14 @@ export default function ManageQuizzesPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/${quiz.id}/builder`)}
-                  className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150"
+                  className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                 >
                   تحرير الأسئلة
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push(`/${locale}/dashboard/courses/${courseId}/manage/quizzes/${quiz.id}/attempts`)}
-                  className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-foreground hover:opacity-80 transition-opacity duration-150"
+                  className="flex items-center gap-2 rounded-[10px] bg-[color:var(--surface-2)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:opacity-80 transition-opacity duration-150"
                 >
                   المحاولات
                 </button>

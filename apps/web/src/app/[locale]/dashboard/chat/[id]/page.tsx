@@ -42,7 +42,7 @@ export default function DashboardChatPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <Link
             href={`/${locale}/dashboard/coaching`}
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-foreground hover:bg-[color:var(--surface-2)]"
+            className="rounded-xl border border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--ink)] hover:bg-[color:var(--surface-2)]"
           >
             {c('back')}
           </Link>
@@ -61,8 +61,8 @@ export default function DashboardChatPage() {
         {q.isLoading ? (
           <Skeleton className="h-[60vh] rounded-2xl" />
         ) : q.isError ? (
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-            <div className="text-sm text-[color:var(--muted)]">{e('something_wrong')}</div>
+          <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6">
+            <div className="text-sm text-[color:var(--ink-2)]">{e('something_wrong')}</div>
             <button
               type="button"
               className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90"
@@ -75,7 +75,7 @@ export default function DashboardChatPage() {
             </button>
           </div>
         ) : !q.data?.id ? (
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--muted)]">
+          <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-2)]">
             {t('empty')}
           </div>
         ) : (

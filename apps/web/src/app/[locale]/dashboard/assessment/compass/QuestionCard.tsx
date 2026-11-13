@@ -24,8 +24,8 @@ export function QuestionCard({ question, index, value, isAnswered, onChange }: Q
 
   return (
     <div style={{
-      background: 'var(--card)',
-      border: `1px solid ${isAnswered ? 'rgba(99,102,241,0.3)' : 'var(--border)'}`,
+      background: 'var(--surface)',
+      border: `1px solid ${isAnswered ? 'rgba(99,102,241,0.3)' : 'var(--line)'}`,
       borderRadius: 14,
       padding: 20,
     }}>
@@ -51,11 +51,11 @@ export function QuestionCard({ question, index, value, isAnswered, onChange }: Q
       </div>
 
       {/* Question text */}
-      <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: 'var(--foreground)', lineHeight: 1.6, fontFamily: 'var(--font-ui)' }}>
+      <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: 'var(--ink)', lineHeight: 1.6, fontFamily: 'var(--font-ui)' }}>
         {question.textAr}
       </p>
       {question.hintAr && (
-        <p style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 14, fontStyle: 'italic' }}>{question.hintAr}</p>
+        <p style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 14, fontStyle: 'italic' }}>{question.hintAr}</p>
       )}
 
       {/* Input by type */}
@@ -90,7 +90,7 @@ function SingleChoiceInput({ question, value, onChange }: Pick<QuestionCardProps
             padding: '10px 16px', borderRadius: 10, textAlign: 'right', border: 'none',
             background: selected === opt.id ? 'rgba(99,102,241,0.15)' : 'var(--secondary)',
             outline: selected === opt.id ? '2px solid rgba(99,102,241,0.5)' : 'none',
-            color: 'var(--foreground)', fontSize: 14, cursor: 'pointer',
+            color: 'var(--ink)', fontSize: 14, cursor: 'pointer',
             fontFamily: 'var(--font-ui)',
             transition: 'all 0.15s',
           }}
@@ -116,7 +116,7 @@ function MultiSelectInput({ question, value, onChange }: Pick<QuestionCardProps,
 
   return (
     <div>
-      <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 10 }}>
+      <p style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 10 }}>
         اختر {min === max ? `${min}` : `من ${min} إلى ${max}`}
       </p>
       <div style={{ display: 'grid', gap: 8 }}>
@@ -128,7 +128,7 @@ function MultiSelectInput({ question, value, onChange }: Pick<QuestionCardProps,
               padding: '10px 16px', borderRadius: 10, textAlign: 'right', border: 'none',
               background: selected.has(opt.id) ? 'rgba(99,102,241,0.15)' : 'var(--secondary)',
               outline: selected.has(opt.id) ? '2px solid rgba(99,102,241,0.5)' : 'none',
-              color: 'var(--foreground)', fontSize: 14, cursor: 'pointer',
+              color: 'var(--ink)', fontSize: 14, cursor: 'pointer',
               fontFamily: 'var(--font-ui)',
             }}
           >
@@ -153,7 +153,7 @@ function RatingInput({ question, value, onChange }: Pick<QuestionCardProps, 'que
             style={{
               width: 44, height: 44, borderRadius: 10, border: 'none',
               background: rating >= v ? 'linear-gradient(135deg,#6366f1,#4338ca)' : 'var(--secondary)',
-              color: rating >= v ? '#fff' : 'var(--foreground)',
+              color: rating >= v ? '#fff' : 'var(--ink)',
               fontSize: 16, cursor: 'pointer', fontWeight: 600,
             }}
           >{v}</button>
@@ -171,7 +171,7 @@ function TextInput({ question, value, onChange }: Pick<QuestionCardProps, 'quest
   return (
     <div>
       {question.type === 'PRACTICAL_MINI' && (
-        <div style={{ padding: '8px 12px', marginBottom: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 7, fontSize: 11, color: 'var(--muted-foreground)' }}>
+        <div style={{ padding: '8px 12px', marginBottom: 10, background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 7, fontSize: 11, color: 'var(--ink-3)' }}>
           هذا سؤال تقييم عملي — إجابتك ستُراجَع مقارنةً بالمعيار المعتمد.
         </div>
       )}
@@ -181,13 +181,13 @@ function TextInput({ question, value, onChange }: Pick<QuestionCardProps, 'quest
         placeholder="اكتب إجابتك هنا..."
         rows={4}
         style={{
-          width: '100%', padding: 12, borderRadius: 10, border: '1px solid var(--border)',
-          background: 'var(--secondary)', color: 'var(--foreground)',
+          width: '100%', padding: 12, borderRadius: 10, border: '1px solid var(--line)',
+          background: 'var(--secondary)', color: 'var(--ink)',
           fontSize: 14, resize: 'vertical', fontFamily: 'var(--font-ui)',
           outline: 'none', boxSizing: 'border-box',
         }}
       />
-      <p style={{ marginTop: 4, fontSize: 11, color: 'var(--muted-foreground)', textAlign: 'left' }}>
+      <p style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-3)', textAlign: 'left' }}>
         {text.length}/500
       </p>
     </div>
@@ -220,17 +220,17 @@ function RankingInput({ question, value, onChange }: Pick<QuestionCardProps, 'qu
 
   return (
     <div>
-      <p style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 10 }}>رتّب من الأهم إلى الأقل أهمية</p>
+      <p style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 10 }}>رتّب من الأهم إلى الأقل أهمية</p>
       <div style={{ display: 'grid', gap: 8 }}>
         {orderedOptions.map((opt, idx) => (
           <div key={opt.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--secondary)', borderRadius: 10, padding: '8px 12px' }}>
-            <span style={{ fontSize: 12, color: 'var(--muted-foreground)', minWidth: 20 }}>{idx + 1}</span>
-            <span style={{ flex: 1, fontSize: 14, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>{opt.textAr}</span>
+            <span style={{ fontSize: 12, color: 'var(--ink-3)', minWidth: 20 }}>{idx + 1}</span>
+            <span style={{ flex: 1, fontSize: 14, color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>{opt.textAr}</span>
             <div style={{ display: 'flex', gap: 4 }}>
               <button onClick={() => move(opt.id, 'up')} disabled={idx === 0}
-                style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'var(--border)', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}>↑</button>
+                style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'var(--line)', cursor: idx === 0 ? 'default' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}>↑</button>
               <button onClick={() => move(opt.id, 'down')} disabled={idx === orderedOptions.length - 1}
-                style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'var(--border)', cursor: idx === orderedOptions.length - 1 ? 'default' : 'pointer', opacity: idx === orderedOptions.length - 1 ? 0.3 : 1 }}>↓</button>
+                style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'var(--line)', cursor: idx === orderedOptions.length - 1 ? 'default' : 'pointer', opacity: idx === orderedOptions.length - 1 ? 0.3 : 1 }}>↓</button>
             </div>
           </div>
         ))}

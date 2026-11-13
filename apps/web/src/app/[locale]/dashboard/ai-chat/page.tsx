@@ -45,7 +45,7 @@ function renderInline(text: string, keyBase: string): React.ReactNode[] {
     if (match.index > last) out.push(text.slice(last, match.index))
     const key = `${keyBase}-${n++}`
     if (match[1] !== undefined) {
-      out.push(<strong key={key} style={{ color: 'var(--foreground)', fontWeight: 500 }}>{match[1]}</strong>)
+      out.push(<strong key={key} style={{ color: 'var(--ink)', fontWeight: 500 }}>{match[1]}</strong>)
     } else if (match[2] !== undefined) {
       out.push(
         <code key={key} style={{ background: 'var(--code-bg)', color: 'var(--primary)', padding: '2px 6px', borderRadius: 6, fontSize: 13, fontFamily: 'monospace' }}>
@@ -72,7 +72,7 @@ function MessageContent({ content }: { content: string }) {
     if (line.startsWith('### ') || line.startsWith('## ')) {
       const text = line.replace(/^#{2,3} /, '')
       return (
-        <div key={i} style={{ fontFamily: F, fontWeight: 500, fontSize: 15, margin: '10px 0 4px', color: 'var(--foreground)' }}>
+        <div key={i} style={{ fontFamily: F, fontWeight: 500, fontSize: 15, margin: '10px 0 4px', color: 'var(--ink)' }}>
           {renderInline(text, `h-${i}`)}
         </div>
       )
@@ -436,7 +436,7 @@ export default function AiChatPage() {
       dir={isAr ? 'rtl' : 'ltr'}
       style={{
         position: 'relative', display: 'flex', height: 'calc(100dvh - 80px)', overflow: 'hidden',
-        background: 'var(--background)', color: 'var(--foreground)', fontFamily: F,
+        background: 'var(--bg)', color: 'var(--ink)', fontFamily: F,
       }}
     >
       {/* Sidebar */}
@@ -444,17 +444,17 @@ export default function AiChatPage() {
         <div
           className="rasheed-sidebar"
           style={{
-            width: 260, flexShrink: 0, borderInlineEnd: '1px solid var(--border)', background: 'var(--card)',
+            width: 260, flexShrink: 0, borderInlineEnd: '1px solid var(--line)', background: 'var(--surface)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '12px 12px 8px', borderBottom: '1px solid var(--line)' }}>
             <button
               onClick={() => { newChat(); setSidebarOpen(false) }}
               disabled={loading}
               style={{
-                width: '100%', padding: '9px 14px', borderRadius: 10, border: '1px solid var(--border)',
-                background: 'transparent', color: 'var(--foreground)', cursor: loading ? 'not-allowed' : 'pointer',
+                width: '100%', padding: '9px 14px', borderRadius: 10, border: '1px solid var(--line)',
+                background: 'transparent', color: 'var(--ink)', cursor: loading ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', gap: 8, fontFamily: F, fontWeight: 300, fontSize: 13,
               }}
             >
@@ -466,7 +466,7 @@ export default function AiChatPage() {
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 6 }}>
             {conversations.length === 0 ? (
-              <div style={{ padding: '20px 12px', textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 12, color: 'var(--muted-foreground)' }}>
+              <div style={{ padding: '20px 12px', textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 12, color: 'var(--ink-3)' }}>
                 {isAr ? 'لا توجد محادثات سابقة' : 'No previous conversations'}
               </div>
             ) : (
@@ -481,7 +481,7 @@ export default function AiChatPage() {
                         flex: 1, minWidth: 0, padding: '9px 10px', borderRadius: 8, border: 'none',
                         textAlign: isAr ? 'right' : 'left',
                         background: active ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : 'transparent',
-                        color: active ? 'var(--primary)' : 'var(--foreground)',
+                        color: active ? 'var(--primary)' : 'var(--ink)',
                         cursor: loading ? 'not-allowed' : 'pointer', fontFamily: F, fontWeight: 300, fontSize: 12,
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       }}
@@ -494,7 +494,7 @@ export default function AiChatPage() {
                       aria-label={isAr ? 'حذف المحادثة' : 'Delete conversation'}
                       style={{
                         width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent',
-                        color: 'var(--muted-foreground)', cursor: loading ? 'not-allowed' : 'pointer',
+                        color: 'var(--ink-3)', cursor: loading ? 'not-allowed' : 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.6,
                       }}
                     >
@@ -515,8 +515,8 @@ export default function AiChatPage() {
         {/* Header */}
         <div
           style={{
-            padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex',
-            alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--card)',
+            padding: '14px 20px', borderBottom: '1px solid var(--line)', display: 'flex',
+            alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--surface)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -525,7 +525,7 @@ export default function AiChatPage() {
               aria-label={isAr ? 'المحادثات' : 'Conversations'}
               style={{
                 width: 32, height: 32, borderRadius: 8, border: 'none',
-                background: 'color-mix(in srgb, var(--foreground) 6%, transparent)', color: 'var(--foreground)',
+                background: 'color-mix(in srgb, var(--ink) 6%, transparent)', color: 'var(--ink)',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
@@ -535,10 +535,10 @@ export default function AiChatPage() {
             </button>
             <Avatar size={36} icon={18} />
             <div>
-              <h1 style={{ margin: 0, fontFamily: F, fontWeight: 900, fontSize: 15, color: 'var(--foreground)' }}>
+              <h1 style={{ margin: 0, fontFamily: F, fontWeight: 900, fontSize: 15, color: 'var(--ink)' }}>
                 {isAr ? 'رشيد — مساعد DeveWay' : 'Rasheed — DeveWay assistant'}
               </h1>
-              <span style={{ fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)' }}>
+              <span style={{ fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--ink-3)' }}>
                 {isAr ? 'متاح الآن' : 'Online'}
               </span>
             </div>
@@ -549,7 +549,7 @@ export default function AiChatPage() {
               disabled={loading}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8,
-                border: '1px solid var(--border)', background: 'transparent', color: 'var(--muted-foreground)',
+                border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink-3)',
                 cursor: loading ? 'not-allowed' : 'pointer', fontFamily: F, fontWeight: 300, fontSize: 12,
               }}
             >
@@ -567,10 +567,10 @@ export default function AiChatPage() {
             {messages.length === 0 ? (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '24px 8px' }}>
                 <Avatar size={64} icon={30} />
-                <h2 style={{ margin: '16px 0 6px', fontFamily: F, fontWeight: 500, fontSize: 18, color: 'var(--foreground)' }}>
+                <h2 style={{ margin: '16px 0 6px', fontFamily: F, fontWeight: 500, fontSize: 18, color: 'var(--ink)' }}>
                   {isAr ? 'مرحباً، أنا رشيد' : "Hi, I'm Rasheed"}
                 </h2>
-                <p style={{ margin: '0 0 24px', maxWidth: 420, fontFamily: F, fontWeight: 300, fontSize: 13, lineHeight: 1.8, color: 'var(--muted-foreground)' }}>
+                <p style={{ margin: '0 0 24px', maxWidth: 420, fontFamily: F, fontWeight: 300, fontSize: 13, lineHeight: 1.8, color: 'var(--ink-3)' }}>
                   {isAr
                     ? 'مساعدك الذكي في DeveWay. أساعدك في اختيار الكورس المناسب، ومسارك المهني، وشرح المفاهيم التقنية.'
                     : 'Your DeveWay assistant. I help you pick courses, plan your career path and explain technical concepts.'}
@@ -581,8 +581,8 @@ export default function AiChatPage() {
                       key={prompt}
                       onClick={() => sendMessage(prompt)}
                       style={{
-                        padding: '8px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--card)',
-                        color: 'var(--foreground)', cursor: 'pointer', fontFamily: F, fontWeight: 300, fontSize: 12,
+                        padding: '8px 14px', borderRadius: 20, border: '1px solid var(--line)', background: 'var(--surface)',
+                        color: 'var(--ink)', cursor: 'pointer', fontFamily: F, fontWeight: 300, fontSize: 12,
                       }}
                     >
                       {prompt}
@@ -600,7 +600,7 @@ export default function AiChatPage() {
                         <div
                           style={{
                             width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                            background: 'color-mix(in srgb, var(--foreground) 10%, transparent)', color: 'var(--foreground)',
+                            background: 'color-mix(in srgb, var(--ink) 10%, transparent)', color: 'var(--ink)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                           }}
                         >
@@ -614,9 +614,9 @@ export default function AiChatPage() {
                       <div
                         style={{
                           maxWidth: '78%', padding: '12px 16px', borderRadius: 14,
-                          background: isUser ? 'var(--primary-muted)' : 'var(--card)',
-                          border: isUser ? '1px solid var(--primary-border)' : '1px solid var(--border)',
-                          fontFamily: F, fontWeight: 300, fontSize: 14, lineHeight: 1.7, color: 'var(--foreground)',
+                          background: isUser ? 'var(--primary-muted)' : 'var(--surface)',
+                          border: isUser ? '1px solid var(--primary-border)' : '1px solid var(--line)',
+                          fontFamily: F, fontWeight: 300, fontSize: 14, lineHeight: 1.7, color: 'var(--ink)',
                         }}
                       >
                         {isUser ? <span style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</span> : <MessageBody content={msg.content} locale={locale} />}
@@ -628,11 +628,11 @@ export default function AiChatPage() {
                 {loading && messages[messages.length - 1]?.role !== 'assistant' && (
                   <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <Avatar size={32} icon={14} />
-                    <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--card)', border: '1px solid var(--border)', display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <div style={{ padding: '14px 16px', borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--line)', display: 'flex', gap: 4, alignItems: 'center' }}>
                       {[0, 1, 2].map((j) => (
                         <span
                           key={j}
-                          style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--muted-foreground)', animation: `rasheedBounce 1.2s ease ${j * 0.2}s infinite` }}
+                          style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--ink-3)', animation: `rasheedBounce 1.2s ease ${j * 0.2}s infinite` }}
                         />
                       ))}
                     </div>
@@ -645,11 +645,11 @@ export default function AiChatPage() {
         </div>
 
         {/* Input: ChatGPT style */}
-        <div style={{ padding: '12px 16px 20px', flexShrink: 0, background: 'var(--background)' }}>
+        <div style={{ padding: '12px 16px 20px', flexShrink: 0, background: 'var(--bg)' }}>
           <div style={{ maxWidth: 768, margin: '0 auto', position: 'relative' }}>
             <div
               style={{
-                display: 'flex', alignItems: 'flex-end', background: 'var(--card)', border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'flex-end', background: 'var(--surface)', border: '1px solid var(--line)',
                 borderRadius: 24, paddingBlock: 10, paddingInlineStart: 16, paddingInlineEnd: 10, gap: 8,
               }}
             >
@@ -671,7 +671,7 @@ export default function AiChatPage() {
                 style={{
                   flex: 1, width: '100%', display: 'block', border: 'none', outline: 'none', background: 'none', boxShadow: 'none',
                   WebkitAppearance: 'none', resize: 'none', overflow: 'hidden',
-                  fontFamily: F, fontWeight: 300, fontSize: 15, color: 'var(--foreground)', lineHeight: 1.6,
+                  fontFamily: F, fontWeight: 300, fontSize: 15, color: 'var(--ink)', lineHeight: 1.6,
                   minHeight: 26, maxHeight: 200, padding: 0, margin: 0,
                 }}
               />
@@ -681,8 +681,8 @@ export default function AiChatPage() {
                 aria-label={isAr ? 'إرسال' : 'Send'}
                 style={{
                   width: 36, height: 36, borderRadius: '50%', border: 'none', flexShrink: 0,
-                  background: canSend ? 'var(--primary)' : 'color-mix(in srgb, var(--foreground) 10%, transparent)',
-                  color: canSend ? 'var(--primary-foreground)' : 'var(--muted-foreground)',
+                  background: canSend ? 'var(--primary)' : 'color-mix(in srgb, var(--ink) 10%, transparent)',
+                  color: canSend ? 'var(--primary-foreground)' : 'var(--ink-3)',
                   cursor: canSend ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s', alignSelf: 'flex-end',
                 }}
@@ -692,7 +692,7 @@ export default function AiChatPage() {
                 </svg>
               </button>
             </div>
-            <p style={{ textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--muted-foreground)', margin: '6px 0 0' }}>
+            <p style={{ textAlign: 'center', fontFamily: F, fontWeight: 300, fontSize: 11, color: 'var(--ink-3)', margin: '6px 0 0' }}>
               {isAr ? 'Enter للإرسال · Shift+Enter لسطر جديد' : 'Enter to send · Shift+Enter for a new line'}
             </p>
           </div>

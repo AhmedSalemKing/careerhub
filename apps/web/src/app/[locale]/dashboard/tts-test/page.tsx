@@ -117,7 +117,7 @@ export default function TTSTestPage() {
     : 'Audio locked'
 
   return (
-    <div dir="rtl" style={{ padding: 24, maxWidth: 760, margin: '0 auto', fontFamily: 'var(--font-ui)', color: 'var(--foreground)' }}>
+    <div dir="rtl" style={{ padding: 24, maxWidth: 760, margin: '0 auto', fontFamily: 'var(--font-ui)', color: 'var(--ink)' }}>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
@@ -125,20 +125,20 @@ export default function TTSTestPage() {
           PROTOTYPE — dev only — not for production
         </div>
         <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>Streaming TTS Prototype</h1>
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '4px 0 0' }}>
+        <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '4px 0 0' }}>
           Model: gemini-3.8-flash-lite-tts · SSE streaming · Web Audio API
         </p>
       </div>
 
       {/* Status bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'var(--card)', border: '1px solid var(--border)', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 10, background: 'var(--surface)', border: '1px solid var(--line)', marginBottom: 20 }}>
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: statusColor, flexShrink: 0,
           boxShadow: isSpeaking ? `0 0 8px ${statusColor}` : undefined,
           animation: isSpeaking ? 'pulse 1s ease infinite' : undefined,
         }} />
         <span style={{ fontSize: 13, fontWeight: 500 }}>{statusLabel}</span>
         {firstChunkMs !== null && !isSpeaking && totalMs !== null && (
-          <span style={{ fontSize: 11, color: 'var(--muted-foreground)', marginRight: 'auto' }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-3)', marginRight: 'auto' }}>
             {firstChunkMs}ms first · {totalMs}ms stream
           </span>
         )}
@@ -160,25 +160,25 @@ export default function TTSTestPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
 
         {/* Text selector */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 8 }}>النص</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-3)', marginBottom: 8 }}>النص</div>
           {(Object.keys(TEST_TEXTS) as (keyof typeof TEST_TEXTS)[]).map(k => (
             <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer', fontSize: 13 }}>
               <input type="radio" name="text" checked={selectedText === k} onChange={() => setSelectedText(k)} />
               <span style={{ fontWeight: selectedText === k ? 500 : 300 }}>
                 {k === 'short' ? 'قصير' : k === 'medium' ? 'متوسط' : 'طويل'}
-                <span style={{ color: 'var(--muted-foreground)', fontSize: 11 }}> ({TEST_TEXTS[k].length} حرف)</span>
+                <span style={{ color: 'var(--ink-3)', fontSize: 11 }}> ({TEST_TEXTS[k].length} حرف)</span>
               </span>
             </label>
           ))}
-          <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--background)', borderRadius: 6, fontSize: 11, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+          <div style={{ marginTop: 8, padding: '8px 10px', background: 'var(--bg)', borderRadius: 6, fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.5 }}>
             {TEST_TEXTS[selectedText]}
           </div>
         </div>
 
         {/* Gender selector + actions */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 8 }}>الصوت</div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-3)', marginBottom: 8 }}>الصوت</div>
           {(['female', 'male'] as const).map(g => (
             <label key={g} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, cursor: 'pointer', fontSize: 13 }}>
               <input type="radio" name="gender" checked={gender === g} onChange={() => setGender(g)} />
@@ -193,8 +193,8 @@ export default function TTSTestPage() {
               onClick={handleSpeak}
               disabled={!audioUnlocked}
               style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none',
-                background: audioUnlocked ? 'var(--primary)' : 'var(--border)',
-                color: audioUnlocked ? '#fff' : 'var(--muted-foreground)',
+                background: audioUnlocked ? 'var(--primary)' : 'var(--line)',
+                color: audioUnlocked ? '#fff' : 'var(--ink-3)',
                 cursor: audioUnlocked ? 'pointer' : 'default', fontFamily: 'inherit', fontWeight: 500, fontSize: 13 }}
             >
               {isSpeaking ? '▶ يتحدث' : '▶ تشغيل'}
@@ -202,8 +202,8 @@ export default function TTSTestPage() {
             <button
               onClick={handleStop}
               disabled={!isSpeaking}
-              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)',
-                background: 'transparent', color: isSpeaking ? 'var(--foreground)' : 'var(--muted-foreground)',
+              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--line)',
+                background: 'transparent', color: isSpeaking ? 'var(--ink)' : 'var(--ink-3)',
                 cursor: isSpeaking ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 13 }}
             >
               ■ إيقاف
@@ -213,11 +213,11 @@ export default function TTSTestPage() {
       </div>
 
       {/* Overlap test */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 8 }}>اختبار التداخل — اضغط مرتين متتاليتين</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-3)', marginBottom: 8 }}>اختبار التداخل — اضغط مرتين متتاليتين</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={handleSpeak} disabled={!audioUnlocked}
-            style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--foreground)', cursor: audioUnlocked ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 13 }}>
+            style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid var(--line)', background: 'transparent', color: 'var(--ink)', cursor: audioUnlocked ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 13 }}>
             تشغيل ← سيلغي أي تشغيل سابق
           </button>
           <button
@@ -227,47 +227,47 @@ export default function TTSTestPage() {
             100ms تشغيل مزدوج بعد
           </button>
         </div>
-        <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 6 }}>
+        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
           في الاختبار الأول: يجب أن تسمع صوتاً واحداً فقط (الطلب الثاني يلغي الأول).
           في الاختبار الثاني: يجب أن تسمع فقط الصوت الذكري (الطلب الأول ملغى بعد 100ms).
         </div>
       </div>
 
       {/* Latency comparison */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
-        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 10 }}>مقارنة الأداء</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-3)', marginBottom: 10 }}>مقارنة الأداء</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div style={{ textAlign: 'center', padding: 12, background: 'var(--background)', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>النقطة الجديدة (streaming)</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: firstChunkMs !== null ? '#22c55e' : 'var(--muted-foreground)' }}>
+          <div style={{ textAlign: 'center', padding: 12, background: 'var(--bg)', borderRadius: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>النقطة الجديدة (streaming)</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: firstChunkMs !== null ? '#22c55e' : 'var(--ink-3)' }}>
               {firstChunkMs !== null ? `${firstChunkMs}ms` : '—'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>أول صوت</div>
+            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>أول صوت</div>
           </div>
-          <div style={{ textAlign: 'center', padding: 12, background: 'var(--background)', borderRadius: 8 }}>
-            <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginBottom: 4 }}>النقطة القديمة (unary WAV)</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: unaryMs ? '#f97316' : 'var(--muted-foreground)' }}>
+          <div style={{ textAlign: 'center', padding: 12, background: 'var(--bg)', borderRadius: 8 }}>
+            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>النقطة القديمة (unary WAV)</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: unaryMs ? '#f97316' : 'var(--ink-3)' }}>
               {unaryMs ?? '—'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>ملف WAV كامل</div>
+            <div style={{ fontSize: 10, color: 'var(--ink-3)' }}>ملف WAV كامل</div>
           </div>
         </div>
         <button onClick={handleCompare} disabled={comparing}
-          style={{ marginTop: 10, width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--border)',
-            background: 'transparent', color: 'var(--foreground)', cursor: comparing ? 'default' : 'pointer',
+          style={{ marginTop: 10, width: '100%', padding: '10px', borderRadius: 8, border: '1px solid var(--line)',
+            background: 'transparent', color: 'var(--ink)', cursor: comparing ? 'default' : 'pointer',
             fontFamily: 'inherit', fontSize: 13 }}>
           {comparing ? 'جاري القياس…' : 'قياس وقت النقطة القديمة (لا يشغل صوتاً)'}
         </button>
       </div>
 
       {/* Event log */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted-foreground)', marginBottom: 8 }}>سجل الأحداث</div>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--ink-3)', marginBottom: 8 }}>سجل الأحداث</div>
         <div style={{ fontFamily: 'monospace', fontSize: 11, lineHeight: 1.6, maxHeight: 200, overflowY: 'auto' }}>
           {log.length === 0
-            ? <span style={{ color: 'var(--muted-foreground)' }}>لا أحداث بعد…</span>
+            ? <span style={{ color: 'var(--ink-3)' }}>لا أحداث بعد…</span>
             : log.map((entry, i) => (
-              <div key={i} style={{ color: entry.includes('Error') ? '#ef4444' : entry.includes('Done') ? '#22c55e' : 'var(--foreground)' }}>
+              <div key={i} style={{ color: entry.includes('Error') ? '#ef4444' : entry.includes('Done') ? '#22c55e' : 'var(--ink)' }}>
                 {entry}
               </div>
             ))
@@ -276,7 +276,7 @@ export default function TTSTestPage() {
       </div>
 
       {/* Audio context info */}
-      <div style={{ marginTop: 12, fontSize: 11, color: 'var(--muted-foreground)', textAlign: 'center' }}>
+      <div style={{ marginTop: 12, fontSize: 11, color: 'var(--ink-3)', textAlign: 'center' }}>
         Prototype · gemini-3.8-flash-lite-tts · first-chunk target: &lt;500ms · no browser TTS fallback
       </div>
     </div>

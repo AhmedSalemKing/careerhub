@@ -137,7 +137,7 @@ return [
 
   if (isAiChat) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--background)' }}>
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
         {children}
       </div>
     )
@@ -146,7 +146,7 @@ return [
   // Loading state
   if (!mounted) {
     return (
-      <div className="min-h-screen" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ backgroundColor: 'var(--background)' }}>
+      <div className="min-h-screen" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ backgroundColor: 'var(--bg)' }}>
         <main className="p-6 lg:p-8">
           <div className="space-y-4 max-w-7xl mx-auto">
             <Skeleton className="h-12 w-56 rounded-xl" />
@@ -170,7 +170,7 @@ return [
   }
 
   return (
-    <div className="min-h-screen dashboard-root dw-dashboard bg-background text-foreground" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ overflowX: 'clip' }}>
+    <div className="min-h-screen dashboard-root dw-dashboard bg-[var(--bg)] text-[var(--ink)]" dir={locale === 'ar' ? 'rtl' : 'ltr'} style={{ overflowX: 'clip' }}>
       
       {/* MOBILE DRAWER - only rendered when open to prevent overflow from off-screen transforms */}
       {isMobile && sidebarOpen && (
@@ -227,11 +227,11 @@ return [
       
       {/* Mobile header */}
       {isMobile && (
-        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-3">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[color:var(--line)] bg-[color:var(--surface)] px-4 py-3">
           <button onClick={() => setSidebarOpen(true)} className="flex items-center justify-center p-1 -mr-1">
-            <Menu className="h-6 w-6 text-foreground" />
+            <Menu className="h-6 w-6 text-[var(--ink)]" />
           </button>
-          <span className="font-bold text-foreground">{isAr ? 'لوحة التحكم' : 'Dashboard'}</span>
+          <span className="font-bold text-[var(--ink)]">{isAr ? 'لوحة التحكم' : 'Dashboard'}</span>
         </div>
       )}
 

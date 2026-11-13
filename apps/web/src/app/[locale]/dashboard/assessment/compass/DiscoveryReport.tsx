@@ -48,7 +48,7 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
     <div dir="rtl" style={{ maxWidth: 680, margin: '0 auto', padding: '24px 16px 60px' }}>
       {/* Header */}
       <div style={{ marginBottom: 28, textAlign: 'center' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
           تقرير بوصلة المسار المهني
         </h1>
         {/* Provisional notice */}
@@ -66,17 +66,17 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
 
       {/* Profile summary */}
       {report?.profileSummaryAr && (
-        <div style={{ padding: 16, marginBottom: 20, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: 'var(--foreground)' }}>ملخص الملف المهني</h2>
-          <p style={{ fontSize: 14, color: 'var(--muted-foreground)', lineHeight: 1.7 }}>{report.profileSummaryAr}</p>
+        <div style={{ padding: 16, marginBottom: 20, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, color: 'var(--ink)' }}>ملخص الملف المهني</h2>
+          <p style={{ fontSize: 14, color: 'var(--ink-3)', lineHeight: 1.7 }}>{report.profileSummaryAr}</p>
         </div>
       )}
 
       {/* Confidence */}
       {evidence?.confidence != null && (
-        <div style={{ padding: '12px 16px', marginBottom: 20, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>اكتمال الأدلة:</span>
-          <div style={{ flex: 1, height: 6, background: 'var(--border)', borderRadius: 3 }}>
+        <div style={{ padding: '12px 16px', marginBottom: 20, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>اكتمال الأدلة:</span>
+          <div style={{ flex: 1, height: 6, background: 'var(--line)', borderRadius: 3 }}>
             <div style={{ height: '100%', width: `${evidence.confidence}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius: 3, transition: 'width 0.5s' }} />
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>{evidence.confidence}%</span>
@@ -86,16 +86,16 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
       {/* Dimension evidence overview */}
       {evidence?.evidenceFindings && Object.keys(evidence.evidenceFindings).length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--foreground)' }}>نظرة على الأبعاد</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--ink)' }}>نظرة على الأبعاد</h2>
           <div style={{ display: 'grid', gap: 8 }}>
             {Object.entries(evidence.evidenceFindings).map(([dim, finding]) => (
-              <div key={dim} style={{ padding: '10px 14px', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div key={dim} style={{ padding: '10px 14px', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                   background: finding.isComplete ? '#10b981' : '#f59e0b',
                 }} />
-                <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 500 }}>{DIMENSION_LABELS[dim] ?? dim}</span>
-                <span style={{ marginRight: 'auto', fontSize: 11, color: 'var(--muted-foreground)' }}>
+                <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{DIMENSION_LABELS[dim] ?? dim}</span>
+                <span style={{ marginRight: 'auto', fontSize: 11, color: 'var(--ink-3)' }}>
                   {finding.answerCount} إجابة · {finding.isComplete ? 'مكتمل' : 'جزئي'}
                 </span>
               </div>
@@ -107,15 +107,15 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
       {/* Candidate paths */}
       {report?.candidatePaths && report.candidatePaths.length > 0 && (
         <div style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--foreground)' }}>المسارات المبدئية المقترحة</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: 'var(--ink)' }}>المسارات المبدئية المقترحة</h2>
           <div style={{ display: 'grid', gap: 14 }}>
             {report.candidatePaths.map((path) => (
-              <div key={path.pathSlug} style={{ padding: 18, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 14 }}>
+              <div key={path.pathSlug} style={{ padding: 18, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--foreground)', fontFamily: 'var(--font-ui)' }}>{path.titleAr}</h3>
-                  <span style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{path.titleEn}</span>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--ink)', fontFamily: 'var(--font-ui)' }}>{path.titleAr}</h3>
+                  <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>{path.titleEn}</span>
                   {path.marketReadinessLevel && (
-                    <span style={{ marginRight: 'auto', fontSize: 11, color: MARKET_COLOR[path.marketReadinessLevel] ?? 'var(--muted-foreground)', fontWeight: 600 }}>
+                    <span style={{ marginRight: 'auto', fontSize: 11, color: MARKET_COLOR[path.marketReadinessLevel] ?? 'var(--ink-3)', fontWeight: 600 }}>
                       استعداد للسوق: {MARKET_LABEL[path.marketReadinessLevel]}
                     </span>
                   )}
@@ -125,7 +125,7 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
                   <div style={{ marginBottom: 10 }}>
                     <p style={{ fontSize: 12, fontWeight: 600, color: '#10b981', marginBottom: 6 }}>أدلة داعمة</p>
                     {path.evidenceFor.map((e, i) => (
-                      <p key={i} style={{ fontSize: 12, color: 'var(--muted-foreground)', marginBottom: 3 }}>• {e}</p>
+                      <p key={i} style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 3 }}>• {e}</p>
                     ))}
                   </div>
                 )}
@@ -157,7 +157,7 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
       )}
 
       {/* Disclaimer */}
-      <div style={{ marginTop: 32, padding: 14, background: 'var(--secondary)', borderRadius: 10, fontSize: 11, color: 'var(--muted-foreground)', textAlign: 'center' }}>
+      <div style={{ marginTop: 32, padding: 14, background: 'var(--secondary)', borderRadius: 10, fontSize: 11, color: 'var(--ink-3)', textAlign: 'center' }}>
         هذه التوصيات إرشاد مهني مبني على إجاباتك ولا تمثّل ضماناً لوظيفة أو قبول في برنامج تدريبي.
       </div>
     </div>
@@ -167,9 +167,9 @@ export function DiscoveryReport({ report: data }: { report: ReportData }) {
 function Section({ title, items, color }: { title: string; items: string[]; color: string }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: 'var(--foreground)' }}>{title}</h2>
+      <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10, color: 'var(--ink)' }}>{title}</h2>
       <ul style={{ paddingRight: 18, margin: 0 }}>
-        {items.map((item, i) => <li key={i} style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 5, lineHeight: 1.6 }}>{item}</li>)}
+        {items.map((item, i) => <li key={i} style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 5, lineHeight: 1.6 }}>{item}</li>)}
       </ul>
     </div>
   )

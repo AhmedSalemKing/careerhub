@@ -104,10 +104,10 @@ export default function InvoicesPage() {
             <Receipt size={22} style={{ color: '#5120C8' }} />
           </div>
           <div>
-            <h1 className="font-black text-xl text-foreground">
+            <h1 className="font-black text-xl text-[var(--ink)]">
               {isAr ? 'تاريخ المدفوعات' : 'Payment History'}
             </h1>
-            <p className="text-sm text-[color:var(--muted)]">
+            <p className="text-sm text-[color:var(--ink-2)]">
               {isAr ? 'سجل شامل لكل عمليات الدفع والشحن' : 'Complete history of all payments and top-ups'}
             </p>
           </div>
@@ -140,7 +140,7 @@ export default function InvoicesPage() {
 
       {/* Filter tabs */}
       <div className="flex items-center gap-2 flex-wrap">
-        <Filter size={14} style={{ color: 'var(--muted)' }} />
+        <Filter size={14} style={{ color: 'var(--ink-2)' }} />
         {([
           { id: 'ALL' as const,         label: isAr ? 'الكل' : 'All' },
           { id: 'COURSE' as const,      label: isAr ? 'كورسات' : 'Courses' },
@@ -157,9 +157,9 @@ export default function InvoicesPage() {
                 fontSize: '13px',
                 fontWeight: 500,
                 cursor: 'pointer',
-                border: active ? '1px solid rgba(81,32,200,0.4)' : '1px solid var(--border)',
+                border: active ? '1px solid rgba(81,32,200,0.4)' : '1px solid var(--line)',
                 background: active ? 'rgba(81,32,200,0.1)' : 'var(--surface)',
-                color: active ? '#5120C8' : 'var(--muted)',
+                color: active ? '#5120C8' : 'var(--ink-2)',
                 transition: 'all 0.15s ease',
               }}
             >
@@ -172,8 +172,8 @@ export default function InvoicesPage() {
       {/* Table / List */}
       <div
         style={{
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
+          background: 'var(--surface)',
+          border: '1px solid var(--line)',
           borderRadius: '16px',
           overflow: 'hidden',
         }}
@@ -181,7 +181,7 @@ export default function InvoicesPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="animate-spin" size={28} style={{ color: '#5120C8' }} />
-            <p className="text-sm text-[color:var(--muted)]">
+            <p className="text-sm text-[color:var(--ink-2)]">
               {isAr ? 'جاري التحميل...' : 'Loading...'}
             </p>
           </div>
@@ -209,10 +209,10 @@ export default function InvoicesPage() {
             }}>
               <Receipt size={24} style={{ color: '#5120C8' }} />
             </div>
-            <p className="font-medium text-foreground">
+            <p className="font-medium text-[var(--ink)]">
               {isAr ? 'لا توجد مدفوعات بعد' : 'No payments yet'}
             </p>
-            <p className="text-sm text-[color:var(--muted)]">
+            <p className="text-sm text-[color:var(--ink-2)]">
               {isAr
                 ? 'ستظهر هنا كل عمليات الدفع والشحن التي قمت بها'
                 : 'Your payment history will appear here'}
@@ -239,7 +239,7 @@ export default function InvoicesPage() {
                   key={inv.id}
                   className="flex items-center gap-4 p-4 transition-colors"
                   style={{
-                    borderTop: idx > 0 ? '1px solid var(--border)' : 'none',
+                    borderTop: idx > 0 ? '1px solid var(--line)' : 'none',
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -260,7 +260,7 @@ export default function InvoicesPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-sm text-foreground truncate">
+                      <p className="font-medium text-sm text-[var(--ink)] truncate">
                         {inv.itemName}
                       </p>
                       <span style={{
@@ -271,11 +271,11 @@ export default function InvoicesPage() {
                         {isAr ? cfg.label : cfg.labelEn}
                       </span>
                     </div>
-                    <p className="text-xs text-[color:var(--muted)] mt-1">
+                    <p className="text-xs text-[color:var(--ink-2)] mt-1">
                       {formatDate(inv.date)}
                     </p>
                     {inv.type === 'SESSION' && inv.metadata?.consultantName && (
-                      <p className="text-xs text-[color:var(--muted)] mt-0.5">
+                      <p className="text-xs text-[color:var(--ink-2)] mt-0.5">
                         {isAr ? 'المستشار:' : 'Consultant:'} {inv.metadata.consultantName}
                       </p>
                     )}
@@ -286,7 +286,7 @@ export default function InvoicesPage() {
                     <p className="font-medium text-base" style={{ color: cfg.color }}>
                       {formatMoney(inv.amount, (inv as any).amountDisplay)}
                     </p>
-                    <p className="text-[10px] font-mono text-[color:var(--muted)] mt-0.5">
+                    <p className="text-[10px] font-mono text-[color:var(--ink-2)] mt-0.5">
                       {inv.reference.slice(-8).toUpperCase()}
                     </p>
                   </div>
@@ -297,7 +297,7 @@ export default function InvoicesPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4"
-                style={{ borderTop: '1px solid var(--border)' }}>
+                style={{ borderTop: '1px solid var(--line)' }}>
                 <button
                   disabled={page <= 1}
                   onClick={() => setPage(p => Math.max(1, p - 1))}
@@ -305,8 +305,8 @@ export default function InvoicesPage() {
                     display: 'flex', alignItems: 'center', gap: '6px',
                     padding: '8px 14px', borderRadius: '10px',
                     background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--foreground)',
+                    border: '1px solid var(--line)',
+                    color: 'var(--ink)',
                     fontSize: '13px', fontWeight: 500,
                     cursor: page <= 1 ? 'not-allowed' : 'pointer',
                     opacity: page <= 1 ? 0.4 : 1,
@@ -315,7 +315,7 @@ export default function InvoicesPage() {
                   <ChevronRight size={14} />
                   {isAr ? 'السابق' : 'Previous'}
                 </button>
-                <span className="text-xs text-[color:var(--muted)]">
+                <span className="text-xs text-[color:var(--ink-2)]">
                   {isAr
                     ? `صفحة ${page} من ${totalPages} · إجمالي ${total}`
                     : `Page ${page} of ${totalPages} · ${total} total`}
@@ -327,8 +327,8 @@ export default function InvoicesPage() {
                     display: 'flex', alignItems: 'center', gap: '6px',
                     padding: '8px 14px', borderRadius: '10px',
                     background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--foreground)',
+                    border: '1px solid var(--line)',
+                    color: 'var(--ink)',
                     fontSize: '13px', fontWeight: 500,
                     cursor: page >= totalPages ? 'not-allowed' : 'pointer',
                     opacity: page >= totalPages ? 0.4 : 1,
@@ -353,11 +353,11 @@ function SummaryCard({
   return (
     <div style={{
       background: bg,
-      border: '1px solid var(--border)',
+      border: '1px solid var(--line)',
       borderRadius: '14px',
       padding: '16px',
     }}>
-      <p className="text-xs mb-1" style={{ color: 'var(--muted)' }}>{label}</p>
+      <p className="text-xs mb-1" style={{ color: 'var(--ink-2)' }}>{label}</p>
       <p className="font-medium text-lg" style={{ color }}>{value}</p>
     </div>
   )

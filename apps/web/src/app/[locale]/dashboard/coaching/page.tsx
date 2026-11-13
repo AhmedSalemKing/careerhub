@@ -46,10 +46,10 @@ export default function DashboardCoachingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-[var(--ink)]">
             {isConsultant ? (isAr ? 'جلساتي الاستشارية' : 'My Sessions') : (isAr ? 'الاستشارات المهنية' : 'Professional Consulting')}
           </h1>
-          <p className="text-[color:var(--muted)] text-sm mt-1">
+          <p className="text-[color:var(--ink-2)] text-sm mt-1">
             {isConsultant ? (isAr ? 'إدارة وقبول طلبات الاستشارة' : 'Manage and accept consultation requests') : (isAr ? 'احجز جلسة مع مستشار مهني متخصص' : 'Book a session with a professional consultant')}
           </p>
         </div>
@@ -65,9 +65,9 @@ export default function DashboardCoachingPage() {
       </div>
 
       {/* Recent sessions preview */}
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--border)]">
-          <h2 className="font-semibold text-foreground">{isAr ? 'آخر الجلسات' : 'Recent Sessions'}</h2>
+      <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface)] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--line)]">
+          <h2 className="font-semibold text-[var(--ink)]">{isAr ? 'آخر الجلسات' : 'Recent Sessions'}</h2>
           <Link href={`/${locale}/dashboard/my-sessions`}
             className="text-sm text-primary hover:underline flex items-center gap-1">
             {isAr ? 'عرض الكل' : 'View All'} <ChevronLeft className="h-3.5 w-3.5" />
@@ -81,7 +81,7 @@ export default function DashboardCoachingPage() {
         ) : (sessions as any[]).length === 0 ? (
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-3 h-10 w-10 opacity-20" />
-            <p className="text-[color:var(--muted)] text-sm">{isAr ? 'لا توجد جلسات بعد' : 'No sessions yet'}</p>
+            <p className="text-[color:var(--ink-2)] text-sm">{isAr ? 'لا توجد جلسات بعد' : 'No sessions yet'}</p>
             {!isConsultant && (
               <Link href={`/${locale}/coaching`}
                 className="mt-3 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary/90">
@@ -90,15 +90,15 @@ export default function DashboardCoachingPage() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-[color:var(--border)]">
+          <div className="divide-y divide-[color:var(--line)]">
             {(sessions as any[]).map((s: any) => {
               const other = isConsultant ? s.student : s.consultant
               const name = `${other?.profile?.firstName || ''} ${other?.profile?.lastName || ''}`.trim() || other?.email || '—'
               return (
                 <div key={s.id} className="flex items-center justify-between px-5 py-3.5">
                   <div>
-                    <p className="font-medium text-foreground text-sm">{name}</p>
-                    <p className="text-xs text-[color:var(--muted)] mt-0.5">
+                    <p className="font-medium text-[var(--ink)] text-sm">{name}</p>
+                    <p className="text-xs text-[color:var(--ink-2)] mt-0.5">
                       {safeDate(s.scheduledAt)?.toLocaleDateString(isAr ? 'ar-EG-u-ca-gregory' : 'en-US', { weekday: 'short', month: 'short', day: 'numeric' }) ?? '—'}
                       {s.topic ? ` — ${s.topic}` : ''}
                     </p>
@@ -117,8 +117,8 @@ export default function DashboardCoachingPage() {
       {!isConsultant && (
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-foreground mb-1">{isAr ? 'تحتاج توجيه مهني؟' : 'Need career guidance?'}</h3>
-            <p className="text-sm text-[color:var(--muted)]">{isAr ? 'تواصل مع مستشار متخصص للحصول على خارطة طريق واضحة' : 'Connect with a specialist for a clear roadmap'}</p>
+            <h3 className="font-bold text-[var(--ink)] mb-1">{isAr ? 'تحتاج توجيه مهني؟' : 'Need career guidance?'}</h3>
+            <p className="text-sm text-[color:var(--ink-2)]">{isAr ? 'تواصل مع مستشار متخصص للحصول على خارطة طريق واضحة' : 'Connect with a specialist for a clear roadmap'}</p>
           </div>
           <Link href={`/${locale}/coaching`}
             className="shrink-0 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition">

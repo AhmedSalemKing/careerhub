@@ -7,7 +7,7 @@ import Link from 'next/link'
 import {
   BookOpen, Users, PlusCircle, Calendar, ArrowLeft, ChevronLeft, Shield, AlertTriangle, Hand,
   CheckCircle, Award, Bookmark, CreditCard, Settings,
-  TrendingUp, DollarSign, BarChart2, Plus, Bell,
+  TrendingUp, DollarSign, BarChart2, Plus, Bell, CalendarClock, Clock, CheckCircle2,
 } from 'lucide-react'
 import { get, post } from '../../../lib/api'
 import { unwrapData } from '../../../lib/unwrap'
@@ -16,6 +16,7 @@ import { learnCoursesLink, learnCourseLink } from '../../../lib/learn-link'
 import { AuthGate } from '../../components/AuthGate'
 import { CHARACTERS } from '../../components/characters'
 import { DashboardShell } from '../../components/DashboardShell'
+import { CareerPathModal, type UserTrack } from '../../../components/dashboard/CareerPathModal'
 import { CourseCard, type CourseCardCourse } from '../../components/CourseCard'
 import { Skeleton } from '../../components/ui/Skeleton'
 import VerifiedBadge from '../../../components/VerifiedBadge'
@@ -117,11 +118,11 @@ function InstructorOverview() {
         .rd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
         .rd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
         .rd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
-        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); }
         .rd-row { transition: background 0.15s ease, border-color 0.15s ease; }
-        a.rd-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+        a.rd-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--line)); }
         .rd-action { transition: border-color 0.15s ease, opacity 0.15s ease; }
-        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); }
         .rd-action.rd-primary:hover { opacity: 0.9; }
         @media (max-width: 900px) { .rd-stats { grid-template-columns: repeat(2, 1fr); } .rd-main { grid-template-columns: 1fr; } }
         @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
@@ -135,10 +136,10 @@ function InstructorOverview() {
           <div style={{ fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 6 }}>
             {isAr ? 'لوحة تحكم المحاضر' : 'Instructor Dashboard'}
           </div>
-          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
+          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--ink)', margin: 0 }}>
             {isAr ? `مرحباً، ${firstName}` : `Welcome, ${firstName}`}
           </h1>
-          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--ink-2)', margin: '4px 0 0' }}>
             {isAr ? 'إليك ملخص نشاطك اليوم' : "Here's your activity overview"}
           </p>
         </div>
@@ -157,7 +158,7 @@ function InstructorOverview() {
         {statCards.map(({ Icon, color, label, value, href }) => (
           <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
             <div className="rd-stat" style={{
-              background: 'var(--card)', border: '1px solid var(--border)',
+              background: 'var(--surface)', border: '1px solid var(--line)',
               borderRadius: 14, padding: '20px 20px 18px',
               display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0,
             }}>
@@ -168,10 +169,10 @@ function InstructorOverview() {
                 <Icon size={18} color={color} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--foreground)', lineHeight: 1.1, wordBreak: 'break-word' }}>
+                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--ink)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                   {value}
                 </div>
-                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--ink-2)', marginTop: 4 }}>
                   {label}
                 </div>
               </div>
@@ -183,11 +184,11 @@ function InstructorOverview() {
       <div className="rd-main">
         {/* Recent courses */}
         <section style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 24, minWidth: 0,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
+            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--ink)', margin: 0 }}>
               {isAr ? 'آخر الكورسات' : 'Recent Courses'}
             </h2>
             <a href={`/${locale}/dashboard/my-courses`} style={{
@@ -210,7 +211,7 @@ function InstructorOverview() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14, minWidth: 0,
                   padding: 12, borderRadius: 10, marginBottom: 10,
-                  border: '1px solid var(--border)', textDecoration: 'none',
+                  border: '1px solid var(--line)', textDecoration: 'none',
                 }}
               >
                 <div style={{
@@ -219,23 +220,23 @@ function InstructorOverview() {
                 }}>
                   {thumb
                     ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <BookOpen size={18} color="var(--muted-foreground)" />}
+                    : <BookOpen size={18} color="var(--ink-3)" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
-                    fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                    fontWeight: 500, fontSize: 13, color: 'var(--ink)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
                     {(isAr ? course.titleAr : course.titleEn) || course.titleAr || course.titleEn}
                   </div>
-                  <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                  <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--ink-2)', marginTop: 2 }}>
                     {course._count?.enrollments ?? 0}{isAr ? ' طالب' : ' students'} · {formatCoursePrice(course)}
                   </div>
                 </div>
                 <span style={{
                   padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 500, flexShrink: 0,
-                  background: mix(published ? 'var(--success)' : 'var(--muted-foreground)', 12),
-                  color: published ? 'var(--success)' : 'var(--muted)',
+                  background: mix(published ? 'var(--success)' : 'var(--ink-3)', 12),
+                  color: published ? 'var(--success)' : 'var(--ink-2)',
                 }}>
                   {published ? (isAr ? 'منشور' : 'Live') : (isAr ? 'مسودة' : 'Draft')}
                 </span>
@@ -244,8 +245,8 @@ function InstructorOverview() {
           })}
 
           {courses.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
-              <BookOpen size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-2)' }}>
+              <BookOpen size={32} color="var(--ink-3)" style={{ margin: '0 auto 10px', display: 'block' }} />
               <p style={{ margin: 0, fontWeight: 300, fontSize: 13 }}>
                 {isAr ? 'لا توجد كورسات بعد' : 'No courses yet'}
               </p>
@@ -254,10 +255,10 @@ function InstructorOverview() {
         </section>
 
         <aside style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 20, minWidth: 0,
         }}>
-          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
+          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--ink)', margin: '0 0 16px' }}>
             {isAr ? 'إجراءات سريعة' : 'Quick Actions'}
           </h2>
           {actions.map(({ Icon, label, href, primary }) => (
@@ -268,15 +269,15 @@ function InstructorOverview() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '11px 12px', borderRadius: 10, marginBottom: 8,
-                border: primary ? 'none' : '1px solid var(--border)',
-                background: primary ? 'var(--primary)' : 'var(--card)',
-                color: primary ? 'var(--primary-foreground)' : 'var(--foreground)',
+                border: primary ? 'none' : '1px solid var(--line)',
+                background: primary ? 'var(--primary)' : 'var(--surface)',
+                color: primary ? 'var(--primary-foreground)' : 'var(--ink)',
                 textDecoration: 'none', fontWeight: primary ? 500 : 300, fontSize: 13,
               }}
             >
-              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--muted-foreground)'} />
+              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--ink-3)'} />
               <span style={{ flex: 1, minWidth: 0 }}>{label}</span>
-              {!primary && <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />}
+              {!primary && <ChevronLeft size={14} color="var(--ink-3)" style={arrow} />}
             </a>
           ))}
         </aside>
@@ -584,6 +585,7 @@ function StudentOverview() {
   const [pathIdx, setPathIdx] = useState(0)
   const [showAllEnrolled, setShowAllEnrolled] = useState(false)
   const [bookingOpen, setBookingOpen] = useState(false)
+  const [careerPathOpen, setCareerPathOpen] = useState(false)
   const queryClient = useQueryClient()
   const safePathIdx = selectedPaths.length ? ((pathIdx % selectedPaths.length) + selectedPaths.length) % selectedPaths.length : 0
   const selectedPathRaw: any = selectedPaths[safePathIdx]
@@ -633,7 +635,7 @@ function StudentOverview() {
         <div className="space-y-6" aria-busy="true" aria-label={isAr ? 'جارٍ التحميل' : 'Loading'}>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div key={i} className="h-28 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}>
                 <div className="skeleton-shimmer mb-3 h-3 w-16 rounded" />
                 <div className="skeleton-shimmer mb-2 h-7 w-24 rounded" />
                 <div className="skeleton-shimmer h-3 w-20 rounded" />
@@ -641,7 +643,7 @@ function StudentOverview() {
             ))}
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="h-64 rounded-2xl p-5 lg:col-span-2" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="h-64 rounded-2xl p-5 lg:col-span-2" style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}>
               <div className="skeleton-shimmer mb-4 h-4 w-32 rounded" />
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="mb-3 flex items-center gap-3">
@@ -653,7 +655,7 @@ function StudentOverview() {
                 </div>
               ))}
             </div>
-            <div className="h-64 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <div className="h-64 rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--line)' }}>
               <div className="skeleton-shimmer mb-4 h-4 w-24 rounded" />
               <div className="skeleton-shimmer mx-auto mb-4 h-32 w-32 rounded-full" />
               <div className="skeleton-shimmer mx-auto mb-2 h-3 w-3/4 rounded" />
@@ -669,7 +671,7 @@ function StudentOverview() {
     return (
       <DashboardShell title={isAr ? 'الملخص' : 'Overview'} subtitle={isAr ? 'حدث خطأ' : 'Something went wrong'}>
         <div style={{ textAlign:'center', padding:'3rem 2rem',
-          border:'1px solid var(--border)', borderRadius:'16px',
+          border:'1px solid var(--line)', borderRadius:'16px',
           background:'var(--surface)' }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none"
             stroke="var(--error)" strokeWidth="2" strokeLinecap="round"
@@ -678,7 +680,7 @@ function StudentOverview() {
             <line x1="12" y1="9" x2="12" y2="13"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <p style={{ fontSize:'0.9rem', color:'var(--muted-foreground)', marginBottom:'1rem' }}>
+          <p style={{ fontSize:'0.9rem', color:'var(--ink-3)', marginBottom:'1rem' }}>
             {isAr ? 'فشل تحميل البيانات' : 'Failed to load data'}
           </p>
           <button onClick={() => refetch()} style={{
@@ -735,6 +737,22 @@ function StudentOverview() {
   const pendingCount = countBy(['PENDING', 'PENDING_APPROVAL', 'AWAITING_PAYMENT', 'RESCHEDULE_REQUESTED'])
   const dateLocale = isAr ? 'ar-EG' : 'en-US'
 
+  const userTracks: UserTrack[] = selectedPaths.map((p: any) => ({
+    id: p.id,
+    slug: p.slug,
+    name: (isAr ? p.titleAr : p.titleEn) || p.titleEn || p.titleAr || '',
+    description: (isAr ? p.descriptionAr : p.descriptionEn) || '',
+    roles: (isAr ? p.jobTitlesAr : p.jobTitlesEn) ?? [],
+    skills: p.skills ?? [],
+    salaryRange: isAr ? p.salaryRangeAr : p.salaryRangeEn,
+    progress: 0,
+  }))
+  const enrolledProgress: Record<string, number> = {}
+  for (const e of enrollments) {
+    const cid = courseOf(e)?.id
+    if (cid) enrolledProgress[cid] = progressForEnrollment(e)
+  }
+
   const OpenArrow = () => (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : 'none' }} aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
   )
@@ -776,10 +794,11 @@ function StudentOverview() {
                 <button type="button" onClick={() => setPathIdx(safePathIdx + 1)} aria-label="المسار التالي"><ChevronLeft size={14} /></button>
               </div>
             )}
-            <Link href={`/${locale}/dashboard/career-path`} className="dw-open-btn">
+            {selectedPaths.length > 1 && <span className="dw3-count-badge">لديك {selectedPaths.length} مسارات</span>}
+            <button type="button" className="dw-open-btn" onClick={() => setCareerPathOpen(true)}>
               فتح المسار المهني
               <OpenArrow />
-            </Link>
+            </button>
           </div>
 
           {selectedPath ? (() => {
@@ -815,10 +834,10 @@ function StudentOverview() {
                     <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: 800 }}>{selectedPath.name}</h3>
                     <p className="dw-muted">{(selectedPath.roles ?? []).slice(0, 3).join(' · ')}</p>
                     <div style={{ marginTop: '14px' }}>
-                      <Link href={`/${locale}/dashboard/career-path`} className="dw-btn dw-btn-primary dw-btn-sm">
+                      <button type="button" onClick={() => setCareerPathOpen(true)} className="dw-btn dw-btn-primary dw-btn-sm">
                         تابع
                         <OpenArrow />
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -992,9 +1011,9 @@ function StudentOverview() {
             </div>
 
             <Link href={`/${locale}/dashboard/my-sessions`} className="dw2-stats" aria-label="جلساتي">
-              <span><b>{upcomingCount}</b><small>قادمة</small></span>
-              <span><b>{pendingCount}</b><small>بانتظار الموافقة</small></span>
-              <span><b>{completedSessionsCount}</b><small>مكتملة</small></span>
+              <span className="dw3-stat"><CalendarClock size={18} aria-hidden="true" /><b>{upcomingCount}</b><small>قادمة</small></span>
+              <span className={`dw3-stat${pendingCount > 0 ? ' warn' : ''}`}><Clock size={18} aria-hidden="true" /><b>{pendingCount}</b><small>بانتظار الموافقة</small></span>
+              <span className="dw3-stat good"><CheckCircle2 size={18} aria-hidden="true" /><b>{completedSessionsCount}</b><small>مكتملة</small></span>
             </Link>
 
             <button type="button" onClick={() => setBookingOpen(true)} className="dw-btn dw-btn-ghost dw-btn-sm dw-btn-block">
@@ -1048,18 +1067,22 @@ function StudentOverview() {
             <h3>المحطات</h3>
           </div>
           <ol className="dw-ms">
-            {[
-              { label: 'إنشاء حسابك', done: true, doing: false },
-              { label: 'اختيار مسارك المهني', done: !!selectedPath, doing: !selectedPath },
-              { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0, doing: !!selectedPath && (completedCount ?? 0) === 0 },
-              { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0, doing: (completedCount ?? 0) > 0 && (completedSessionsCount ?? 0) === 0 },
-              { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0, doing: false },
-            ].map((s, i) => (
-              <li key={i} className={s.done ? 'done' : s.doing ? 'doing' : ''}>
-                <span className="dw-m-dot">{s.done && <Check size={11} />}</span>
-                <span>{s.label}</span>
-              </li>
-            ))}
+            {(() => {
+              const steps = [
+                { label: 'إنشاء حسابك', done: true },
+                { label: 'اختيار مسارك المهني', done: selectedPaths.length > 0 },
+                { label: 'إكمال أول كورس', done: (completedCount ?? 0) > 0 },
+                { label: 'حجز جلسة مع مرشد', done: (completedSessionsCount ?? 0) > 0 },
+                { label: 'الحصول على شهادتك الأولى', done: (certificatesCount ?? 0) > 0 },
+              ]
+              const current = steps.findIndex((x) => !x.done)
+              return steps.map((s, i) => (
+                <li key={i} className={s.done ? 'done' : i === current ? 'doing' : ''}>
+                  <span className="dw-m-dot">{s.done ? <Check size={13} /> : i + 1}</span>
+                  <span>{s.label}</span>
+                </li>
+              ))
+            })()}
           </ol>
         </div>
       </div>
@@ -1123,6 +1146,14 @@ function StudentOverview() {
         </div>
       </div>
 
+      <CareerPathModal
+        isOpen={careerPathOpen}
+        onClose={() => setCareerPathOpen(false)}
+        tracks={userTracks}
+        enrolledProgress={enrolledProgress}
+        continueHref={`/${locale}/dashboard/my-courses`}
+      />
+
       {bookingOpen && (
         <BookingModal
           paths={selectedPaths}
@@ -1152,13 +1183,13 @@ function Stat({
 }) {
   return (
     <div 
-      className={`rounded-2xl p-4 md:p-6 border border-border bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${delay + 1}`}
+      className={`rounded-2xl p-4 md:p-6 border border-[var(--line)] bg-surface shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 animate-fade-up stagger-${delay + 1}`}
     >
       <div className={`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${color} shadow-md`}>
         {icon || <BookOpen className="h-5 w-5 text-white" />}
       </div>
-      <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">{label}</p>
-      <p className="text-2xl md:text-3xl font-medium text-foreground" style={{ fontFamily: 'var(--font-ui)' }}>
+      <p className="text-xs font-medium text-[var(--ink-2)] uppercase tracking-wide mb-2">{label}</p>
+      <p className="text-2xl md:text-3xl font-medium text-[var(--ink)]" style={{ fontFamily: 'var(--font-ui)' }}>
         {value}
       </p>
     </div>
@@ -1241,11 +1272,11 @@ function ConsultantOverview() {
         .rd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
         .rd-main { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
         .rd-stat { transition: transform 0.15s ease, border-color 0.15s ease; }
-        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); }
         .rd-row { transition: background 0.15s ease, border-color 0.15s ease; }
-        a.rd-row:hover { background: color-mix(in srgb, var(--foreground) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+        a.rd-row:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); border-color: color-mix(in srgb, var(--primary) 30%, var(--line)); }
         .rd-action { transition: border-color 0.15s ease, opacity 0.15s ease; }
-        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--border)); }
+        .rd-action:hover { border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); }
         .rd-action.rd-primary:hover { opacity: 0.9; }
         @media (max-width: 900px) { .rd-stats { grid-template-columns: repeat(2, 1fr); } .rd-main { grid-template-columns: 1fr; } }
         @media (max-width: 520px) { .rd-stats { grid-template-columns: 1fr; } }
@@ -1259,10 +1290,10 @@ function ConsultantOverview() {
           <div style={{ fontWeight: 500, fontSize: 12, color: 'var(--primary)', marginBottom: 6 }}>
             {isAr ? 'لوحة تحكم المستشار' : 'Coach Dashboard'}
           </div>
-          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--foreground)', margin: 0 }}>
+          <h1 style={{ fontWeight: 900, fontSize: 26, lineHeight: 1.2, color: 'var(--ink)', margin: 0 }}>
             {isAr ? `مرحباً، ${firstName}` : `Welcome, ${firstName}`}
           </h1>
-          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+          <p style={{ fontWeight: 300, fontSize: 13, color: 'var(--ink-2)', margin: '4px 0 0' }}>
             {isAr ? 'تابع جلساتك واستشاراتك' : 'Track your sessions and consultations'}
           </p>
         </div>
@@ -1281,7 +1312,7 @@ function ConsultantOverview() {
         {statCards.map(({ Icon, color, label, value, href }) => (
           <a key={label} href={href} style={{ textDecoration: 'none', minWidth: 0 }}>
             <div className="rd-stat" style={{
-              background: 'var(--card)', border: '1px solid var(--border)',
+              background: 'var(--surface)', border: '1px solid var(--line)',
               borderRadius: 14, padding: '20px 20px 18px',
               display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0,
             }}>
@@ -1292,10 +1323,10 @@ function ConsultantOverview() {
                 <Icon size={18} color={color} />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--foreground)', lineHeight: 1.1, wordBreak: 'break-word' }}>
+                <div style={{ fontWeight: 900, fontSize: 26, color: 'var(--ink)', lineHeight: 1.1, wordBreak: 'break-word' }}>
                   {value}
                 </div>
-                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                <div style={{ fontWeight: 300, fontSize: 12, color: 'var(--ink-2)', marginTop: 4 }}>
                   {label}
                 </div>
               </div>
@@ -1307,11 +1338,11 @@ function ConsultantOverview() {
       <div className="rd-main">
         {/* Upcoming sessions */}
         <section style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 24, minWidth: 0,
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: 0 }}>
+            <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--ink)', margin: 0 }}>
               {isAr ? 'الجلسات القادمة' : 'Upcoming Sessions'}
             </h2>
             <a href={`/${locale}/dashboard/my-sessions`} style={{
@@ -1331,7 +1362,7 @@ function ConsultantOverview() {
                 <div key={session.id || i} className="rd-row" style={{
                   display: 'flex', alignItems: 'center', gap: 14, minWidth: 0,
                   padding: '14px 16px', borderRadius: 12, marginBottom: 10,
-                  border: '1px solid var(--border)', background: 'var(--card)',
+                  border: '1px solid var(--line)', background: 'var(--surface)',
                 }}>
                   <div style={{
                     width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
@@ -1343,12 +1374,12 @@ function ConsultantOverview() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                      fontWeight: 500, fontSize: 13, color: 'var(--foreground)',
+                      fontWeight: 500, fontSize: 13, color: 'var(--ink)',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                       {clientName}
                     </div>
-                    <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    <div style={{ fontWeight: 300, fontSize: 11, color: 'var(--ink-2)', marginTop: 2 }}>
                       {d
                         ? d.toLocaleDateString(
                             isAr ? 'ar-EG-u-ca-gregory' : 'en-US',
@@ -1375,8 +1406,8 @@ function ConsultantOverview() {
               )
             })
           ) : (
-            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)' }}>
-              <Calendar size={32} color="var(--muted-foreground)" style={{ margin: '0 auto 10px', display: 'block' }} />
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-2)' }}>
+              <Calendar size={32} color="var(--ink-3)" style={{ margin: '0 auto 10px', display: 'block' }} />
               <p style={{ margin: 0, fontWeight: 300, fontSize: 13 }}>
                 {isAr ? 'لا توجد جلسات قادمة' : 'No upcoming sessions'}
               </p>
@@ -1385,10 +1416,10 @@ function ConsultantOverview() {
         </section>
 
         <aside style={{
-          background: 'var(--card)', border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--line)',
           borderRadius: 16, padding: 20, minWidth: 0,
         }}>
-          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--foreground)', margin: '0 0 16px' }}>
+          <h2 style={{ fontWeight: 500, fontSize: 16, color: 'var(--ink)', margin: '0 0 16px' }}>
             {isAr ? 'روابط سريعة' : 'Quick Links'}
           </h2>
           {actions.map(({ Icon, label, href, primary }) => (
@@ -1399,15 +1430,15 @@ function ConsultantOverview() {
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '11px 12px', borderRadius: 10, marginBottom: 8,
-                border: primary ? 'none' : '1px solid var(--border)',
-                background: primary ? 'var(--primary)' : 'var(--card)',
-                color: primary ? 'var(--primary-foreground)' : 'var(--foreground)',
+                border: primary ? 'none' : '1px solid var(--line)',
+                background: primary ? 'var(--primary)' : 'var(--surface)',
+                color: primary ? 'var(--primary-foreground)' : 'var(--ink)',
                 textDecoration: 'none', fontWeight: primary ? 500 : 300, fontSize: 13,
               }}
             >
-              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--muted-foreground)'} />
+              <Icon size={16} color={primary ? 'var(--primary-foreground)' : 'var(--ink-3)'} />
               <span style={{ flex: 1, minWidth: 0 }}>{label}</span>
-              {!primary && <ChevronLeft size={14} color="var(--muted-foreground)" style={arrow} />}
+              {!primary && <ChevronLeft size={14} color="var(--ink-3)" style={arrow} />}
             </a>
           ))}
         </aside>
@@ -1470,7 +1501,7 @@ export default function DashboardPage() {
     return (
       <div className="p-4 md:p-6 lg:p-8 space-y-6">
         {/* Skeleton Welcome Card */}
-        <div className="rounded-2xl p-4 md:p-8 bg-surface border border-border">
+        <div className="rounded-2xl p-4 md:p-8 bg-surface border border-[var(--line)]">
           <div className="flex items-center gap-4 flex-wrap">
             <Skeleton className="w-14 h-14 rounded-2xl" />
             <div className="space-y-2">
@@ -1510,7 +1541,7 @@ export default function DashboardPage() {
             {roleCard.icon}
           </div>
           <div style={{flex:1}}>
-            <div style={{color:'var(--foreground)',fontWeight:500,fontSize:15}}>{roleCard.title}</div>
+            <div style={{color:'var(--ink)',fontWeight:500,fontSize:15}}>{roleCard.title}</div>
             <div style={{color:'#6b7280',fontSize:13,marginTop:2}}>{roleCard.desc}</div>
           </div>
           <ChevronLeft size={18} color={roleCard.chevronColor}/>

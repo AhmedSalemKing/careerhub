@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { get } from '@/lib/api'
 import { UserAvatar } from '@/components/avatars/UserAvatar'
+import { MentorDetailsModal } from '@/components/coaching/MentorDetailsModal'
 import { useMarket } from '../../contexts/MarketContext'
 import { formatCurrency } from '../../../lib/formatCurrency'
 import { toMarketAmount } from '../../../lib/marketConfig'
@@ -281,6 +282,8 @@ interface ConsultantProfile {
   languages?: string[] | null
   avatar?: string | null
   gender?: string | null
+  bio?: string | null
+  rating?: number | null
   yearsExperience?: number | null
   sessionPrice?: number | string | null
   sessionDuration?: number | null
@@ -304,6 +307,7 @@ export default function CoachingPage() {
   const { market } = useMarket()
 
   const [showCoaches, setShowCoaches] = useState(false)
+  const [selectedMentor, setSelectedMentor] = useState<Consultant | null>(null)
   const [coaches, setCoaches] = useState<Consultant[]>([])
   const [coachesLoading, setCoachesLoading] = useState(false)
   const [coachesError, setCoachesError] = useState(false)
@@ -532,7 +536,7 @@ export default function CoachingPage() {
                           </p>
                         )}
                         <div className="cch-btns">
-                          <a className="cch-cta ghost" href={href}>تفاصيل</a>
+                          <button type="button" className="cch-cta ghost" onClick={() => setSelectedMentor(c)}>تفاصيل</button>
                           <a className="cch-cta primary" href={href}>احجز الآن</a>
                         </div>
                       </article>
@@ -544,6 +548,7 @@ export default function CoachingPage() {
           )}
         </div>
       </section>
+      <MentorDetailsModal mentor={selectedMentor} onClose={() => setSelectedMentor(null)} />
     </main>
   )
 }

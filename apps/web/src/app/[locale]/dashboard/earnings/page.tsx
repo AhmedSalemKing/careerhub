@@ -173,7 +173,7 @@ export default function EarningsPage() {
       {
         label: isAr ? 'الجلسات المكتملة' : 'Completed sessions',
         value: String(data?.sessionsCount || 0),
-        color: 'var(--foreground)',
+        color: 'var(--ink)',
         background: 'var(--surface)',
         icon: <Ic.trending size={15} />,
       },
@@ -186,7 +186,7 @@ export default function EarningsPage() {
       <div
         dir="rtl"
         className="flex min-h-[50vh] flex-col items-center justify-center gap-2"
-        style={{ background: 'var(--background)', color: 'var(--muted)', fontFamily: 'var(--font-body)' }}
+        style={{ background: 'var(--bg)', color: 'var(--ink-2)', fontFamily: 'var(--font-body)' }}
       >
         <Ic.spinner size={24} />
         <p className="text-sm" style={{ fontWeight: 300 }}>{isAr ? 'جاري تحميل الأرباح...' : 'Loading earnings...'}</p>
@@ -200,13 +200,13 @@ export default function EarningsPage() {
     <div
       dir="rtl"
       className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6"
-      style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}
+      style={{ background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
     >
       <header className="mb-6">
         <h1 className="text-2xl sm:text-3xl" style={{ fontFamily: 'var(--font-madinet)', fontWeight: 900 }}>
           {isAr ? 'أرباحي' : 'My earnings'}
         </h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
           {isAr
             ? 'إيراداتك من الجلسات الاستشارية، محدثة من سجل الجلسات'
             : 'Your consulting revenue, sourced from the sessions ledger'}
@@ -229,7 +229,7 @@ export default function EarningsPage() {
           <div
             key={stat.label}
             className="rounded-2xl border p-3 sm:p-4"
-            style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
+            style={{ background: 'var(--surface)', borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}
           >
             <div className="mb-2 flex items-center gap-2">
               <span
@@ -238,7 +238,7 @@ export default function EarningsPage() {
               >
                 {stat.icon}
               </span>
-              <p className="text-[10px] leading-tight sm:text-[11px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+              <p className="text-[10px] leading-tight sm:text-[11px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                 {stat.label}
               </p>
             </div>
@@ -251,31 +251,31 @@ export default function EarningsPage() {
 
       <section
         className="overflow-hidden rounded-2xl border"
-        style={{ background: 'var(--card)', borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}
+        style={{ background: 'var(--surface)', borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}
       >
-        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
+        <div className="flex items-center justify-between border-b p-4" style={{ borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}>
           <h2 className="flex items-center gap-2 text-sm" style={{ fontWeight: 500 }}>
             <span style={{ color: 'var(--primary)' }}><Ic.dollar size={17} /></span>
             {isAr ? 'سجل الجلسات' : 'Sessions history'}
           </h2>
-          <span className="text-[11px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+          <span className="text-[11px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
             {isAr ? `${sessions.length} جلسة` : `${sessions.length} sessions`}
           </span>
         </div>
 
         {sessions.length === 0 ? (
           <div className="px-6 py-14 text-center">
-            <span style={{ color: 'var(--muted)', opacity: 0.3, display: 'block', marginBottom: 12 }}>
+            <span style={{ color: 'var(--ink-2)', opacity: 0.3, display: 'block', marginBottom: 12 }}>
               <Ic.dollar size={40} />
             </span>
-            <p className="text-sm" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+            <p className="text-sm" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
               {isAr ? 'لا توجد جلسات بعد' : 'No sessions yet'}
             </p>
           </div>
         ) : (
           <>
             {/* Mobile cards */}
-            <div className="divide-y sm:hidden" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
+            <div className="divide-y sm:hidden" style={{ borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}>
               {sessions.map((session) => (
                 <div key={session.id} className="p-4">
                   <div className="mb-1 flex items-center justify-between gap-2">
@@ -286,10 +286,10 @@ export default function EarningsPage() {
                       {money(Number(session.amount ?? session.price ?? 0), session.amountDisplay ?? session.priceDisplay)}
                     </span>
                   </div>
-                  <p className="truncate text-[11px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+                  <p className="truncate text-[11px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                     {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                   </p>
-                  <p className="mt-1 text-[10px]" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+                  <p className="mt-1 text-[10px]" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                     {formatSessionDate(parseAnyDate(session), isAr)}
                   </p>
                 </div>
@@ -300,7 +300,7 @@ export default function EarningsPage() {
             <div className="hidden overflow-x-auto sm:block">
               <table className="w-full border-collapse text-right">
                 <thead>
-                  <tr className="border-b text-[11px]" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)', color: 'var(--muted)' }}>
+                  <tr className="border-b text-[11px]" style={{ borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)', color: 'var(--ink-2)' }}>
                     <th className="p-3" style={{ fontWeight: 500 }}>{isAr ? 'العميل' : 'Client'}</th>
                     <th className="p-3" style={{ fontWeight: 500 }}>{isAr ? 'الجلسة' : 'Session'}</th>
                     <th className="p-3 text-center" style={{ fontWeight: 500 }}>{isAr ? 'التاريخ' : 'Date'}</th>
@@ -310,7 +310,7 @@ export default function EarningsPage() {
                 </thead>
                 <tbody>
                   {sessions.map((session) => (
-                    <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'color-mix(in srgb, var(--foreground) 10%, transparent)' }}>
+                    <tr key={session.id} className="border-b text-xs last:border-0" style={{ borderColor: 'color-mix(in srgb, var(--ink) 10%, transparent)' }}>
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <span
@@ -324,19 +324,19 @@ export default function EarningsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="max-w-[220px] truncate p-3" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+                      <td className="max-w-[220px] truncate p-3" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                         {session.sessionName || (isAr ? 'جلسة استشارية' : 'Consulting session')}
                       </td>
-                      <td className="p-3 text-center" style={{ color: 'var(--muted)', fontWeight: 300 }}>
+                      <td className="p-3 text-center" style={{ color: 'var(--ink-2)', fontWeight: 300 }}>
                         {formatSessionDate(parseAnyDate(session), isAr)}
                       </td>
                       <td className="p-3 text-center">
                         <span
                           className="rounded-full border px-2 py-0.5 text-[10px]"
                           style={{
-                            borderColor: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--border)',
+                            borderColor: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--line)',
                             background: session.status === 'COMPLETED' ? 'var(--accent-light)' : 'var(--surface)',
-                            color: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--muted)',
+                            color: session.status === 'COMPLETED' ? 'var(--accent)' : 'var(--ink-2)',
                             fontWeight: 300,
                           }}
                         >
@@ -354,7 +354,7 @@ export default function EarningsPage() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ background: 'color-mix(in srgb, var(--foreground) 4%, transparent)' }}>
+                  <tr style={{ background: 'color-mix(in srgb, var(--ink) 4%, transparent)' }}>
                     <td className="p-3 text-xs" colSpan={4} style={{ fontWeight: 500 }}>
                       {isAr ? 'الإجمالي' : 'Total'}
                     </td>

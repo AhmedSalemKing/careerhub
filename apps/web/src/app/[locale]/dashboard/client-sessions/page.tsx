@@ -86,7 +86,7 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
   COMPLETED: {
     ar: 'مكتملة',
     en: 'Completed',
-    color: 'var(--muted)',
+    color: 'var(--ink-2)',
     subtle: 'var(--surface-2)',
   },
   CANCELLED: {
@@ -310,11 +310,11 @@ export default function ClientSessionsPage() {
     <div
       dir="rtl"
       className="min-h-screen pb-20"
-      style={{ background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'var(--font-body)' }}
+      style={{ background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--font-body)' }}
     >
       <header
         className="border-b px-4 pb-0 pt-6 sm:px-6"
-        style={{ background: 'var(--card)', borderColor: 'var(--border)' }}
+        style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
       >
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -329,7 +329,7 @@ export default function ClientSessionsPage() {
                 <h1 className="text-lg font-black sm:text-xl" style={{ fontFamily: 'var(--font-madinet)' }}>
                   {isAr ? 'جلسات عملائي' : 'Client sessions'}
                 </h1>
-                <p className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+                <p className="text-[11px] font-semibold" style={{ color: 'var(--ink-2)' }}>
                   {isAr ? `${sessions.length} جلسة من العملاء` : `${sessions.length} sessions from clients`}
                 </p>
               </div>
@@ -339,7 +339,7 @@ export default function ClientSessionsPage() {
               type="button"
               onClick={() => refetch()}
               className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold transition-colors"
-              style={{ borderColor: 'var(--border)', background: 'var(--surface)', color: 'var(--muted)' }}
+              style={{ borderColor: 'var(--line)', background: 'var(--surface)', color: 'var(--ink-2)' }}
             >
               <Ic.refresh size={12} />
               {isAr ? 'تحديث' : 'Refresh'}
@@ -373,12 +373,12 @@ export default function ClientSessionsPage() {
               <div
                 key={item.en}
                 className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                style={{ borderColor: 'var(--border)', background: item.subtle }}
+                style={{ borderColor: 'var(--line)', background: item.subtle }}
               >
                 <span className="text-base font-black" style={{ color: item.color }}>
                   {item.value}
                 </span>
-                <span className="text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--ink-2)' }}>
                   {isAr ? item.ar : item.en}
                 </span>
               </div>
@@ -399,7 +399,7 @@ export default function ClientSessionsPage() {
                   className="flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-3 text-xs font-bold transition-colors"
                   style={{
                     borderColor: active ? 'var(--primary)' : 'transparent',
-                    color: active ? 'var(--primary)' : 'var(--muted)',
+                    color: active ? 'var(--primary)' : 'var(--ink-2)',
                     background: 'transparent',
                     cursor: 'pointer',
                   }}
@@ -410,7 +410,7 @@ export default function ClientSessionsPage() {
                       className="min-w-[18px] rounded-full px-1.5 py-0.5 text-[9px] font-black"
                       style={{
                         background: active ? 'var(--primary)' : 'var(--surface-2)',
-                        color: active ? 'var(--primary-foreground)' : 'var(--muted)',
+                        color: active ? 'var(--primary-foreground)' : 'var(--ink-2)',
                       }}
                     >
                       {count}
@@ -430,15 +430,15 @@ export default function ClientSessionsPage() {
               <div
                 key={item}
                 className="h-44 animate-pulse rounded-2xl border"
-                style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
               />
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border px-6 py-16 text-center" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
-            <span style={{ color: 'var(--muted)', opacity: 0.4, display: 'block', margin: '0 auto 14px', width: 'fit-content' }}><Ic.users size={44} /></span>
+          <div className="rounded-2xl border px-6 py-16 text-center" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
+            <span style={{ color: 'var(--ink-2)', opacity: 0.4, display: 'block', margin: '0 auto 14px', width: 'fit-content' }}><Ic.users size={44} /></span>
             <h3 className="mb-2 text-base font-black">{isAr ? 'لا توجد جلسات هنا' : 'No sessions here'}</h3>
-            <p className="text-xs" style={{ color: 'var(--muted)' }}>
+            <p className="text-xs" style={{ color: 'var(--ink-2)' }}>
               {isAr
                 ? 'ستظهر هنا الجلسات التي يحجزها العملاء معك'
                 : 'Sessions booked with you by clients will appear here'}
@@ -468,8 +468,8 @@ export default function ClientSessionsPage() {
                   key={session.id}
                   className="overflow-hidden rounded-2xl border transition-shadow"
                   style={{
-                    background: 'var(--card)',
-                    borderColor: soon ? 'var(--primary-border)' : rescheduleWaiting ? 'var(--accent)' : 'var(--border)',
+                    background: 'var(--surface)',
+                    borderColor: soon ? 'var(--primary-border)' : rescheduleWaiting ? 'var(--accent)' : 'var(--line)',
                     boxShadow: soon ? '0 6px 20px var(--primary-subtle)' : 'none',
                   }}
                 >
@@ -496,7 +496,7 @@ export default function ClientSessionsPage() {
                     >
                       <Ic.alert size={13} />
                       {isAr ? 'بانتظار موافقة العميل على الموعد الجديد' : 'Awaiting client approval for the new time'}
-                      <span style={{ color: 'var(--foreground)' }}>
+                      <span style={{ color: 'var(--ink)' }}>
                         {formatFullDate(session.proposedAt, locale)} — {formatTimeSafe(session.proposedAt, locale)}
                       </span>
                     </div>
@@ -510,7 +510,7 @@ export default function ClientSessionsPage() {
                             src={session.user.profile.avatar}
                             alt={name}
                             className="h-11 w-11 rounded-xl object-cover"
-                            style={{ border: '1px solid var(--border)' }}
+                            style={{ border: '1px solid var(--line)' }}
                           />
                         ) : (
                           <div
@@ -523,7 +523,7 @@ export default function ClientSessionsPage() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-black">{name || (isAr ? 'عميل' : 'Client')}</p>
                           {session.user?.email && (
-                            <p className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+                            <p className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--ink-2)' }}>
                               <Ic.mail size={10} />
                               <span className="truncate">{session.user.email}</span>
                             </p>
@@ -540,7 +540,7 @@ export default function ClientSessionsPage() {
                         </span>
                         <span
                           className="flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold"
-                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)' }}
+                          style={{ background: 'var(--surface)', borderColor: 'var(--line)', color: 'var(--ink-2)' }}
                         >
                           <Ic.calendar size={10} />
                           {formatShortDate(scheduledAt, locale)}
@@ -550,18 +550,18 @@ export default function ClientSessionsPage() {
 
                     <div
                       className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border px-3 py-2"
-                      style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+                      style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}
                     >
                       <span className="flex items-center gap-1 text-[11px] font-bold">
-                        <span style={{ color: 'var(--muted)' }}><Ic.clock size={11} /></span>
+                        <span style={{ color: 'var(--ink-2)' }}><Ic.clock size={11} /></span>
                         {formatTimeSafe(session.scheduledAt, locale, '—')}
                       </span>
-                      <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--muted)' }}>
+                      <span className="flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--ink-2)' }}>
                         <Ic.video size={11} />
                         {duration} {isAr ? 'دقيقة' : 'min'}
                       </span>
                       {isCompleted && (
-                        <span className="text-[11px] font-bold" style={{ color: 'var(--muted)' }}>
+                        <span className="text-[11px] font-bold" style={{ color: 'var(--ink-2)' }}>
                           {isAr ? 'انتهت' : 'Ended'}
                           {duration ? ` — ${duration} ${isAr ? 'دقيقة' : 'min'}` : ''}
                         </span>
@@ -569,14 +569,14 @@ export default function ClientSessionsPage() {
                     </div>
 
                     <div className="mb-3">
-                      <p className="text-[10px] font-bold" style={{ color: 'var(--muted)' }}>
+                      <p className="text-[10px] font-bold" style={{ color: 'var(--ink-2)' }}>
                         {isAr ? 'الموضوع' : 'Topic'}
                       </p>
                       <p className="text-xs font-semibold">
                         {session.topic || session.sessionName || session.description || (isAr ? '—' : '—')}
                       </p>
                       {session.notes && (
-                        <p className="mt-1 text-[11px]" style={{ color: 'var(--muted)' }}>
+                        <p className="mt-1 text-[11px]" style={{ color: 'var(--ink-2)' }}>
                           {session.notes}
                         </p>
                       )}
@@ -602,7 +602,7 @@ export default function ClientSessionsPage() {
                               setRescheduleSession(session)
                             }}
                             className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
-                            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--foreground)', cursor: 'pointer' }}
+                            style={{ background: 'var(--surface)', borderColor: 'var(--line)', color: 'var(--ink)', cursor: 'pointer' }}
                           >
                             <Ic.clock size={12} />
                             {isAr ? 'إعادة الجدولة' : 'Reschedule'}
@@ -664,7 +664,7 @@ export default function ClientSessionsPage() {
                             setRescheduleSession(session)
                           }}
                           className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-[11px] font-bold"
-                          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--muted)', cursor: 'pointer' }}
+                          style={{ background: 'var(--surface)', borderColor: 'var(--line)', color: 'var(--ink-2)', cursor: 'pointer' }}
                         >
                           <Ic.clock size={12} />
                           {isAr ? 'إعادة الجدولة' : 'Reschedule'}
@@ -808,8 +808,8 @@ function RescheduleModal({
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate()
 
   const font = 'PingAR'
-  const muted = 'var(--muted)'
-  const faint = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
+  const muted = 'var(--ink-2)'
+  const faint = 'color-mix(in srgb, var(--ink) 8%, transparent)'
 
   const primaryBtn = (enabled: boolean): React.CSSProperties => ({
     background: enabled ? 'var(--primary)' : faint,
@@ -823,9 +823,9 @@ function RescheduleModal({
     cursor: enabled ? 'pointer' : 'not-allowed',
   })
   const ghostBtn: React.CSSProperties = {
-    border: '1px solid var(--border)',
+    border: '1px solid var(--line)',
     background: 'transparent',
-    color: 'var(--foreground)',
+    color: 'var(--ink)',
     borderRadius: 10,
     padding: '10px 0',
     fontFamily: font,
@@ -839,7 +839,7 @@ function RescheduleModal({
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 10000,
-        background: 'color-mix(in srgb, var(--foreground) 60%, transparent)',
+        background: 'color-mix(in srgb, var(--ink) 60%, transparent)',
         backdropFilter: 'blur(6px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 16px 90px 16px',
       }}
@@ -848,13 +848,13 @@ function RescheduleModal({
         dir={isAr ? 'rtl' : 'ltr'}
         onClick={(event) => event.stopPropagation()}
         style={{
-          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 20,
+          background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 20,
           width: '100%', maxWidth: 520, height: 'min(calc(88dvh - 80px), 600px)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}
       >
-        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontFamily: font, fontWeight: 500, fontSize: 16, color: 'var(--foreground)' }}>
+            <div style={{ fontFamily: font, fontWeight: 500, fontSize: 16, color: 'var(--ink)' }}>
               {tr('إعادة جدولة الجلسة', 'Reschedule session')}
             </div>
             <div style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: muted, marginTop: 3 }}>
@@ -883,10 +883,10 @@ function RescheduleModal({
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontFamily: font, fontWeight: 500, fontSize: 12,
               }}>{s}</div>
-              <span style={{ fontFamily: font, fontWeight: 300, fontSize: 11, color: step >= s ? 'var(--foreground)' : muted }}>
+              <span style={{ fontFamily: font, fontWeight: 300, fontSize: 11, color: step >= s ? 'var(--ink)' : muted }}>
                 {s === 1 ? tr('التاريخ', 'Date') : s === 2 ? tr('الوقت', 'Time') : tr('تأكيد', 'Confirm')}
               </span>
-              {s < 3 && <div style={{ width: 24, height: 1, background: 'var(--border)' }} />}
+              {s < 3 && <div style={{ width: 24, height: 1, background: 'var(--line)' }} />}
             </div>
           ))}
         </div>
@@ -898,19 +898,19 @@ function RescheduleModal({
                 <button
                   type="button"
                   onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', padding: '4px 8px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)', padding: '4px 8px' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : undefined }}>
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
                 </button>
-                <span style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--foreground)' }}>
+                <span style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--ink)' }}>
                   {currentMonth.toLocaleDateString(dateLocale, { month: 'long', year: 'numeric' })}
                 </span>
                 <button
                   type="button"
                   onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)', padding: '4px 8px' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink)', padding: '4px 8px' }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isAr ? 'scaleX(-1)' : undefined }}>
                     <polyline points="9 18 15 12 9 6" />
@@ -940,7 +940,7 @@ function RescheduleModal({
                       style={{
                         width: '100%', aspectRatio: '1', borderRadius: 6, border: 'none',
                         background: isSelected ? 'var(--primary)' : available ? faint : 'transparent',
-                        color: isSelected ? 'var(--primary-foreground)' : available ? 'var(--foreground)' : 'color-mix(in srgb, var(--foreground) 20%, transparent)',
+                        color: isSelected ? 'var(--primary-foreground)' : available ? 'var(--ink)' : 'color-mix(in srgb, var(--ink) 20%, transparent)',
                         cursor: available ? 'pointer' : 'not-allowed',
                         fontFamily: font, fontWeight: 300, fontSize: 12,
                       }}
@@ -999,22 +999,22 @@ function RescheduleModal({
                               : isCurrent
                                 ? '1.5px solid var(--accent)'
                                 : isBooked
-                                  ? '1px solid color-mix(in srgb, var(--foreground) 10%, transparent)'
-                                  : '1px solid var(--border)',
+                                  ? '1px solid color-mix(in srgb, var(--ink) 10%, transparent)'
+                                  : '1px solid var(--line)',
                             background: isSelected
                               ? 'var(--primary-subtle)'
                               : isCurrent
                                 ? 'var(--accent-light)'
                                 : isBooked
-                                  ? 'color-mix(in srgb, var(--foreground) 4%, transparent)'
-                                  : 'var(--card)',
+                                  ? 'color-mix(in srgb, var(--ink) 4%, transparent)'
+                                  : 'var(--surface)',
                             color: isSelected
                               ? 'var(--primary)'
                               : isCurrent
                                 ? 'var(--accent)'
                                 : isBooked
-                                  ? 'color-mix(in srgb, var(--foreground) 35%, transparent)'
-                                  : 'var(--foreground)',
+                                  ? 'color-mix(in srgb, var(--ink) 35%, transparent)'
+                                  : 'var(--ink)',
                             cursor: isAvailable ? 'pointer' : 'not-allowed',
                             fontFamily: font, fontWeight: isCurrent ? 500 : 300, fontSize: 12,
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1030,9 +1030,9 @@ function RescheduleModal({
 
                   <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
                     {[
-                      { color: 'var(--border)', label: tr('متاح', 'Available') },
+                      { color: 'var(--line)', label: tr('متاح', 'Available') },
                       { color: 'var(--accent)', label: tr('الموعد الحالي', 'Current time') },
-                      { color: 'color-mix(in srgb, var(--foreground) 20%, transparent)', label: tr('محجوز', 'Booked') },
+                      { color: 'color-mix(in srgb, var(--ink) 20%, transparent)', label: tr('محجوز', 'Booked') },
                     ].map((item) => (
                       <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         <div style={{ width: 10, height: 10, borderRadius: 3, border: `1.5px solid ${item.color}`, background: 'transparent' }} />
@@ -1047,8 +1047,8 @@ function RescheduleModal({
 
           {step === 3 && (
             <div>
-              <div style={{ padding: '14px 16px', borderRadius: 12, marginBottom: 16, background: faint, border: '1px solid var(--border)' }}>
-                <div style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--foreground)', marginBottom: 10 }}>
+              <div style={{ padding: '14px 16px', borderRadius: 12, marginBottom: 16, background: faint, border: '1px solid var(--line)' }}>
+                <div style={{ fontFamily: font, fontWeight: 500, fontSize: 13, color: 'var(--ink)', marginBottom: 10 }}>
                   {tr('ملخص الموعد الجديد', 'New time summary')}
                 </div>
                 {[
@@ -1058,7 +1058,7 @@ function RescheduleModal({
                 ].map((row) => (
                   <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                     <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: muted }}>{row.label}</span>
-                    <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--foreground)' }}>{row.value}</span>
+                    <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--ink)' }}>{row.value}</span>
                   </div>
                 ))}
               </div>
@@ -1068,7 +1068,7 @@ function RescheduleModal({
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
-                <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--foreground)' }}>
+                <span style={{ fontFamily: font, fontWeight: 300, fontSize: 12, color: 'var(--ink)' }}>
                   {tr('سيتم إرسال إشعار للعميل بالموعد الجديد ويطلب موافقته', 'The client will be notified of the new time and asked to approve it')}
                 </span>
               </div>
@@ -1083,7 +1083,7 @@ function RescheduleModal({
                   onChange={(event) => setReason(event.target.value)}
                   placeholder={tr('مثال: ارتباط طارئ', 'e.g. Emergency')}
                   rows={2}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', resize: 'none', fontFamily: font, fontWeight: 300, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', resize: 'none', fontFamily: font, fontWeight: 300, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
@@ -1091,7 +1091,7 @@ function RescheduleModal({
         </div>
 
         {/* Action buttons: always visible below the scrolling content */}
-        <div style={{ padding: '10px 20px 14px', borderTop: '1px solid var(--border)', flexShrink: 0, background: 'var(--card)' }}>
+        <div style={{ padding: '10px 20px 14px', borderTop: '1px solid var(--line)', flexShrink: 0, background: 'var(--surface)' }}>
           {step === 1 && (
             <button
               type="button"
