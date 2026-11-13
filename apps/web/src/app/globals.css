@@ -3358,8 +3358,28 @@ a.dw-instructor:hover { color: var(--accent); }
 .dw-assess .rc-step { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink); }
 .dw-assess .skills { display: flex; flex-wrap: wrap; gap: 6px; }
 .dw-assess .skills span { padding: 3px 10px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); font-size: 12px; font-weight: 600; border: 1px solid var(--line); }
-.dw-assess .rc-foot { display: flex; align-items: center; justify-content: flex-end; padding: 14px 24px; gap: 12px; flex-wrap: wrap; }
+.dw-assess .rc-foot { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; gap: 12px; flex-wrap: wrap; }
 .dw-assess .rc-actions { display: flex; gap: 8px; }
+.dw-assess .jobs { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.dw-assess .j-main { display: flex; flex-direction: column; gap: 3px; }
+.dw-assess .j-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.dw-assess .j-desc { font-size: 12px; line-height: 1.5; color: var(--ink-2); }
+.dw-assess .j-sal { display: flex; align-items: baseline; gap: 4px; font-size: 12px; color: var(--ink-3); }
+.dw-assess .j-sal b { color: var(--ink); font-weight: 600; }
+.dw-assess .rc-courses { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.dw-assess .rc-courses li { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink); }
+.dw-assess .rc-courses b { font-weight: 500; flex: 1; min-width: 0; }
+.dw-assess .rc-courses small { font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.dw-assess .c-n { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--wash); color: var(--brand); }
+.dw-assess .rc-vision { display: flex; align-items: center; gap: 14px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--bg-2); }
+.dw-assess .rc-vision .v-logo { flex: none; display: grid; place-items: center; width: 64px; height: 48px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.dw-assess .rc-vision .v-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.dw-assess .rc-vision p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--ink-2); }
+.dw-assess .rc-vision .v-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.dw-assess .rc-price { display: flex; flex-direction: column; gap: 2px; }
+.dw-assess .rc-price small { font-size: 11px; color: var(--ink-3); }
+.dw-assess .rc-price b { font-size: 18px; font-weight: 700; color: var(--ink); }
+.dw-assess .note.info { display: flex; align-items: flex-start; justify-content: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
 .dw-assess .rc-bottom { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; padding-bottom: 48px; }
 
 /* Ring (match % donut) */

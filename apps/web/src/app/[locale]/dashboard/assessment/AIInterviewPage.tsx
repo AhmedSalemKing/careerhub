@@ -9,6 +9,9 @@ import { computeDiscoveryStage, type ChatMessage } from './career-signals'
 import { useAuthStore } from '@/stores/authStore'
 import { useCareerMemory, buildMemoryContext } from '@/components/ai/useCareerMemory'
 import { getToken } from '@/lib/auth'
+import { useQueries } from '@tanstack/react-query'
+import { useTracks, fetchTrack, formatSalaryRange, formatTrackPrice, type Track } from '@/lib/tracks'
+import { getCountryClient } from '@/lib/market'
 import { RasheedAvatar, CharacterAvatar } from '../../../components/CharacterDuo'
 import { SECTION_SVGS, CHECK_SVG } from './sections'
 
@@ -45,6 +48,7 @@ interface QuizResult {
   topCareers: {
     name: string
     nameEn: string
+    trackSlug?: string
     match: number
     reason: string
     strengths: string[]
@@ -671,10 +675,32 @@ function InterviewMode({ onEnd }: { onEnd: () => void }) {
 }
 
 /* ── Quiz Result Card ─────────────────────────────────────── */
-function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: () => void }) {
+function QuizResultCard({ result, answers, onRestart }: { result: QuizResult; answers: Record<string, string>; onRestart: () => void }) {
   const router = useRouter()
   const locale = useLocale()
   const RC_COLORS = ['var(--brand)', 'var(--purple)', 'var(--lavender)']
+  const market: 'EG' | 'KSA' = getCountryClient() === 'EG' ? 'EG' : 'KSA'
+  const currency: 'EGP' | 'SAR' = market === 'EG' ? 'EGP' : 'SAR'
+
+  // Real tracks from the admin API: jobs, courses, vision and package price come from here.
+  const { data: tracks = [] } = useTracks('ar')
+  const matchTrack = (c: QuizResult['topCareers'][number]): Track | undefined =>
+    tracks.find((t) => t.slug === c.trackSlug) ??
+    tracks.find((t) => t.slug === c.nameEn.toLowerCase().replace(/\s+/g, '-')) ??
+    tracks.find((t) => t.name === c.name)
+  const matched = result.topCareers.map(matchTrack)
+  const details = useQueries({
+    queries: matched.map((tk) => ({
+      queryKey: ['track', tk?.slug ?? 'none', 'ar'],
+      queryFn: () => fetchTrack(tk!.slug, 'ar'),
+      enabled: !!tk,
+      staleTime: 60_000,
+    })),
+  })
+
+  // First two readiness answers mean fewer than 5 study hours a week.
+  const readinessOpts = ALL_QUESTIONS.find((q) => q.id === 'p6q1')?.options ?? []
+  const lowHours = [readinessOpts[0], readinessOpts[1]].filter(Boolean).includes(answers['p6q1'])
 
   const startPath = (idx: number) => {
     try {
@@ -693,6 +719,11 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
     router.push(`/${locale}/dashboard/career-path`)
   }
 
+  const VISION_LABEL = {
+    KSA: { name: 'رؤية السعودية 2030', logo: '/images/ro2ya.png' },
+    EG: { name: 'رؤية مصر 2030', logo: '/images/egypt-vision.webp' },
+  } as const
+
   return (
     <div dir="rtl" className="dw-assess" style={{ overflowY: 'auto' }}>
       <style>{INTERVIEW_CSS}</style>
@@ -709,15 +740,27 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
             <RasheedAvatar size={52} />
           </span>
           <div className="r-bubble">
-            <b>رشيد</b> <span className="muted small">· مرشدك المهني</span>
+            <b>رشيد</b> <span className="muted small">· مرشد DeveWay المهني بالذكاء الاصطناعي</span>
+            <p>هذا ما توصّلت إليه. كل اقتراح مصحوب بأسبابي، لتقرّر أنت ما يناسبك.</p>
             <p>{result.summary}</p>
-            {result.personalNote && <p>{result.personalNote}</p>}
+            {result.personalNote && <p className="pill" style={{ marginTop: 8 }}>{result.personalNote}</p>}
           </div>
         </div>
 
         <div className="results rc-list">
           {result.topCareers.map((career, i) => {
-            const len = 2 * Math.PI * 22
+            const len = 2 * Math.PI * 27
+            const tk = matched[i]
+            const td = details[i]?.data ?? null
+            const pkg = td?.package ?? null
+            const jobs = (tk?.jobs ?? []).slice(0, 3)
+            const pkgIds = pkg?.courseIds ?? []
+            const allCourses = (tk?.courses ?? []).slice().sort((a, b) => (a.order || 0) - (b.order || 0))
+            const inPackage = pkgIds.length ? allCourses.filter((c) => c.courseId && pkgIds.includes(c.courseId)) : []
+            const courses = inPackage.length ? inPackage : allCourses
+            const skills = tk?.skills?.length ? tk.skills : career.skillsToLearn
+            const vision = tk ? (tk.vision2030.includes(market) ? market : tk.vision2030[0]) : undefined
+            const visionDesc = vision === 'KSA' ? td?.visionDescKSA : vision === 'EG' ? td?.visionDescEG : null
             return (
               <article
                 key={i}
@@ -727,23 +770,23 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
                 <header className="rc-head">
                   <span className="rc-ic" style={{ background: RC_COLORS[i % RC_COLORS.length] }}>{SECTION_SVGS[5]}</span>
                   <div className="rc-title">
-                    <span className="rc-rank">{i === 0 ? <>{SECTION_SVGS[0]} الأفضل تطابقًا</> : `خيار ${i + 1}`}</span>
-                    <h3>{career.name}</h3>
-                    <p>{career.nameEn}</p>
+                    <span className="rc-rank">{i === 0 ? <>{SECTION_SVGS[0]} الأنسب لك</> : `الخيار ${i + 1}`}</span>
+                    <h3>{tk?.name ?? career.name}</h3>
+                    <p>{tk?.description ? tk.description : career.nameEn}</p>
                   </div>
                   <div className="rc-match">
-                    <span className="ring-wrap">
-                      <svg className="ring-svg" width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">
+                    <span className="ring-wrap" style={{ width: 60, height: 60 }}>
+                      <svg className="ring-svg" width="60" height="60" viewBox="0 0 60 60" aria-hidden="true">
                         <defs>
                           <linearGradient id={`rg-${i}`} x1="0" y1="0" x2="1" y2="1">
                             <stop offset="0%" stopColor="var(--brand)" />
                             <stop offset="100%" stopColor="var(--lavender)" />
                           </linearGradient>
                         </defs>
-                        <circle className="bg" cx="28" cy="28" r="22" strokeWidth="6" />
+                        <circle className="bg" cx="30" cy="30" r="27" strokeWidth="6" />
                         <circle
                           className="fg"
-                          cx="28" cy="28" r="22" strokeWidth="6"
+                          cx="30" cy="30" r="27" strokeWidth="6"
                           stroke={`url(#rg-${i})`}
                           strokeDasharray={len}
                           strokeDashoffset={len * (1 - Math.min(100, Math.max(0, career.match)) / 100)}
@@ -752,7 +795,7 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
                       </svg>
                       <b>{career.match}%</b>
                     </span>
-                    <small>تطابق</small>
+                    <small>توافق</small>
                   </div>
                 </header>
 
@@ -766,24 +809,78 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
                       ))}
                     </ul>
                   </section>
+
+                  {jobs.length > 0 ? (
+                    <section className="rc-sec">
+                      <h4>{SECTION_SVGS[2]} الوظائف ذات الصلة</h4>
+                      <ul className="jobs">
+                        {jobs.map((j) => {
+                          const sal = market === 'EG' ? j.salaryEG : j.salaryKSA
+                          const salary = formatSalaryRange(sal.min, sal.max, currency, 'ar')
+                          return (
+                            <li key={j.title}>
+                              <span className="j-main">
+                                <span className="j-name">{j.titleAr || j.title}</span>
+                                {j.desc && <span className="j-desc">{j.desc}</span>}
+                                {salary && <span className="j-sal"><b>{salary}</b><small>/ شهريًا</small></span>}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </section>
+                  ) : (
+                    <section className="rc-sec">
+                      <h4>{SECTION_SVGS[2]} خطوتك القادمة</h4>
+                      <p className="rc-step">{career.nextStep}</p>
+                    </section>
+                  )}
+
+                  {courses.length > 0 && (
+                    <section className="rc-sec">
+                      <h4>{SECTION_SVGS[1]} الدورات المشمولة <span className="pill pill-muted">{courses.length}</span></h4>
+                      <ol className="rc-courses">
+                        {courses.map((c, n) => (
+                          <li key={`${c.order}-${c.title}`}>
+                            <span className="c-n">{n + 1}</span>
+                            <b>{c.title}</b>
+                            {c.weeks > 0 && <small>{c.weeks} أسبوع</small>}
+                          </li>
+                        ))}
+                      </ol>
+                    </section>
+                  )}
+
                   <section className="rc-sec">
-                    <h4>{SECTION_SVGS[2]} خطوتك القادمة</h4>
-                    <p className="rc-step">{career.nextStep}</p>
-                  </section>
-                  <section className="rc-sec" style={{ gridColumn: '1 / -1' }}>
-                    <h4>{SECTION_SVGS[1]} المهارات التي ستتعلمها</h4>
-                    <div className="skills">{career.skillsToLearn.map(s => <span key={s}>{s}</span>)}</div>
+                    <h4>{SECTION_SVGS[3]} المهارات التي ستبنيها</h4>
+                    <div className="skills">{skills.map(s => <span key={s}>{s}</span>)}</div>
                   </section>
                 </div>
 
+                {vision && (
+                  <div className="rc-vision">
+                    <span className="v-logo"><img src={VISION_LABEL[vision].logo} alt={VISION_LABEL[vision].name} /></span>
+                    <div>
+                      <p className="v-name">متوافق مع {VISION_LABEL[vision].name}</p>
+                      {visionDesc && <p>{visionDesc}</p>}
+                    </div>
+                  </div>
+                )}
+
                 <footer className="rc-foot">
+                  {pkg ? (
+                    <span className="rc-price"><small>سعر واحد شامل</small><b>{formatTrackPrice(pkg.price, 'SAR', 'ar')}</b></span>
+                  ) : <span />}
                   <span className="rc-actions">
+                    {tk && (
+                      <a className="btn btn-ghost btn-sm" href={`/${locale}/careers/${tk.slug}`}>عرض المسار</a>
+                    )}
                     <button
                       type="button"
                       className={`btn ${i === 0 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
                       onClick={() => startPath(i)}
                     >
-                      ابدأ مسار {career.name}
+                      ابدأ هذا المسار
                       <svg className="icon go flip" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                     </button>
                   </span>
@@ -793,12 +890,21 @@ function QuizResultCard({ result, onRestart }: { result: QuizResult; onRestart: 
           })}
         </div>
 
+        {lowHours && (
+          <p className="note info" style={{ marginTop: 20 }}>
+            <span>مع أقل من 5 ساعات أسبوعيًا، نقترح دورة واحدة في كل مرة.</span>
+          </p>
+        )}
+        <p className="muted small" style={{ textAlign: 'center', marginTop: 10 }}>
+          تتبع شارات رؤية 2030 السوق الذي اخترته (السعودية أو مصر) أعلى الصفحة. يعكس التوافق قراءة DeveWay للأولويات الوطنية المعلنة، وليس اعتمادًا رسميًا.
+        </p>
+
         <div className="rc-bottom">
-          <button type="button" className="btn btn-ghost" onClick={() => router.push(`/${locale}/careers`)}>
-            اختر مساراً مختلفاً
+          <button type="button" className="btn btn-primary" onClick={() => router.push(`/${locale}/dashboard/my-courses`)}>
+            افتح «تعلّمي»
           </button>
           <button type="button" className="btn btn-ghost" onClick={onRestart}>
-            إعادة التقييم
+            أعد التقييم
           </button>
         </div>
       </div>
@@ -817,6 +923,18 @@ const RASHEED_REACTIONS: string[][] = [
   ['أهدافك واضحة، وهذا ممتاز.', 'الوقت المتاح عامل مهم.', 'قريباً من النتيجة!'],
 ]
 const RASHEED_IDLE = 'اختر الإجابة الأقرب لك، ولا توجد إجابة خاطئة.'
+const PHASE_HINTS: Record<string, string> = {
+  profiling:  'أجب بصراحة عن وضعك الحالي، فلا توجد إجابة صح أو خطأ',
+  interests:  'فكّر في الأنشطة اللي تستمتع بيها بشكل طبيعي',
+  skills:     'مش مهم مستواك الحالي، فكّر في اللي تميل إليه',
+  behavioral: 'تخيّل نفسك في الموقف فعلاً، واختر اللي كنت هتعمله بجد',
+  motivation: 'فكّر في اللي بيخليك تكمل حتى لو صعب',
+  readiness:  'اختر بواقعية، ده بيساعدنا نبني لك خطة تناسب وقتك',
+}
+const QUESTION_HINTS: Record<string, string> = {
+  p5q2: 'تخيّل يوم عمل مثالي ليك',
+}
+const hintFor = (q: { id: string; phase: string }) => QUESTION_HINTS[q.id] ?? PHASE_HINTS[q.phase] ?? RASHEED_IDLE
 
 function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: boolean }) {
   const [reaction,        setReaction]        = useState('')
@@ -828,6 +946,7 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
   const [isAnalyzing,     setIsAnalyzing]     = useState(false)
   const [result,          setResult]          = useState<QuizResult | null>(null)
 
+  const { data: platformTracks = [] } = useTracks('ar')
   const currentQuestion  = ALL_QUESTIONS[currentIndex]
   const currentPhaseIdx  = PHASES.findIndex(p => p.id === currentQuestion.phase)
   const selectedOption   = answers[currentQuestion.id] ?? null
@@ -894,25 +1013,23 @@ function QuizMode({ onEnd, embedded = false }: { onEnd: () => void; embedded?: b
     if (nextIndex >= ALL_QUESTIONS.length) {
       setIsAnalyzing(true)
       const finalAnswers = answers
-      const answersText  = ALL_QUESTIONS.map(q =>
-        `[${q.phaseLabel}] ${q.question}\nإجابته: ${finalAnswers[q.id] || 'لم يجب'}`
-      ).join('\n\n')
+      // Every answer goes to the model together with the question it answers.
+      const qaText = ALL_QUESTIONS.map((q, n) =>
+        `[Q${n + 1}: ${q.question}] → ${finalAnswers[q.id] || 'لم يجب'}`
+      ).join('\n')
+      const trackList = platformTracks.length
+        ? platformTracks.map(t => `- ${t.slug}: ${t.name}`).join('\n')
+        : `- Data Analyst, Frontend Developer, Backend Developer, Full Stack Developer, UI/UX Designer, Product Manager, Data Scientist, Business Analyst, DevOps Engineer, Digital Marketing, Cybersecurity, Mobile Developer`
 
       try {
         const text = await callChat(
-`أنت رشيد، خبير توجيه مهني متخصص في DeveWay.
-المستخدم أكمل تقييم مهني شامل من 18 سؤال في 6 محاور.
+`أنت رشيد، مستشار مهني. بناءً على إجابات المستخدم التالية على أسئلة التقييم المهني، قدّم توصيات مسارات مهنية مخصصة:
 
-إجاباته الكاملة:
-${answersText}
+${qaText}
 
-بناءً على التحليل الشامل لكل إجاباته مع بعض (مش كل سؤال على حدة):
-- لاحظ أي تناقضات أو أنماط مثيرة للاهتمام
-- حلل شخصيته المهنية بشكل حقيقي
-- حدد أقوى 3 مسارات مهنية مناسبة له من المسارات التالية:
-  Data Analyst, Frontend Developer, Backend Developer, Full Stack Developer,
-  UI/UX Designer, Product Manager, Data Scientist, Business Analyst,
-  DevOps Engineer, Digital Marketing, Cybersecurity, Mobile Developer
+حلّل هذه الإجابات بعمق (لاحظ الأنماط وأي تناقضات بين الإجابات، ولا تحلل كل سؤال على حدة) وقدّم 3 مسارات مهنية مرتبة حسب التوافق مع أسباب واضحة لكل مسار.
+اختر المسارات من هذه القائمة فقط${platformTracks.length ? '، وأعد الـ slug كما هو في الحقل trackSlug' : ''}:
+${trackList}
 
 أجب بهذا الفورمات بالضبط (JSON):
 [QUIZ_RESULT]
@@ -922,6 +1039,7 @@ ${answersText}
     {
       "name": "اسم المسار بالعربي",
       "nameEn": "Career Name in English",
+      "trackSlug": "slug من القائمة أعلاه (أو فارغ)",
       "match": 87,
       "reason": "ليه هو المناسب بالتحديد بناءً على إجاباته — جملة أو اثنتين",
       "strengths": ["نقطة قوة 1", "نقطة قوة 2"],
@@ -953,6 +1071,7 @@ ${answersText}
     return (
       <QuizResultCard
         result={result}
+        answers={answers}
         onRestart={() => { clearAdvance(); setCurrentIndex(0); setAnswers({}); setInsight(''); setResult(null) }}
       />
     )
@@ -972,7 +1091,7 @@ ${answersText}
 
   const progressPercent = Math.round(((currentIndex + (selectedOption ? 1 : 0)) / ALL_QUESTIONS.length) * 100)
   const phaseLabel = PHASES[currentPhaseIdx]?.label ?? currentQuestion.phaseLabel
-  const bubbleText = insight && !isLoadingInsight ? insight : (reaction || RASHEED_IDLE)
+  const bubbleText = insight && !isLoadingInsight ? insight : (reaction || hintFor(currentQuestion))
 
   return (
     <div dir="rtl" className={`dw-assess${embedded ? ' embedded' : ''}`}>
